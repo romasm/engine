@@ -17,7 +17,7 @@ namespace EngineCore
 		
 		inline static WindowsMgr* Get(){return m_instance;}
 		
-		map<HWND, Window*>* GetMap(){return &app_windows;}
+		inline map<HWND, Window*>* GetMap(){return &app_windows;}
 		Window* GetWindowByHwnd(HWND hwnd);
 		inline Window* GetMainWindow(){return main_window;}
 

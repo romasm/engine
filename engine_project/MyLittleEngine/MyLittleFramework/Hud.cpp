@@ -332,14 +332,13 @@ HEntityWraper Hud::GetEntityById(string id)
 	return HEntityWraper();
 }
 
-void Hud::Frame(bool force_update_gui, bool no_gui_gc)
+void Hud::Update(bool force_update_gui, bool no_gui_gc)
 {
 	if(!no_gui_gc)
 		EntStorge->DefferedDestroyProcess();
 
 	const float dt = Timer::Get()->dt_ms;
 
-	// update
 	for(auto& it : rootEnts)
 	{
 		auto win = it.second.win;
@@ -354,19 +353,25 @@ void Hud::Frame(bool force_update_gui, bool no_gui_gc)
 		
 		GET_HENTITY(it.second.rootEnt)->Update(dt);
 	}
+}
 
-	// draw
-	for(auto& it : rootEnts)
+void Hud::Draw(HWND win)
+{
+	auto it = rootEnts.find(win);
+	if(it == rootEnts.end())
 	{
-		auto win = it.second.win;
-		win->SetRenderTarget();
-		
-		GET_HENTITY(it.second.rootEnt)->RegToDraw();
-		
-		it.second.border->GetShaderInst()->SetVector(
-			it.second.win->IsActive() ? *(it.second.win->GetColorBorderFocus()) : *(it.second.win->GetColorBorder()), 3);
-		it.second.border->Draw();
+		ERR("Wrong HWND!");
+		return;
 	}
+
+	auto win_ptr = it->second.win;
+	win_ptr->SetRenderTarget();
+		
+	GET_HENTITY(it->second.rootEnt)->RegToDraw();
+		
+	it->second.border->GetShaderInst()->SetVector(
+		win_ptr->IsActive() ? *(win_ptr->GetColorBorderFocus()) : *(win_ptr->GetColorBorder()), 3);
+	it->second.border->Draw();
 }
 
 void Hud::Close()

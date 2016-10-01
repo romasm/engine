@@ -17,7 +17,8 @@ public:
 	inline static Hud* Get(){return instance;}
 
 	bool Init();
-	void Frame(bool force_update_gui = false, bool no_gui_gc = false);
+	void Update(bool force_update_gui, bool no_gui_gc);
+	void Draw(HWND win);
 	void Close();
 
 	void UpdateEntities(Window* win);

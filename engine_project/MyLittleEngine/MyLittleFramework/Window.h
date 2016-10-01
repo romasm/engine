@@ -288,6 +288,8 @@ namespace EngineCore
 			resize();
 		}
 
+		DXGI_PRESENT_PARAMETERS presetParams;
+
 		bool resize();
 
 		XMMATRIX m_ortho;

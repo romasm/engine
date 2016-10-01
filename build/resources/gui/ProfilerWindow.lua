@@ -39,10 +39,10 @@ return GuiWindow({
 
     --scrollable = {x = false, y = false},
 
-    left = 0,
-    top = 0,
-    width = 1920,
-    height = 1080,
+    left = 400,
+    top = 400,
+    width = 1280,
+    height = 720,
 
     id = "profiler_window",
 

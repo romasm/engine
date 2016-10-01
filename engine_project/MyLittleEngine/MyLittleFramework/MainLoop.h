@@ -137,25 +137,31 @@ public:
 			if(tick_func)
 				(*tick_func)((*main_table), m_timer.dt_ms);
 		
+			
+			PERF_CPU(_GUIUPDATE);
+
 			if(!force_update_gui)
 			{
 				// Events
 				if(!m_wins.Frame())
 					return false;
 			}
+
+			m_hud->Update(force_update_gui, no_gui_gc);
 			
 			// Render
-			m_render->BeginFrame();
-
-			PERF_CPU(_SCENE);
+			PERF_CPU(_SCENE);	
 
 			m_render->Draw();
 
-			PERF_CPU(_GUI);
+			for(auto& window : *WindowsMgr::Get()->GetMap())
+			{
+				window.second->ClearRenderTarget();
 
-			m_hud->Frame(force_update_gui, no_gui_gc);
-
-			m_render->EndFrame();
+				m_hud->Draw(window.first);
+				
+				window.second->Swap();
+			}
 
 			PERF_CPU(_FINISH);
 		}

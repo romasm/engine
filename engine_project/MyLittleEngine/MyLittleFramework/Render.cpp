@@ -142,22 +142,6 @@ namespace EngineCore
 		
 		return true;
 	}
-	
-	void Render::BeginFrame()
-	{
-		for(auto& it : *wim_map)
-		{
-			it.second->ClearRenderTarget();
-		}
-	}
-
-	void Render::EndFrame()
-	{
-		for(auto& it : *wim_map)
-		{
-			it.second->Swap();
-		}
-	}
 
 	bool Render::m_createdevice()
 	{

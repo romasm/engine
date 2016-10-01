@@ -40,6 +40,8 @@ namespace EngineCore
 
 		is_tracking_mouse = false;
 		is_press_captured = false;
+
+		ZeroMemory(&presetParams, sizeof(presetParams));
 	}
 
 	bool Window::Create(const DescWindow &desc, bool main)
@@ -170,8 +172,10 @@ namespace EngineCore
 
 	void Window::Swap()
 	{
-		if(EngineSettings::EngSets.vsync && EngineSettings::EngSets.fullscreen)m_pSwapChain->Present(1, 0); // todo: num of wait frames
-		else m_pSwapChain->Present(0, 0);
+		/*if(EngineSettings::EngSets.vsync && EngineSettings::EngSets.fullscreen)
+			m_pSwapChain->Present1(1, 0, &p); // todo: num of wait frames
+		else */
+			m_pSwapChain->Present1(0, 0, &presetParams);
 	}
 
 	void Window::AfterRunEvent()

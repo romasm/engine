@@ -3,8 +3,8 @@
 #define PERF_CPU_FRAME_ID		0
 #define PERF_CPU_FRAME_STR		"Frame"
 
-	#define PERF_CPU_GUI_ID			1
-	#define PERF_CPU_GUI_STR			"Frame|Gui"
+	#define PERF_CPU_GUIUPDATE_ID			1
+	#define PERF_CPU_GUIUPDATE_STR			"Frame|GuiUpdate"
 
 	#define PERF_CPU_SCENE_ID		2
 	#define PERF_CPU_SCENE_STR		"Frame|Scene"

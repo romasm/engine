@@ -44,10 +44,7 @@ namespace EngineCore
 		virtual ~Render();
 		
 		inline static Render* Get(){return m_instance;}
-
-		void BeginFrame();
-		void EndFrame();
-
+		
 		bool Init();
 		bool Draw();
 		void Close();
