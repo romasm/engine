@@ -86,7 +86,7 @@ namespace EngineCore
 
 		GET_DATETIME
 
-		string filename = PATH_RUNTIME_STATS "log_" + datetime + ".txt";
+		string filename = PATH_RUNTIME_STATS "log_" + datetime + ".log";
 
 		if( fopen_s(&m_file, filename.c_str(), "w") == 0 )
 		{
