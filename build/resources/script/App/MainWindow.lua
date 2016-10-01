@@ -238,8 +238,8 @@ function MainWindow:SetsMenuPress(ent)
 end
 
 function MainWindow:SetsMenuSub(ev)
-    if ev.id ~= "test_sub_menu" then return true end 
-
+    if ev.id ~= "dev_sub_menu" then return true end 
+    
     if not SceneMgr:IsWorld() then
         local sub = ev.entity:GetInherited()
 		sub:SetItemState("tb_dev_skyrebake", false)

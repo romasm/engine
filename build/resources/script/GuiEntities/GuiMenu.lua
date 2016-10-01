@@ -314,14 +314,14 @@ function GuiMenu:callback(eventData)
 end
 
 function GuiMenu:SetItemState(item_id, active)
-    if (self.entity:is_null() or self.entity:IsExist()) then return false end
+    if (self.entity:is_null() or not self.entity:IsExist()) then return false end
     
     local ent = self.entity:GetChildById(item_id)
     if ent:is_null() then return false end
-
+    
     if active then ent:Activate()
     else ent:Deactivate() end
-
+    
     return true
 end
 
