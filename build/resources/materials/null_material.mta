@@ -1,0 +1,7 @@
+shader = "../resources/shaders/objects/editor/tools_mesh"
+
+ps
+{
+	f0 = 0
+	v0 = "1.0 0.0 0.0 1.0"
+}

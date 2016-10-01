@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Developer|x64">
+      <Configuration>Developer</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2668B6CD-5AA7-4525-BD41-355111C00ADC}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>D3D_Framework</RootNamespace>
+    <ProjectName>MyLittleFramework</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>core_d</TargetName>
+    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)\MyLittleFramework;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\debug;$(SolutionDir)..\DirectXTK\lib\x64\Debug;$(SolutionDir)..\DirectXTex\lib\x64\Debug;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\release;$(SolutionDir)..\DirectXTK\lib\x64\Release;$(SolutionDir)..\DirectXTex\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <TargetName>core</TargetName>
+    <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">
+    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\release;$(SolutionDir)..\DirectXTK\lib\x64\Release;$(SolutionDir)..\DirectXTex\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <TargetName>core_dev</TargetName>
+    <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN64;_DEV;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)MyLittleFramework\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>D:\Programs\FBX SDK\2014.2\lib\vs2012\x64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN64;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)MyLittleFramework\</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>D:\Programs\FBX SDK\2014.2\lib\vs2012\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN64;_DEV;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)MyLittleFramework\</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>D:\Programs\FBX SDK\2014.2\lib\vs2012\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Compute.h" />
+    <ClInclude Include="ECS\GlobalLightSystem.h" />
+    <ClInclude Include="ECS\ScriptSystem.h" />
+    <ClInclude Include="ECS\TypeMgr.h" />
+    <ClInclude Include="Generate_PBS_Env_LUT.h" />
+    <ClInclude Include="GUI\HDefines.h" />
+    <ClInclude Include="GUI\HEntity.h" />
+    <ClInclude Include="JobSystem.h" />
+    <ClInclude Include="MainLoop.h" />
+    <ClInclude Include="MaterialMgr.h" />
+    <ClInclude Include="ResourceProcessor.h" />
+    <ClInclude Include="StringToData.h" />
+    <ClInclude Include="TransformControls.h" />
+    <ClInclude Include="DataAlloc\Arrays.h" />
+    <ClInclude Include="ECS\ShadowSystem.h" />
+    <ClInclude Include="LightBuffers.h" />
+    <ClInclude Include="ECS\CameraSystem.h" />
+    <ClInclude Include="ECS\ControllerSystem.h" />
+    <ClInclude Include="ECS\EarlyVisibilitySystem.h" />
+    <ClInclude Include="ECS\ECS_defines.h" />
+    <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\EnvProbSystem.h" />
+    <ClInclude Include="ECS\FreeCamController.h" />
+    <ClInclude Include="ECS\LightSystem.h" />
+    <ClInclude Include="ECS\LineGeometrySystem.h" />
+    <ClInclude Include="ECS\StaticMeshSystem.h" />
+    <ClInclude Include="ECS\TransformSystem.h" />
+    <ClInclude Include="ECS\VisibilitySystem.h" />
+    <ClInclude Include="Font.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="FontMgr.h" />
+    <ClInclude Include="GaussianBlur.h" />
+    <ClInclude Include="GlobalColor.h" />
+    <ClInclude Include="LocalTimer.h" />
+    <ClInclude Include="MaterialData.h" />
+    <ClInclude Include="MathGeometry.h" />
+    <ClInclude Include="RenderMgrs.h" />
+    <ClInclude Include="ScenePipeline.h" />
+    <ClInclude Include="ShaderCodeMgr.h" />
+    <ClInclude Include="LuaVM.h" />
+    <ClInclude Include="Utils\Profiler.h" />
+    <ClInclude Include="Utils\ProfilerIDs.h" />
+    <ClInclude Include="WinAPIDialogs.h" />
+    <ClInclude Include="WindowsMgr.h" />
+    <ClInclude Include="DataTypes.h" />
+    <ClInclude Include="EngineSettings.h" />
+    <ClInclude Include="FileIO.h" />
+    <ClInclude Include="Frustum.h" />
+    <ClInclude Include="Hud.h" />
+    <ClInclude Include="Image.h" />
+    <ClInclude Include="InputCodes.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Pathes.h" />
+    <ClInclude Include="Render.h" />
+    <ClInclude Include="RenderState.h" />
+    <ClInclude Include="RenderTarget.h" />
+    <ClInclude Include="ScreenPlane.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderMgr.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StMeshMgr.h" />
+    <ClInclude Include="TexMgr.h" />
+    <ClInclude Include="Text.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="Window.h" />
+    <ClInclude Include="Util.h" />
+    <ClInclude Include="World.h" />
+    <ClInclude Include="WorldMgr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ECS\GlobalLightSystem.cpp" />
+    <ClCompile Include="ECS\ScriptSystem.cpp" />
+    <ClCompile Include="ECS\TypeMgr.cpp" />
+    <ClCompile Include="GUI\HEntity.cpp" />
+    <ClCompile Include="JobSystem.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MaterialMgr.cpp" />
+    <ClCompile Include="ResourceProcessor.cpp" />
+    <ClCompile Include="TransformControls.cpp" />
+    <ClCompile Include="ECS\CameraSystem.cpp" />
+    <ClCompile Include="ECS\ControllerSystem.cpp" />
+    <ClCompile Include="ECS\EarlyVisibilitySystem.cpp" />
+    <ClCompile Include="ECS\EnvProbSystem.cpp" />
+    <ClCompile Include="ECS\FreeCamController.cpp" />
+    <ClCompile Include="ECS\LightSystem.cpp" />
+    <ClCompile Include="ECS\LineGeometrySystem.cpp" />
+    <ClCompile Include="ECS\ShadowSystem.cpp" />
+    <ClCompile Include="ECS\StaticMeshSystem.cpp" />
+    <ClCompile Include="ECS\TransformSystem.cpp" />
+    <ClCompile Include="ECS\VisibilitySystem.cpp" />
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="Buffer.cpp" />
+    <ClCompile Include="FileIO.cpp" />
+    <ClCompile Include="FontMgr.cpp" />
+    <ClCompile Include="GaussianBlur.cpp" />
+    <ClCompile Include="GlobalColor.cpp" />
+    <ClCompile Include="Hud.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="LocalTimer.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Render.cpp" />
+    <ClCompile Include="RenderMgrs.cpp" />
+    <ClCompile Include="RenderState.cpp" />
+    <ClCompile Include="RenderTarget.cpp" />
+    <ClCompile Include="ScenePipeline.cpp" />
+    <ClCompile Include="SceneRenderMgr.cpp" />
+    <ClCompile Include="ScreenPlane.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderCodeMgr.cpp" />
+    <ClCompile Include="ShaderMgr.cpp" />
+    <ClCompile Include="LuaVM.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="StMeshMgr.cpp" />
+    <ClCompile Include="TexMgr.cpp" />
+    <ClCompile Include="Text.cpp" />
+    <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="Utils\Profiler.cpp" />
+    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="WindowsMgr.cpp" />
+    <ClCompile Include="World.cpp" />
+    <ClCompile Include="WorldMgr.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

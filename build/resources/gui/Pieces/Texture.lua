@@ -1,0 +1,146 @@
+function Gui.Texture(props)
+local res = GuiDumb({
+    styles = {
+        GuiStyles.live,
+        props,
+    },
+    height = 100,
+    id = props.id,
+
+    events = props.events,
+
+    GuiRect({
+        styles = {GuiStyles.ghost,},
+        width = 100,
+        height = 100,
+        border = {
+            color = 'text_06',
+            color_nonactive = 'text_02',
+            width = 1
+        },
+        background = {
+            color = 'bg_01',
+            color_nonactive = 'bg_03'
+        },
+
+        GuiString({
+            styles = {
+                GuiStyles.ghost,
+                GuiStyles.string_autosize,
+                GuiStyles.string_18,
+            },
+            str = "No texture",
+            static = true,
+            top = 18,
+            align = GUI_ALIGN.CENTER,
+            valign = GUI_VALIGN.MIDDLE,
+            color = 'text_02',
+        }),
+        GuiString({
+            styles = {
+                GuiStyles.ghost,
+                GuiStyles.string_autosize,
+                GuiStyles.string_18,
+            },
+            enable = props.str ~= nil,
+            str = props.str == nil and "" or props.str,
+            static = true,
+            top = -18,
+            align = GUI_ALIGN.CENTER,
+            valign = GUI_VALIGN.MIDDLE,
+            color = 'text_02',
+        }),
+    }),
+
+    GuiRect({
+        styles = {GuiStyles.ghost,},
+        enable = false,
+        width = 98,
+        height = 98,
+        left = 1,
+        top = 1,
+        material = props.material == nil and GuiMaterials.texture or props.material,
+        id = 'texture_rect'
+    }),
+
+    GuiFilefield({
+        styles = {GuiStyles.common_filefield,},
+        left = 110,
+        right = 0,
+        top = 0,
+        align = GUI_ALIGN.BOTH,
+        browse_header = (props.str == nil and "" or props.str) .." texture open",
+        filetypes = {
+            {"All supported", "*.bmp;*.dds;*.gif;*.jpg;*.tga;*.tiff;*.png;"},
+            {"BMP", "*.bmp;"},
+            {"DDS", "*.dds;"},
+            {"GIF", "*.gif;"},
+            {"JPEG", "*.jpg;"},
+            {"TGA", "*.tga;"},
+            {"TIFF", "*.tiff;"},
+            {"PNG", "*.png;"},
+        },
+        id = "texture_field",
+
+        events = {
+            [GUI_EVENTS.FF_SET] = function(self, ev)
+                    local tr = self.entity:GetParent():GetChildById('texture_rect'):GetInherited()
+                    tr.entity.enable = false
+                    
+                    if tr.rect_mat:SetTextureByName(self:GetPath(), 0, SHADERS.PS) == true then 
+                        tr.entity.enable = true
+                    end
+
+                    ev.event = GUI_EVENTS.TEXTURE_SET
+                    return false 
+                end,
+            [GUI_EVENTS.FF_RELOAD] = function(self, ev)
+                    local tr = self.entity:GetParent():GetChildById('texture_rect'):GetInherited()
+                    -- reloading
+                    ev.event = GUI_EVENTS.TEXTURE_RELOAD
+                    return false 
+                end,
+            [GUI_EVENTS.FF_DELETE] = function(self, ev)
+                    local tr = self.entity:GetParent():GetChildById('texture_rect'):GetInherited()
+                    tr.rect_mat:ClearTextures()
+                    tr.entity.enable = false
+                    ev.event = GUI_EVENTS.TEXTURE_DELETE
+                    return false 
+                end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.props_check,},
+        enable = props.allow_autoreload,
+        left = 110,
+        top = 30,
+        width = 120,
+        height = 18,
+        text = { str = "Auto reload" },
+        alt = "Auto reload texture on changes",        
+        -- temp
+        id = 'reload_check',
+    }),
+})
+
+res.GetTexture = function(self)
+        local ff = self.entity:GetChildById("texture_field"):GetInherited()
+        return ff:GetPath()
+    end
+res.SetTexture = function(self, texture)
+        local ff = self.entity:GetChildById("texture_field"):GetInherited()
+        ff:SetPath(texture)
+        
+        local tr = self.entity:GetChildById('texture_rect'):GetInherited()
+        tr.entity.enable = false
+        if texture == nil then return end
+
+        tr.entity.enable = tr.rect_mat:SetTextureByName(texture, 0, SHADERS.PS)
+    end
+
+-- temp 
+res.entity:GetChildById('reload_check'):Deactivate()
+
+return res
+end

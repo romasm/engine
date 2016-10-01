@@ -1,0 +1,26 @@
+TECHNIQUE_DEFAULT
+{
+	VertexShader = "../resources/shaders/system/screen_plane Main";
+	PixelShader = "PS";
+}
+
+//~ code
+#include "../common/math.hlsl"
+#include "../common/structs.hlsl"
+
+Texture2D shaderTexture : register(t0); 
+SamplerState samplerPointClamp : register(s0); 
+
+float4 PS(PI_PosTex input) : SV_TARGET
+{
+	float4 color = shaderTexture.Sample(samplerPointClamp, input.tex);
+	if(color.a == 0)
+	{
+		color = 0;		// плавно гасить в зав-ти от подхождения к краю объема
+	}
+	else
+	{
+		color.a = 1;
+	}
+	return color;
+}

@@ -1,0 +1,8 @@
+shader = "../resources/shaders/objects/editor/3d_hud"
+
+ps
+{
+	v0 = "1.0 1.0 1.0 1.0"
+	f0 = 1
+	t0 = "../resources/textures/editor_hud/3d_arrow.dds"
+}

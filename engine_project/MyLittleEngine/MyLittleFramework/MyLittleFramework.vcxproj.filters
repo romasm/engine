@@ -1,0 +1,415 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="macros.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="InputCodes.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="Render.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderState.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="Frustum.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="DataTypes.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTarget.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="TexMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="StMeshMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenPlane.h">
+      <Filter>Render System\Render Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineSettings.h">
+      <Filter>Common\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ScenePipeline.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialData.h">
+      <Filter>Render System\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="FontMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Render System\Render Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="MathGeometry.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="FileIO.h">
+      <Filter>Util\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Util\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Util\System</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalTimer.h">
+      <Filter>Util\System</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderCodeMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalColor.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsMgr.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="GaussianBlur.h">
+      <Filter>Render System\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="LuaVM.h">
+      <Filter>Util\System</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAPIDialogs.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="DataAlloc\Arrays.h">
+      <Filter>DataAlloc</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\Entity.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\ECS_defines.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\StaticMeshSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\TransformSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\VisibilitySystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\CameraSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\ControllerSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\FreeCamController.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\EnvProbSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Pathes.h">
+      <Filter>Common\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\LightSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\EarlyVisibilitySystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\LineGeometrySystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="LightBuffers.h">
+      <Filter>Render System\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\ShadowSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderMgrs.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformControls.h">
+      <Filter>Gui\3D_Hud</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\TypeMgr.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\GlobalLightSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Generate_PBS_Env_LUT.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\HEntity.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="Hud.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="Image.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="Text.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI\HDefines.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+    <ClInclude Include="MainLoop.h" />
+    <ClInclude Include="ResourceProcessor.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="JobSystem.h">
+      <Filter>Multithreading</Filter>
+    </ClInclude>
+    <ClInclude Include="StringToData.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
+    <ClInclude Include="Compute.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\ScriptSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Profiler.h">
+      <Filter>Util\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\ProfilerIDs.h">
+      <Filter>Util\Profiler</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Window.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="Render.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderState.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTarget.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="TexMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="StMeshMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenPlane.cpp">
+      <Filter>Render System\Render Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="ScenePipeline.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="FontMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>Render System\Render Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="FileIO.cpp">
+      <Filter>Util\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Util\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Util\System</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalTimer.cpp">
+      <Filter>Util\System</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderCodeMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalColor.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsMgr.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussianBlur.cpp">
+      <Filter>Render System\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="LuaVM.cpp">
+      <Filter>Util\System</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\TransformSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\VisibilitySystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\StaticMeshSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\CameraSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\ControllerSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\FreeCamController.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\EnvProbSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\LightSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\EarlyVisibilitySystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\LineGeometrySystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\ShadowSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderMgrs.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneRenderMgr.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformControls.cpp">
+      <Filter>Gui\3D_Hud</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\TypeMgr.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\GlobalLightSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="GUI\HEntity.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="Hud.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="Image.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="Text.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceProcessor.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem.cpp">
+      <Filter>Multithreading</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialMgr.cpp">
+      <Filter>Resource managment</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\ScriptSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Profiler.cpp">
+      <Filter>Util\Profiler</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Render System">
+      <UniqueIdentifier>{f0340b90-a763-4485-8120-bfbee64f30c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{84351ffa-bc17-492f-bc0f-49c8e23f4abd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{1dd72510-3d1e-4d6f-85f2-f4f087d4ae82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{a54a81c2-67f3-43fe-b6b6-abf9b8a2deee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render System\Render Entities">
+      <UniqueIdentifier>{4288e22a-1d2d-43f6-9545-1c7d5bad09a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common\Settings">
+      <UniqueIdentifier>{2bb5ce70-2775-4b0a-8736-2f15e52e43b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render System\Support">
+      <UniqueIdentifier>{feda406b-5d4b-49ba-ac07-aa3a073b9d9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource managment">
+      <UniqueIdentifier>{1e720b62-a211-40da-98c7-eb24882f7c68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util\System">
+      <UniqueIdentifier>{b9938254-4f87-43b1-b976-fd421571344a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECS">
+      <UniqueIdentifier>{31e7d2ee-8bdb-4ec4-ae8b-2c65daa258f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DataAlloc">
+      <UniqueIdentifier>{9f606f40-6c1a-4a48-bf11-458c79dd6a4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gui">
+      <UniqueIdentifier>{7ec27076-4c91-4211-977c-842228b7d7bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gui\3D_Hud">
+      <UniqueIdentifier>{d202a5c4-e2e5-435c-849e-1e12cc1fa908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Multithreading">
+      <UniqueIdentifier>{d085df25-0d66-47f2-a7a0-f104f2f577fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util\Profiler">
+      <UniqueIdentifier>{349b63ca-5f0b-4606-9d71-d75b772866b5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

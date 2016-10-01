@@ -1,0 +1,250 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>E439935D-B2A2-46AE-856D-2AA408428F33</ProjectGuid>
+    <!--$guid1$-->
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>
+    </StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>LuaScript</Name>
+    <RootNamespace>LuaScript</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Developer' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <OutputPath>bin\Developer\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\gui\ComponentsGui\GlobalLight.lua">
+      <Link>Gui\ComponentsGui\GlobalLight.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\GlobalLightCallback.lua">
+      <Link>Gui\ComponentsGui\GlobalLightCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\Light.lua">
+      <Link>Gui\ComponentsGui\Light.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\LightCallback.lua">
+      <Link>Gui\ComponentsGui\LightCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\StaticMesh.lua">
+      <Link>Gui\ComponentsGui\StaticMesh.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\StaticMeshCallback.lua">
+      <Link>Gui\ComponentsGui\StaticMeshCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\TestEnt.lua">
+      <Link>Gui\ComponentsGui\TestEnt.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\TestEntCallback.lua">
+      <Link>Gui\ComponentsGui\TestEntCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\Transform.lua">
+      <Link>Gui\ComponentsGui\Transform.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\TransformCallback.lua">
+      <Link>Gui\ComponentsGui\TransformCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialWindow.lua">
+      <Link>Gui\MaterialWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Menus\TB_File.lua">
+      <Link>Gui\Menus\TB_File.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Menus\TB_Sets.lua">
+      <Link>Gui\Menus\TB_Sets.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Menus\Textfield.lua">
+      <Link>Gui\Menus\Textfield.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Menus\Viewport.lua">
+      <Link>Gui\Menus\Viewport.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Pieces\Alt.lua">
+      <Link>Gui\Pieces\Alt.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Pieces\ColorPicker.lua">
+      <Link>Gui\Pieces\ColorPicker.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Pieces\ColorPickerScript.lua">
+      <Link>Gui\Pieces\ColorPickerScript.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Pieces\Texture.lua">
+      <Link>Gui\Pieces\Texture.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ProfilerWindow.lua">
+      <Link>Gui\ProfilerWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\PropertiesWindow.lua">
+      <Link>Gui\PropertiesWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ShadersProps\opaque_main.lua">
+      <Link>Gui\ShadersProps\opaque_main.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ShadersProps\opaque_mainCallback.lua">
+      <Link>Gui\ShadersProps\opaque_mainCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Styles\DefaultStyles.lua">
+      <Link>Gui\Styles\DefaultStyles.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Styles\GroupStyles.lua">
+      <Link>Gui\Styles\GroupStyles.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Styles\Materials.lua">
+      <Link>Gui\Styles\Materials.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Styles\MenuStyles.lua">
+      <Link>Gui\Styles\MenuStyles.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Styles\WinStyles.lua">
+      <Link>Gui\Styles\WinStyles.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ToolBar.lua">
+      <Link>Gui\ToolBar.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\TopBar.lua">
+      <Link>Gui\TopBar.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ViewportWindow.lua">
+      <Link>Gui\ViewportWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\App\const_Defines.lua">
+      <Link>App\const_Defines.lua</Link>
+    </Compile>
+    <Compile Include="..\App\History.lua">
+      <Link>App\History.lua</Link>
+    </Compile>
+    <Compile Include="..\App\Hotkeys.lua">
+      <Link>App\Hotkeys.lua</Link>
+    </Compile>
+    <Compile Include="..\App\MainWindow.lua">
+      <Link>App\MainWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\App\MaterialProps.lua">
+      <Link>App\MaterialProps.lua</Link>
+    </Compile>
+    <Compile Include="..\App\Properties.lua">
+      <Link>App\Properties.lua</Link>
+    </Compile>
+    <Compile Include="..\App\SceneMgr.lua">
+      <Link>App\SceneMgr.lua</Link>
+    </Compile>
+    <Compile Include="..\App\Tools.lua">
+      <Link>App\Tools.lua</Link>
+    </Compile>
+    <Compile Include="..\App\Viewport.lua">
+      <Link>App\Viewport.lua</Link>
+    </Compile>
+    <Compile Include="..\App\WinTable.lua">
+      <Link>App\WinTable.lua</Link>
+    </Compile>
+    <Compile Include="..\class.lua">
+      <Link>class.lua</Link>
+    </Compile>
+    <Compile Include="..\common_math.lua">
+      <Link>common_math.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\BaseEntity.lua">
+      <Link>Entities\BaseEntity.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\GlobalLight.lua">
+      <Link>Entities\GlobalLight.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\LocalLight.lua">
+      <Link>Entities\LocalLight.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\StaticModel.lua">
+      <Link>Entities\StaticModel.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\TestEnt.lua">
+      <Link>Entities\TestEnt.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\const_GuiDefines.lua">
+      <Link>GuiEntities\const_GuiDefines.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiButton.lua">
+      <Link>GuiEntities\GuiButton.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiCheck.lua">
+      <Link>GuiEntities\GuiCheck.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiCheckGroup.lua">
+      <Link>GuiEntities\GuiCheckGroup.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiCombo.lua">
+      <Link>GuiEntities\GuiCombo.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiDataSlider.lua">
+      <Link>GuiEntities\GuiDataSlider.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiEntity.lua">
+      <Link>GuiEntities\GuiEntity.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiFilefield.lua">
+      <Link>GuiEntities\GuiFilefield.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiGroup.lua">
+      <Link>GuiEntities\GuiGroup.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiMenu.lua">
+      <Link>GuiEntities\GuiMenu.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiRect.lua">
+      <Link>GuiEntities\GuiRect.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiRoot.lua">
+      <Link>GuiEntities\GuiRoot.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiSlider.lua">
+      <Link>GuiEntities\GuiSlider.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiString.lua">
+      <Link>GuiEntities\GuiString.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiStyles.lua">
+      <Link>GuiEntities\GuiStyles.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiTextfield.lua">
+      <Link>GuiEntities\GuiTextfield.lua</Link>
+    </Compile>
+    <Compile Include="..\GuiEntities\GuiWindow.lua">
+      <Link>GuiEntities\GuiWindow.lua</Link>
+    </Compile>
+    <Compile Include="..\main.lua">
+      <Link>main.lua</Link>
+    </Compile>
+    <Compile Include="..\script_loader.lua">
+      <Link>script_loader.lua</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Gui\" />
+    <Folder Include="GuiEntities\" />
+    <Folder Include="App\" />
+    <Folder Include="Gui\Menus\" />
+    <Folder Include="Gui\ComponentsGui\" />
+    <Folder Include="Gui\ShadersProps\" />
+    <Folder Include="Gui\Pieces\" />
+    <Folder Include="Gui\Styles\" />
+    <Folder Include="Entities\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\config\engine_settings.cfg">
+      <Link>engine_settings.cfg</Link>
+    </Content>
+    <Content Include="..\..\colors.rsc">
+      <Link>colors.rsc</Link>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>

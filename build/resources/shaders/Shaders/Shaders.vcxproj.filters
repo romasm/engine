@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="common">
+      <UniqueIdentifier>{2ce41b29-ff6c-420b-b3d1-d17fb554421e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="offline">
+      <UniqueIdentifier>{2aa44142-24a4-4acb-943d-69860e942cd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{be937d09-afb3-42ef-8c27-714b8ba6445e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects">
+      <UniqueIdentifier>{40cd97ec-087d-4732-a4c0-81bea7b1a628}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{21952a22-5136-4614-bcab-0be050d82b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="objects\editor">
+      <UniqueIdentifier>{ce1eafd4-6e06-4a9e-95fc-b61c1d435088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="examples">
+      <UniqueIdentifier>{91604a17-5c54-47b9-900a-8160d0128644}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system\gblur">
+      <UniqueIdentifier>{9b0b84d9-f796-4fe7-95e3-fbddcc4f472a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\samplers.hlsl" />
+    <FxCompile Include="..\objects\opaque_main.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\opaque_vertex.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\sky_sphere.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\pixel.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\3dhud.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\screen_plane.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\common\shared.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
+    <FxCompile Include="..\common\structs.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
+    <FxCompile Include="..\common\math.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
+    <FxCompile Include="..\common\PCF.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\depth_copy_hiz.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hbao_perspective_correct.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hbao.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hdr.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\tonemapping.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\combine.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\light_constants.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\light_calc.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hiz_depth_uc.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hiz_depth_uu.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hiz_depth_cc.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\hiz_depth_cu.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\opaque_blur.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\editor\3d_hud.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\editor\tools_mesh.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\avglum.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\bloom_find.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\aa_edge.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\aa_final.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\aa_blend.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\deffered_opaque.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\indirect_brdf.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\direct_brdf.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\ssr.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\font_default.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\viewport.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\color.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\example.hlsl">
+      <Filter>examples</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\rect.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\group_arrow.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\h_picker.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\rect_icon.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\rect_icon_bg.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\shadow.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\t_picker.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\sv_picker.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\editor\line_geometry.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\editor\line_geometry_sphere.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\offline_ibl.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\envmap_mipgen.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\envmap_render.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\noise2d.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\scep_diff_dfg.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\offline\envmap_diffgen.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\gblur.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel5h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel5h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel9h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel15h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel21h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel31h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel7h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel7h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel9h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel15h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel21h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel31h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel5v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel5v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel7v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel7v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel9v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel9v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel15v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel15v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel21v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel21v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel31v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel31v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\viewport_2darr.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\viewport_cube.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\ibl_brdf.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\old_deffered_opaque_indirect.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\font_vs.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\null_shader.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\ssr_compute.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\texture_preview.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\editor\3d_hud_alpha.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
