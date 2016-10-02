@@ -20,10 +20,24 @@ Profiler::Profiler()
 			perf_data[i][j].assign(0);
 		}
 	}
+
+	frameBegin.resize(PERF_FRAMES_DUMP);
+	frameBegin.assign(0);
+
 	started = false;
+	dumping = false;
 	currentFrameID = 0;
 
 	thread_map.reserve(JobSystem::GetHWCount() + 1);
+
+	ids_name.resize(PERF_IDS_COUNT);
+
+	ids_name[PERF_CPU_FRAME_ID] = name_depth("Frame", 0);
+	ids_name[PERF_CPU_GUIUPDATE_ID] = name_depth("GuiUpdate", 1);
+	ids_name[PERF_CPU_SCENE_ID] = name_depth("Scene", 1);
+	ids_name[PERF_CPU_SCENE_UPDATE_ID] = name_depth("SceneUpdate", 2);
+	ids_name[PERF_CPU_SCENE_DRAW_ID] = name_depth("SceneDraw", 2);
+	ids_name[PERF_CPU_FINISH_ID] = name_depth("Finish", 0);
 
 	if(instance)
 		ERR("Only one instance of Profiler is allowed!");
@@ -35,8 +49,29 @@ Profiler::~Profiler()
 	instance = nullptr;
 }
 
+void Profiler::RegLuaFunctions()
+{
+	getGlobalNamespace(LSTATE)
+		.beginNamespace("Util")
+			.addFunction("GetProfiler", &Profiler::Get)
+			.beginClass<Profiler>("Profiler")
+				.addFunction("Stop", &Profiler::Stop)
+				.addFunction("Start", &Profiler::Start)
+				.addFunction("IsRunning", &Profiler::IsRunning)
+				.addProperty("dump", &Profiler::GetDumping, &Profiler::SetDumping)
+				.addFunction("GetIDsCount", &Profiler::GetIDsCount)
+				.addFunction("GetIDName", &Profiler::GetIDName)
+				.addFunction("GetIDDepth", &Profiler::GetIDDepth)
+				.addFunction("GetCurrentTimeSlice", &Profiler::GetCurrentTimeSlice)
+			.endClass()
+		.endNamespace();
+}
+
 void Profiler::Dump()
 {
+	if(!dumping)
+		return;
+
 	GET_DATETIME
 
 	string filename = PATH_RUNTIME_STATS "perf_cpu_" + datetime + ".prf";

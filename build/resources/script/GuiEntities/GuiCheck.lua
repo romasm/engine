@@ -240,7 +240,7 @@ function GuiCheck:callback(eventData)
         if not self.state_hover then 
             self.anim_go = 1
             self.state_hover = true
-            self.entity:GetRoot():GetInherited():HideAlt()
+            self.entity:GetRoot():GetInherited():ShowAlt(self.alt)
             res.event = GUI_EVENTS.CB_HOVER
             res.coords.x = self.group_id
             res.coords.y = 0

@@ -24,6 +24,7 @@ public:
 	#ifdef _DEV
 		profiler = new Profiler;
 	#endif
+		Profiler::RegLuaFunctions();
 
 		if(m_instance)
 		{

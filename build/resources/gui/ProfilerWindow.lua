@@ -1,23 +1,21 @@
-GuiStyles.topmenu_button = {
+GuiStyles.perf_button = {
     styles = {
         GuiStyles.solid_button,
     },
 
     holded = false,
-
-    height = 24,
-
+    
     background = {
         color = 'bg_01',
         color_hover = 'act_01',
-        color_press = 'bg_05',
+        color_press = 'act_00',
     },
     
     text = {
         color = 'text_01',
         color_hover = 'act_03',
-        color_press = 'act_02',
-        font = "../content/materials/fonts/opensans_normal_18px",
+        color_press = 'act_03',
+        font = "../content/materials/fonts/opensans_normal_25px",
     },
 }
 
@@ -25,7 +23,18 @@ function Gui.ProfilerWindow()
 return GuiWindow({
     styles = {
         GuiStyles.integrated_window,
-        GuiStyles.window_colors,
+    },
+
+    background = {
+        color = 'bg_01',
+        color_live = 'bg_01',
+        color_nonactive = 'bg_01',
+    },
+
+    border = {
+        color = 'bg_01',
+        color_live = 'bg_01',
+        color_nonactive = 'bg_01',
     },
 
     independent = true,
@@ -42,7 +51,7 @@ return GuiWindow({
     left = 400,
     top = 400,
     width = 1280,
-    height = 720,
+    height = 900,
 
     id = "profiler_window",
 
@@ -50,6 +59,7 @@ return GuiWindow({
         styles = {
             GuiStyles.window_header,
         },
+
         str = "Profiler"
     },
     
@@ -67,21 +77,88 @@ return GuiWindow({
             
             GuiButton({
                 styles = {
-                    GuiStyles.topmenu_button,
+                    GuiStyles.perf_button,
                 },
 
-                left = 20,
-                top = 20,
-                width = 75,
+                left = 25,
+                top = 0,
+                width = 40,
+                height = 40,
 
                 holded = true,
 
-                text = {str = "Turn on"},
+                text = {str = "Q"},
                 alt = "Turn on / off collecting of perf data",
 
                 events = {
                     [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return true end,
                     [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return true end,
+                },
+            }),
+
+            GuiCheck({
+                styles = {GuiStyles.props_check,},
+                left = 25,
+                top = 60,
+                width = 150,
+                height = 18,
+                text = { str = "Dump data on disc" },
+                alt = "Write perf data in stats/ every minute",
+                id = 'isdump',
+
+                events = {
+                    [GUI_EVENTS.CB_CHECKED] = function(self, ev) return true end,
+                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return true end,
+                }
+            }),
+
+            GuiCheck({
+                styles = {GuiStyles.props_check,},
+                left = 25,
+                top = 95,
+                width = 160,
+                height = 18,
+                text = { str = "Real-time visualization" },
+                alt = "Draw parfomance data in real-time",
+                id = 'isrealtime',
+
+                events = {
+                    [GUI_EVENTS.CB_CHECKED] = function(self, ev) return true end,
+                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return true end,
+                }
+            }),
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 900,
+                height = 200,
+                left = 250,
+                top = 0,
+                id = 'graph_rect',
+
+                border = {
+                    color = 'text_06',
+                    width = 1,
+                },
+                background = {
+                    color = 'bg_02',
+                },
+            }),
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 900,
+                height = 500,
+                left = 250,
+                top = 220,
+                id = 'frame_rect',
+
+                border = {
+                    color = 'text_06',
+                    width = 1,
+                },
+                background = {
+                    color = 'bg_02',
                 },
             }),
              

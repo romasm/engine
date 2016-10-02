@@ -442,6 +442,11 @@ end
 function GuiWindow:Close()
     self.entity:GetParent():DetachChild(self.entity)
     self.entity:Destroy()
+
+    if self.independent == true then
+        self.sys_win:UserClose()
+        self.sys_win = nil
+    end
 end
 
 function GuiWindow:callback(eventData)
@@ -507,11 +512,6 @@ function GuiWindow:callback(eventData)
 
     elseif eventData.event == GUI_EVENTS.BUTTON_PRESSED then 
         if self.closeable and eventData.entity:is_eq(self.close_btn.entity) then
-            if self.independent == true then
-                self.sys_win:UserClose()
-                self.sys_win = nil
-            end
-
             self:Close()
 
             res.event = GUI_EVENTS.WIN_CLOSE
