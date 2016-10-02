@@ -30,19 +30,6 @@ function MainWindow.reloadTopBar()
     if MainWindow.sys_rst:is_null() then error("Require sys_rst button!") end
 end
 
-function MainWindow.reloadProfiler()
-    if MainWindow.profiler_win ~= nil then
-        local left = MainWindow.profiler_win.sys_win:GetLeft()
-        local top = MainWindow.profiler_win.sys_win:GetTop()
-
-        MainWindow.profiler_win:Close()
-
-        MainWindow.profiler_win = Gui.ProfilerWindow()
-        MainWindow.profiler_win.sys_win:SetPos(left, top)
-        MainWindow.profiler_win.entity:UpdatePosSize()
-    end
-end
-
 function MainWindow:Init()
     print("MainWindow:Init")  
 
@@ -300,12 +287,8 @@ function MainWindow:SetsMenuClick(btn, ev)
         print("Converting meshes")
         
     elseif ev.id == "tb_dev_profiler" then
-        if self.profiler_win == nil then
-            loader.require("ProfilerWindow", MainWindow.reloadProfiler)
-
-            self.profiler_win = Gui.ProfilerWindow()
-            self.profiler_win.entity:UpdatePosSize()
-
+        if not Profiler:IsInit() then
+            Profiler:Init()
             print("Profiler window opening")
         end
 

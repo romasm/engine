@@ -65,7 +65,7 @@ return GuiWindow({
     
     events = {
         [GUI_EVENTS.KILL] = function(self, ev) 
-            MainWindow.profiler_win = nil
+            Profiler:SysClose()
             return true
         end,
     },
@@ -91,8 +91,14 @@ return GuiWindow({
                 alt = "Turn on / off collecting of perf data",
 
                 events = {
-                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return true end,
-                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return true end,
+                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                        Profiler:Start()
+                        return true
+                    end,
+                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
+                        Profiler:Stop()
+                        return true
+                    end,
                 },
             }),
 
@@ -107,8 +113,14 @@ return GuiWindow({
                 id = 'isdump',
 
                 events = {
-                    [GUI_EVENTS.CB_CHECKED] = function(self, ev) return true end,
-                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return true end,
+                    [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
+                        Profiler:SetDump(true) 
+                        return true 
+                    end,
+                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev)
+                        Profiler:SetDump(false) 
+                        return true 
+                    end,
                 }
             }),
 
@@ -123,8 +135,14 @@ return GuiWindow({
                 id = 'isrealtime',
 
                 events = {
-                    [GUI_EVENTS.CB_CHECKED] = function(self, ev) return true end,
-                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return true end,
+                    [GUI_EVENTS.CB_CHECKED] = function(self, ev)
+                        Profiler:SetRealtime(true)
+                        return true
+                    end,
+                    [GUI_EVENTS.CB_UNCHECKED] = function(self, ev)
+                        Profiler:SetRealtime(false)
+                        return true
+                    end,
                 }
             }),
 

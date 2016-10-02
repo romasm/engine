@@ -133,6 +133,9 @@
     <Compile Include="..\App\MaterialProps.lua">
       <Link>App\MaterialProps.lua</Link>
     </Compile>
+    <Compile Include="..\App\Profiler.lua">
+      <Link>App\Profiler.lua</Link>
+    </Compile>
     <Compile Include="..\App\Properties.lua">
       <Link>App\Properties.lua</Link>
     </Compile>
