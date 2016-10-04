@@ -178,6 +178,8 @@ return GuiWindow({
                 background = {
                     color = 'bg_02',
                 },
+
+                
             }),
              
         }),

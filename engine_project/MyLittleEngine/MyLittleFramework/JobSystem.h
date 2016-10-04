@@ -12,6 +12,8 @@
 
 #define JOBSYSTEM JobSystem::Get()
 
+using namespace EngineCore;
+
 enum JobPriority
 {
 	BACKGROUND = 0,
@@ -76,6 +78,10 @@ public:
 
 	void Tick(float dt);
 	void Close();
+
+#ifdef _DEV
+	void RegThreadsForProfiler();
+#endif
 
 	void addJob(jobMain func, void* obj = nullptr, uint16_t sync = MAX_SYNCS, JobPriority priority = JobPriority::FRAME);
 	

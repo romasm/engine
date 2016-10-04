@@ -29,6 +29,7 @@ Profiler::Profiler()
 	currentFrameID = 0;
 
 	thread_map.reserve(JobSystem::GetHWCount() + 1);
+	thread_count = 0;
 
 	ids_name.resize(PERF_IDS_COUNT);
 
@@ -60,6 +61,7 @@ void Profiler::RegLuaFunctions()
 				.addFunction("IsRunning", &Profiler::IsRunning)
 				.addProperty("dump", &Profiler::GetDumping, &Profiler::SetDumping)
 				.addFunction("GetIDsCount", &Profiler::GetIDsCount)
+				.addFunction("GetThreadsCount", &Profiler::GetThreadsCount)
 				.addFunction("GetIDName", &Profiler::GetIDName)
 				.addFunction("GetIDDepth", &Profiler::GetIDDepth)
 				.addFunction("GetCurrentTimeSlice", &Profiler::GetCurrentTimeSlice)

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "JobSystem.h"
 #include "Timer.h"
+#include "Utils\Profiler.h"
 
 JobSystem *JobSystem::instance = nullptr;
 
@@ -50,6 +51,14 @@ void JobSystem::Tick(float dt)
 		}
 	}
 }
+
+#ifdef _DEV
+void JobSystem::RegThreadsForProfiler()
+{
+	for(uint32_t i = 0; i < HW_count; i++)
+		Profiler::Get()->RegThread(workers[i].get_id().hash());
+}
+#endif
 
 void JobSystem::Close()
 {

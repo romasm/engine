@@ -23,6 +23,8 @@ public:
 		
 	#ifdef _DEV
 		profiler = new Profiler;
+		profiler->RegThread(this_thread::get_id().hash());
+		jobSystem->RegThreadsForProfiler();
 	#endif
 		Profiler::RegLuaFunctions();
 

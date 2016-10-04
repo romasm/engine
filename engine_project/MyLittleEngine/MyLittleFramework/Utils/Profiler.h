@@ -61,10 +61,17 @@ namespace EngineCore
 		void Start() {started = true;}
 		inline bool IsRunning() {return started;}
 
+		void RegThread(size_t thread_hash)
+		{
+			instance->thread_map.insert(make_pair(thread_hash, thread_count));
+			thread_count++;
+		}
+
 		void SetDumping(bool dump) {dumping = dump;}
 		bool GetDumping() const {return dumping;}
 
 		uint32_t GetIDsCount() const {return PERF_IDS_COUNT;}
+		uint32_t GetThreadsCount() const {return (uint32_t)thread_map.size();}
 		string GetIDName(uint32_t id) const {return ids_name[id].name;}
 		uint32_t GetIDDepth(uint32_t id) const {return (uint32_t)ids_name[id].depth;}
 
@@ -99,6 +106,7 @@ namespace EngineCore
 		SArray<name_depth, PERF_IDS_COUNT> ids_name;
 
 		unordered_map<size_t, uint32_t> thread_map;
+		uint32_t thread_count;
 
 		SArray<double, PERF_FRAMES_DUMP> frameBegin;
 

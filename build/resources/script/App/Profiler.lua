@@ -25,6 +25,37 @@ function Profiler:Init()
     loader.require("ProfilerWindow", Profiler.reload)
     
     self.profiler_win = Gui.ProfilerWindow()
+
+    self.frame_rect = self.profiler_win.entity:GetChildById('frame_rect')
+
+    self.ids_count = self.profiler:GetIDsCount()
+    self.threads_count = self.profiler:GetThreadsCount()
+
+    local line_h = self.frame_rect.height / self.threads_count
+    local offset_h = 0
+
+    self.threads_lines = {}
+    for i = 1, self.threads_count do
+        self.threads_lines[i] = GuiDumb({
+            styles = {GuiStyles.live,},
+            width_percent = true,
+            width = 100,
+            height = line_h,
+            top = offset_h,
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width_percent = true,
+                width = 100,
+                height = 1,
+                valign = GUI_VALIGN.BOTTOM,
+                background = {color = 'act_01',},               
+            }),
+        })
+        offset_h = offset_h + line_h
+        self.frame_rect:AttachChild( self.threads_lines[i].entity )
+    end
+
     self.profiler_win.entity:UpdatePosSize() 
 
     self.update_time = 0
