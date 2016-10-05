@@ -14,9 +14,11 @@
 #define PROFILER Profiler::Get()
 
 #ifdef _DEV
-	#define PERF_CPU(param) Profiler::CPU_TimeSlice(PERF_CPU##param##_ID)
+	#define PERF_CPU_BEGIN(param) Profiler::CPU_TimeBegin(PERF_CPU##param##_ID)
+	#define PERF_CPU_END(param) Profiler::CPU_TimeEnd(PERF_CPU##param##_ID)
 #else
-	#define PERF_CPU(param)
+	#define PERF_CPU_BEGIN(param)
+	#define PERF_CPU_END(param)
 #endif
 
 namespace EngineCore
@@ -48,13 +50,24 @@ namespace EngineCore
 			frameBegin[currentFrameID] = Timer::ForcedGetCurrentTime();
 		}
 		
-		inline static void CPU_TimeSlice( uint32_t id )
+		inline static void CPU_TimeBegin( uint32_t id )
 		{
 			if(!instance || !instance->started)
 				return;
 
 			uint32_t& th = instance->thread_map[JobSystem::GetThreadHash()];
-			instance->perf_data[id][th][instance->currentFrameID] = Timer::ForcedGetCurrentTime();
+			instance->perf_data[id][th][instance->currentFrameID].begin = 
+				(float)(Timer::ForcedGetCurrentTime() - instance->frameBegin[instance->currentFrameID]);
+		}
+		inline static void CPU_TimeEnd( uint32_t id )
+		{
+			if(!instance || !instance->started)
+				return;
+
+			uint32_t& th = instance->thread_map[JobSystem::GetThreadHash()];
+			instance->perf_data[id][th][instance->currentFrameID].length = 
+				(float)(Timer::ForcedGetCurrentTime() - instance->frameBegin[instance->currentFrameID] - 
+					instance->perf_data[id][th][instance->currentFrameID].begin);
 		}
 
 		void Stop() {started = false;}
@@ -75,14 +88,13 @@ namespace EngineCore
 		string GetIDName(uint32_t id) const {return ids_name[id].name;}
 		uint32_t GetIDDepth(uint32_t id) const {return (uint32_t)ids_name[id].depth;}
 
-		float GetCurrentTimeSlice(uint32_t id, uint32_t thread) 
+		XMFLOAT2 GetCurrentTimeSlice(uint32_t id, uint32_t thread) 
 		{
 			int32_t frame_id = (int32_t)currentFrameID - PERF_FRAMES_OFFSET;
 			if(frame_id < 0)
 				frame_id = PERF_FRAMES_DUMP + frame_id;
-			double& id_slice = perf_data[id][thread][frame_id];
-			double& frame_slice = frameBegin[frame_id];
-			return max(0.0f, (float)(id_slice - frame_slice));
+			auto& id_slice = perf_data[id][thread][frame_id];
+			return XMFLOAT2(id_slice.begin, id_slice.length);
 		}
 
 		void Dump();
@@ -110,9 +122,14 @@ namespace EngineCore
 
 		SArray<double, PERF_FRAMES_DUMP> frameBegin;
 
+		struct frame_perf
+		{
+			float begin;
+			float length;
+		};
 		RArray<
 			RArray<
-				SArray<double, PERF_FRAMES_DUMP>
+				SArray<frame_perf, PERF_FRAMES_DUMP>
 				/*frames*/>
 			/*threads*/>
 		/*params*/ perf_data; // 8 bytes * threads(9) per frame per param

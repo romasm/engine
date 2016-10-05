@@ -270,19 +270,6 @@ bool Material::Save()
 	return true;
 }
 
-// TEMP
-string tempReadVal(string& raw, size_t ptr, bool withSpace = false)
-{
-	if(raw[ptr] == '\"')
-		ptr++;
-
-	size_t i = ptr;
-	while(raw[i] != '\"' && raw[i] != '\n' && raw[i] != '\r' && raw[i] != '\t' && raw[i] != '#' && raw[i] != char(0) && (raw[i] != ' ' || withSpace))
-		i++;
-
-	return raw.substr(ptr, i - ptr);
-}
-
 #ifdef _DEV
 bool Material::ñonvertMat(string& nameBin)
 {
@@ -755,8 +742,6 @@ void SimpleShaderInst::updateBuffers()
 
 void SimpleShaderInst::Set()
 {
-	auto shaderPtr = (SimpleShader*) ShaderMgr::GetShaderPtr(shaderID);
-
 	if(b_dirty)
 		updateBuffers();		
 	
@@ -780,7 +765,7 @@ void SimpleShaderInst::Set()
 	if(inputBuf != nullptr)
 		Render::PSSetConstantBuffers(vectorsReg, 1, &inputBuf);
 
-	shaderPtr->Set();
+	((SimpleShader*)ShaderMgr::GetShaderPtr(shaderID))->Set();
 }
 
 void SimpleShaderInst::SetMatrixBuffer(ID3D11Buffer* matrixBuf)

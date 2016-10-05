@@ -128,7 +128,7 @@ public:
 			profiler->CPU_BeginFrame();
 		#endif
 
-			PERF_CPU(_FRAME);
+			PERF_CPU_BEGIN(_FRAME);
 
 			rendertime = cur_time;
 			m_timer.Frame();
@@ -141,7 +141,7 @@ public:
 				(*tick_func)((*main_table), m_timer.dt_ms);
 		
 			
-			PERF_CPU(_GUIUPDATE);
+			PERF_CPU_BEGIN(_GUIUPDATE);
 
 			if(!force_update_gui)
 			{
@@ -152,11 +152,16 @@ public:
 
 			m_hud->Update(force_update_gui, no_gui_gc);
 			
+			PERF_CPU_END(_GUIUPDATE);	
+
 			// Render
-			PERF_CPU(_SCENE);	
+			PERF_CPU_BEGIN(_SCENE);	
 
 			m_render->Draw();
 
+			PERF_CPU_END(_SCENE);
+
+			PERF_CPU_BEGIN(_GUIDRAW);	
 			for(auto& window : *WindowsMgr::Get()->GetMap())
 			{
 				window.second->ClearRenderTarget();
@@ -164,9 +169,10 @@ public:
 				m_hud->Draw(window.first);
 				
 				window.second->Swap();
-			}
+			}	
+			PERF_CPU_END(_GUIDRAW);	
 
-			PERF_CPU(_FINISH);
+			PERF_CPU_END(_FRAME);
 		}
 		return true;
 	}

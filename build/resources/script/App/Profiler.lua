@@ -32,6 +32,7 @@ function Profiler:Init()
     self.threads_count = self.profiler:GetThreadsCount()
 
     local line_h = self.frame_rect.height / self.threads_count
+    self.line_w = self.frame_rect.width
     local offset_h = 0
 
     self.threads_lines = {}
@@ -49,11 +50,31 @@ function Profiler:Init()
                 width = 100,
                 height = 1,
                 valign = GUI_VALIGN.BOTTOM,
+                focus_mode = GUI_FOCUS_MODE.ONTOP,
                 background = {color = 'act_01',},               
             }),
         })
         offset_h = offset_h + line_h
         self.frame_rect:AttachChild( self.threads_lines[i].entity )
+    end
+
+    self.ids_btns = {}
+    for i = 1, self.threads_count do self.ids_btns[i] = {} end
+    for j = 1, self.ids_count do 
+        local name = self.profiler:GetIDName(j - 1)
+        local depth = self.profiler:GetIDDepth(j - 1)
+
+        for i = 1, self.threads_count do
+            self.ids_btns[i][j] = GuiButton({
+                styles = {GuiStyles.perf_id,},
+                text = {str = name},
+                enable = false,
+                height_percent = true,
+                height = 100 - math.min(90, depth * 15),
+                valign = GUI_VALIGN.BOTTOM,
+            })
+            self.threads_lines[i].entity:AttachChild( self.ids_btns[i][j].entity )
+        end
     end
 
     self.profiler_win.entity:UpdatePosSize() 
@@ -86,7 +107,20 @@ function Profiler:Tick(dt)
     if self.update_time < 500 then return end
     self.update_time = 0
 
-
+    local frame_time = self.profiler:GetCurrentTimeSlice(0, 0)
+    local total_time = frame_time.x + frame_time.y
+    
+    for i = 1, self.threads_count do
+        for j = 1, self.ids_count do 
+            local id_time = self.profiler:GetCurrentTimeSlice(j - 1, i - 1)
+            if id_time.x ~= 0 or id_time.y ~= 0 then
+                self.ids_btns[i][j].entity.left = self.line_w * math.min(1, id_time.x / total_time)
+                self.ids_btns[i][j].entity.width = self.line_w * math.min(1, id_time.y / total_time)
+                self.ids_btns[i][j].entity.enable = true
+                self.ids_btns[i][j].entity:UpdatePosSize()
+            end
+        end
+    end
 end
 
 function Profiler:SetDump(dump)

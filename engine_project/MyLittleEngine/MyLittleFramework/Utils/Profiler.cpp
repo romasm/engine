@@ -8,6 +8,10 @@ Profiler* Profiler::instance = nullptr;
 
 Profiler::Profiler()
 {
+	frame_perf null_perf;
+	null_perf.begin = 0;
+	null_perf.length = 0;
+
 	perf_data.create(PERF_IDS_COUNT);
 	perf_data.resize(PERF_IDS_COUNT);
 	for(uint32_t i = 0; i < PERF_IDS_COUNT; i++)
@@ -17,7 +21,7 @@ Profiler::Profiler()
 		for(uint32_t j = 0; j < perf_data[i].capacity(); j++)
 		{
 			perf_data[i][j].resize(PERF_FRAMES_DUMP);
-			perf_data[i][j].assign(0);
+			perf_data[i][j].assign(null_perf);
 		}
 	}
 
@@ -38,7 +42,7 @@ Profiler::Profiler()
 	ids_name[PERF_CPU_SCENE_ID] = name_depth("Scene", 1);
 	ids_name[PERF_CPU_SCENE_UPDATE_ID] = name_depth("SceneUpdate", 2);
 	ids_name[PERF_CPU_SCENE_DRAW_ID] = name_depth("SceneDraw", 2);
-	ids_name[PERF_CPU_FINISH_ID] = name_depth("Finish", 0);
+	ids_name[PERF_CPU_GUIDRAW_ID] = name_depth("GuiDraw & Present", 1);
 
 	if(instance)
 		ERR("Only one instance of Profiler is allowed!");

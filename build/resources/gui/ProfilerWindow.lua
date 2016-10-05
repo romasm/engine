@@ -19,6 +19,34 @@ GuiStyles.perf_button = {
     },
 }
 
+GuiStyles.perf_id = {
+    styles = {
+        GuiStyles.common_button,
+    },
+    
+    text = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        offset = { x = 1, y = 1 },
+        center = { x = false, y = false },
+        font = "../content/materials/fonts/opensans_normal_12px",
+    },
+    
+    background = {
+        color = 'bg_01',
+        color_hover = 'act_01',
+        color_press = 'act_00',
+    },
+
+    border = {
+        color = 'text_06',
+        color_hover = 'act_02',
+        color_press = 'act_02',
+        width = 1,
+    },
+}
+
 function Gui.ProfilerWindow()
 return GuiWindow({
     styles = {
@@ -163,23 +191,28 @@ return GuiWindow({
                 },
             }),
 
+            GuiDumb({
+                styles = {GuiStyles.live,},
+                width = 900,
+                height = 500,
+                left = 250,
+                top = 220,
+                id = 'frame_rect',
+            }),
+
             GuiRect({
                 styles = {GuiStyles.ghost,},
                 width = 900,
                 height = 500,
                 left = 250,
                 top = 220,
-                id = 'frame_rect',
-
                 border = {
                     color = 'text_06',
                     width = 1,
                 },
                 background = {
-                    color = 'bg_02',
-                },
-
-                
+                    color = 'null',
+                },                
             }),
              
         }),

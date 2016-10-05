@@ -135,6 +135,12 @@ void World::Close()
 
 void World::Snapshot(ScenePipeline* scene)
 {
+#ifdef _DEV
+	bool profiler_state = Profiler::Get()->IsRunning();
+	if(profiler_state)
+		Profiler::Get()->Stop();
+#endif
+
 	m_dt = 0;
 	
 	m_transformSystem->Update();
@@ -172,6 +178,11 @@ void World::Snapshot(ScenePipeline* scene)
 		scene->HDRtoLDRStage();
 		scene->EndFrame();
 	}
+
+#ifdef _DEV
+	if(profiler_state)
+		Profiler::Get()->Start();
+#endif
 }
 
 void World::Frame()
@@ -179,7 +190,7 @@ void World::Frame()
 	if(!b_active)
 		return;
 
-	PERF_CPU(_SCENE_UPDATE);
+	PERF_CPU_BEGIN(_SCENE_UPDATE);
 
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
@@ -213,7 +224,9 @@ void World::Frame()
 
 	m_visibilitySystem->CheckVisibility();
 
-	PERF_CPU(_SCENE_DRAW);
+	PERF_CPU_END(_SCENE_UPDATE);
+
+	PERF_CPU_BEGIN(_SCENE_DRAW);
 
 	m_staticMeshSystem->RegToDraw();
 	m_lineGeometrySystem->RegToDraw();
@@ -239,6 +252,8 @@ void World::Frame()
 			it->EndFrame();
 		}
 	}
+
+	PERF_CPU_END(_SCENE_DRAW);
 }
 
 void World::DestroyEntity(Entity e)
