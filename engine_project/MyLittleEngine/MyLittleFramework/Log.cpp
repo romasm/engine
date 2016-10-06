@@ -83,7 +83,7 @@ namespace EngineCore
 
 		// FILE ----------------
 		m_file = nullptr;
-
+		
 		GET_DATETIME
 
 		string filename = PATH_RUNTIME_STATS "log_" + datetime + ".log";
@@ -101,7 +101,7 @@ namespace EngineCore
 		{
 			printf("Error creating log file!\n");
 			m_file = nullptr;
-		}		
+		}	
 	}
 
 	Log::~Log()

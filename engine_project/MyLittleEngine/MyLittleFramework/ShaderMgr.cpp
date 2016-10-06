@@ -189,6 +189,8 @@ void ShaderMgr::UpdateShaders()
 		if(last_date == handle.shader->GetSrcDate())
 			continue;
 
+		ERR("SHADER RELOADING"); // todo
+		
 		BaseShader* newShader;
 		if(handle.shader->IsSimple())
 			newShader = (BaseShader*) new SimpleShader((string&)it.first);
@@ -198,6 +200,8 @@ void ShaderMgr::UpdateShaders()
 		BaseShader* remove = handle.shader;
 
 		handle.shader = newShader;
+		handle.shader->SetSrcDate(last_date);
+
 		_DELETE(remove);
 	}
 }

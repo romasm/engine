@@ -37,6 +37,7 @@ namespace EngineCore
 		
 	#ifdef _DEV
 		inline uint32_t GetSrcDate() {return filedate;}
+		inline void SetSrcDate(uint32_t date) {filedate = date;}
 		inline bool IsSimple(){return is_simple;}
 	#endif
 		
