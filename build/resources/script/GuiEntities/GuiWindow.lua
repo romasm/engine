@@ -623,3 +623,11 @@ function GuiWindow:callback(eventData)
 
     return self._base.callback(self, res)
 end
+
+function GuiWindow:GetBody()
+    return self.body_ent
+end
+
+function GuiWindow:GetClient()
+    return self.clientarea_ent
+end

@@ -70,8 +70,16 @@ namespace EngineCore
 					instance->perf_data[id][th][instance->currentFrameID].begin);
 		}
 
-		void Stop() {started = false;}
-		void Start() {started = true;}
+		void Stop() 
+		{
+			started = false;
+			LOG("Profiler stopped!");
+		}
+		void Start()
+		{
+			started = true;
+			LOG("Profiler started!");
+		}
 		inline bool IsRunning() {return started;}
 
 		void RegThread(size_t thread_hash)

@@ -32,3 +32,13 @@ function CMath.ColorDenormalize(color, intensity)
     res.w = color.w
     return res
 end
+
+function CMath.ColorLerp(color1, color2, alpha)
+    local res = Vector4(0,0,0,0)
+    local inv_alpha = 1 - alpha
+    res.x = color1.x * inv_alpha + color2.x * alpha
+    res.y = color1.y * inv_alpha + color2.y * alpha
+    res.z = color1.z * inv_alpha + color2.z * alpha
+    res.w = color1.w * inv_alpha + color2.w * alpha
+    return res
+end

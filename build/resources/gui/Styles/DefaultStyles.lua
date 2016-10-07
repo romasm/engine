@@ -81,6 +81,9 @@ GuiStyles.string_autosize = {
     padding = { x = 0, y = 0 },
 }
 
+GuiStyles.string_16 = {
+    font = "../content/materials/fonts/opensans_normal_16px",
+}
 GuiStyles.string_18 = {
     font = "../content/materials/fonts/opensans_normal_18px",
 }
