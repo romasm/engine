@@ -225,7 +225,7 @@ void ShaderCodeMgr::UpdateShadersCode()
 			uint32_t last_date = FileIO::GetDateModifRaw(srcFilename);
 			if(last_date == shader_code.filedate)
 				continue;
-
+			
 			shader_code.filedate = last_date;
 
 			string entryPoint = it.first.substr(del+1);

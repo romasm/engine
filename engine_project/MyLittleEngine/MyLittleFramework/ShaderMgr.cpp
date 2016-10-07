@@ -188,9 +188,7 @@ void ShaderMgr::UpdateShaders()
 		uint32_t last_date = FileIO::GetDateModifRaw(srcFilename);
 		if(last_date == handle.shader->GetSrcDate())
 			continue;
-
-		ERR("SHADER RELOADING"); // todo
-		
+				
 		BaseShader* newShader;
 		if(handle.shader->IsSimple())
 			newShader = (BaseShader*) new SimpleShader((string&)it.first);
