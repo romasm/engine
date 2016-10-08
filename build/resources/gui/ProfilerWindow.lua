@@ -24,8 +24,10 @@ GuiStyles.perf_id = {
         GuiStyles.common_button,
     },
     
+    holded = true,
+
     text = {
-        color = 'act_03',
+        color = 'bg_00',
         color_hover = 'act_03',
         color_press = 'act_03',
         offset = { x = 2, y = 1 },
@@ -39,7 +41,7 @@ GuiStyles.perf_id = {
     },
 
     border = {
-        color = 'text_06',
+        color = 'bg_05_a4',
         color_hover = 'act_02',
         color_press = 'act_02',
         width = 1,
@@ -90,7 +92,7 @@ return GuiWindow({
     closeable = true,
     close = {
         styles = {
-            GuiStyles.close_button,
+            GuiStyles.close_button_alpha,
         },
     },
 
@@ -99,10 +101,10 @@ return GuiWindow({
     left = 400,
     top = 400,
     width = 1505,
-    height = 900,
+    height = 910,
 
     id = "profiler_window",
-
+    
     header = {
         styles = {
             GuiStyles.window_header,
@@ -117,22 +119,22 @@ return GuiWindow({
             return true
         end,
     },
-        
+    
     GuiClientarea({
         GuiBody({
             width = 1491,
-            height = 1080,
+            height = 881,
 
             GuiCheck({
                 styles = {GuiStyles.props_check,},
-                left = 25,
-                top = 0,
+                left = 20,
+                top = 25,
                 width = 160,
                 height = 18,
                 text = { str = "Real-time visualization" },
                 alt = "Draw parfomance data in real-time",
                 id = 'isrealtime',
-
+                
                 events = {
                     [GUI_EVENTS.CB_CHECKED] = function(self, ev)
                         Profiler:SetRealtime(true)
@@ -147,8 +149,8 @@ return GuiWindow({
             
             GuiCheck({
                 styles = {GuiStyles.props_check,},
-                left = 25,
-                top = 35,
+                left = 20,
+                top = 60,
                 width = 150,
                 height = 18,
                 text = { str = "Dump data on disc" },
@@ -166,89 +168,72 @@ return GuiWindow({
                     end,
                 }
             }),
-            
-            GuiRect({
-                styles = {GuiStyles.ghost,},
-                width = 1200,
-                height = 200,
-                left = 250,
-                top = 0,
-                id = 'graph_rect',
-
-                border = {
-                    color = 'text_06',
-                    width = 1,
-                },
-                background = {
-                    color = 'bg_02',
-                },
-            }),
 
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "0 %",
                 left = 250,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "10 %",
                 left = 370,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "20 %",
                 left = 490,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "30 %",
                 left = 610,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "40 %",
                 left = 730,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "50 %",
                 left = 850,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "60 %",
                 left = 970,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "70 %",
                 left = 1090,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "80 %",
                 left = 1210,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "90 %",
                 left = 1330,
-                top = 225,
+                top = 0,
             }),
             GuiString({
                 styles = {GuiStyles.bg_str,},
                 str = "100 %",
                 left = 1450,
-                top = 225,
+                top = 0,
             }),
 
             GuiRect({
@@ -256,7 +241,7 @@ return GuiWindow({
                 width = 1200,
                 height = 500,
                 left = 250,
-                top = 250,
+                top = 25,
                 background = {
                     color = 'bg_02',
                 },                
@@ -267,7 +252,7 @@ return GuiWindow({
                 width = 1200,
                 height = 500,
                 left = 250,
-                top = 250,
+                top = 25,
                 id = 'frame_rect',
             }),
 
@@ -276,9 +261,51 @@ return GuiWindow({
                 width = 1200,
                 height = 500,
                 left = 250,
-                top = 250,
+                top = 25,
                 border = {
-                    color = 'text_06',
+                    color = 'act_01',
+                    width = 1,
+                },
+                background = {
+                    color = 'null',
+                },                
+            }),
+
+            GuiString({
+                styles = {GuiStyles.bg_str_normal,},
+                str = "GPU",
+                left = 210,
+                top = 560,
+            }),
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 1200,
+                height = 50, 
+                left = 250,
+                top = 545,
+                background = {
+                    color = 'bg_02',
+                },               
+            }),
+
+            GuiDumb({
+                styles = {GuiStyles.live,},
+                width = 1200,
+                height = 50,
+                left = 250,
+                top = 545,
+                id = 'gru_rect',
+            }),
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 1200,
+                height = 50,
+                left = 250,
+                top = 545,
+                border = {
+                    color = 'act_01',
                     width = 1,
                 },
                 background = {
@@ -286,17 +313,47 @@ return GuiWindow({
                 },                
             }),
             
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 1280,
+                height = 1,
+                left = 200,
+                top = 625,
+                background = {
+                    color = 'act_01',
+                },                
+            }),
+
+
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 1200,
+                height = 200,
+                left = 250,
+                top = 655,
+                id = 'graph_rect',
+
+                border = {
+                    color = 'act_01',
+                    width = 1,
+                },
+                background = {
+                    color = 'bg_02',
+                },
+            }),
+                 
+                 
             GuiDumb({
                 styles = {GuiStyles.live,},
                 width = 200,
                 height = 500,
-                left = 25,
-                top = 500,
+                left = 20,
+                top = 655,
                 id = 'param_stats',
 
                 GuiString({
                     styles = {GuiStyles.bg_str_normal,},
-                    str = "Param:",
+                    str = "Param",
                 }),
 
                 GuiString({
@@ -311,35 +368,29 @@ return GuiWindow({
                 GuiString({
                     styles = {GuiStyles.bg_str_normal,},
                     str = "Cur",
-                    align = GUI_ALIGN.RIGHT,
-                    right = 175,
-                    top = 50,
+                    top = 30,
                 }),
 
                 GuiString({
                     styles = {GuiStyles.bg_str_normal,},
                     str = "Avg",
-                    align = GUI_ALIGN.RIGHT,
-                    right = 175,
-                    top = 75,
+                    top = 55,
                 }),
 
                 GuiString({
                     styles = {GuiStyles.bg_str_normal,},
                     str = "Max",
-                    align = GUI_ALIGN.RIGHT,
-                    right = 175,
-                    top = 100,
+                    top = 80,
                 }),
 
                 GuiString({
                     styles = {GuiStyles.string_props_01,},
                     str = "",
                     static = false,
-                    length = 8,
+                    length = 16,
                     align = GUI_ALIGN.RIGHT,
                     right = 100,
-                    top = 50,
+                    top = 30,
                     id = 'cur_ms',
                 }),
 
@@ -347,10 +398,10 @@ return GuiWindow({
                     styles = {GuiStyles.string_props_01,},
                     str = "",
                     static = false,
-                    length = 8,
+                    length = 16,
                     align = GUI_ALIGN.RIGHT,
                     right = 100,
-                    top = 75,
+                    top = 55,
                     id = 'avg_ms',
                 }),
 
@@ -358,10 +409,10 @@ return GuiWindow({
                     styles = {GuiStyles.string_props_01,},
                     str = "",
                     static = false,
-                    length = 8,
+                    length = 16,
                     align = GUI_ALIGN.RIGHT,
                     right = 100,
-                    top = 100,
+                    top = 80,
                     id = 'max_ms',
                 }),
 
@@ -372,7 +423,7 @@ return GuiWindow({
                     length = 8,
                     align = GUI_ALIGN.RIGHT,
                     right = 40,
-                    top = 50,
+                    top = 30,
                     id = 'cur_prc',
                 }),
 
@@ -383,7 +434,7 @@ return GuiWindow({
                     length = 8,
                     align = GUI_ALIGN.RIGHT,
                     right = 40,
-                    top = 75,
+                    top = 55,
                     id = 'avg_prc',
                 }),
 
@@ -394,10 +445,50 @@ return GuiWindow({
                     length = 8,
                     align = GUI_ALIGN.RIGHT,
                     right = 40,
-                    top = 100,
+                    top = 80,
                     id = 'max_prc',
                 }),
-            }),            
+
+                GuiString({
+                    styles = {GuiStyles.bg_str_normal,},
+                    str = "Total",
+                    top = 130,
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 100,
+                    top = 130,
+                    id = 'frame_ms',
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 33,
+                    top = 130,
+                    id = 'frame_fps',
+                }),
+            }),
+        }),
+
+        GuiRect({
+            styles = {GuiStyles.ghost,},
+            width = 1,
+            height = 100,
+            height_percent = true,
+            left = 200,
+            top = 0,
+            background = {
+                color = 'act_01',
+            },                
         }),
     }),
 })

@@ -12,6 +12,7 @@ function Profiler.reload()
         Profiler.profiler_win = Gui.ProfilerWindow()
 
         Profiler:FillWindow()
+        Profiler:SetStatsParam(nil)
 
         Profiler.profiler_win.sys_win:SetPos(left, top)
         Profiler.profiler_win.entity:UpdatePosSize()
@@ -29,6 +30,8 @@ function Profiler:FillWindow()
     self.stats_cur_prc = stats_dumb:GetChildById('cur_prc'):GetInherited()
     self.stats_avg_prc = stats_dumb:GetChildById('avg_prc'):GetInherited()
     self.stats_max_prc = stats_dumb:GetChildById('max_prc'):GetInherited()
+    self.stats_frame_ms = stats_dumb:GetChildById('frame_ms'):GetInherited()
+    self.stats_frame_fps = stats_dumb:GetChildById('frame_fps'):GetInherited()
 
     self.frame_rect = self.profiler_win.entity:GetChildById('frame_rect')
 
@@ -40,7 +43,7 @@ function Profiler:FillWindow()
     local offset_h = 0
 
     local body = self.profiler_win:GetBody()
-    local thread_name_left = self.frame_rect.left - 35 
+    local thread_name_left = self.frame_rect.left - 40 
     local thread_name_top = self.frame_rect.top + line_h / 2 - 11
 
     self.threads_lines = {}
@@ -48,7 +51,7 @@ function Profiler:FillWindow()
         
         local str = GuiString({
             styles = {GuiStyles.bg_str_normal,},
-            str = i == 1 and "Main" or "#"..tostring(i - 1),
+            str = i == 1 and "Main" or "Th "..tostring(i - 1),
             top = thread_name_top,
             left = thread_name_left,
         })
@@ -67,7 +70,7 @@ function Profiler:FillWindow()
                 styles = {GuiStyles.ghost,},
                 width_percent = true,
                 width = 100,
-                height = 2,
+                height = 1,
                 valign = GUI_VALIGN.BOTTOM,
                 focus_mode = GUI_FOCUS_MODE.ONTOP,
                 background = {color = 'act_01',},  
@@ -98,6 +101,7 @@ function Profiler:FillWindow()
         end
 
         for i = 1, self.threads_count do
+            local thread_id = i - 1
             self.ids_btns[i][j] = GuiButton({
                 styles = {GuiStyles.perf_id,},
                 background = {color = id_color,},
@@ -108,8 +112,11 @@ function Profiler:FillWindow()
                 bottom = 5,
                 bottom_percent = true,
                 valign = GUI_VALIGN.BOTTOM,
-                id = tostring(param_id),
-                events = {[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Profiler:SetStatsParam(self) end,},
+                id = tostring(param_id).."_"..tostring(thread_id),
+                alt = "Detail view of "..name,
+                events = {
+                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Profiler:SetStatsParam(self) end,
+                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Profiler:SetStatsParam(nil) end,},
             })
             self.threads_lines[i].entity:AttachChild( self.ids_btns[i][j].entity )
         end
@@ -131,11 +138,18 @@ function Profiler:Init()
 
     self.stats = false
     self.stats_param = 0
+    self.stats_thread = 0
     self.stats_avg = 0
+    self.stats_avg_p = 0
     self.stats_frame_count = 0
     self.stats_max = 0
+    self.stats_max_p = 0
     self.stats_cur = 0
+    self.stats_cur_p = 0
     self.stats_cur_count = 0
+
+    self.total_frame_time = 0
+    self.total_frame_count = 0
 
     loader.require("ProfilerWindow", Profiler.reload)
     
@@ -147,6 +161,8 @@ function Profiler:Init()
 
     self.update_time = 0
     self.stats_update_time = 0
+
+    self.stats_btn = nil
 end
 
 function Profiler:IsInit()
@@ -174,17 +190,34 @@ function Profiler:Tick(dt)
     local frame_time = self.profiler:GetCurrentTimeSlice(0, 0)
     local total_time = frame_time.x + frame_time.y
 
+    self.total_frame_time = self.total_frame_time + dt
+    self.total_frame_count = self.total_frame_count + 1
+    if self.total_frame_time > 100 then
+        local total_time = self.total_frame_time / self.total_frame_count
+        local fps = 1000.0 / total_time
+        self.total_frame_count = 0
+        self.total_frame_time = 0
+
+        self.stats_frame_ms:SetString(string.format("%.2f ms", total_time))
+        self.stats_frame_fps:SetString(string.format("%.1f fps", fps))
+    end
+
     if self.stats then
         self.stats_update_time = self.stats_update_time + dt
 
-        local id_time = self.profiler:GetCurrentTimeSlice(self.stats_param, 0)
+        local id_time = self.profiler:GetCurrentTimeSlice(self.stats_param, self.stats_thread)
+        local relative_time = id_time.y / frame_time.y
+
         self.stats_cur = self.stats_cur + id_time.y
+        self.stats_cur_p = self.stats_cur_p + relative_time
         self.stats_cur_count = self.stats_cur_count + 1
         self.stats_frame_count = self.stats_frame_count + 1
 
         local delta = 1.0 / self.stats_frame_count
         self.stats_avg = self.stats_avg * (1 - delta) + id_time.y * delta
+        self.stats_avg_p = self.stats_avg_p * (1 - delta) + relative_time * delta
         self.stats_max = math.max(self.stats_max, id_time.y)
+        self.stats_max_p = math.max(self.stats_max_p, relative_time)
 
         if self.stats_update_time > 100 then
             self.stats_update_time = 0
@@ -192,8 +225,12 @@ function Profiler:Tick(dt)
             self.stats_avg_ms:SetString(string.format("%.2f ms", self.stats_avg))
             self.stats_max_ms:SetString(string.format("%.2f ms", self.stats_max))
             self.stats_cur_ms:SetString(string.format("%.2f ms", self.stats_cur / self.stats_cur_count))
+            self.stats_avg_prc:SetString(string.format("%.1f", self.stats_avg_p * 100).." %")
+            self.stats_max_prc:SetString(string.format("%.1f", self.stats_max_p * 100).." %")
+            self.stats_cur_prc:SetString(string.format("%.1f", self.stats_cur_p * 100 / self.stats_cur_count).." %")
 
             self.stats_cur = 0
+            self.stats_cur_p = 0
             self.stats_cur_count = 0
         end
     end
@@ -226,20 +263,13 @@ function Profiler:SetRealtime(realtime)
 end
 
 function Profiler:SetStatsParam(btn)
-    local btn_id = btn.entity:GetID()
-
-    self.stats = true
-    self.stats_param = tonumber(btn_id)
-
-    local name = self.profiler:GetIDName(self.stats_param)
-
-    local stats_dumb = self.profiler_win.entity:GetChildById('param_stats')
-    stats_dumb:GetChildById('param_name'):GetInherited():SetString(name)
-
     self.stats_avg = 0
+    self.stats_avg_p = 0
     self.stats_frame_count = 0
     self.stats_max = 0
+    self.stats_max_p = 0
     self.stats_cur = 0
+    self.stats_cur_p = 0
     self.stats_cur_count = 0
 
     self.stats_avg_ms:SetString("")
@@ -249,5 +279,31 @@ function Profiler:SetStatsParam(btn)
     self.stats_max_prc:SetString("")
     self.stats_cur_prc:SetString("")
 
+    local name = ""
+    
+    if btn == nil then
+        self.stats = false
+        self.stats_param = 0
+        self.stats_thread = 0
+        self.stats_btn = nil
+    else
+        if self.stats_btn ~= nil then 
+            self.stats_btn:SetPressed(false)
+        end
+
+        local btn_id = btn.entity:GetID()
+
+        self.stats = true
+        local param, thread = btn_id:match("([^_]+)_([^_]+)")
+        self.stats_param = tonumber(param)        
+        self.stats_thread = tonumber(thread)
+        self.stats_btn = btn
+
+        name = self.profiler:GetIDName(self.stats_param)
+    end
+
+    local stats_dumb = self.profiler_win.entity:GetChildById('param_stats')
+    stats_dumb:GetChildById('param_name'):GetInherited():SetString(name)    
+    
     return true
 end

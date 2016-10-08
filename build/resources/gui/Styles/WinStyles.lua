@@ -75,6 +75,18 @@ GuiStyles.close_button = {
     },
 }
 
+GuiStyles.close_button_alpha = {
+    styles = {
+        GuiStyles.close_button,
+    },
+    
+    background = {
+        color = 'null',
+        color_hover = 'act_01',
+        color_press = 'act_01',
+    },
+}
+
 GuiStyles.window_colors = {
     background = {
         color = 'bg_01',
