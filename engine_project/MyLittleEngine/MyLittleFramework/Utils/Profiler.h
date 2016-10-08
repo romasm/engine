@@ -5,20 +5,36 @@
 #include "Timer.h"
 #include "DataAlloc\Arrays.h"
 #include "JobSystem.h"
+#include "Render.h"
 
 #include "ProfilerIDs.h"
 
 #define PERF_FRAMES_DUMP 60 * 60 * 1 // 1 minute
 #define PERF_FRAMES_OFFSET 5
+#define PERF_PARAMS_DEPTH 32
 
 #define PROFILER Profiler::Get()
 
 #ifdef _DEV
-	#define PERF_CPU_BEGIN(param) Profiler::CPU_TimeBegin(PERF_CPU##param##_ID)
-	#define PERF_CPU_END(param) Profiler::CPU_TimeEnd(PERF_CPU##param##_ID)
+	#define PERF_CPU_FRAME_BEGIN Profiler::Get()->CPU_BeginFrame()
+	#define PERF_CPU_FRAME_END Profiler::Get()->CPU_EndFrame()
+	#define PERF_CPU_BEGIN(param) Profiler::CPU_TimeBegin(PERF_CPU::PERF_CPU##param##)
+	#define PERF_CPU_END(param) Profiler::CPU_TimeEnd(PERF_CPU::PERF_CPU##param##)
+
+	#define PERF_GPU_FRAME_BEGIN Profiler::Get()->GPU_BeginFrame()
+	#define PERF_GPU_FRAME_END Profiler::Get()->GPU_EndFrame()
+	#define PERF_GPU_TIMESTAMP(param) Profiler::GPU_Timestamp(PERF_GPU::PERF_GPU##param##)
+	#define PERF_GPU_GRABDATA Profiler::Get()->GPU_GrabData()
 #else
+	#define PERF_CPU_FRAME_BEGIN
+	#define PERF_CPU_FRAME_END
 	#define PERF_CPU_BEGIN(param)
 	#define PERF_CPU_END(param)
+
+	#define PERF_GPU_FRAME_BEGIN
+	#define PERF_GPU_FRAME_END
+	#define PERF_GPU_TIMESTAMP(param)
+	#define PERF_GPU_GRABDATA
 #endif
 
 namespace EngineCore
@@ -32,23 +48,13 @@ namespace EngineCore
 		Profiler();
 		~Profiler();
 
+		bool InitQueries();
+		void ReleaseQueries();
+
 		static Profiler* Get(){return instance;}
 
-		inline void CPU_BeginFrame()
-		{
-			if(!started)
-				return;
-
-			currentFrameID++;
-
-			if(currentFrameID >= PERF_FRAMES_DUMP)
-			{
-				Dump();
-				currentFrameID = 0;
-			}
-
-			frameBegin[currentFrameID] = Timer::ForcedGetCurrentTime();
-		}
+		void CPU_BeginFrame();
+		void CPU_EndFrame();
 		
 		inline static void CPU_TimeBegin( uint32_t id )
 		{
@@ -69,6 +75,18 @@ namespace EngineCore
 				(float)(Timer::ForcedGetCurrentTime() - instance->frameBegin[instance->currentFrameID] - 
 					instance->perf_data[id][th][instance->currentFrameID].begin);
 		}
+
+		void GPU_BeginFrame();
+		void GPU_EndFrame();
+		inline static void GPU_Timestamp( uint32_t id )
+		{
+			if(!instance || !instance->started)
+				return;
+
+			CONTEXT->End(instance->timestamps[id][instance->querySwitch]);
+		}
+
+		void GPU_GrabData();
 
 		void Stop() 
 		{
@@ -91,25 +109,25 @@ namespace EngineCore
 		void SetDumping(bool dump) {dumping = dump;}
 		bool GetDumping() const {return dumping;}
 
-		uint32_t GetIDsCount() const {return PERF_IDS_COUNT;}
+		uint32_t GetIDsCount() const {return PERF_CPU::PERF_CPU_COUNT;}
 		uint32_t GetThreadsCount() const {return (uint32_t)thread_map.size();}
 		string GetIDName(uint32_t id) const {return ids_name[id].name;}
 		uint32_t GetIDDepth(uint32_t id) const {return (uint32_t)ids_name[id].depth;}
+		
+		uint32_t GetGpuIDsCount() const {return PERF_GPU::PERF_GPU_COUNT;}
+		string GetGpuIDName(uint32_t id) const {return gpu_ids_name[id].name;}
+		uint32_t GetGpuIDDepth(uint32_t id) const {return gpu_ids_name[id].depth;}
 
-		XMFLOAT2 GetCurrentTimeSlice(uint32_t id, uint32_t thread) 
-		{
-			int32_t frame_id = (int32_t)currentFrameID - PERF_FRAMES_OFFSET;
-			if(frame_id < 0)
-				frame_id = PERF_FRAMES_DUMP + frame_id;
-			auto& id_slice = perf_data[id][thread][frame_id];
-			return XMFLOAT2(id_slice.begin, id_slice.length);
-		}
+		XMFLOAT2 GetCurrentTimeSlice(uint32_t id, uint32_t thread);
+		XMFLOAT2 GetGpuCurrentTimeSlice(uint32_t id);
 
 		void Dump();
 
 		static void RegLuaFunctions();
 
 	private:
+		void InitParams();
+		
 		static Profiler* instance;
 		bool started;
 		bool dumping;
@@ -123,7 +141,7 @@ namespace EngineCore
 			name_depth(string str, uint16_t d) : name(str), depth(d) {}
 			name_depth() : depth(0) {}
 		};
-		SArray<name_depth, PERF_IDS_COUNT> ids_name;
+		SArray<name_depth, PERF_CPU::PERF_CPU_COUNT> ids_name;
 
 		unordered_map<size_t, uint32_t> thread_map;
 		uint32_t thread_count;
@@ -140,6 +158,21 @@ namespace EngineCore
 				SArray<frame_perf, PERF_FRAMES_DUMP>
 				/*frames*/>
 			/*threads*/>
-		/*params*/ perf_data; // 8 bytes * threads(9) per frame per param
+		/*params*/ perf_data; // 8 bytes * threads(9) per frame(3600) per param
+
+		SArray<ID3D11Query*, 2> disjoints;
+		RArray<SArray<ID3D11Query*, 2>/*params*/> timestamps;
+
+		RArray<
+			SArray<frame_perf, PERF_FRAMES_DUMP>
+			/*frames*/>
+		/*params*/ gpu_perf_data; // 8 bytes per frame(3600) per param
+		
+		SArray<name_depth, PERF_GPU::PERF_GPU_COUNT> gpu_ids_name;
+
+		SArray<int32_t, PERF_PARAMS_DEPTH> gpu_prev_id;
+
+		uint8_t querySwitch;
+		int8_t collectSwitch;
 	};
 }

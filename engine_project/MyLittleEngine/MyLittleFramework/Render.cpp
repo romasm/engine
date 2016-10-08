@@ -11,6 +11,7 @@
 #include "FontMgr.h"
 #include "ScenePipeline.h"
 #include "WorldMgr.h"
+#include "Utils/Profiler.h"
 
 #include "ResourceProcessor.h"
 
@@ -127,6 +128,14 @@ namespace EngineCore
 			return false;
 		}
 		
+	#ifdef _DEV
+		if( !Profiler::Get()->InitQueries() )
+		{
+			ERR("Cant init profiler queries!");
+			return false;
+		}
+	#endif
+
 		shaderMgr->PreloadShaders();
 
 		texMgr = new TexMgr;
@@ -179,6 +188,10 @@ namespace EngineCore
 
 	void Render::Close()
 	{
+	#ifdef _DEV
+		Profiler::Get()->ReleaseQueries();
+	#endif
+
 		if( m_pImmediateContext ) 
 			m_pImmediateContext->ClearState();
 	

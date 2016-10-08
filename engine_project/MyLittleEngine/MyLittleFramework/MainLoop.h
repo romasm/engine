@@ -124,25 +124,21 @@ public:
 		
 		if( waittime >= fpslock )
 		{
-		#ifdef _DEV
-			profiler->CPU_BeginFrame();
-		#endif
-
-			PERF_CPU_BEGIN(_FRAME);
+			PERF_CPU_FRAME_BEGIN;
+			PERF_GPU_FRAME_BEGIN;
 
 			rendertime = cur_time;
 			m_timer.Frame();
 
 			// job update
 			jobSystem->Tick(m_timer.dt_ms);
+			
+			PERF_CPU_BEGIN(_GUIUPDATE);
 
 			// Lua
 			if(tick_func)
 				(*tick_func)((*main_table), m_timer.dt_ms);
 		
-			
-			PERF_CPU_BEGIN(_GUIUPDATE);
-
 			if(!force_update_gui)
 			{
 				// Events
@@ -156,12 +152,14 @@ public:
 
 			// Render
 			PERF_CPU_BEGIN(_SCENE);	
+			PERF_GPU_TIMESTAMP(_SCENE);	
 
 			m_render->Draw();
 
 			PERF_CPU_END(_SCENE);
 
-			PERF_CPU_BEGIN(_GUIDRAW);	
+			PERF_CPU_BEGIN(_GUIDRAW);
+			PERF_GPU_TIMESTAMP(_GUI);		
 			for(auto& window : *WindowsMgr::Get()->GetMap())
 			{
 				window.second->ClearRenderTarget();
@@ -172,7 +170,10 @@ public:
 			}	
 			PERF_CPU_END(_GUIDRAW);	
 
-			PERF_CPU_END(_FRAME);
+			PERF_GPU_GRABDATA;
+
+			PERF_GPU_FRAME_END;
+			PERF_CPU_FRAME_END;
 		}
 		return true;
 	}

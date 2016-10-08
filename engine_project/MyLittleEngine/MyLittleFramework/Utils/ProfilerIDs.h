@@ -1,10 +1,26 @@
 #pragma once
 
-#define PERF_CPU_FRAME_ID				0
-#define PERF_CPU_GUIUPDATE_ID			1
-#define PERF_CPU_SCENE_ID				2
-#define PERF_CPU_SCENE_UPDATE_ID		3
-#define PERF_CPU_SCENE_DRAW_ID			4
-#define PERF_CPU_GUIDRAW_ID				5
+namespace EngineCore
+{
+	enum PERF_CPU
+	{
+		PERF_CPU_FRAME,
+		PERF_CPU_GUIUPDATE,
+		PERF_CPU_SCENE,
+		PERF_CPU_SCENE_UPDATE,
+		PERF_CPU_SCENE_DRAW,
+		PERF_CPU_GUIDRAW,
 
-#define PERF_IDS_COUNT					6
+		PERF_CPU_COUNT,
+	};
+
+	enum PERF_GPU
+	{
+		PERF_GPU_FRAME,
+
+		PERF_GPU_SCENE,
+		PERF_GPU_GUI,
+
+		PERF_GPU_COUNT,
+	};
+}
