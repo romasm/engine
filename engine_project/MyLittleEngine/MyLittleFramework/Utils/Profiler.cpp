@@ -332,6 +332,11 @@ void Profiler::Dump()
 		for(uint32_t j = 0; j < perf_data[i].capacity(); j++)
 			stream.write((char*)perf_data[i][j].data(), sizeof(double) * perf_data[i][j].size());
 
+	uint32_t gpuParamsCount = PERF_GPU::PERF_GPU_COUNT;
+	stream.write((char*)&gpuParamsCount, sizeof(uint32_t));
+	for(uint32_t i = 0; i < PERF_GPU::PERF_GPU_COUNT; i++)
+		stream.write((char*)gpu_perf_data[i].data(), sizeof(double) * gpu_perf_data[i].size());
+
 	stream.close();
 
 	LOG("Performance for last %i frames dumped in %s", PERF_FRAMES_DUMP, filename.c_str());

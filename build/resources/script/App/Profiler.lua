@@ -30,8 +30,12 @@ function Profiler:FillWindow()
     self.stats_cur_prc = stats_dumb:GetChildById('cur_prc'):GetInherited()
     self.stats_avg_prc = stats_dumb:GetChildById('avg_prc'):GetInherited()
     self.stats_max_prc = stats_dumb:GetChildById('max_prc'):GetInherited()
-    self.stats_frame_ms = stats_dumb:GetChildById('frame_ms'):GetInherited()
-    self.stats_frame_fps = stats_dumb:GetChildById('frame_fps'):GetInherited()
+
+    local stats_common_dumb = self.profiler_win.entity:GetChildById('common_stats')
+    self.stats_frame_ms = stats_common_dumb:GetChildById('frame_ms'):GetInherited()
+    self.stats_frame_fps = stats_common_dumb:GetChildById('frame_fps'):GetInherited()
+    self.stats_cpuframe = stats_common_dumb:GetChildById('cpu_frame_ms'):GetInherited()
+    self.stats_gpuframe = stats_common_dumb:GetChildById('gpu_frame_ms'):GetInherited()
 
     self.frame_rect = self.profiler_win.entity:GetChildById('frame_rect')
 
@@ -190,6 +194,8 @@ function Profiler:Init()
     self.stats_cur_count = 0
 
     self.total_frame_time = 0
+    self.cpu_frame_time = 0
+    self.gpu_frame_time = 0
     self.total_frame_count = 0
 
     loader.require("ProfilerWindow", Profiler.reload)
@@ -234,16 +240,25 @@ function Profiler:Tick(dt)
     local gpu_frame_time = self.profiler:GetGpuCurrentTimeSlice(0)
     local gpu_total_time = gpu_frame_time.x + gpu_frame_time.y
 
+    self.cpu_frame_time = self.cpu_frame_time + total_time
+    self.gpu_frame_time = self.gpu_frame_time + gpu_total_time
     self.total_frame_time = self.total_frame_time + dt
+
     self.total_frame_count = self.total_frame_count + 1
     if self.total_frame_time > 100 then
         local total_time = self.total_frame_time / self.total_frame_count
         local fps = 1000.0 / total_time
-        self.total_frame_count = 0
-        self.total_frame_time = 0
 
         self.stats_frame_ms:SetString(string.format("%.2f ms", total_time))
         self.stats_frame_fps:SetString(string.format("%.1f fps", fps))
+        
+        self.stats_cpuframe:SetString(string.format("%.2f ms", self.cpu_frame_time / self.total_frame_count))
+        self.stats_gpuframe:SetString(string.format("%.2f ms", self.gpu_frame_time / self.total_frame_count))
+        
+        self.total_frame_count = 0
+        self.total_frame_time = 0
+        self.cpu_frame_time = 0
+        self.gpu_frame_time = 0
     end
 
     if self.stats then
@@ -293,23 +308,19 @@ function Profiler:Tick(dt)
     for i = 1, self.threads_count do
         for j = 1, self.ids_count do 
             local id_time = self.profiler:GetCurrentTimeSlice(j - 1, i - 1)
-            --if id_time.x ~= 0 or id_time.y ~= 0 then
-                self.ids_btns[i][j].entity.left = self.line_w * math.min(1, id_time.x / total_time)
-                self.ids_btns[i][j].entity.width = self.line_w * math.min(1, id_time.y / total_time)
-                self.ids_btns[i][j].entity.enable = true
-                self.ids_btns[i][j].entity:UpdatePosSize()
-            --end
+            self.ids_btns[i][j].entity.left = CMath.Round( self.line_w * math.min(1, id_time.x / total_time) )
+            self.ids_btns[i][j].entity.width = CMath.Round( self.line_w * math.min(1, id_time.y / total_time) )
+            self.ids_btns[i][j].entity.enable = true
+            self.ids_btns[i][j].entity:UpdatePosSize()
         end
     end
     
     for j = 1, self.gpu_ids_count do 
         local id_time = self.profiler:GetGpuCurrentTimeSlice(j - 1)
-        --if id_time.x ~= 0 or id_time.y ~= 0 then
-            self.gpu_ids_btns[j].entity.left = self.line_w * math.min(1, id_time.x / gpu_total_time)
-            self.gpu_ids_btns[j].entity.width = self.line_w * math.min(1, id_time.y / gpu_total_time)
-            self.gpu_ids_btns[j].entity.enable = true
-            self.gpu_ids_btns[j].entity:UpdatePosSize()
-        --end
+        self.gpu_ids_btns[j].entity.left = CMath.Round( self.line_w * math.min(1, id_time.x / gpu_total_time) )
+        self.gpu_ids_btns[j].entity.width = CMath.Round( self.line_w * math.min(1, id_time.y / gpu_total_time) )
+        self.gpu_ids_btns[j].entity.enable = true
+        self.gpu_ids_btns[j].entity:UpdatePosSize()
     end
 end
 

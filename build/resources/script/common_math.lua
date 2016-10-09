@@ -42,3 +42,7 @@ function CMath.ColorLerp(color1, color2, alpha)
     res.w = color1.w * inv_alpha + color2.w * alpha
     return res
 end
+
+function CMath.Round(value)
+    return math.floor(value + 0.5)
+end

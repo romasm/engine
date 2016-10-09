@@ -342,6 +342,94 @@ return GuiWindow({
                 },
             }),
                  
+            GuiRect({
+                styles = {GuiStyles.ghost,},
+                width = 1,
+                height = 100,
+                height_percent = true,
+                left = 200,
+                top = 0,
+                background = {
+                    color = 'act_01',
+                },                
+            }),
+
+            GuiDumb({
+                styles = {GuiStyles.live,},
+                width = 200,
+                height = 500,
+                left = 20,
+                top = 440,
+                id = 'common_stats',
+                
+                GuiString({
+                    styles = {GuiStyles.bg_str_normal,},
+                    str = "Frame time",
+                    top = 50,
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.bg_str_normal,},
+                    str = "CPU",
+                    top = 80,
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 100,
+                    top = 82,
+                    id = 'cpu_frame_ms',
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.bg_str_normal,},
+                    str = "GPU",
+                    top = 105,
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 100,
+                    top = 105,
+                    id = 'gpu_frame_ms',
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.bg_str_normal,},
+                    str = "Real",
+                    top = 130,
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 100,
+                    top = 130,
+                    id = 'frame_ms',
+                }),
+
+                GuiString({
+                    styles = {GuiStyles.string_props_01,},
+                    str = "",
+                    static = false,
+                    length = 16,
+                    align = GUI_ALIGN.RIGHT,
+                    right = 33,
+                    top = 130,
+                    id = 'frame_fps',
+                }), 
+            }),
                  
             GuiDumb({
                 styles = {GuiStyles.live,},
@@ -448,47 +536,7 @@ return GuiWindow({
                     top = 80,
                     id = 'max_prc',
                 }),
-
-                GuiString({
-                    styles = {GuiStyles.bg_str_normal,},
-                    str = "Total",
-                    top = 130,
-                }),
-
-                GuiString({
-                    styles = {GuiStyles.string_props_01,},
-                    str = "",
-                    static = false,
-                    length = 16,
-                    align = GUI_ALIGN.RIGHT,
-                    right = 100,
-                    top = 130,
-                    id = 'frame_ms',
-                }),
-
-                GuiString({
-                    styles = {GuiStyles.string_props_01,},
-                    str = "",
-                    static = false,
-                    length = 16,
-                    align = GUI_ALIGN.RIGHT,
-                    right = 33,
-                    top = 130,
-                    id = 'frame_fps',
-                }),
             }),
-        }),
-
-        GuiRect({
-            styles = {GuiStyles.ghost,},
-            width = 1,
-            height = 100,
-            height_percent = true,
-            left = 200,
-            top = 0,
-            background = {
-                color = 'act_01',
-            },                
         }),
     }),
 })
