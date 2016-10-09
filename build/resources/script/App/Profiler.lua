@@ -115,12 +115,53 @@ function Profiler:FillWindow()
                 id = tostring(param_id).."_"..tostring(thread_id),
                 alt = "Detail view of "..name,
                 events = {
-                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Profiler:SetStatsParam(self) end,
-                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Profiler:SetStatsParam(nil) end,},
+                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Profiler:SetStatsParam(self, false) end,
+                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Profiler:SetStatsParam(nil, false) end,},
             })
             self.threads_lines[i].entity:AttachChild( self.ids_btns[i][j].entity )
         end
     end
+
+    self.gru_rect = self.profiler_win.entity:GetChildById('gru_rect')
+    self.gpu_ids_count = self.profiler:GetGpuIDsCount()
+    
+    self.gpu_ids_btns = {}
+    for j = 1, self.gpu_ids_count do 
+        local param_id = j - 1
+        local name = self.profiler:GetGpuIDName(param_id)
+        local depth = self.profiler:GetGpuIDDepth(param_id)
+
+        local id_color = nil
+        local color_lerp = depth / 2.0
+        if color_lerp > 2 then
+            color_lerp = math.min(1.0, color_lerp - 2)
+            id_color = CMath.ColorLerp( Vector4(1.0, 0.0, 0.0, 0.4), Vector4(1.0, 0.0, 1.0, 0.4), color_lerp)
+        elseif color_lerp > 1 then 
+            color_lerp = math.min(1.0, color_lerp - 1)
+            id_color = CMath.ColorLerp( Vector4(1.0, 1.0, 0.0, 0.4), Vector4(1.0, 0.0, 0.0, 0.4), color_lerp)
+        else
+            id_color = CMath.ColorLerp( Vector4(0.0, 1.0, 0.0, 0.4), Vector4(1.0, 1.0, 0.0, 0.4), color_lerp)
+        end
+        
+        self.gpu_ids_btns[j] = GuiButton({
+                styles = {GuiStyles.perf_id,},
+                background = {color = id_color,},
+                text = {str = name},
+                enable = false,
+                height_percent = true,
+                height = 90 - math.min(80, depth * 15),
+                bottom = 5,
+                bottom_percent = true,
+                valign = GUI_VALIGN.BOTTOM,
+                id = tostring(param_id),
+                alt = "Detail view of "..name,
+                events = {
+                    [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Profiler:SetStatsParam(self, true) end,
+                    [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Profiler:SetStatsParam(nil, true) end,},
+        })
+        self.gru_rect:AttachChild( self.gpu_ids_btns[j].entity )
+    end
+    
 end
 
 function Profiler:Init()
@@ -189,6 +230,9 @@ function Profiler:Tick(dt)
     
     local frame_time = self.profiler:GetCurrentTimeSlice(0, 0)
     local total_time = frame_time.x + frame_time.y
+    
+    local gpu_frame_time = self.profiler:GetGpuCurrentTimeSlice(0)
+    local gpu_total_time = gpu_frame_time.x + gpu_frame_time.y
 
     self.total_frame_time = self.total_frame_time + dt
     self.total_frame_count = self.total_frame_count + 1
@@ -205,8 +249,16 @@ function Profiler:Tick(dt)
     if self.stats then
         self.stats_update_time = self.stats_update_time + dt
 
-        local id_time = self.profiler:GetCurrentTimeSlice(self.stats_param, self.stats_thread)
-        local relative_time = id_time.y / frame_time.y
+        local id_time = Vector2(0,0)
+        local relative_time = 0
+
+        if self.stats_thread < 0 then
+            id_time = self.profiler:GetGpuCurrentTimeSlice(self.stats_param)
+            relative_time = id_time.y / gpu_frame_time.y
+        else
+            id_time = self.profiler:GetCurrentTimeSlice(self.stats_param, self.stats_thread)
+            relative_time = id_time.y / frame_time.y
+        end
 
         self.stats_cur = self.stats_cur + id_time.y
         self.stats_cur_p = self.stats_cur_p + relative_time
@@ -241,13 +293,23 @@ function Profiler:Tick(dt)
     for i = 1, self.threads_count do
         for j = 1, self.ids_count do 
             local id_time = self.profiler:GetCurrentTimeSlice(j - 1, i - 1)
-            if id_time.x ~= 0 or id_time.y ~= 0 then
+            --if id_time.x ~= 0 or id_time.y ~= 0 then
                 self.ids_btns[i][j].entity.left = self.line_w * math.min(1, id_time.x / total_time)
                 self.ids_btns[i][j].entity.width = self.line_w * math.min(1, id_time.y / total_time)
                 self.ids_btns[i][j].entity.enable = true
                 self.ids_btns[i][j].entity:UpdatePosSize()
-            end
+            --end
         end
+    end
+    
+    for j = 1, self.gpu_ids_count do 
+        local id_time = self.profiler:GetGpuCurrentTimeSlice(j - 1)
+        --if id_time.x ~= 0 or id_time.y ~= 0 then
+            self.gpu_ids_btns[j].entity.left = self.line_w * math.min(1, id_time.x / gpu_total_time)
+            self.gpu_ids_btns[j].entity.width = self.line_w * math.min(1, id_time.y / gpu_total_time)
+            self.gpu_ids_btns[j].entity.enable = true
+            self.gpu_ids_btns[j].entity:UpdatePosSize()
+        --end
     end
 end
 
@@ -262,7 +324,7 @@ function Profiler:SetRealtime(realtime)
     self.realtime = realtime
 end
 
-function Profiler:SetStatsParam(btn)
+function Profiler:SetStatsParam(btn, gpu)
     self.stats_avg = 0
     self.stats_avg_p = 0
     self.stats_frame_count = 0
@@ -294,12 +356,17 @@ function Profiler:SetStatsParam(btn)
         local btn_id = btn.entity:GetID()
 
         self.stats = true
-        local param, thread = btn_id:match("([^_]+)_([^_]+)")
-        self.stats_param = tonumber(param)        
-        self.stats_thread = tonumber(thread)
+        if gpu then
+            self.stats_param = tonumber(btn_id)        
+            self.stats_thread = -1
+            name = "GPU_".. self.profiler:GetGpuIDName(self.stats_param)
+        else
+            local param, thread = btn_id:match("([^_]+)_([^_]+)")
+            self.stats_param = tonumber(param)        
+            self.stats_thread = tonumber(thread)
+            name = self.profiler:GetIDName(self.stats_param)
+        end
         self.stats_btn = btn
-
-        name = self.profiler:GetIDName(self.stats_param)
     end
 
     local stats_dumb = self.profiler_win.entity:GetChildById('param_stats')

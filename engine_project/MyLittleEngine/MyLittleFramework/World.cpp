@@ -231,6 +231,7 @@ void World::Frame()
 	m_staticMeshSystem->RegToDraw();
 	m_lineGeometrySystem->RegToDraw();
 	
+	PERF_GPU_TIMESTAMP(_SCENE_SHADOWS);
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
 
@@ -240,9 +241,11 @@ void World::Frame()
 	{
 		if(it->StartFrame(&m_world_timer))
 		{
+			PERF_GPU_TIMESTAMP(_SCENE_FORWARD);
 			it->OpaqueForwardStage();
 			it->HudStage();
 
+			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
 			it->OpaqueDefferedStage();
 
 			it->TransparentForwardStage();

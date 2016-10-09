@@ -17,6 +17,9 @@ void Profiler::InitParams()
 
 	gpu_ids_name[PERF_GPU::PERF_GPU_FRAME] = name_depth("Frame", 0);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE] = name_depth("Scene", 1);
+	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2);
+	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
+	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_DEFFERED] = name_depth("Deffered", 2);
 	gpu_ids_name[PERF_GPU::PERF_GPU_GUI] = name_depth("Gui", 1);
 }
 
@@ -133,6 +136,13 @@ void Profiler::CPU_BeginFrame()
 	}
 	frameBegin[currentFrameID] = Timer::ForcedGetCurrentTime();
 
+	for(uint32_t i = 0; i < PERF_CPU::PERF_CPU_COUNT; i++)
+		for(uint32_t j = 0; j < perf_data[i].capacity(); j++)
+		{
+			perf_data[i][j][currentFrameID].begin = 0;
+			perf_data[i][j][currentFrameID].length = 0;
+		}
+
 	perf_data[PERF_CPU::PERF_CPU_FRAME][0][currentFrameID].begin = 
 		(float)(Timer::ForcedGetCurrentTime() - frameBegin[currentFrameID]);
 }
@@ -228,30 +238,50 @@ void Profiler::GPU_GrabData()
 	gpu_prev_id.assign(-1);
 
 	uint64_t timeBegin = 0;
+	uint16_t maxDepth = 0;
 	for (uint32_t i = 0; i <= PERF_GPU::PERF_GPU_COUNT; i++)
 	{
 		uint64_t time;
 		if( CONTEXT->GetData(timestamps[i][prevCollect], &time, sizeof(uint64_t), 0) != S_OK )
 		{
-			ERR("Cant get profiler GPU timestamp query data for id: %u !", i);
-			return;
+			//ERR("Cant get profiler GPU timestamp query data for id: %u !", i);
+			if(i < PERF_GPU::PERF_GPU_COUNT)
+			{
+				gpu_perf_data[i][prevFrameID].begin = 0;
+				gpu_perf_data[i][prevFrameID].length = 0;
+			}
+			continue;
 		}
 
 		if(i == 0)
 			timeBegin = time;
 
+		float timeslice = 1000.0f * float(time - timeBegin) / timestampDisjoint.Frequency;
+
 		if(i < PERF_GPU::PERF_GPU_COUNT)
-			gpu_perf_data[i][prevFrameID].begin = float(time - timeBegin) / timestampDisjoint.Frequency;
+			gpu_perf_data[i][prevFrameID].begin = timeslice;
 
 		uint16_t depth = 0;
 		if(i < PERF_GPU::PERF_GPU_COUNT)
 			depth = gpu_ids_name[i].depth;
 		
+		maxDepth = max(maxDepth, depth);
+
 		int32_t prevID = gpu_prev_id[depth];
 		if(prevID >= 0)
-			gpu_perf_data[prevID][prevFrameID].length = float(time - gpu_perf_data[prevID][prevFrameID].begin) / timestampDisjoint.Frequency;
-		else
-			gpu_prev_id[depth] = i;
+		{
+			gpu_perf_data[prevID][prevFrameID].length = timeslice - gpu_perf_data[prevID][prevFrameID].begin;
+			for(uint16_t j = depth + 1; j <= maxDepth; j++)
+			{
+				int32_t prevDepthID = gpu_prev_id[j];
+				if(prevDepthID < 0)
+					continue;
+				gpu_perf_data[prevDepthID][prevFrameID].length = timeslice - gpu_perf_data[prevDepthID][prevFrameID].begin;
+				gpu_prev_id[j] = -1;
+			}
+		}
+		
+		gpu_prev_id[depth] = i;
 	}
 }
 
