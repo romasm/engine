@@ -9,18 +9,22 @@ Profiler* Profiler::instance = nullptr;
 void Profiler::InitParams()
 {
 	ids_name[PERF_CPU::PERF_CPU_FRAME] = name_depth("Frame", 0);
-	ids_name[PERF_CPU::PERF_CPU_GUIUPDATE] = name_depth("GuiUpdate", 1);
+	ids_name[PERF_CPU::PERF_CPU_LUA_TICK] = name_depth("LuaTick", 1);
+	ids_name[PERF_CPU::PERF_CPU_WIN_MSG] = name_depth("Win Msg", 1);
+	ids_name[PERF_CPU::PERF_CPU_GUI_UPDATE] = name_depth("GuiUpdate", 1);
 	ids_name[PERF_CPU::PERF_CPU_SCENE] = name_depth("Scene", 1);
 	ids_name[PERF_CPU::PERF_CPU_SCENE_UPDATE] = name_depth("SceneUpdate", 2);
 	ids_name[PERF_CPU::PERF_CPU_SCENE_DRAW] = name_depth("SceneDraw", 2);
-	ids_name[PERF_CPU::PERF_CPU_GUIDRAW] = name_depth("GuiDraw & Present", 1);
+	ids_name[PERF_CPU::PERF_CPU_GUI_DRAW] = name_depth("GuiDraw", 1);
+	ids_name[PERF_CPU::PERF_CPU_PRESENT] = name_depth("Present", 1);
 
 	gpu_ids_name[PERF_GPU::PERF_GPU_FRAME] = name_depth("Frame", 0);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE] = name_depth("Scene", 1);
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2);
+	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2); 
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_DEFFERED] = name_depth("Deffered", 2);
 	gpu_ids_name[PERF_GPU::PERF_GPU_GUI] = name_depth("Gui", 1);
+	gpu_ids_name[PERF_GPU::PERF_GPU_PRESENT] = name_depth("Present", 1);
 }
 
 Profiler::Profiler()

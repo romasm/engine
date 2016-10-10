@@ -133,22 +133,24 @@ public:
 			// job update
 			jobSystem->Tick(m_timer.dt_ms);
 			
-			PERF_CPU_BEGIN(_GUIUPDATE);
-
+			PERF_CPU_BEGIN(_LUA_TICK);
 			// Lua
 			if(tick_func)
 				(*tick_func)((*main_table), m_timer.dt_ms);
-		
+			PERF_CPU_END(_LUA_TICK);
+			
+			PERF_CPU_BEGIN(_WIN_MSG);
 			if(!force_update_gui)
 			{
 				// Events
 				if(!m_wins.Frame())
 					return false;
 			}
-
-			m_hud->Update(force_update_gui, no_gui_gc);
+			PERF_CPU_END(_WIN_MSG);
 			
-			PERF_CPU_END(_GUIUPDATE);	
+			PERF_CPU_BEGIN(_GUI_UPDATE);
+			m_hud->Update(force_update_gui, no_gui_gc);
+			PERF_CPU_END(_GUI_UPDATE);	
 
 			// Render
 			PERF_CPU_BEGIN(_SCENE);	
@@ -158,17 +160,21 @@ public:
 
 			PERF_CPU_END(_SCENE);
 
-			PERF_CPU_BEGIN(_GUIDRAW);
+			PERF_CPU_BEGIN(_GUI_DRAW);
 			PERF_GPU_TIMESTAMP(_GUI);		
 			for(auto& window : *WindowsMgr::Get()->GetMap())
 			{
 				window.second->ClearRenderTarget();
 
 				m_hud->Draw(window.first);
-				
+			}
+			PERF_CPU_END(_GUI_DRAW);	
+			
+			PERF_CPU_BEGIN(_PRESENT);
+			PERF_GPU_TIMESTAMP(_PRESENT);	
+			for(auto& window : *WindowsMgr::Get()->GetMap())
 				window.second->Swap();
-			}	
-			PERF_CPU_END(_GUIDRAW);	
+			PERF_CPU_END(_PRESENT);	
 
 			PERF_GPU_GRABDATA;
 

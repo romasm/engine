@@ -82,7 +82,7 @@ function Main:Start()
 end
 
 function Main:onTick(dt) 
-    -- remove in consumer
+    -- remove in consumer (eat time!!!)
 	self.reload_time = self.reload_time + dt
 
     if self.reload_time > 2000 then
