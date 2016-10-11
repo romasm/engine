@@ -34,7 +34,10 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	shadowsBuffer = nullptr;
 	shadowsBufferSRV = nullptr;
 	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
+	{
 		shadowsBufferDSV[i] = nullptr;
+		shadowsBufferRTV[i] = nullptr;
+	}
 
 	shadowmap_array.create(SHADOWMAPS_COUNT);
 
@@ -70,13 +73,13 @@ bool SceneRenderMgr::initShadowBuffer()
 	ZeroMemory(&shadowBufferDesc, sizeof(shadowBufferDesc));
 	shadowBufferDesc.Width = SHADOWS_BUF_RES;
 	shadowBufferDesc.Height = SHADOWS_BUF_RES;
-	shadowBufferDesc.MipLevels = 1;
+	shadowBufferDesc.MipLevels = 0;
 	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
 	shadowBufferDesc.Format = DXGI_FORMAT_R32_TYPELESS; //DXGI_FORMAT_D32_FLOAT
 	shadowBufferDesc.SampleDesc.Count = 1;
 	shadowBufferDesc.SampleDesc.Quality = 0;
 	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	shadowBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowBufferDesc.BindFlags = /*D3D11_BIND_RENDER_TARGET | */D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	shadowBufferDesc.CPUAccessFlags = 0;
 	shadowBufferDesc.MiscFlags = 0;
 	if( FAILED(Render::CreateTexture2D(&shadowBufferDesc, NULL, &shadowsBuffer)) )
@@ -91,7 +94,7 @@ bool SceneRenderMgr::initShadowBuffer()
 	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
 	if( FAILED(Render::CreateShaderResourceView(shadowsBuffer, &shaderResourceViewDesc, &shadowsBufferSRV)) )
 		return false;
-
+	
 	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -103,9 +106,24 @@ bool SceneRenderMgr::initShadowBuffer()
 		depthStencilViewDesc.Texture2DArray.FirstArraySlice = i;
 		if( FAILED(Render::CreateDepthStencilView(shadowsBuffer, &depthStencilViewDesc, &shadowsBufferDSV[i])) )
 			return false;
+
+		/*D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
+		renderTargetViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		renderTargetViewDesc.Texture2DArray.MipSlice = 0;
+		renderTargetViewDesc.Texture2DArray.ArraySize = 1;
+		renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+		if( FAILED(Render::CreateRenderTargetView(shadowsBuffer, &renderTargetViewDesc, &shadowsBufferRTV[i])) )
+			return false;*/
 	}
 
 	return true;
+}
+
+void SceneRenderMgr::GenerateShadowHiZ()
+{
+
 }
 
 bool SceneRenderMgr::CompareShadows(ShadowMap& first, ShadowMap& second)

@@ -256,6 +256,7 @@ namespace EngineCore
 
 		void ResolveShadowMaps();
 		ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
+		void GenerateShadowHiZ();
 
 		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
 		static void SwapShadows(ShadowMap* first, ShadowMap* second, RArray<ShadowMap>* arr);
@@ -425,6 +426,7 @@ namespace EngineCore
 		ID3D11Texture2D* shadowsBuffer;
 		ID3D11ShaderResourceView* shadowsBufferSRV;
 		ID3D11DepthStencilView* shadowsBufferDSV[SHADOWS_BUF_SIZE];
+		ID3D11RenderTargetView* shadowsBufferRTV[SHADOWS_BUF_SIZE];
 
 		CameraComponent* current_cam;
 

@@ -247,9 +247,11 @@ void World::Frame()
 
 			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
 			it->OpaqueDefferedStage();
-
+			
+			PERF_GPU_TIMESTAMP(_SCENE_APLHA);
 			it->TransparentForwardStage();
-
+			
+			PERF_GPU_TIMESTAMP(_SCENE_LDR);
 			it->HDRtoLDRStage();
 
 			it->EndFrame();

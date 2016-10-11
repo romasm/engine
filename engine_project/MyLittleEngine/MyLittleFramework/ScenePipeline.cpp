@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ScenePipeline.h"
 #include "Render.h"
+#include "Utils\Profiler.h"
 
 using namespace EngineCore;
 
@@ -588,6 +589,9 @@ void ScenePipeline::OpaqueForwardStage()
 
 	render_mgr->DrawOpaque(this);
 
+	//ID3D11Resource* hiz_topmip = nullptr;
+	//rt_HiZDepth->GetRenderTargetView(0)->GetResource(&hiz_topmip);
+	//CONTEXT->CopyResource(hiz_topmip, sceneDepth);
 	rt_HiZDepth->SetRenderTarget();
 	sp_OpaqueDepthCopy->Draw();
 }
@@ -942,17 +946,21 @@ void ScenePipeline::OpaqueDefferedStage()
 	int t_width = EngineSettings::EngSets.wres;
 	int t_height = EngineSettings::EngSets.hres;
 	
+	PERF_GPU_TIMESTAMP(_HIZ_GEN);
 	HiZMips();
 
 	rt_SSR->ClearRenderTargets();
 	rt_SSR->SetRenderTarget();
-
+	
+	PERF_GPU_TIMESTAMP(_SSR);
 	Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
 	//sp_SSR->Draw();
 
 	// ao
+	PERF_GPU_TIMESTAMP(_AO);
+
 	rt_AO->ClearRenderTargets();
 	rt_AO->SetRenderTarget();
 
@@ -964,6 +972,11 @@ void ScenePipeline::OpaqueDefferedStage()
 	g_AO->blur(rt_AO, 0, rt_HiZDepth->GetShaderResourceView(0));
 #endif
 	
+	PERF_GPU_TIMESTAMP(_SHADOW_HIZ);
+	render_mgr->GenerateShadowHiZ();
+	auto shadowBuffer = render_mgr->GetShadowBuffer();
+
+	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	// mat params
 	D3D11_MAPPED_SUBRESOURCE mappedResourceM;
 	if(FAILED(Render::Map(m_MaterialBuffer.buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceM)))
@@ -973,9 +986,6 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
-	auto shadowBuffer = render_mgr->GetShadowBuffer();
-	//Render::PSSetShaderResources(3, 1, &shadowBuffer);
-	// TEMP: todo
 	sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
 
 	LoadLights();
@@ -994,6 +1004,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	sp_OpaqueDefferedDirect->Draw();
 
+	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
 	// final 
 	rt_OpaqueFinal->ClearRenderTargets();
 	rt_OpaqueFinal->SetRenderTarget();
@@ -1001,7 +1012,8 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	// blur
 	rt_OpaqueFinal->GenerateMipmaps(this); // !!!!!!!!!!!!!! TODO: separete blur
-
+	
+	PERF_GPU_TIMESTAMP(_HDR_BLOOM);
 	// avglum
 	rt_AvgLum->ClearRenderTargets();
 
@@ -1029,6 +1041,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 void ScenePipeline::HDRtoLDRStage()
 {
+	PERF_GPU_TIMESTAMP(_COMBINE);
 	rt_Antialiased->ClearRenderTargets();
 
 	// combine opaque and transparent, hdr, tonemap
@@ -1042,6 +1055,7 @@ void ScenePipeline::HDRtoLDRStage()
 
 	sp_HDRtoLDR->Draw();
 
+	PERF_GPU_TIMESTAMP(_AA);
 	// smaa
 	rt_Antialiased->SetRenderTarget(1, 2);
 	sp_Antialiased[0]->Draw();
