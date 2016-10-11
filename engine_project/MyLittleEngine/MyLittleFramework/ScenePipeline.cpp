@@ -306,7 +306,7 @@ bool ScenePipeline::InitAvgRt()
 	if(!rt_AvgLumCurrent->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false;
 	rt_AvgLumCurrent->ClearRenderTargets(0.5,0.5,0.5,0.5);
 
-	sp_AvgLum = new ScreenPlane(2, 2, SP_MATERIAL_AVGLUM);
+	sp_AvgLum = new ScreenPlane(SP_MATERIAL_AVGLUM);
 	sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
 	sp_AvgLum->SetFloat(CONFIG(hdr_limit_min), 2);
 	sp_AvgLum->SetFloat(CONFIG(hdr_limit_max), 3);
@@ -406,10 +406,10 @@ bool ScenePipeline::InitRts()
 	if(!rt_3DHud->Init(width, height, sceneDepthDSV))return false;
 	if(!rt_3DHud->AddRT(DXGI_FORMAT_R8G8B8A8_UNORM))return false;
 	
-	sp_OpaqueDepthCopy = new ScreenPlane(width, height, SP_MATERIAL_DEPTH_OPAC_DIR);
+	sp_OpaqueDepthCopy = new ScreenPlane(SP_MATERIAL_DEPTH_OPAC_DIR);
 	sp_OpaqueDepthCopy->SetTexture(sceneDepthSRV, 0);
 
-	sp_SSR = new ScreenPlane(width, height, SP_SHADER_SSR);
+	sp_SSR = new ScreenPlane(SP_SHADER_SSR);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 0);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 1);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
@@ -418,22 +418,22 @@ bool ScenePipeline::InitRts()
 	sp_SSR->SetTexture(rt_HiZVis->GetShaderResourceView(0), 5);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 6);
 
-	sp_OpaqueDefferedDirect = new ScreenPlane(width, height, SP_MATERIAL_DEFFERED_OPAC_DIR);
+	sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_DIR);
 	//sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_NOISE2D, 0);
 	sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 3);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 4);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 5);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 6);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 7);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 8);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 9);
-	sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 10);
-	sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
-	sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 3);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 4);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 5);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 6);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 7);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 8);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 9);
+	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 10);
+	sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 11);
+	sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 12);
+	sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
 
-	sp_AO = new ScreenPlane(width, height, SP_MATERIAL_AO);
+	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
 	sp_AO->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 1);
 	sp_AO->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 2);
@@ -443,7 +443,7 @@ bool ScenePipeline::InitRts()
 	sp_AO->SetFloat(CONFIG(ao_hiz_mip_scaler), 3);
 	sp_AO->SetFloat(CONFIG(ao_max_dist_sqr), 4);
 	
-	sp_FinalOpaque = new ScreenPlane(width, height, SP_MATERIAL_COMBINE);
+	sp_FinalOpaque = new ScreenPlane(SP_MATERIAL_COMBINE);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(0), 0);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(1), 1);
 	sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 2);
@@ -452,13 +452,13 @@ bool ScenePipeline::InitRts()
 	sp_AvgLum->SetTexture(rt_OpaqueFinal->GetShaderResourceView(1), 0);
 	sp_AvgLum->SetFloat(float(rt_OpaqueFinal->GetMipsCountInFullChain() - 2), 0);
 
-	sp_Bloom = new ScreenPlane(t_width_half, t_height_half, SP_MATERIAL_BLOOM_FIND);
+	sp_Bloom = new ScreenPlane(SP_MATERIAL_BLOOM_FIND);
 	sp_Bloom->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
 	sp_Bloom->SetTexture(rt_AvgLum->GetShaderResourceView(0), 1);
 	sp_Bloom->SetFloat(CONFIG(hdr_bloom_threshold), 0);
 	sp_Bloom->SetFloat(CONFIG(hdr_bloom_max), 1);
 
-	sp_HDRtoLDR = new ScreenPlane(width, height, SP_MATERIAL_HDR);
+	sp_HDRtoLDR = new ScreenPlane(SP_MATERIAL_HDR);
 	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
 	sp_HDRtoLDR->SetTexture(rt_TransparentForward->GetShaderResourceView(0), 1);
 	sp_HDRtoLDR->SetTexture(rt_3DHud->GetShaderResourceView(0), 2);
@@ -488,11 +488,11 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetFloat(CONFIG(hdr_bloom_amount), 10);
 	sp_HDRtoLDR->SetFloat(CONFIG(hdr_bloom_mul), 11);
 
-	sp_Antialiased[0] = new ScreenPlane(width, height, SP_MATERIAL_AA_EDGE);
+	sp_Antialiased[0] = new ScreenPlane(SP_MATERIAL_AA_EDGE);
 	sp_Antialiased[0]->SetTexture(rt_Antialiased->GetShaderResourceView(0), 0);
 	sp_Antialiased[0]->SetFloat(CONFIG(smaa_threshold), 0);
 
-	sp_Antialiased[1] = new ScreenPlane(width, height, SP_MATERIAL_AA_BLEND);
+	sp_Antialiased[1] = new ScreenPlane(SP_MATERIAL_AA_BLEND);
 	sp_Antialiased[1]->SetTextureByNameS(TEX_SMAA_AREA, 0);
 	sp_Antialiased[1]->SetTextureByNameS(TEX_SMAA_SEARCH, 1);
 	sp_Antialiased[1]->SetTexture(rt_Antialiased->GetShaderResourceView(1), 2);
@@ -504,7 +504,7 @@ bool ScenePipeline::InitRts()
 	sp_Antialiased[1]->SetFloat(0, 5);
 	sp_Antialiased[1]->SetFloat(0, 6);
 
-	sp_Antialiased[2] = new ScreenPlane(width, height, SP_MATERIAL_AA);
+	sp_Antialiased[2] = new ScreenPlane(SP_MATERIAL_AA);
 	sp_Antialiased[2]->SetTexture(rt_FinalLDR->GetShaderResourceView(0), 0);
 	sp_Antialiased[2]->SetTexture(rt_Antialiased->GetShaderResourceView(0), 1);
 
@@ -513,10 +513,10 @@ bool ScenePipeline::InitRts()
 	sp_3DHud->AddTex(rt_Antialiased->GetShaderResourceView(1));
 	sp_3DHud->AddTex(rt_3DHud->GetShaderResourceView(0));	*/
 
-	sp_HiZ_cc = new ScreenPlane(width, height, SP_MATERIAL_HIZ_DEPTH_CC);
-	sp_HiZ_cu = new ScreenPlane(width, height, SP_MATERIAL_HIZ_DEPTH_CU);
-	sp_HiZ_uc = new ScreenPlane(width, height, SP_MATERIAL_HIZ_DEPTH_UC);
-	sp_HiZ_uu = new ScreenPlane(width, height, SP_MATERIAL_HIZ_DEPTH_UU);
+	sp_HiZ_cc = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_CC);
+	sp_HiZ_cu = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_CU);
+	sp_HiZ_uc = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_UC);
+	sp_HiZ_uu = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_UU);
 
 	return true;
 }
@@ -702,8 +702,8 @@ void ScenePipeline::LoadEnvProbs()
 	if(distProb.mipsCount == 0)
 		return;
 
-	sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
-	sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
+	sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 14);
+	sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 15);
 	sp_OpaqueDefferedDirect->SetFloat(float(distProb.mipsCount), 13);
 	
 	// todo: distProb.matrix
@@ -975,6 +975,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	PERF_GPU_TIMESTAMP(_SHADOW_HIZ);
 	render_mgr->GenerateShadowHiZ();
 	auto shadowBuffer = render_mgr->GetShadowBuffer();
+	auto shadowBufferMips = render_mgr->GetShadowBufferMips();
 
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	// mat params
@@ -987,6 +988,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
 	sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
+	sp_OpaqueDefferedDirect->SetTexture(shadowBufferMips, 2);
 
 	LoadLights();
 

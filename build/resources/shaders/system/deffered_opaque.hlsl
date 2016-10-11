@@ -43,12 +43,13 @@ StructuredBuffer<MaterialParamsStructBuffer> MAT_PARAMS : register(t0);
 // from material configs
 //Texture2D noiseTex : register(t1); 
 //#define noiseResInv 1.0/512
-Texture2D envbrdfLUT : register(t2);
+Texture2D envbrdfLUT : register(t1);
 #define DFG_TEXTURE_SIZE 256
 #define NOV_MIN 0.5f/DFG_TEXTURE_SIZE
 #define NOV_MAX 1.0f - NOV_MIN
 
-Texture2DArray <float> shadows: register(t3); 
+Texture2DArray <float> shadows: register(t2); 
+Texture2DArray <float> shadowsMips: register(t3);
 
 Texture2D <float4> gb_albedo_roughY : register(t4); 
 Texture2D <float4> gb_tbn : register(t5); 

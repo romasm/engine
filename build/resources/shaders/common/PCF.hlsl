@@ -126,6 +126,7 @@ float RandomBlurfilter(float2 uv,
 float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)  
 {  
 	float4 shadMapDepth = shadows.GatherRed(samplerPointClamp, UV);
+
 	float4 compare = float4(shadMapDepth.x < depth,
 							shadMapDepth.y < depth,
 							shadMapDepth.z < depth,

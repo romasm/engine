@@ -32,12 +32,19 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	casterPointTube_array = new PointCasterTubeBuffer;	
 
 	shadowsBuffer = nullptr;
+	shadowsBufferMips = nullptr;
 	shadowsBufferSRV = nullptr;
-	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
+	shadowsBufferMipsSingleSRV = nullptr;
+	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
 	{
 		shadowsBufferDSV[i] = nullptr;
-		shadowsBufferRTV[i] = nullptr;
+		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
+			shadowsBufferRTV[i][j] = nullptr;
+		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
+			shadowsBufferMipSRV[i][j] = nullptr;
 	}
+
+	sp_shadowHiZ = nullptr;
 
 	shadowmap_array.create(SHADOWMAPS_COUNT);
 
@@ -73,18 +80,18 @@ bool SceneRenderMgr::initShadowBuffer()
 	ZeroMemory(&shadowBufferDesc, sizeof(shadowBufferDesc));
 	shadowBufferDesc.Width = SHADOWS_BUF_RES;
 	shadowBufferDesc.Height = SHADOWS_BUF_RES;
-	shadowBufferDesc.MipLevels = 0;
+	shadowBufferDesc.MipLevels = 1;
 	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
 	shadowBufferDesc.Format = DXGI_FORMAT_R32_TYPELESS; //DXGI_FORMAT_D32_FLOAT
 	shadowBufferDesc.SampleDesc.Count = 1;
 	shadowBufferDesc.SampleDesc.Quality = 0;
 	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	shadowBufferDesc.BindFlags = /*D3D11_BIND_RENDER_TARGET | */D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	shadowBufferDesc.CPUAccessFlags = 0;
 	shadowBufferDesc.MiscFlags = 0;
 	if( FAILED(Render::CreateTexture2D(&shadowBufferDesc, NULL, &shadowsBuffer)) )
 		return false;
-
+	
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -94,8 +101,33 @@ bool SceneRenderMgr::initShadowBuffer()
 	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
 	if( FAILED(Render::CreateShaderResourceView(shadowsBuffer, &shaderResourceViewDesc, &shadowsBufferSRV)) )
 		return false;
+
+	ZeroMemory(&shadowBufferDesc, sizeof(shadowBufferDesc));
+	shadowBufferDesc.Width = SHADOWS_BUF_RES / 2;
+	shadowBufferDesc.Height = SHADOWS_BUF_RES / 2;
+	shadowBufferDesc.MipLevels = SHADOWS_BUF_MIPS;
+	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
+	shadowBufferDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	shadowBufferDesc.SampleDesc.Count = 1;
+	shadowBufferDesc.SampleDesc.Quality = 0;
+	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	shadowBufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	shadowBufferDesc.CPUAccessFlags = 0;
+	shadowBufferDesc.MiscFlags = 0;
+	if( FAILED(Render::CreateTexture2D(&shadowBufferDesc, NULL, &shadowsBufferMips)) )
+		return false;
 	
-	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
+	ZeroMemory(&shaderResourceViewDesc, sizeof(shaderResourceViewDesc));
+	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+	shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2DArray.MipLevels = -1;	
+	shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;	
+	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
+	if( FAILED(Render::CreateShaderResourceView(shadowsBufferMips, &shaderResourceViewDesc, &shadowsBufferMipsSingleSRV)) )
+		return false;
+	
+	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 		ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
@@ -107,23 +139,70 @@ bool SceneRenderMgr::initShadowBuffer()
 		if( FAILED(Render::CreateDepthStencilView(shadowsBuffer, &depthStencilViewDesc, &shadowsBufferDSV[i])) )
 			return false;
 
-		/*D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
-		renderTargetViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-		renderTargetViewDesc.Texture2DArray.MipSlice = 0;
-		renderTargetViewDesc.Texture2DArray.ArraySize = 1;
-		renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
-		if( FAILED(Render::CreateRenderTargetView(shadowsBuffer, &renderTargetViewDesc, &shadowsBufferRTV[i])) )
-			return false;*/
+		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
+		{
+			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+			ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
+			renderTargetViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+			renderTargetViewDesc.Texture2DArray.MipSlice = j;
+			renderTargetViewDesc.Texture2DArray.ArraySize = 1;
+			renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+			if( FAILED(Render::CreateRenderTargetView(shadowsBufferMips, &renderTargetViewDesc, &shadowsBufferRTV[i][j])) )
+				return false;
+		}
+
+		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewMipsDesc;
+			shaderResourceViewMipsDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			shaderResourceViewMipsDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			shaderResourceViewMipsDesc.Texture2DArray.MostDetailedMip = j;
+			shaderResourceViewMipsDesc.Texture2DArray.MipLevels = 1;	
+			shaderResourceViewMipsDesc.Texture2DArray.ArraySize = 1;	
+			shaderResourceViewMipsDesc.Texture2DArray.FirstArraySlice = i;	
+			if( FAILED(Render::CreateShaderResourceView(shadowsBufferMips, &shaderResourceViewMipsDesc, &shadowsBufferMipSRV[i][j])) )
+				return false;
+		}
 	}
+
+	sp_shadowHiZ = new ScreenPlane(SP_SHADER_HIZ_SHADOWS);
 
 	return true;
 }
 
 void SceneRenderMgr::GenerateShadowHiZ()
 {
+	D3D11_VIEWPORT viewport;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
 
+	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
+	{
+		uint32_t res = SHADOWS_BUF_RES / 2;
+
+		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
+		{
+			viewport.Width = (float)res;
+			viewport.Height = (float)res;
+			Render::RSSetViewports(1, &viewport);
+
+			Render::OMSetRenderTargets(1, &shadowsBufferRTV[i][j], nullptr);
+
+			if( j == 0 )
+				sp_shadowHiZ->SetTexture(shadowsBufferSRV, 0);
+			else
+				sp_shadowHiZ->SetTexture(shadowsBufferMipSRV[i][j - 1], 0);
+
+			sp_shadowHiZ->Draw();
+
+			Render::OMSetRenderTargets(0, nullptr, nullptr);
+
+			res /= 2;
+		}
+	}
 }
 
 bool SceneRenderMgr::CompareShadows(ShadowMap& first, ShadowMap& second)

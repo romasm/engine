@@ -292,5 +292,8 @@
     <FxCompile Include="..\objects\editor\3d_hud_alpha.hlsl">
       <Filter>objects\editor</Filter>
     </FxCompile>
+    <FxCompile Include="..\system\hiz_shadows.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -222,7 +222,7 @@ bool RenderTarget::AddRT(DXGI_FORMAT RT_format, unsigned short mips, bool UAV, b
 				mipRes[RT_count].mip_SRV = new ID3D11ShaderResourceView*[mipRes[RT_count].mipCount];
 
 				if(!plane && mip_mat)
-					plane = new ScreenPlane(t_width, t_height, *mip_mat);
+					plane = new ScreenPlane(*mip_mat);
 				
 				shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 				shaderResourceViewDesc.Texture2D.MipLevels = 1;	

@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #include "ScenePipeline.h"
+#include "RenderMgrs.h"
 #include "TransformControls.h"
 #include "ECS\LineGeometrySystem.h"
 #include "ECS\EnvProbSystem.h"
@@ -60,6 +61,7 @@ void ShaderMgr::PreloadShaders()
 	GetShader(string(SP_MATERIAL_AA_BLEND), true);
 	GetShader(string(SP_MATERIAL_AA), true);
 	GetShader(string(SP_SHADER_SSR), true);
+	GetShader(string(SP_SHADER_HIZ_SHADOWS), true);
 
 	GetShader(string(LG_SHADER), false);
 	GetShader(string(LG_SHADER_SPHERE), false);

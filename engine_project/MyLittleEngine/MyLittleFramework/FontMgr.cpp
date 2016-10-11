@@ -28,6 +28,23 @@ FontMgr::~FontMgr()
 	instance = nullptr;
 }
 
+void FontMgr::PreloadFonts()
+{
+	GetFont(string(PATH_FONTS "opensans_light_18px"));
+	GetFont(string(PATH_FONTS "opensans_light_20px"));
+	GetFont(string(PATH_FONTS "opensans_light_25px"));
+	GetFont(string(PATH_FONTS "opensans_light_40px"));
+	GetFont(string(PATH_FONTS "opensans_light_70px"));
+	GetFont(string(PATH_FONTS "opensans_normal_12px"));
+	GetFont(string(PATH_FONTS "opensans_normal_14px"));
+	GetFont(string(PATH_FONTS "opensans_normal_16px"));
+	GetFont(string(PATH_FONTS "opensans_normal_18px"));
+	GetFont(string(PATH_FONTS "opensans_normal_20px"));
+	GetFont(string(PATH_FONTS "opensans_normal_25px"));
+	GetFont(string(PATH_FONTS "opensans_normal_40px"));
+	GetFont(string(PATH_FONTS "opensans_normal_70px"));
+}
+
 Font* FontMgr::GetFont(string& name)
 {
 	if(name.size() == 0)

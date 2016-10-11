@@ -186,7 +186,7 @@ bool EnvProbSystem::Bake(Entity e)
 
 	env_scene->SetComponents(false, true, true, true); // TODO
 
-	unique_ptr<ScreenPlane> sp(new ScreenPlane(comp.resolution, comp.resolution, ENVPROBS_MAT));
+	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
 	
 	int mipNum = 1;
 	int cur_mip_res = comp.resolution;
@@ -323,7 +323,7 @@ bool EnvProbSystem::Bake(Entity e)
 			}
 		}
 
-		unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(mip_res, mip_res, ENVPROBS_MIPS_MAT));
+		unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_MIPS_MAT));
 		mip_sp->SetTextureByNameS(TEX_HAMMERSLEY, 0);
 		mip_sp->SetTexture(cubemap_srv, 1);
 		mip_sp->SetFloat(roughness, 0);
@@ -416,7 +416,7 @@ bool EnvProbSystem::Bake(Entity e)
 			}
 		}
 
-		unique_ptr<ScreenPlane> diff_sp(new ScreenPlane(diff_res, diff_res, ENVPROBS_DIFF_MAT));
+		unique_ptr<ScreenPlane> diff_sp(new ScreenPlane(ENVPROBS_DIFF_MAT));
 		diff_sp->SetTextureByNameS(TEX_HAMMERSLEY, 0);
 		diff_sp->SetTexture(cubemap_filtered, 1);
 

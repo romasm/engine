@@ -49,7 +49,7 @@ namespace EngineCore
 			return false;
 		}
 
-		ScreenPlane plane(res, res, shadername);
+		ScreenPlane plane(shadername);
 
 		rt.ClearRenderTargets(0,0,0,0);
 		rt.SetRenderTarget();

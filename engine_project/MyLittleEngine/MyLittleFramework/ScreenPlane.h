@@ -10,10 +10,10 @@ namespace EngineCore
 	class ScreenPlane
 	{
 	public:
-		ScreenPlane(uint32_t sw, uint32_t sh, string& shadername)
-		{createPlane(sw, sh, shadername);}
-		ScreenPlane(uint32_t sw, uint32_t sh, char* shadername)
-		{createPlane(sw, sh, string(shadername));}
+		ScreenPlane(string& shadername)
+		{createPlane(shadername);}
+		ScreenPlane(char* shadername)
+		{createPlane(string(shadername));}
 
 		~ScreenPlane();
 
@@ -29,10 +29,8 @@ namespace EngineCore
 		inline void ClearTex(){shaderInst->ClearTextures();}
 
 	private:
-		void createPlane(uint32_t sw, uint32_t sh, string& shadername);
+		void createPlane(string& shadername);
 
-		ID3D11Buffer *vertexBuffer;
-		ID3D11Buffer *indexBuffer;
 		SimpleShaderInst* shaderInst;
 	};
 }

@@ -149,6 +149,8 @@ namespace EngineCore
 
 		BufferObj = new Buffer();
 		
+		m_fontmgr->PreloadFonts();
+
 		return true;
 	}
 

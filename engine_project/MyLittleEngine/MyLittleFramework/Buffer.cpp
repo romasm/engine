@@ -35,6 +35,24 @@ Buffer::Buffer()
 	_RELEASE(QuadIndex);
 	QuadVertex = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex)*4, false, &vertices_quad);
 	QuadIndex = Buffer::CreateIndexBuffer(DEVICE, sizeof(unsigned short)*6, false, &indices_quad);
+
+	UnlitVertex vertices_tris[3];
+	vertices_tris[0].Pos = XMFLOAT3(-1.0f, 1.0f, 0.0f);
+	vertices_tris[0].Tex = XMFLOAT2(0.0f, 0.0f);
+	vertices_tris[1].Pos = XMFLOAT3(3.0f ,1.0f, 0.0f);
+	vertices_tris[1].Tex = XMFLOAT2(2.0f, 0.0f);
+	vertices_tris[2].Pos = XMFLOAT3(-1.0f, -3.0f, 0.0f);
+	vertices_tris[2].Tex = XMFLOAT2(0.0f,2.0f);
+
+	unsigned short indices_tris[3] = 
+	{
+		0,1,2
+	};
+	
+	_RELEASE(TriangVertex);
+	_RELEASE(TriangIndex);
+	TriangVertex = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex)*3, false, &vertices_tris);
+	TriangIndex = Buffer::CreateIndexBuffer(DEVICE, sizeof(unsigned short)*3, false, &indices_tris);
 }
 
 Buffer::~Buffer()

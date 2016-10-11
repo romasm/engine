@@ -143,10 +143,10 @@ bool GaussianBlur::Init(int width, int height, DXGI_FORMAT format, eKernel kerne
 		}
 	}
 	
-	sp_horz = new ScreenPlane(t_width, t_height, mat_h);
+	sp_horz = new ScreenPlane(mat_h);
 	if(!sp_horz)
 		return false;
-	sp_vert = new ScreenPlane(t_width, t_height, mat_v);
+	sp_vert = new ScreenPlane(mat_v);
 	if(!sp_vert)
 		return false;
 
