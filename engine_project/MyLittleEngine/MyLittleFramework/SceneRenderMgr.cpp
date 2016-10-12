@@ -107,7 +107,7 @@ bool SceneRenderMgr::initShadowBuffer()
 	shadowBufferDesc.Height = SHADOWS_BUF_RES / 2;
 	shadowBufferDesc.MipLevels = SHADOWS_BUF_MIPS;
 	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
-	shadowBufferDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	shadowBufferDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 	shadowBufferDesc.SampleDesc.Count = 1;
 	shadowBufferDesc.SampleDesc.Quality = 0;
 	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -118,7 +118,7 @@ bool SceneRenderMgr::initShadowBuffer()
 		return false;
 	
 	ZeroMemory(&shaderResourceViewDesc, sizeof(shaderResourceViewDesc));
-	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	shaderResourceViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 	shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2DArray.MipLevels = -1;	
@@ -143,7 +143,7 @@ bool SceneRenderMgr::initShadowBuffer()
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 			ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
-			renderTargetViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			renderTargetViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 			renderTargetViewDesc.Texture2DArray.MipSlice = j;
 			renderTargetViewDesc.Texture2DArray.ArraySize = 1;
@@ -155,7 +155,7 @@ bool SceneRenderMgr::initShadowBuffer()
 		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
 		{
 			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewMipsDesc;
-			shaderResourceViewMipsDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			shaderResourceViewMipsDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 			shaderResourceViewMipsDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 			shaderResourceViewMipsDesc.Texture2DArray.MostDetailedMip = j;
 			shaderResourceViewMipsDesc.Texture2DArray.MipLevels = 1;	
@@ -192,9 +192,15 @@ void SceneRenderMgr::GenerateShadowHiZ()
 			Render::OMSetRenderTargets(1, &shadowsBufferRTV[i][j], nullptr);
 
 			if( j == 0 )
+			{
 				sp_shadowHiZ->SetTexture(shadowsBufferSRV, 0);
+				sp_shadowHiZ->SetFloat(1.0f, 0);
+			}
 			else
+			{
 				sp_shadowHiZ->SetTexture(shadowsBufferMipSRV[i][j - 1], 0);
+				sp_shadowHiZ->SetFloat(-1.0f, 0);
+			}
 
 			sp_shadowHiZ->Draw();
 

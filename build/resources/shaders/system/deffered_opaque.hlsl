@@ -49,7 +49,7 @@ Texture2D envbrdfLUT : register(t1);
 #define NOV_MAX 1.0f - NOV_MIN
 
 Texture2DArray <float> shadows: register(t2); 
-Texture2DArray <float> shadowsMips: register(t3);
+Texture2DArray <float2> shadowsMips: register(t3);
 
 Texture2D <float4> gb_albedo_roughY : register(t4); 
 Texture2D <float4> gb_tbn : register(t5); 
@@ -307,7 +307,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	MaterialParamsStructBuffer params = MAT_PARAMS[matID];
 
 	float3 normal;
-	float3 tangent;
+	float3 tangent;   
 	float3 binormal;
 	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);
 			
@@ -323,11 +323,15 @@ PO_final DefferedLighting(PI_PosTex input)
 	float3 subsurf = subsurf_thick.rgb;
 		
 	if(params.unlit == 1)
-	{
+	{  
 		res.diffuse.rgb = emissive;
 		return res;
 	}
 
+
+	//res.diffuse.rgb = pow(shadowsMips.SampleLevel(samplerPointClamp, float3(input.tex, 0), 7).g, 100);
+	//return res;
+	   
 	//res.diffuse.rgb = albedo;
 	//return res;
 	// ----------------- DIRECT -------------------------
@@ -858,6 +862,8 @@ PO_final DefferedLighting(PI_PosTex input)
 		}
 	
 		float light_blocked = SpotlightShadow(float4(wpos,1.0f), DoUL, vertex_normal, dot(vertex_normal, L), vp_mat, adress, texelSize, shadowDepthFix);
+		res.diffuse.rgb = light_blocked;  
+		return res;
 		if(light_blocked == 0)
 			continue;
 		
