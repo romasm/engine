@@ -576,7 +576,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, X
 
 	casterSpot_array->ShadowmapAdress[casterSpot_count] = XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	casterSpot_array->ShadowmapParams[casterSpot_count] = XMFLOAT4(2.0f / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), 0, 0);
+	casterSpot_array->ShadowmapParams[casterSpot_count] = XMFLOAT4(/*2.0f / shm.res*/ 0.5f / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), 0, 0);
 
 	casterSpot_array->ViewProj[casterSpot_count] = vp;
 

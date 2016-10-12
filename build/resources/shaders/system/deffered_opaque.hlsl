@@ -47,7 +47,7 @@ Texture2D envbrdfLUT : register(t1);
 #define DFG_TEXTURE_SIZE 256
 #define NOV_MIN 0.5f/DFG_TEXTURE_SIZE
 #define NOV_MAX 1.0f - NOV_MIN
-
+ 
 Texture2DArray <float> shadows: register(t2); 
 Texture2DArray <float2> shadowsMips: register(t3);
 
@@ -842,19 +842,19 @@ PO_final DefferedLighting(PI_PosTex input)
 			continue;
 		
 		float illuminance = getDistanceAtt( unnormL, pos_range.w );
-		if(illuminance == 0)
+		if(illuminance == 0) 
 			continue;
 		
 		const float3 L = normalize(unnormL);
-			
+			 
 		illuminance *= getAngleAtt(L, -dir_coney.xyz, color_conex.w, dir_coney.w);
 		if(illuminance == 0)
-			continue;
+			continue; 
 		
 		const float NoL = saturate(dot(normal, L));
 		float3 colorIlluminance = illuminance * color_conex.rgb;
 		
-		if(NoL == 0.0f)
+		if(NoL == 0.0f) 
 		{
 			if(params.subscattering != 0)
 				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
@@ -865,8 +865,8 @@ PO_final DefferedLighting(PI_PosTex input)
 		res.diffuse.rgb = light_blocked;  
 		return res;
 		if(light_blocked == 0)
-			continue;
-		
+			continue; 
+		 
 		colorIlluminance *= light_blocked;
 
 		const float3 H = normalize(VtoWP + L);

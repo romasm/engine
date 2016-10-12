@@ -37,10 +37,39 @@ float GatherFilter2(float3 UV, float2 reprojUV, float halfPix, float depth, floa
 
 	//temp
 	float source_size = 0.3;
-	
-	float pixRcp = 1.0 / (2 * halfPix);
 
+	float pixRcp = 1.0 / (2 * halfPix);
 	uint maxMip = (SHADOW_MAX_MIP + 1) - min(0, int(log2(pixRcp / 256)));
+	
+	float2 shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, maxMip - 1);
+
+	float startRadius = max(0, source_size * (1 - shadowInt.x / depth));
+	startRadius *= perspCorrection;
+
+	int level = (int)min(trunc(log2(startRadius * pixRcp)), maxMip);
+	if(level <= 0)
+		return 1;
+
+	float occluding = 0;
+	float occludingStep = 1.0 / level;
+	while(level > 0)
+	{
+		shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, level - 1);
+
+		if(depth > shadowInt.y)
+		{
+			occluding += occludingStep * level;
+			break;
+		}
+
+		//if(shadowInt.x < depth)
+		occluding += occludingStep;
+		level--;
+	}
+
+	return 1.0 - occluding;
+
+	/*
 	int level = maxMip;
 	float finalPenumbra = 0;
 	while(level > 0)
@@ -70,7 +99,7 @@ float GatherFilter2(float3 UV, float2 reprojUV, float halfPix, float depth, floa
 	}
 	level = max(level, 0);
 
-	return finalPenumbra;
+	return finalPenumbra;*/
 	/*
 	float pixRcp = 1.0 / (2 * halfPix);
 	uint currentMip = (uint)log2(pixRcp);
