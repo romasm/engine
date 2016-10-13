@@ -50,10 +50,7 @@ void ShaderMgr::PreloadShaders()
 	GetShader(string(SP_MATERIAL_AO), true);
 	GetShader(string(SP_MATERIAL_HDR), true);
 	GetShader(string(SP_MATERIAL_COMBINE), true);
-	GetShader(string(SP_MATERIAL_HIZ_DEPTH_CC), true);
-	GetShader(string(SP_MATERIAL_HIZ_DEPTH_UC), true);
-	GetShader(string(SP_MATERIAL_HIZ_DEPTH_CU), true);
-	GetShader(string(SP_MATERIAL_HIZ_DEPTH_UU), true);
+	GetShader(string(SP_MATERIAL_HIZ_DEPTH), true);
 	GetShader(string(SP_MATERIAL_OPAQUE_BLUR), true);
 	GetShader(string(SP_MATERIAL_AVGLUM), true);
 	GetShader(string(SP_MATERIAL_BLOOM_FIND), true);

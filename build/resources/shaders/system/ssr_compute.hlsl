@@ -30,11 +30,11 @@ cbuffer CamMove : register(b1)
 
 
 #define MIN_REFL_DEPTH 0.00002
-#define MAX_DEPTH_OFFSET 0.0001
+#define MAX_DEPTH_OFFSET 0.001
 #define RAY_ITERATOR 128
 
-#define MAX_RAY_DIST_SQ 1000.0f
-#define MAX_RAY_DIST_FADE 1000.0f
+#define MAX_RAY_DIST_SQ 32000.0f
+#define MAX_RAY_DIST_FADE 5000.0f
 
 #define BORDER_FADE 0.05f
 
@@ -71,7 +71,7 @@ float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, fl
 	return o + d * t;
 }
 
-float4 traceReflections( float3 p, float3 refl, float2 screenSize )
+float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW )
 {
 	float level = 0;
 	float iterator = 0;
@@ -100,12 +100,12 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize )
 	{
 		const float levelExp = exp2(level);
 	
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(ray.xy), level).rg;
 		
 		const float2 cellCount = trunc(screenSize / levelExp);
 		const float2 oldCellId = trunc(ray.xy * cellCount);
 		
-		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, MAX_DEPTH_OFFSET);
+		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, MAX_DEPTH_OFFSET /* g_perspParam / minmaxZ.g*/);
 
 		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
@@ -185,7 +185,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize )
 	[loop]
 	while( level >= 0 && iterator < RAY_ITERATOR )
 	{
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(ray.xy), level).rg;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, MAX_DEPTH_OFFSET);
 
 		[branch]
@@ -220,6 +220,9 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize )
 
 float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 {
+	float3 viewPos = mul(float4(WP, 1.0f), g_view).rgb;
+	float perspW = viewPos.z * g_proj[2][3] + g_proj[3][3];
+
 	float3 V_unnorm = g_CamPos - WP;
 	float3 V = normalize(V_unnorm);
 	float3 reflWS = reflect(-V, N);
@@ -245,7 +248,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	}
 	else
 	{    
-		ray = traceReflections( p, refl, screenSize );
+		ray = traceReflections( p, refl, screenSize, perspW );
 		//return ray.w / 75;
 	}    
 
@@ -253,7 +256,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 		return 0; 
 		 
 	float3 reflRay = WP - GetWPos(ray.xy, ray.z);
-	float reflFade = 1;//1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
+	float reflFade = 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
 	if(reflFade == 0)   
 		return 0;      
 	 
@@ -271,7 +274,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	totalColor.a *= saturate(1 - float(ray.w - 100) / 27);
 
 	if(ray.w >= 1290)  
-		return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, ray.xy, 4).r * R,1);//totalColor.a = 0;
+		return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(ray.xy), 4).r * R,1);//totalColor.a = 0;
 	
 	return totalColor;  
 } 
@@ -297,7 +300,7 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	float3 binormal;            
 	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);           
 	                 
-	float depth = hiz_depth.Sample(samplerPointClamp, inUV).r;       
+	float depth = hiz_depth.Sample(samplerPointClamp, UVforSamplePow2(inUV)).r;       
 	const float3 wpos = GetWPos(inUV, depth);    
 	           
 	float R_X = gb_roughnessX.Sample(samplerPointClamp, inUV).a;     

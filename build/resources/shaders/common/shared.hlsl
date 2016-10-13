@@ -21,7 +21,10 @@ shared cbuffer SharedBuffer : register(b0)
 	float g_hizMipCount;
 
 	float3 g_CamBinormal;
-	float padding;
+	float g_perspParam;
+
+	float2 g_uvCorrectionForPow2;
+	float2 padding1;
 };
 
 float3 GetWPos(float2 uv, float depth)
@@ -41,4 +44,9 @@ float3 GetWPos(float2 uv, float depth)
 float2 SnapToScreenTexel(float2 screen_uv)
 {
 	return round(screen_uv * g_maxScreenCoords.xy) * g_maxScreenCoords.zw;
+}
+
+float2 UVforSamplePow2(float2 uv)
+{
+	return uv * g_uvCorrectionForPow2;
 }

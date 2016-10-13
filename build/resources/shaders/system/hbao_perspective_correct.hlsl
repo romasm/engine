@@ -48,8 +48,8 @@ cbuffer materialBuffer : register(b1)
 
 	float maxDistSqr;
 	float projParam;
-	float hizMip;
 	float _padding0;
+	float _padding1;
 };
 
 // rotates a sample direction according to the row-vectors of the rotation matrix
@@ -75,7 +75,7 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 	float2 inUV = SnapToScreenTexel(input.tex);
 
 	float4 TBN = gb_tbn.Sample(samplerPointClamp, inUV);
-	float3 wpos = GetWPos(inUV, gb_depth.SampleLevel(samplerPointClamp, inUV, 0).r);
+	float3 wpos = GetWPos(inUV, gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(inUV), 0).r);
 
 	float3 normal;
 	float3 tangent;
@@ -113,7 +113,7 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 	// do not take more steps than there are pixels		
 	uint numStepsPerRay = max(min(maxStepsPerRay, screenRadius), 2);
 	float rcpSteps = rcp(numStepsPerRay - 1);
-	float mipMul = rcpSteps * hizMip * mipScaler;
+	float mipMul = rcpSteps * g_hizMipCount * mipScaler;
 
 	bias *= (1 + biasScale * 10);
 
@@ -139,7 +139,7 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 		for(uint step = 0; step < numStepsPerRay; ++step)
 		{
 			uv += stepUV;
-			float3 sampleWpos = GetWPos(uv, gb_depth.SampleLevel( samplerPointClamp, uv, step * mipMul ).r);
+			float3 sampleWpos = GetWPos(uv, gb_depth.SampleLevel( samplerPointClamp, UVforSamplePow2(uv), step * mipMul ).r);
 			
 			// get occlusion factor based on candidate horizon elevation
 			float3 horizonVector = sampleWpos - wpos;

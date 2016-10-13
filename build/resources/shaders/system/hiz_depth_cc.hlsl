@@ -11,17 +11,17 @@ TECHNIQUE_DEFAULT
 
 #include "light_constants.hlsl"
 
-Texture2D depth : register(t0); 
-Texture2D vis : register(t1); 
+Texture2D depthTex : register(t0); 
+Texture2D visTex : register(t1); 
 
 SamplerState samplerPointClamp : register(s0);
 
 cbuffer materialBuffer : register(b1)
 {
-	float coordData0;
-	float coordData1;
 	float calcVis;
 	float _padding0;
+	float _padding1;
+	float _padding2;
 };
 
 struct PO_HIZ
@@ -35,40 +35,24 @@ struct PO_HIZ
 PO_HIZ CalcHiZ(PI_PosTex input)
 {
 	// hi z
-	float2 coords1 = input.tex - float2(coordData0, coordData1) * 0.49f;
-	float2 coords2 = coords1 + float2(0, coordData1 * 0.99f);
-	float2 coords3 = coords1 + float2(coordData0 * 0.99f, 0);
-	float2 coords4 = coords1 + float2(coordData0, coordData1) * 0.99f;
-	
-	float2 depth1, depth2, depth3, depth4;
-
-	depth1 = depth.SampleLevel(samplerPointClamp, coords1, 0).rg;
-	depth2 = depth.SampleLevel(samplerPointClamp, coords2, 0).rg;
-	depth3 = depth.SampleLevel(samplerPointClamp, coords3, 0).rg;
-	depth4 = depth.SampleLevel(samplerPointClamp, coords4, 0).rg;
+	float4 depthMin = depthTex.GatherRed(samplerPointClamp, input.tex);
+	float4 depthMax = depthTex.GatherGreen(samplerPointClamp, input.tex);
 	
 	PO_HIZ res;
-	res.hiz.x = min( min(depth1.x, depth2.x), min(depth3.x, depth4.x) );
-	res.hiz.y = max( max(depth1.y, depth2.y), max(depth3.y, depth4.y) );
+	res.hiz.x = min( min(depthMin.x, depthMin.y), min(depthMin.z, depthMin.w) );
+	res.hiz.y = max( max(depthMax.x, depthMax.y), max(depthMax.z, depthMax.w) );
 
 	// vis
-	float vis1 = 1;
-	float vis2 = 1;
-	float vis3 = 1;
-	float vis4 = 1;
+	float4 vis = 1;
 	if(calcVis > 0)
-	{
-		vis1 = vis.SampleLevel(samplerPointClamp, coords1, 0).r;
-		vis2 = vis.SampleLevel(samplerPointClamp, coords2, 0).r;
-		vis3 = vis.SampleLevel(samplerPointClamp, coords3, 0).r;
-		vis4 = vis.SampleLevel(samplerPointClamp, coords4, 0).r;
-	}
+		vis = visTex.GatherRed(samplerPointClamp, input.tex);
+	
 	res.vis = 0;
 	float maxmindiff = 1.0f / (res.hiz.y - res.hiz.x);
-	res.vis += ((depth1.x - res.hiz.x) * maxmindiff) * vis1;
-	res.vis += ((depth2.x - res.hiz.x) * maxmindiff) * vis2;
-	res.vis += ((depth3.x - res.hiz.x) * maxmindiff) * vis3;
-	res.vis += ((depth4.x - res.hiz.x) * maxmindiff) * vis4;
+	res.vis += ((depthMin.x - res.hiz.x) * maxmindiff) * vis.x;
+	res.vis += ((depthMin.y - res.hiz.x) * maxmindiff) * vis.y;
+	res.vis += ((depthMin.z - res.hiz.x) * maxmindiff) * vis.z;
+	res.vis += ((depthMin.w - res.hiz.x) * maxmindiff) * vis.w;
 	res.vis *= VIS_DIV;
 
 	return res;

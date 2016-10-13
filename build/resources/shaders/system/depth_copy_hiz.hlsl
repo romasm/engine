@@ -14,6 +14,7 @@ SamplerState samplerPointClamp : register(s0);
 
 float2 DepthCopy(PI_PosTex input) : SV_TARGET
 {	
-	float d = depthTex.Sample(samplerPointClamp, input.tex).r;
+	float2 uv = input.tex / g_uvCorrectionForPow2;
+	float d = depthTex.Sample(samplerPointClamp, uv).r;
 	return float2(d,d);
 }

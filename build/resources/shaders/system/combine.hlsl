@@ -33,7 +33,7 @@ PO_opaque Combine(PI_PosTex input)
 	light_spec.gb = specular.Sample(samplerPointClamp, input.tex).rg;
 	light_spec.r = light_diff.a;
 	
-	float d = gb_depth.Sample(samplerPointClamp, input.tex).r;
+	float d = gb_depth.Sample(samplerPointClamp, UVforSamplePow2(input.tex)).r;
 	
 	// ss blur: TODO
 	res.diffuse.rgb = light_diff.rgb;

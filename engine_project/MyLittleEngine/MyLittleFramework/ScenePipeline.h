@@ -12,7 +12,7 @@ namespace EngineCore
 {
 
 #define AO_TYPE 1
-#define AO_FILTER
+//#define AO_FILTER
 
 #define RENDERING_TRANSPARENT_CHANNEL_COUNT 3
 
@@ -35,10 +35,7 @@ namespace EngineCore
 #define SP_MATERIAL_HDR PATH_SHADERS "system/hdr" 
 #define SP_MATERIAL_COMBINE PATH_SHADERS "system/combine"
 
-#define SP_MATERIAL_HIZ_DEPTH_CC PATH_SHADERS "system/hiz_depth_cc" 
-#define SP_MATERIAL_HIZ_DEPTH_UC PATH_SHADERS "system/hiz_depth_uc" 
-#define SP_MATERIAL_HIZ_DEPTH_CU PATH_SHADERS "system/hiz_depth_cu" 
-#define SP_MATERIAL_HIZ_DEPTH_UU PATH_SHADERS "system/hiz_depth_uu" 
+#define SP_MATERIAL_HIZ_DEPTH PATH_SHADERS "system/hiz_depth_cc" 
 #define SP_MATERIAL_OPAQUE_BLUR PATH_SHADERS "system/opaque_blur" 
 
 #define SP_MATERIAL_AVGLUM PATH_SHADERS "system/avglum" 
@@ -77,7 +74,10 @@ namespace EngineCore
 			float mipCount; 
 
 			XMFLOAT3 CamBinormal; 
-			float padding; 
+			float perspParam;
+
+			XMFLOAT2 uvCorrectionForPow2;
+			XMFLOAT2 padding1;
 		};
 
 		/*struct BloomBuffer
@@ -242,10 +242,7 @@ namespace EngineCore
 		ScreenPlane *sp_HDRtoLDR;
 		//ScreenPlane *sp_3DHud;
 
-		ScreenPlane *sp_HiZ_cc;
-		ScreenPlane *sp_HiZ_cu;
-		ScreenPlane *sp_HiZ_uu;
-		ScreenPlane *sp_HiZ_uc;
+		ScreenPlane *sp_HiZ;
 
 		ScreenPlane *sp_AvgLum;
 		ScreenPlane *sp_Bloom;
@@ -319,8 +316,10 @@ namespace EngineCore
 
 		CameraLink camera;
 		CameraComponent* current_camera;
-		int width;
-		int height;
+		int32_t width;
+		int32_t height;
+		int32_t width_pow2;
+		int32_t height_pow2;
 
 		bool b_directSpec, b_indirectSpec, b_directDiff, b_indirectDiff, b_renderHud;
 

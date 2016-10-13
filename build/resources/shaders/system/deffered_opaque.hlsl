@@ -297,7 +297,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	float ao = min(gb_ao.Sample(samplerPointClamp, input.tex).r, dynamicAO.Sample(samplerPointClamp, input.tex).r);
 	//ao *= ao;
 
-	const float depth = gb_depth.Sample(samplerPointClamp, input.tex).r;
+	const float depth = gb_depth.Sample(samplerPointClamp, UVforSamplePow2(input.tex)).r;
 	
 	const uint matID = GetMatID(matID_objID);
 	const uint objID = GetObjID(matID_objID);

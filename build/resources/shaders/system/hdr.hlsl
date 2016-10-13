@@ -170,7 +170,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 	else if(debugMode == 8)
 		tonemapped = min(gb_ao.Sample(samplerPointClamp, input.tex).r, dynamicAO.Sample(samplerPointClamp, input.tex).r);
 	else if(debugMode == 9)
-		tonemapped = PowAbs( gb_depth.Sample(samplerPointClamp, input.tex).r, 30 );
+		tonemapped = PowAbs( gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r, 30 );
 	else if(debugMode == 10)
 	{
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);

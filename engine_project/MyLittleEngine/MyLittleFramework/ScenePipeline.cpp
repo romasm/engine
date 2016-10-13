@@ -45,10 +45,7 @@ ScenePipeline::ScenePipeline()
 	sp_HDRtoLDR = nullptr;
 	//sp_3DHud = nullptr;
 
-	sp_HiZ_cc = nullptr;
-	sp_HiZ_cu = nullptr;
-	sp_HiZ_uc = nullptr;
-	sp_HiZ_uu = nullptr;
+	sp_HiZ = nullptr;
 
 	sp_AvgLum = nullptr;
 	sp_Bloom = nullptr;
@@ -158,10 +155,7 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_FinalOpaque);
 	_DELETE(sp_HDRtoLDR);
 
-	_DELETE(sp_HiZ_cc);
-	_DELETE(sp_HiZ_cu);
-	_DELETE(sp_HiZ_uc);
-	_DELETE(sp_HiZ_uu);
+	_DELETE(sp_HiZ);
 
 	_DELETE(sp_Bloom);
 
@@ -227,11 +221,16 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 
 	width = t_width;
 	height = t_height;
+	
+	width_pow2 = (int32_t)pow(2.0f, ceil(log(float(width)) / log(2.0f)));
+	height_pow2 = (int32_t)pow(2.0f, ceil(log(float(height)) / log(2.0f)));
 
 	sharedconst.screenW = width;
 	sharedconst.screenH = height;
 	sharedconst.PixSize.x = 1.0f/width;
 	sharedconst.PixSize.y = 1.0f/height;
+
+	sharedconst.uvCorrectionForPow2 = XMFLOAT2(float(width) / width_pow2, float(height) / height_pow2);
 
 	sharedconst.maxScreenCoords.x = float(width - 1);
 	sharedconst.maxScreenCoords.y = float(height - 1);
@@ -248,12 +247,6 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 		sharedconst.mipCount = (float)rt_HiZDepth->mipRes[0].mipCount - 1.0f;
 	else
 		sharedconst.mipCount = 0.0f;
-
-	// remove
-	if(rt_HiZDepth)
-		sp_AO->SetFloat((float)rt_HiZDepth->mipRes[0].mipCount, 6);
-	else
-		sp_AO->SetFloat(0, 6);
 
 	return true;
 }
@@ -316,8 +309,8 @@ bool ScenePipeline::InitAvgRt()
 
 bool ScenePipeline::InitRts()
 {
-	int t_width_half = width / 2;
-	int t_height_half = height / 2;
+	int32_t t_width_half = width / 2;
+	int32_t t_height_half = height / 2;
 
 	if(!InitDepth())
 		return false;
@@ -335,13 +328,13 @@ bool ScenePipeline::InitRts()
 	// 296b per pixel + 32b depth
 
 	rt_HiZDepth = new RenderTarget;
-	if(!rt_HiZDepth->Init(width, height))return false;
-	rt_HiZDepth->SetMipmappingMaterial(SP_MATERIAL_HIZ_DEPTH_UU);
+	if(!rt_HiZDepth->Init(width_pow2, height_pow2))return false;
+	rt_HiZDepth->SetMipmappingMaterial(SP_MATERIAL_HIZ_DEPTH);
 	if(!rt_HiZDepth->AddRT(DXGI_FORMAT_R32G32_FLOAT, 0))return false;
 
 	rt_HiZVis = new RenderTarget;
-	if(!rt_HiZVis->Init(t_width_half, t_height_half))return false;
-	rt_HiZVis->SetMipmappingMaterial(SP_MATERIAL_HIZ_DEPTH_UU);
+	if(!rt_HiZVis->Init(width_pow2 / 2, height_pow2 / 2))return false;
+	rt_HiZVis->SetMipmappingMaterial(SP_MATERIAL_HIZ_DEPTH);
 	if(!rt_HiZVis->AddRT(DXGI_FORMAT_R8_UNORM, 0))return false;
 
 	rt_AO = new RenderTarget;
@@ -513,10 +506,7 @@ bool ScenePipeline::InitRts()
 	sp_3DHud->AddTex(rt_Antialiased->GetShaderResourceView(1));
 	sp_3DHud->AddTex(rt_3DHud->GetShaderResourceView(0));	*/
 
-	sp_HiZ_cc = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_CC);
-	sp_HiZ_cu = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_CU);
-	sp_HiZ_uc = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_UC);
-	sp_HiZ_uu = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH_UU);
+	sp_HiZ = new ScreenPlane(SP_MATERIAL_HIZ_DEPTH);
 
 	return true;
 }
@@ -540,6 +530,8 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	sharedconst.viewProjection = sharedconst.projection * sharedconst.view;
 	sharedconst.invViewProjection = XMMatrixInverse(nullptr, sharedconst.viewProjection);
 
+	sharedconst.perspParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
+
 	Render::UpdateSubresource(m_SharedBuffer, 0, NULL, &sharedconst, 0, 0);
 	Render::PSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::VSSetConstantBuffers(0, 1, &m_SharedBuffer); 
@@ -547,6 +539,7 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	Render::DSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::GSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	
+	// remove
 	float projParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
 	sp_AO->SetFloat(projParam, 5);
 #if AO_TYPE == 0
@@ -892,9 +885,6 @@ uint8_t ScenePipeline::LoadLights()
 
 void ScenePipeline::HiZMips()
 {
-	rt_HiZVis->ClearRenderTargets();
-	ScreenPlane* plane = nullptr; 
-
 	int prevX = rt_HiZDepth->t_width;
 	int prevY = rt_HiZDepth->t_height;
 
@@ -910,29 +900,12 @@ void ScenePipeline::HiZMips()
 		rts[0] = miplvl.mip_RTV[j];
 		rts[1] = j==0 ? rt_HiZVis->m_RTV[0] : rt_HiZVis->mipRes[0].mip_RTV[j-1];
 		Render::OMSetRenderTargets(2, rts, nullptr);
-
-		if(prevX%2==0)
-		{
-			if(prevY%2==0)
-				plane = sp_HiZ_cc;
-			else
-				plane = sp_HiZ_cu;
-		}
-		else
-		{
-			if(prevY%2==0)
-				plane = sp_HiZ_uc;
-			else
-				plane = sp_HiZ_uu;
-		}
 		
-		plane->ClearTex();
-		plane->SetTexture(miplvl.mip_SRV[j], 0);
-		if(j!=0)plane->SetTexture(rt_HiZVis->mipRes[0].mip_SRV[j-1], 1);
-		plane->SetFloat(1.0f/float(rt_HiZDepth->mip_res[j].x), 0);
-		plane->SetFloat(1.0f/float(rt_HiZDepth->mip_res[j].y), 1);
-		plane->SetFloat(float(j), 2);
-		plane->Draw();
+		sp_HiZ->SetTexture(miplvl.mip_SRV[j], 0);
+		if(j!=0)
+			sp_HiZ->SetTexture(rt_HiZVis->mipRes[0].mip_SRV[j-1], 1);
+		sp_HiZ->SetFloat(float(j), 0);
+		sp_HiZ->Draw();
 
 		prevX = rt_HiZDepth->mip_res[j].x;
 		prevY = rt_HiZDepth->mip_res[j].y;
@@ -956,7 +929,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
-	//sp_SSR->Draw();
+	sp_SSR->Draw();
 
 	// ao
 	PERF_GPU_TIMESTAMP(_AO);
