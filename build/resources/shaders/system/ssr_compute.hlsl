@@ -58,15 +58,15 @@ float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, fl
 {
 	float2 index = cellIndex + step;
 	index /= count;
-	index += offset;
+	//index += offset;
 	
 	float2 delta = index - o.xy;
 	delta /= d.xy;
 
 	float t;
 	[flatten]
-	if(is_negative) t = max(delta.x, delta.y);
-	else t = min(delta.x, delta.y);
+	if(is_negative) t = (max(delta.x, delta.y) - 0.000001);
+	else t = (min(delta.x, delta.y) + 0.000001);
 
 	return o + d * t;
 }
@@ -75,6 +75,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 {
 	float level = 0;
 	float iterator = 0;
+	float alpha = 1;
 
 	if( abs(refl.x) < 0.01 && abs(refl.y) < 0.01 )
 		return 0;
@@ -84,28 +85,30 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	float2 crossOffset, crossStep;
 	crossStep.x = (refl.x>=0) ? 1.0f : -1.0f;
 	crossStep.y = (refl.y>=0) ? 1.0f : -1.0f;
-	crossOffset = crossStep * g_PixSize * 0.5;
+	//crossOffset = crossStep * g_PixSize * 0.5;
+	crossOffset = crossStep * 0.5 / screenSize;
+
 	crossStep = saturate(crossStep);
 	
 	float3 ray = p;
 	const float3 d = refl.xyz / refl.z;
 	const float3 o = p - d * p.z;
-
+			
 	float2 rayCell = trunc(ray.xy * screenSize);
 	ray = intersectCellBound(o, d, rayCell, screenSize, crossStep, crossOffset, is_negative);
-	//ray.xy = (trunc(ray.xy * screenSize) + float2(0.5, 0.5)) / screenSize;
-
+	
 	[loop]
 	while( level >= 0 && iterator < RAY_ITERATOR )
-	{
-		const float levelExp = exp2(level);
-	
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(ray.xy), level).rg;
+	{	
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
 		
-		const float2 cellCount = trunc(screenSize / levelExp);
+		const float2 cellCount = trunc(screenSize / exp2(level));
 		const float2 oldCellId = trunc(ray.xy * cellCount);
 		
-		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, MAX_DEPTH_OFFSET /* g_perspParam / minmaxZ.g*/);
+		float minThickness = MAX_DEPTH_OFFSET /* g_perspParam / minmaxZ.g*/;
+		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
+
+		alpha = (ray.z - minmaxZ.r) / minThickness;
 
 		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
@@ -114,29 +117,26 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 		if( oldCellId.x != newCellId.x || oldCellId.y != newCellId.y )
 		{
 			ray = intersectCellBound(o, d, oldCellId, cellCount, crossStep, crossOffset, is_negative);
-			//ray.xy = (trunc(ray.xy * screenSize) + float2(0.5, 0.5)) / screenSize;
 			level++;
 		}
 		else
 			level--;
-		//if(iterator > 30)
-		//	return 75;
-		if(ray.x <= 0 || ray.y <= 0 || ray.x >= 1 || ray.y >= 1)
+		
+		[branch]
+		if(level >= g_hizMipCount || ray.x <= 0 || ray.y <= 0 || 
+			ray.x >= g_uvCorrectionForPow2.x || ray.y >= g_uvCorrectionForPow2.y)
 		{
-			iterator = 0;
+			alpha = 1;
 			break;
 		}
 		
-		if(level >= g_hizMipCount)
-		{
-			iterator = 0;
-			break;
-		}
-		else 
-			++iterator;
+		++iterator;
 	}
 
-	return float4(ray, iterator);
+	alpha = 1 - saturate(alpha);
+	alpha *= alpha;
+	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
+	return float4(ray, alpha);
 }
 
 float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 offset)
@@ -160,7 +160,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize )
 	float2 crossOffset, crossStep;
 	crossStep.x = (refl.x>=0) ? 1.0f : -1.0f;
 	crossStep.y = (refl.y>=0) ? 1.0f : -1.0f;
-	crossOffset = crossStep * g_PixSize * 0.5;
+	crossOffset = crossStep * 0.5 / screenSize;
 	crossStep = saturate(crossStep);
 	
 	float3 ray = p;
@@ -185,7 +185,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize )
 	[loop]
 	while( level >= 0 && iterator < RAY_ITERATOR )
 	{
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(ray.xy), level).rg;
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, MAX_DEPTH_OFFSET);
 
 		[branch]
@@ -198,7 +198,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize )
 		else	
 			level--;
 
-		if(ray.x <= 0 || ray.y <= 0 || ray.x >= 1 || ray.y >= 1)
+		if(ray.x <= 0 || ray.y <= 0 || ray.x >= g_uvCorrectionForPow2.x || ray.y >= g_uvCorrectionForPow2.y)
 		{
 			iterator = 0;
 			break;
@@ -230,7 +230,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	// correct reflection pos
 	float refl_d = dot(g_CamDir, V_unnorm);
 	float refl_e = dot(g_CamDir, reflWS);
-	bool is_parallel = abs(refl_e) < 0.1f;
+	bool is_parallel = abs(refl_e) < 0.3f;
 
 	if(!is_parallel)
 		reflWS *= abs(refl_d / refl_e) * 0.8; 
@@ -240,18 +240,27 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	posReflSSvect.xy = posReflSSvect.xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);	
 	float3 refl = posReflSSvect - p; 
 	 	  
+	p.x *= g_uvCorrectionForPow2.x;
+	p.y *= g_uvCorrectionForPow2.y;
+	refl.x *= g_uvCorrectionForPow2.x;
+	refl.y *= g_uvCorrectionForPow2.y;
+
+	float2 correctedSceenSize = screenSize / g_uvCorrectionForPow2;
+
 	float4 ray;    
 	[branch]         
 	if(is_parallel)  
 	{
-		ray = traceReflectionsParall( p, refl, screenSize );
+		ray = traceReflectionsParall( p, refl, correctedSceenSize );
+		return 0;
 	}
 	else
 	{    
-		ray = traceReflections( p, refl, screenSize, perspW );
-		//return ray.w / 75;
+		ray = traceReflections( p, refl, correctedSceenSize, perspW );
+		//return ray;
 	}    
-
+	ray.xy /= g_uvCorrectionForPow2; 
+	
 	if(ray.w == 0)
 		return 0; 
 		 
@@ -260,18 +269,20 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	if(reflFade == 0)   
 		return 0;      
 	 
-	float2 borderFade = saturate( (float2(1, 1) - abs(2 * (ray.xy - float2(0.5, 0.5))) ) / float2(BORDER_FADE, BORDER_FADE) );
+	float3 newSamplePos = GetPrevPos(ray);  
+
+	float2 borderDetectionPrev = 2 * abs(newSamplePos.xy - float2(0.5, 0.5));
+	float2 borderDetectionCurr = 2 * abs(ray.xy - float2(0.5, 0.5));
+	borderDetectionCurr = max(borderDetectionCurr, borderDetectionPrev);
+
+	float2 borderFade = saturate( (float2(1, 1) - borderDetectionCurr ) / float2(BORDER_FADE, BORDER_FADE) );
 	reflFade *= 0.5 * (sin((borderFade.x * borderFade.y - 0.5) * PI) + 1);
 	 
-	float4 totalColor = 0; 
-		    
-	float3 newSamplePos = GetPrevPos(ray);  
-	totalColor.rgb = reflectData.Sample(samplerPointClamp, newSamplePos.xy).rgb;
-	totalColor.a = 1;
+	float4 totalColor = 0;
+	totalColor.rgb = reflectData.Sample(samplerBilinearClamp, newSamplePos.xy).rgb;
+	totalColor.a = ray.a;
 
 	totalColor.a *= reflFade;
-
-	totalColor.a *= saturate(1 - float(ray.w - 100) / 27);
 
 	if(ray.w >= 1290)  
 		return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(ray.xy), 4).r * R,1);//totalColor.a = 0;
