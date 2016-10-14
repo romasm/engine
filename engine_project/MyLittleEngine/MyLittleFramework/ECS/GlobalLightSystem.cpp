@@ -240,7 +240,6 @@ void GlobalLightSystem::RegShadowMaps()
 			for(uint8_t j=0; j < LIGHT_DIR_NUM_CASCADES; j++)
 			{
 				((SceneRenderMgr*)f->rendermgr)->RegShadowMap(i.get_id(), DIR_LIGHT_SCREENSIZE);
-				shadowMap->render_mgr[j]->ClearAll();
 				frustumMgr->AddFrustum(i.get_entity(), &shadowMap->worldFrustum[j], (BaseRenderMgr*)shadowMap->render_mgr[j], nullptr, nullptr, true);
 			}
 		}					
@@ -312,6 +311,22 @@ void GlobalLightSystem::RenderShadows()
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j<LIGHT_DIR_NUM_CASCADES; j++)
 				((SceneRenderMgr*)f->rendermgr)->RenderShadow(i.get_id(), j, cascade.render_mgr[j], cascade.vp_buf[j]);
+		}
+	}
+}
+
+void GlobalLightSystem::ClearShadows()
+{
+	for(auto& i: *components.data())
+	{
+		if(!i.active)
+			continue;
+		
+		for(auto f: *frustums)
+		{
+			CascadeShadow* shadowMap = &i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
+			for(uint8_t j=0; j < LIGHT_DIR_NUM_CASCADES; j++)
+				shadowMap->render_mgr[j]->ClearAll();
 		}
 	}
 }

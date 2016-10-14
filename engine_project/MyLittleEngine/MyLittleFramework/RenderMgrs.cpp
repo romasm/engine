@@ -33,6 +33,7 @@ void BaseRenderMgr::cleanRenderArrayOpaque()
 
 			for(unsigned int i=0; i<temp_group->mesh_count; i++)
 			{
+				// CRASH on null mat assign!!!!!!
 				temp_group->meshes[i]->group = nullptr;
 			}
 			_DELETE_ARRAY(temp_group->meshes);

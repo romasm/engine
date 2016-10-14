@@ -170,6 +170,9 @@ void World::Snapshot(ScenePipeline* scene)
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
 
+	m_shadowSystem->ClearShadows();
+	m_globalLightSystem->ClearShadows();
+
 	if(scene->StartFrame(&m_world_timer))
 	{
 		scene->OpaqueForwardStage();
@@ -234,6 +237,9 @@ void World::Frame()
 	PERF_GPU_TIMESTAMP(_SCENE_SHADOWS);
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
+
+	m_shadowSystem->ClearShadows();
+	m_globalLightSystem->ClearShadows();
 
 	m_transformControls->RegToDraw();
 

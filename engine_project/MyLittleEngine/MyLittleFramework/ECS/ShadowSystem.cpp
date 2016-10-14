@@ -51,6 +51,14 @@ void ShadowSystem::Update()
 	}
 }
 
+void ShadowSystem::ClearShadows()
+{
+	for(auto& i: *components.data())
+	{
+		i.render_mgr->ClearAll();
+	}
+}
+
 void ShadowSystem::RenderShadows()
 {
 	for(auto& i: *components.data())
