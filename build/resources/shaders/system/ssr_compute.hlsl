@@ -30,7 +30,7 @@ cbuffer CamMove : register(b1)
 
 
 #define MIN_REFL_DEPTH 0.00002
-#define MAX_DEPTH_OFFSET 0.001
+#define MAX_DEPTH_OFFSET 0.0025
 #define RAY_ITERATOR 128
 
 #define MAX_RAY_DIST_SQ 32000.0f
@@ -54,7 +54,7 @@ float3 GetPrevPos(float3 pos) // screen space
 	return res; 
 }
 
-float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 offset, bool is_negative)
+float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float pixStep, bool is_negative)
 {
 	float2 index = cellIndex + step;
 	index /= count;
@@ -65,8 +65,8 @@ float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, fl
 
 	float t;
 	[flatten]
-	if(is_negative) t = (max(delta.x, delta.y) - 0.000001);
-	else t = (min(delta.x, delta.y) + 0.000001);
+	if(is_negative) t = (max(delta.x, delta.y) - /*0.000001*/pixStep);
+	else t = (min(delta.x, delta.y) + pixStep);
 
 	return o + d * t;
 }
@@ -77,7 +77,9 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	float iterator = 0;
 	float alpha = 1;
 
-	if( abs(refl.x) < 0.01 && abs(refl.y) < 0.01 )
+	float2 pixSize = rcp(screenSize);
+
+	if( abs(refl.x) <= pixSize.x && abs(refl.y) <= pixSize.y )
 		return 0;
 	
 	const bool is_negative = refl.z < 0;
@@ -86,7 +88,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	crossStep.x = (refl.x>=0) ? 1.0f : -1.0f;
 	crossStep.y = (refl.y>=0) ? 1.0f : -1.0f;
 	//crossOffset = crossStep * g_PixSize * 0.5;
-	crossOffset = crossStep * 0.5 / screenSize;
+	//crossOffset = crossStep * 0.5 * pixSize;
 
 	crossStep = saturate(crossStep);
 	
@@ -94,8 +96,14 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	const float3 d = refl.xyz / refl.z;
 	const float3 o = p - d * p.z;
 			
+	float2 d_pix = abs(pixSize / d.xy);
+
+	float d_pixStep = min(1.0, min(d_pix.x, d_pix.y));
+	d_pixStep *= 0.1;
+	//return min(d.x, d.y) > 0.00000001;
+
 	float2 rayCell = trunc(ray.xy * screenSize);
-	ray = intersectCellBound(o, d, rayCell, screenSize, crossStep, crossOffset, is_negative);
+	ray = intersectCellBound(o, d, rayCell, screenSize, crossStep, d_pixStep, is_negative);
 	
 	[loop]
 	while( level >= 0 && iterator < RAY_ITERATOR )
@@ -105,10 +113,11 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 		const float2 cellCount = trunc(screenSize / exp2(level));
 		const float2 oldCellId = trunc(ray.xy * cellCount);
 		
-		float minThickness = MAX_DEPTH_OFFSET /* g_perspParam / minmaxZ.g*/;
+		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
 
-		alpha = (ray.z - minmaxZ.r) / minThickness;
+		minThickness *= 0.5;
+		alpha = ((ray.z - minmaxZ.r) - minThickness) / minThickness;
 
 		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
@@ -116,7 +125,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 		[branch]
 		if( oldCellId.x != newCellId.x || oldCellId.y != newCellId.y )
 		{
-			ray = intersectCellBound(o, d, oldCellId, cellCount, crossStep, crossOffset, is_negative);
+			ray = intersectCellBound(o, d, oldCellId, cellCount, crossStep, d_pixStep, is_negative);
 			level++;
 		}
 		else
@@ -132,7 +141,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 		
 		++iterator;
 	}
-
+	
 	alpha = 1 - saturate(alpha);
 	alpha *= alpha;
 	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
@@ -252,7 +261,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	if(is_parallel)  
 	{
 		ray = traceReflectionsParall( p, refl, correctedSceenSize );
-		return 0;
+		return 1;
 	}
 	else
 	{    
@@ -279,7 +288,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	reflFade *= 0.5 * (sin((borderFade.x * borderFade.y - 0.5) * PI) + 1);
 	 
 	float4 totalColor = 0;
-	totalColor.rgb = reflectData.Sample(samplerBilinearClamp, newSamplePos.xy).rgb;
+	totalColor.rgb = reflectData.Sample(samplerTrilinearClamp, newSamplePos.xy).rgb;
 	totalColor.a = ray.a;
 
 	totalColor.a *= reflFade;
