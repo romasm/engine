@@ -170,8 +170,8 @@ void World::Snapshot(ScenePipeline* scene)
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
 
-	m_shadowSystem->ClearShadows();
-	m_globalLightSystem->ClearShadows();
+	m_shadowSystem->ClearShadowsQueue();
+	m_globalLightSystem->ClearShadowsQueue();
 
 	if(scene->StartFrame(&m_world_timer))
 	{
@@ -238,8 +238,8 @@ void World::Frame()
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
 
-	m_shadowSystem->ClearShadows();
-	m_globalLightSystem->ClearShadows();
+	m_shadowSystem->ClearShadowsQueue();
+	m_globalLightSystem->ClearShadowsQueue();
 
 	m_transformControls->RegToDraw();
 

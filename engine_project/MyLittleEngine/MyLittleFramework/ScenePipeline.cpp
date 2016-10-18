@@ -924,8 +924,15 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	rt_SSR->ClearRenderTargets();
 	rt_SSR->SetRenderTarget();
-	
+
 	PERF_GPU_TIMESTAMP(_SSR);
+	// mat params
+	D3D11_MAPPED_SUBRESOURCE mappedResourceM;
+	if(FAILED(Render::Map(m_MaterialBuffer.buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceM)))
+		return;
+	memcpy(mappedResourceM.pData, (void*)Materials, Materials_Count * sizeof(MaterialParamsStructBuffer));
+	Render::Unmap(m_MaterialBuffer.buf, 0);
+
 	Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
@@ -945,19 +952,11 @@ void ScenePipeline::OpaqueDefferedStage()
 	g_AO->blur(rt_AO, 0, rt_HiZDepth->GetShaderResourceView(0));
 #endif
 	
-	PERF_GPU_TIMESTAMP(_SHADOW_HIZ);
-	render_mgr->GenerateShadowHiZ();
+	//render_mgr->GenerateShadowHiZ();
 	auto shadowBuffer = render_mgr->GetShadowBuffer();
 	auto shadowBufferMips = render_mgr->GetShadowBufferMips();
 
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
-	// mat params
-	D3D11_MAPPED_SUBRESOURCE mappedResourceM;
-	if(FAILED(Render::Map(m_MaterialBuffer.buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceM)))
-		return;
-	memcpy(mappedResourceM.pData, (void*)Materials, Materials_Count * sizeof(MaterialParamsStructBuffer));
-	Render::Unmap(m_MaterialBuffer.buf, 0);
-
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
 	sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);

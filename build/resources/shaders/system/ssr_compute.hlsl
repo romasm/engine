@@ -31,7 +31,7 @@ cbuffer CamMove : register(b1)
 
 #define MIN_REFL_DEPTH 0.00002
 #define MAX_DEPTH_OFFSET 0.0025
-#define RAY_ITERATOR 128
+#define RAY_ITERATOR 64
 
 #define MAX_RAY_DIST_SQ 32000.0f
 #define MAX_RAY_DIST_FADE 5000.0f
@@ -143,7 +143,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	return float4(ray, alpha);
 }
 
-float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 pixStep)
+float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 pixStep, bool is_negative)
 {
 	float2 index = cellIndex + step;
 	index /= count;
@@ -152,17 +152,27 @@ float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 cou
 	float2 delta = index - o.xy;
 	delta /= d.xy;
 
-	float t = min(delta.x, delta.y) + pixStep;
+	//float t = min(delta.x, delta.y) + pixStep;
+	float t;
+	[flatten]
+	if(is_negative) t = (max(delta.x, delta.y) - /*0.000001*/pixStep);
+	else t = (min(delta.x, delta.y) + pixStep);
+
 	return o + d * t;
 }
 
-float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float perspW )
+float4 traceReflections2( float3 p, float3 refl, float2 screenSize, float perspW )
 {
 	float level = 0;
 	float iterator = 0;
 	float alpha = 1;
 	
 	float2 pixSize = rcp(screenSize);
+
+	if( abs(refl.x) <= pixSize.x && abs(refl.y) <= pixSize.y )
+		return 0;
+	
+	const bool is_negative = false;//refl.z < 0;
 
 	float2 crossStep;
 	crossStep.x = (refl.x>=0) ? 1.0f : 0.0f;
@@ -171,7 +181,27 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	float3 ray = p;
 	const float3 d = refl.xyz / refl.z;
 	const float3 o = p - d * p.z;
+
+	float2 temp_p = p.xy;
+	if(refl.x<0)temp_p.x = 1.0f - temp_p.x;
+	if(refl.y<0)temp_p.y = 1.0f - temp_p.y;
 	
+	float2 absRefl = abs(refl.xy);
+	float2 delta = temp_p / absRefl;
+	float diff = min(delta.x, delta.y);
+	float3 o_inbox = p - refl * diff;
+	
+	temp_p = float2(1, 1) - temp_p;
+	delta = temp_p / absRefl;
+	diff += min(delta.x, delta.y);
+	float3 d_inbox = refl * diff;
+
+	if(o_inbox.z < 0.0)
+		o_inbox = o;
+
+	if(d_inbox.z > 1.0)
+		d_inbox = d;
+		/*	
 	// box intersect
 	float boundParams[4];
 	boundParams[0] = - o.x / d.x;
@@ -201,9 +231,8 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	if(d_inbox.z > 1.0)
 		d_inbox = o + d;
 	d_inbox -= o_inbox;
+	*/
 
-	//return float4(o_inbox, 1);
-	float o_offset = o_inbox.z;
 	// box intersect
 	
 	float2 d_pix = abs(pixSize / d_inbox.xy);
@@ -212,7 +241,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	d_pixStep *= 0.1;
 
 	float2 rayCell = trunc(ray.xy * screenSize);
-	ray = intersectCellBoundParall(o_inbox, d_inbox, rayCell, screenSize, crossStep, d_pixStep);
+	ray = intersectCellBoundParall(o_inbox, d_inbox, rayCell, screenSize, crossStep, d_pixStep, is_negative);
 	
 	[loop]
 	while( level >= 0 && iterator < RAY_ITERATOR )
@@ -225,21 +254,30 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
 
-		minThickness *= 0.5;
-		alpha = ((ray.z - minmaxZ.r) - minThickness) / minThickness;
+		//minThickness *= 0.5;
+		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.05) / (minThickness * 0.95);
 
-		const float3 tmpRay = o_inbox + d_inbox * max(0.0, clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_offset );
-		return o_inbox.z + d_inbox.z > 0.99;//float4(, 1);
+		//const float3 tmpRay = o_inbox + d_inbox * max(0.0, clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_inbox.z );
+		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
+		//return o.z + d.z == 1.0;//float4(, 1);
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
 
 		[branch]
 		if( oldCellId.x != newCellId.x || oldCellId.y != newCellId.y)
 		{
-			ray = intersectCellBoundParall(o_inbox, d_inbox, oldCellId, cellCount, crossStep, d_pixStep);
+			ray = intersectCellBoundParall(o_inbox, d_inbox, oldCellId, cellCount, crossStep, d_pixStep, is_negative);
 			level++;
 		}
-		else	
+		else
+		{
 			level--;
+			[branch]
+			if(level < 0)
+			{
+				ray.xy = oldCellId * pixSize;
+				break;
+			}
+		}
 
 		[branch]
 		if(level >= g_hizMipCount || ray.x <= 0 || ray.y <= 0 || 
@@ -251,28 +289,122 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 		
 		++iterator;
 	}
-	
+
 	alpha = 1 - saturate(alpha);
+	alpha *= alpha;
 	alpha *= alpha;
 	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
 	return float4(ray, alpha);
 }
 
-//#include "ssr.hlsl" 
+float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float perspW )
+{
+	float level = 0;
+	float iterator = 0;
+	float alpha = 1;
+	
+	float2 pixSize = rcp(screenSize);
+
+	if( abs(refl.x) <= pixSize.x && abs(refl.y) <= pixSize.y )
+		return 0;
+	
+	float2 crossStep;
+	crossStep.x = (refl.x>=0) ? 1.0f : 0.0f;
+	crossStep.y = (refl.y>=0) ? 1.0f : 0.0f;
+	
+	float3 ray = p;
+	
+	float2 temp_p = p.xy;
+	if(refl.x<0)temp_p.x = 1.0f - temp_p.x;
+	if(refl.y<0)temp_p.y = 1.0f - temp_p.y;
+	
+	float2 absRefl = abs(refl.xy);
+	float2 delta = temp_p / absRefl;
+	float diff = min(delta.x, delta.y);
+	float3 o = p - refl * diff;
+	
+	temp_p = float2(1, 1) - temp_p;
+	delta = temp_p / absRefl;
+	diff += min(delta.x, delta.y);
+	float3 d = refl * diff;
+	
+	float2 d_pix = abs(pixSize / d.xy);
+
+	float d_pixStep = min(1.0, min(d_pix.x, d_pix.y));
+	d_pixStep *= 0.1;
+
+	float2 rayCell = trunc(ray.xy * screenSize);
+	ray = intersectCellBoundParall(o, d, rayCell, screenSize, crossStep, d_pixStep, false);
+	
+	[loop]
+	while( level >= 0 && iterator < RAY_ITERATOR )
+	{
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
+		
+		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
+		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
+
+		//minThickness *= 0.5;
+		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.05) / (minThickness * 0.95);
+
+		[branch]
+		if( ray.z < minmaxZ.r || ray.z > minmaxZ.g )
+		{
+			float2 cellCount = trunc(screenSize / exp2(level));
+			ray = intersectCellBoundParall(o, d, trunc(ray.xy * cellCount), cellCount, crossStep, d_pixStep, false);
+			level++;
+		}
+		else	
+		{
+			level--;
+			[branch]
+			if(level < 0)
+			{
+				ray.xy = trunc(ray.xy * screenSize) * pixSize;
+				break;
+			}
+		}
+
+		[branch]
+		if(level >= g_hizMipCount || ray.x <= 0 || ray.y <= 0 || 
+			ray.x >= g_uvCorrectionForPow2.x || ray.y >= g_uvCorrectionForPow2.y)
+		{
+			alpha = 1;
+			break;
+		}
+		
+		++iterator;
+	}
+	//return iterator / 100;
+	alpha = 1 - saturate(alpha);
+	alpha *= alpha;
+	alpha *= alpha;
+	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
+	return float4(ray, alpha);
+}
+
+//#include "light_constants.hlsl" 
 
 float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 {
+	//if(p.z > 0.999)
+	//	return 0;
+
 	float3 viewPos = mul(float4(WP, 1.0f), g_view).rgb;
 	float perspW = viewPos.z * g_proj[2][3] + g_proj[3][3];
 
 	float3 V_unnorm = g_CamPos - WP;
 	float3 V = normalize(V_unnorm);
+
+	if(dot(V, N) <= 0.0)
+		return 0;
+
 	float3 reflWS = reflect(-V, N);
 	
 	// correct reflection pos
 	float refl_d = dot(g_CamDir, V_unnorm);
 	float refl_e = dot(g_CamDir, reflWS);
-	bool is_parallel = abs(refl_e) < 0.7f;
+	bool is_parallel = abs(refl_e) < 0.05f;
 
 	if(!is_parallel)
 		reflWS *= abs(refl_d / refl_e) * 0.8; 
@@ -290,26 +422,37 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	float2 correctedSceenSize = screenSize / g_uvCorrectionForPow2;
 
 	float4 ray;    
-	//ray = traceReflectionsParall( p, refl, correctedSceenSize, perspW );
-		//return ray;
 	[branch]         
 	if(is_parallel)  
 	{
 		ray = traceReflectionsParall( p, refl, correctedSceenSize, perspW );
-		return ray;
+		//return 1;
 	}
 	else
-	{    
-		ray = traceReflections( p, refl, correctedSceenSize, perspW );
-		//return 1;
+	{   
+		ray = traceReflections2( p, refl, correctedSceenSize, perspW );
+		//return ray;		
 	}    
 	ray.xy /= g_uvCorrectionForPow2; 
 	
-	//if(ray.w == 0)
-	//	return 0; 
+	if(ray.w == 0)
+		return 0; 
 		 
 	float3 reflRay = WP - GetWPos(ray.xy, ray.z);
-	float reflFade = 1;// - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
+
+	const float4 TBN = gb_normal.Sample(samplerPointClamp, ray.xy);              
+	float3 normal;      
+	float3 tangent;               
+	float3 binormal;            
+	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);  
+
+	float reflFade = dot(normal, normalize(reflRay));
+	if(reflFade <= 0)
+		return 0;
+
+	reflFade = saturate(reflFade * 10);
+	//return reflFade;
+	reflFade *= 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
 	if(reflFade == 0)   
 		return 0;      
 	 
@@ -323,7 +466,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	reflFade *= 0.5 * (sin((borderFade.x * borderFade.y - 0.5) * PI) + 1);
 	 
 	float4 totalColor = 0;
-	totalColor.rgb = reflectData.Sample(samplerTrilinearClamp, newSamplePos.xy).rgb;
+	totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, newSamplePos.xy, 0).rgb;
 	totalColor.a = ray.a;
 
 	totalColor.a *= reflFade;
@@ -346,7 +489,7 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	const uint matID = GetMatID(matID_objID); 
 	MaterialParamsStructBuffer params = MAT_PARAMS[matID];   
 	if(params.unlit == 1)          
-		return 0;  
+		return 0; 
 	
 	const float4 TBN = gb_normal.Sample(samplerPointClamp, inUV);  
 	                

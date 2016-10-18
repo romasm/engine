@@ -91,9 +91,9 @@ float4 BlurH(PI_PosTex input) : SV_TARGET
 	[unroll]
 	for(int j = -G_SAMPLES; j <= G_SAMPLES; j++)
 #if G_SAMPLES > 7
-		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, input.tex + float2(pix * j, 0), 0 ).r;
+		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, UVforSamplePow2(input.tex + float2(pix * j, 0)), 0 ).r;
 #else
-		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, input.tex, 0, int2(j, 0) ).r;
+		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, UVforSamplePow2(input.tex), 0, int2(j, 0) ).r;
 #endif
 
 	const float target_depth = d[G_SAMPLES];
@@ -131,9 +131,9 @@ float4 BlurV(PI_PosTex input) : SV_TARGET
 	[unroll]
 	for(int j = -G_SAMPLES; j <= G_SAMPLES; j++)
 #if G_SAMPLES > 7
-		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, input.tex + float2(0, pix * j), 0 ).r;
+		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, UVforSamplePow2(input.tex + float2(0, pix * j)), 0 ).r;
 #else
-		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, input.tex, 0, int2(0, j) ).r;
+		d[j+G_SAMPLES] = depth.SampleLevel( samplerPointClamp, UVforSamplePow2(input.tex), 0, int2(0, j) ).r;
 #endif
 
 	const float target_depth = d[G_SAMPLES];

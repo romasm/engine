@@ -95,7 +95,7 @@ namespace EngineCore
 
 		void Update();
 		void RenderShadows();
-		void ClearShadows();
+		void ClearShadowsQueue();
 
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);

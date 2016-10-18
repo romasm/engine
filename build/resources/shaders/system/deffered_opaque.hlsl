@@ -1339,11 +1339,11 @@ PO_final DefferedLighting(PI_PosTex input)
 	float4 ssr = ssr_buf.Sample(samplerPointClamp, input.tex);
 
 	Indir.specular = skyEnvProbSpec(specNormal, VtoWP, indirNoV, indirR, sqrtR, distMip, envprobsDist, envprobsDistDiff);
+	
+	Indir.specular *= computeSpecularOcclusion(indirNoV, ao, indirR);
 	Indir.specular = lerp(Indir.specular, ssr.rgb, ssr.a);
 	Indir.specular *= specBrdf;
 	
-	Indir.specular *= computeSpecularOcclusion(indirNoV, ao, indirR);
-		
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff) * diffBrdf * ao;
 		  
 	/*if(params.subscattering != 0)

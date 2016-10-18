@@ -172,7 +172,7 @@ namespace EngineCore
 		void RegToScene();
 		void RegShadowMaps();
 		void RenderShadows();
-		void ClearShadows();
+		void ClearShadowsQueue();
 
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);

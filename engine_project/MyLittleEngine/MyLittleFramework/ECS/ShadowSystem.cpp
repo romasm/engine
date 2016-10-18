@@ -51,7 +51,7 @@ void ShadowSystem::Update()
 	}
 }
 
-void ShadowSystem::ClearShadows()
+void ShadowSystem::ClearShadowsQueue()
 {
 	for(auto& i: *components.data())
 	{

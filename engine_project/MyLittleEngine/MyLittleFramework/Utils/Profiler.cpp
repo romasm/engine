@@ -27,7 +27,6 @@ void Profiler::InitParams()
 	gpu_ids_name[PERF_GPU::PERF_GPU_HIZ_GEN] = name_depth("HiZ", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SSR] = name_depth("SSR", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_AO] = name_depth("AO", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_SHADOW_HIZ] = name_depth("ShadowsHiZ", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_MAIN] = name_depth("OpaqueMain", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_FINAL] = name_depth("OpaqueFinal", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_HDR_BLOOM] = name_depth("BloomHDR", 3);

@@ -315,7 +315,7 @@ void GlobalLightSystem::RenderShadows()
 	}
 }
 
-void GlobalLightSystem::ClearShadows()
+void GlobalLightSystem::ClearShadowsQueue()
 {
 	for(auto& i: *components.data())
 	{
