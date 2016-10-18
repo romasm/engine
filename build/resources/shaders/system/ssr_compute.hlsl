@@ -31,7 +31,7 @@ cbuffer CamMove : register(b1)
 
 #define MIN_REFL_DEPTH 0.00002
 #define MAX_DEPTH_OFFSET 0.0025
-#define RAY_ITERATOR 64
+#define RAY_ITERATOR 128
 
 #define MAX_RAY_DIST_SQ 32000.0f
 #define MAX_RAY_DIST_FADE 5000.0f
@@ -446,13 +446,13 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	float3 binormal;            
 	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);  
 
-	float reflFade = dot(normal, normalize(reflRay));
-	if(reflFade <= 0)
+	float NoR = dot(normal, normalize(reflRay));
+	if(NoR <= 0)
 		return 0;
 
-	reflFade = saturate(reflFade * 10);
+	//reflFade = saturate(reflFade * 100);
 	//return reflFade;
-	reflFade *= 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
+	float reflFade = 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
 	if(reflFade == 0)   
 		return 0;      
 	 
