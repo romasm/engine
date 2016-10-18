@@ -199,10 +199,10 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 
 	float3 d_inbox = o + d * boundParams[2];
 	if(d_inbox.z > 1.0)
-		d_inbox = d;
-
+		d_inbox = o + d;
 	d_inbox -= o_inbox;
-	return float4(o_inbox, 1);
+
+	//return float4(o_inbox, 1);
 	float o_offset = o_inbox.z;
 	// box intersect
 	
@@ -228,7 +228,8 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 		minThickness *= 0.5;
 		alpha = ((ray.z - minmaxZ.r) - minThickness) / minThickness;
 
-		const float3 tmpRay = o_inbox + d_inbox * ( clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_offset );
+		const float3 tmpRay = o_inbox + d_inbox * max(0.0, clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_offset );
+		return o_inbox.z + d_inbox.z > 0.99;//float4(, 1);
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
 
 		[branch]
@@ -247,7 +248,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 			alpha = 1;
 			break;
 		}
-
+		
 		++iterator;
 	}
 	
