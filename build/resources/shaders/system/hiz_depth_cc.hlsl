@@ -12,7 +12,7 @@ TECHNIQUE_DEFAULT
 #include "light_constants.hlsl"
 
 Texture2D depthTex : register(t0); 
-Texture2D visTex : register(t1); 
+//Texture2D visTex : register(t1); 
 
 SamplerState samplerPointClamp : register(s0);
 
@@ -27,7 +27,7 @@ cbuffer materialBuffer : register(b1)
 struct PO_HIZ
 {
     float2 hiz : SV_TARGET0;
-	float vis : SV_TARGET1;
+	//float vis : SV_TARGET1;
 };
 
 #define VIS_DIV 1.0f/4.0f
@@ -41,7 +41,7 @@ PO_HIZ CalcHiZ(PI_PosTex input)
 	PO_HIZ res;
 	res.hiz.x = min( min(depthMin.x, depthMin.y), min(depthMin.z, depthMin.w) );
 	res.hiz.y = max( max(depthMax.x, depthMax.y), max(depthMax.z, depthMax.w) );
-
+	/*
 	// vis
 	float4 vis = 1;
 	if(calcVis > 0)
@@ -54,6 +54,6 @@ PO_HIZ CalcHiZ(PI_PosTex input)
 	res.vis += ((depthMin.z - res.hiz.x) * maxmindiff) * vis.z;
 	res.vis += ((depthMin.w - res.hiz.x) * maxmindiff) * vis.w;
 	res.vis *= VIS_DIV;
-
+	*/
 	return res;
 }

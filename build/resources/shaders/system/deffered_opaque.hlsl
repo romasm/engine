@@ -367,6 +367,8 @@ PO_final DefferedLighting(PI_PosTex input)
 	//binormal = normalize(cross(cross(normal, binormal), binormal));
 	
 	float3 Refl = 2 * normal * NoV - VtoWP; 
+
+	//float VNoR = dot(vertex_normal, Refl);
 	
 	// SHADOW DEPTH FIX
 #define NORMAL_OFFSET_MAX 10
@@ -1343,13 +1345,9 @@ PO_final DefferedLighting(PI_PosTex input)
 	Indir.specular = skyEnvProbSpec(specNormal, VtoWP, indirNoV, indirR, sqrtR, distMip, envprobsDist, envprobsDistDiff);
 	
 	Indir.specular *= computeSpecularOcclusion(indirNoV, ao, indirR);
-
-	float4 specSecond;
-	specSecond.rgb = ssr.rgb * ssr.a;
-	specSecond.a = 1 - ssr.a;
+	Indir.specular = lerp(Indir.specular, ssr.rgb, ssr.a);
 
 	Indir.specular *= specBrdf;
-	specSecond.rgb *= specBrdf;
 	
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff) * diffBrdf * ao;
 		  
@@ -1362,7 +1360,9 @@ PO_final DefferedLighting(PI_PosTex input)
 	res.diffuse.rgb = Light.diffuse * dirDiff + (emissive + Indir.diffuse) * indirDiff;
 	res.specular.rgb = Indir.specular * indirSpec;
 
-	specSecond.rgb += Light.specular * dirSpec;
+	float4 specSecond = 1;
+	specSecond.rgb = Light.specular * dirSpec;
+
 	res.diffuse.a = specSecond.r;
 	res.specular.a = specSecond.g;
 	res.specularMore.rg = specSecond.ba;

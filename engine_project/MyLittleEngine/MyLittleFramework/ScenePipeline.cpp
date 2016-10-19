@@ -414,8 +414,10 @@ bool ScenePipeline::InitRts()
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
 	sp_SSR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(1), 3);
 	sp_SSR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 4);
-	sp_SSR->SetTexture(rt_HiZVis->GetShaderResourceView(0), 5);
-	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 6);
+	//sp_SSR->SetTexture(rt_HiZVis->GetShaderResourceView(0), 5);
+	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 5);
+	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 6);
+	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 7);
 
 	sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_DIR);
 	//sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_NOISE2D, 0);
@@ -903,14 +905,15 @@ void ScenePipeline::HiZMips()
 		rt_HiZDepth->m_viewport.Height = float(rt_HiZDepth->mip_res[j].y);
 		Render::RSSetViewports(1, &rt_HiZDepth->m_viewport);
 
-		ID3D11RenderTargetView* rts[2];
+		/*ID3D11RenderTargetView* rts[2];
 		rts[0] = miplvl.mip_RTV[j];
 		rts[1] = j==0 ? rt_HiZVis->m_RTV[0] : rt_HiZVis->mipRes[0].mip_RTV[j-1];
-		Render::OMSetRenderTargets(2, rts, nullptr);
+		Render::OMSetRenderTargets(2, rts, nullptr);*/
+		Render::OMSetRenderTargets(1, &miplvl.mip_RTV[j], nullptr);
 		
 		sp_HiZ->SetTexture(miplvl.mip_SRV[j], 0);
-		if(j!=0)
-			sp_HiZ->SetTexture(rt_HiZVis->mipRes[0].mip_SRV[j-1], 1);
+		//if(j!=0)
+		//	sp_HiZ->SetTexture(rt_HiZVis->mipRes[0].mip_SRV[j-1], 1);
 		sp_HiZ->SetFloat(float(j), 0);
 		sp_HiZ->Draw();
 

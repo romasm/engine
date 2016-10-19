@@ -16,8 +16,9 @@ Texture2D <float4> gb_roughnessX : register(t2);
 Texture2D <float4> gb_roughnessY : register(t3); 
 Texture2D <float4> reflectData : register(t4); 
 Texture2D <float2> hiz_depth : register(t5); 
-Texture2D hiz_vis : register(t6);  
-Texture2D <uint> gb_mat_obj : register(t7); 
+Texture2D <uint> gb_mat_obj : register(t6); 
+Texture2D <float2> gb_vnXY : register(t7); 
+Texture2D <float4> gb_emiss_vnZ : register(t8); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerTrilinearClamp : register(s1);
@@ -54,42 +55,23 @@ float3 GetPrevPos(float3 pos) // screen space
 	return res; 
 }
 
-float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float pixStep, bool is_negative)
-{
-	float2 index = cellIndex + step;
-	index /= count;
-	//index += offset;
-	
-	float2 delta = index - o.xy;
-	delta /= d.xy;
-
-	float t;
-	[flatten]
-	if(is_negative) t = (max(delta.x, delta.y) - /*0.000001*/pixStep);
-	else t = (min(delta.x, delta.y) + pixStep);
-
-	return o + d * t;
-}
-
 float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 pixStep, bool is_negative)
 {
 	float2 index = cellIndex + step;
 	index /= count;
-	//index += offset;
 	
 	float2 delta = index - o.xy;
 	delta /= d.xy;
 
-	//float t = min(delta.x, delta.y) + pixStep;
 	float t;
 	[flatten]
-	if(is_negative) t = (max(delta.x, delta.y) - /*0.000001*/pixStep);
+	if(is_negative) t = (max(delta.x, delta.y) - pixStep);
 	else t = (min(delta.x, delta.y) + pixStep);
 
 	return o + d * t;
 }
 
-float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW )
+float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW, float VNoR )
 {
 	float level = 0;
 	float iterator = 0;
@@ -100,7 +82,7 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	if( abs(refl.x) <= pixSize.x && abs(refl.y) <= pixSize.y )
 		return 0;
 	
-	const bool is_negative = false;//refl.z < 0;
+	const bool is_negative = false;
 
 	float2 crossStep;
 	crossStep.x = (refl.x>=0) ? 1.0f : 0.0f;
@@ -129,39 +111,6 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 
 	if(d_inbox.z > 1.0)
 		d_inbox = d;
-		/*	
-	// box intersect
-	float boundParams[4];
-	boundParams[0] = - o.x / d.x;
-	boundParams[1] = (1 - o.x) / d.x;
-	boundParams[2] = - o.y / d.y;
-	boundParams[3] = (1 - o.y) / d.y;
-
-	[unrool]
-	for(int i=0; i<3; i++)
-	{
-		for(int i=0; i<3; i++)
-		{
-			if(boundParams[i] > boundParams[i+1])
-			{
-				float temp = boundParams[i];
-				boundParams[i] = boundParams[i+1];
-				boundParams[i+1] = temp;
-			}
-		}
-	}
-
-	float3 o_inbox = o + d * boundParams[1];
-	if(o_inbox.z < 0.0)
-		o_inbox = o;
-
-	float3 d_inbox = o + d * boundParams[2];
-	if(d_inbox.z > 1.0)
-		d_inbox = o + d;
-	d_inbox -= o_inbox;
-	*/
-
-	// box intersect
 	
 	float2 d_pix = abs(pixSize / d_inbox.xy);
 
@@ -179,15 +128,12 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 		const float2 cellCount = trunc(screenSize / exp2(level));
 		const float2 oldCellId = trunc(ray.xy * cellCount);
 
-		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
+		float minThickness = MAX_DEPTH_OFFSET * perspW;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
 
-		//minThickness *= 0.5;
 		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.15) / (minThickness * 0.85);
 
-		//const float3 tmpRay = o_inbox + d_inbox * max(0.0, clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_inbox.z );
 		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
-		//return o.z + d.z == 1.0;//float4(, 1);
 		const float2 newCellId = trunc(tmpRay.xy * cellCount);
 
 		[branch]
@@ -219,13 +165,17 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW 
 	}
 
 	alpha = 1 - saturate(alpha);
+
+	if(iterator == 0)
+		alpha *= saturate((VNoR - 0.2) * 10.0);
+
 	alpha *= alpha;
 	alpha *= alpha;
 	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
 	return float4(ray, alpha);
 }
 
-float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float perspW )
+float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float perspW, float VNoR )
 {
 	float level = 0;
 	float iterator = 0;
@@ -269,10 +219,9 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	{
 		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
 		
-		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
+		float minThickness = MAX_DEPTH_OFFSET * perspW;
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
 
-		//minThickness *= 0.5;
 		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.05) / (minThickness * 0.95);
 
 		[branch]
@@ -303,42 +252,44 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 		
 		++iterator;
 	}
-	//return iterator / 100;
+
 	alpha = 1 - saturate(alpha);
+
+	if(iterator == 0)
+		alpha *= saturate((VNoR - 0.2) * 10.0);
+
 	alpha *= alpha;
 	alpha *= alpha;
 	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
 	return float4(ray, alpha);
 }
 
-float isoscelesTriangleInRadius(float a, float h)
-{
-	float a2 = a * a;
-	float fh2 = 4.0f * h * h;
-	return (a * (sqrt(a2 + fh2) - a)) / (4.0f * max(h, 0.00001f));
-}
+#include "light_constants.hlsl"
 
-float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
+float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, float3 vertex_normal )
 {
-	//if(p.z > 0.999)
-	//	return 0;
-
 	float3 viewPos = mul(float4(WP, 1.0f), g_view).rgb;
 	float perspW = viewPos.z * g_proj[2][3] + g_proj[3][3];
+	perspW = g_perspParam / perspW;
 
 	if(viewPos.z > 50.0)
 		return 0;
-
+	
 	float distFade = pow(1 - saturate((viewPos.z - 30.0) / 20.0), 2);
 
 	float3 V_unnorm = g_CamPos - WP;
 	float3 V = normalize(V_unnorm);
 
-	if(dot(V, N) <= 0.0)
+	float NoV = dot(N, V); // fix normals
+	if(NoV < 0.001)
 		return 0;
-
-	float3 reflWS = reflect(-V, N);
 	
+	float3 reflWS = 2 * N * dot(N, V) - V;
+
+	float VNoR = dot(vertex_normal, reflWS);
+	if(VNoR < 0.001)
+		return 0;
+		
 	// correct reflection pos
 	float refl_d = dot(g_CamDir, V_unnorm);
 	float refl_e = dot(g_CamDir, reflWS);
@@ -362,21 +313,16 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 
 	float4 ray;    
 	[branch]         
-	if(is_parallel)  
-	{
-		ray = traceReflectionsParall( p_corr, refl, correctedSceenSize, perspW );
-		//return 1;
-	}
-	else
-	{   
-		ray = traceReflections( p_corr, refl, correctedSceenSize, perspW );
-		//return ray;		
-	}    
+	if(is_parallel)
+		ray = traceReflectionsParall( p_corr, refl, correctedSceenSize, perspW, VNoR );
+	else 
+		ray = traceReflections( p_corr, refl, correctedSceenSize, perspW, VNoR );	
+	  
 	ray.xy /= g_uvCorrectionForPow2; 
 	
-	//if(ray.w == 0)
-	//	return 0; 
-		 
+	if(ray.w == 0)
+		return 0; 
+	
 	float3 reflRay = WP - GetWPos(ray.xy, ray.z);
 
 	const float4 TBN = gb_normal.Sample(samplerPointClamp, ray.xy);              
@@ -389,14 +335,14 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 		ray.a = 0;
 
 	float NoR = dot(normal, normalize(reflRay));
-	//if(NoR <= 0)
+	//if(NoR <= 0.0 || NoR >= 0.9)
 	//	ray.a = 0;
 
-	//reflFade = saturate(reflFade * 100);
-	//return reflFade;
+	// COLOR RESOLVE
+
 	float reflFade = 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
-	//if(reflFade == 0)   
-	//	return 0;      
+	if(reflFade == 0)   
+		return 0;      
 	 
 	float3 newSamplePos = GetPrevPos(ray);  
 
@@ -406,111 +352,26 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 
 	float2 borderFade = saturate( (float2(1, 1) - borderDetectionCurr ) / float2(BORDER_FADE, BORDER_FADE) );
 	reflFade *= 0.5 * (sin((borderFade.x * borderFade.y - 0.5) * PI) + 1);
-	 
-	//float4 totalColor = 0;
-	//totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, newSamplePos.xy, 0).rgb;
-	//totalColor.a = ray.a;
-	
-
-	// CONE TRACING
-	float coneThetaHalf = acos(sqrt( (1 - 0.5) / ( 1 + (R*R*R*R - 1) * 0.5 ) ));
 		
-	float2 toReflPos = ray.xy - p.xy; // 2d or 3d? screen space or view space?
-	
-	float adjacentLength = length(toReflPos.xy);
-	const float startLength = adjacentLength;
-	
-	float2 adjacentUnit = normalize(toReflPos.xy);
+	float coneThetaHalf = acos(sqrt( (1 - 0.5) / ( 1 + (R*R*R*R - 1) * 0.5 ) ));
 	
 	// angle perspective correction
 	float tanThetaHalf = tan(coneThetaHalf);
-	//float incircleSize = tanThetaHalf * adjacentLength;
 	float worldSize = tanThetaHalf * length(reflRay);
-	float incircleSize = worldSize * g_perspParam / perspW;
-	const float startSize = incircleSize;
+	float incircleSize = worldSize * perspW;
 		
-	// cone-tracing using an isosceles triangle to approximate a cone in screen space
-	float3 samplePos = 0;
-	samplePos.z = ray.z;
-	
 	float4 totalColor = 0;
 	
-	samplePos.xy = p.xy + adjacentUnit * adjacentLength;
-	float mipChannel = log2(2.0f * incircleSize * max(screenSize.x, screenSize.y)); // try this with min intead of max
+	float mipChannel = log2(2.0f * incircleSize * max(screenSize.x, screenSize.y));
 	mipChannel = max(0, mipChannel);
 
-	float3 prevSamplePos = GetPrevPos(samplePos);
-	totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, prevSamplePos.xy, mipChannel).rgb;
-	if(mipChannel >= 1)
-	{
-		float visCurrent = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel - 1).r;
-		visCurrent = pow(visCurrent * 10, 1.1);//saturate(visCurrent * 10.0);
-		visCurrent = saturate(visCurrent);
-		totalColor.a = visCurrent * ray.a;
-	}
-	else
-	{
-		totalColor.a = ray.a;
-		float visZero = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), 0).r;
-		visZero = pow(visZero * 10, 1.1);//saturate(visZero * 10);
-		visZero = saturate(visZero);
-		totalColor.a = lerp(totalColor.a, visZero * ray.a, mipChannel);
-	}
+	totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, newSamplePos.xy, mipChannel).rgb;
+	
 	totalColor.a = ray.a;
 	totalColor.a *= 1 - (sin(saturate((mipChannel - 3.5) / 4.0) * PI - PIDIV2) * 0.5 + 0.5);
-	//totalColor.a = 1;
-	//totalColor.a = ray.a;
-	
-	/*[unroll]
-	for(int i = 0; i < 7; ++i)
-	{
-		adjacentLength = adjacentLength - incircleSize * 1.5;
-		if(adjacentLength <= 0)
-			break;
-
-		incircleSize = lerp(startSize, 0.0, adjacentLength / startLength);
-		
-		samplePos.z = lerp(p.z, ray.z, adjacentLength / startLength);
-		samplePos.xy = p.xy + adjacentUnit * adjacentLength;
-
-		float mipChannel = log2(2.0f * incircleSize * max(screenSize.x, screenSize.y));
-		
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel).rg;
-		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
-		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
-
-		[branch]
-		if( ray.z >= minmaxZ.r && ray.z <= minmaxZ.g )
-		{
-			float4 color = 0;
-			float3 prevSamplePos = GetPrevPos(samplePos);
-			color.rgb = reflectData.SampleLevel(samplerTrilinearClamp, prevSamplePos.xy, mipChannel).rgb;
-			//if(ray.x != 0)
-				//return mipChannel;
-
-			[branch]
-			if(mipChannel > 0)
-				color.a = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel - 1).r;
-			else
-				color.a = 1.0;
-		
-			totalColor.rgb = lerp(totalColor.rgb, color.rgb, color.a);
-			totalColor.a = lerp(totalColor.a, 1.0, color.a);
-		}
-		
-		[branch]
-		if(mipChannel < 0.5f)
-			break;
-	}*/
-	
-	///////////
-	//totalColor.a = 1;
 
 	totalColor.a *= reflFade;
 
-	//if(ray.w == 0)  
-	//	return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(ray.xy), 4).r * R,0);//totalColor.a = 0;
-	
 	return totalColor * distFade;  
 } 
 
@@ -540,7 +401,11 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	           
 	float R_X = gb_roughnessX.Sample(samplerPointClamp, inUV).a;     
 	float R_Y = gb_roughnessY.Sample(samplerPointClamp, inUV).a;  
-	   
+
+	float3 vertex_normal;
+	vertex_normal.xy = gb_vnXY.Sample(samplerPointClamp, inUV).xy;
+	vertex_normal.z = gb_emiss_vnZ.Sample(samplerPointClamp, inUV).a;
+	
 	float3 posSS = float3(inUV, depth);   
 		   
 	float avgR = (R_X + R_Y) * 0.5f;
@@ -548,9 +413,9 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	if(avgR > 0.4)
 		return 0;
 
-	float4 ssr = calc_ssr(posSS, normal, wpos, float2(float(g_screenW), float(g_screenH)), avgR);
+	float4 ssr = calc_ssr(posSS, normal, wpos, float2(float(g_screenW), float(g_screenH)), avgR, vertex_normal);
 
-	float FadeR = 1 - saturate((avgR - 0.3) / 0.1);
+	float fadeR = 1 - saturate((avgR - 0.3) / 0.1);
 	
-	return ssr * FadeR;
+	return ssr * fadeR;
 } 
