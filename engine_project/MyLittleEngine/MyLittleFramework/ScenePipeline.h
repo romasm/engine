@@ -248,6 +248,7 @@ namespace EngineCore
 		ScreenPlane *sp_Bloom;
 
 		ScreenPlane *sp_SSR;
+		GaussianBlur *g_SSR;
 
 		ScreenPlane *sp_Antialiased[3];
 

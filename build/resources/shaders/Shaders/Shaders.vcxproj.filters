@@ -295,5 +295,17 @@
     <FxCompile Include="..\system\hiz_shadows.hlsl">
       <Filter>system</Filter>
     </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel3h.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel3h_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel3v.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\gblur\kernel3v_dd.hlsl">
+      <Filter>system\gblur</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

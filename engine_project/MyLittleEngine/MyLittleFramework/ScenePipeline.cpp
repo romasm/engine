@@ -51,6 +51,7 @@ ScenePipeline::ScenePipeline()
 	sp_Bloom = nullptr;
 
 	sp_SSR = nullptr;
+	g_SSR = nullptr;
 
 	sp_Antialiased[0] = nullptr;
 	sp_Antialiased[1] = nullptr;
@@ -160,6 +161,7 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_Bloom);
 
 	_DELETE(sp_SSR);
+	_CLOSE(g_SSR);
 
 	_DELETE(sp_Antialiased[0]);
 	_DELETE(sp_Antialiased[1]);
@@ -349,12 +351,16 @@ bool ScenePipeline::InitRts()
 	rt_SSR = new RenderTarget;
 	if(!rt_SSR->Init(width, height))return false;
 	if(!rt_SSR->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT))return false;
+	
+	g_SSR = new GaussianBlur;
+	if(!g_SSR->Init(width, height, DXGI_FORMAT_R16G16B16A16_FLOAT, GB_KERNEL3, GB_ONLYMIP0, true))return false;
 
 	// OPAQUE
 	rt_OpaqueDefferedDirect = new RenderTarget;
 	if(!rt_OpaqueDefferedDirect->Init(width, height))return false;
-	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0))return false; // diffuse, specular.r
-	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32_FLOAT))return false; // specular gb
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0))return false; // diffuse, second specular
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false; // specular, second specular
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32_FLOAT))return false; // second specular
 
 	rt_OpaqueFinal = new RenderTarget;
 	if(!rt_OpaqueFinal->Init(width, height))return false;
@@ -439,8 +445,9 @@ bool ScenePipeline::InitRts()
 	sp_FinalOpaque = new ScreenPlane(SP_MATERIAL_COMBINE);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(0), 0);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(1), 1);
-	sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 2);
-	sp_FinalOpaque->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 3);
+	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(2), 2);
+	sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 3);
+	sp_FinalOpaque->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 4);
 
 	sp_AvgLum->SetTexture(rt_OpaqueFinal->GetShaderResourceView(1), 0);
 	sp_AvgLum->SetFloat(float(rt_OpaqueFinal->GetMipsCountInFullChain() - 2), 0);
@@ -937,6 +944,8 @@ void ScenePipeline::OpaqueDefferedStage()
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 
 	sp_SSR->Draw();
+
+	g_SSR->blur(rt_SSR, 0, rt_HiZDepth->GetShaderResourceView(0));
 
 	// ao
 	PERF_GPU_TIMESTAMP(_AO);

@@ -10,7 +10,7 @@ float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)
 	
 	// temp
 	float4 ttt = shadowsMips.GatherRed(samplerPointClamp, UV);
-	if(ttt.x <= 0) 
+	if(ttt.x >= 1) 
 		return 1;
 
 	if(!any(compare))

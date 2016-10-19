@@ -268,7 +268,8 @@ cbuffer materialBuffer : register(b11)
 struct PO_final
 {
     float4 diffuse : SV_TARGET0;
-	float2 specular : SV_TARGET1;
+	float4 specular : SV_TARGET1;
+	float2 specularMore : SV_TARGET2;
 };
 
 PO_final DefferedLighting(PI_PosTex input)
@@ -276,6 +277,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	PO_final res;
 	res.diffuse = 0;
 	res.specular = 0;
+	res.specularMore = 0;
 	
 	int2 pixCoords = 0;
 	pixCoords.x = int(g_screenW * input.tex.x);
@@ -305,7 +307,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	const float3 wpos = GetWPos(input.tex, depth);
 	
 	MaterialParamsStructBuffer params = MAT_PARAMS[matID];
-
+	 
 	float3 normal;
 	float3 tangent;   
 	float3 binormal;
@@ -1341,8 +1343,13 @@ PO_final DefferedLighting(PI_PosTex input)
 	Indir.specular = skyEnvProbSpec(specNormal, VtoWP, indirNoV, indirR, sqrtR, distMip, envprobsDist, envprobsDistDiff);
 	
 	Indir.specular *= computeSpecularOcclusion(indirNoV, ao, indirR);
-	Indir.specular = lerp(Indir.specular, ssr.rgb, ssr.a);
+
+	float4 specSecond;
+	specSecond.rgb = ssr.rgb * ssr.a;
+	specSecond.a = 1 - ssr.a;
+
 	Indir.specular *= specBrdf;
+	specSecond.rgb *= specBrdf;
 	
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff) * diffBrdf * ao;
 		  
@@ -1353,9 +1360,12 @@ PO_final DefferedLighting(PI_PosTex input)
 	  
 	// ----------------- FINAL -------------------------
 	res.diffuse.rgb = Light.diffuse * dirDiff + (emissive + Indir.diffuse) * indirDiff;
-	float3 specFin = Light.specular * dirSpec + Indir.specular * indirSpec;
-	res.diffuse.a = specFin.r;
-	res.specular = specFin.gb;
+	res.specular.rgb = Indir.specular * indirSpec;
+
+	specSecond.rgb += Light.specular * dirSpec;
+	res.diffuse.a = specSecond.r;
+	res.specular.a = specSecond.g;
+	res.specularMore.rg = specSecond.ba;
 
 	//res.diffuse *= 1 - indirDiff;
 	//res.diffuse.rgb += shadows.Sample(samplerPointClamp, float3(input.tex, 0)).r;

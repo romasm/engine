@@ -126,6 +126,10 @@
     <FxCompile Include="..\system\gblur\kernel31h_dd.hlsl" />
     <FxCompile Include="..\system\gblur\kernel31v.hlsl" />
     <FxCompile Include="..\system\gblur\kernel31v_dd.hlsl" />
+    <FxCompile Include="..\system\gblur\kernel3h.hlsl" />
+    <FxCompile Include="..\system\gblur\kernel3h_dd.hlsl" />
+    <FxCompile Include="..\system\gblur\kernel3v.hlsl" />
+    <FxCompile Include="..\system\gblur\kernel3v_dd.hlsl" />
     <FxCompile Include="..\system\gblur\kernel5h.hlsl" />
     <FxCompile Include="..\system\gblur\kernel5h_dd.hlsl" />
     <FxCompile Include="..\system\gblur\kernel5v.hlsl" />

@@ -71,78 +71,6 @@ float3 intersectCellBound(float3 o, float3 d, float2 cellIndex, float2 count, fl
 	return o + d * t;
 }
 
-float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW )
-{
-	float level = 0;
-	float iterator = 0;
-	float alpha = 1;
-
-	float2 pixSize = rcp(screenSize);
-
-	if( abs(refl.x) <= pixSize.x && abs(refl.y) <= pixSize.y )
-		return 0;
-	
-	const bool is_negative = refl.z < 0;
-	
-	float2 crossStep;
-	crossStep.x = (refl.x>=0) ? 1.0f : 0.0f;
-	crossStep.y = (refl.y>=0) ? 1.0f : 0.0f;
-	
-	float3 ray = p;
-	const float3 d = refl.xyz / refl.z;
-	const float3 o = p - d * p.z;
-			
-	float2 d_pix = abs(pixSize / d.xy);
-
-	float d_pixStep = min(1.0, min(d_pix.x, d_pix.y));
-	d_pixStep *= 0.1;
-
-	float2 rayCell = trunc(ray.xy * screenSize);
-	ray = intersectCellBound(o, d, rayCell, screenSize, crossStep, d_pixStep, is_negative);
-	
-	[loop]
-	while( level >= 0 && iterator < RAY_ITERATOR )
-	{	
-		float2 minmaxZ = hiz_depth.SampleLevel(samplerPointClamp, ray.xy, level).rg;
-		
-		const float2 cellCount = trunc(screenSize / exp2(level));
-		const float2 oldCellId = trunc(ray.xy * cellCount);
-		
-		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
-		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
-
-		minThickness *= 0.5;
-		alpha = ((ray.z - minmaxZ.r) - minThickness) / minThickness;
-
-		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
-		const float2 newCellId = trunc(tmpRay.xy * cellCount);
-		
-		[branch]
-		if( oldCellId.x != newCellId.x || oldCellId.y != newCellId.y )
-		{
-			ray = intersectCellBound(o, d, oldCellId, cellCount, crossStep, d_pixStep, is_negative);
-			level++;
-		}
-		else
-			level--;
-		
-		[branch]
-		if(level >= g_hizMipCount || ray.x <= 0 || ray.y <= 0 || 
-			ray.x >= g_uvCorrectionForPow2.x || ray.y >= g_uvCorrectionForPow2.y)
-		{
-			alpha = 1;
-			break;
-		}
-		
-		++iterator;
-	}
-	
-	alpha = 1 - saturate(alpha);
-	alpha *= alpha;
-	alpha *= saturate(1 - float(iterator - RAY_ITERATOR * 0.8) / (RAY_ITERATOR * 0.2));
-	return float4(ray, alpha);
-}
-
 float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 pixStep, bool is_negative)
 {
 	float2 index = cellIndex + step;
@@ -161,7 +89,7 @@ float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 cou
 	return o + d * t;
 }
 
-float4 traceReflections2( float3 p, float3 refl, float2 screenSize, float perspW )
+float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW )
 {
 	float level = 0;
 	float iterator = 0;
@@ -255,7 +183,7 @@ float4 traceReflections2( float3 p, float3 refl, float2 screenSize, float perspW
 		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
 
 		//minThickness *= 0.5;
-		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.05) / (minThickness * 0.95);
+		alpha = ((ray.z - minmaxZ.r) - minThickness * 0.15) / (minThickness * 0.85);
 
 		//const float3 tmpRay = o_inbox + d_inbox * max(0.0, clamp( ray.z, minmaxZ.r, minmaxZ.g ) - o_inbox.z );
 		const float3 tmpRay = o + d * clamp( ray.z, minmaxZ.r, minmaxZ.g );
@@ -274,7 +202,7 @@ float4 traceReflections2( float3 p, float3 refl, float2 screenSize, float perspW
 			[branch]
 			if(level < 0)
 			{
-				ray.xy = oldCellId * pixSize;
+				ray.xy = (float2(oldCellId) + float2(0.5, 0.5)) * pixSize;
 				break;
 			}
 		}
@@ -360,7 +288,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 			[branch]
 			if(level < 0)
 			{
-				ray.xy = trunc(ray.xy * screenSize) * pixSize;
+				ray.xy = (trunc(ray.xy * screenSize) + float2(0.5, 0.5)) * pixSize;
 				break;
 			}
 		}
@@ -383,7 +311,12 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	return float4(ray, alpha);
 }
 
-//#include "light_constants.hlsl" 
+float isoscelesTriangleInRadius(float a, float h)
+{
+	float a2 = a * a;
+	float fh2 = 4.0f * h * h;
+	return (a * (sqrt(a2 + fh2) - a)) / (4.0f * max(h, 0.00001f));
+}
 
 float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 {
@@ -392,6 +325,11 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 
 	float3 viewPos = mul(float4(WP, 1.0f), g_view).rgb;
 	float perspW = viewPos.z * g_proj[2][3] + g_proj[3][3];
+
+	if(viewPos.z > 50.0)
+		return 0;
+
+	float distFade = pow(1 - saturate((viewPos.z - 30.0) / 20.0), 2);
 
 	float3 V_unnorm = g_CamPos - WP;
 	float3 V = normalize(V_unnorm);
@@ -413,9 +351,10 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	float3 posReflSSvect = posReflSS.xyz / posReflSS.w; 
 	posReflSSvect.xy = posReflSSvect.xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);	
 	float3 refl = posReflSSvect - p; 
-	 	  
-	p.x *= g_uvCorrectionForPow2.x;
-	p.y *= g_uvCorrectionForPow2.y;
+	 	
+	float3 p_corr = p;
+	p_corr.x *= g_uvCorrectionForPow2.x;
+	p_corr.y *= g_uvCorrectionForPow2.y;
 	refl.x *= g_uvCorrectionForPow2.x;
 	refl.y *= g_uvCorrectionForPow2.y;
 
@@ -425,18 +364,18 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	[branch]         
 	if(is_parallel)  
 	{
-		ray = traceReflectionsParall( p, refl, correctedSceenSize, perspW );
+		ray = traceReflectionsParall( p_corr, refl, correctedSceenSize, perspW );
 		//return 1;
 	}
 	else
 	{   
-		ray = traceReflections2( p, refl, correctedSceenSize, perspW );
+		ray = traceReflections( p_corr, refl, correctedSceenSize, perspW );
 		//return ray;		
 	}    
 	ray.xy /= g_uvCorrectionForPow2; 
 	
-	if(ray.w == 0)
-		return 0; 
+	//if(ray.w == 0)
+	//	return 0; 
 		 
 	float3 reflRay = WP - GetWPos(ray.xy, ray.z);
 
@@ -446,15 +385,18 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	float3 binormal;            
 	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);  
 
+	if(!any(normal))
+		ray.a = 0;
+
 	float NoR = dot(normal, normalize(reflRay));
-	if(NoR <= 0)
-		return 0;
+	//if(NoR <= 0)
+	//	ray.a = 0;
 
 	//reflFade = saturate(reflFade * 100);
 	//return reflFade;
 	float reflFade = 1 - saturate((dot(reflRay, reflRay) - MAX_RAY_DIST_SQ) / MAX_RAY_DIST_FADE);
-	if(reflFade == 0)   
-		return 0;      
+	//if(reflFade == 0)   
+	//	return 0;      
 	 
 	float3 newSamplePos = GetPrevPos(ray);  
 
@@ -465,16 +407,111 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R )
 	float2 borderFade = saturate( (float2(1, 1) - borderDetectionCurr ) / float2(BORDER_FADE, BORDER_FADE) );
 	reflFade *= 0.5 * (sin((borderFade.x * borderFade.y - 0.5) * PI) + 1);
 	 
+	//float4 totalColor = 0;
+	//totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, newSamplePos.xy, 0).rgb;
+	//totalColor.a = ray.a;
+	
+
+	// CONE TRACING
+	float coneThetaHalf = acos(sqrt( (1 - 0.5) / ( 1 + (R*R*R*R - 1) * 0.5 ) ));
+		
+	float2 toReflPos = ray.xy - p.xy; // 2d or 3d? screen space or view space?
+	
+	float adjacentLength = length(toReflPos.xy);
+	const float startLength = adjacentLength;
+	
+	float2 adjacentUnit = normalize(toReflPos.xy);
+	
+	// angle perspective correction
+	float tanThetaHalf = tan(coneThetaHalf);
+	//float incircleSize = tanThetaHalf * adjacentLength;
+	float worldSize = tanThetaHalf * length(reflRay);
+	float incircleSize = worldSize * g_perspParam / perspW;
+	const float startSize = incircleSize;
+		
+	// cone-tracing using an isosceles triangle to approximate a cone in screen space
+	float3 samplePos = 0;
+	samplePos.z = ray.z;
+	
 	float4 totalColor = 0;
-	totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, newSamplePos.xy, 0).rgb;
+	
+	samplePos.xy = p.xy + adjacentUnit * adjacentLength;
+	float mipChannel = log2(2.0f * incircleSize * max(screenSize.x, screenSize.y)); // try this with min intead of max
+	mipChannel = max(0, mipChannel);
+
+	float3 prevSamplePos = GetPrevPos(samplePos);
+	totalColor.rgb = reflectData.SampleLevel(samplerTrilinearClamp, prevSamplePos.xy, mipChannel).rgb;
+	if(mipChannel >= 1)
+	{
+		float visCurrent = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel - 1).r;
+		visCurrent = pow(visCurrent * 10, 1.1);//saturate(visCurrent * 10.0);
+		visCurrent = saturate(visCurrent);
+		totalColor.a = visCurrent * ray.a;
+	}
+	else
+	{
+		totalColor.a = ray.a;
+		float visZero = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), 0).r;
+		visZero = pow(visZero * 10, 1.1);//saturate(visZero * 10);
+		visZero = saturate(visZero);
+		totalColor.a = lerp(totalColor.a, visZero * ray.a, mipChannel);
+	}
 	totalColor.a = ray.a;
+	totalColor.a *= 1 - (sin(saturate((mipChannel - 3.5) / 4.0) * PI - PIDIV2) * 0.5 + 0.5);
+	//totalColor.a = 1;
+	//totalColor.a = ray.a;
+	
+	/*[unroll]
+	for(int i = 0; i < 7; ++i)
+	{
+		adjacentLength = adjacentLength - incircleSize * 1.5;
+		if(adjacentLength <= 0)
+			break;
+
+		incircleSize = lerp(startSize, 0.0, adjacentLength / startLength);
+		
+		samplePos.z = lerp(p.z, ray.z, adjacentLength / startLength);
+		samplePos.xy = p.xy + adjacentUnit * adjacentLength;
+
+		float mipChannel = log2(2.0f * incircleSize * max(screenSize.x, screenSize.y));
+		
+		float2 minmaxZ = hiz_depth.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel).rg;
+		float minThickness = MAX_DEPTH_OFFSET * g_perspParam / perspW;
+		minmaxZ.g = minmaxZ.r + max(minmaxZ.g - minmaxZ.r, minThickness);
+
+		[branch]
+		if( ray.z >= minmaxZ.r && ray.z <= minmaxZ.g )
+		{
+			float4 color = 0;
+			float3 prevSamplePos = GetPrevPos(samplePos);
+			color.rgb = reflectData.SampleLevel(samplerTrilinearClamp, prevSamplePos.xy, mipChannel).rgb;
+			//if(ray.x != 0)
+				//return mipChannel;
+
+			[branch]
+			if(mipChannel > 0)
+				color.a = hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(samplePos.xy), mipChannel - 1).r;
+			else
+				color.a = 1.0;
+		
+			totalColor.rgb = lerp(totalColor.rgb, color.rgb, color.a);
+			totalColor.a = lerp(totalColor.a, 1.0, color.a);
+		}
+		
+		[branch]
+		if(mipChannel < 0.5f)
+			break;
+	}*/
+	
+	///////////
+	//totalColor.a = 1;
 
 	totalColor.a *= reflFade;
 
-	if(ray.w == 0)  
-		return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(ray.xy), 4).r * R,0);//totalColor.a = 0;
+	//if(ray.w == 0)  
+	//	return float4(0,1,hiz_vis.SampleLevel(samplerTrilinearClamp, UVforSamplePow2(ray.xy), 4).r * R,0);//totalColor.a = 0;
 	
-	return totalColor;  
+	return totalColor * distFade;  
 } 
 
 float4 SSR(PI_PosTex input) : SV_TARGET 
@@ -506,7 +543,14 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	   
 	float3 posSS = float3(inUV, depth);   
 		   
-	float4 ssr = calc_ssr(posSS, normal, wpos, float2(float(g_screenW), float(g_screenH)), (R_X + R_Y) * 0.5f);
+	float avgR = (R_X + R_Y) * 0.5f;
+	[branch]
+	if(avgR > 0.4)
+		return 0;
+
+	float4 ssr = calc_ssr(posSS, normal, wpos, float2(float(g_screenW), float(g_screenH)), avgR);
+
+	float FadeR = 1 - saturate((avgR - 0.3) / 0.1);
 	
-	return ssr;
+	return ssr * FadeR;
 } 

@@ -13,33 +13,34 @@ TECHNIQUE_DEFAULT
 
 Texture2D diffuse : register(t0); 
 Texture2D specular : register(t1); 
-Texture2D gb_matID_objID : register(t2); 
-Texture2D gb_depth : register(t3); 
+Texture2D specularMore : register(t2); 
+Texture2D gb_matID_objID : register(t3); 
+Texture2D gb_depth : register(t4); 
 
 SamplerState samplerPointClamp : register(s0);
 
 struct PO_opaque
 {
 	float4 opaque : SV_TARGET0;
-	float4 diffuse : SV_TARGET1;
+	float4 forNextFrame : SV_TARGET1;
 };
 
 PO_opaque Combine(PI_PosTex input)
 {
 	PO_opaque res;
 	
-	float4 light_diff = diffuse.Sample(samplerPointClamp, input.tex);
-	float3 light_spec = 0;
-	light_spec.gb = specular.Sample(samplerPointClamp, input.tex).rg;
-	light_spec.r = light_diff.a;
-	
+	float4 diffSample = diffuse.Sample(samplerPointClamp, input.tex);
+	float4 specSample = specular.Sample(samplerPointClamp, input.tex);
+	float2 specSecondSample = specularMore.Sample(samplerPointClamp, input.tex).rg;
+
 	float d = gb_depth.Sample(samplerPointClamp, UVforSamplePow2(input.tex)).r;
 	
 	// ss blur: TODO
-	res.diffuse.rgb = light_diff.rgb;
-	res.diffuse.a = d;
+	res.forNextFrame.rgb = diffSample.rgb + specSample.rgb;
+	res.forNextFrame.a = d;
 
-	res.opaque.rgb = res.diffuse.rgb + light_spec;
+	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + 
+		float3(diffSample.a, specSample.a, specSecondSample.r);
 	res.opaque.a = d;
 	
 	return res;
