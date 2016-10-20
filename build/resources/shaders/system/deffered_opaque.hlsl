@@ -863,13 +863,13 @@ PO_final DefferedLighting(PI_PosTex input)
 		}
 	
 		float light_blocked = SpotlightShadow(float4(wpos,1.0f), DoUL, vertex_normal, dot(vertex_normal, L), vp_mat, adress, texelSize, shadowDepthFix);
-		res.diffuse.rgb = light_blocked;  
-		return res;
+		//res.diffuse.rgb = light_blocked;  
+		//return res; 
 		if(light_blocked == 0)
 			continue; 
-		 
+		
 		colorIlluminance *= light_blocked;
-
+		
 		const float3 H = normalize(VtoWP + L);
 		const float VoH = saturate(dot(VtoWP, H));
 		const float NoH = saturate( dot(normal, H) + 0.00001f );

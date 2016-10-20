@@ -20,6 +20,54 @@ float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)
 	return 1 - lerp(l1, l2, fracUV.y); 
 }
 
+#define PCF_NUM_SAMPLES 16
+#define PCF_WIDTH 6
+#define PCF_PIXEL 1.0 / 4096
+
+float PCF_Filter(float3 UV, float depth, float mapScale)
+{
+	float filterWidth = max(PCF_WIDTH * PCF_PIXEL * mapScale, PCF_PIXEL);
+
+	float stepSize = 2 * filterWidth / PCF_NUM_SAMPLES;
+	UV.xy -= float2(filterWidth, filterWidth);
+	
+	float sum = 0;
+	for(int i=0; i<PCF_NUM_SAMPLES; i++)
+		for(int j=0; j<PCF_NUM_SAMPLES; j++) 
+		{
+			float3 uv = UV;
+			uv.xy += float2(i * stepSize, j * stepSize);
+			float shadMapDepth = shadows.SampleLevel(samplerBilinearClamp, uv, 0).r;
+			float shad = depth < shadMapDepth;
+			sum += shad;
+        }
+
+	return sum / (PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
+}
+
+#define PCF_WIDTH_DIR 3
+
+float PCF_FilterDir(float3 UV, float depth, float mapScale)
+{
+	float filterWidth = max(PCF_WIDTH_DIR * PCF_PIXEL * mapScale, PCF_PIXEL);
+
+	float stepSize = 2 * filterWidth / PCF_NUM_SAMPLES;
+	UV.xy -= float2(filterWidth, filterWidth);
+	
+	float sum = 0;
+	for(int i=0; i<PCF_NUM_SAMPLES; i++)
+		for(int j=0; j<PCF_NUM_SAMPLES; j++) 
+		{
+			float3 uv = UV;
+			uv.xy += float2(i * stepSize, j * stepSize);
+			float shadMapDepth = shadows.SampleLevel(samplerBilinearClamp, uv, 0).r;
+			float shad = depth < shadMapDepth;
+			sum += shad;
+        }
+
+	return sum / (PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
+}
+
 // rect
 float rectangleSolidAngle( float3 worldPos ,float3 p0 , float3 p1 ,float3 p2 , float3 p3 )
 {
@@ -187,7 +235,8 @@ float SpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, mat
 	
 	float depthView = lightViewProjPos.z * lvp_rcp;
 	
-	return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress.z);
+	//return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
 }
 
 float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, matrix vp_mat, float4 adress, float2 texelSize, float near, float3 depthFix)
@@ -217,7 +266,8 @@ float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL,
 	lightViewProjPos.z -= shadowBiasSpotArea * near * depthFix.z;
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress.z);
+	//return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
 }
 
 /*static const float3 pl_dirs[6] =
@@ -244,6 +294,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 	float halfPix = 0;
 	float depthView = 0;
 	
+	float adress;
 	[branch]
 	if(zInLSqAbs[0]>=zInLSqAbs[1] && zInLSqAbs[0]>=zInLSqAbs[2])
 	{
@@ -270,6 +321,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 					
 			shadowmapCoords.xy = adress0.xy + reprojCoords.xy * adress0.z;
+			adress = adress0.z;
 			shadowmapCoords.z = adress0.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -296,6 +348,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 					
 			shadowmapCoords.xy = adress1.xy + reprojCoords.xy * adress1.z;
+			adress = adress1.z;
 			shadowmapCoords.z = adress1.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -326,6 +379,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 			
 			shadowmapCoords.xy = adress2.xy + reprojCoords.xy * adress2.z;
+			adress = adress2.z;
 			shadowmapCoords.z = adress2.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -352,6 +406,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 			
 			shadowmapCoords.xy = adress3.xy + reprojCoords.xy * adress3.z;
+			adress = adress3.z;
 			shadowmapCoords.z = adress3.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -382,6 +437,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 					
 			shadowmapCoords.xy = adress4.xy + reprojCoords.xy * adress4.z;
+			adress = adress4.z;
 			shadowmapCoords.z = adress4.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -408,13 +464,15 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 				return false;
 					
 			shadowmapCoords.xy = adress5.xy + reprojCoords.xy * adress5.z;
+			adress = adress5.z;
 			shadowmapCoords.z = adress5.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
 		}
 	}
 
-	return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress);
+	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 }
 
 float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, matrix view_mat, 
@@ -433,6 +491,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 	float halfPix = 0;
 	float depthView = 0;
 	
+	float adress;
 	[branch]
 	if(zInLSqAbs[0]>=zInLSqAbs[1] && zInLSqAbs[0]>=zInLSqAbs[2])
 	{
@@ -459,6 +518,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 					
 			shadowmapCoords.xy = adress0.xy + reprojCoords.xy * adress0.z;
+			adress = adress0.z;
 			shadowmapCoords.z = adress0.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -485,6 +545,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 					
 			shadowmapCoords.xy = adress1.xy + reprojCoords.xy * adress1.z;
+			adress = adress1.z;
 			shadowmapCoords.z = adress1.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -515,6 +576,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 			
 			shadowmapCoords.xy = adress2.xy + reprojCoords.xy * adress2.z;
+			adress = adress2.z;
 			shadowmapCoords.z = adress2.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -541,6 +603,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 			
 			shadowmapCoords.xy = adress3.xy + reprojCoords.xy * adress3.z;
+			adress = adress3.z;
 			shadowmapCoords.z = adress3.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -571,6 +634,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 					
 			shadowmapCoords.xy = adress4.xy + reprojCoords.xy * adress4.z;
+			adress = adress4.z;
 			shadowmapCoords.z = adress4.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
@@ -597,13 +661,15 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 				return false;
 					
 			shadowmapCoords.xy = adress5.xy + reprojCoords.xy * adress5.z;
+			adress = adress5.z;
 			shadowmapCoords.z = adress5.w;
 			lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 			depthView = lightViewProjPos.z * lvp_rcp;
 		}
 	}
 	
-	return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress);
+	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 }
 
 float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 pos2, float3 pos3, float3 normal, float NoL, 
@@ -703,687 +769,10 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
 #if DEBUG_CASCADE_LIGHTS != 0
-	return res * GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return res * PCF_FilterDir(shadowmapCoords, depthView, adress.z);
+	//return res * GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 #else
-	return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return PCF_FilterDir(shadowmapCoords, depthView, adress.z);
+	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 #endif
 }
-
-/*
-bool SpotlightShadow(out float shadowmap, uint lnum, float3 WP, matrix m_view, float dist, uint FilterType, float bias, float lbr, float samples, float light_size, bool noise, float2 noise_coord, float pix, float2 border)
-{
-	shadowmap = 0;
-	bool output = true;
-	
-	float2 projectTexCoord = 0;
-	if(!ReprojectCoords(WP, m_view, projectTexCoord, border))
-	{
-		output = false;
-		return output;
-	}
-	
-	float4 t_samp = 0;
-
-	if(FilterType == E_SHADOW_FILTER_NONE)
-	{
-		if(noise)
-		{
-			float2 noise_vect = noiseTex.SampleLevel(samplerWarp, noise_coord, 0).rg;
-			noise_vect = (noise_vect * 2 - 1) * light_size * pix * 0.5; 
-			projectTexCoord += noise_vect;
-		}
-	
-		t_samp = shadows[lnum].SampleLevel(samplerClampFilter, projectTexCoord, 0);
-		if(t_samp.r < dist - bias)
-			output = false;
-		else
-			shadowmap = 1;
-	}
-	else if(FilterType == E_SHADOW_FILTER_SOFTPCF)
-	{
-		float lightDepthValue = dist - bias;
-		shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], light_size, samples, noise_coord, noise);
-	}
-	else if(FilterType == E_SHADOW_FILTER_PENUMBRA)
-	{
-		float lightDepthValue = dist - bias;
-		float seach_dist = light_size * lbr / lightDepthValue;// 3/lbr
-
-		float blocker = findBlocker(projectTexCoord, lightDepthValue, shadows[lnum], seach_dist, samples, noise_coord, noise);
-		if (blocker < -998) 
-		{
-			shadowmap = 1;
-		}
-		else
-		{
-			float penumbra = estimatePenumbra(lightDepthValue, blocker, light_size);
-			penumbra = clamp(penumbra, pix, seach_dist/2);
-			shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], penumbra, samples, noise_coord, noise);
-		}
-	}
-
-	return output;
-}
-
-bool DirlightShadow(out float shadowmap, uint lnum, float3 WP, float3 pos_0, float3 pos_1, float3 pos_2, float3 pos_3, matrix m_view_0, matrix m_view_1, matrix m_view_2, matrix m_view_3, uint FilterType, float bias, float lbr, float samples, float light_size, bool noise, float2 noise_coord, float pix, float2 border)
-{
-	shadowmap = 0;
-	bool output = true;
-	float dist = 0;
-	float cascade_bias = 0;
-	
-	float2 projectTexCoord = 0;
-	if(ReprojectCoords(WP, m_view_0, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.5,0.5);
-		dist = length(pos_0 - WP);
-		cascade_bias = bias;
-	}
-	else if(ReprojectCoords(WP, m_view_1, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.5,0.5) + float2(0.5,0);
-		dist = length(pos_1 - WP);
-		cascade_bias = bias * 4;
-	}
-	else if(ReprojectCoords(WP, m_view_2, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.5,0.5) + float2(0,0.5);
-		dist = length(pos_2 - WP);
-		cascade_bias = bias * 8;
-	}
-	else if(ReprojectCoords(WP, m_view_3, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.5,0.5) + float2(0.5,0.5);
-		dist = length(pos_3 - WP);
-		cascade_bias = bias * 16;
-	}
-	else
-	{
-		shadowmap = 1;
-		output = true;
-	}
-	
-	if(shadowmap == 0)
-	{
-		float4 t_samp = 0;
-
-		if(FilterType == E_SHADOW_FILTER_NONE)
-		{
-			if(noise)
-			{
-				float2 noise_vect = noiseTex.SampleLevel(samplerWarp, noise_coord, 0).rg;
-				noise_vect = (noise_vect * 2 - 1) * light_size * pix * 0.5; 
-				projectTexCoord += noise_vect;
-			}
-		
-			t_samp = shadows[lnum].SampleLevel(samplerClampFilter, projectTexCoord, 0);
-			if(t_samp.r < dist - cascade_bias)
-				output = false;
-			else
-				shadowmap = 1;
-		}
-		else if(FilterType == E_SHADOW_FILTER_SOFTPCF)
-		{
-			float lightDepthValue = dist - cascade_bias;
-			shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], light_size, samples, noise_coord, noise);
-		}
-		else if(FilterType == E_SHADOW_FILTER_PENUMBRA)
-		{
-			float lightDepthValue = dist - cascade_bias;
-			float seach_dist = light_size * lbr / lightDepthValue;// 3/lbr
-
-			float blocker = findBlocker(projectTexCoord, lightDepthValue, shadows[lnum], seach_dist, samples, noise_coord, noise);
-			if (blocker < -998) 
-			{
-				shadowmap = 1;
-			}
-			else
-			{
-				float penumbra = estimatePenumbra(lightDepthValue, blocker, light_size);
-				penumbra = clamp(penumbra, pix, seach_dist/2);
-				shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], penumbra, samples, noise_coord, noise);
-			}
-		}
-	}
-
-	return output;
-}
-
-bool PointlightShadow(out float shadowmap, uint lnum, float3 WP, float dist, matrix m_view_0, matrix m_view_1, matrix m_view_2, matrix m_view_3, matrix m_view_4, matrix m_view_5, uint FilterType, float bias, float lbr, float samples, float light_size, bool noise, float2 noise_coord, float pix, float2 border)
-{
-	shadowmap = 0;
-	bool output = true;
-	
-	float2 projectTexCoord = 0;
-	if(ReprojectCoords(WP, m_view_0, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5);
-	}
-	else if(ReprojectCoords(WP, m_view_1, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5) + float2(0.3333333,0);
-	}
-	else if(ReprojectCoords(WP, m_view_2, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5) + float2(0.6666667,0);
-	}
-	else if(ReprojectCoords(WP, m_view_3, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5) + float2(0,0.5);
-	}
-	else if(ReprojectCoords(WP, m_view_4, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5) + float2(0.3333333,0.5);
-	}
-	else if(ReprojectCoords(WP, m_view_5, projectTexCoord, border))
-	{
-		projectTexCoord = projectTexCoord * float2(0.3333333,0.5) + float2(0.6666667,0.5);
-	}
-	else
-	{
-		output = false;
-	}
-	
-	if(output)
-	{
-		float4 t_samp = 0;
-
-		if(FilterType == E_SHADOW_FILTER_NONE)
-		{
-			if(noise)
-			{
-				float2 noise_vect = noiseTex.SampleLevel(samplerWarp, noise_coord, 0).rg;
-				noise_vect = (noise_vect * 2 - 1) * light_size * pix * 0.5; 
-				projectTexCoord += noise_vect;
-			}
-		
-			t_samp = shadows[lnum].SampleLevel(samplerClampFilter, projectTexCoord, 0);
-			if(t_samp.r < dist - bias)
-				output = false;
-			else
-				shadowmap = 1;
-		}
-		else if(FilterType == E_SHADOW_FILTER_SOFTPCF)
-		{
-			float lightDepthValue = dist - bias;
-			shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], light_size, samples, noise_coord, noise);
-		}
-		else if(FilterType == E_SHADOW_FILTER_PENUMBRA)
-		{
-			float lightDepthValue = dist - bias;
-			float seach_dist = light_size * lbr / lightDepthValue;// 3/lbr
-
-			float blocker = findBlocker(projectTexCoord, lightDepthValue, shadows[lnum], seach_dist, samples, noise_coord, noise);
-			if (blocker < -998) 
-			{
-				shadowmap = 1;
-			}
-			else
-			{
-				float penumbra = estimatePenumbra(lightDepthValue, blocker, light_size);
-				penumbra = clamp(penumbra, pix, seach_dist/2);
-				shadowmap = 1.0 - RandomBlurfilter(projectTexCoord, lightDepthValue, shadows[lnum], penumbra, samples, noise_coord, noise);
-			}
-		}
-	}
-
-	return output;
-}
-
-LightCalcOutput CalcSpotLight(float3 WP, float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float aGGX, float3 A, float3 SS, MaterialParamsStructBuffer params, SpotLightBuffer lData, float NoV, float3 Refl)
-{
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-	res.nope = true;
-	res.distL = 0;
-	
-	const float3 unnormL = lData.Pos - WP;
-	const float3 L = normalize(unnormL);
-	
-	bool back = false;
-	bool nope = false;
-	
-	const float DdotUL = dot(lData.Dir, -unnormL);
-	if(DdotUL <= 0)
-		return res;
-	
-	float illuminance = 0;
-	float noDirIlluminance = 0;
-	
-	float3 specL = unnormL;
-	float3 specH = 0;
-	float specNoH = 0;
-	float specVoH = 0;
-	float specNoL = 0;
-	float specEnergy = 1;
-	
-	float3 diffL = unnormL;
-	float3 diffH = 0;
-	float diffVoH = 0;
-	float diffNoL = 0;
-	
-	if(lData.AreaInfo.x > 0)
-	{
-		const float sqrDist = dot( unnormL, unnormL );
-		float smoothFalloff = smoothDistanceAtt(sqrDist, lData.Range);
-		if(smoothFalloff == 0)nope = true;
-		
-		float coneFalloff = getAngleAtt(normalize(lData.VirtualPos - WP), -lData.Dir, lData.Cone.r, lData.Cone.g);
-		if(coneFalloff == 0)nope = true;
-			
-		coneFalloff *= smoothFalloff;
-	
-		if(!nope)
-		{
-			res.distL = sqrt( sqrDist );
-			const float RLengthL = rcp( max(res.distL, lData.AreaInfo.x) );
-			const float3 newRefl = Refl;//getSpecularDominantDirArea(N, Refl, avgR); 
-			
-			const float radiusSqr = Square( lData.AreaInfo.x );
-			const float NdotL = dot(N, L);
-			
-			const float e = clamp(dot(lData.Dir, newRefl), -1, -0.01f);
-			const float3 planeRay = WP - newRefl * DdotUL / e;
-			const float3 newL = planeRay - lData.Pos;
-			
-			if(lData.AreaInfo.y == 0)
-			{	
-				// specular
-				const float SphereAngle = clamp( -e * lData.AreaInfo.x * RLengthL, 0, 0.5 );
-				specEnergy *= Square( aGGX / saturate( aGGX + SphereAngle ) );
-			
-				specL = specL + normalize(newL) * clamp(length(newL), 0, lData.AreaInfo.x);
-					
-				//diffuse
-				diffL = diffL + lerp( N * lData.AreaInfo.x, float3(0,0,0), saturate(NdotL) );	
-					
-				// Disk evaluation
-				const float sinSigmaSqr = radiusSqr / (radiusSqr + max(sqrDist, radiusSqr));
-				illuminance = illuminanceSphereOrDisk( NdotL, sinSigmaSqr, noDirIlluminance );
-			}
-			else
-			{
-				// specular				
-				const float LineXAngle = clamp( -e * lData.AreaInfo.z * RLengthL, 0, 0.5 );
-				const float LineYAngle = clamp( -e * lData.AreaInfo.y * RLengthL, 0, 0.5 );
-				specEnergy *= Square( aGGX ) / ( saturate( aGGX + LineXAngle ) * saturate( aGGX + LineYAngle ) );
-				
-				const float3 lightLeft = normalize(cross(lData.Dir, lData.DirUp)); // remove to c++ ??????
-				
-				specL = specL + clamp(dot(newL, lightLeft), -lData.AreaInfo.y, lData.AreaInfo.y) * lightLeft + clamp(dot(newL, lData.DirUp), -lData.AreaInfo.z, lData.AreaInfo.z) * lData.DirUp;
-				
-				//diffuse
-				diffL = diffL + lerp( N * sqrt(radiusSqr + Square(2 * lData.AreaInfo.y)), float3(0,0,0), saturate(NdotL) );	
-					
-				// Rect evaluation
-				illuminance = illuminanceRect(WP, lData.Pos, L, N, lData.Dir, lightLeft * lData.AreaInfo.y, lData.DirUp * lData.AreaInfo.z, noDirIlluminance);
-			}
-		
-			coneFalloff *= saturate((dot(lData.Dir, -L) - 0.02) * 1.02); // clamp angle 89
-							
-			illuminance *= coneFalloff;
-			noDirIlluminance *= coneFalloff;
-					
-			diffL = normalize(diffL);
-			diffNoL = saturate(dot(N, diffL));	
-			diffH = normalize(V + diffL);
-			diffVoH = saturate(dot(V, diffH));
-
-			specL = normalize(specL);
-			specNoL = saturate( dot(N, specL) );
-			specH = normalize(V + specL);
-			specNoH = saturate( dot(N, specH) + 0.00001f );
-			specVoH = saturate( dot(V, specH) );
-		}
-	}
-	else
-	{
-		diffNoL = saturate(dot(N, L));
-		if(diffNoL == 0.0f)
-		{
-			if(params.subscattering == 0)
-				nope = true;
-			else
-				back = true;
-		}
-		
-		if(!nope)
-		{
-			noDirIlluminance = getDistanceAtt( unnormL, lData.Range );
-			if(noDirIlluminance == 0)nope = true;
-			
-			float coneFalloff = getAngleAtt(L, -lData.Dir, lData.Cone.r, lData.Cone.g);
-			if(coneFalloff == 0)nope = true;
-			
-			noDirIlluminance *= coneFalloff;
-			
-			illuminance = noDirIlluminance * diffNoL;
-			
-			diffL = L;
-			diffH = normalize(V + diffL);
-			diffVoH = saturate(dot(V, diffH));
-			diffNoL = saturate(dot(N, diffL));	
-			
-			specL = diffL;
-			specH = diffH;
-			specNoH = saturate( dot(N, specH) + 0.00001f );
-			specVoH = diffVoH;
-			specNoL = diffNoL;
-		}
-	}
-	
-	if(nope)return res;
-	
-	float3 colorIlluminance = illuminance * lData.Color.rgb;
-	if(!back)
-	{
-		res.specular = colorIlluminance * specEnergy * directSpecularBRDF(S, R, specNoH, NoV, specNoL, specVoH, specH, T, B, avgR);	
-		res.diffuse = colorIlluminance * directDiffuseBRDF(A, avgR, NoV, diffNoL, diffVoH);
-	}
-	if(params.subscattering != 0)
-		res.diffuse += noDirIlluminance * lData.Color.rgb * directSubScattering(SS, params, diffL, N, V);
-	
-	res.nope = false;
-	return res;
-}
-
-LightCalcOutput CalcSpotLightWithShadow(float3 WP, float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float aGGX, float3 A, float3 SS, MaterialParamsStructBuffer params, LightShadowStructBuffer lData, float2 noise_coord, uint lnum, float NoV, float3 Refl)
-{	
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-
-	SpotLightBuffer nlData;
-	nlData.Dir = lData.Dir;
-	nlData.Color = lData.Color;
-	nlData.AreaInfo = lData.Pos_1;
-	nlData.DirUp = lData.Pos_2;
-	nlData.VirtualPos = lData.Pos_3;
-	nlData.Range = lData.Range;
-	nlData.Pos = lData.Pos;
-	nlData.Cone = lData.Cone;
-	
-	res = CalcSpotLight(WP, V, N, T, B, S, R, avgR, aGGX, A, SS, params, nlData, NoV, Refl);
-	if(res.nope)
-		return res;
-		
-	float distL = length(lData.Pos_3 - WP);
-		
-	float shadowmap = 1.0f;
-	const float pixMulPi = lData.ShadowPix*PIDIV2;
-	const float2 borders = float2(0,1);
-	if(!SpotlightShadow(shadowmap, lnum, WP, lData.lightViewMatrix, distL, lData.FilterType, lData.Bias, lData.LBR, lData.FilterSamples, lData.FilterSize, lData.noise, noise_coord, lData.ShadowPix, borders))
-	{
-		res.diffuse = 0;
-		res.specular = 0;
-		return res;
-	}
-	
-	res.diffuse *= shadowmap;
-	res.specular *= shadowmap;
-	
-	return res;
-}
-
-LightCalcOutput CalcPointLight(float3 WP, float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float aGGX, float3 A, float3 SS, MaterialParamsStructBuffer params, PointLightBuffer lData, float NoV, float3 Refl)
-{	
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-	res.nope = true;
-	res.distL = 0;
-	
-	const float3 unnormL = lData.Pos - WP;
-	const float3 L = normalize(unnormL);
-	
-	bool back = false;
-	bool nope = false;
-	
-	float illuminance = 0;
-	float noDirIlluminance = 0;
-	
-	float3 specL = unnormL;
-	float3 specH = 0;
-	float specNoH = 0;
-	float specVoH = 0;
-	float specNoL = 0;
-	float specEnergy = 1;
-	
-	float3 diffL = unnormL;
-	float3 diffH = 0;
-	float diffVoH = 0;
-	float diffNoL = 0;
-	
-	if(lData.AreaInfo.x > 0 || lData.AreaInfo.y > 0)
-	{
-		const float sqrDist = dot( unnormL, unnormL );
-		float smoothFalloff = smoothDistanceAtt(sqrDist, lData.Range);
-		if(smoothFalloff == 0)nope = true;
-
-		if(!nope)
-		{
-			res.distL = sqrt( sqrDist );
-			float RLengthL = rcp( max(res.distL, lData.AreaInfo.x) );
-			const float3 newRefl = Refl;//getSpecularDominantDirArea(N, Refl, avgR); 
-			
-			const float radiusSqr = Square( lData.AreaInfo.x );
-			const float NdotL = dot(N, L);
-			
-			if(lData.AreaInfo.y > 0) // to do: артефакты в спеке на больших рафнесах!!!!!!!!!!!!!!!!!
-			{
-				// specular
-				const float LineAngle = saturate( lData.AreaInfo.y * RLengthL );
-				specEnergy *= aGGX / saturate( aGGX + 0.5 * LineAngle );
-
-				// Closest point on line segment to ray
-				const float3 Ld = lData.Dir * lData.AreaInfo.y;
-				const float3 halfLd = 0.5 * Ld;
-				const float3 L0 = unnormL - halfLd;
-
-				// Shortest distance
-				const float sqrLength = Square( lData.AreaInfo.y );
-				const float b = dot( newRefl, Ld );
-				const float t = saturate( dot( L0, b * newRefl - Ld ) / (sqrLength - b*b) );
-
-				specL = L0 + t * Ld;
-				
-				RLengthL = rcp( max(sqrt( dot( specL, specL ) ), lData.AreaInfo.x) );
-				
-				const float SphereAngle = clamp( lData.AreaInfo.x * RLengthL, 0, 0.5 );
-				specEnergy *= Square( aGGX / saturate( aGGX + SphereAngle ) );
-			
-				const float3 centerToRay = dot(specL, newRefl) * newRefl - specL;
-				specL = specL + centerToRay * saturate(lData.AreaInfo.x * rsqrt(dot(centerToRay, centerToRay)));
-				
-				// diffuse
-				illuminance = illuminanceTube( lData.Pos, WP, N, lData.AreaInfo.x, radiusSqr, L, L0, Ld, sqrLength, noDirIlluminance );
-				
-				diffL = diffL + lerp( N * (lData.AreaInfo.y + 2 * lData.AreaInfo.x), float3(0,0,0), saturate(NdotL) );					
-				//diffL = N * res.distL; // Lambert hacks
-			}
-			else
-			{		
-				// specular
-				const float SphereAngle = clamp( lData.AreaInfo.x * RLengthL, 0, 0.5 );
-				specEnergy *= Square( aGGX / saturate( aGGX + SphereAngle ) );
-			
-				const float3 centerToRay = dot(specL, newRefl) * newRefl - specL;
-				specL = specL + centerToRay * saturate(lData.AreaInfo.x * rsqrt(dot(centerToRay, centerToRay)));
-				
-				//diffuse
-				diffL = diffL + lerp( N * lData.AreaInfo.x, float3(0,0,0), saturate(NdotL) );	
-					
-				// Sphere evaluation
-				const float cosTheta = clamp( NdotL, -0.999, 0.999);
-				const float sinSigmaSqr = min( radiusSqr / sqrDist, 0.9999f );
-				illuminance = illuminanceSphereOrDisk( cosTheta, sinSigmaSqr, noDirIlluminance );
-			}
-					
-			illuminance *= smoothFalloff;
-			noDirIlluminance *= smoothFalloff;
-			
-			diffL = normalize(diffL);
-			diffNoL = saturate(dot(N, diffL));	
-			diffH = normalize(V + diffL);
-			diffVoH = saturate(dot(V, diffH));
-
-			specL = normalize(specL);
-			specNoL = saturate( dot(N, specL) );
-			specH = normalize(V + specL);
-			specNoH = saturate( dot(N, specH) + 0.00001f );
-			specVoH = saturate( dot(V, specH) );
-		}
-	}
-	else
-	{
-		diffNoL = saturate(dot(N, L));
-		if(diffNoL == 0.0f)
-		{
-			if(params.subscattering == 0)
-				nope = true;
-			else
-				back = true;
-		}
-		
-		if(!nope)
-		{
-			noDirIlluminance = getDistanceAtt( unnormL, lData.Range );
-			if(noDirIlluminance == 0)nope = true;
-			illuminance = noDirIlluminance * diffNoL;
-			
-			diffL = L;
-			diffH = normalize(V + diffL);
-			diffVoH = saturate(dot(V, diffH));
-			diffNoL = saturate(dot(N, diffL));	
-			
-			specL = diffL;
-			specH = diffH;
-			specNoH = saturate( dot(N, specH) + 0.00001f );
-			specVoH = diffVoH;
-			specNoL = diffNoL;
-		}
-	}
-	
-	if(nope)return res;
-	
-	float3 colorIlluminance = illuminance * lData.Color.rgb;
-	if(!back)
-	{
-		res.specular = colorIlluminance * specEnergy * directSpecularBRDF(S, R, specNoH, NoV, specNoL, specVoH, specH, T, B, avgR);	
-		res.diffuse = colorIlluminance * directDiffuseBRDF(A, avgR, NoV, diffNoL, diffVoH);
-	}
-	if(params.subscattering != 0)
-		res.diffuse += noDirIlluminance * lData.Color.rgb * directSubScattering(SS, params, diffL, N, V);
-	
-	res.nope = false;
-	return res;
-}
-
-LightCalcOutput CalcPointLightWithShadow(float3 WP, float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float aGGX, float3 A, float3 SS, MaterialParamsStructBuffer params, LightShadowStructBuffer lData, float2 noise_coord, uint lnum, float NoV, float3 Refl)
-{	
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-
-	PointLightBuffer nlData;
-	nlData.Dir = lData.Dir;
-	nlData.Color = lData.Color;
-	nlData.AreaInfo = lData.Pos_1;
-	nlData.Range = lData.Range;
-	nlData.Pos = lData.Pos;
-	
-	res = CalcPointLight(WP, V, N, T, B, S, R, avgR, aGGX, A, SS, params, nlData, NoV, Refl);
-	if(res.nope)
-		return res;
-		
-	float distL = 0;
-	if(res.distL != 0)
-		distL = res.distL;
-	else
-		distL = length(lData.Pos - WP);
-		
-	float shadowmap = 1.0f;
-	const float pixMulPi = lData.ShadowPix*PIDIV2;
-	if(!PointlightShadow(shadowmap, lnum, WP, distL, lData.lightViewMatrix, lData.lightViewMatrix_1, lData.lightViewMatrix_2, lData.lightViewMatrix_3, lData.lightViewMatrix_4, lData.lightViewMatrix_5, lData.FilterType, lData.Bias, lData.LBR, lData.FilterSamples, lData.FilterSize, lData.noise, noise_coord, lData.ShadowPix, float2(pixMulPi,1.0f-pixMulPi)))
-	{
-		res.diffuse = 0;
-		res.specular = 0;
-		return res;
-	}
-	
-	res.diffuse *= shadowmap;
-	res.specular *= shadowmap;
-	
-	return res;
-}
-
-LightCalcOutput CalcDirLight(float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float3 A, float3 SS, MaterialParamsStructBuffer params, DirLightBuffer lData, float NoV, float3 Refl)
-{	
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-	
-	float3 L = -lData.Dir;
-	
-	const float LdotRefl = saturate(dot(L , Refl));
-	const float3 projRefl = Refl - LdotRefl * L;
-	const float3 specL = LdotRefl < lData.AreaInfo.g ? normalize(lData.AreaInfo.g * L + normalize(projRefl) * lData.AreaInfo.r) : Refl;
-	
-	const float3 H = normalize(V + L);
-	const float VoH = saturate( dot(V, H) );
-	const float NoL = saturate(dot(N, L));
-	
-	const float3 specH = normalize(V + specL);
-	const float specNoH = saturate( dot(N, specH) + 0.00001f );
-	const float specVoH = saturate( dot(V, specH) );
-	const float specNoL = saturate( dot(N, specL) );
-	
-	bool back = false;
-	if(specNoL<=0.0f)
-	{
-		if(params.subscattering == 0)
-			return res;
-		else
-			back = true;
-	}
-	
-	if(params.subscattering == 0)
-	{
-		res.specular = specNoL * lData.Color.rgb * directSpecularBRDF(S, R, specNoH, NoV, specNoL, specVoH, specH, T, B, avgR);	
-		res.diffuse = NoL * lData.Color.rgb * directDiffuseBRDF(A, avgR, NoV, NoL, VoH);
-	}
-	else
-	{
-		if(!back)
-		{
-			res.specular = specNoL * lData.Color.rgb * directSpecularBRDF(S, R, specNoH, NoV, specNoL, specVoH, specH, T, B, avgR);	
-			res.diffuse = NoL * lData.Color.rgb * directDiffuseBRDF(A, avgR, NoV, NoL, VoH);
-		}
-		res.diffuse += lData.Color.rgb * directSubScattering(SS, params, L, N, V);
-	}
-		
-	return res;
-}
-
-LightCalcOutput CalcDirLightWithShadow(float3 WP, float3 V, float3 N, float3 T, float3 B, float3 S, float2 R, float avgR, float3 A, float3 SS, MaterialParamsStructBuffer params, LightShadowStructBuffer lData, float2 noise_coord, uint lnum, float NoV, float3 Refl)
-{	
-	LightCalcOutput res;
-	res.diffuse = 0;
-	res.specular = 0;
-	
-	float shadowmap = 1.0f;
-	if(!DirlightShadow(shadowmap, lnum, WP, lData.Pos, lData.Pos_1, lData.Pos_2, lData.Pos_3, lData.lightViewMatrix, lData.lightViewMatrix_1, lData.lightViewMatrix_2, lData.lightViewMatrix_3, lData.FilterType, lData.Bias, lData.LBR, lData.FilterSamples, lData.FilterSize, lData.noise, noise_coord, lData.ShadowPix, float2(lData.ShadowPix,1-lData.ShadowPix)))
-		return res;
-
-	DirLightBuffer nlData;
-	nlData.Dir = lData.Dir;
-	nlData.Color = lData.Color;
-	nlData.AreaInfo.xy = lData.Cone;
-	
-	res = CalcDirLight(V, N, T, B, S, R, avgR, A, SS, params, nlData, NoV, Refl);
-	res.diffuse *= shadowmap;
-	res.specular *= shadowmap;
-	
-	return res;
-}*/
