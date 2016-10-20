@@ -145,11 +145,7 @@
     <FxCompile Include="..\system\hbao.hlsl" />
     <FxCompile Include="..\system\hbao_perspective_correct.hlsl" />
     <FxCompile Include="..\system\hdr.hlsl" />
-    <FxCompile Include="..\system\hiz_depth_cc.hlsl" />
-    <FxCompile Include="..\system\hiz_depth_cu.hlsl" />
-    <FxCompile Include="..\system\hiz_depth_uc.hlsl" />
-    <FxCompile Include="..\system\hiz_depth_uu.hlsl" />
-    <FxCompile Include="..\system\hiz_shadows.hlsl" />
+    <FxCompile Include="..\system\hiz_depth.hlsl" />
     <FxCompile Include="..\system\ibl_brdf.hlsl" />
     <FxCompile Include="..\system\indirect_brdf.hlsl" />
     <FxCompile Include="..\system\light_calc.hlsl" />

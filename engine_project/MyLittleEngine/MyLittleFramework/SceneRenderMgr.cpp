@@ -32,20 +32,10 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	casterPointTube_array = new PointCasterTubeBuffer;	
 
 	shadowsBuffer = nullptr;
-	shadowsBufferMips = nullptr;
 	shadowsBufferSRV = nullptr;
-	shadowsBufferMipsSingleSRV = nullptr;
 	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
-	{
 		shadowsBufferDSV[i] = nullptr;
-		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
-			shadowsBufferRTV[i][j] = nullptr;
-		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
-			shadowsBufferMipSRV[i][j] = nullptr;
-	}
-
-	sp_shadowHiZ = nullptr;
-
+	
 	shadowmap_array.create(SHADOWMAPS_COUNT);
 
 	castersIdx.resize(ENTITY_COUNT);
@@ -101,31 +91,6 @@ bool SceneRenderMgr::initShadowBuffer()
 	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
 	if( FAILED(Render::CreateShaderResourceView(shadowsBuffer, &shaderResourceViewDesc, &shadowsBufferSRV)) )
 		return false;
-
-	ZeroMemory(&shadowBufferDesc, sizeof(shadowBufferDesc));
-	shadowBufferDesc.Width = SHADOWS_BUF_RES / 2;
-	shadowBufferDesc.Height = SHADOWS_BUF_RES / 2;
-	shadowBufferDesc.MipLevels = SHADOWS_BUF_MIPS;
-	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
-	shadowBufferDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-	shadowBufferDesc.SampleDesc.Count = 1;
-	shadowBufferDesc.SampleDesc.Quality = 0;
-	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	shadowBufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	shadowBufferDesc.CPUAccessFlags = 0;
-	shadowBufferDesc.MiscFlags = 0;
-	if( FAILED(Render::CreateTexture2D(&shadowBufferDesc, NULL, &shadowsBufferMips)) )
-		return false;
-	
-	ZeroMemory(&shaderResourceViewDesc, sizeof(shaderResourceViewDesc));
-	shaderResourceViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-	shaderResourceViewDesc.Texture2DArray.MipLevels = -1;	
-	shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;	
-	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
-	if( FAILED(Render::CreateShaderResourceView(shadowsBufferMips, &shaderResourceViewDesc, &shadowsBufferMipsSingleSRV)) )
-		return false;
 	
 	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
 	{
@@ -138,77 +103,9 @@ bool SceneRenderMgr::initShadowBuffer()
 		depthStencilViewDesc.Texture2DArray.FirstArraySlice = i;
 		if( FAILED(Render::CreateDepthStencilView(shadowsBuffer, &depthStencilViewDesc, &shadowsBufferDSV[i])) )
 			return false;
-
-		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
-		{
-			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-			ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
-			renderTargetViewDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-			renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-			renderTargetViewDesc.Texture2DArray.MipSlice = j;
-			renderTargetViewDesc.Texture2DArray.ArraySize = 1;
-			renderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
-			if( FAILED(Render::CreateRenderTargetView(shadowsBufferMips, &renderTargetViewDesc, &shadowsBufferRTV[i][j])) )
-				return false;
-		}
-
-		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
-		{
-			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewMipsDesc;
-			shaderResourceViewMipsDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-			shaderResourceViewMipsDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-			shaderResourceViewMipsDesc.Texture2DArray.MostDetailedMip = j;
-			shaderResourceViewMipsDesc.Texture2DArray.MipLevels = 1;	
-			shaderResourceViewMipsDesc.Texture2DArray.ArraySize = 1;	
-			shaderResourceViewMipsDesc.Texture2DArray.FirstArraySlice = i;	
-			if( FAILED(Render::CreateShaderResourceView(shadowsBufferMips, &shaderResourceViewMipsDesc, &shadowsBufferMipSRV[i][j])) )
-				return false;
-		}
 	}
-
-	sp_shadowHiZ = new ScreenPlane(SP_SHADER_HIZ_SHADOWS);
 
 	return true;
-}
-
-void SceneRenderMgr::GenerateShadowHiZ()
-{
-	D3D11_VIEWPORT viewport;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-
-	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
-	{
-		uint32_t res = SHADOWS_BUF_RES / 2;
-
-		for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
-		{
-			viewport.Width = (float)res;
-			viewport.Height = (float)res;
-			Render::RSSetViewports(1, &viewport);
-
-			Render::OMSetRenderTargets(1, &shadowsBufferRTV[i][j], nullptr);
-
-			if( j == 0 )
-			{
-				sp_shadowHiZ->SetTexture(shadowsBufferSRV, 0);
-				sp_shadowHiZ->SetFloat(1.0f, 0);
-			}
-			else
-			{
-				sp_shadowHiZ->SetTexture(shadowsBufferMipSRV[i][j - 1], 0);
-				sp_shadowHiZ->SetFloat(-1.0f, 0);
-			}
-
-			sp_shadowHiZ->Draw();
-
-			Render::OMSetRenderTargets(0, nullptr, nullptr);
-
-			res /= 2;
-		}
-	}
 }
 
 bool SceneRenderMgr::CompareShadows(ShadowMap& first, ShadowMap& second)
@@ -348,9 +245,6 @@ void SceneRenderMgr::ResolveShadowMaps()
 
 	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
 		Render::ClearDepthStencilView(shadowsBufferDSV[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	//for(uint16_t i=0; i < shadowmap_array.size(); i++)
-	//	DBG_SHORT("%f", shadowmap_array[i].size);	
 
 	PlaceShadowMaps();
 }

@@ -35,7 +35,7 @@ namespace EngineCore
 #define SP_MATERIAL_HDR PATH_SHADERS "system/hdr" 
 #define SP_MATERIAL_COMBINE PATH_SHADERS "system/combine"
 
-#define SP_MATERIAL_HIZ_DEPTH PATH_SHADERS "system/hiz_depth_cc" 
+#define SP_MATERIAL_HIZ_DEPTH PATH_SHADERS "system/hiz_depth" 
 #define SP_MATERIAL_OPAQUE_BLUR PATH_SHADERS "system/opaque_blur" 
 
 #define SP_MATERIAL_AVGLUM PATH_SHADERS "system/avglum" 
@@ -215,7 +215,6 @@ namespace EngineCore
 		RenderTarget *rt_AO;
 		RenderTarget *rt_OpaqueDefferedDirect;
 		RenderTarget *rt_OpaqueFinal;
-		RenderTarget *rt_HiZVis;
 		RenderTarget *rt_HiZDepth;
 		RenderTarget *rt_TransparentRecursive;
 		RenderTarget *rt_TransparentForward;

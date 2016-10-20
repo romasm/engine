@@ -7,11 +7,6 @@ float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)
 							shadMapDepth.y < depth,
 							shadMapDepth.z < depth,
 							shadMapDepth.w < depth);
-	
-	// temp
-	float4 ttt = shadowsMips.GatherRed(samplerPointClamp, UV);
-	if(ttt.x >= 1) 
-		return 1;
 
 	if(!any(compare))
 		return 1;
@@ -24,93 +19,6 @@ float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)
 	float l2 = lerp(compare.z, compare.w, fracUV.x);
 	return 1 - lerp(l1, l2, fracUV.y); 
 }
-
-#define SHADOW_MAX_MIP 7
-
-float GatherFilter2(float3 UV, float2 reprojUV, float halfPix, float depth, float perspCorrection)  
-{  
-	// temp
-	float4 ttt = shadows.GatherRed(samplerPointClamp, UV);
-	if(ttt.x <= 0) 
-		return 1;
-	// temp
-
-	//temp
-	float source_size = 0.3;
-
-	float pixRcp = 1.0 / (2 * halfPix);
-	uint maxMip = (SHADOW_MAX_MIP + 1) - min(0, int(log2(pixRcp / 256)));
-	
-	float2 shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, maxMip - 1);
-
-	float startRadius = max(0, source_size * (1 - shadowInt.x / depth));
-	startRadius *= perspCorrection;
-
-	int level = (int)min(trunc(log2(startRadius * pixRcp)), maxMip);
-	if(level <= 0)
-		return 1;
-
-	float occluding = 0;
-	float occludingStep = 1.0 / level;
-	while(level > 0)
-	{
-		shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, level - 1);
-
-		if(depth > shadowInt.y)
-		{
-			occluding += occludingStep * level;
-			break;
-		}
-
-		//if(shadowInt.x < depth)
-		occluding += occludingStep;
-		level--;
-	}
-
-	return 1.0 - occluding;
-
-	/*
-	int level = maxMip;
-	float finalPenumbra = 0;
-	while(level > 0)
-	{
-		float2 shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, level - 1);
-		float fromBlockerToPoint = depth - shadowInt.x;
-
-		if(depth > shadowInt.y)
-			break;
-		if(fromBlockerToPoint < 0)
-			break;
-
-		float penumbra = fromBlockerToPoint * source_size / shadowInt.x;
-		//penumbra *= perspCorrection;
-		
-		int estimLevel = (int)trunc(log2(penumbra * pixRcp));
-		if(estimLevel < level)
-		{
-			level = estimLevel;
-			continue;
-		}
-		else
-		{
-			finalPenumbra = penumbra;
-			break;
-		}
-	}
-	level = max(level, 0);
-
-	return finalPenumbra;*/
-	/*
-	float pixRcp = 1.0 / (2 * halfPix);
-	uint currentMip = (uint)log2(pixRcp);
-
-	level = (uint)min( SHADOW_MAX_MIP + 1, trunc(log2(penumbra * pixRcp)) );
-		
-	shadowInt = shadowsMips.SampleLevel(samplerPointClamp, UV, level);
-
-	return float(depth <= shadowInt.x);*/
-}
-//#include "../common/PCF.hlsl"
 
 // rect
 float rectangleSolidAngle( float3 worldPos ,float3 p0 , float3 p1 ,float3 p2 , float3 p3 )
@@ -276,12 +184,10 @@ float SpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, mat
 	//float shadowDepth = shadows.SampleLevel(samplerClamp, shadowmapCoords, 0).r;
 	const float resBiasScale = max(2, (texelSize.x * SHADOWS_RES_BIAS_SCALE) * 0.2);
 	lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
-
-	float perspCorrection = 0.5 * (vp_mat[1][1] + vp_mat[2][2]) / lightViewProjPos.z;
-
+	
 	float depthView = lightViewProjPos.z * lvp_rcp;
 	
-	return GatherFilter2(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView, perspCorrection);
+	return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
 }
 
 float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, matrix vp_mat, float4 adress, float2 texelSize, float near, float3 depthFix)

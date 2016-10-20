@@ -166,8 +166,8 @@ float4 traceReflections( float3 p, float3 refl, float2 screenSize, float perspW,
 
 	alpha = 1 - saturate(alpha);
 
-	if(iterator == 0)
-		alpha *= saturate((VNoR - 0.2) * 10.0);
+	//if(iterator == 0)
+	//	alpha *= saturate((VNoR - 0.2) * 10.0);
 
 	alpha *= alpha;
 	alpha *= alpha;
@@ -255,8 +255,8 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 
 	alpha = 1 - saturate(alpha);
 
-	if(iterator == 0)
-		alpha *= saturate((VNoR - 0.2) * 10.0);
+	//if(iterator == 0)
+	//	alpha *= saturate((VNoR - 0.2) * 10.0);
 
 	alpha *= alpha;
 	alpha *= alpha;
@@ -335,7 +335,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, floa
 		ray.a = 0;
 
 	float NoR = dot(normal, normalize(reflRay));
-	//if(NoR <= 0.0 || NoR >= 0.9)
+	//if(NoR <= 0.0)
 	//	ray.a = 0;
 
 	// COLOR RESOLVE

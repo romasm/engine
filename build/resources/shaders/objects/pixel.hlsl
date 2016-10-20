@@ -89,7 +89,7 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 	else if( normal_tex == 1 )
 	{
 		normal = normalTex.Sample(samplerAnisotropicWrap, texcoord).rgb * 2.0f - 1.0f;
-		normal.y = -normal.y;
+		//normal.y = -normal.y;
 		if( normal.z != 0.0f )
 			normal = normal.xyz / normal.z;
 			

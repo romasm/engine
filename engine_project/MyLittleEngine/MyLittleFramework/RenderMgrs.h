@@ -211,8 +211,6 @@ namespace EngineCore
 #define SHADOWS_DIR_RES SHADOWS_BUF_RES / 2
 #define SHADOWS_DIR_DEPTH 10000.0f
 
-#define SP_SHADER_HIZ_SHADOWS PATH_SHADERS "system/hiz_shadows"
-
 	struct CameraComponent;
 
 	class SceneRenderMgr: public BaseRenderMgr
@@ -260,8 +258,6 @@ namespace EngineCore
 
 		void ResolveShadowMaps();
 		ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
-		ID3D11ShaderResourceView* GetShadowBufferMips() const {return shadowsBufferMipsSingleSRV;}
-		void GenerateShadowHiZ();
 
 		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
 		static void SwapShadows(ShadowMap* first, ShadowMap* second, RArray<ShadowMap>* arr);
@@ -290,8 +286,6 @@ namespace EngineCore
 		{
 			ClearAll();
 
-			_DELETE(sp_shadowHiZ);
-
 			_DELETE(lightSpot_array);
 			_DELETE(lightSpotDisk_array);
 			_DELETE(lightSpotRect_array);
@@ -310,16 +304,9 @@ namespace EngineCore
 			shadowmap_array.destroy();
 
 			_RELEASE(shadowsBufferSRV);
-			_RELEASE(shadowsBufferMipsSingleSRV);
 			for(int i=0; i<SHADOWS_BUF_SIZE; i++)
-			{
-				for(uint8_t j = 0; j < SHADOWS_BUF_MIPS; j++)
-					_RELEASE(shadowsBufferRTV[i][j]);
-				for(uint8_t j = 0; j < SHADOWS_BUF_MIPS - 1; j++)
-					_RELEASE(shadowsBufferMipSRV[i][j]);
-			}
+				_RELEASE(shadowsBufferDSV[i]);
 			_RELEASE(shadowsBuffer);
-			_RELEASE(shadowsBufferMips);
 		}
 
 		inline CameraComponent* GetCurrentCamera() const {return current_cam;} 
@@ -438,13 +425,8 @@ namespace EngineCore
 		uint16_t cascadeShadowRes;
 
 		ID3D11Texture2D* shadowsBuffer;
-		ID3D11Texture2D* shadowsBufferMips;
 		ID3D11ShaderResourceView* shadowsBufferSRV;
-		ID3D11ShaderResourceView* shadowsBufferMipsSingleSRV;
 		ID3D11DepthStencilView* shadowsBufferDSV[SHADOWS_BUF_SIZE];
-
-		ID3D11RenderTargetView* shadowsBufferRTV[SHADOWS_BUF_SIZE][SHADOWS_BUF_MIPS];
-		ID3D11ShaderResourceView* shadowsBufferMipSRV[SHADOWS_BUF_SIZE][SHADOWS_BUF_MIPS - 1];
 
 		CameraComponent* current_cam;
 
@@ -452,7 +434,5 @@ namespace EngineCore
 			float size;
 			uint16_t res;
 		} shadows_sizes[SHADOWS_STRINGS_NUM];
-
-		ScreenPlane *sp_shadowHiZ;
 	};
 }

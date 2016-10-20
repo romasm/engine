@@ -49,23 +49,22 @@ Texture2D envbrdfLUT : register(t1);
 #define NOV_MAX 1.0f - NOV_MIN
  
 Texture2DArray <float> shadows: register(t2); 
-Texture2DArray <float2> shadowsMips: register(t3);
 
-Texture2D <float4> gb_albedo_roughY : register(t4); 
-Texture2D <float4> gb_tbn : register(t5); 
-Texture2D <float2> gb_vnXY : register(t6); 
-Texture2D <float4> gb_spec_roughX : register(t7); 
-Texture2D <float4> gb_emiss_vnZ : register(t8); 
-Texture2D <uint> gb_mat_obj : register(t9); 
-Texture2D <float4> gb_subs_thick : register(t10); 
-Texture2D <float> gb_ao : register(t11); 
-Texture2D <float2> gb_depth : register(t12);
+Texture2D <float4> gb_albedo_roughY : register(t3); 
+Texture2D <float4> gb_tbn : register(t4); 
+Texture2D <float2> gb_vnXY : register(t5); 
+Texture2D <float4> gb_spec_roughX : register(t6); 
+Texture2D <float4> gb_emiss_vnZ : register(t7); 
+Texture2D <uint> gb_mat_obj : register(t8); 
+Texture2D <float4> gb_subs_thick : register(t9); 
+Texture2D <float> gb_ao : register(t10); 
+Texture2D <float2> gb_depth : register(t11);
 
-Texture2D <float> dynamicAO : register(t13); 
-Texture2D <float4> ssr_buf : register(t14); 
+Texture2D <float> dynamicAO : register(t12); 
+Texture2D <float4> ssr_buf : register(t13); 
 
-TextureCube envprobsDist : register(t15); 
-TextureCube envprobsDistDiff : register(t16); 
+TextureCube envprobsDist : register(t14); 
+TextureCube envprobsDistDiff : register(t15); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -367,8 +366,6 @@ PO_final DefferedLighting(PI_PosTex input)
 	//binormal = normalize(cross(cross(normal, binormal), binormal));
 	
 	float3 Refl = 2 * normal * NoV - VtoWP; 
-
-	//float VNoR = dot(vertex_normal, Refl);
 	
 	// SHADOW DEPTH FIX
 #define NORMAL_OFFSET_MAX 10
@@ -1342,12 +1339,18 @@ PO_final DefferedLighting(PI_PosTex input)
 	
 	float4 ssr = ssr_buf.Sample(samplerPointClamp, input.tex);
 
-	Indir.specular = skyEnvProbSpec(specNormal, VtoWP, indirNoV, indirR, sqrtR, distMip, envprobsDist, envprobsDistDiff);
+	Indir.specular = skyEnvProbSpec(specNormal, VtoWP, indirNoV, indirR, sqrtR, distMip, envprobsDist, envprobsDistDiff, vertex_normal);
 	
-	Indir.specular *= computeSpecularOcclusion(indirNoV, ao, indirR);
-	Indir.specular = lerp(Indir.specular, ssr.rgb, ssr.a);
-
+	float4 specSecond;
+	 
+	float SO = computeSpecularOcclusion(indirNoV, ao, indirR);
+	
+	Indir.specular *= SO;
+	specSecond.rgb = (ssr.rgb * SO) * ssr.a;
+	specSecond.a = 1 - ssr.a;
+	
 	Indir.specular *= specBrdf;
+	specSecond.rgb *= specBrdf;
 	
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff) * diffBrdf * ao;
 		  
@@ -1360,8 +1363,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	res.diffuse.rgb = Light.diffuse * dirDiff + (emissive + Indir.diffuse) * indirDiff;
 	res.specular.rgb = Indir.specular * indirSpec;
 
-	float4 specSecond = 1;
-	specSecond.rgb = Light.specular * dirSpec;
+	specSecond.rgb += Light.specular * dirSpec;
 
 	res.diffuse.a = specSecond.r;
 	res.specular.a = specSecond.g;

@@ -169,10 +169,12 @@ void simpleEnvProbSpec(float3 wp, EnvProbStructBuffer data, float3 S, float3 N, 
 	}
 }
 */
-float3 skyEnvProbSpec(float3 N, float3 V, float NoV , float R, float mipR, float maxMip, TextureCube specularCube, TextureCube specularCubeLastMip)
+float3 skyEnvProbSpec(float3 N, float3 V, float NoV , float R, float mipR, float maxMip, TextureCube specularCube, TextureCube specularCubeLastMip, float3 VN)
 {
 	float3 Refl = reflect(-V, N);
 	float3 dominantR = getSpecularDominantDir(N, Refl, R, NoV );
+
+	float surfaceFade = saturate(1.1 + dot(VN, normalize(dominantR)));
 
 	float mipNum = mipR * maxMip;
 	float lastMipLerp = clamp(1 - (maxMip - mipNum), 0, 1);		
@@ -184,7 +186,7 @@ float3 skyEnvProbSpec(float3 N, float3 V, float NoV , float R, float mipR, float
 		cubemap = lerp(cubemap, diffCube, lastMipLerp);
 	}
 	
-	return cubemap;
+	return cubemap * surfaceFade;
 }
 
 float3 skyEnvProbDiff(float3 N, float3 V, float NoV , float R, TextureCube diffuseCube)

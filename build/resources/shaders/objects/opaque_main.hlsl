@@ -9,7 +9,7 @@ TECHNIQUE_DEFAULT
 	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueVS";
 	PixelShader = "OpaquePS";
 }
-
+ 
 TECHNIQUE_SHADOW
 {
 	Queue = SC_OPAQUE; 
