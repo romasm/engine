@@ -20,10 +20,71 @@ float GatherFilter(float3 UV, float2 reprojUV, float halfPix, float depth)
 	return 1 - lerp(l1, l2, fracUV.y); 
 }
 
-#define PCF_NUM_SAMPLES 16
-#define PCF_WIDTH 6
-#define PCF_PIXEL 1.0 / 4096
+#define PCF_DEPTH_TEST_SENCE 1000000.0f
+#define PCF_PIXEL 1.0f / SHADOWS_BUFFER_RES
 
+float2 horzPCF(float4 horzSamples[3], float uvFracX)
+{
+	float uvFravXInv = 1.0 - uvFracX;
+	
+	float2 res;
+
+	res.x = horzSamples[0].w * uvFravXInv;
+	res.y = horzSamples[0].x * uvFravXInv;
+	res.x += horzSamples[0].z;
+	res.y += horzSamples[0].y;
+
+	res.x += horzSamples[1].w;
+	res.y += horzSamples[1].x;
+	res.x += horzSamples[1].z;
+	res.y += horzSamples[1].y;
+
+	res.x += horzSamples[2].w;
+	res.y += horzSamples[2].x;
+	res.x += horzSamples[2].z * uvFracX;
+	res.y += horzSamples[2].y * uvFracX;
+
+	return res;
+}
+
+float PCF_Filter(float3 UV, float depth, float mapScale, float sharpen)
+{
+	float2 uvInTexels = UV.xy * float2(SHADOWS_BUFFER_RES, SHADOWS_BUFFER_RES) - 0.5f;
+	float2 uvFrac = frac(uvInTexels);
+	float2 texelPos = floor(uvInTexels);
+
+	float3 shadowCoords = float3( (texelPos + 0.5f) * PCF_PIXEL, UV.z );
+
+	//float avgDepthShadow = 0;
+
+	float2 vertSamples[3];
+
+	[unroll]
+	for(int i = -1; i <= 1; i++)
+	{
+		float4 horzSamples[3];
+
+		[unroll]
+		for(int j = -1; j <= 1; j++)
+		{
+			float4 shadowSample = shadows.Gather( samplerPointClamp, shadowCoords, int2(j, i) * 2 );
+			//avgDepthShadow += shadowSample;
+			horzSamples[j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
+		}
+		vertSamples[i + 1] = horzPCF(horzSamples, uvFrac.x);
+	}
+
+	float shadow = vertSamples[0].x * (1 - uvFrac.y) + vertSamples[0].y;
+	shadow += vertSamples[1].x + vertSamples[1].y;
+	shadow += vertSamples[2].x + vertSamples[2].y * uvFrac.y;
+	shadow *= 0.04f;
+	
+	//avgDepthShadow *= 0.1111111f;
+	//sharpen = lerp(4 * sharpen, sharpen, saturate((depth - avgDepthShadow) * 5000.0f));
+
+	return saturate( (saturate(shadow) - 0.5f) * sharpen + 0.5f );
+}
+/*
 float PCF_Filter(float3 UV, float depth, float mapScale)
 {
 	float filterWidth = max(PCF_WIDTH * PCF_PIXEL * mapScale, PCF_PIXEL);
@@ -43,30 +104,7 @@ float PCF_Filter(float3 UV, float depth, float mapScale)
         }
 
 	return sum / (PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
-}
-
-#define PCF_WIDTH_DIR 3
-
-float PCF_FilterDir(float3 UV, float depth, float mapScale)
-{
-	float filterWidth = max(PCF_WIDTH_DIR * PCF_PIXEL * mapScale, PCF_PIXEL);
-
-	float stepSize = 2 * filterWidth / PCF_NUM_SAMPLES;
-	UV.xy -= float2(filterWidth, filterWidth);
-	
-	float sum = 0;
-	for(int i=0; i<PCF_NUM_SAMPLES; i++)
-		for(int j=0; j<PCF_NUM_SAMPLES; j++) 
-		{
-			float3 uv = UV;
-			uv.xy += float2(i * stepSize, j * stepSize);
-			float shadMapDepth = shadows.SampleLevel(samplerBilinearClamp, uv, 0).r;
-			float shad = depth < shadMapDepth;
-			sum += shad;
-        }
-
-	return sum / (PCF_NUM_SAMPLES * PCF_NUM_SAMPLES);
-}
+}*/
 
 // rect
 float rectangleSolidAngle( float3 worldPos ,float3 p0 , float3 p1 ,float3 p2 , float3 p3 )
@@ -229,14 +267,11 @@ float SpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, mat
 	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
 	shadowmapCoords.z = adress.w;
 	
-	//float shadowDepth = shadows.SampleLevel(samplerClamp, shadowmapCoords, 0).r;
-	const float resBiasScale = max(2, (texelSize.x * SHADOWS_RES_BIAS_SCALE) * 0.2);
+	const float resBiasScale = max(2, (texelSize.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
 	lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
-	
 	float depthView = lightViewProjPos.z * lvp_rcp;
 	
-	return PCF_Filter(shadowmapCoords, depthView, adress.z);
-	//return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
 }
 
 float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, matrix vp_mat, float4 adress, float2 texelSize, float near, float3 depthFix)
@@ -266,8 +301,7 @@ float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL,
 	lightViewProjPos.z -= shadowBiasSpotArea * near * depthFix.z;
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return PCF_Filter(shadowmapCoords, depthView, adress.z);
-	//return GatherFilter(shadowmapCoords, reprojCoords.xy, texelSize.x, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
 }
 
 /*static const float3 pl_dirs[6] =
@@ -471,8 +505,7 @@ float PointlightShadow(float3 wpos, float3 posInLight, float3 pos, float3 normal
 		}
 	}
 
-	return PCF_Filter(shadowmapCoords, depthView, adress);
-	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress, 1.0f);
 }
 
 float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, matrix view_mat, 
@@ -668,8 +701,7 @@ float TubelightShadow(float3 wpos, float3 normal, float NoL, matrix proj_mat, ma
 		}
 	}
 	
-	return PCF_Filter(shadowmapCoords, depthView, adress);
-	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return PCF_Filter(shadowmapCoords, depthView, adress, 1.0f);
 }
 
 float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 pos2, float3 pos3, float3 normal, float NoL, 
@@ -769,10 +801,9 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
 #if DEBUG_CASCADE_LIGHTS != 0
-	return res * PCF_FilterDir(shadowmapCoords, depthView, adress.z);
-	//return res * GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
+	return res * PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
 #else
-	return PCF_FilterDir(shadowmapCoords, depthView, adress.z);
+	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
 	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 #endif
 }

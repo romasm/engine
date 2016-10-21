@@ -32,6 +32,7 @@ TECHNIQUE_DEFAULT
 
 #define SHADOW_NEARCLIP 0.01
 
+#define SHADOWS_BUFFER_RES 4096
 #define SHADOWS_MAXRES 2048
 #define SHADOWS_MINRES 64
 
@@ -72,7 +73,7 @@ SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 
 #define normalShadowOffsetSpot 2
-#define shadowBiasSpotArea 0.0008
+#define shadowBiasSpotArea 0.0008 
 #define shadowBiasSpot shadowBiasSpotArea * SHADOW_NEARCLIP
 
 #define normalShadowOffsetPoint 2
