@@ -757,6 +757,32 @@ void SceneRenderMgr::UpdateCamera(CameraComponent* cam)
 	cameraPosition = current_cam->camPos;
 }
 
+void SceneRenderMgr::VoxelizeScene(ScenePipeline* scene)
+{
+	const unsigned int offset = 0;
+	
+	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
+
+	for(auto cur: opaque_array)
+	{
+		bool has_tq = false;
+		auto queue = cur->material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
+		if(!has_tq)
+			continue;
+
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
+		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur->material->SetMatrixBuffer(cur->constant_buffer);
+
+		cur->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
+
+		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+
+		// compute execute
+	}
+}
+
 void SceneRenderMgr::DrawHud()
 {
 	//sort(hud_array.begin(), hud_array.end(), BaseRenderMgr::InvCompareMeshes );

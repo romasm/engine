@@ -87,6 +87,7 @@
     <FxCompile Include="..\gui\viewport.hlsl" />
     <FxCompile Include="..\gui\viewport_2darr.hlsl" />
     <FxCompile Include="..\gui\viewport_cube.hlsl" />
+    <FxCompile Include="..\objects\alphatest_main.hlsl" />
     <FxCompile Include="..\objects\editor\3d_hud.hlsl" />
     <FxCompile Include="..\objects\editor\3d_hud_alpha.hlsl" />
     <FxCompile Include="..\objects\editor\line_geometry.hlsl" />
@@ -95,7 +96,9 @@
     <FxCompile Include="..\objects\opaque_main.hlsl" />
     <FxCompile Include="..\objects\opaque_vertex.hlsl" />
     <FxCompile Include="..\objects\pixel.hlsl" />
+    <FxCompile Include="..\objects\pixel_input.hlsl" />
     <FxCompile Include="..\objects\sky_sphere.hlsl" />
+    <FxCompile Include="..\objects\voxelization.hlsl" />
     <FxCompile Include="..\offline\envmap_diffgen.hlsl" />
     <FxCompile Include="..\offline\envmap_mipgen.hlsl" />
     <FxCompile Include="..\offline\envmap_render.hlsl" />

@@ -295,5 +295,14 @@
     <FxCompile Include="..\system\hiz_depth.hlsl">
       <Filter>system</Filter>
     </FxCompile>
+    <FxCompile Include="..\objects\alphatest_main.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\voxelization.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
+    <FxCompile Include="..\objects\pixel_input.hlsl">
+      <Filter>objects</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

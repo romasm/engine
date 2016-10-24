@@ -37,9 +37,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 			ERR("Technique must have a name in %s", file.c_str());
 			continue;
 		}
-
-		//wstring techName = it.first.substr(TECHIQUE_STR_SIZE);
-
+		
 		if(!it.second.node)
 		{
 			ERR("Technique %ls must have params in %s", it.first.c_str(), file.c_str());
