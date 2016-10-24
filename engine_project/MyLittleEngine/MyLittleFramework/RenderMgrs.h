@@ -83,6 +83,14 @@ namespace EngineCore
 		}
 	};
 
+	struct VolumeData
+	{
+		XMMATRIX volumeVP;
+
+		XMFLOAT4 volumeOffset;
+		XMFLOAT4 volumeScale;
+	};
+
 	struct distEP
 	{
 		ID3D11ShaderResourceView* specCube;
@@ -211,6 +219,9 @@ namespace EngineCore
 #define SHADOWS_DIR_RES SHADOWS_BUF_RES / 2
 #define SHADOWS_DIR_DEPTH 10000.0f
 
+#define VOXEL_VOLUME_RES 256
+#define VOXEL_VOLUME_SIZE 10.0f
+
 	struct CameraComponent;
 
 	class SceneRenderMgr: public BaseRenderMgr
@@ -302,6 +313,14 @@ namespace EngineCore
 			_DELETE(casterPoint_array);
 			_DELETE(casterPointSphere_array);
 			_DELETE(casterPointTube_array);
+			
+			_RELEASE(voxelizationDumbRTV);
+			_RELEASE(voxelizationDumb);
+			_RELEASE(voxelSceneUAV);
+			_RELEASE(voxelSceneSRV);
+			_RELEASE(voxelScene);
+
+			_RELEASE(volumeBuffer);
 
 			shadowmap_array.destroy();
 
@@ -358,6 +377,8 @@ namespace EngineCore
 
 		bool initShadowBuffer();
 		void PlaceShadowMaps();
+
+		bool initVoxelBuffer();
 
 		void cleanRenderArrayHud();
 		void cleanRenderArrayEnvProbs() {skyEP = distEP();}
@@ -429,6 +450,15 @@ namespace EngineCore
 		ID3D11Texture2D* shadowsBuffer;
 		ID3D11ShaderResourceView* shadowsBufferSRV;
 		ID3D11DepthStencilView* shadowsBufferDSV[SHADOWS_BUF_SIZE];
+
+		ID3D11Texture2D* voxelizationDumb;
+		ID3D11RenderTargetView* voxelizationDumbRTV;
+
+		ID3D11Texture3D* voxelScene;
+		ID3D11UnorderedAccessView* voxelSceneUAV;
+		ID3D11ShaderResourceView* voxelSceneSRV;
+
+		ID3D11Buffer* volumeBuffer;
 
 		CameraComponent* current_cam;
 

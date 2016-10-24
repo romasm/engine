@@ -172,9 +172,9 @@ bool ScenePipeline::Init(int t_width, int t_height)
 	
 	render_mgr = new SceneRenderMgr;
 	
-	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), false);
+	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
 
-	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), false);
+	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
 		
 	lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer) + sizeof(SpotLightDiskBuffer) + sizeof(SpotLightRectBuffer), true);
 	lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer) + sizeof(PointLightSphereBuffer) + sizeof(PointLightTubeBuffer), true);

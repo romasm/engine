@@ -78,7 +78,7 @@ namespace EngineCore
 			res->parent = e;
 			res->material = nullptr;
 
-			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LineGeometryBuffer), false);
+			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LineGeometryBuffer), true);
 			return res;
 		}
 		void DeleteComponent(Entity e);

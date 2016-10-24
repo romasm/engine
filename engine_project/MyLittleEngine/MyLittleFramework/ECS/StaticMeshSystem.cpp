@@ -137,7 +137,7 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 	newComp->dirty = true;
 	visibilitySys->SetBBox(dest, meshPtr->box);
 
-	newComp->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), false);
+	newComp->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 	
 	newComp->materials.create(meshPtr->matCount);
 	for(int i=0; i < meshPtr->matCount; i++)

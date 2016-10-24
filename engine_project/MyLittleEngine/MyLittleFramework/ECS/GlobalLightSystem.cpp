@@ -137,7 +137,7 @@ void GlobalLightSystem::buildCascades(GlobalLightComponent& comp, uint16_t camId
 		if(!shadowCascade.render_mgr[i])
 			shadowCascade.render_mgr[i] = new ShadowRenderMgr();
 		if(!shadowCascade.vp_buf[i])
-			shadowCascade.vp_buf[i] = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), false);
+			shadowCascade.vp_buf[i] = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
 	}
 }
 

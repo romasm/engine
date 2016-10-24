@@ -384,7 +384,7 @@ bool Material::initBuffers()
 		if(dataVector[i].size() == 0)
 			continue;
 
-		inputBuf[i] = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector[i].size() * sizeof(XMFLOAT4), false);
+		inputBuf[i] = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector[i].size() * sizeof(XMFLOAT4), true);
 		if (!inputBuf[i])
 			return false;
 	}
@@ -392,7 +392,7 @@ bool Material::initBuffers()
 	if(!defferedParams || sceneReg == REGISTER_NULL)
 		return true;
 
-	idBuf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(uint32_t) * 4, false);
+	idBuf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(uint32_t) * 4, true);
 	if (!idBuf)
 		return false;
 
@@ -726,7 +726,7 @@ bool SimpleShaderInst::initBuffers()
 	if(dataVector.size() == 0)
 		return true;
 
-	inputBuf = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector.size() * sizeof(XMFLOAT4), false);
+	inputBuf = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector.size() * sizeof(XMFLOAT4), true);
 	if (!inputBuf)
 		return false;
 

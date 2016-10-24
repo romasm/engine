@@ -54,7 +54,7 @@ namespace EngineCore
 			StaticMeshComponent* res = components.add(e.index());
 			res->parent = e;
 			// todo: static alloc???
-			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), false);
+			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 			return res;
 		}
 		StaticMeshComponent* AddComponent(Entity e, string& mesh)
@@ -76,7 +76,7 @@ namespace EngineCore
 			D.dirty = true;
 			D.parent = e;
 			if(!D.constantBuffer)
-				D.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), false);
+				D.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 			visibilitySys->SetBBox(e, StMeshMgr::GetStMeshPtr(D.stmesh)->box);
 			components.add(e.index(), D);
 		}

@@ -23,7 +23,7 @@ void ShadowSystem::initShadowmap(ShadowComponent* comp)
 {
 	comp->dirty = true;
 	comp->render_mgr = new ShadowRenderMgr();
-	comp->vp_buf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), false);
+	comp->vp_buf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
 }
 
 void ShadowSystem::Update()

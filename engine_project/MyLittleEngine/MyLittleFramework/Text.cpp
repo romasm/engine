@@ -106,7 +106,7 @@ bool Text::initBuffers(wstring &text)
 		return false;
 	}
 
-	constantBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(SimpleMatrixBuffer), false);
+	constantBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(SimpleMatrixBuffer), true);
 	if (!constantBuffer)
 	{
 		_DELETE_ARRAY(vertex);

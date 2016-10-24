@@ -6,6 +6,8 @@
 
 SamplerState samplerTrilinearWrap : register(s0);
 
+RWTexture3D <float> opacityVolume : register(u1);  
+
 float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 {
 	if(!AlphatestSample(samplerTrilinearWrap, input.tex))

@@ -79,28 +79,7 @@ namespace EngineCore
 			XMFLOAT2 uvCorrectionForPow2;
 			XMFLOAT2 padding1;
 		};
-
-		/*struct BloomBuffer
-		{
-			unsigned int NumApproxPasses;
-			float HalfBoxFilterWidth;
-			float FracHalfBoxFilterWidth;
-			float InvFracHalfBoxFilterWidth;
-			float RcpBoxFilterWidth;
-		};*/
-
-		/*struct AOBuffer
-		{
-			float screenCoordMaxW;
-			float screenCoordMaxH;
-			float screenCoordMaxWRcp;
-			float screenCoordMaxHRcp;
-			float projParam;
-			float maxDistSqr;
-			float hizMip;
-			float padding;
-		};*/
-
+		
 	public:
 		ScenePipeline();
 		~ScenePipeline();
@@ -313,7 +292,7 @@ namespace EngineCore
 		ID3D11Texture2D* sceneDepth;
 		ID3D11ShaderResourceView* sceneDepthSRV;
 		ID3D11DepthStencilView* sceneDepthDSV;
-
+		
 		CameraLink camera;
 		CameraComponent* current_camera;
 		int32_t width;

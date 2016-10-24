@@ -46,7 +46,7 @@ TransformControls::TransformControls(World* wrd)
 
 	for(uint i=0; i<TC_MAX_CAMS; i++)
 	{
-		matricies[i].constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), false);
+		matricies[i].constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 		matricies[i].actualTransform = XMMatrixIdentity();
 	}
 

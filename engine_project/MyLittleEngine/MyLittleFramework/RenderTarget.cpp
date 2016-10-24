@@ -343,9 +343,8 @@ void RenderTarget::SetRenderTarget(UINT rt_start, UINT rt_end)
 
 void RenderTarget::ClearRenderTargets(float red, float green, float blue, float alpha, bool clearDS)
 {
-	float color[4] = {red, green, blue, alpha};
 	for(int i=0; i<(int)RT_count; i++)
-		Render::ClearRenderTargetView(m_RTV[i], color);
+		Render::ClearRenderTargetView(m_RTV[i], XMFLOAT4(red, green, blue, alpha));
 	
 	if(clearDS && m_DSV) Render::ClearDepthStencilView(m_DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }

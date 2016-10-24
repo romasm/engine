@@ -61,6 +61,17 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	shadows_sizes[4].res = SHADOWS_MAXRES / 16;
 	shadows_sizes[5].res = SHADOWS_MAXRES / 32;
 
+	voxelizationDumb = nullptr;
+	voxelizationDumbRTV = nullptr;
+	voxelScene = nullptr;
+	voxelSceneUAV = nullptr;
+	voxelSceneSRV = nullptr;
+
+	volumeBuffer = nullptr;
+
+	if(!initVoxelBuffer())
+		ERR("Failed init voxel buffer");
+
 	ClearAll();
 }
 
@@ -310,6 +321,75 @@ void SceneRenderMgr::RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mg
 	}*/
 
 	Render::OMSetRenderTargets(0, nullptr, nullptr);
+}
+
+bool SceneRenderMgr::initVoxelBuffer()
+{
+	ID3D11Texture2D* voxelizationDumb;
+		ID3D11RenderTargetView* voxelizationDumbRTV;
+
+		ID3D11Texture3D* voxelScene;
+		ID3D11UnorderedAccessView* voxelSceneUAV;
+		ID3D11ShaderResourceView* voxelSceneSRV;
+
+	D3D11_TEXTURE2D_DESC dumbDesc;
+	ZeroMemory(&dumbDesc, sizeof(dumbDesc));
+	dumbDesc.Width = VOXEL_VOLUME_RES;
+	dumbDesc.Height = VOXEL_VOLUME_RES;
+	dumbDesc.MipLevels = 1;
+	dumbDesc.ArraySize = 0;
+	dumbDesc.Format = DXGI_FORMAT_R8_UNORM;
+	dumbDesc.SampleDesc.Count = 1;
+	dumbDesc.SampleDesc.Quality = 0;
+	dumbDesc.Usage = D3D11_USAGE_DEFAULT;
+	dumbDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+	dumbDesc.CPUAccessFlags = 0;
+	dumbDesc.MiscFlags = 0;
+	if( FAILED(Render::CreateTexture2D(&dumbDesc, NULL, &voxelizationDumb)) )
+		return false;
+
+	D3D11_RENDER_TARGET_VIEW_DESC dumbRTVDesc;
+	ZeroMemory(&dumbRTVDesc, sizeof(dumbRTVDesc));
+	dumbRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	dumbRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	dumbRTVDesc.Texture2D.MipSlice = 0;
+	if( FAILED(Render::CreateRenderTargetView(voxelizationDumb, &dumbRTVDesc, &voxelizationDumbRTV)) )
+		return false;
+
+	D3D11_TEXTURE3D_DESC volumeDesc;
+	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
+	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Height = VOXEL_VOLUME_RES;
+	volumeDesc.Depth = VOXEL_VOLUME_RES;
+	volumeDesc.MipLevels = 1;
+	volumeDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
+	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.CPUAccessFlags = 0;
+	volumeDesc.MiscFlags = 0;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelScene)) )
+		return false;
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
+	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
+	volumeUAVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+	volumeUAVDesc.Texture3D.MipSlice = 0;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelScene, &volumeUAVDesc, &voxelSceneUAV)) )
+		return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
+	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
+	volumeSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Texture3D.MipLevels = -1;
+	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
+	if( FAILED(Render::CreateShaderResourceView(voxelScene, &volumeSRVDesc, &voxelSceneSRV)) )
+		return false;
+
+	volumeBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData), true);
+
+	return true;
 }
 
 bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
@@ -760,7 +840,28 @@ void SceneRenderMgr::UpdateCamera(CameraComponent* cam)
 void SceneRenderMgr::VoxelizeScene(ScenePipeline* scene)
 {
 	const unsigned int offset = 0;
+
+	VolumeData constBuffer;
+	constBuffer.volumeOffset = XMFLOAT4(0,0,0,0);
+	constBuffer.volumeScale.x = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
+	constBuffer.volumeScale.y = constBuffer.volumeScale.z = constBuffer.volumeScale.x;
+	constBuffer.volumeScale.w = 0.0f;
+	constBuffer.volumeVP = XMMatrixOrthographicLH(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, 0.0f, VOXEL_VOLUME_SIZE); // view matrix
+
+	Render::UpdateSubresource(volumeBuffer, 0, nullptr, &constBuffer, 0, 0);
+	Render::VSSetConstantBuffers(2, 1, &volumeBuffer); 
+
+	Render::ClearUnorderedAccessViewFloat(voxelSceneUAV, XMFLOAT4(0,0,0,0));
+	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 0, 1, &voxelSceneUAV, nullptr);
 	
+	D3D11_VIEWPORT viewport;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	Render::RSSetViewports(1, &viewport);
+
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
 	for(auto cur: opaque_array)
@@ -781,6 +882,8 @@ void SceneRenderMgr::VoxelizeScene(ScenePipeline* scene)
 
 		// compute execute
 	}
+
+	Render::OMSetRenderTargetsAndUnorderedAccessViews(0, nullptr, nullptr, 0, 0, nullptr, nullptr);
 }
 
 void SceneRenderMgr::DrawHud()

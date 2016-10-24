@@ -115,8 +115,12 @@ namespace EngineCore
 		{m_instance->m_pImmediateContext->Unmap(pResource, Subresource);}
 
 		// RTV
-		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, const FLOAT ColorRGBA[ 4 ])
-		{m_instance->m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, ColorRGBA);}
+		inline static void ClearUnorderedAccessViewFloat(ID3D11UnorderedAccessView *pUnorderedAccessView, XMFLOAT4 ColorRGBA)
+		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
+		m_instance->m_pImmediateContext->ClearUnorderedAccessViewFloat(pUnorderedAccessView, color);}
+
+		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, const UINT ColorRGBA[ 4 ])
+		{m_instance->m_pImmediateContext->ClearUnorderedAccessViewUint(pUnorderedAccessView, ColorRGBA);}
 
 		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, XMFLOAT4 ColorRGBA)
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
@@ -139,6 +143,9 @@ namespace EngineCore
 
 		inline static HRESULT CreateTexture2D(const D3D11_TEXTURE2D_DESC *pDesc, const D3D11_SUBRESOURCE_DATA *pInitialData, ID3D11Texture2D **ppTexture2D)
 		{return m_instance->m_pd3dDevice->CreateTexture2D(pDesc, pInitialData, ppTexture2D);}
+		
+		inline static HRESULT CreateTexture3D(const D3D11_TEXTURE3D_DESC *pDesc, const D3D11_SUBRESOURCE_DATA *pInitialData, ID3D11Texture3D **ppTexture3D)
+		{return m_instance->m_pd3dDevice->CreateTexture3D(pDesc, pInitialData, ppTexture3D);}
 
 		inline static HRESULT CreateUnorderedAccessView(ID3D11Resource *pResource, const D3D11_UNORDERED_ACCESS_VIEW_DESC *pDesc, ID3D11UnorderedAccessView **ppUAView)
 		{return m_instance->m_pd3dDevice->CreateUnorderedAccessView(pResource, pDesc, ppUAView);}
