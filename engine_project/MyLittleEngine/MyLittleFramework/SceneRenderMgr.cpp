@@ -325,19 +325,12 @@ void SceneRenderMgr::RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mg
 
 bool SceneRenderMgr::initVoxelBuffer()
 {
-	ID3D11Texture2D* voxelizationDumb;
-		ID3D11RenderTargetView* voxelizationDumbRTV;
-
-		ID3D11Texture3D* voxelScene;
-		ID3D11UnorderedAccessView* voxelSceneUAV;
-		ID3D11ShaderResourceView* voxelSceneSRV;
-
 	D3D11_TEXTURE2D_DESC dumbDesc;
 	ZeroMemory(&dumbDesc, sizeof(dumbDesc));
 	dumbDesc.Width = VOXEL_VOLUME_RES;
 	dumbDesc.Height = VOXEL_VOLUME_RES;
 	dumbDesc.MipLevels = 1;
-	dumbDesc.ArraySize = 0;
+	dumbDesc.ArraySize = 1;
 	dumbDesc.Format = DXGI_FORMAT_R8_UNORM;
 	dumbDesc.SampleDesc.Count = 1;
 	dumbDesc.SampleDesc.Quality = 0;
@@ -375,6 +368,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	volumeUAVDesc.Format = DXGI_FORMAT_R8_UNORM;
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
+	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
 	if( FAILED(Render::CreateUnorderedAccessView(voxelScene, &volumeUAVDesc, &voxelSceneUAV)) )
 		return false;
 
@@ -837,22 +831,12 @@ void SceneRenderMgr::UpdateCamera(CameraComponent* cam)
 	cameraPosition = current_cam->camPos;
 }
 
-void SceneRenderMgr::VoxelizeScene(ScenePipeline* scene)
+void SceneRenderMgr::VoxelizeScene()
 {
 	const unsigned int offset = 0;
 
-	VolumeData constBuffer;
-	constBuffer.volumeOffset = XMFLOAT4(0,0,0,0);
-	constBuffer.volumeScale.x = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
-	constBuffer.volumeScale.y = constBuffer.volumeScale.z = constBuffer.volumeScale.x;
-	constBuffer.volumeScale.w = 0.0f;
-	constBuffer.volumeVP = XMMatrixOrthographicLH(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, 0.0f, VOXEL_VOLUME_SIZE); // view matrix
-
-	Render::UpdateSubresource(volumeBuffer, 0, nullptr, &constBuffer, 0, 0);
-	Render::VSSetConstantBuffers(2, 1, &volumeBuffer); 
-
 	Render::ClearUnorderedAccessViewFloat(voxelSceneUAV, XMFLOAT4(0,0,0,0));
-	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 0, 1, &voxelSceneUAV, nullptr);
+	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 1, &voxelSceneUAV, nullptr);
 	
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = 0.0f;
@@ -864,23 +848,54 @@ void SceneRenderMgr::VoxelizeScene(ScenePipeline* scene)
 
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
-	for(auto cur: opaque_array)
+	VolumeData constBuffer;
+	constBuffer.volumeOffset = XMFLOAT4(0,0,0,0);
+	constBuffer.volumeScale.x = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
+	constBuffer.volumeScale.y = constBuffer.volumeScale.z = constBuffer.volumeScale.x;
+	constBuffer.volumeScale.w = 0.0f;
+
+	XMVECTOR camPoses[3];
+	camPoses[0] = XMVectorSet(0.0f, VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
+	camPoses[1] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 0.0f, 1.0f);
+	camPoses[2] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, 0.0f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
+
+	XMVECTOR camDirs[3];
+	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	camDirs[1] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	camDirs[2] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	XMVECTOR camUps[3];
+	camUps[0] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	camUps[1] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	camUps[2] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+
+	for(uint8_t i = 0; i < 3; i++)
 	{
-		bool has_tq = false;
-		auto queue = cur->material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
-		if(!has_tq)
-			continue;
+		constBuffer.volumeVP = XMMatrixLookToLH(camPoses[i], camDirs[i], camUps[i]);
+		constBuffer.volumeVP *= XMMatrixOrthographicLH(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, 0.0f, VOXEL_VOLUME_SIZE);
+		constBuffer.volumeVP = XMMatrixTranspose(constBuffer.volumeVP);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		Render::UpdateDynamicResource(volumeBuffer, (void*)&constBuffer, sizeof(VolumeData));
+		Render::VSSetConstantBuffers(2, 1, &volumeBuffer); 
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		for(auto cur: opaque_array)
+		{
+			bool has_tq = false;
+			auto queue = cur->material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
+			if(!has_tq)
+				continue;
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
+			Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
+			Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+			cur->material->SetMatrixBuffer(cur->constant_buffer);
 
-		// compute execute
+			cur->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
+
+			Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+
+			// compute execute
+		}
 	}
 
 	Render::OMSetRenderTargetsAndUnorderedAccessViews(0, nullptr, nullptr, 0, 0, nullptr, nullptr);

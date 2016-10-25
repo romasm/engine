@@ -80,7 +80,7 @@ void StaticMeshSystem::RegToDraw()
 			StmMatrixBuffer mb;
 			mb.world = XMMatrixTranspose(transformComponent->worldMatrix);
 			mb.norm = XMMatrixTranspose(normalMatrix);
-			Render::UpdateSubresource(i.constantBuffer, 0, NULL, &mb, 0, 0);
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(StmMatrixBuffer));
 					
 			i.dirty = false;
 		}

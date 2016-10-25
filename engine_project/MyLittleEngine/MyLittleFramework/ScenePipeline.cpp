@@ -468,6 +468,7 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 12);
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
+	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelSRV(), 14);
 
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);
@@ -531,9 +532,32 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	sharedconst.viewProjection = sharedconst.projection * sharedconst.view;
 	sharedconst.invViewProjection = XMMatrixInverse(nullptr, sharedconst.viewProjection);
 
+	// frustum vectors
+	XMMATRIX invView = XMMatrixInverse(nullptr, current_camera->viewMatrix);
+	XMMATRIX invProj = XMMatrixInverse(nullptr, current_camera->projMatrix);
+
+	XMVECTOR camCorners[4];
+	camCorners[0] = XMVectorSet(-1.0f, 1.0f, current_camera->near_clip, 1.0f);
+	camCorners[1] = XMVectorSet(1.0f, 1.0f, current_camera->near_clip, 1.0f);
+	camCorners[2] = XMVectorSet(-1.0f, -1.0f, current_camera->near_clip, 1.0f);
+	camCorners[3] = XMVectorSet(1.0f, -1.0f, current_camera->near_clip, 1.0f);
+
+	for(uint8_t i = 0; i < 4; i++)
+	{
+		camCorners[i] = XMVector3Normalize(XMVector3TransformCoord(camCorners[i], invProj));
+		camCorners[i] = XMVectorSetW(camCorners[i], 0.0f);
+		camCorners[i] = XMVector4Transform(camCorners[i], invView);
+	}
+
+	XMStoreFloat3(&sharedconst.g_CamFrust0, camCorners[0]);
+	XMStoreFloat3(&sharedconst.g_CamFrust1, camCorners[1]);
+	XMStoreFloat3(&sharedconst.g_CamFrust2, camCorners[2]);
+	XMStoreFloat3(&sharedconst.g_CamFrust3, camCorners[3]);
+	// frustum vectors
+
 	sharedconst.perspParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
 
-	Render::UpdateSubresource(m_SharedBuffer, 0, NULL, &sharedconst, 0, 0);
+	Render::UpdateDynamicResource(m_SharedBuffer, (void*)&sharedconst, sizeof(sharedconst));
 	Render::PSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::VSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::HSSetConstantBuffers(0, 1, &m_SharedBuffer); 
@@ -550,7 +574,7 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 #endif
 
 	XMMATRIX camMove = XMMatrixTranspose(current_camera->prevViewProj) * sharedconst.invViewProjection;
-	Render::UpdateSubresource(m_CamMoveBuffer, 0, NULL, &camMove, 0, 0);
+	Render::UpdateDynamicResource(m_CamMoveBuffer, (void*)&camMove, sizeof(XMMATRIX));
 	
 	return true;
 }
@@ -577,11 +601,19 @@ void ScenePipeline::HudStage()
 
 void ScenePipeline::OpaqueForwardStage()
 {
+	PERF_GPU_TIMESTAMP(_VOXELIZATION);
+
+	render_mgr->VoxelizeScene();
+
+	PERF_GPU_TIMESTAMP(_GEOMETRY);
+
 	rt_OpaqueForward->ClearRenderTargets();
 	rt_OpaqueForward->SetRenderTarget();
 	Materials_Count = 1;
 
 	render_mgr->DrawOpaque(this);
+
+	PERF_GPU_TIMESTAMP(_DEPTH_COPY);
 
 	//ID3D11Resource* hiz_topmip = nullptr;
 	//rt_HiZDepth->GetRenderTargetView(0)->GetResource(&hiz_topmip);

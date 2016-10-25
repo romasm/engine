@@ -102,6 +102,15 @@ namespace EngineCore
 		inline static ID3D11DeviceContext* Context() {return m_instance->m_pImmediateContext;}
 
 		// subresource
+		inline static void UpdateDynamicResource(ID3D11Resource* resource, void* data, size_t size)
+		{
+			D3D11_MAPPED_SUBRESOURCE mappedResource;
+			if(FAILED(Render::Map(resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
+				return;
+			memcpy(mappedResource.pData, data, size);
+			Render::Unmap(resource, 0);
+		}
+
 		inline static void UpdateSubresource(ID3D11Resource* pDstResource, UINT DstSubresource, const D3D11_BOX* pDstBox, 
 			const void* pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
 		{m_instance->m_pImmediateContext->UpdateSubresource(pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);}

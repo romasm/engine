@@ -452,11 +452,11 @@ void Material::ClearTextures()
 }
 
 void Material::updateBuffers()
-{
+{	
+	b_dirty = false;
 	for(uint i=0; i<5; i++)
 		if(inputBuf[i] != nullptr)
-			Render::UpdateSubresource(inputBuf[i], 0, NULL, dataVector[i].data(), 0, 0);
-	b_dirty = false;
+			Render::UpdateDynamicResource(inputBuf[i], (void*)dataVector[i].data(), sizeof(XMFLOAT4) * dataVector[i].size());
 }
 
 void Material::AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i)
@@ -496,7 +496,8 @@ void Material::Set(TECHNIQUES tech)
 	{
 		uint32_t id[4];
 		id[0] = scene_id;
-		Render::UpdateSubresource(idBuf, 0, NULL, id, 0, 0);
+
+		Render::UpdateDynamicResource(idBuf, (void*)id, sizeof(uint32_t) * 4);
 		Render::PSSetConstantBuffers(sceneReg, 1, &idBuf);
 	}
 
@@ -735,9 +736,12 @@ bool SimpleShaderInst::initBuffers()
 
 void SimpleShaderInst::updateBuffers()
 {
-	if(inputBuf != nullptr)
-		Render::UpdateSubresource(inputBuf, 0, NULL, dataVector.data(), 0, 0);
 	b_dirty = false;
+
+	if(inputBuf == nullptr)
+		return;
+	
+	Render::UpdateDynamicResource(inputBuf, (void*)dataVector.data(), sizeof(XMFLOAT4) * dataVector.size());
 }
 
 void SimpleShaderInst::Set()

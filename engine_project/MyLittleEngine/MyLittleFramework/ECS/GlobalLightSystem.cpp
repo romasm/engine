@@ -209,7 +209,7 @@ void GlobalLightSystem::matrixGenerate(GlobalLightComponent& comp, CascadeShadow
 		cascade.view_proj[i] = XMMatrixTranspose(cascade.view[i] * projCascade.proj[i]);
 		XMStoreFloat3(&cascade.pos[i], lightPos);
 		
-		Render::UpdateSubresource(cascade.vp_buf[i], 0, NULL, &cascade.view_proj[i], 0, 0);
+		Render::UpdateDynamicResource(cascade.vp_buf[i], (void*)&cascade.view_proj[i], sizeof(XMMATRIX));
 
 		// Frustum
 		BoundingOrientedBox& viewbox = cascade.worldFrustum[i];

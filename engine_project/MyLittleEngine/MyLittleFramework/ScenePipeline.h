@@ -77,7 +77,19 @@ namespace EngineCore
 			float perspParam;
 
 			XMFLOAT2 uvCorrectionForPow2;
-			XMFLOAT2 padding1;
+			XMFLOAT2 padding0;
+
+			// 0 ---- 1
+			// |      |
+			// 2 ---- 3
+			XMFLOAT3 g_CamFrust0;
+			float padding1;
+			XMFLOAT3 g_CamFrust1;
+			float padding2;
+			XMFLOAT3 g_CamFrust2;
+			float padding3;
+			XMFLOAT3 g_CamFrust3;
+			float padding4;
 		};
 		
 	public:

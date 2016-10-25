@@ -24,10 +24,12 @@ float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGE
 	normal = normalize(normal);
 	if(!front)normal = -normal;
 	
-	float3 inVolumePos = input.worldPos.rgb;
-
 	// to voxel!!!!!
 	// albedo, normal, emissive
+
+	uint3 uavCoords = uint3(input.worldPos.rgb);
+
+	opacityVolume[uavCoords] = 1.0f;
 	
 	discard;
 	return 0.0;

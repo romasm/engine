@@ -277,7 +277,8 @@ namespace EngineCore
 
 		void RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
 		
-		void VoxelizeScene(ScenePipeline* scene);
+		void VoxelizeScene();
+		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelSceneSRV;}
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);

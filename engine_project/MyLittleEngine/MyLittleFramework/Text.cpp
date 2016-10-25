@@ -172,7 +172,9 @@ bool Text::updateMatrix()
 	
 	SimpleMatrixBuffer cb;
 	cb.WVP = XMMatrixTranspose(objmatrix);
-	Render::UpdateSubresource( constantBuffer, 0, NULL, &cb, 0, 0 );
+
+	Render::UpdateDynamicResource(constantBuffer, (void*)&cb, sizeof(SimpleMatrixBuffer));
+
 	return true;
 }
 

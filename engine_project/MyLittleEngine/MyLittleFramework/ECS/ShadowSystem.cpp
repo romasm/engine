@@ -41,7 +41,7 @@ void ShadowSystem::Update()
 		i.view = XMMatrixTranspose(view);
 		i.view_proj = i.proj * i.view;
 
-		Render::UpdateSubresource(i.vp_buf, 0, NULL, &i.view_proj, 0, 0);
+		Render::UpdateDynamicResource(i.vp_buf, (void*)&i.view_proj, sizeof(XMMATRIX));
 
 		i.localFrustum.Transform(i.worldFrustum, TransformationFromViewPos(view, pos));
 

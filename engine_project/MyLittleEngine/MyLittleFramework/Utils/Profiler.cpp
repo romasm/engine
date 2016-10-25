@@ -22,6 +22,11 @@ void Profiler::InitParams()
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE] = name_depth("Scene", 1);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2); 
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
+
+	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELIZATION] = name_depth("Voxelization", 3);
+	gpu_ids_name[PERF_GPU::PERF_GPU_GEOMETRY] = name_depth("Geometry", 3);
+	gpu_ids_name[PERF_GPU::PERF_GPU_DEPTH_COPY] = name_depth("DepthCopy", 3);
+
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_DEFFERED] = name_depth("Deffered", 2);
 
 	gpu_ids_name[PERF_GPU::PERF_GPU_HIZ_GEN] = name_depth("HiZ", 3);

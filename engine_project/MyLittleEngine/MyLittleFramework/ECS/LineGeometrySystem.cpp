@@ -54,7 +54,7 @@ void LineGeometrySystem::RegToDraw()
 
 			LineGeometryBuffer mb;
 			mb.world = XMMatrixTranspose(transformComponent->worldMatrix);
-			Render::UpdateSubresource(i.constantBuffer, 0, NULL, &mb, 0, 0);				
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(LineGeometryBuffer));			
 					
 			i.dirty = false;
 		}

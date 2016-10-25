@@ -16,7 +16,7 @@ Image2D::Image2D()
 
 void Image2D::Init(string& shadername)
 {
-	vertexBuffer = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex)*4, false, nullptr);
+	vertexBuffer = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex)*4, true, nullptr);
 	if(!vertexBuffer)
 	{
 		ERR("Cant create vertex buffer for Image2D");
@@ -73,7 +73,8 @@ bool Image2D::updateVertices()
 	vertices_quad[3].Pos = XMFLOAT3(right, top, 0.0f);
 	vertices_quad[3].Tex = XMFLOAT2(1.0f, 0.0f);
 
-	Render::UpdateSubresource( vertexBuffer, 0, NULL, &vertices_quad, 0, 0 );
+	Render::UpdateDynamicResource(vertexBuffer, (void*)vertices_quad, sizeof(UnlitVertex) * 4);
+
 	return true;
 }
 

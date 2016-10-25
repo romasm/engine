@@ -25,6 +25,7 @@ Texture2D <float> dynamicAO : register(t11);
 Texture2D <float2> gb_depth : register(t12);
 // debug
 Texture2D <float4> ssrTex : register(t13);
+Texture3D <float> voxelTex : register(t14);
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -99,6 +100,47 @@ struct PO_LDR
 	float4 lin : SV_TARGET1;
 };
 
+#define VOXEL_VOLUME_RES 256
+#define VOXEL_VOLUME_SIZE 10.0f
+#define VOXEL_SIZE VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES
+
+float4 GetVoxel(float2 uv)
+{
+	float3 ray = GetCameraVector(uv);
+
+	float step = 0.25 * VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES;
+	
+	float3 colorFin = 0;
+
+	float dist = step;
+	float value = 0;
+	[loop]
+	while(value < 1.0f && dist < VOXEL_VOLUME_SIZE * 2.0f)
+	{
+		float3 samplePos = g_CamPos + ray * dist;
+		samplePos /= VOXEL_VOLUME_SIZE;
+
+		[branch]
+		if( samplePos.x > 1.0f || samplePos.x < 0.0f ||
+			samplePos.y > 1.0f || samplePos.y < 0.0f ||
+			samplePos.z > 1.0f || samplePos.z < 0.0f)
+		{
+			dist += step;
+			continue;
+		}
+
+		float voxel = voxelTex.SampleLevel(samplerPointClamp, samplePos, 0).r;
+	
+		float3 voxelSnap = floor(samplePos * VOXEL_VOLUME_RES) / VOXEL_VOLUME_RES;
+		float d = mul(float4(voxelSnap * VOXEL_VOLUME_SIZE, 1.0f), g_viewProj).z;
+
+		colorFin += d * voxel;
+		value += voxel;
+		dist += step;
+	}
+
+	return float4(colorFin, value);
+}
 
 PO_LDR HDRLDR(PI_PosTex input)
 {
@@ -175,6 +217,11 @@ PO_LDR HDRLDR(PI_PosTex input)
 	{
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);
 		tonemapped = ssr.rgb * ssr.a;
+	}
+	else if(debugMode == 11)
+	{
+		float4 voxel = GetVoxel(input.tex);
+		tonemapped = lerp(tonemapped, voxel.rgb, voxel.a * 0.75f);
 	}
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);

@@ -102,7 +102,7 @@ void TransformControls::calcSreenScaleMat(CXMVECTOR campos, uint id)
 	StmMatrixBuffer mb;
 	mb.world = XMMatrixTranspose(matricies[id].actualTransform);
 	mb.norm = XMMatrixIdentity();
-	Render::UpdateSubresource(matricies[id].constantBuffer, 0, NULL, &mb, 0, 0);
+	Render::UpdateDynamicResource(matricies[id].constantBuffer, (void*)&mb, sizeof(StmMatrixBuffer));
 }
 
 void TransformControls::RegToDraw()

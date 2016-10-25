@@ -24,7 +24,19 @@ shared cbuffer SharedBuffer : register(b0)
 	float g_perspParam;
 
 	float2 g_uvCorrectionForPow2;
-	float2 padding1;
+	float2 padding0;
+
+	// 0 ---- 1
+	// |      |
+	// 2 ---- 3
+	float3 g_CamFrust0;
+	float padding1;
+	float3 g_CamFrust1;
+	float padding2;
+	float3 g_CamFrust2;
+	float padding3;
+	float3 g_CamFrust3;
+	float padding4;
 };
 
 float3 GetWPos(float2 uv, float depth)
@@ -38,6 +50,14 @@ float3 GetWPos(float2 uv, float depth)
 	position /= position.w;
 
 	return position.xyz;
+}
+
+float3 GetCameraVector(float2 screen_uv)
+{
+	float3 horz0 = lerp(g_CamFrust0, g_CamFrust1, screen_uv.x);
+	float3 horz1 = lerp(g_CamFrust2, g_CamFrust3, screen_uv.x);
+	float3 res = lerp(horz0, horz1, screen_uv.y);
+	return normalize(res);
 }
 
 // snaps a uv coord to the nearest texel centre
