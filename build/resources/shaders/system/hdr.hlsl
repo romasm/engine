@@ -132,9 +132,9 @@ float4 GetVoxel(float2 uv)
 		float voxel = voxelTex.SampleLevel(samplerPointClamp, samplePos, 0).r;
 	
 		float3 voxelSnap = floor(samplePos * VOXEL_VOLUME_RES) / VOXEL_VOLUME_RES;
-		float d = mul(float4(voxelSnap * VOXEL_VOLUME_SIZE, 1.0f), g_viewProj).z;
+		float2 d = mul(float4(voxelSnap * VOXEL_VOLUME_SIZE, 1.0f), g_viewProj).zw;
 
-		colorFin += d * voxel;
+		colorFin += pow(saturate(d.x / d.y), 40.0f) * voxel;
 		value += voxel;
 		dist += step;
 	}
@@ -227,7 +227,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
-	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || debugMode == 10)
+	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || debugMode == 10 || debugMode == 11)
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);
