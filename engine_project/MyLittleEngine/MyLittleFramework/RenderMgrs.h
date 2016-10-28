@@ -220,6 +220,7 @@ namespace EngineCore
 #define SHADOWS_DIR_DEPTH 10000.0f
 
 #define VOXEL_VOLUME_RES 256
+#define VOXEL_VOLUME_RES_DUMB VOXEL_VOLUME_RES * 4
 #define VOXEL_VOLUME_SIZE 10.0f
 
 	struct CameraComponent;

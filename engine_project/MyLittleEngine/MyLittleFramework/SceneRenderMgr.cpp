@@ -327,8 +327,8 @@ bool SceneRenderMgr::initVoxelBuffer()
 {
 	D3D11_TEXTURE2D_DESC dumbDesc;
 	ZeroMemory(&dumbDesc, sizeof(dumbDesc));
-	dumbDesc.Width = VOXEL_VOLUME_RES;
-	dumbDesc.Height = VOXEL_VOLUME_RES;
+	dumbDesc.Width = VOXEL_VOLUME_RES_DUMB;
+	dumbDesc.Height = VOXEL_VOLUME_RES_DUMB;
 	dumbDesc.MipLevels = 1;
 	dumbDesc.ArraySize = 1;
 	dumbDesc.Format = DXGI_FORMAT_R8_UNORM;
@@ -355,7 +355,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	volumeDesc.Height = VOXEL_VOLUME_RES;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
-	volumeDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeDesc.Format = DXGI_FORMAT_R8_UINT;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
 	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 	volumeDesc.CPUAccessFlags = 0;
@@ -365,7 +365,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
 	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeUAVDesc.Format = DXGI_FORMAT_R8_UINT;
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
 	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
@@ -374,7 +374,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
 	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+	volumeSRVDesc.Format = DXGI_FORMAT_R8_UINT;
 	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
@@ -835,13 +835,13 @@ void SceneRenderMgr::VoxelizeScene()
 {
 	const unsigned int offset = 0;
 
-	Render::ClearUnorderedAccessViewFloat(voxelSceneUAV, XMFLOAT4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, XMFLOAT4(0,0,0,0));
 	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 1, &voxelSceneUAV, nullptr);
 	
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
-	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES;
+	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES_DUMB;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 	Render::RSSetViewports(1, &viewport);
@@ -851,7 +851,8 @@ void SceneRenderMgr::VoxelizeScene()
 	VolumeData constBuffer;
 	constBuffer.volumeOffset = XMFLOAT4(0,0,0,0);
 	constBuffer.volumeScale.x = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
-	constBuffer.volumeScale.y = constBuffer.volumeScale.z = constBuffer.volumeScale.x;
+	constBuffer.volumeScale.y = constBuffer.volumeScale.x;
+	constBuffer.volumeScale.z = constBuffer.volumeScale.x;
 	constBuffer.volumeScale.w = 0.0f;
 
 	XMVECTOR camPoses[3];
@@ -869,7 +870,7 @@ void SceneRenderMgr::VoxelizeScene()
 	camUps[1] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	camUps[2] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
-	for(uint8_t i = 0; i < 3; i++)
+	for(uint8_t i = 1; i < 2; i++)
 	{
 		constBuffer.volumeVP = XMMatrixLookToLH(camPoses[i], camDirs[i], camUps[i]);
 		constBuffer.volumeVP *= XMMatrixOrthographicLH(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, 0.0f, VOXEL_VOLUME_SIZE);

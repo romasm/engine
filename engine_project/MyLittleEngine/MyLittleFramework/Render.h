@@ -128,8 +128,9 @@ namespace EngineCore
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
 		m_instance->m_pImmediateContext->ClearUnorderedAccessViewFloat(pUnorderedAccessView, color);}
 
-		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, const UINT ColorRGBA[ 4 ])
-		{m_instance->m_pImmediateContext->ClearUnorderedAccessViewUint(pUnorderedAccessView, ColorRGBA);}
+		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, XMFLOAT4 ColorRGBA)
+		{const UINT color[4] = {UINT(ColorRGBA.x), UINT(ColorRGBA.y), UINT(ColorRGBA.z), UINT(ColorRGBA.w)};
+		m_instance->m_pImmediateContext->ClearUnorderedAccessViewUint(pUnorderedAccessView, color);}
 
 		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, XMFLOAT4 ColorRGBA)
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};

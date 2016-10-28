@@ -6,13 +6,13 @@
 
 SamplerState samplerTrilinearWrap : register(s0);
 
-RWTexture3D <float> opacityVolume : register(u1);  
+RWTexture3D <uint> opacityVolume : register(u1);  
 
 float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 {
 	if(!AlphatestSample(samplerTrilinearWrap, input.tex))
 		discard;
-	
+
 	float3 albedo = AlbedoSample(samplerTrilinearWrap, input.tex);
 	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal );
 	float3 emissive = EmissiveSample(samplerTrilinearWrap, input.tex);
@@ -27,9 +27,15 @@ float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGE
 	// to voxel!!!!!
 	// albedo, normal, emissive
 
-	uint3 uavCoords = uint3(input.worldPos.rgb);
+	uint3 uavCoords = uint3(input.worldPos.xyz);
 
-	opacityVolume[uavCoords] = 1.0f;
+	if(!front)
+		discard;
+
+	//opacityVolume[uavCoords] += 1;
+	uint bitShift = (uavCoords.x % 4) * 8;
+	uavCoords.x /= 4;
+	InterlockedAdd( opacityVolume[uavCoords], 1 << bitShift );
 	
 	discard;
 	return 0.0;
