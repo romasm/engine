@@ -393,7 +393,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 	if(date)
 		*date = mdate;
 
-	LOG("Shader %s compiled successfully", file.c_str());
+	LOG_GOOD("Shader %s compiled successfully", file.c_str());
 
 	return code_compiled;
 }

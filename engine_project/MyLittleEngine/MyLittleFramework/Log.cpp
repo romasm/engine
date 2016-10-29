@@ -176,6 +176,12 @@ namespace EngineCore
 		LOG_BODY(:, true)
 	}
 
+	void Log::PrintGood(const char *message, ...)
+	{
+		GOOD_COLOR
+		LOG_BODY(:, true)
+	}
+
 	void Log::Debug(const char *message, ...)
 	{
 		DEBUG_COLOR

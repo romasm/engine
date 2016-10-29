@@ -110,6 +110,15 @@ TECHNIQUE_DEFAULT
     BACK	= 3
 	*/
 
+	AntialiasedLineEnable = true;
+	DepthBias = 0;
+	DepthBiasClamp = 0.0;
+	DepthClipEnable = true;
+	FrontCounterClockwise = false;
+	MultisampleEnable = false;
+	ScissorEnable = false;
+	SlopeScaledDepthBias = 0.0;
+
 	VertexShader = "../resources/shaders/tech/screen_plane_hud VS";
 	PixelShader = PS;
 

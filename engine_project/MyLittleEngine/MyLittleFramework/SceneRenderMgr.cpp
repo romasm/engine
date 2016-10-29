@@ -327,12 +327,12 @@ bool SceneRenderMgr::initVoxelBuffer()
 {
 	D3D11_TEXTURE2D_DESC dumbDesc;
 	ZeroMemory(&dumbDesc, sizeof(dumbDesc));
-	dumbDesc.Width = VOXEL_VOLUME_RES_DUMB;
-	dumbDesc.Height = VOXEL_VOLUME_RES_DUMB;
+	dumbDesc.Width = VOXEL_VOLUME_RES;
+	dumbDesc.Height = VOXEL_VOLUME_RES;
 	dumbDesc.MipLevels = 1;
 	dumbDesc.ArraySize = 1;
 	dumbDesc.Format = DXGI_FORMAT_R8_UNORM;
-	dumbDesc.SampleDesc.Count = 1;
+	dumbDesc.SampleDesc.Count = VOXEL_VOLUME_SUBSAMPLES;
 	dumbDesc.SampleDesc.Quality = 0;
 	dumbDesc.Usage = D3D11_USAGE_DEFAULT;
 	dumbDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -344,7 +344,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	D3D11_RENDER_TARGET_VIEW_DESC dumbRTVDesc;
 	ZeroMemory(&dumbRTVDesc, sizeof(dumbRTVDesc));
 	dumbRTVDesc.Format = DXGI_FORMAT_R8_UNORM;
-	dumbRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	dumbRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
 	dumbRTVDesc.Texture2D.MipSlice = 0;
 	if( FAILED(Render::CreateRenderTargetView(voxelizationDumb, &dumbRTVDesc, &voxelizationDumbRTV)) )
 		return false;
@@ -841,7 +841,7 @@ void SceneRenderMgr::VoxelizeScene()
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
-	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES_DUMB;
+	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 	Render::RSSetViewports(1, &viewport);

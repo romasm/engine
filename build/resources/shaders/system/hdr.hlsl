@@ -100,7 +100,7 @@ struct PO_LDR
 	float4 lin : SV_TARGET1;
 };
 
-#define VOXEL_VOLUME_RES 256
+#define VOXEL_VOLUME_RES 64
 #define VOXEL_VOLUME_SIZE 10.0f
 #define VOXEL_SIZE VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES
 
@@ -153,7 +153,7 @@ float2 GetVoxel(float2 uv)
 	{
 		voxelSnap = floor(samplePoint / VOXEL_VOLUME_SIZE * VOXEL_VOLUME_RES);
 
-		value = float( voxelTex.Load(int4(voxelSnap, 0)) ) * 0.0625f;
+		value = float( voxelTex.Load(int4(voxelSnap, 0)) ) * 0.125f;
 		
 		voxelSnap *= VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES;
 		prevVoxel = voxelSnap;
@@ -183,7 +183,7 @@ float2 GetVoxel(float2 uv)
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(value, collidePosPS.z / collidePosPS.w);
+	return float2(saturate(value), collidePosPS.z / collidePosPS.w);
 }
 
 PO_LDR HDRLDR(PI_PosTex input)

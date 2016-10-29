@@ -8,8 +8,13 @@ SamplerState samplerTrilinearWrap : register(s0);
 
 RWTexture3D <uint> opacityVolume : register(u1);  
 
-float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
+float VoxelizationOpaquePS(PI_Mesh_Subsample input, bool front: SV_IsFrontFace, 
+						   uint subsampleIndex : SV_SampleIndex, uint subsampleCoverage : SV_Coverage) : SV_TARGET
 {
+	uint cover = (1 << subsampleIndex) & subsampleCoverage;
+	if( cover == 0 )
+		discard;
+
 	if(!AlphatestSample(samplerTrilinearWrap, input.tex))
 		discard;
 
@@ -29,10 +34,10 @@ float VoxelizationOpaquePS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGE
 
 	uint3 uavCoords = uint3(input.worldPos.xyz);
 
+	// temp
 	if(!front)
 		discard;
-
-	//opacityVolume[uavCoords] += 1;
+	
 	uint bitShift = (uavCoords.x % 4) * 8;
 	uavCoords.x /= 4;
 	InterlockedAdd( opacityVolume[uavCoords], 1 << bitShift );

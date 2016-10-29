@@ -63,9 +63,9 @@ cbuffer volumeBuffer : register(b2)
 	float4 volumeScale;
 };
 
-PI_Mesh VoxelizationOpaqueVS(VI_Mesh input)
+PI_Mesh_Subsample VoxelizationOpaqueVS(VI_Mesh input)
 {
-    PI_Mesh output;
+    PI_Mesh_Subsample output;
 
     output.position = mul(float4(input.position, 1), worldMatrix);
 	output.worldPos.xyz = (output.position.xyz - volumeOffset.xyz) * volumeScale.xyz;

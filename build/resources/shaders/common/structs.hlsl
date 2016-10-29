@@ -47,6 +47,16 @@ struct PI_Mesh
 	float4 worldPos			: POSITION;
 };
 
+struct PI_Mesh_Subsample
+{
+    sample float4 position			: SV_POSITION;
+    sample float2 tex				: TEXCOORD0;
+   	sample float3 normal			: NORMAL;
+	sample float3 tangent			: TANGENT;
+	sample float3 binormal			: BINORMAL;
+	sample float4 worldPos			: POSITION;
+};
+
 struct PO_Gbuffer
 {
     float4 albedo_roughY 	: SV_TARGET0;

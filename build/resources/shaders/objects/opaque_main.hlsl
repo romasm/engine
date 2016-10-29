@@ -29,6 +29,9 @@ TECHNIQUE_VOXEL
 	DepthEnable = false;
 	DepthWrite = false;
 	CullMode = NONE;
+	
+	AntialiasedLineEnable = false;
+	MultisampleEnable = true; 
 	   
 	VertexShader = "../resources/shaders/objects/opaque_vertex VoxelizationOpaqueVS";
 	PixelShader = "../resources/shaders/objects/voxelization VoxelizationOpaquePS";

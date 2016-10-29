@@ -193,11 +193,16 @@ void ShaderMgr::UpdateShaders()
 		else
 			newShader = (BaseShader*) new Shader((string&)it.first);
 
-		BaseShader* remove = handle.shader;
-
-		handle.shader = newShader;
 		handle.shader->SetSrcDate(last_date);
 
+		if(newShader->IsError())
+		{
+			_DELETE(newShader);
+			continue;
+		}
+
+		BaseShader* remove = handle.shader;
+		handle.shader = newShader;
 		_DELETE(remove);
 	}
 }

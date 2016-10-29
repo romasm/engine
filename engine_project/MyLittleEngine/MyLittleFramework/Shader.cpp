@@ -19,6 +19,8 @@ BaseShader::BaseShader(string& name)
 #ifdef _DEV
 bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_desc>& techsDesc)
 {
+	LOG("Compiling techniques in %s", file.c_str());
+
 	FileIO techSource(file);
 	auto root = techSource.Root();
 	if(!root)
@@ -135,8 +137,8 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 	
 		// D3D11_BLEND_DESC
 		ZeroMemory(&technique.blendDesc, sizeof(D3D11_BLEND_DESC));
-		technique.blendDesc.AlphaToCoverageEnable = false;
-		technique.blendDesc.IndependentBlendEnable = false;
+		technique.blendDesc.AlphaToCoverageEnable = techSource.ReadBool(L"AlphaToCoverageEnable", it.second.node);
+		technique.blendDesc.IndependentBlendEnable = false; // todo???
 		technique.blendDesc.RenderTarget[0].BlendEnable = techSource.ReadBool(L"BlendEnable", it.second.node);
 		technique.blendDesc.RenderTarget[0].BlendOp = StringToData::GetBlendOp(techSource.ReadString(L"BlendOp", it.second.node));
 		technique.blendDesc.RenderTarget[0].BlendOpAlpha = StringToData::GetBlendOp(techSource.ReadString(L"BlendOpAlpha", it.second.node));
@@ -153,14 +155,24 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 
 		// D3D11_RASTERIZER_DESC
 		ZeroMemory(&technique.rastDesc, sizeof(D3D11_RASTERIZER_DESC));
-		technique.rastDesc.AntialiasedLineEnable = true;
-		technique.rastDesc.DepthBias = 0;
-		technique.rastDesc.DepthBiasClamp = 0.0f;
-		technique.rastDesc.DepthClipEnable = true;
-		technique.rastDesc.FrontCounterClockwise = false;
-		technique.rastDesc.MultisampleEnable = false;
-		technique.rastDesc.ScissorEnable = false;
-		technique.rastDesc.SlopeScaledDepthBias = 0.0f;
+
+		if(techSource.IsNodeExist(L"AntialiasedLineEnable", it.second.node))
+			technique.rastDesc.AntialiasedLineEnable = techSource.ReadBool(L"AntialiasedLineEnable", it.second.node);
+		else
+			technique.rastDesc.AntialiasedLineEnable = true;
+
+		technique.rastDesc.DepthBias = techSource.ReadInt(L"DepthBias", it.second.node);
+		technique.rastDesc.DepthBiasClamp = techSource.ReadFloat(L"DepthBiasClamp", it.second.node);
+
+		if(techSource.IsNodeExist(L"DepthClipEnable", it.second.node))
+			technique.rastDesc.DepthClipEnable = techSource.ReadBool(L"DepthClipEnable", it.second.node);
+		else
+			technique.rastDesc.DepthClipEnable = true;
+
+		technique.rastDesc.FrontCounterClockwise = techSource.ReadBool(L"FrontCounterClockwise", it.second.node);
+		technique.rastDesc.MultisampleEnable = techSource.ReadBool(L"MultisampleEnable", it.second.node);
+		technique.rastDesc.ScissorEnable = techSource.ReadBool(L"ScissorEnable", it.second.node);
+		technique.rastDesc.SlopeScaledDepthBias = techSource.ReadFloat(L"SlopeScaledDepthBias", it.second.node);
 
 		technique.rastDesc.FillMode = StringToData::GetFill(techSource.ReadString(L"FillMode", it.second.node));
 		technique.rastDesc.CullMode = StringToData::GetCull(techSource.ReadString(L"CullMode", it.second.node));
@@ -219,6 +231,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 	if(FileIO::WriteFileData(binFile, s_data, s_datasize, filedate))
 	{
 		_DELETE_ARRAY(s_data);
+		LOG_GOOD("Techniques in %s compiled successfully", file.c_str());
 		return true;
 	}
 	_DELETE_ARRAY(s_data);
