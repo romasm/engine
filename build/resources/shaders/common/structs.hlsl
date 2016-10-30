@@ -37,6 +37,15 @@ struct VI_Mesh
 	float3 binormal			: BINORMAL;
 };
 
+struct GI_Mesh
+{
+    float3 position			: POSITION;
+    float2 tex				: TEXCOORD0;
+   	float3 normal			: NORMAL;
+	float3 tangent			: TANGENT;
+	float3 binormal			: BINORMAL;
+};
+
 struct PI_Mesh
 {
     float4 position			: SV_POSITION;
@@ -47,7 +56,7 @@ struct PI_Mesh
 	float4 worldPos			: POSITION;
 };
 
-struct PI_Mesh_Subsample
+struct PI_Mesh_Voxel
 {
     sample float4 position			: SV_POSITION;
     sample float2 tex				: TEXCOORD0;
@@ -55,6 +64,7 @@ struct PI_Mesh_Subsample
 	sample float3 tangent			: TANGENT;
 	sample float3 binormal			: BINORMAL;
 	sample float4 worldPos			: POSITION;
+	nointerpolation uint planeId	: SV_InstanceID;
 };
 
 struct PO_Gbuffer

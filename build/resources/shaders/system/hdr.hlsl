@@ -104,16 +104,7 @@ struct PO_LDR
 #define VOXEL_VOLUME_SIZE 10.0f
 #define VOXEL_SIZE VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES
 
-static float3 axis_colors[6] = {
-	float3(0.6,0.0,0.0),
-	float3(0.8,0.0,0.0),
-	float3(0.4,0.0,0.0),
-	float3(0.0,0.0,0.6),
-	float3(0.0,0.0,0.8),
-	float3(0.0,0.0,0.4)
-};
-
-#define VOXEL_ALPHA 1.0
+#define VOXEL_ALPHA 0.7
 
 float2 GetVoxel(float2 uv)
 {
@@ -144,7 +135,7 @@ float2 GetVoxel(float2 uv)
 	float3 voxelSnap = 0;
 	float3 prevVoxel = 0;
 	
-	float value = 0;
+	float value[6];
 	float depth = 0;
 	float3 color = 0;
 	int i = 0;
@@ -153,13 +144,21 @@ float2 GetVoxel(float2 uv)
 	{
 		voxelSnap = floor(samplePoint / VOXEL_VOLUME_SIZE * VOXEL_VOLUME_RES);
 
-		value = float( voxelTex.Load(int4(voxelSnap, 0)) ) * 0.125f;
+		int4 coords = int4(voxelSnap, 0);
+		float anyValue = 0;
+		[unroll]
+		for(int j = 0; j < 6; j++)
+		{
+			value[j] = voxelTex.Load(coords) * 0.125f;
+			coords.y += VOXEL_VOLUME_RES;
+			anyValue += value[j];
+		}
 		
 		voxelSnap *= VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES;
 		prevVoxel = voxelSnap;
 
 		[branch]
-		if(value > 0.0f)
+		if(anyValue > 0.0f)
 			break;
 
 		voxelSnap += step;
@@ -168,7 +167,7 @@ float2 GetVoxel(float2 uv)
 		float d = min(delta.x, min(delta.y, delta.z));
 
 		[branch]
-		if ( intersections.y <= d )
+		if ( intersections.y - 0.000001 <= d )
 			return 0;
 
 		samplePoint = g_CamPos + ray * d + epcilon;
@@ -176,14 +175,28 @@ float2 GetVoxel(float2 uv)
 	}
 
 	float3 voxelExtend = voxelSize * 0.5f;
-	prevVoxel += voxelExtend;
-	float3 camInVoxel = g_CamPos - prevVoxel;
+	float3 camInVoxel = g_CamPos - (prevVoxel + voxelExtend);
 	float2 voxelIntersections = RayBoxIntersect( camInVoxel, ray, -voxelExtend, voxelExtend );
 	float3 collidePosWS = g_CamPos + ray * voxelIntersections.x;
+		
+	float3 entry = collidePosWS - prevVoxel;
+	entry.x = ray.x < 0 ? (VOXEL_SIZE - entry.x) : entry.x;
+	entry.y = ray.y < 0 ? (VOXEL_SIZE - entry.y) : entry.y;
+	entry.z = ray.z < 0 ? (VOXEL_SIZE - entry.z) : entry.z;
+	float minEntry = min(entry.x, min(entry.y, entry.z));
+
+	float finalValue;
+	[branch]
+	if(minEntry == entry.x)
+		finalValue = ray.x < 0 ? value[1] : value[0];
+	else if(minEntry == entry.y)
+		finalValue = ray.y < 0 ? value[3] : value[2];
+	else
+		finalValue = ray.z < 0 ? value[5] : value[4];
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(saturate(value), collidePosPS.z / collidePosPS.w);
+	return float2(saturate(finalValue), collidePosPS.z / collidePosPS.w);
 }
 
 PO_LDR HDRLDR(PI_PosTex input)
@@ -266,8 +279,9 @@ PO_LDR HDRLDR(PI_PosTex input)
 	{
 		float2 voxel = GetVoxel(input.tex);
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
-		if(sceneDepth >= voxel.g) 
-			tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), float(voxel.r > 0) * VOXEL_ALPHA);
+		if(sceneDepth >= voxel.g && voxel.g != 0) 
+			tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
+			//tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
 	}
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);

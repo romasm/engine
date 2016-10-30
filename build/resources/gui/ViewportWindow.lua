@@ -141,8 +141,8 @@ return GuiEntity({
                 "Thickness",
                 "Ambient occlusion",
                 "Depth",
-                "Screen space reflections",
-                "Voxels",
+                "SSR",
+                "Voxels Vis",
             },
             alt = "Frame components",
 

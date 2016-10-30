@@ -34,5 +34,6 @@ TECHNIQUE_VOXEL
 	MultisampleEnable = true; 
 	   
 	VertexShader = "../resources/shaders/objects/opaque_vertex VoxelizationOpaqueVS";
+	GeometryShader = "../resources/shaders/objects/voxelization VoxelizationGS";
 	PixelShader = "../resources/shaders/objects/voxelization VoxelizationOpaquePS";
 }

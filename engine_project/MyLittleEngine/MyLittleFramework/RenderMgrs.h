@@ -85,10 +85,10 @@ namespace EngineCore
 
 	struct VolumeData
 	{
-		XMMATRIX volumeVP;
+		XMMATRIX volumeVP[3];
 
-		XMFLOAT4 volumeOffset;
-		XMFLOAT4 volumeScale;
+		XMFLOAT4 volumeOffsetSize;
+		XMFLOAT4 volumeScaleResDir;
 	};
 
 	struct distEP
