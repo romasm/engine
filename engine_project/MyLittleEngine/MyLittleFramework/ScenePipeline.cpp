@@ -469,6 +469,8 @@ bool ScenePipeline::InitRts()
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
 	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelSRV(), 14);
+	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor0SRV(), 15);
+	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor1SRV(), 16);
 
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);

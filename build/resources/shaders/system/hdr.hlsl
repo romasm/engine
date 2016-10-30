@@ -26,6 +26,8 @@ Texture2D <float2> gb_depth : register(t12);
 // debug
 Texture2D <float4> ssrTex : register(t13);
 Texture3D <uint> voxelTex : register(t14);
+Texture3D <uint> voxelColor0Tex : register(t15);
+Texture3D <uint> voxelColor1Tex : register(t16);
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -104,13 +106,14 @@ struct PO_LDR
 #define VOXEL_VOLUME_SIZE 10.0f
 #define VOXEL_SIZE VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES
 
-#define VOXEL_ALPHA 0.7
+#define VOXEL_ALPHA 1.0
 
-float2 GetVoxel(float2 uv)
+float2 GetVoxel(float2 uv, out float4 color)
 {
 	const float3 boxExtend = float3(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE) * 0.5f;
 	const float3 voxelSize = float3(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
 	const float distance = 25.0f;
+	color = 0;
 
 	float3 ray = GetCameraVector(uv) * distance;
 	float3 camInBox = g_CamPos - boxExtend;
@@ -136,8 +139,6 @@ float2 GetVoxel(float2 uv)
 	float3 prevVoxel = 0;
 	
 	float value[6];
-	float depth = 0;
-	float3 color = 0;
 	int i = 0;
 	[loop]
 	while( i < 512 )
@@ -149,7 +150,7 @@ float2 GetVoxel(float2 uv)
 		[unroll]
 		for(int j = 0; j < 6; j++)
 		{
-			value[j] = voxelTex.Load(coords) * 0.125f;
+			value[j] = voxelTex.Load(coords);
 			coords.y += VOXEL_VOLUME_RES;
 			anyValue += value[j];
 		}
@@ -185,18 +186,30 @@ float2 GetVoxel(float2 uv)
 	entry.z = ray.z < 0 ? (VOXEL_SIZE - entry.z) : entry.z;
 	float minEntry = min(entry.x, min(entry.y, entry.z));
 
-	float finalValue;
+	int4 colorCoords = int4(prevVoxel / VOXEL_VOLUME_SIZE * VOXEL_VOLUME_RES, 0);
+
+	uint faceID;
 	[branch]
-	if(minEntry == entry.x)
-		finalValue = ray.x < 0 ? value[1] : value[0];
-	else if(minEntry == entry.y)
-		finalValue = ray.y < 0 ? value[3] : value[2];
-	else
-		finalValue = ray.z < 0 ? value[5] : value[4];
+	if(minEntry == entry.x) faceID = ray.x < 0 ? 1 : 0;
+	else if(minEntry == entry.y) faceID = ray.y < 0 ? 3 : 2;
+	else faceID = ray.z < 0 ? 5 : 4;
+
+	if( value[faceID] > 0 )
+	{
+		colorCoords.y += VOXEL_VOLUME_RES * faceID;
+
+		uint color0 = voxelColor0Tex.Load(colorCoords);
+		uint color1 = voxelColor1Tex.Load(colorCoords);
+
+		color.x = (float(color0 >> 16) / value[faceID]) / 255.0f;
+		color.y = (float(color0 & 0x0000ffff) / value[faceID]) / 255.0f;
+		color.z = (float(color1 >> 16) / value[faceID]) / 255.0f;
+		color.w = (float(color1 & 0x0000ffff) / value[faceID]) / 255.0f * 100.0f;
+	}
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(saturate(finalValue), collidePosPS.z / collidePosPS.w);
+	return float2(saturate(value[faceID] * 0.125f), collidePosPS.z / collidePosPS.w);
 }
 
 PO_LDR HDRLDR(PI_PosTex input)
@@ -275,19 +288,29 @@ PO_LDR HDRLDR(PI_PosTex input)
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);
 		tonemapped = ssr.rgb * ssr.a;
 	}
-	else if(debugMode == 11)
+	else if(debugMode >= 11 && debugMode <= 14)
 	{
-		float2 voxel = GetVoxel(input.tex);
+		float4 voxelColor = 0;
+		float2 voxel = GetVoxel(input.tex, voxelColor);
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
 		if(sceneDepth >= voxel.g && voxel.g != 0) 
-			tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
-			//tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
+		{
+			if(debugMode == 11)
+				tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
+				//tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
+			else if(debugMode == 12)
+				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
+			else if(debugMode == 13)
+				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
+			else if(debugMode == 14)
+				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
+		}
 	}
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
-	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || debugMode == 10 || debugMode == 11)
+	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || debugMode >= 10)
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);

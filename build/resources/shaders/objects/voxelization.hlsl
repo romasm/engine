@@ -7,6 +7,8 @@
 SamplerState samplerTrilinearWrap : register(s0);
 
 RWTexture3D <uint> opacityVolume : register(u1);  
+RWTexture3D <uint> colorVolume0 : register(u2);  
+RWTexture3D <uint> colorVolume1 : register(u3);  
 
 cbuffer volumeBuffer : register(b4)
 {
@@ -23,32 +25,51 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	if( cover == 0 )
 		discard;
 
+	// material data
 	bool opaque = AlphatestSample(samplerTrilinearWrap, input.tex);
 	if(!opaque)
 		discard;
 
 	float3 albedo = AlbedoSample(samplerTrilinearWrap, input.tex);
+
 	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal );
+	normal = normalize(normal);
+	
 	float3 emissive = EmissiveSample(samplerTrilinearWrap, input.tex);
 
 	float3 specular = SpecularSample(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
-		
-	normal = normalize(normal);
-	
-	// to voxel!!!!!
-	// albedo, normal, emissive
 
+	float NoP[3];
+	NoP[0] = normal.x;
+	NoP[1] = normal.y;
+	NoP[2] = normal.z;
+	albedo *= abs(NoP[input.planeId]);
+
+	// emittance prepare
+	float emissiveLum = length(emissive);
+	emissive /= emissiveLum;
+	float4 emittance = emissiveLum > 0.00001 ? float4(emissive, emissiveLum) : float4(albedo, 0.0);
+	emittance = float4(saturate(emittance.x) * 255, saturate(emittance.y) * 255, 
+		saturate(emittance.z) * 255, saturate(emittance.w / 100.0f) * 255);
+	uint2 emitValue = uint2( (uint(emittance.x) << 16) + uint(emittance.y), (uint(emittance.z) << 16) + uint(emittance.w) );
+
+	// coords 
 	uint3 uavCoords = uint3(input.worldPos.xyz);
 	uavCoords.y += uint(volumeScaleResDir.z) * input.planeId;
 
 	if(!front)
 		uavCoords.y += uint(volumeScaleResDir.y);
 	
-	uint bitShift = (uavCoords.x % 4) * 8;
-	uavCoords.x /= 4;
-	InterlockedAdd( opacityVolume[uavCoords], 1 << bitShift );
+	// write
+	uint3 visCoords = uavCoords;
+	uint bitShift = (visCoords.x % 4) * 8;
+	visCoords.x /= 4;
+	InterlockedAdd( opacityVolume[visCoords], 1 << bitShift );
 	
+	InterlockedAdd( colorVolume0[uavCoords], emitValue.x );
+	InterlockedAdd( colorVolume1[uavCoords], emitValue.y );
+
 	discard;
 	return 0.0;
 }
