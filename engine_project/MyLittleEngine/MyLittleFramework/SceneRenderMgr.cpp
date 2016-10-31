@@ -72,6 +72,9 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	voxelSceneColor1 = nullptr;
 	voxelSceneColor1UAV = nullptr;
 	voxelSceneColor1SRV = nullptr;
+	voxelSceneNormal = nullptr;
+	voxelSceneNormalUAV = nullptr;
+	voxelSceneNormalSRV = nullptr;
 
 	volumeBuffer = nullptr;
 
@@ -445,6 +448,36 @@ bool SceneRenderMgr::initVoxelBuffer()
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
 	if( FAILED(Render::CreateShaderResourceView(voxelSceneColor1, &volumeSRVDesc, &voxelSceneColor1SRV)) )
+		return false;
+
+	// normal
+	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
+	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
+	volumeDesc.Depth = VOXEL_VOLUME_RES;
+	volumeDesc.MipLevels = 1;
+	volumeDesc.Format = DXGI_FORMAT_R32_UINT;
+	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
+	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.CPUAccessFlags = 0;
+	volumeDesc.MiscFlags = 0;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelSceneNormal)) )
+		return false;
+
+	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
+	volumeUAVDesc.Format = DXGI_FORMAT_R32_UINT;
+	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+	volumeUAVDesc.Texture3D.MipSlice = 0;
+	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelSceneNormal, &volumeUAVDesc, &voxelSceneNormalUAV)) )
+		return false;
+
+	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
+	volumeSRVDesc.Format = DXGI_FORMAT_R32_UINT;
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Texture3D.MipLevels = -1;
+	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
+	if( FAILED(Render::CreateShaderResourceView(voxelSceneNormal, &volumeSRVDesc, &voxelSceneNormalSRV)) )
 		return false;
 
 	volumeBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData), true);
@@ -904,13 +937,15 @@ void SceneRenderMgr::VoxelizeScene()
 	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, XMFLOAT4(0,0,0,0));
 	Render::ClearUnorderedAccessViewUint(voxelSceneColor0UAV, XMFLOAT4(0,0,0,0));
 	Render::ClearUnorderedAccessViewUint(voxelSceneColor1UAV, XMFLOAT4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneNormalUAV, XMFLOAT4(0,0,0,0));
 
-	ID3D11UnorderedAccessView* uavs[3];
+	ID3D11UnorderedAccessView* uavs[4];
 	uavs[0] = voxelSceneUAV;
 	uavs[1] = voxelSceneColor0UAV;
 	uavs[2] = voxelSceneColor1UAV;
+	uavs[3] = voxelSceneNormalUAV;
 
-	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 3, uavs, nullptr);
+	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 4, uavs, nullptr);
 	
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = 0.0f;

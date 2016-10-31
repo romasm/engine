@@ -282,6 +282,7 @@ namespace EngineCore
 		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelSceneSRV;}
 		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelSceneColor0SRV;}
 		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelSceneColor1SRV;}
+		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelSceneNormalSRV;}
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
@@ -329,6 +330,9 @@ namespace EngineCore
 			_RELEASE(voxelSceneColor1UAV);
 			_RELEASE(voxelSceneColor1SRV);
 			_RELEASE(voxelSceneColor1);
+			_RELEASE(voxelSceneNormalUAV);
+			_RELEASE(voxelSceneNormalSRV);
+			_RELEASE(voxelSceneNormal);
 
 			_RELEASE(volumeBuffer);
 
@@ -474,6 +478,10 @@ namespace EngineCore
 		ID3D11Texture3D* voxelSceneColor1;
 		ID3D11UnorderedAccessView* voxelSceneColor1UAV;
 		ID3D11ShaderResourceView* voxelSceneColor1SRV;
+
+		ID3D11Texture3D* voxelSceneNormal;
+		ID3D11UnorderedAccessView* voxelSceneNormalUAV;
+		ID3D11ShaderResourceView* voxelSceneNormalSRV;
 
 		ID3D11Buffer* volumeBuffer;
 

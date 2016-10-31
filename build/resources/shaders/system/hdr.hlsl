@@ -28,6 +28,7 @@ Texture2D <float4> ssrTex : register(t13);
 Texture3D <uint> voxelTex : register(t14);
 Texture3D <uint> voxelColor0Tex : register(t15);
 Texture3D <uint> voxelColor1Tex : register(t16);
+Texture3D <uint> voxelNormalTex : register(t17);
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -108,12 +109,13 @@ struct PO_LDR
 
 #define VOXEL_ALPHA 1.0
 
-float2 GetVoxel(float2 uv, out float4 color)
+float2 GetVoxel(float2 uv, out float4 color, out float3 normal)
 {
 	const float3 boxExtend = float3(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE) * 0.5f;
 	const float3 voxelSize = float3(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
 	const float distance = 25.0f;
 	color = 0;
+	normal = 0;
 
 	float3 ray = GetCameraVector(uv) * distance;
 	float3 camInBox = g_CamPos - boxExtend;
@@ -150,7 +152,7 @@ float2 GetVoxel(float2 uv, out float4 color)
 		[unroll]
 		for(int j = 0; j < 6; j++)
 		{
-			value[j] = voxelTex.Load(coords);
+			value[j] = voxelTex.Load(coords) & 0x0000ffff;
 			coords.y += VOXEL_VOLUME_RES;
 			anyValue += value[j];
 		}
@@ -205,6 +207,13 @@ float2 GetVoxel(float2 uv, out float4 color)
 		color.y = (float(color0 & 0x0000ffff) / value[faceID]) / 255.0f;
 		color.z = (float(color1 >> 16) / value[faceID]) / 255.0f;
 		color.w = (float(color1 & 0x0000ffff) / value[faceID]) / 255.0f * 100.0f;
+		
+		uint normalZ = voxelTex.Load(colorCoords) >> 16;
+		uint normalXY = voxelNormalTex.Load(colorCoords);
+		
+		float3 normalXYZ = float3( float(normalXY >> 16) / 255.0f, float(normalXY & 0x0000ffff) / 255.0f, float(normalZ) / 255.0f );
+		normalXYZ = normalXYZ * 2.0f - (float)value[faceID];
+		normal = normalize(normalXYZ);
 	}
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
@@ -288,29 +297,32 @@ PO_LDR HDRLDR(PI_PosTex input)
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);
 		tonemapped = ssr.rgb * ssr.a;
 	}
-	else if(debugMode >= 11 && debugMode <= 14)
+	else if(debugMode >= 11 && debugMode <= 15)
 	{
 		float4 voxelColor = 0;
-		float2 voxel = GetVoxel(input.tex, voxelColor);
+		float3 voxelNormal = 0;
+		float2 voxel = GetVoxel(input.tex, voxelColor, voxelNormal);
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
 		if(sceneDepth >= voxel.g && voxel.g != 0) 
 		{
 			if(debugMode == 11)
-				tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
-				//tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
+				//tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
+				tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
 			else if(debugMode == 12)
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
 			else if(debugMode == 13)
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
 			else if(debugMode == 14)
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
+			else if(debugMode == 15)
+				tonemapped = lerp(tonemapped, (voxelNormal + 1.0f) * 0.5f, VOXEL_ALPHA);
 		}
 	}
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
-	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || debugMode >= 10)
+	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || (debugMode >= 10 && debugMode < 15))
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);

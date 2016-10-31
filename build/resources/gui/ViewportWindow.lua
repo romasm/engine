@@ -142,10 +142,11 @@ return GuiEntity({
                 "Ambient occlusion",
                 "Depth",
                 "SSR",
-                "Voxels Vis",
+                "Voxels Opacity",
                 "Voxels Color",
                 "Voxels Emissive",
                 "Voxels Intensity",
+                "Voxels Normal",
             },
             alt = "Frame components",
 

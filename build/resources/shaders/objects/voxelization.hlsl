@@ -9,6 +9,7 @@ SamplerState samplerTrilinearWrap : register(s0);
 RWTexture3D <uint> opacityVolume : register(u1);  
 RWTexture3D <uint> colorVolume0 : register(u2);  
 RWTexture3D <uint> colorVolume1 : register(u3);  
+RWTexture3D <uint> normalVolume : register(u4);  
 
 cbuffer volumeBuffer : register(b4)
 {
@@ -33,7 +34,6 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	float3 albedo = AlbedoSample(samplerTrilinearWrap, input.tex);
 
 	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal );
-	normal = normalize(normal);
 	
 	float3 emissive = EmissiveSample(samplerTrilinearWrap, input.tex);
 
@@ -45,7 +45,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	NoP[1] = normal.y;
 	NoP[2] = normal.z;
 	albedo *= abs(NoP[input.planeId]);
-
+	
 	// emittance prepare
 	float emissiveLum = length(emissive);
 	emissive /= emissiveLum;
@@ -53,6 +53,15 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	emittance = float4(saturate(emittance.x) * 255, saturate(emittance.y) * 255, 
 		saturate(emittance.z) * 255, saturate(emittance.w / 100.0f) * 255);
 	uint2 emitValue = uint2( (uint(emittance.x) << 16) + uint(emittance.y), (uint(emittance.z) << 16) + uint(emittance.w) );
+
+	// normal prepare
+	normal = normalize(normal);
+	normal = (normal + 1.0f) * 0.5f;
+
+	uint3 voxelNormal;
+	voxelNormal.x = normal.x * 255;
+	voxelNormal.y = normal.y * 255;
+	voxelNormal.z = normal.z * 255;
 
 	// coords 
 	uint3 uavCoords = uint3(input.worldPos.xyz);
@@ -62,10 +71,12 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 		uavCoords.y += uint(volumeScaleResDir.y);
 	
 	// write
-	InterlockedAdd( opacityVolume[uavCoords], 1 );
+	InterlockedAdd( opacityVolume[uavCoords], (voxelNormal.z << 16) + 1 );
 	
 	InterlockedAdd( colorVolume0[uavCoords], emitValue.x );
 	InterlockedAdd( colorVolume1[uavCoords], emitValue.y );
+
+	InterlockedAdd( normalVolume[uavCoords], (voxelNormal.x << 16) + voxelNormal.y );
 
 	discard;
 	return 0.0;
