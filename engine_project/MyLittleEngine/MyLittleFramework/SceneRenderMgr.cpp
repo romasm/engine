@@ -362,7 +362,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
-	volumeDesc.Format = DXGI_FORMAT_R8_UINT;
+	volumeDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
 	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 	volumeDesc.CPUAccessFlags = 0;
@@ -372,7 +372,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
 	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.Format = DXGI_FORMAT_R8_UINT;
+	volumeUAVDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
 	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
@@ -381,7 +381,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
 	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.Format = DXGI_FORMAT_R8_UINT;
+	volumeSRVDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;

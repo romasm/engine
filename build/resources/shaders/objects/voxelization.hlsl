@@ -62,10 +62,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 		uavCoords.y += uint(volumeScaleResDir.y);
 	
 	// write
-	//uint3 visCoords = uavCoords; // TODO wtf on 1080 GTX?
-	//visCoords.x /= 4;
-	uint bitShift = (uavCoords.x % 4) * 8;
-	InterlockedAdd( opacityVolume[uavCoords], 1 << bitShift );
+	InterlockedAdd( opacityVolume[uavCoords], 1 );
 	
 	InterlockedAdd( colorVolume0[uavCoords], emitValue.x );
 	InterlockedAdd( colorVolume1[uavCoords], emitValue.y );
