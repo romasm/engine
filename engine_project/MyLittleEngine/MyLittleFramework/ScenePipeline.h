@@ -49,6 +49,8 @@ namespace EngineCore
 
 #define SP_SHADER_SSR PATH_SHADERS "system/ssr_compute"
 
+#define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject"
+
 	class ScenePipeline
 	{
 		struct SharedBuffer
@@ -241,6 +243,8 @@ namespace EngineCore
 		GaussianBlur *g_SSR;
 
 		ScreenPlane *sp_Antialiased[3];
+
+		uint16_t computeVoxelInjectLight;
 
 		MaterialParamsStructBuffer Materials[MATERIALS_COUNT];
 		uint32_t Materials_Count;

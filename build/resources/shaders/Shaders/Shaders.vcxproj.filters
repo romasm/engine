@@ -304,5 +304,8 @@
     <FxCompile Include="..\objects\pixel_input.hlsl">
       <Filter>objects</Filter>
     </FxCompile>
+    <FxCompile Include="..\system\voxel_light_inject.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -163,6 +163,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Developer|Win32'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="..\system\tonemapping.hlsl" />
+    <FxCompile Include="..\system\voxel_light_inject.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

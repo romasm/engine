@@ -136,6 +136,7 @@ namespace EngineCore
 		}
 	#endif
 
+		shaderCodeMgr->PreloadPureCodes();
 		shaderMgr->PreloadShaders();
 
 		texMgr = new TexMgr;

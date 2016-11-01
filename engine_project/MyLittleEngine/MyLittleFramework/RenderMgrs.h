@@ -284,6 +284,9 @@ namespace EngineCore
 		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelSceneColor1SRV;}
 		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelSceneNormalSRV;}
 
+		inline ID3D11UnorderedAccessView* GetVoxelColor0UAV() const {return voxelSceneColor0UAV;}
+		inline ID3D11UnorderedAccessView* GetVoxelColor1UAV() const {return voxelSceneColor1UAV;}
+
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
 		void DrawTransparent(ScenePipeline* scene);

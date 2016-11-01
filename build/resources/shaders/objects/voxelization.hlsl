@@ -19,6 +19,7 @@ cbuffer volumeBuffer : register(b4)
 	float4 volumeScaleResDir;
 };
 
+// pixel
 float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 						   uint subsampleIndex : SV_SampleIndex, uint subsampleCoverage : SV_Coverage) : SV_TARGET
 {
@@ -82,6 +83,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	return 0.0;
 }
 
+// geomatry
 [instance(3)]
 [maxvertexcount(3)]
 void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream, uint instanceId : SV_GSInstanceID )

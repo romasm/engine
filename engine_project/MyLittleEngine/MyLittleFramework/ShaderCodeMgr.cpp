@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "macros.h"
 #include "Render.h"
+#include "ScenePipeline.h"
 #include "Log.h"
 
 using namespace EngineCore;
@@ -40,6 +41,11 @@ ShaderCodeMgr::~ShaderCodeMgr()
 	}
 
 	instance = nullptr;
+}
+
+void ShaderCodeMgr::PreloadPureCodes()
+{
+	COMPUTE( COMPUTE_VOXEL_INJECT_LIGHT, InjectLightToVolume );
 }
 
 uint16_t ShaderCodeMgr::GetShaderCode(string& name, uint8_t type)
