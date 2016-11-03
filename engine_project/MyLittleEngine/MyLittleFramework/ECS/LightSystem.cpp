@@ -96,7 +96,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.rangeInvSqr, i.cone_data, i.pos, i.dir, 
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.rangeInvSqr, i.cone_data, i.pos, i.dir, SHADOW_NEARCLIP, 
 							shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}

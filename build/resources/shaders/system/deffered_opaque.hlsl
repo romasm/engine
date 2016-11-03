@@ -909,7 +909,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		if(smoothFalloff == 0)
 			continue;
 			
-		const float3 virtUnnormL = pos_range.xyz - wpos;
+		const float3 virtUnnormL = virtpos.xyz - wpos;
 		const float3 virtL = normalize(virtUnnormL);
 			
 		float coneFalloff = getAngleAtt(virtL, -dir_coney.xyz, color_conex.w, dir_coney.w);

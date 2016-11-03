@@ -7,10 +7,6 @@
 #define SHADERCODE_DROP(name, type) ShaderCodeMgr::Get()->DeleteShaderCode(name, type)
 #define GET_SHADER(id) ShaderCodeMgr::Get()->GetShaderCodeRef(id)
 
-#define COMPUTE(name, func) ShaderCodeMgr::Get()->GetShaderCode(string(name) + "_" + #func , SHADER_CS)
-#define COMPUTE_DROP(id) ShaderCodeMgr::Get()->DeleteShaderCode(id, SHADER_CS)
-#define GET_COMPUTE(id) (ID3D11ComputeShader*)GET_SHADER(computeVoxelInjectLight).code
-
 #define SHADER_MAX_COUNT 256
 #define SHADER_INIT_COUNT 64
 #define LAYOUT_INIT_COUNT 8

@@ -18,6 +18,9 @@
 #define CASTER_POINT_SPHERE_FRAME_MAX 32
 #define CASTER_POINT_TUBE_FRAME_MAX 32
 
+#define SPOT_VOXEL_FRAME_MAX CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX
+#define POINT_VOXEL_FRAME_MAX CASTER_POINT_FRAME_MAX + CASTER_POINT_SPHERE_FRAME_MAX + CASTER_POINT_TUBE_FRAME_MAX
+
 namespace EngineCore
 {
 	struct SpotLightBuffer
@@ -166,5 +169,50 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress1[LIGHT_DIR_FRAME_MAX];
 		XMFLOAT4 ShadowmapAdress2[LIGHT_DIR_FRAME_MAX];
 		XMFLOAT4 ShadowmapAdress3[LIGHT_DIR_FRAME_MAX];
+	};
+
+	// voxels
+	struct SpotVoxelBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 Virtpos;
+		XMFLOAT4 ShadowmapAdress;
+		XMFLOAT4 ShadowmapHPixProjNearclip;
+		XMMATRIX matViewProj;
+	};
+
+	struct PointVoxelBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorShadowmapProj;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMFLOAT4 ShadowmapAdress4;
+		XMFLOAT4 ShadowmapAdress5;
+		XMFLOAT4 ShadowmapHPix0;
+		XMFLOAT4 ShadowmapHPix1;
+		XMMATRIX matProj;
+	};
+
+	struct DirVoxelBuffer
+	{
+		XMFLOAT4 Color;
+		XMFLOAT4 Dir;
+		XMFLOAT4 PosHPix0;
+		XMFLOAT4 PosHPix1;
+		XMFLOAT4 PosHPix2;
+		XMFLOAT4 PosHPix3;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMMATRIX ViewProj0;
+		XMMATRIX ViewProj1;
+		XMMATRIX ViewProj2;
+		XMMATRIX ViewProj3;
 	};
 }

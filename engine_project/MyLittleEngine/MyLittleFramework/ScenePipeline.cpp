@@ -56,8 +56,6 @@ ScenePipeline::ScenePipeline()
 	sp_Antialiased[1] = nullptr;
 	sp_Antialiased[2] = nullptr;
 
-	computeVoxelInjectLight = SHADER_NULL;
-
 	Materials_Count = 0;
 
 	render_mgr = nullptr;
@@ -113,8 +111,6 @@ void ScenePipeline::Close()
 	_RELEASE(m_AOBuffer);
 
 	_CLOSE(render_mgr);
-
-	COMPUTE_DROP(computeVoxelInjectLight);
 }
 
 void ScenePipeline::CloseAvgRt()
@@ -191,20 +187,13 @@ bool ScenePipeline::Init(int t_width, int t_height)
 	casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterSphereBuffer), true);
 	casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterTubeBuffer), true);
 	
-	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), sizeof(MaterialParamsStructBuffer)*MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), MATERIALS_COUNT, true);
+	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;
 	Materials[0].ss_direct_pow = 0;
 	Materials[0].ss_direct_translucency = 0;
 	Materials[0].ss_distortion = 0;
 	Materials[0].ss_indirect_translucency = 0;
 	Materials[0].subscattering = 0;
-
-	computeVoxelInjectLight = COMPUTE( COMPUTE_VOXEL_INJECT_LIGHT, InjectLightToVolume );
-	if(computeVoxelInjectLight == SHADER_NULL)
-	{
-		ERR("Cant init voxel inject light compute shader %s !", COMPUTE_VOXEL_INJECT_LIGHT);
-		return false;
-	}
 
 	if(!InitAvgRt())
 		return false;
@@ -619,21 +608,10 @@ void ScenePipeline::OpaqueForwardStage()
 
 	render_mgr->VoxelizeScene();
 	
-	ID3D11UnorderedAccessView* uavs[2];
-	uavs[0] = render_mgr->GetVoxelColor0UAV();
-	uavs[1] = render_mgr->GetVoxelColor1UAV();
-	CONTEXT->CSSetUnorderedAccessViews(0, 2, uavs, nullptr);
+	PERF_GPU_TIMESTAMP(_LIGHTINJECT);
 
-	CONTEXT->CSSetShader( GET_COMPUTE(computeVoxelInjectLight), nullptr, 0 );
-
-	CONTEXT->Dispatch( 8, 8, 8 );
-
-	CONTEXT->CSSetShader( nullptr, nullptr, 0 );
-
-	uavs[0] = nullptr;
-	uavs[1] = nullptr;
-	CONTEXT->CSSetUnorderedAccessViews(0, 2, uavs, nullptr);
-
+	render_mgr->ProcessEmittance();
+	
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
 	rt_OpaqueForward->ClearRenderTargets();

@@ -171,14 +171,15 @@ public:
 			PERF_CPU_END(_GUI_DRAW);	
 			
 			PERF_CPU_BEGIN(_PRESENT);
-			PERF_GPU_TIMESTAMP(_PRESENT);	
+			//PERF_GPU_TIMESTAMP(_PRESENT);	
+			PERF_GPU_FRAME_END;
+
 			for(auto& window : *WindowsMgr::Get()->GetMap())
 				window.second->Swap();
 			PERF_CPU_END(_PRESENT);	
 
 			PERF_GPU_GRABDATA;
 
-			PERF_GPU_FRAME_END;
 			PERF_CPU_FRAME_END;
 		}
 		return true;

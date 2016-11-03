@@ -6,6 +6,7 @@
 #include "ScreenPlane.h"
 #include "LocalTimer.h"
 #include "GaussianBlur.h"
+#include "Compute.h"
 #include "ECS\CameraSystem.h"
 
 namespace EngineCore
@@ -243,9 +244,7 @@ namespace EngineCore
 		GaussianBlur *g_SSR;
 
 		ScreenPlane *sp_Antialiased[3];
-
-		uint16_t computeVoxelInjectLight;
-
+		
 		MaterialParamsStructBuffer Materials[MATERIALS_COUNT];
 		uint32_t Materials_Count;
 

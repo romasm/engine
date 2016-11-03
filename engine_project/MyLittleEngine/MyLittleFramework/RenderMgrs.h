@@ -6,6 +6,7 @@
 #include "RenderTarget.h"
 #include "RenderState.h"
 #include "LightBuffers.h"
+#include "Compute.h"
 #include "ECS/Entity.h"
 
 namespace EngineCore
@@ -258,7 +259,7 @@ namespace EngineCore
 
 		bool RegDirLight(XMFLOAT4 color, XMFLOAT2 area, XMFLOAT3 dir, XMMATRIX* view_proj, XMFLOAT3* pos, uint64_t id);
 		
-		bool RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, CXMMATRIX vp, CXMMATRIX proj, UINT id);
+		bool RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, UINT id);
 		bool RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 virtpos, float nearclip, 
 			CXMMATRIX vp, CXMMATRIX proj, UINT id);
 		bool RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 up, XMFLOAT3 side, XMFLOAT3 virtpos, float nearclip,
@@ -269,7 +270,7 @@ namespace EngineCore
 		bool RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, XMFLOAT3 dir, CXMMATRIX proj, CXMMATRIX view, UINT id);
 
 		void ResolveShadowMaps();
-		ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
+		inline ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
 
 		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
 		static void SwapShadows(ShadowMap* first, ShadowMap* second, RArray<ShadowMap>* arr);
@@ -279,6 +280,8 @@ namespace EngineCore
 		void RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
 		
 		void VoxelizeScene();
+		void ProcessEmittance();
+
 		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelSceneSRV;}
 		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelSceneColor0SRV;}
 		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelSceneColor1SRV;}
@@ -286,6 +289,8 @@ namespace EngineCore
 
 		inline ID3D11UnorderedAccessView* GetVoxelColor0UAV() const {return voxelSceneColor0UAV;}
 		inline ID3D11UnorderedAccessView* GetVoxelColor1UAV() const {return voxelSceneColor1UAV;}
+
+		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeBuffer;}
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
@@ -338,6 +343,7 @@ namespace EngineCore
 			_RELEASE(voxelSceneNormal);
 
 			_RELEASE(volumeBuffer);
+			_DELETE(voxelInjectLight);
 
 			shadowmap_array.destroy();
 
@@ -417,6 +423,10 @@ namespace EngineCore
 			casterPointSphere_count = 0;
 			casterPointTube_count = 0;
 
+			spotVoxel_array.resize(0);
+			pointVoxel_array.resize(0);
+			dirVoxel_array.resize(0);
+
 			for(auto& it: shadowmap_array)
 				castersIdx[it.id] = ENTITY_COUNT;		
 			shadowmap_array.clear();
@@ -459,6 +469,16 @@ namespace EngineCore
 		size_t casterPointSphere_count;
 		PointCasterTubeBuffer* casterPointTube_array;
 		size_t casterPointTube_count;
+		
+		SArray<SpotVoxelBuffer, SPOT_VOXEL_FRAME_MAX> spotVoxel_array;
+		SArray<PointVoxelBuffer, POINT_VOXEL_FRAME_MAX> pointVoxel_array;
+		SArray<DirVoxelBuffer, LIGHT_DIR_FRAME_MAX> dirVoxel_array;
+
+		StructBuf spotLightInjectBuffer;
+		StructBuf pointLightInjectBuffer;
+		StructBuf dirLightInjectBuffer;
+
+		Compute* voxelInjectLight;
 
 		RArray<ShadowMap> shadowmap_array;
 

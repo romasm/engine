@@ -54,3 +54,48 @@ struct d_light_wshadows
 	matrix lightViewMatrix[LIGHT_SHADOW_COUNT];
     matrix lightProjectionMatrix[LIGHT_SHADOW_COUNT];
 };
+
+// for voxel inject
+struct SpotVoxelBuffer
+{
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 Virtpos;
+	float4 ShadowmapAdress;
+	float4 ShadowmapHPixProjNearclip;
+	matrix matViewProj;
+};
+
+struct PointVoxelBuffer
+{
+	float4 PosRange;
+	float4 ColorShadowmapProj;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	float4 ShadowmapAdress4;
+	float4 ShadowmapAdress5;
+	float4 ShadowmapHPix0;
+	float4 ShadowmapHPix1;
+	matrix matProj;
+};
+
+struct DirVoxelBuffer
+{
+	float4 Color;
+	float4 Dir;
+	float4 PosHPix0;
+	float4 PosHPix1;
+	float4 PosHPix2;
+	float4 PosHPix3;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	matrix ViewProj0;
+	matrix ViewProj1;
+	matrix ViewProj2;
+	matrix ViewProj3;
+};

@@ -262,8 +262,13 @@ namespace EngineCore
 		//CS
 		inline static void CSSetShader(ID3D11ComputeShader* pComputeShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
 		{m_instance->m_pImmediateContext->CSSetShader(pComputeShader, ppClassInstances, NumClassInstances);}
+		inline static void CSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		{m_instance->m_pImmediateContext->CSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
+		inline static void CSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		{m_instance->m_pImmediateContext->CSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
+		inline static void CSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		{m_instance->m_pImmediateContext->CSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		
-
 
 	};
 

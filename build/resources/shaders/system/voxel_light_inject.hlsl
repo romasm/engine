@@ -1,5 +1,6 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
+#include "light_constants.hlsl"
 
 #define GROUP_THREAD_COUNT 8
 
@@ -10,8 +11,14 @@ SamplerState samplerBilinearClamp : register(s0);
 
 Texture2D <float> shadowsAtlas : register(t0);  
 
-cbuffer inputConfig : register(b0)
+StructuredBuffer<SpotVoxelBuffer> spotLightInjectBuffer : register(t1); 
+StructuredBuffer<PointVoxelBuffer> pointLightInjectBuffer : register(t2); 
+StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer : register(t3); 
+
+cbuffer volumeBuffer : register(b0)
 {
+	matrix volumeVP[3];
+
 	float4 volumeOffsetSize;
 	float4 volumeScaleResDir;
 };
