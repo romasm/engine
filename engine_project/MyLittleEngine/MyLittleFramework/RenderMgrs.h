@@ -88,8 +88,13 @@ namespace EngineCore
 	{
 		XMMATRIX volumeVP[3];
 
-		XMFLOAT4 volumeOffsetSize;
-		XMFLOAT4 volumeScaleResDir;
+		XMFLOAT3 cornerOffset;
+		float worldSize;
+		
+		float scaleHelper;
+		uint32_t volumeRes;
+		uint32_t volumeDoubleRes;
+		float voxelSize;
 	};
 
 	struct distEP
@@ -343,6 +348,7 @@ namespace EngineCore
 			_RELEASE(voxelSceneNormal);
 
 			_RELEASE(volumeBuffer);
+			_RELEASE(volumeInfo);
 			_DELETE(voxelInjectLight);
 
 			shadowmap_array.destroy();
@@ -507,6 +513,7 @@ namespace EngineCore
 		ID3D11ShaderResourceView* voxelSceneNormalSRV;
 
 		ID3D11Buffer* volumeBuffer;
+		ID3D11Buffer* volumeInfo;
 
 		CameraComponent* current_cam;
 

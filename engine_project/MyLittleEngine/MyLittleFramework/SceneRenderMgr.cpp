@@ -77,6 +77,7 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	voxelSceneNormalSRV = nullptr;
 
 	volumeBuffer = nullptr;
+	volumeInfo = nullptr;
 	voxelInjectLight = nullptr;
 
 	if(!initVoxelBuffer())
@@ -482,6 +483,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 		return false;
 
 	volumeBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData), true);
+	volumeInfo = Buffer::CreateConstantBuffer(DEVICE, sizeof(XMFLOAT4), true);
 
 	spotLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, SPOT_VOXEL_FRAME_MAX, sizeof(SpotVoxelBuffer), true);
 	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, POINT_VOXEL_FRAME_MAX, sizeof(PointVoxelBuffer), true);
@@ -1049,11 +1051,12 @@ void SceneRenderMgr::VoxelizeScene()
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
 	VolumeData constBuffer;
-	constBuffer.volumeOffsetSize = XMFLOAT4(0,0,0, float(VOXEL_VOLUME_SIZE));
-	constBuffer.volumeScaleResDir.x = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
-	constBuffer.volumeScaleResDir.y = float(VOXEL_VOLUME_RES);
-	constBuffer.volumeScaleResDir.z = 2.0f * VOXEL_VOLUME_RES;
-	constBuffer.volumeScaleResDir.w = 0.0f;
+	constBuffer.cornerOffset = XMFLOAT3(0,0,0);
+	constBuffer.worldSize = VOXEL_VOLUME_SIZE;
+	constBuffer.scaleHelper = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
+	constBuffer.volumeRes = VOXEL_VOLUME_RES;
+	constBuffer.volumeDoubleRes = VOXEL_VOLUME_RES * 2;
+	constBuffer.voxelSize = float(VOXEL_VOLUME_SIZE) / VOXEL_VOLUME_RES;
 
 	// todo
 	XMVECTOR camPoses[3];
@@ -1105,6 +1108,14 @@ void SceneRenderMgr::VoxelizeScene()
 
 void SceneRenderMgr::ProcessEmittance()
 {
+	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
+	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(SpotVoxelBuffer));
+	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(SpotVoxelBuffer));
+
+	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
+		(uint32_t)dirVoxel_array.size(), 0};
+	Render::UpdateDynamicResource(volumeInfo, lightCount, sizeof(XMFLOAT4));
+
 	voxelInjectLight->BindUAV(voxelSceneColor0UAV);
 	voxelInjectLight->BindUAV(voxelSceneColor1UAV);
 
@@ -1114,6 +1125,7 @@ void SceneRenderMgr::ProcessEmittance()
 	Render::CSSetShaderResources(3, 1, &dirLightInjectBuffer.srv);
 
 	Render::CSSetConstantBuffers(0, 1, &volumeBuffer);
+	Render::CSSetConstantBuffers(1, 1, &volumeInfo);
 
 	voxelInjectLight->Dispatch( 8, 8, 8 );
 	voxelInjectLight->UnbindUAV();
