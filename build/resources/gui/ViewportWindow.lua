@@ -147,6 +147,7 @@ return GuiEntity({
                 "Voxels Emissive",
                 "Voxels Intensity",
                 "Voxels Normal",
+                "Voxels Emittance",
             },
             alt = "Frame components",
 

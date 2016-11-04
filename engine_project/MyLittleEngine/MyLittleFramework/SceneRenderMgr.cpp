@@ -75,6 +75,9 @@ SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
 	voxelSceneNormal = nullptr;
 	voxelSceneNormalUAV = nullptr;
 	voxelSceneNormalSRV = nullptr;
+	voxelEmittance = nullptr;
+	voxelEmittanceUAV = nullptr;
+	voxelEmittanceSRV = nullptr;
 
 	volumeBuffer = nullptr;
 	volumeInfo = nullptr;
@@ -480,6 +483,36 @@ bool SceneRenderMgr::initVoxelBuffer()
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
 	if( FAILED(Render::CreateShaderResourceView(voxelSceneNormal, &volumeSRVDesc, &voxelSceneNormalSRV)) )
+		return false;
+	
+	// emittance
+	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
+	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
+	volumeDesc.Depth = VOXEL_VOLUME_RES;
+	volumeDesc.MipLevels = 1;
+	volumeDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
+	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.CPUAccessFlags = 0;
+	volumeDesc.MiscFlags = 0;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelEmittance)) )
+		return false;
+
+	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
+	volumeUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+	volumeUAVDesc.Texture3D.MipSlice = 0;
+	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelEmittance, &volumeUAVDesc, &voxelEmittanceUAV)) )
+		return false;
+
+	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
+	volumeSRVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Texture3D.MipLevels = -1;
+	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
+	if( FAILED(Render::CreateShaderResourceView(voxelEmittance, &volumeSRVDesc, &voxelEmittanceSRV)) )
 		return false;
 
 	volumeBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData), true);
@@ -1108,6 +1141,8 @@ void SceneRenderMgr::VoxelizeScene()
 
 void SceneRenderMgr::ProcessEmittance()
 {
+	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, XMFLOAT4(0,0,0,0));
+
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(SpotVoxelBuffer));
@@ -1116,13 +1151,18 @@ void SceneRenderMgr::ProcessEmittance()
 		(uint32_t)dirVoxel_array.size(), 0};
 	Render::UpdateDynamicResource(volumeInfo, lightCount, sizeof(XMFLOAT4));
 
-	voxelInjectLight->BindUAV(voxelSceneColor0UAV);
-	voxelInjectLight->BindUAV(voxelSceneColor1UAV);
+	voxelInjectLight->BindUAV(voxelEmittanceUAV);
 
 	Render::CSSetShaderResources(0, 1, &shadowsBufferSRV);
-	Render::CSSetShaderResources(1, 1, &spotLightInjectBuffer.srv);
-	Render::CSSetShaderResources(2, 1, &pointLightInjectBuffer.srv);
-	Render::CSSetShaderResources(3, 1, &dirLightInjectBuffer.srv);
+
+	Render::CSSetShaderResources(1, 1, &voxelSceneSRV);
+	Render::CSSetShaderResources(2, 1, &voxelSceneColor0SRV);
+	Render::CSSetShaderResources(3, 1, &voxelSceneColor1SRV);
+	Render::CSSetShaderResources(4, 1, &voxelSceneNormalSRV);
+
+	Render::CSSetShaderResources(5, 1, &spotLightInjectBuffer.srv);
+	Render::CSSetShaderResources(6, 1, &pointLightInjectBuffer.srv);
+	Render::CSSetShaderResources(7, 1, &dirLightInjectBuffer.srv);
 
 	Render::CSSetConstantBuffers(0, 1, &volumeBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeInfo);

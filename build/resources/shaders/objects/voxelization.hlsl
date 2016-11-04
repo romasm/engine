@@ -46,11 +46,11 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	float3 specular = SpecularSample(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
 
-	float NoP[3];
+	/*float NoP[3];
 	NoP[0] = normal.x;
 	NoP[1] = normal.y;
 	NoP[2] = normal.z;
-	albedo *= abs(NoP[input.planeId]);
+	albedo *= abs(NoP[input.planeId]);*/
 	
 	// emittance prepare
 	float emissiveLum = length(emissive);

@@ -472,6 +472,7 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor0SRV(), 15);
 	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor1SRV(), 16);
 	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelNormalSRV(), 17);
+	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelEmittanceSRV(), 18);
 
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);
