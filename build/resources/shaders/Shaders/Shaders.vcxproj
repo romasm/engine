@@ -67,10 +67,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <FxCompile Include="..\common\light_helpers.hlsl" />
     <FxCompile Include="..\common\math.hlsl" />
     <FxCompile Include="..\common\PCF.hlsl" />
     <FxCompile Include="..\common\shared.hlsl" />
     <FxCompile Include="..\common\structs.hlsl" />
+    <FxCompile Include="..\common\voxel_helpers.hlsl" />
     <FxCompile Include="..\gui\color.hlsl" />
     <FxCompile Include="..\gui\example.hlsl" />
     <FxCompile Include="..\gui\font_default.hlsl" />
@@ -163,7 +165,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Developer|Win32'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="..\system\tonemapping.hlsl" />
-    <FxCompile Include="..\system\voxel_helpers.hlsl" />
     <FxCompile Include="..\system\voxel_light_inject.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

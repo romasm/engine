@@ -366,7 +366,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	// visibility
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
@@ -398,7 +398,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	// color
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
@@ -427,7 +427,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 		return false;
 
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
@@ -457,7 +457,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 
 	// normal
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
@@ -487,7 +487,7 @@ bool SceneRenderMgr::initVoxelBuffer()
 	
 	// emittance
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES;
+	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;
 	volumeDesc.Height = VOXEL_VOLUME_RES * 6;
 	volumeDesc.Depth = VOXEL_VOLUME_RES;
 	volumeDesc.MipLevels = 1;
