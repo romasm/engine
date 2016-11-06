@@ -119,9 +119,9 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, float volumeSize, uint volumeRes, 
 	collideWS = origin + ray * voxelIntersections.x;
 		
 	float3 entry = collideWS - prevVoxel;
-	entry.x = ray.x < 0 ? (voxelSize - entry.x) : entry.x;
-	entry.y = ray.y < 0 ? (voxelSize - entry.y) : entry.y;
-	entry.z = ray.z < 0 ? (voxelSize - entry.z) : entry.z;
+	entry.x = ray.x < 0 ? (voxelSize.x - entry.x) : entry.x;
+	entry.y = ray.y < 0 ? (voxelSize.y - entry.y) : entry.y;
+	entry.z = ray.z < 0 ? (voxelSize.z - entry.z) : entry.z;
 	float minEntry = min(entry.x, min(entry.y, entry.z));
 	
 	uint faceID;
