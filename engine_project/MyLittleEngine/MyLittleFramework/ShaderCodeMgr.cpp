@@ -47,6 +47,8 @@ ShaderCodeMgr::~ShaderCodeMgr()
 void ShaderCodeMgr::PreloadPureCodes()
 {
 	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT, "InjectLightToVolume" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE, "DownsampleEmittance" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE, "DownsampleMove" );
 }
 
 uint16_t ShaderCodeMgr::GetShaderCode(string& name, uint8_t type)

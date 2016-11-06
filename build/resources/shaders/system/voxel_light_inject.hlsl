@@ -11,8 +11,7 @@
 
 RWTexture3D <float4> emittanceVolume : register(u0);  
 
-SamplerState samplerBilinearClamp : register(s0);
-SamplerState samplerPointClamp : register(s1);
+SamplerState samplerPointClamp : register(s0);
 
 Texture2DArray <float> shadowsAtlas : register(t0);   
 
@@ -38,7 +37,7 @@ cbuffer volumeBuffer : register(b0)
 	float voxelSize;
 };
 
-cbuffer volumeBuffer : register(b1)
+cbuffer lightCountBuffer : register(b1)
 {
 	uint spotCount;
 	uint pointCount;
@@ -67,6 +66,8 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 	float faceOpacity[6];
 	float3 faceNormal[6];
 	float3 faceEmittance[6];
+
+	float is_emissive = 1.0f;
 	[unroll]
 	for(int i = 0; i < 6; i++)
 	{
@@ -77,11 +78,22 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 		faceOpacity[i] = DecodeVoxelOpacity(opacitySample);
 		faceColor[i] = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity[i] );
+		is_emissive = min(is_emissive, faceColor[i].w);
+
 		faceNormal[i] = DecodeVoxelNormal(normalVolume.Load(coorsd), opacitySample);
 
 		faceEmittance[i] = 0; 
 		faceOpacity[i] = saturate(faceOpacity[i] * VOXEL_SUBSAMPLES_COUNT_RCP);
 	}	
+
+	[branch]
+	if(is_emissive > 0.0f)
+	{
+		[unroll]
+		for(int j = 0; j < 6; j++)
+			emittanceVolume[faceAdress[j]] = float4(faceColor[j].rgb * faceColor[j].w, faceOpacity[j]);
+		return;
+	}
 
 	[loop]
 	for(int spotID = 0; spotID < (int)spotCount; spotID++)
@@ -95,7 +107,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 			continue;
 		 
 		float illuminance = getDistanceAtt( unnormL, lightData.PosRange.w );
-		if(illuminance == 0) 
+		if(illuminance <= 0) 
 			continue;
 		
 		const float3 L = normalize(unnormL);
@@ -104,7 +116,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		const float3 virtL = normalize(virtUnnormL);
 
 		illuminance *= getAngleAtt(virtL, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
-		if(illuminance == 0)
+		if(illuminance <= 0)
 			continue; 
 
 		float4 samplePoint = float4(wpos, 1.0f);

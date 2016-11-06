@@ -230,6 +230,9 @@ namespace EngineCore
 #define VOXEL_VOLUME_SUBSAMPLES 8
 #define VOXEL_VOLUME_SIZE 10.0f
 
+#define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject"
+#define COMPUTE_VOXEL_DOWNSAMPLE PATH_SHADERS "system/voxel_downsample"
+
 	struct CameraComponent;
 
 	class SceneRenderMgr: public BaseRenderMgr
@@ -349,10 +352,16 @@ namespace EngineCore
 			_RELEASE(voxelEmittanceUAV);
 			_RELEASE(voxelEmittanceSRV);
 			_RELEASE(voxelEmittance);
+			_RELEASE(voxelDownsampleTempUAV);
+			_RELEASE(voxelDownsampleTempSRV);
+			_RELEASE(voxelDownsampleTemp);
 
 			_RELEASE(volumeBuffer);
 			_RELEASE(volumeInfo);
+			_RELEASE(volumeDownsampleBuffer);
 			_DELETE(voxelInjectLight);
+			_DELETE(voxelDownsample);
+			_DELETE(voxelDownsampleMove);
 
 			shadowmap_array.destroy();
 
@@ -488,6 +497,8 @@ namespace EngineCore
 		StructBuf dirLightInjectBuffer;
 
 		Compute* voxelInjectLight;
+		Compute* voxelDownsample;
+		Compute* voxelDownsampleMove;
 
 		RArray<ShadowMap> shadowmap_array;
 
@@ -519,8 +530,13 @@ namespace EngineCore
 		ID3D11UnorderedAccessView* voxelEmittanceUAV;
 		ID3D11ShaderResourceView* voxelEmittanceSRV;
 
+		ID3D11Texture3D* voxelDownsampleTemp;
+		ID3D11UnorderedAccessView* voxelDownsampleTempUAV;
+		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
+
 		ID3D11Buffer* volumeBuffer;
 		ID3D11Buffer* volumeInfo;
+		ID3D11Buffer* volumeDownsampleBuffer;
 
 		CameraComponent* current_cam;
 

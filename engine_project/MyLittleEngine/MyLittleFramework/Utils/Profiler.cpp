@@ -24,7 +24,9 @@ void Profiler::InitParams()
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
 
 	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELIZATION] = name_depth("Voxelization", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_LIGHTINJECT] = name_depth("LightInject", 3);
+	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELLIGHT] = name_depth("VxLight", 3);
+	gpu_ids_name[PERF_GPU::PERF_GPU_LIGHTINJECT] = name_depth("LightInject", 4);
+	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELDOWNSAMPLE] = name_depth("Downsample", 4);
 	gpu_ids_name[PERF_GPU::PERF_GPU_GEOMETRY] = name_depth("Geometry", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_DEPTH_COPY] = name_depth("DepthCopy", 3);
 

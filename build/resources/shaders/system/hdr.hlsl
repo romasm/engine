@@ -8,7 +8,8 @@ TECHNIQUE_DEFAULT
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
-#include "voxel_helpers.hlsl"
+
+#include "../common/voxel_helpers.hlsl"
 
 Texture2D opaqueTex : register(t0); 
 Texture2D transparentTex : register(t1); 
@@ -111,109 +112,62 @@ struct PO_LDR
 
 #define VOXEL_ALPHA 1.0
 
-float2 GetVoxel(float2 uv, out float4 color, out float3 normal, out float4 emittance)
+float2 GetVoxelOpacity(float2 uv, uint level)
 {
-	const float3 boxExtend = float3(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE) * 0.5f;
-	const float3 voxelSize = float3(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
-	const float distance = 25.0f;
-	color = 0;
-	normal = 0;
-
-	float3 ray = GetCameraVector(uv) * distance;
-	float3 camInBox = g_CamPos - boxExtend;
-
-	float2 intersections = RayBoxIntersect( camInBox, ray, -boxExtend, boxExtend );
-
-	if ( intersections.y <= intersections.x )
+	float3 collidePosWS = 0;
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, level, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
 		return 0;
-	
-	float3 epcilon = 0.00001f;
-	float3 step;
-	step.x = ray.x >= 0 ? 1 : -1;
-	step.y = ray.y >= 0 ? 1 : -1;
-	step.z = ray.z >= 0 ? 1 : -1;
 
-	epcilon *= step;
-
-	step = saturate(step);
-	step *= voxelSize;
-	
-	float3 samplePoint = g_CamPos + ray * intersections.x + epcilon;
-	float3 voxelSnap = 0;
-	float3 prevVoxel = 0;
-	
-	float value[6];
-	int i = 0;
-	[loop]
-	while( i < 512 )
-	{
-		voxelSnap = floor(samplePoint / VOXEL_VOLUME_SIZE * VOXEL_VOLUME_RES);
-
-		int4 coords = int4(voxelSnap, 0);
-		float anyValue = 0;
-		[unroll]
-		for(int j = 0; j < 6; j++)
-		{
-			value[j] = voxelTex.Load(coords) & 0x0000ffff;
-			coords.y += VOXEL_VOLUME_RES;
-			anyValue += value[j];
-		}
-		
-		voxelSnap *= VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES;
-		prevVoxel = voxelSnap;
-
-		[branch]
-		if(anyValue > 0.0f)
-			break;
-
-		voxelSnap += step;
-
-		float3 delta = (voxelSnap - g_CamPos) / ray;
-		float d = min(delta.x, min(delta.y, delta.z));
-
-		[branch]
-		if ( intersections.y - 0.000001 <= d )
-			return 0;
-
-		samplePoint = g_CamPos + ray * d + epcilon;
-		i++;
-	}
-
-	float3 voxelExtend = voxelSize * 0.5f;
-	float3 camInVoxel = g_CamPos - (prevVoxel + voxelExtend);
-	float2 voxelIntersections = RayBoxIntersect( camInVoxel, ray, -voxelExtend, voxelExtend );
-	float3 collidePosWS = g_CamPos + ray * voxelIntersections.x;
-		
-	float3 entry = collidePosWS - prevVoxel;
-	entry.x = ray.x < 0 ? (VOXEL_SIZE - entry.x) : entry.x;
-	entry.y = ray.y < 0 ? (VOXEL_SIZE - entry.y) : entry.y;
-	entry.z = ray.z < 0 ? (VOXEL_SIZE - entry.z) : entry.z;
-	float minEntry = min(entry.x, min(entry.y, entry.z));
-
-	int4 colorCoords = int4(prevVoxel / VOXEL_VOLUME_SIZE * VOXEL_VOLUME_RES, 0);
-
-	uint faceID;
-	[branch]
-	if(minEntry == entry.x) faceID = ray.x < 0 ? 1 : 0;
-	else if(minEntry == entry.y) faceID = ray.y < 0 ? 3 : 2;
-	else faceID = ray.z < 0 ? 5 : 4;
-
-	if( value[faceID] > 0 )
-	{
-		colorCoords.y += VOXEL_VOLUME_RES * faceID;
-
-		uint color0 = voxelColor0Tex.Load(colorCoords);
-		uint color1 = voxelColor1Tex.Load(colorCoords);
-		color = DecodeVoxelColor(color0, color1, value[faceID]);
-		
-		normal = DecodeVoxelNormal(voxelNormalTex.Load(colorCoords), voxelTex.Load(colorCoords));
-		
-		emittance = voxelEmittanceTex.Load(colorCoords);
-	}
-
+	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(saturate(value[faceID] * 0.125f), collidePosPS.z / collidePosPS.w);
+	return float2(emittance.w, collidePosPS.z / collidePosPS.w);
+}
+
+float4 GetVoxelEmittance(float2 uv, uint level)
+{
+	float3 collidePosWS = 0;
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, level, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
+		return 0;
+
+	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
+	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
+
+	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
+}
+
+float4 GetVoxelColor(float2 uv, out float depth)
+{
+	float3 collidePosWS = 0;
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, 0, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
+		return 0;
+
+	uint count = DecodeVoxelOpacity(voxelTex.Load(sampleCoords));
+
+	uint color0 = voxelColor0Tex.Load(sampleCoords);
+	uint color1 = voxelColor1Tex.Load(sampleCoords);
+	float4 color = DecodeVoxelColor(color0, color1, count);
+
+	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
+	depth = collidePosPS.z / collidePosPS.w;
+
+	return color;
+}
+
+float4 GetVoxelNormal(float2 uv)
+{
+	float3 collidePosWS = 0;
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, 0, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
+		return 0;
+
+	float3 normal = DecodeVoxelNormal(voxelNormalTex.Load(sampleCoords), voxelTex.Load(sampleCoords));
+	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
+
+	return float4(normal, collidePosPS.z / collidePosPS.w);
 }
 
 PO_LDR HDRLDR(PI_PosTex input)
@@ -292,35 +246,55 @@ PO_LDR HDRLDR(PI_PosTex input)
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);
 		tonemapped = ssr.rgb * ssr.a;
 	}
-	else if(debugMode >= 11 && debugMode <= 16)
+	else 
 	{
-		float4 voxelColor = 0;
-		float3 voxelNormal = 0;
-		float4 voxelEmittance = 0;
-		float2 voxel = GetVoxel(input.tex, voxelColor, voxelNormal, voxelEmittance);
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
-		if(sceneDepth >= voxel.g && voxel.g != 0) 
+
+		if(debugMode == 11)
 		{
-			if(debugMode == 11)
-				//tonemapped = lerp(tonemapped, voxel.r, VOXEL_ALPHA);
-				tonemapped = lerp(tonemapped, float3(voxel.r, 0, 1 - voxel.r), VOXEL_ALPHA);
-			else if(debugMode == 12)
+			float voxelDepth = 0;
+			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
+			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
-			else if(debugMode == 13)
+		}
+		else if(debugMode == 12)
+		{ 
+			float voxelDepth = 0;
+			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
+			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
-			else if(debugMode == 14)
+		} 
+		else if(debugMode == 13) 
+		{ 
+			float voxelDepth = 0;
+			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
+			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
-			else if(debugMode == 15)
+		}
+		else if(debugMode == 14) 
+		{
+			float4 voxelNormal = GetVoxelNormal(input.tex);
+			if(sceneDepth >= voxelNormal.a && voxelNormal.a != 0) 
 				tonemapped = lerp(tonemapped, (voxelNormal + 1.0f) * 0.5f, VOXEL_ALPHA);
-			else if(debugMode == 16)
-				tonemapped = lerp(tonemapped, voxelEmittance, VOXEL_ALPHA);		
+		}
+		else if(debugMode >= 15 && debugMode <= 20)
+		{
+			float2 voxelOpacity = GetVoxelOpacity(input.tex, debugMode - 15);
+			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
+				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
+		}
+		else if(debugMode >= 21 && debugMode <= 26)
+		{
+			float4 voxelEmittance = GetVoxelEmittance(input.tex, debugMode - 21);
+			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
+				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
 		}
 	}
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
-	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || (debugMode >= 10 && debugMode != 15))
+	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || (debugMode >= 10 && debugMode != 14))
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);

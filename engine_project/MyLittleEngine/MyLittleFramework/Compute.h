@@ -32,7 +32,7 @@ namespace EngineCore
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)
 		{
-			auto handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
+			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
 			if(!handle.input.samplers.empty())
 				Render::CSSetSamplers(0, (UINT)handle.input.samplers.size(), handle.input.samplers.data());
 			Render::CSSetShader( (ID3D11ComputeShader*)handle.code, nullptr, 0 );

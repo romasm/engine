@@ -50,8 +50,6 @@ namespace EngineCore
 
 #define SP_SHADER_SSR PATH_SHADERS "system/ssr_compute"
 
-#define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject"
-
 	class ScenePipeline
 	{
 		struct SharedBuffer

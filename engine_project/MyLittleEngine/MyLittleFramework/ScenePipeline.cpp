@@ -609,7 +609,7 @@ void ScenePipeline::OpaqueForwardStage()
 
 	render_mgr->VoxelizeScene();
 	
-	PERF_GPU_TIMESTAMP(_LIGHTINJECT);
+	PERF_GPU_TIMESTAMP(_VOXELLIGHT);
 
 	render_mgr->ProcessEmittance();
 	
