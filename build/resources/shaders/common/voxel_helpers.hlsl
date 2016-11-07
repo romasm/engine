@@ -35,6 +35,114 @@ float3 DecodeVoxelNormal(uint n, uint o)
 	return normalize(normalXYZ);
 }
 
+static const float3 diffuseConeDirections[6] =
+{
+    float3(0.0f, 1.0f, 0.0f),
+    float3(0.0f, 0.5f, 0.866025f),
+    float3(0.823639f, 0.5f, 0.267617f),
+    float3(0.509037f, 0.5f, -0.7006629f),
+    float3(-0.50937f, 0.5f, -0.7006629f),
+    float3(-0.823639f, 0.5f, 0.267617f)
+};
+
+static const float diffuseConeWeights[6] =
+{
+    1.0f / 4.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+};
+
+#define VOXEL_CONE_TRACING_STEP 0.5f
+#define VOXEL_CONE_TRACING_MAX_STEPS 64
+
+#define VOXEL_LEVEL_COUNT 6
+#define VOXEL_LEVEL_COUNT_RCP 1.0f / VOXEL_LEVEL_COUNT
+
+#define VOXEL_FACE_COUNT_RCP 1.0f / 6
+
+float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, float voxelDiag, float4 volumeData, 
+					  Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
+{
+	float faces[3];
+	faces[0] = (direction.x >= 0) ? 0 : 1;
+    faces[1] = (direction.y >= 0) ? 2 : 3;
+    faces[2] = (direction.z >= 0) ? 4 : 5;
+	faces[0] *= VOXEL_FACE_COUNT_RCP;
+	faces[1] *= VOXEL_FACE_COUNT_RCP;
+	faces[2] *= VOXEL_FACE_COUNT_RCP;
+
+	float dirWeight[3];
+	dirWeight[0] = direction.x * direction.x;
+	dirWeight[1] = direction.y * direction.y;
+	dirWeight[2] = direction.z * direction.z;
+
+	const float apertureDouble = 2.0f * aperture;
+	const float voxelDiagRcp = rcp(voxelDiag);
+
+	float3 coneStart = origin + surfaceNormal * voxelDiag;
+	
+	float distance = voxelDiag;
+	float4 coneColor = 0;
+	float level = 0;
+
+	int i = 0;
+	while(coneColor.a < 1.0f/* && level < VOXEL_LEVEL_COUNT*/ && i <= VOXEL_CONE_TRACING_MAX_STEPS)
+    {
+        float3 currentConePos = coneStart + direction * distance;
+
+        float diameter = apertureDouble * distance;
+        level = log2(diameter * voxelDiagRcp);
+		level = clamp(level, 0.0f, VOXEL_LEVEL_COUNT);
+        
+        float3 sampleCoords = (currentConePos - volumeData.xyz) * volumeData.w;
+		sampleCoords = clamp(sampleCoords, 0, 1);
+		/*float maxCoord = max(sampleCoords.x, max(sampleCoords.y, sampleCoords.z));
+		float minCoord = min(sampleCoords.x, min(sampleCoords.y, sampleCoords.z));
+		if(maxCoord > 1.0f || minCoord < 0.0f)
+			break;*/
+
+		sampleCoords.xy *= float2(VOXEL_LEVEL_COUNT_RCP, VOXEL_FACE_COUNT_RCP);
+
+		float levelUpDown[2];
+		levelUpDown[0] = ceil(level);
+		levelUpDown[1] = floor(level);
+
+		float levelLerp = saturate(level - levelUpDown[1]);
+		
+		float4 voxelSample[2];
+		[unroll]
+		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
+		{
+			float3 coordsLevel = sampleCoords;
+			coordsLevel /= exp2(levelUpDown[voxelLevel]);
+			coordsLevel.x += VOXEL_LEVEL_COUNT_RCP * levelUpDown[voxelLevel];
+
+			voxelSample[voxelLevel] = 0;
+			[unroll]
+			for(int faceID = 0; faceID < 3; faceID++)
+			{
+				float3 coords = coordsLevel;
+				coords.y += faces[faceID];
+
+				voxelSample[voxelLevel] += volumeEmittance.SampleLevel(volumeSampler, coords, 0) * dirWeight[faceID];
+			}
+		}
+		        
+		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
+        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a);
+		coneColor.a += finalColor.a;
+        
+        distance += diameter * VOXEL_CONE_TRACING_STEP;
+		i++;
+    }
+
+	coneColor.a = saturate(coneColor.a);
+	return coneColor;
+}
+
 #define RAY_TRACE_DISTANCE 25.0f
 #define RAY_TRACE_EPCILON 0.00001f
 #define RAY_TRACE_MAX_I 512

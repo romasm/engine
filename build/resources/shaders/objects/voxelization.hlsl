@@ -22,6 +22,11 @@ cbuffer volumeBuffer : register(b4)
 	uint volumeRes;
 	uint volumeDoubleRes;
 	float voxelSize;
+	
+	float voxelDiag;
+	float _padding0;
+	float _padding1;
+	float _padding2;
 };
 
 // pixel

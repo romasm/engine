@@ -35,6 +35,11 @@ cbuffer volumeBuffer : register(b0)
 	uint volumeRes;
 	uint volumeDoubleRes;
 	float voxelSize;
+	
+	float voxelDiag;
+	float _padding0;
+	float _padding1;
+	float _padding2;
 };
 
 cbuffer lightCountBuffer : register(b1)

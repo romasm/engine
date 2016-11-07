@@ -1132,6 +1132,7 @@ void SceneRenderMgr::VoxelizeScene()
 	constBuffer.volumeRes = VOXEL_VOLUME_RES;
 	constBuffer.volumeDoubleRes = VOXEL_VOLUME_RES * 2;
 	constBuffer.voxelSize = float(VOXEL_VOLUME_SIZE) / VOXEL_VOLUME_RES;
+	constBuffer.voxelDiag = sqrt( constBuffer.voxelSize * constBuffer.voxelSize * 3 );
 
 	// todo
 	XMVECTOR camPoses[3];

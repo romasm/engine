@@ -426,6 +426,8 @@ bool ScenePipeline::InitRts()
 	sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
 	sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
 
+	sp_OpaqueDefferedDirect->SetTexture(render_mgr->GetVoxelEmittanceSRV(), 15);
+
 	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
 	sp_AO->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 1);
@@ -994,6 +996,9 @@ void ScenePipeline::OpaqueDefferedStage()
 	LoadEnvProbs();
 	
 	Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
+
+	auto volumeBuffer = render_mgr->GetVolumeBuffer();
+	Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
 	
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 	rt_OpaqueDefferedDirect->SetRenderTarget();

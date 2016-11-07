@@ -39,8 +39,7 @@ PO_opaque Combine(PI_PosTex input)
 	res.forNextFrame.rgb = diffSample.rgb + specSample.rgb;
 	res.forNextFrame.a = d;
 
-	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + 
-		float3(diffSample.a, specSample.a, specSecondSample.r);
+	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + float3(diffSample.a, specSample.a, specSecondSample.r);
 	res.opaque.a = d;
 	
 	return res;

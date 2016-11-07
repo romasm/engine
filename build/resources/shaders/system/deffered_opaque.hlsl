@@ -9,6 +9,7 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
 #include "light_constants.hlsl"
+#include "../common/voxel_helpers.hlsl"
 
 // DEBUG
 #define DEBUG_CASCADE_LIGHTS 0
@@ -67,10 +68,13 @@ Texture2D <float4> ssr_buf : register(t13);
 TextureCube envprobsDist : register(t14); 
 TextureCube envprobsDistDiff : register(t15); 
 
+Texture3D <float4> volumeEmittance : register(t16); 
+
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
+SamplerState samplerBilinearVolumeClamp : register(s4);
 
 #define normalShadowOffsetSpot 2
 #define shadowBiasSpotArea 0.0008 
@@ -234,7 +238,25 @@ cbuffer camMove : register(b10)
 	float4x4 viewProjInv_ViewProjPrev;
 };
 
-cbuffer materialBuffer : register(b11)
+cbuffer volumeBuffer : register(b11)
+{
+	matrix volumeVP[3];
+	
+	float3 cornerOffset;
+	float worldSize;
+		
+	float scaleHelper;
+	uint volumeRes;
+	uint volumeDoubleRes;
+	float voxelSize;
+	
+	float voxelDiag;
+	float _VB_padding0;
+	float _VB_padding1;
+	float _VB_padding2;
+};
+
+cbuffer materialBuffer : register(b12)
 {
 	float spot_count;
 	float disk_count;
@@ -1346,20 +1368,56 @@ PO_final DefferedLighting(PI_PosTex input)
 	 
 	float SO = computeSpecularOcclusion(indirNoV, ao, indirR);
 	
-	Indir.specular *= SO;
 	specSecond.rgb = (ssr.rgb * SO) * ssr.a;
 	specSecond.a = 1 - ssr.a;
-	
-	Indir.specular *= specBrdf;
 	specSecond.rgb *= specBrdf;
-	
-	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff) * diffBrdf * ao;
+
+	// temp
+	if(Indir.specular.r != 0)
+	{
+		specSecond = 0;
+		specSecond.a = 1;
+	}
+
+	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff);
 		  
 	/*if(params.subscattering != 0)
 	{
 		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, VtoWP, ao, 0, envprobsDistDiff, 2, envprobsDist);
-	}*/
+	}*/ 
 	  
+	// Voxel Cone Tracing
+	float3 diffuseVCT = 0;
+	const float apertureDiffuse = 0.57735f;
+	for(int diffuseCones = 0; diffuseCones < 6; diffuseCones++)
+    {
+		float3 coneDirection = normal;
+        coneDirection += diffuseConeDirections[diffuseCones].x * tangent + diffuseConeDirections[diffuseCones].z * binormal;
+        coneDirection = normalize(coneDirection);
+        
+		float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, voxelSize, 
+			float4(cornerOffset, 1.0f / worldSize), volumeEmittance, samplerBilinearVolumeClamp);
+		diffuseVCT += lerp( Indir.diffuse, VCTdiffuse.rgb, VCTdiffuse.a) * diffuseConeWeights[diffuseCones];
+    }
+	
+	Indir.diffuse = diffuseVCT * diffBrdf * ao;  
+
+
+	float3 coneReflDirection = normalize(Refl);
+
+	float apertureSpecular = tan( clamp( PIDIV2 * avgR, 0.0174533f, PI) );
+	float4 specularVCT = VoxelConeTrace(wpos, coneReflDirection, apertureSpecular, normal, voxelSize, 
+			float4(cornerOffset, 1.0f / worldSize), volumeEmittance, samplerBilinearVolumeClamp);
+	
+	Indir.specular = lerp( Indir.specular, specularVCT.rgb, specularVCT.a);
+	Indir.specular *= specBrdf * SO;
+	 
+	/*if(diffuseVCT.r > -1)  
+	{ 
+		res.diffuse.rgb = Indir.diffuse;
+		return res; 
+	}*/
+
 	// ----------------- FINAL -------------------------
 	res.diffuse.rgb = Light.diffuse * dirDiff + (emissive + Indir.diffuse) * indirDiff;
 	res.specular.rgb = Indir.specular * indirSpec;

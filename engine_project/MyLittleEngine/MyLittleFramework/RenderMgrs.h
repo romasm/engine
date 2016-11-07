@@ -95,6 +95,11 @@ namespace EngineCore
 		uint32_t volumeRes;
 		uint32_t volumeDoubleRes;
 		float voxelSize;
+
+		float voxelDiag;
+		float _padding0;
+		float _padding1;
+		float _padding2;
 	};
 
 	struct distEP

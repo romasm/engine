@@ -377,6 +377,9 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, floa
 
 float4 SSR(PI_PosTex input) : SV_TARGET 
 {   
+	// temp
+	return 0;
+
 	float2 inUV = input.tex;      
 		  
 	int2 pixCoords = 0; 
