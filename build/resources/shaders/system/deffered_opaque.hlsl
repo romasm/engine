@@ -1385,7 +1385,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	{
 		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, VtoWP, ao, 0, envprobsDistDiff, 2, envprobsDist);
 	}*/ 
-	  
+	 
 	// Voxel Cone Tracing
 	float3 diffuseVCT = 0;
 	const float apertureDiffuse = 0.57735f;

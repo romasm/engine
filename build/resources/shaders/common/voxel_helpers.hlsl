@@ -83,6 +83,11 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	const float voxelDiagRcp = rcp(voxelDiag);
 
 	float3 coneStart = origin + surfaceNormal * voxelDiag;
+
+	float maxConeStart = max(coneStart.x, max(coneStart.y, coneStart.z));
+	float minConeStart = min(coneStart.x, min(coneStart.y, coneStart.z));
+	if(maxConeStart > 10.0f || minConeStart < 0.0f)
+		return 0;
 	
 	float distance = voxelDiag;
 	float4 coneColor = 0;
@@ -132,7 +137,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		}
 		        
 		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
-        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a);
+        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb /* finalColor.a*/);
 		coneColor.a += finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
