@@ -263,7 +263,7 @@ ID3D11ShaderResourceView* TexMgr::LoadTexture(string& name)
 	{
 		TexMetadata metaData;
 		ScratchImage image;
-		HRESULT hr = LoadFromWICFile(tempName.c_str(), WIC_FLAGS_NONE, &metaData, image);
+		HRESULT hr = LoadFromWICFile(tempName.c_str(), WIC_FLAGS_IGNORE_SRGB, &metaData, image);
 		if(FAILED(hr))
 		{
 			ERR("Cant load WIC texture %s !", name.c_str());

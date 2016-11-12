@@ -55,6 +55,7 @@ function GuiFilefield:init(props)
     self.ChildFilepath.height_percent = true
     self.ChildFilepath.allow_none = self.allow_none
     self.ChildFilepath.show_tail = true
+    self.ChildFilepath.text = {length = 256}
 
     self.filepath_tf = GuiTextfield(self.ChildFilepath)
     self.entity:AttachChild(self.filepath_tf.entity)
