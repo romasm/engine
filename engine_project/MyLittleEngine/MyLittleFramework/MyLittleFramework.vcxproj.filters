@@ -210,6 +210,12 @@
     <ClInclude Include="Utils\ProfilerIDs.h">
       <Filter>Util\Profiler</Filter>
     </ClInclude>
+    <ClInclude Include="VoxelRenderer.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowsRenderer.h">
+      <Filter>Render System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -363,6 +369,12 @@
     </ClCompile>
     <ClCompile Include="Utils\Profiler.cpp">
       <Filter>Util\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="VoxelRenderer.cpp">
+      <Filter>Render System</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowsRenderer.cpp">
+      <Filter>Render System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

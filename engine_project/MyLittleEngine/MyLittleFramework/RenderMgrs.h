@@ -7,6 +7,8 @@
 #include "RenderState.h"
 #include "LightBuffers.h"
 #include "Compute.h"
+#include "VoxelRenderer.h"
+#include "ShadowsRenderer.h"
 #include "ECS/Entity.h"
 
 namespace EngineCore
@@ -57,51 +59,6 @@ namespace EngineCore
 		}
 	};
 
-	struct ShadowMap
-	{
-		float x;
-		float y;
-		uint8_t dsv;
-
-		float res;
-
-		float size;
-
-		uint64_t id;
-		uint32_t next;
-		uint32_t prev;
-
-		ShadowMap()
-		{
-			x = 0;
-			y = 0;
-			dsv = 0;
-			res = 0;
-			size = 0;
-			id = 0;
-			next = 0;
-			prev = 0;
-		}
-	};
-
-	struct VolumeData
-	{
-		XMMATRIX volumeVP[3];
-
-		XMFLOAT3 cornerOffset;
-		float worldSize;
-		
-		float scaleHelper;
-		uint32_t volumeRes;
-		uint32_t volumeDoubleRes;
-		float voxelSize;
-
-		float voxelDiag;
-		float _padding0;
-		float _padding1;
-		float _padding2;
-	};
-
 	struct distEP
 	{
 		ID3D11ShaderResourceView* specCube;
@@ -123,6 +80,8 @@ namespace EngineCore
 	{
 	public:
 		BaseRenderMgr();
+		~BaseRenderMgr()
+		{ClearAll();}
 
 		inline bool IsShadow() const {return b_shadow;}
 
@@ -139,11 +98,6 @@ namespace EngineCore
 			cleanRenderArrayOpaque();
 			cleanRenderArrayAlphatest();
 			cleanRenderArrayTransparenty();
-		}
-
-		void Close()
-		{
-			ClearAll();
 		}
 
 	protected:
@@ -170,6 +124,8 @@ namespace EngineCore
 	{
 	public:
 		ShadowRenderMgr();
+		~ShadowRenderMgr()
+		{ClearAll();}
 
 		bool RegMesh(uint32_t index_count, 
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
@@ -185,12 +141,6 @@ namespace EngineCore
 		void DrawTransparent();
 
 		void ClearAll() {BaseRenderMgr::ClearAll();}
-
-		void Close()
-		{
-			ClearAll();
-
-		}
 
 		inline bool IsTranparentShadows() const {return transparent_array.capacity() != 0;}
 		void SetTranparentShadows(bool enable)
@@ -208,42 +158,13 @@ namespace EngineCore
 
 #define ENVPROB_FRAME_MAX 32
 
-#define SHADOWS_BUF_RES 4096
-#define SHADOWS_BUF_RES_RCP 1.0f / SHADOWS_BUF_RES
-#define SHADOWS_BUF_MIPS 8 // min - 16
-
-#define SHADOWS_BUF_SIZE 4
-#define SHADOWMAPS_COUNT 1024
-
-#define SHADOWS_MAXRES 2048
-#define SHADOWS_MINRES 64
-#define SHADOWS_STRINGS_NUM 6 // 1 + (log(SHADOWS_MAXRES) - log(SHADOWS_MINRES)) / log(2)
-
-#define SHADOWS_LOD_0_SIZE 1.0f
-#define SHADOWS_LOD_1_SIZE 0.8f
-#define SHADOWS_LOD_2_SIZE 0.5f
-#define SHADOWS_LOD_3_SIZE 0.3f
-#define SHADOWS_LOD_4_SIZE 0.13f
-#define SHADOWS_LOD_5_SIZE 0.05f
-
-	// Dir light configs
-#define SHADOWS_DIR_RES SHADOWS_BUF_RES / 2
-#define SHADOWS_DIR_DEPTH 10000.0f
-
-#define VOXEL_VOLUME_RES 64
-#define VOXEL_VOLUME_CLIPMAP_COUNT 6
-#define VOXEL_VOLUME_SUBSAMPLES 8
-#define VOXEL_VOLUME_SIZE 10.0f
-
-#define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject"
-#define COMPUTE_VOXEL_DOWNSAMPLE PATH_SHADERS "system/voxel_downsample"
-
 	struct CameraComponent;
 
 	class SceneRenderMgr: public BaseRenderMgr
 	{
 	public:
 		SceneRenderMgr();
+		~SceneRenderMgr();
 
 		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
 			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
@@ -273,37 +194,15 @@ namespace EngineCore
 
 		bool RegDirLight(XMFLOAT4 color, XMFLOAT2 area, XMFLOAT3 dir, XMMATRIX* view_proj, XMFLOAT3* pos, uint64_t id);
 		
-		bool RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, UINT id);
+		bool RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
 		bool RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 virtpos, float nearclip, 
-			CXMMATRIX vp, CXMMATRIX proj, UINT id);
+			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
 		bool RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 up, XMFLOAT3 side, XMFLOAT3 virtpos, float nearclip,
-			CXMMATRIX vp, CXMMATRIX proj, UINT id);
+			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
 
-		bool RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, CXMMATRIX proj, UINT id);
-		bool RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, CXMMATRIX proj, UINT id);
-		bool RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, XMFLOAT3 dir, CXMMATRIX proj, CXMMATRIX view, UINT id);
-
-		void ResolveShadowMaps();
-		inline ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
-
-		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
-		static void SwapShadows(ShadowMap* first, ShadowMap* second, RArray<ShadowMap>* arr);
-
-		bool RegShadowMap(uint id,  float size);
-
-		void RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
-		
-		void VoxelizeScene();
-		void ProcessEmittance();
-
-		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelSceneSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelSceneColor0SRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelSceneColor1SRV;}
-		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelSceneNormalSRV;}
-
-		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
-
-		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeBuffer;}
+		bool RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, CXMMATRIX proj, uint64_t id);
+		bool RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, CXMMATRIX proj, uint64_t id);
+		bool RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, XMFLOAT3 dir, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
@@ -320,62 +219,7 @@ namespace EngineCore
 		}
 
 		void UpdateCamera(CameraComponent* cam);
-
-		void Close()
-		{
-			ClearAll();
-
-			_DELETE(lightSpot_array);
-			_DELETE(lightSpotDisk_array);
-			_DELETE(lightSpotRect_array);
-			_DELETE(lightPoint_array);
-			_DELETE(lightPointSphere_array);
-			_DELETE(lightPointTube_array);
-			_DELETE(lightDir_array);
-
-			_DELETE(casterSpot_array);
-			_DELETE(casterSpotDisk_array);
-			_DELETE(casterSpotRect_array);
-			_DELETE(casterPoint_array);
-			_DELETE(casterPointSphere_array);
-			_DELETE(casterPointTube_array);
-			
-			_RELEASE(voxelizationDumbRTV);
-			_RELEASE(voxelizationDumb);
-			_RELEASE(voxelSceneUAV);
-			_RELEASE(voxelSceneSRV);
-			_RELEASE(voxelScene);
-			_RELEASE(voxelSceneColor0UAV);
-			_RELEASE(voxelSceneColor0SRV);
-			_RELEASE(voxelSceneColor0);
-			_RELEASE(voxelSceneColor1UAV);
-			_RELEASE(voxelSceneColor1SRV);
-			_RELEASE(voxelSceneColor1);
-			_RELEASE(voxelSceneNormalUAV);
-			_RELEASE(voxelSceneNormalSRV);
-			_RELEASE(voxelSceneNormal);
-			_RELEASE(voxelEmittanceUAV);
-			_RELEASE(voxelEmittanceSRV);
-			_RELEASE(voxelEmittance);
-			_RELEASE(voxelDownsampleTempUAV);
-			_RELEASE(voxelDownsampleTempSRV);
-			_RELEASE(voxelDownsampleTemp);
-
-			_RELEASE(volumeBuffer);
-			_RELEASE(volumeInfo);
-			_RELEASE(volumeDownsampleBuffer);
-			_DELETE(voxelInjectLight);
-			_DELETE(voxelDownsample);
-			_DELETE(voxelDownsampleMove);
-
-			shadowmap_array.destroy();
-
-			_RELEASE(shadowsBufferSRV);
-			for(int i=0; i<SHADOWS_BUF_SIZE; i++)
-				_RELEASE(shadowsBufferDSV[i]);
-			_RELEASE(shadowsBuffer);
-		}
-
+		
 		inline CameraComponent* GetCurrentCamera() const {return current_cam;} 
 
 		inline const distEP& GetDistEnvProb() const {return skyEP;}
@@ -410,8 +254,12 @@ namespace EngineCore
 		{*size = casterPointSphere_count; return casterPointSphere_array;}
 		inline PointCasterTubeBuffer* GetPointCasterTubeDataPtr(size_t* size) 
 		{*size = casterPointTube_count; return casterPointTube_array;}
+		
+		// temp
+		inline RArray<RenderMesh*>& GetOpaqueArray() {return opaque_array;}
 
-		inline uint16_t GetShadowCascadeRes() {return cascadeShadowRes;}
+		VoxelRenderer* voxelRenderer;
+		ShadowsRenderer* shadowsRenderer;
 
 		ALIGNED_ALLOCATION
 
@@ -421,39 +269,10 @@ namespace EngineCore
 		bool regToDraw(uint32_t* index_count, ID3D11Buffer** vertex_buffer, 
 			ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer, uint32_t vertex_size, RArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo);
 
-		bool initShadowBuffer();
-		void PlaceShadowMaps();
-
-		bool initVoxelBuffer();
-
 		void cleanRenderArrayHud();
 		void cleanRenderArrayEnvProbs() {skyEP = distEP();}
 
-		void cleanRenderArrayLights()
-		{
-			lightSpot_count = 0;
-			lightSpotDisk_count = 0;
-			lightSpotRect_count = 0;
-			lightPoint_count = 0;
-			lightPointSphere_count = 0;
-			lightPointTube_count = 0;
-			lightDir_count = 0;
-
-			casterSpot_count = 0;
-			casterSpotDisk_count = 0;
-			casterSpotRect_count = 0;
-			casterPoint_count = 0;
-			casterPointSphere_count = 0;
-			casterPointTube_count = 0;
-
-			spotVoxel_array.resize(0);
-			pointVoxel_array.resize(0);
-			dirVoxel_array.resize(0);
-
-			for(auto& it: shadowmap_array)
-				castersIdx[it.id] = ENTITY_COUNT;		
-			shadowmap_array.clear();
-		}
+		void cleanRenderArrayLights();
 
 		RArray<RenderMesh*> hud_array;
 		RArray<RenderMesh*> ovhud_array;
@@ -477,8 +296,6 @@ namespace EngineCore
 		DirLightBuffer* lightDir_array;
 		size_t lightDir_count;
 
-		SArray<uint32_t, ENTITY_COUNT> castersIdx;
-
 		SpotCasterBuffer* casterSpot_array;
 		size_t casterSpot_count;
 		SpotCasterDiskBuffer* casterSpotDisk_array;
@@ -493,61 +310,6 @@ namespace EngineCore
 		PointCasterTubeBuffer* casterPointTube_array;
 		size_t casterPointTube_count;
 		
-		SArray<SpotVoxelBuffer, SPOT_VOXEL_FRAME_MAX> spotVoxel_array;
-		SArray<PointVoxelBuffer, POINT_VOXEL_FRAME_MAX> pointVoxel_array;
-		SArray<DirVoxelBuffer, LIGHT_DIR_FRAME_MAX> dirVoxel_array;
-
-		StructBuf spotLightInjectBuffer;
-		StructBuf pointLightInjectBuffer;
-		StructBuf dirLightInjectBuffer;
-
-		Compute* voxelInjectLight;
-		Compute* voxelDownsample;
-		Compute* voxelDownsampleMove;
-
-		RArray<ShadowMap> shadowmap_array;
-
-		uint16_t cascadeShadowRes;
-
-		ID3D11Texture2D* shadowsBuffer;
-		ID3D11ShaderResourceView* shadowsBufferSRV;
-		ID3D11DepthStencilView* shadowsBufferDSV[SHADOWS_BUF_SIZE];
-
-		ID3D11Texture2D* voxelizationDumb;
-		ID3D11RenderTargetView* voxelizationDumbRTV;
-
-		ID3D11Texture3D* voxelScene;
-		ID3D11UnorderedAccessView* voxelSceneUAV;
-		ID3D11ShaderResourceView* voxelSceneSRV;
-
-		ID3D11Texture3D* voxelSceneColor0;
-		ID3D11UnorderedAccessView* voxelSceneColor0UAV;
-		ID3D11ShaderResourceView* voxelSceneColor0SRV;
-		ID3D11Texture3D* voxelSceneColor1;
-		ID3D11UnorderedAccessView* voxelSceneColor1UAV;
-		ID3D11ShaderResourceView* voxelSceneColor1SRV;
-
-		ID3D11Texture3D* voxelSceneNormal;
-		ID3D11UnorderedAccessView* voxelSceneNormalUAV;
-		ID3D11ShaderResourceView* voxelSceneNormalSRV;
-		
-		ID3D11Texture3D* voxelEmittance;
-		ID3D11UnorderedAccessView* voxelEmittanceUAV;
-		ID3D11ShaderResourceView* voxelEmittanceSRV;
-
-		ID3D11Texture3D* voxelDownsampleTemp;
-		ID3D11UnorderedAccessView* voxelDownsampleTempUAV;
-		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
-
-		ID3D11Buffer* volumeBuffer;
-		ID3D11Buffer* volumeInfo;
-		ID3D11Buffer* volumeDownsampleBuffer;
-
 		CameraComponent* current_cam;
-
-		struct{
-			float size;
-			uint16_t res;
-		} shadows_sizes[SHADOWS_STRINGS_NUM];
 	};
 }

@@ -168,6 +168,7 @@
     <ClInclude Include="MainLoop.h" />
     <ClInclude Include="MaterialMgr.h" />
     <ClInclude Include="ResourceProcessor.h" />
+    <ClInclude Include="ShadowsRenderer.h" />
     <ClInclude Include="StringToData.h" />
     <ClInclude Include="TransformControls.h" />
     <ClInclude Include="DataAlloc\Arrays.h" />
@@ -200,6 +201,7 @@
     <ClInclude Include="LuaVM.h" />
     <ClInclude Include="Utils\Profiler.h" />
     <ClInclude Include="Utils\ProfilerIDs.h" />
+    <ClInclude Include="VoxelRenderer.h" />
     <ClInclude Include="WinAPIDialogs.h" />
     <ClInclude Include="WindowsMgr.h" />
     <ClInclude Include="DataTypes.h" />
@@ -238,6 +240,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MaterialMgr.cpp" />
     <ClCompile Include="ResourceProcessor.cpp" />
+    <ClCompile Include="ShadowsRenderer.cpp" />
     <ClCompile Include="TransformControls.cpp" />
     <ClCompile Include="ECS\CameraSystem.cpp" />
     <ClCompile Include="ECS\ControllerSystem.cpp" />
@@ -282,6 +285,7 @@
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utils\Profiler.cpp" />
+    <ClCompile Include="VoxelRenderer.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WindowsMgr.cpp" />
     <ClCompile Include="World.cpp" />

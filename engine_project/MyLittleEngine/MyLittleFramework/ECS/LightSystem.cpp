@@ -46,7 +46,7 @@ void LightSystem::RegShadowMaps()
 				ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 
 				ITERATE_FRUSTUMS(
-					((SceneRenderMgr*)f->rendermgr)->RegShadowMap(i.get_id(), FrustumMgr::CalcScreenSize(f->frustum, shadowComp->worldFrustum));
+					((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RegShadowMap(i.get_id(), FrustumMgr::CalcScreenSize(f->frustum, shadowComp->worldFrustum));
 					frustumMgr->AddFrustum(i.get_entity(), &shadowComp->worldFrustum, (BaseRenderMgr*)shadowComp->render_mgr, nullptr, nullptr, true);
 				)
 			}
@@ -66,7 +66,7 @@ void LightSystem::RegShadowMaps()
 				ITERATE_FRUSTUMS(
 					do
 					{
-						((SceneRenderMgr*)f->rendermgr)->RegShadowMap(i.get_id(), FrustumMgr::CalcScreenSize(f->frustum, shadowComp->worldFrustum));
+						((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RegShadowMap(i.get_id(), FrustumMgr::CalcScreenSize(f->frustum, shadowComp->worldFrustum));
 						frustumMgr->AddFrustum(i.get_entity(), &shadowComp->worldFrustum, (BaseRenderMgr*)shadowComp->render_mgr, nullptr, nullptr, true);
 					} while(shadowComp = shadowSystem->GetNextComponent(shadowComp));
 				)

@@ -110,7 +110,7 @@ void ScenePipeline::Close()
 	_RELEASE(m_CamMoveBuffer);
 	_RELEASE(m_AOBuffer);
 
-	_CLOSE(render_mgr);
+	_DELETE(render_mgr);
 }
 
 void ScenePipeline::CloseAvgRt()
@@ -426,7 +426,7 @@ bool ScenePipeline::InitRts()
 	sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
 	sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
 
-	sp_OpaqueDefferedDirect->SetTexture(render_mgr->GetVoxelEmittanceSRV(), 15);
+	sp_OpaqueDefferedDirect->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
 
 	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
@@ -470,11 +470,11 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 12);
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
-	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelSRV(), 14);
-	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor0SRV(), 15);
-	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelColor1SRV(), 16);
-	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelNormalSRV(), 17);
-	sp_HDRtoLDR->SetTexture(render_mgr->GetVoxelEmittanceSRV(), 18);
+	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelSRV(), 14);
+	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor0SRV(), 15);
+	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor1SRV(), 16);
+	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelNormalSRV(), 17);
+	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 18);
 
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);
@@ -609,11 +609,11 @@ void ScenePipeline::OpaqueForwardStage()
 {
 	PERF_GPU_TIMESTAMP(_VOXELIZATION);
 
-	render_mgr->VoxelizeScene();
+	render_mgr->voxelRenderer->VoxelizeScene();
 	
 	PERF_GPU_TIMESTAMP(_VOXELLIGHT);
 
-	render_mgr->ProcessEmittance();
+	render_mgr->voxelRenderer->ProcessEmittance();
 	
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
@@ -988,7 +988,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 	
-	auto shadowBuffer = render_mgr->GetShadowBuffer();
+	auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
 	sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
 
 	LoadLights();
@@ -997,7 +997,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	
 	Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
 
-	auto volumeBuffer = render_mgr->GetVolumeBuffer();
+	auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 	Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
 	
 	rt_OpaqueDefferedDirect->ClearRenderTargets();

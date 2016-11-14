@@ -48,7 +48,7 @@ namespace EngineCore
 		{
 			for(auto& it: *components.data())
 			{
-				_CLOSE(it.render_mgr);
+				_DELETE(it.render_mgr);
 				_RELEASE(it.vp_buf);
 			}
 		}
@@ -75,7 +75,7 @@ namespace EngineCore
 			do
 			{
 				_RELEASE(comp->vp_buf);
-				_CLOSE(comp->render_mgr);
+				_DELETE(comp->render_mgr);
 			}
 			while(comp = GetNextComponent(comp));
 

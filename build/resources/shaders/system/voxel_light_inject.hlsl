@@ -72,8 +72,8 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 	float3 faceNormal[6];
 	float3 faceEmittance[6];
 
-	float is_emissive = 1.0f;
-	[unroll]
+	bool is_emissive = true;
+	[loop]			// [unroll] doesnt work: is_emissive becomes time unstable on 770GTX, WHY???
 	for(int i = 0; i < 6; i++)
 	{
 		faceAdress[i] = uint3(voxelID.x, voxelID.y + volumeRes * i, voxelID.z);
@@ -83,7 +83,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 		faceOpacity[i] = DecodeVoxelOpacity(opacitySample);
 		faceColor[i] = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity[i] );
-		is_emissive = min(is_emissive, faceColor[i].w);
+		is_emissive = is_emissive && (faceColor[i].w > 0.0f);
 
 		faceNormal[i] = DecodeVoxelNormal(normalVolume.Load(coorsd), opacitySample);
 
@@ -92,11 +92,11 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 	}	
 
 	[branch]
-	if(is_emissive > 0.0f)
+	if(is_emissive)
 	{
 		[unroll]
-		for(int j = 0; j < 6; j++)
-			emittanceVolume[faceAdress[j]] = float4(faceColor[j].rgb * faceColor[j].w, faceOpacity[j]);
+		for(int k = 0; k < 6; k++)
+			emittanceVolume[faceAdress[k]] = float4(faceColor[k].rgb * faceColor[k].w, faceOpacity[k]);
 		return;
 	}
 
@@ -134,7 +134,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 		float light_blocked = 0;
 		[unroll]
-		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize
+		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize to piramid 4 points
 		{
 			float4 aaPoint = samplePoint;
 			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
@@ -158,7 +158,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		float4 final = faceColor[j].w > 0.0f ? 
 			float4(faceColor[j].rgb * faceColor[j].w, faceOpacity[j]) :
 			float4(faceEmittance[j], faceOpacity[j]);
-		
+
 		emittanceVolume[faceAdress[j]] = final;
 	}
 }

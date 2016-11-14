@@ -97,8 +97,8 @@ namespace EngineCore
 		ScenePipeline();
 		~ScenePipeline();
 
-		void ResolveShadowmaps() {render_mgr->ResolveShadowMaps();}
-
+		void ResolveShadowmaps() {render_mgr->shadowsRenderer->ResolveShadowMaps();}
+		
 		void HudStage();
 
 		void OpaqueForwardStage();
@@ -119,7 +119,7 @@ namespace EngineCore
 		luaSRV GetShadowSRV()
 		{
 			luaSRV res;
-			res.srv = render_mgr->GetShadowBuffer();
+			res.srv = render_mgr->shadowsRenderer->GetShadowBuffer();
 			return res;
 		}
 		luaSRV GetAOSRV() // todo: bend ao

@@ -23,7 +23,7 @@ CameraSystem::~CameraSystem()
 {
 	for(auto& it: *components.data())
 	{
-		_CLOSE(it.render_mgr);
+		_DELETE(it.render_mgr);
 		globalLightSystem->DeleteCascadesForCamera(&it);
 	}
 }
@@ -32,7 +32,7 @@ void CameraSystem::DeleteComponent(Entity e)
 {
 	auto comp = GetComponent(e);
 	if(!comp) return;
-	_CLOSE(comp->render_mgr);
+	_DELETE(comp->render_mgr);
 	if(comp->active)
 	{
 		WRN("Camera component still active for deleted entity!");

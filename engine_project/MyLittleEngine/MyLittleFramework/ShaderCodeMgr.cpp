@@ -4,6 +4,7 @@
 #include "macros.h"
 #include "Render.h"
 #include "ScenePipeline.h"
+#include "VoxelRenderer.h"
 #include "Compute.h"
 #include "Log.h"
 
@@ -46,9 +47,9 @@ ShaderCodeMgr::~ShaderCodeMgr()
 
 void ShaderCodeMgr::PreloadPureCodes()
 {
-	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT, "InjectLightToVolume" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE, "DownsampleEmittance" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE, "DownsampleMove" );
+	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE );
 }
 
 uint16_t ShaderCodeMgr::GetShaderCode(string& name, uint8_t type)

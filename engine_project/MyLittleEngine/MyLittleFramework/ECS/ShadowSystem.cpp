@@ -78,7 +78,7 @@ void ShadowSystem::RenderShadows()
 		if(bits == 0)
 		{
 			for(auto f: *frustums)
-				((SceneRenderMgr*)f->rendermgr)->RenderShadow(i.get_id(), i.num, (ShadowRenderMgr*)i.render_mgr, i.vp_buf);
+				((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RenderShadow(i.get_id(), i.num, (ShadowRenderMgr*)i.render_mgr, i.vp_buf);
 			continue;
 		}
 
@@ -86,7 +86,7 @@ void ShadowSystem::RenderShadows()
 		{
 			if((bits & f->bit) == f->bit)
 			{
-				((SceneRenderMgr*)f->rendermgr)->RenderShadow(i.get_id(), i.num, (ShadowRenderMgr*)i.render_mgr, i.vp_buf);
+				((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RenderShadow(i.get_id(), i.num, (ShadowRenderMgr*)i.render_mgr, i.vp_buf);
 
 				bits &= ~f->bit;
 				if(bits == 0) break;

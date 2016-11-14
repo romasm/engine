@@ -173,7 +173,7 @@ void GlobalLightSystem::destroyCascades(CascadeShadow& cascade)
 {
 	for(uint8_t i=0; i<LIGHT_DIR_NUM_CASCADES; i++)
 	{
-		_CLOSE(cascade.render_mgr[i]);
+		_DELETE(cascade.render_mgr[i]);
 		_RELEASE(cascade.vp_buf[i]);
 	}
 }
@@ -181,7 +181,7 @@ void GlobalLightSystem::destroyCascades(CascadeShadow& cascade)
 void GlobalLightSystem::matrixGenerate(GlobalLightComponent& comp, CascadeShadow& cascade, CascadeProj& projCascade)
 {
 	auto cam = cameraSystem->GetComponent(cascade.camera);
-	uint16_t shadowRes = cam->render_mgr->GetShadowCascadeRes();
+	uint16_t shadowRes = cam->render_mgr->shadowsRenderer->GetShadowCascadeRes();
 
 	XMVECTOR lightDir = XMLoadFloat3(&comp.dir);
 	XMVECTOR Up = XMLoadFloat3(&comp.dir_up);
@@ -239,7 +239,7 @@ void GlobalLightSystem::RegShadowMaps()
 			CascadeShadow* shadowMap = &i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j < LIGHT_DIR_NUM_CASCADES; j++)
 			{
-				((SceneRenderMgr*)f->rendermgr)->RegShadowMap(i.get_id(), DIR_LIGHT_SCREENSIZE);
+				((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RegShadowMap(i.get_id(), DIR_LIGHT_SCREENSIZE);
 				frustumMgr->AddFrustum(i.get_entity(), &shadowMap->worldFrustum[j], (BaseRenderMgr*)shadowMap->render_mgr[j], nullptr, nullptr, true);
 			}
 		}					
@@ -310,7 +310,7 @@ void GlobalLightSystem::RenderShadows()
 		{
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j<LIGHT_DIR_NUM_CASCADES; j++)
-				((SceneRenderMgr*)f->rendermgr)->RenderShadow(i.get_id(), j, cascade.render_mgr[j], cascade.vp_buf[j]);
+				((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RenderShadow(i.get_id(), j, cascade.render_mgr[j], cascade.vp_buf[j]);
 		}
 	}
 }
