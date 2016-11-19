@@ -8,7 +8,7 @@ using namespace EngineCore;
 StaticMeshSystem::StaticMeshSystem(World* world)
 {
 	FrustumMgr* frustumMgr = world->GetFrustumMgr();
-	frustums = frustumMgr->dataArray;
+	frustums = frustumMgr->m_frustums.data();
 
 	transformSys = world->GetTransformSystem();
 	visibilitySys = world->GetVisibilitySystem();
@@ -85,11 +85,11 @@ void StaticMeshSystem::RegToDraw()
 			i.dirty = false;
 		}
 		
-		if(bits == 0)
+		if( bits == 0 )
 		{
-			for(auto& f: *frustums)
+			for( auto& f: *frustums )
 			{
-				if(!f.rendermgr->IsShadow())
+				if( !f.rendermgr->IsShadow() )
 				{
 					if(!meshPtr)
 						meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
@@ -100,21 +100,26 @@ void StaticMeshSystem::RegToDraw()
 			continue;
 		}
 
-		for(auto& f: *frustums)
+		for( auto& f: *frustums )
 		{
-			if((bits & f.bit) == f.bit)
+			if( (bits & f.bit) == f.bit )
 			{
 				if(!meshPtr)
 					meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
 
-				if(f.rendermgr->IsShadow())// todo
+				if( f.rendermgr->IsShadow() )// todo
 				{
 					if(i.cast_shadow)
 						((ShadowRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
 				}
 				else
-					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
-				
+				{
+					if( !f.is_volume )
+						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
+					else
+						((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
+				}
+
 				bits &= ~f.bit;
 				if(bits == 0) break;
 			}

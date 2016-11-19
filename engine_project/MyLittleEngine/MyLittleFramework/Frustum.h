@@ -3,6 +3,7 @@
 #include "RenderMgrs.h"
 
 #define FRUSTUM_MAX_COUNT 256
+#define VOLUME_MAX_COUNT 8
 
 namespace EngineCore
 {
@@ -14,6 +15,7 @@ namespace EngineCore
 
 		BoundingFrustumEx frustum;
 		BaseRenderMgr* rendermgr;
+		bool is_volume;
 
 		bitset<FRUSTUM_MAX_COUNT> bit;
 
@@ -27,25 +29,23 @@ namespace EngineCore
 	public:
 		FrustumMgr()
 		{
-			free_list.resize(FRUSTUM_MAX_COUNT);
+			frustums_free_list.resize(FRUSTUM_MAX_COUNT);
 			for(int i=0; i<FRUSTUM_MAX_COUNT; i++)
-				free_list[i] = i;
-
-			dataArray = m_frustums.data();
+				frustums_free_list[i] = i;
 		}
 
 		inline Frustum& GetFrustum(int id) {return m_frustums.getDataById(id);}
 		
 		Frustum* AddFrustum(Entity e, BoundingFrustum* frust, BaseRenderMgr* rendermgr, XMMATRIX* WV = nullptr, XMMATRIX* Proj = nullptr, bool shadow = false) 
 		{
-			if(free_list.size() == 0 || !frust || !rendermgr)
+			if(frustums_free_list.size() == 0 || !frust || !rendermgr)
 			{
 				WRN("Frustums overflow!");
 				return nullptr;
 			}
 
-			int id = int(free_list.front());
-			free_list.pop_front();
+			int id = int(frustums_free_list.front());
+			frustums_free_list.pop_front();
 
 			Frustum data;
 			data.frustum.Create(*frust, WV, Proj);
@@ -54,6 +54,7 @@ namespace EngineCore
 			data.bit = 1;
 			data.bit <<= id;
 			data.id = id;
+			data.is_volume = false;
 
 			data.parent = e;
 
@@ -65,16 +66,16 @@ namespace EngineCore
 			return &m_frustums.getDataById(id);
 		}
 
-		Frustum* AddFrustum(Entity e, BoundingOrientedBox* box, BaseRenderMgr* rendermgr, XMMATRIX* WV = nullptr, XMMATRIX* Proj = nullptr, bool shadow = false) 
+		Frustum* AddFrustum(Entity e, BoundingOrientedBox* box, BaseRenderMgr* rendermgr, XMMATRIX* WV = nullptr, XMMATRIX* Proj = nullptr, bool shadow = false, bool is_volume = false) 
 		{
-			if(free_list.size() == 0 || !box || !rendermgr)
+			if(frustums_free_list.size() == 0 || !box || !rendermgr)
 			{
 				WRN("Frustums overflow!");
 				return nullptr;
 			}
 
-			int id = int(free_list.front());
-			free_list.pop_front();
+			int id = int(frustums_free_list.front());
+			frustums_free_list.pop_front();
 
 			Frustum data;
 			data.frustum.Create(*box, WV, Proj);
@@ -83,6 +84,7 @@ namespace EngineCore
 			data.bit = 1;
 			data.bit <<= id;
 			data.id = id;
+			data.is_volume = is_volume;
 
 			data.parent = e;
 
@@ -96,10 +98,10 @@ namespace EngineCore
 		
 		void Clear()
 		{
-			free_list.clear();
-			free_list.resize(FRUSTUM_MAX_COUNT);
+			frustums_free_list.clear();
+			frustums_free_list.resize(FRUSTUM_MAX_COUNT);
 			for(int i=0; i<FRUSTUM_MAX_COUNT; i++)
-				free_list[i] = i;
+				frustums_free_list[i] = i;
 
 			m_frustums.clear();
 			camDataArray.clear();
@@ -160,16 +162,12 @@ namespace EngineCore
 
 			return (p_max.x - p_min.x) * (p_max.y - p_min.y) * 0.25f; // / 4 - screen square
 		}
-		/*static float CalcScreenSize(const BoundingFrustumEx& screen, const BoundingSphere& shape)
-		{
-			return 1;
-		}*/
 
-		SArray<Frustum, FRUSTUM_MAX_COUNT>* dataArray;
 		SArray<Frustum*, FRUSTUM_MAX_COUNT> camDataArray;
 
-	private:
 		ComponentSArray<Frustum, FRUSTUM_MAX_COUNT> m_frustums;
-		SDeque<size_t, FRUSTUM_MAX_COUNT> free_list;
+
+	private:
+		SDeque<size_t, FRUSTUM_MAX_COUNT> frustums_free_list;
 	};
 }

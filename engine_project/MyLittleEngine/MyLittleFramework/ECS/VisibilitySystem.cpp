@@ -8,7 +8,6 @@ VisibilitySystem::VisibilitySystem(World* world)
 {
 
 	frustumMgr = world->GetFrustumMgr();
-	frustums = frustumMgr->dataArray;
 
 	transformSys = world->GetTransformSystem();
 }
@@ -29,7 +28,7 @@ void VisibilitySystem::CheckVisibility()
 		}
 
 		i.inFrust = 0;
-		for(auto& f: *frustums)
+		for(auto& f: *frustumMgr->m_frustums.data())
 			if(f.frustum.Contains(i.worldBox) != DISJOINT)
 				i.inFrust |= f.bit;
 	}

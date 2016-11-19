@@ -81,11 +81,18 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 		comp.view_proj = XMMatrixMultiply(comp.viewMatrix, comp.projMatrix); // remove
 
+		comp.render_mgr->voxelRenderer->CalcVolumeBox();
+
 		comp.dirty = false;
 	}
 
-	auto f = frustum_mgr->AddFrustum(comp.get_entity(), &comp.worldFrustum, comp.render_mgr, &comp.viewMatrix, &comp.projMatrix);
-	comp.frust_id = int(f->get_frustum_id());
+	auto ent = comp.get_entity();
+
+	auto f = frustum_mgr->AddFrustum(ent, &comp.worldFrustum, comp.render_mgr, &comp.viewMatrix, &comp.projMatrix);
+	comp.frust_id = int32_t(f->get_frustum_id());
+
+	auto v = frustum_mgr->AddFrustum(ent, comp.render_mgr->voxelRenderer->GetVolumeBox(), comp.render_mgr, nullptr, nullptr, false, true);
+	comp.volume_id = int32_t(v->get_frustum_id());
 
 	comp.render_mgr->UpdateCamera(&comp);
 	comp.render_mgr->ZeroMeshgroups();
@@ -204,10 +211,16 @@ bool CameraSystem::Deactivate(Entity e, ScenePipeline* scene)
 	return true;
 }
 
-int CameraSystem::GetFrustumId(Entity e)
+int32_t CameraSystem::GetFrustumId(Entity e)
 {
-	GET_COMPONENT(false)
+	GET_COMPONENT(-1)
 	return comp.frust_id;
+}
+
+int32_t CameraSystem::GetVolumeId(Entity e)
+{
+	GET_COMPONENT(-1)
+	return comp.volume_id;
 }
 
 XMVECTOR CameraSystem::GetVectorFromScreen(Entity e, XMVECTOR screen_point, float screen_w, float screen_h)

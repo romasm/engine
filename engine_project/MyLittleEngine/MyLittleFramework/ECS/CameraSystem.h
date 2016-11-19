@@ -30,7 +30,8 @@ namespace EngineCore
 		float near_clip;
 		float far_clip;
 		
-		int frust_id;
+		int32_t frust_id;
+		int32_t volume_id;
 
 		XMMATRIX projMatrix;
 
@@ -162,7 +163,8 @@ namespace EngineCore
 		float GetFar(Entity e);
 		float GetNear(Entity e);
 
-		int GetFrustumId(Entity e);
+		int32_t GetFrustumId(Entity e);
+		int32_t GetVolumeId(Entity e);
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
