@@ -246,7 +246,9 @@ void VoxelRenderer::VoxelizeScene()
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
 	VolumeData constBuffer;
-	constBuffer.cornerOffset = XMFLOAT3(0,0,0);
+	constBuffer.cornerOffset.x = bigVolume.Center.x - bigVolume.Extents.x;
+	constBuffer.cornerOffset.y = bigVolume.Center.y - bigVolume.Extents.y;
+	constBuffer.cornerOffset.z = bigVolume.Center.z - bigVolume.Extents.z;
 	constBuffer.worldSize = VOXEL_VOLUME_SIZE;
 	constBuffer.scaleHelper = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
 	constBuffer.volumeRes = VOXEL_VOLUME_RES;
@@ -256,9 +258,15 @@ void VoxelRenderer::VoxelizeScene()
 
 	// todo
 	XMVECTOR camPoses[3];
-	camPoses[0] = XMVectorSet(0.0f, VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
-	camPoses[1] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, 0.0f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
-	camPoses[2] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 0.0f, 1.0f);
+	//camPoses[0] = XMVectorSet(0.0f, VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
+	//camPoses[1] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, 0.0f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
+	//camPoses[2] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 0.0f, 1.0f);
+	camPoses[0] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
+		XMVectorSet(0.0f, bigVolume.Extents.y, bigVolume.Extents.z, 0.0f);
+	camPoses[1] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
+		XMVectorSet(bigVolume.Extents.x, 0.0f, bigVolume.Extents.z, 0.0f);
+	camPoses[2] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
+		XMVectorSet(bigVolume.Extents.x, bigVolume.Extents.y, 0.0f, 0.0f);
 	
 	XMVECTOR camDirs[3];
 	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
@@ -342,7 +350,8 @@ void VoxelRenderer::prepareMeshData()
 		instancesCount = 1;
 	}
 
-	currentInstance->instanceCount = instancesCount;
+	if(currentInstance)
+		currentInstance->instanceCount = instancesCount;
 }
 
 void VoxelRenderer::ProcessEmittance()
@@ -447,6 +456,6 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 
 void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos)
 {
-	bigVolume.Center = XMFLOAT3(5.0f, 5.0f, 5.0f);
+	XMStoreFloat3(&bigVolume.Center, camPos);
 	bigVolume.Extents = XMFLOAT3(5.0f, 5.0f, 5.0f);
 }
