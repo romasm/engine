@@ -64,7 +64,7 @@ struct PI_Mesh_Voxel
 	sample float3 tangent			: TANGENT;
 	sample float3 binormal			: BINORMAL;
 	sample float4 worldPos			: POSITION;
-	nointerpolation uint planeId	: SV_InstanceID;
+	nointerpolation uint planeId	: TEXCOORD1;
 };
 
 struct PO_Gbuffer
@@ -114,4 +114,10 @@ struct MaterialParamsStructBuffer
 	float ss_indirect_translucency;
 
 	float padding[2];
+};
+
+struct StmInstanceMatrix
+{
+	matrix worldMatrix;
+	matrix normalMatrix;
 };

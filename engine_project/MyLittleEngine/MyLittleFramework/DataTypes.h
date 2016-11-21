@@ -141,6 +141,12 @@ struct StmMatrixBuffer
 {
 	XMMATRIX world;
 	XMMATRIX norm;
+
+	StmMatrixBuffer()
+	{
+		world = XMMatrixIdentity();
+		norm = XMMatrixIdentity();
+	}
 };
 
 struct SimpleMatrixBuffer

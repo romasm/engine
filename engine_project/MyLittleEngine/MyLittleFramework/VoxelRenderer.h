@@ -13,6 +13,9 @@
 #define VOXEL_VOLUME_SUBSAMPLES 8
 #define VOXEL_VOLUME_SIZE 10.0f
 
+#define VCT_MESH_MAX_COUNT 4096
+#define VCT_MESH_MAX_INSTANCE 128
+
 namespace EngineCore
 {
 	struct VolumeData
@@ -37,6 +40,44 @@ namespace EngineCore
 
 	class VoxelRenderer
 	{
+		struct VCTRenderMesh
+		{
+			uint32_t index_count; 
+			ID3D11Buffer* vertex_buffer; 
+			ID3D11Buffer* index_buffer; 
+			uint32_t vertex_size;
+			Material* material;
+
+			uint32_t meshHash;
+
+			uint32_t arrayID;
+
+			VCTRenderMesh()
+			{
+				index_count = 0;
+				vertex_buffer = nullptr;
+				index_buffer = nullptr;
+				vertex_size = 0;
+				material = nullptr;
+				meshHash = 0;
+				arrayID = 0;
+			}
+		};
+
+		struct VCTInstanceGroup
+		{
+			VCTRenderMesh* meshData;
+			uint32_t matrixStart;
+			uint32_t instanceCount;
+
+			VCTInstanceGroup()
+			{
+				meshData = nullptr;
+				matrixStart = 0;
+				instanceCount = 0;
+			}
+		};
+
 	public:
 		VoxelRenderer(SceneRenderMgr* rndm);
 		~VoxelRenderer();
@@ -62,8 +103,30 @@ namespace EngineCore
 
 		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeBuffer;}
 
+		void RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData);
+
+		void CalcVolumeBox(XMVECTOR& camPos);
+		inline BoundingOrientedBox& GetBigVolumeBox() {return bigVolume;}
+
 	private:
 		bool initVoxelBuffers();
+		void prepareMeshData();
+
+		static bool CompareMeshes(VCTRenderMesh& a, VCTRenderMesh& b);
+		static void SwapMeshes(VCTRenderMesh* first, VCTRenderMesh* second, SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT>* meshArr, 
+			SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT>* matrixArr);
+		
+		inline uint32_t calcMeshHash(VCTRenderMesh* meshPtr)
+		{
+			uint64_t meshHash = reinterpret_cast<uint64_t>( meshPtr->index_buffer ) + 
+				reinterpret_cast<uint64_t>( meshPtr->vertex_buffer ) + 
+				reinterpret_cast<uint64_t>( meshPtr->material );
+			return static_cast<uint32_t>( meshHash ^ (meshHash >> 32));
+		}
+
+		SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT> meshesToRender;
+		SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT> matrixPerMesh;
+		SArray<VCTInstanceGroup, VCT_MESH_MAX_COUNT> meshInstanceGroups;
 
 		SArray<SpotVoxelBuffer, SPOT_VOXEL_FRAME_MAX> spotVoxel_array;
 		SArray<PointVoxelBuffer, POINT_VOXEL_FRAME_MAX> pointVoxel_array;
@@ -76,6 +139,8 @@ namespace EngineCore
 		Compute* voxelInjectLight;
 		Compute* voxelDownsample;
 		Compute* voxelDownsampleMove;
+
+		BoundingOrientedBox bigVolume;
 
 		ID3D11Texture2D* voxelizationDumb;
 		ID3D11RenderTargetView* voxelizationDumbRTV;
@@ -106,6 +171,8 @@ namespace EngineCore
 		ID3D11Buffer* volumeBuffer;
 		ID3D11Buffer* volumeInfo;
 		ID3D11Buffer* volumeDownsampleBuffer;
+
+		ID3D11Buffer* instanceMatrixBuffer;
 
 		SceneRenderMgr* render_mgr;
 	};

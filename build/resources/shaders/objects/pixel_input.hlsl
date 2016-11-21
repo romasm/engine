@@ -36,12 +36,6 @@ cbuffer materialId : register(b2)
 	uint4 iddata;
 };
 
-cbuffer matrixBuffer : register(b3)
-{
-	matrix worldMatrix;
-	matrix normalMatrix;
-};
-
 bool AlphatestSample(SamplerState samplerTex, float2 uv)
 {
 	if( alpha_ref != 0 )
@@ -60,7 +54,7 @@ float3 AlbedoSample(SamplerState samplerTex, float2 uv)
 		return albedo_color.rgb;
 }
 
-float3 NormalSample(SamplerState samplerTex, float2 uv, float3 vertex_normal, float3 vertex_tangent, float3 vertex_binormal )
+float3 NormalSample(SamplerState samplerTex, float2 uv, float3 vertex_normal, float3 vertex_tangent, float3 vertex_binormal, matrix nMatrix )
 {
 	float3 normal;
 	if( normal_tex == 0 )
@@ -78,7 +72,7 @@ float3 NormalSample(SamplerState samplerTex, float2 uv, float3 vertex_normal, fl
 	else if( normal_tex == 2 )
 	{
 		normal = normalTex.Sample(samplerTex, uv).rbg * 2.0f - 1.0f;
-		const float3x3 nM = (float3x3)normalMatrix;
+		const float3x3 nM = (float3x3)nMatrix;
 		normal = mul(normal, nM);
 	}
 	return normalize(normal);

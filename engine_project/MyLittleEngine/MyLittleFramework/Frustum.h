@@ -66,7 +66,7 @@ namespace EngineCore
 			return &m_frustums.getDataById(id);
 		}
 
-		Frustum* AddFrustum(Entity e, BoundingOrientedBox* box, BaseRenderMgr* rendermgr, XMMATRIX* WV = nullptr, XMMATRIX* Proj = nullptr, bool shadow = false, bool is_volume = false) 
+		Frustum* AddFrustum(Entity e, BoundingOrientedBox* box, BaseRenderMgr* rendermgr, XMMATRIX* WV = nullptr, XMMATRIX* Proj = nullptr, bool not_camera = false, bool is_volume = false) 
 		{
 			if(frustums_free_list.size() == 0 || !box || !rendermgr)
 			{
@@ -90,7 +90,7 @@ namespace EngineCore
 
 			m_frustums.add(id, data);
 
-			if(!shadow)
+			if(!not_camera)
 				camDataArray.push_back(&GetFrustum(id));
 
 			return &m_frustums.getDataById(id);

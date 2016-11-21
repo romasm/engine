@@ -1,6 +1,7 @@
 #include "../common/math.hlsl"
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
+#include "../common/voxel_helpers.hlsl"
 
 #include "pixel_input.hlsl"
 
@@ -29,9 +30,14 @@ cbuffer volumeBuffer : register(b4)
 	float _padding2;
 };
 
+cbuffer matrixBuffer : register(b3)
+{
+	StmInstanceMatrix matrixPerInstance[VCT_MESH_MAX_INSTANCE];
+};
+
 // pixel
-float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
-						   uint subsampleIndex : SV_SampleIndex, uint subsampleCoverage : SV_Coverage) : SV_TARGET
+float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint subsampleIndex : SV_SampleIndex, 
+						   uint subsampleCoverage : SV_Coverage, uint instID : SV_InstanceID) : SV_TARGET
 {
 	uint cover = (1 << subsampleIndex) & subsampleCoverage;
 	if( cover == 0 )
@@ -44,7 +50,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 
 	float3 albedo = AlbedoSample(samplerTrilinearWrap, input.tex);
 
-	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal );
+	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal, matrixPerInstance[instID].normalMatrix );
 	
 	float3 emissive = EmissiveSample(samplerTrilinearWrap, input.tex);
 
@@ -93,7 +99,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace,
 	return 0.0;
 }
 
-// geomatry
+// geometry
 [instance(3)]
 [maxvertexcount(3)]
 void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream, uint instanceId : SV_GSInstanceID )

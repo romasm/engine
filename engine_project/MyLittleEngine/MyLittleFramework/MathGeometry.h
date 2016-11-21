@@ -165,6 +165,35 @@ inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata
     QSortSwap(mid + 1, end, compare_func, swap_func, p_array);
 }
 
+template<class pointer, class compare, class swapdata, class first_array_pointer, class second_array_pointer>
+inline pointer _QS_partition(pointer begin, pointer end, compare compare_func, swapdata swap_func, first_array_pointer p_array, second_array_pointer q_array)
+{
+	pointer i = begin;
+	for(pointer j = begin + 1; j < end; j++)
+	{
+		if(compare_func(*begin, *j))
+		{
+			i = i + 1;
+			if(i != j)
+				swap_func(i, j, p_array, q_array);
+		}
+	}
+	if(i != begin)
+		swap_func(i, begin, p_array, q_array);
+	return i;
+}
+
+template<class pointer, class compare, class swapdata, class first_array_pointer, class second_array_pointer>
+inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata swap_func, first_array_pointer p_array, second_array_pointer q_array)
+{
+	if(begin >= end)
+		return;
+    
+    pointer mid = _QS_partition(begin, end, compare_func, swap_func, p_array, q_array);
+    QSortSwap(begin, mid, compare_func, swap_func, p_array, q_array);
+    QSortSwap(mid + 1, end, compare_func, swap_func, p_array, q_array);
+}
+
 /*inline bool RayBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, XMFLOAT3 box_min, XMFLOAT3 box_max, CXMMATRIX box_transform, float min_dist, float max_dist)
 {
 	XMVECTOR box_pos, box_rot, box_scale;

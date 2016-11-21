@@ -13,38 +13,34 @@ void Profiler::InitParams()
 	ids_name[PERF_CPU::PERF_CPU_WIN_MSG] = name_depth("Win Msg", 1);
 	ids_name[PERF_CPU::PERF_CPU_GUI_UPDATE] = name_depth("GuiUpdate", 1);
 	ids_name[PERF_CPU::PERF_CPU_SCENE] = name_depth("Scene", 1);
-	ids_name[PERF_CPU::PERF_CPU_SCENE_UPDATE] = name_depth("SceneUpdate", 2);
-	ids_name[PERF_CPU::PERF_CPU_SCENE_DRAW] = name_depth("SceneDraw", 2);
+		ids_name[PERF_CPU::PERF_CPU_SCENE_UPDATE] = name_depth("SceneUpdate", 2);
+		ids_name[PERF_CPU::PERF_CPU_SCENE_DRAW] = name_depth("SceneDraw", 2);
+			ids_name[PERF_CPU::PERF_CPU_VOXELIZATION] = name_depth("Voxelization", 3);
+			ids_name[PERF_CPU::PERF_CPU_VOXELLIGHT] = name_depth("VxLight", 3);
 	ids_name[PERF_CPU::PERF_CPU_GUI_DRAW] = name_depth("GuiDraw", 1);
 	ids_name[PERF_CPU::PERF_CPU_PRESENT] = name_depth("Present", 1);
 
 	gpu_ids_name[PERF_GPU::PERF_GPU_FRAME] = name_depth("Frame", 0);
 	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE] = name_depth("Scene", 1);
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2); 
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
-
-	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELIZATION] = name_depth("Voxelization", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELLIGHT] = name_depth("VxLight", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_LIGHTINJECT] = name_depth("LightInject", 4);
-	gpu_ids_name[PERF_GPU::PERF_GPU_VOXELDOWNSAMPLE] = name_depth("Downsample", 4);
-	gpu_ids_name[PERF_GPU::PERF_GPU_GEOMETRY] = name_depth("Geometry", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_DEPTH_COPY] = name_depth("DepthCopy", 3);
-
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_DEFFERED] = name_depth("Deffered", 2);
-
-	gpu_ids_name[PERF_GPU::PERF_GPU_HIZ_GEN] = name_depth("HiZ", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_SSR] = name_depth("SSR", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_AO] = name_depth("AO", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_MAIN] = name_depth("OpaqueMain", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_FINAL] = name_depth("OpaqueFinal", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_HDR_BLOOM] = name_depth("BloomHDR", 3);
-
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_APLHA] = name_depth("Transparent", 2);
-	gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_LDR] = name_depth("LDR", 2);
-
-	gpu_ids_name[PERF_GPU::PERF_GPU_COMBINE] = name_depth("Combine", 3);
-	gpu_ids_name[PERF_GPU::PERF_GPU_AA] = name_depth("SMAA", 3);
-
+		gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_SHADOWS] = name_depth("Shadows", 2); 
+		gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_FORWARD] = name_depth("Forward", 2);
+			gpu_ids_name[PERF_GPU::PERF_GPU_VOXELIZATION] = name_depth("Voxelization", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_VOXELLIGHT] = name_depth("VxLight", 3);
+				gpu_ids_name[PERF_GPU::PERF_GPU_LIGHTINJECT] = name_depth("LightInject", 4);
+				gpu_ids_name[PERF_GPU::PERF_GPU_VOXELDOWNSAMPLE] = name_depth("Downsample", 4);
+			gpu_ids_name[PERF_GPU::PERF_GPU_GEOMETRY] = name_depth("Geometry", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_DEPTH_COPY] = name_depth("DepthCopy", 3);
+		gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_DEFFERED] = name_depth("Deffered", 2);
+			gpu_ids_name[PERF_GPU::PERF_GPU_HIZ_GEN] = name_depth("HiZ", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_SSR] = name_depth("SSR", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_AO] = name_depth("AO", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_MAIN] = name_depth("OpaqueMain", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_OPAQUE_FINAL] = name_depth("OpaqueFinal", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_HDR_BLOOM] = name_depth("BloomHDR", 3);
+		gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_APLHA] = name_depth("Transparent", 2);
+		gpu_ids_name[PERF_GPU::PERF_GPU_SCENE_LDR] = name_depth("LDR", 2);
+			gpu_ids_name[PERF_GPU::PERF_GPU_COMBINE] = name_depth("Combine", 3);
+			gpu_ids_name[PERF_GPU::PERF_GPU_AA] = name_depth("SMAA", 3);
 	gpu_ids_name[PERF_GPU::PERF_GPU_GUI] = name_depth("Gui", 1);
 	gpu_ids_name[PERF_GPU::PERF_GPU_PRESENT] = name_depth("Present", 1);
 }

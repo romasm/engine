@@ -607,13 +607,17 @@ void ScenePipeline::HudStage()
 
 void ScenePipeline::OpaqueForwardStage()
 {
+	PERF_CPU_BEGIN(_VOXELIZATION);
 	PERF_GPU_TIMESTAMP(_VOXELIZATION);
 
 	render_mgr->voxelRenderer->VoxelizeScene();
+	PERF_CPU_END(_VOXELIZATION);
 	
+	PERF_CPU_BEGIN(_VOXELLIGHT);
 	PERF_GPU_TIMESTAMP(_VOXELLIGHT);
 
 	render_mgr->voxelRenderer->ProcessEmittance();
+	PERF_CPU_END(_VOXELLIGHT);
 	
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 

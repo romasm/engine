@@ -7,7 +7,7 @@ using namespace EngineCore;
 EarlyVisibilitySystem::EarlyVisibilitySystem(World* world)
 {
 	FrustumMgr* frustumMgr = world->GetFrustumMgr();
-	frustums = frustumMgr->dataArray;
+	frustums = frustumMgr->m_frustums.data();
 
 	transformSys = world->GetTransformSystem();
 }

@@ -35,6 +35,9 @@ void StaticMeshSystem::PostReload()
 
 void StaticMeshSystem::RegToDraw()
 {
+	// temp
+	StmMatrixBuffer matrixBuffer;
+
 	for(auto& i: *components.data())
 	{
 		VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
@@ -62,7 +65,7 @@ void StaticMeshSystem::RegToDraw()
 
 		StMeshData* meshPtr = nullptr;
 
-		if(i.dirty)
+		if(i.dirty || true) // temp
 		{
 			meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
 			TransformComponent* transformComponent = transformSys->GetComponent(i.get_entity());
@@ -77,10 +80,9 @@ void StaticMeshSystem::RegToDraw()
 
 			i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), transformComponent->worldMatrix);
 
-			StmMatrixBuffer mb;
-			mb.world = XMMatrixTranspose(transformComponent->worldMatrix);
-			mb.norm = XMMatrixTranspose(normalMatrix);
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(StmMatrixBuffer));
+			matrixBuffer.world = XMMatrixTranspose(transformComponent->worldMatrix);
+			matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)&matrixBuffer, sizeof(StmMatrixBuffer));
 					
 			i.dirty = false;
 		}
@@ -115,9 +117,15 @@ void StaticMeshSystem::RegToDraw()
 				else
 				{
 					if( !f.is_volume )
+					{
 						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
-					else
-						((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
+					}
+					else		// voxelize
+					{
+						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexCount[mat_i], sizeof(LitVertex), meshPtr->indexBuffer[mat_i], 
+								meshPtr->vertexBuffer[mat_i], i.materials[mat_i], matrixBuffer);
+					}
 				}
 
 				bits &= ~f.bit;

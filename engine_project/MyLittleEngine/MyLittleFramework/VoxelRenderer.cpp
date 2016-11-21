@@ -41,6 +41,8 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 
 	if(!initVoxelBuffers())
 		ERR("Failed init voxel buffers");
+
+	instanceMatrixBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(StmMatrixBuffer) * VCT_MESH_MAX_INSTANCE, true);
 }
 
 VoxelRenderer::~VoxelRenderer()
@@ -74,10 +76,16 @@ VoxelRenderer::~VoxelRenderer()
 	_DELETE(voxelInjectLight);
 	_DELETE(voxelDownsample);
 	_DELETE(voxelDownsampleMove);
+
+	_RELEASE(instanceMatrixBuffer);
 }
 
 void VoxelRenderer::ClearPerFrame()
 {
+	meshesToRender.resize(0);
+	matrixPerMesh.resize(0);
+	meshInstanceGroups.resize(0);
+
 	spotVoxel_array.resize(0);
 	pointVoxel_array.resize(0);
 	dirVoxel_array.resize(0);
@@ -212,8 +220,8 @@ bool VoxelRenderer::initVoxelBuffers()
 
 void VoxelRenderer::VoxelizeScene()
 {
-	const unsigned int offset = 0;
-
+	prepareMeshData();
+	
 	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, XMFLOAT4(0,0,0,0));
 	Render::ClearUnorderedAccessViewUint(voxelSceneColor0UAV, XMFLOAT4(0,0,0,0));
 	Render::ClearUnorderedAccessViewUint(voxelSceneColor1UAV, XMFLOAT4(0,0,0,0));
@@ -273,26 +281,68 @@ void VoxelRenderer::VoxelizeScene()
 	Render::PSSetConstantBuffers(4, 1, &volumeBuffer); 
 	Render::GSSetConstantBuffers(4, 1, &volumeBuffer); 
 
-	// todo
-	auto& queue = render_mgr->GetOpaqueArray();
-	for(auto cur: queue)
+	// draw
+	const unsigned int offset = 0;
+	for(auto& currentInstancesGroup: meshInstanceGroups)
 	{
-		bool has_tq = false;
-		auto queue = cur->material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
-		if(!has_tq)
-			continue;
+		auto matrixData = matrixPerMesh.begin() + currentInstancesGroup.matrixStart;
+		Render::UpdateDynamicResource(instanceMatrixBuffer, matrixData, sizeof(StmMatrixBuffer) * currentInstancesGroup.instanceCount);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		Render::Context()->IASetVertexBuffers(0, 1, &(currentInstancesGroup.meshData->vertex_buffer), 
+			&(currentInstancesGroup.meshData->vertex_size), &offset);
+		Render::Context()->IASetIndexBuffer(currentInstancesGroup.meshData->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
-
-		cur->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
-
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		currentInstancesGroup.meshData->material->SetMatrixBuffer(instanceMatrixBuffer);
+		currentInstancesGroup.meshData->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
+		
+		Render::Context()->DrawIndexedInstanced(currentInstancesGroup.meshData->index_count, currentInstancesGroup.instanceCount, 0, 0, 0);
 	}
 
 	Render::OMSetRenderTargetsAndUnorderedAccessViews(0, nullptr, nullptr, 0, 0, nullptr, nullptr);
+}
+
+bool VoxelRenderer::CompareMeshes(VCTRenderMesh& a, VCTRenderMesh& b)
+{
+	return a.meshHash < b.meshHash;
+}
+
+void VoxelRenderer::SwapMeshes(VCTRenderMesh* first, VCTRenderMesh* second, SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT>* meshArr, 
+	SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT>* matrixArr)
+{
+	swap((*matrixArr)[first->arrayID], (*matrixArr)[second->arrayID]);
+	swap(first->arrayID, second->arrayID);
+	swap(*first, *second);
+}
+
+void VoxelRenderer::prepareMeshData()
+{
+	QSortSwap(meshesToRender.begin(), meshesToRender.end(), VoxelRenderer::CompareMeshes, 
+		VoxelRenderer::SwapMeshes, &meshesToRender, &matrixPerMesh);
+
+	uint32_t currentHash = 0;
+	uint32_t instancesCount = 0;
+	VCTInstanceGroup* currentInstance = nullptr;
+	
+	for(uint32_t mesh_i = 0; mesh_i < meshesToRender.size(); mesh_i++)
+	{
+		if( meshesToRender[mesh_i].meshHash == currentHash && instancesCount < VCT_MESH_MAX_INSTANCE)
+		{
+			instancesCount++;
+			continue;
+		}
+
+		if(currentInstance)
+			currentInstance->instanceCount = instancesCount;
+
+		currentInstance = meshInstanceGroups.push_back();
+		currentInstance->meshData = &meshesToRender[mesh_i];
+		currentInstance->matrixStart = mesh_i;
+
+		currentHash = meshesToRender[mesh_i].meshHash;
+		instancesCount = 1;
+	}
+
+	currentInstance->instanceCount = instancesCount;
 }
 
 void VoxelRenderer::ProcessEmittance()
@@ -367,4 +417,36 @@ void VoxelRenderer::ProcessEmittance()
 		currentRes /= 2;
 	}
 
+}
+
+void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData)
+{
+	if(meshesToRender.full())
+		return;
+
+	bool has_tq = false;
+	auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
+	if(!has_tq)
+		return;
+
+	auto meshPtr = meshesToRender.push_back();
+	auto matixPtr = matrixPerMesh.push_back();
+
+	meshPtr->index_count = index_count;
+	meshPtr->vertex_size = vertex_size;
+	meshPtr->index_buffer = index_buffer;
+	meshPtr->vertex_buffer = vertex_buffer;
+	meshPtr->material = material;
+	meshPtr->arrayID = (uint32_t)meshesToRender.size() - 1;
+
+	matixPtr->world = matrixData.world;
+	matixPtr->norm = matrixData.norm;
+
+	meshPtr->meshHash = calcMeshHash(meshPtr);
+}
+
+void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos)
+{
+	bigVolume.Center = XMFLOAT3(5.0f, 5.0f, 5.0f);
+	bigVolume.Extents = XMFLOAT3(5.0f, 5.0f, 5.0f);
 }

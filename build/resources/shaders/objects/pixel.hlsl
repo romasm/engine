@@ -6,13 +6,19 @@
 
 SamplerState samplerAnisotropicWrap : register(s0);
 
+cbuffer matrixBuffer : register(b3)
+{
+	matrix worldMatrix;
+	matrix normalMatrix;
+};
+
 PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 {
 	if(!AlphatestSample(samplerAnisotropicWrap, input.tex))
 		discard;
 	
 	float3 albedo = AlbedoSample(samplerAnisotropicWrap, input.tex);
-	float3 normal = NormalSample(samplerAnisotropicWrap, input.tex, input.normal, input.tangent, input.binormal );
+	float3 normal = NormalSample(samplerAnisotropicWrap, input.tex, input.normal, input.tangent, input.binormal, normalMatrix);
 	float2 roughtness = RoughnessSample(samplerAnisotropicWrap, input.tex);
 	float3 specular = SpecularSample(samplerAnisotropicWrap, input.tex, albedo);
 	float3 emissive = EmissiveSample(samplerAnisotropicWrap, input.tex);

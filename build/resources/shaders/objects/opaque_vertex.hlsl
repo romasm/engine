@@ -1,5 +1,7 @@
+#include "../common/math.hlsl"
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
+#include "../common/voxel_helpers.hlsl"
 
 cbuffer matrixBuffer : register(b1)
 {
@@ -55,15 +57,20 @@ PI_Mesh AlphatestShadowVS(VI_Mesh input)
 }
 
 // voxelization
-GI_Mesh VoxelizationOpaqueVS(VI_Mesh input)
+cbuffer matrixBuffer : register(b1)
+{
+	StmInstanceMatrix matrixPerInstance[VCT_MESH_MAX_INSTANCE];
+};
+
+GI_Mesh VoxelizationOpaqueVS(VI_Mesh input, uint instID : SV_InstanceID)
 {
     GI_Mesh output;
 
-    output.position = mul(float4(input.position, 1), worldMatrix).rgb;
+    output.position = mul(float4(input.position, 1), matrixPerInstance[instID].worldMatrix).rgb;
 
 	output.tex = input.tex;
 	
-	const float3x3 nM = (float3x3)normalMatrix;
+	const float3x3 nM = (float3x3)matrixPerInstance[instID].normalMatrix;
     output.normal = normalize(mul(input.normal, nM));
     output.tangent = normalize(mul(input.tangent, nM));
     output.binormal = normalize(mul(input.binormal, nM));
