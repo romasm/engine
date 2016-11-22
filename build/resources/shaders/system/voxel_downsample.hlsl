@@ -5,15 +5,7 @@
 
 cbuffer volumeBuffer : register(b0)
 {
-	matrix volumeVP[3];
-	
-	float3 cornerOffset;
-	float worldSize;
-		
-	float scaleHelper;
-	uint volumeRes;
-	uint volumeDoubleRes;
-	float voxelSize;
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
 cbuffer downsampleBuffer : register(b1)
@@ -71,8 +63,8 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 	uint3 voxelID = treadID;
 	voxelID.y = treadID.y % currentRes;
 	voxelID *= 2;
-	voxelID.y += volumeRes * face;
-	voxelID.x += volumeRes * (currentLevel - 1);
+	voxelID.y += volumeData[0].volumeRes * face;
+	voxelID.x += volumeData[0].volumeRes * (currentLevel - 1);
 
 	float3 emittanceWeight[4] = {
 		float3(0,0,0),
@@ -114,9 +106,9 @@ void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
 	uint3 emitID = treadID;
 
 	uint face = emitID.y / currentRes;
-	emitID.y = face * volumeRes + (emitID.y % currentRes);
+	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
 
-	emitID.x += volumeRes * currentLevel;
+	emitID.x += volumeData[0].volumeRes * currentLevel;
 
 	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
 }

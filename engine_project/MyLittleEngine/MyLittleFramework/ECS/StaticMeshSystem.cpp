@@ -120,11 +120,11 @@ void StaticMeshSystem::RegToDraw()
 					{
 						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
 					}
-					else		// voxelize
+					else if(visComponent)		// voxelize
 					{
 						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexCount[mat_i], sizeof(LitVertex), meshPtr->indexBuffer[mat_i], 
-								meshPtr->vertexBuffer[mat_i], i.materials[mat_i], matrixBuffer);
+								meshPtr->vertexBuffer[mat_i], i.materials[mat_i], matrixBuffer, visComponent->worldBox);
 					}
 				}
 

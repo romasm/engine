@@ -81,7 +81,7 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 		comp.view_proj = XMMatrixMultiply(comp.viewMatrix, comp.projMatrix); // remove
 
-		comp.render_mgr->voxelRenderer->CalcVolumeBox(comp.camPos);
+		comp.render_mgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
 
 		comp.dirty = false;
 	}

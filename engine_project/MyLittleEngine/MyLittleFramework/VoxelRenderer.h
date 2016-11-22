@@ -8,32 +8,37 @@
 #define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample", "DownsampleEmittance"
 #define COMPUTE_VOXEL_DOWNSAMPLE_MOVE PATH_SHADERS "system/voxel_downsample", "DownsampleMove"
 
-#define VOXEL_VOLUME_RES 64
-#define VOXEL_VOLUME_CLIPMAP_COUNT 6
-#define VOXEL_VOLUME_SUBSAMPLES 8
-#define VOXEL_VOLUME_SIZE 10.0f
+#define VCT_VOLUME_RES 64
+#define VCT_CLIPMAP_COUNT 6
+#define VCT_SUBSAMPLES 8
+#define VCT_VOLUME_SIZE 8.0f
+#define VCT_BACK_VOXEL_COUNT 2
+
+#define VCT_VOLUME_RES 64
+#define VCT_CLIPMAP_COUNT 6
+#define VCT_CLIPMAP_COUNT_MAX 12
+#define VCT_SUBSAMPLES 8
+#define VCT_VOLUME_SIZE 8.0f
 
 #define VCT_MESH_MAX_COUNT 4096
 #define VCT_MESH_MAX_INSTANCE 128
 
 namespace EngineCore
 {
+	struct VolumeMatrix
+	{
+		XMMATRIX volumeVP[VCT_CLIPMAP_COUNT_MAX][3];
+	};
+
 	struct VolumeData
 	{
-		XMMATRIX volumeVP[3];
-
 		XMFLOAT3 cornerOffset;
 		float worldSize;
 		
 		float scaleHelper;
 		uint32_t volumeRes;
-		uint32_t volumeDoubleRes;
 		float voxelSize;
-
 		float voxelDiag;
-		float _padding0;
-		float _padding1;
-		float _padding2;
 	};
 
 	class SceneRenderMgr;
@@ -101,16 +106,17 @@ namespace EngineCore
 
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
 
-		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeBuffer;}
+		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
 
-		void RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData);
+		void RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
 
-		void CalcVolumeBox(XMVECTOR& camPos);
-		inline BoundingOrientedBox& GetBigVolumeBox() {return bigVolume;}
+		void CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir);
+		inline BoundingOrientedBox& GetBigVolumeBox() {return volumesConfig[clipmapCount - 1].volumeBox;}
 
 	private:
 		bool initVoxelBuffers();
 		void prepareMeshData();
+		void updateBuffers();
 
 		static bool CompareMeshes(VCTRenderMesh& a, VCTRenderMesh& b);
 		static void SwapMeshes(VCTRenderMesh* first, VCTRenderMesh* second, SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT>* meshArr, 
@@ -124,9 +130,11 @@ namespace EngineCore
 			return static_cast<uint32_t>( meshHash ^ (meshHash >> 32));
 		}
 
-		SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT> meshesToRender;
-		SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT> matrixPerMesh;
-		SArray<VCTInstanceGroup, VCT_MESH_MAX_COUNT> meshInstanceGroups;
+		void calcVolumesConfigs();
+
+		RArray<SArray<VCTRenderMesh, VCT_MESH_MAX_COUNT>> meshesToRender;
+		RArray<SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT>> matrixPerMesh;
+		RArray<SArray<VCTInstanceGroup, VCT_MESH_MAX_COUNT>> meshInstanceGroups;
 
 		SArray<SpotVoxelBuffer, SPOT_VOXEL_FRAME_MAX> spotVoxel_array;
 		SArray<PointVoxelBuffer, POINT_VOXEL_FRAME_MAX> pointVoxel_array;
@@ -139,8 +147,6 @@ namespace EngineCore
 		Compute* voxelInjectLight;
 		Compute* voxelDownsample;
 		Compute* voxelDownsampleMove;
-
-		BoundingOrientedBox bigVolume;
 
 		ID3D11Texture2D* voxelizationDumb;
 		ID3D11RenderTargetView* voxelizationDumbRTV;
@@ -167,12 +173,34 @@ namespace EngineCore
 		ID3D11Texture3D* voxelDownsampleTemp;
 		ID3D11UnorderedAccessView* voxelDownsampleTempUAV;
 		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
+		
+		ID3D11Buffer* volumeMatBuffer;
+		ID3D11Buffer* volumeDataBuffer;
+		ID3D11Buffer* levelBuffer;
 
-		ID3D11Buffer* volumeBuffer;
-		ID3D11Buffer* volumeInfo;
+		ID3D11Buffer* volumeLightInfo;
 		ID3D11Buffer* volumeDownsampleBuffer;
 
+		D3D11_VIEWPORT viewport;
+		VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+
 		ID3D11Buffer* instanceMatrixBuffer;
+		
+		struct VolumeConfig
+		{
+			XMFLOAT3 corner;
+			float worldSize;
+			float voxelSize;
+			BoundingOrientedBox volumeBox;
+			VolumeConfig() : corner(0,0,0), worldSize(0), voxelSize(0) 
+			{}
+		};
+		RArray<VolumeConfig> volumesConfig;
+
+		uint16_t volumeResolution;
+		float volumeSize;
+		uint16_t clipmapCount;
+		uint16_t AAquality;
 
 		SceneRenderMgr* render_mgr;
 	};

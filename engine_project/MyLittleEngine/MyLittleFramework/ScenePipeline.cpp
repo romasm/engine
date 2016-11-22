@@ -1063,6 +1063,9 @@ void ScenePipeline::HDRtoLDRStage()
 	r_target[1] = rt_Antialiased->GetRenderTargetView(0);
 	Render::OMSetRenderTargets(2, r_target, nullptr);
 
+	auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
+	Render::PSSetConstantBuffers(2, 1, &volumeBuffer); 
+
 	sp_HDRtoLDR->Draw();
 
 	PERF_GPU_TIMESTAMP(_AA);

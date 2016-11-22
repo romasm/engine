@@ -26,20 +26,7 @@ StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer : register(t7);
 
 cbuffer volumeBuffer : register(b0)
 {
-	matrix volumeVP[3];
-	
-	float3 cornerOffset;
-	float worldSize;
-		
-	float scaleHelper;
-	uint volumeRes;
-	uint volumeDoubleRes;
-	float voxelSize;
-	
-	float voxelDiag;
-	float _padding0;
-	float _padding1;
-	float _padding2;
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
 cbuffer lightCountBuffer : register(b1)
@@ -51,20 +38,25 @@ cbuffer lightCountBuffer : register(b1)
 };
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, GROUP_THREAD_COUNT )]
-void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
+void InjectLightToVolume(uint3 treadID : SV_DispatchThreadID)
 {
-	float3 wpos = (float3(voxelID) + 0.5f) * voxelSize;
-	wpos += cornerOffset;
+	uint3 voxelID = treadID;
+	voxelID.x = treadID.x % volumeData[0].volumeRes;
+
+	uint level = treadID.x / volumeData[0].volumeRes;
+
+	float3 wpos = (float3(voxelID) + 0.5f) * volumeData[level].voxelSize;
+	wpos += volumeData[level].cornerOffset;
 
 	const float3 voxelVector[4] = 
 	{
-		float3(voxelSize, voxelSize, voxelSize),
-		float3(-voxelSize, voxelSize, voxelSize),
-		float3(voxelSize, -voxelSize, voxelSize),
-		float3(-voxelSize, -voxelSize, voxelSize)
+		float3(volumeData[level].voxelSize, volumeData[level].voxelSize, volumeData[level].voxelSize),
+		float3(-volumeData[level].voxelSize, volumeData[level].voxelSize, volumeData[level].voxelSize),
+		float3(volumeData[level].voxelSize, -volumeData[level].voxelSize, volumeData[level].voxelSize),
+		float3(-volumeData[level].voxelSize, -volumeData[level].voxelSize, volumeData[level].voxelSize)
 	};
 
-	const float voxelSizeThird = 0.33333f * voxelSize;
+	const float voxelSizeThird = 0.33333f * volumeData[level].voxelSize;
 
 	uint3 faceAdress[6];
 	float4 faceColor[6];
@@ -73,15 +65,18 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 	float3 faceEmittance[6];
 
 	bool is_emissive = true;
+	bool is_empty = true;
 	[loop]			// [unroll] doesnt work: is_emissive becomes time unstable on 770GTX, WHY???
 	for(int i = 0; i < 6; i++)
 	{
-		faceAdress[i] = uint3(voxelID.x, voxelID.y + volumeRes * i, voxelID.z);
+		faceAdress[i] = uint3(voxelID.x, voxelID.y + volumeData[0].volumeRes * i, voxelID.z);
 		uint4 coorsd = uint4(faceAdress[i], 0);
 
 		uint opacitySample = opacityVolume.Load(coorsd);
 
 		faceOpacity[i] = DecodeVoxelOpacity(opacitySample);
+		is_empty = is_empty && (faceOpacity[i] > 0.0f);
+
 		faceColor[i] = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity[i] );
 		is_emissive = is_emissive && (faceColor[i].w > 0.0f);
 
@@ -90,6 +85,10 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		faceEmittance[i] = 0; 
 		faceOpacity[i] = saturate(faceOpacity[i] * VOXEL_SUBSAMPLES_COUNT_RCP);
 	}	
+
+	[branch]
+	if(is_empty)
+		return;
 
 	[branch]
 	if(is_emissive)

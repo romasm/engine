@@ -11,6 +11,8 @@ TECHNIQUE_DEFAULT
 
 #include "../common/voxel_helpers.hlsl"
 
+#define VOXEL_ALPHA 1.0
+
 Texture2D opaqueTex : register(t0); 
 Texture2D transparentTex : register(t1); 
 Texture2D hudTex : register(t2); 
@@ -59,6 +61,11 @@ cbuffer materialBuffer : register(b1)
 	float _padding2;
 };
 
+cbuffer volumeBuffer : register(b2)
+{
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+};
+
 #include "tonemapping.hlsl"
 
 /*
@@ -104,63 +111,57 @@ struct PO_LDR
 {
     float4 srgb : SV_TARGET0;
 	float4 lin : SV_TARGET1;
-};
-
-#define VOXEL_VOLUME_RES 64
-#define VOXEL_VOLUME_SIZE 10.0f
-#define VOXEL_SIZE VOXEL_VOLUME_SIZE / VOXEL_VOLUME_RES
-
-#define VOXEL_ALPHA 1.0
+}; 
 
 float2 GetVoxelOpacity(float2 uv, uint level)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, level, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
-
+	 
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
 	return float2(emittance.w, collidePosPS.z / collidePosPS.w);
 }
-
+    
 float4 GetVoxelEmittance(float2 uv, uint level)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, level, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
-
+	 
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
 	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
-}
-
+}    
+   
 float4 GetVoxelColor(float2 uv, out float depth)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, 0, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, 0, voxelEmittanceTex, collidePosWS);	 
 	if( sampleCoords.w < 0.0f )
 		return 0;
-
+	     
 	uint count = DecodeVoxelOpacity(voxelTex.Load(sampleCoords));
-
+	
 	uint color0 = voxelColor0Tex.Load(sampleCoords);
 	uint color1 = voxelColor1Tex.Load(sampleCoords);
 	float4 color = DecodeVoxelColor(color0, color1, count);
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	depth = collidePosPS.z / collidePosPS.w;
-
+	 
 	return color;
-}
+} 
 
 float4 GetVoxelNormal(float2 uv)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), VOXEL_VOLUME_SIZE, VOXEL_VOLUME_RES, 0, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, 0, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
 
@@ -256,7 +257,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
-		}
+		}  
 		else if(debugMode == 12)
 		{ 
 			float voxelDepth = 0;
@@ -265,18 +266,18 @@ PO_LDR HDRLDR(PI_PosTex input)
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
 		} 
 		else if(debugMode == 13) 
-		{ 
+		{      
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
-		}
+		} 
 		else if(debugMode == 14) 
 		{
 			float4 voxelNormal = GetVoxelNormal(input.tex);
 			if(sceneDepth >= voxelNormal.a && voxelNormal.a != 0) 
-				tonemapped = lerp(tonemapped, (voxelNormal + 1.0f) * 0.5f, VOXEL_ALPHA);
-		}
+				tonemapped = lerp(tonemapped, (voxelNormal.rgb + 1.0f) * 0.5f, VOXEL_ALPHA);
+		} 
 		else if(debugMode >= 15 && debugMode <= 20)
 		{
 			float2 voxelOpacity = GetVoxelOpacity(input.tex, debugMode - 15);

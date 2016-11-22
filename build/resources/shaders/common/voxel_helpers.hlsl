@@ -1,5 +1,6 @@
 
 #define VCT_MESH_MAX_INSTANCE 128
+#define VCT_CLIPMAP_COUNT_MAX 12
 
 #define VOXEL_SUBSAMPLES_COUNT 8
 #define VOXEL_SUBSAMPLES_COUNT_RCP 1.0f / VOXEL_SUBSAMPLES_COUNT
@@ -151,28 +152,17 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 }
 
 #define RAY_TRACE_DISTANCE 25.0f
+#define RAY_TRACE_NEARCLIP 0.2f
+
 #define RAY_TRACE_EPCILON 0.00001f
 #define RAY_TRACE_MAX_I 512
 
-int4 GetVoxelOnRay(float3 origin, float3 ray, float volumeSize, uint volumeRes, uint level, Texture3D <float4> voxelEmittance, out float3 collideWS)
+int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], uint minLevel, Texture3D <float4> voxelEmittance, out float3 collideWS)
 {
 	collideWS = 0;
 
-	const float levelOffset = level * volumeRes;
-	const uint volumeLevelRes = volumeRes / exp2(level);
-
-	const float3 voxelSize = volumeSize / volumeLevelRes;
-	const float3 voxelSizeRcp = 1.0f / voxelSize;
-	const float3 boxExtend = float3(volumeSize, volumeSize, volumeSize) * 0.5f;
-
-	ray *= RAY_TRACE_DISTANCE;
-	float3 originInBox = origin - boxExtend;
-
-	float2 intersections = RayBoxIntersect( originInBox, ray, -boxExtend, boxExtend );
-
-	if ( intersections.y <= intersections.x )
-		return -1;
-	
+	uint currentLevel = minLevel;
+		
 	float3 epcilon = RAY_TRACE_EPCILON;
 	float3 step;
 	step.x = ray.x >= 0 ? 1 : -1;
@@ -182,61 +172,74 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, float volumeSize, uint volumeRes, 
 	epcilon *= step;
 
 	step = saturate(step);
-	step *= voxelSize;
 	
-	float3 samplePoint = origin + ray * intersections.x + epcilon;
+	float3 samplePoint = origin + ray * RAY_TRACE_NEARCLIP + epcilon;
 	float3 voxelSnap = 0;
 	float3 prevVoxel = 0;
+
+	ray *= RAY_TRACE_DISTANCE;
 	
 	int i = 0;
 	[loop]
-	while( i < RAY_TRACE_MAX_I )
+	while( i < RAY_TRACE_MAX_I && currentLevel < VOXEL_LEVEL_COUNT )
 	{
-		voxelSnap = floor(samplePoint * voxelSizeRcp);
+		float3 inVolumePoint = samplePoint - volumeData[currentLevel].cornerOffset;
+		float3 isNextLevel = saturate( abs(inVolumePoint) - volumeData[currentLevel].worldSize );
+		
+		[branch]
+		if( any(isNextLevel) )
+		{
+			currentLevel++;
+			continue;
+		}
+		
+		voxelSnap = floor(inVolumePoint * volumeData[currentLevel].scaleHelper);
 
 		int4 voxelCoords = int4(voxelSnap, 0);
-		voxelCoords.x += levelOffset;
+		voxelCoords.x += volumeData[currentLevel].volumeRes * currentLevel;
 		float anyValue = 0;
 		[unroll]
 		for(int j = 0; j < 6; j++)
 		{
 			anyValue += voxelEmittance.Load(voxelCoords).w;
-			voxelCoords.y += volumeRes;
+			voxelCoords.y += volumeData[currentLevel].volumeRes;
 		}
 		
-		voxelSnap *= voxelSize;
+		voxelSnap *= volumeData[currentLevel].voxelSize;
+		voxelSnap += volumeData[currentLevel].cornerOffset;
 		prevVoxel = voxelSnap;
 
 		[branch]
 		if( anyValue > 0.0f )
 			break;
 
-		voxelSnap += step;
-
-		float3 delta = (voxelSnap - origin) / ray;
-		float d = min(delta.x, min(delta.y, delta.z));
-
+		voxelSnap += step * volumeData[currentLevel].voxelSize;
+		
+		float3 currentRay = voxelSnap - origin;
 		[branch]
-		if( intersections.y - 0.000001 <= d )
+		if( dot(currentRay, currentRay) > RAY_TRACE_DISTANCE * RAY_TRACE_DISTANCE )
 			return -1;
 
+		float3 delta = currentRay / ray;
+		float d = min(delta.x, min(delta.y, delta.z));
+		
 		samplePoint = origin + ray * d + epcilon;
 		i++;
 	}
 	
 	[branch]
-	if( i == RAY_TRACE_MAX_I )
+	if( i == RAY_TRACE_MAX_I || currentLevel >= VOXEL_LEVEL_COUNT )
 		return -1;
 
-	float3 voxelExtend = voxelSize * 0.5f;
+	float3 voxelExtend = volumeData[currentLevel].voxelSize * 0.5f;
 	float3 originInVoxel = origin - (prevVoxel + voxelExtend);
 	float2 voxelIntersections = RayBoxIntersect( originInVoxel, ray, -voxelExtend, voxelExtend );
 	collideWS = origin + ray * voxelIntersections.x;
 		
 	float3 entry = collideWS - prevVoxel;
-	entry.x = ray.x < 0 ? (voxelSize.x - entry.x) : entry.x;
-	entry.y = ray.y < 0 ? (voxelSize.y - entry.y) : entry.y;
-	entry.z = ray.z < 0 ? (voxelSize.z - entry.z) : entry.z;
+	entry.x = ray.x < 0 ? (volumeData[currentLevel].voxelSize - entry.x) : entry.x;
+	entry.y = ray.y < 0 ? (volumeData[currentLevel].voxelSize - entry.y) : entry.y;
+	entry.z = ray.z < 0 ? (volumeData[currentLevel].voxelSize - entry.z) : entry.z;
 	float minEntry = min(entry.x, min(entry.y, entry.z));
 	
 	uint faceID;
@@ -245,9 +248,9 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, float volumeSize, uint volumeRes, 
 	else if(minEntry == entry.y) faceID = ray.y < 0 ? 3 : 2;
 	else faceID = ray.z < 0 ? 5 : 4;
 
-	prevVoxel *= voxelSizeRcp;
-	prevVoxel.y += volumeRes * faceID;
-	prevVoxel.x += levelOffset;
+	prevVoxel = (prevVoxel - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
+	prevVoxel.y += volumeData[currentLevel].volumeRes * faceID;
+	prevVoxel.x += volumeData[currentLevel].volumeRes * currentLevel;
 
 	return int4(prevVoxel, 0);	
 }

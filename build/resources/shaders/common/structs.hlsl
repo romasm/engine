@@ -121,3 +121,14 @@ struct StmInstanceMatrix
 	matrix worldMatrix;
 	matrix normalMatrix;
 };
+
+struct VolumeData
+{
+	float3 cornerOffset;
+	float worldSize;
+		
+	float scaleHelper;
+	uint volumeRes;
+	float voxelSize;
+	float voxelDiag;
+};

@@ -12,27 +12,27 @@ RWTexture3D <uint> colorVolume0 : register(u2);
 RWTexture3D <uint> colorVolume1 : register(u3);  
 RWTexture3D <uint> normalVolume : register(u4);  
 
-cbuffer volumeBuffer : register(b4)
-{
-	matrix volumeVP[3];
-	
-	float3 cornerOffset;
-	float worldSize;
-		
-	float scaleHelper;
-	uint volumeRes;
-	uint volumeDoubleRes;
-	float voxelSize;
-	
-	float voxelDiag;
-	float _padding0;
-	float _padding1;
-	float _padding2;
-};
-
 cbuffer matrixBuffer : register(b3)
 {
 	StmInstanceMatrix matrixPerInstance[VCT_MESH_MAX_INSTANCE];
+};
+
+cbuffer volumeMatBuffer : register(b4)
+{
+	matrix volumeVP[VCT_CLIPMAP_COUNT_MAX][3];
+};
+
+cbuffer volumeBuffer : register(b5)
+{
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+};
+
+cbuffer levelData : register(b6)
+{
+	uint currentLevel;
+	float _padding00;
+	float _padding01;
+	float _padding02;
 };
 
 // pixel
@@ -82,10 +82,10 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 
 	// coords 
 	uint3 uavCoords = uint3(input.worldPos.xyz);
-	uavCoords.y += volumeDoubleRes * input.planeId;
+	uavCoords.y += volumeData[currentLevel].volumeRes * 2 * input.planeId;
 
 	if(!front)
-		uavCoords.y += volumeRes;
+		uavCoords.y += volumeData[currentLevel].volumeRes;
 	
 	// write
 	InterlockedAdd( opacityVolume[uavCoords], (voxelNormal.z << 16) + 1 );
@@ -106,10 +106,10 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 {
 	PI_Mesh_Voxel output = (PI_Mesh_Voxel)0;
 	for ( uint i = 0; i < 3; i++ )
-	{
-		output.worldPos.xyz = (input[i].position.xyz - cornerOffset) * scaleHelper;
+	{ 
+		output.worldPos.xyz = (input[i].position.xyz - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
 		output.worldPos.w = 1.0f;
-		output.position = mul(float4(input[i].position, 1.0f), volumeVP[instanceId]);
+		output.position = mul(float4(input[i].position, 1.0f), volumeVP[currentLevel][instanceId]);
 		
 		output.tex = input[i].tex;
 		output.normal = input[i].normal; 

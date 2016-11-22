@@ -31,18 +31,35 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 	voxelDownsampleTemp = nullptr;
 	voxelDownsampleTempUAV = nullptr;
 	voxelDownsampleTempSRV = nullptr;
+	
+	volumeMatBuffer = nullptr;
+	volumeDataBuffer = nullptr;
+	levelBuffer = nullptr;
 
-	volumeBuffer = nullptr;
-	volumeInfo = nullptr;
+	volumeLightInfo = nullptr;
 	volumeDownsampleBuffer = nullptr;
+
 	voxelInjectLight = nullptr;
 	voxelDownsample = nullptr;
 	voxelDownsampleMove = nullptr;
+
+	volumeResolution = 0;
+	clipmapCount = 0;
+	volumeSize = 0;
+
+	calcVolumesConfigs();
 
 	if(!initVoxelBuffers())
 		ERR("Failed init voxel buffers");
 
 	instanceMatrixBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(StmMatrixBuffer) * VCT_MESH_MAX_INSTANCE, true);
+
+	meshesToRender.create(clipmapCount);
+	meshesToRender.resize(clipmapCount);
+	matrixPerMesh.create(clipmapCount);
+	matrixPerMesh.resize(clipmapCount);
+	meshInstanceGroups.create(clipmapCount);
+	meshInstanceGroups.resize(clipmapCount);
 }
 
 VoxelRenderer::~VoxelRenderer()
@@ -70,9 +87,13 @@ VoxelRenderer::~VoxelRenderer()
 	_RELEASE(voxelDownsampleTempSRV);
 	_RELEASE(voxelDownsampleTemp);
 	
-	_RELEASE(volumeBuffer);
-	_RELEASE(volumeInfo);
+	_RELEASE(volumeMatBuffer);
+	_RELEASE(volumeDataBuffer);
+	_RELEASE(levelBuffer);
+
+	_RELEASE(volumeLightInfo);
 	_RELEASE(volumeDownsampleBuffer);
+
 	_DELETE(voxelInjectLight);
 	_DELETE(voxelDownsample);
 	_DELETE(voxelDownsampleMove);
@@ -82,13 +103,48 @@ VoxelRenderer::~VoxelRenderer()
 
 void VoxelRenderer::ClearPerFrame()
 {
-	meshesToRender.resize(0);
-	matrixPerMesh.resize(0);
-	meshInstanceGroups.resize(0);
+	for(uint8_t i = 0; i < clipmapCount; i++)
+	{
+		meshesToRender[i].resize(0);
+		matrixPerMesh[i].resize(0);
+		meshInstanceGroups[i].resize(0);
+	}
 
 	spotVoxel_array.resize(0);
 	pointVoxel_array.resize(0);
 	dirVoxel_array.resize(0);
+}
+
+void VoxelRenderer::calcVolumesConfigs()
+{
+	volumeResolution = VCT_VOLUME_RES;
+	clipmapCount = VCT_CLIPMAP_COUNT;
+	volumeSize = VCT_VOLUME_SIZE;
+	AAquality = VCT_SUBSAMPLES;
+
+	volumesConfig.destroy();
+	volumesConfig.create(clipmapCount);
+	volumesConfig.resize(clipmapCount);
+
+	for(uint8_t i = 0; i < clipmapCount; i++)
+	{
+		volumesConfig[i].worldSize = volumeSize * pow(2.0f, (float)i);
+		volumesConfig[i].voxelSize = volumesConfig[i].worldSize / volumeResolution;
+		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
+		volumesConfig[i].volumeBox.Extents = XMFLOAT3(halfWorldSize, halfWorldSize, halfWorldSize);
+
+		volumeData[i].worldSize = volumesConfig[i].worldSize;
+		volumeData[i].scaleHelper = (float)volumeResolution / volumesConfig[i].worldSize;
+		volumeData[i].volumeRes = volumeResolution;
+		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / volumeResolution;
+		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
+	}
+
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Height = viewport.Width = (float)volumeResolution;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
 }
 
 bool VoxelRenderer::initVoxelBuffers()
@@ -96,12 +152,12 @@ bool VoxelRenderer::initVoxelBuffers()
 	// dumb MSAA target
 	D3D11_TEXTURE2D_DESC dumbDesc;
 	ZeroMemory(&dumbDesc, sizeof(dumbDesc));
-	dumbDesc.Width = VOXEL_VOLUME_RES;
-	dumbDesc.Height = VOXEL_VOLUME_RES;
+	dumbDesc.Width = volumeResolution;
+	dumbDesc.Height = volumeResolution;
 	dumbDesc.MipLevels = 1;
 	dumbDesc.ArraySize = 1;
 	dumbDesc.Format = DXGI_FORMAT_R8_UNORM;
-	dumbDesc.SampleDesc.Count = VOXEL_VOLUME_SUBSAMPLES;
+	dumbDesc.SampleDesc.Count = AAquality;
 	dumbDesc.SampleDesc.Quality = 0;
 	dumbDesc.Usage = D3D11_USAGE_DEFAULT;
 	dumbDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -121,9 +177,9 @@ bool VoxelRenderer::initVoxelBuffers()
 	// visibility
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = VOXEL_VOLUME_RES * VOXEL_VOLUME_CLIPMAP_COUNT;	// x - level
-	volumeDesc.Height = VOXEL_VOLUME_RES * 6;							// y - face
-	volumeDesc.Depth = VOXEL_VOLUME_RES;
+	volumeDesc.Width = volumeResolution * clipmapCount;			// x - level
+	volumeDesc.Height = volumeResolution * 6;					// y - face
+	volumeDesc.Depth = volumeResolution;
 	volumeDesc.MipLevels = 1;
 	volumeDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -138,7 +194,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	volumeUAVDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
-	volumeUAVDesc.Texture3D.WSize = VOXEL_VOLUME_RES;
+	volumeUAVDesc.Texture3D.WSize = volumeResolution;
 	if( FAILED(Render::CreateUnorderedAccessView(voxelScene, &volumeUAVDesc, &voxelSceneUAV)) )
 		return false;
 
@@ -188,7 +244,7 @@ bool VoxelRenderer::initVoxelBuffers()
 		return false;
 
 	// downsample
-	uint32_t downsampleRes = VOXEL_VOLUME_RES / 2;
+	uint32_t downsampleRes = volumeResolution / 2;
 
 	volumeDesc.Width = downsampleRes;
 	volumeDesc.Height = downsampleRes * 6;
@@ -203,8 +259,11 @@ bool VoxelRenderer::initVoxelBuffers()
 	if( FAILED(Render::CreateShaderResourceView(voxelDownsampleTemp, &volumeSRVDesc, &voxelDownsampleTempSRV)) )
 		return false;
 
-	volumeBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData), true);
-	volumeInfo = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
+	volumeDataBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_CLIPMAP_COUNT_MAX, true);
+	volumeMatBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeMatrix), true);
+	levelBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
+
+	volumeLightInfo = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
 	volumeDownsampleBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
 
 	spotLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, SPOT_VOXEL_FRAME_MAX, sizeof(SpotVoxelBuffer), true);
@@ -216,6 +275,41 @@ bool VoxelRenderer::initVoxelBuffers()
 	voxelDownsampleMove = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE );
 
 	return true;
+}
+
+void VoxelRenderer::updateBuffers()
+{
+	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * clipmapCount);
+	
+	XMVECTOR camDirs[3];
+	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	camDirs[1] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	camDirs[2] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+	XMVECTOR camUps[3];
+	camUps[0] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	camUps[1] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	camUps[2] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	VolumeMatrix matrixBuffer;
+	for(uint8_t level = 0; level < clipmapCount; level++)
+	{
+		auto& bbox = volumesConfig[level].volumeBox;
+
+		XMVECTOR camPoses[3];
+		camPoses[0] = XMVectorSet(bbox.Center.x - bbox.Extents.x, bbox.Center.y, bbox.Center.z, 1.0f);
+		camPoses[1] = XMVectorSet(bbox.Center.x, bbox.Center.y - bbox.Extents.y, bbox.Center.z, 1.0f);
+		camPoses[2] = XMVectorSet(bbox.Center.x, bbox.Center.y, bbox.Center.z - bbox.Extents.z, 1.0f);
+	
+		for(uint8_t i = 0; i < 3; i++)
+		{
+			matrixBuffer.volumeVP[level][i] = XMMatrixLookToLH(camPoses[i], camDirs[i], camUps[i]);
+			matrixBuffer.volumeVP[level][i] *= XMMatrixOrthographicLH(volumesConfig[level].worldSize, volumesConfig[level].worldSize, 0.0f, volumesConfig[level].worldSize);
+			matrixBuffer.volumeVP[level][i] = XMMatrixTranspose(matrixBuffer.volumeVP[level][i]);
+		}
+	}
+
+	Render::UpdateDynamicResource(volumeMatBuffer, (void*)&matrixBuffer, sizeof(VolumeMatrix));
 }
 
 void VoxelRenderer::VoxelizeScene()
@@ -234,76 +328,42 @@ void VoxelRenderer::VoxelizeScene()
 	uavs[3] = voxelSceneNormalUAV;
 
 	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 4, uavs, nullptr);
-	
-	D3D11_VIEWPORT viewport;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.Height = viewport.Width = (float)VOXEL_VOLUME_RES;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	Render::RSSetViewports(1, &viewport);
 
+	Render::RSSetViewports(1, &viewport);
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
-	VolumeData constBuffer;
-	constBuffer.cornerOffset.x = bigVolume.Center.x - bigVolume.Extents.x;
-	constBuffer.cornerOffset.y = bigVolume.Center.y - bigVolume.Extents.y;
-	constBuffer.cornerOffset.z = bigVolume.Center.z - bigVolume.Extents.z;
-	constBuffer.worldSize = VOXEL_VOLUME_SIZE;
-	constBuffer.scaleHelper = (float)VOXEL_VOLUME_RES / VOXEL_VOLUME_SIZE;
-	constBuffer.volumeRes = VOXEL_VOLUME_RES;
-	constBuffer.volumeDoubleRes = VOXEL_VOLUME_RES * 2;
-	constBuffer.voxelSize = float(VOXEL_VOLUME_SIZE) / VOXEL_VOLUME_RES;
-	constBuffer.voxelDiag = sqrt( constBuffer.voxelSize * constBuffer.voxelSize * 3 );
+	updateBuffers();
 
-	// todo
-	XMVECTOR camPoses[3];
-	//camPoses[0] = XMVectorSet(0.0f, VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
-	//camPoses[1] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, 0.0f, VOXEL_VOLUME_SIZE * 0.5f, 1.0f);
-	//camPoses[2] = XMVectorSet(VOXEL_VOLUME_SIZE * 0.5f, VOXEL_VOLUME_SIZE * 0.5f, 0.0f, 1.0f);
-	camPoses[0] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
-		XMVectorSet(0.0f, bigVolume.Extents.y, bigVolume.Extents.z, 0.0f);
-	camPoses[1] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
-		XMVectorSet(bigVolume.Extents.x, 0.0f, bigVolume.Extents.z, 0.0f);
-	camPoses[2] = XMVectorSet(bigVolume.Center.x, bigVolume.Center.y, bigVolume.Center.z, 1.0f) + 
-		XMVectorSet(bigVolume.Extents.x, bigVolume.Extents.y, 0.0f, 0.0f);
+	Render::PSSetConstantBuffers(4, 1, &volumeMatBuffer);
+	Render::GSSetConstantBuffers(4, 1, &volumeMatBuffer);
+
+	Render::PSSetConstantBuffers(5, 1, &volumeDataBuffer);
+	Render::GSSetConstantBuffers(5, 1, &volumeDataBuffer);
 	
-	XMVECTOR camDirs[3];
-	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	camDirs[1] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	camDirs[2] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-
-	XMVECTOR camUps[3];
-	camUps[0] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	camUps[1] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	camUps[2] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	
-	for(uint8_t i = 0; i < 3; i++)
-	{
-		constBuffer.volumeVP[i] = XMMatrixLookToLH(camPoses[i], camDirs[i], camUps[i]);
-		constBuffer.volumeVP[i] *= XMMatrixOrthographicLH(VOXEL_VOLUME_SIZE, VOXEL_VOLUME_SIZE, 0.0f, VOXEL_VOLUME_SIZE);
-		constBuffer.volumeVP[i] = XMMatrixTranspose(constBuffer.volumeVP[i]);
-	}
-
-	Render::UpdateDynamicResource(volumeBuffer, (void*)&constBuffer, sizeof(VolumeData));
-	Render::PSSetConstantBuffers(4, 1, &volumeBuffer); 
-	Render::GSSetConstantBuffers(4, 1, &volumeBuffer); 
+	Render::PSSetConstantBuffers(6, 1, &levelBuffer);
+	Render::GSSetConstantBuffers(6, 1, &levelBuffer);
 
 	// draw
 	const unsigned int offset = 0;
-	for(auto& currentInstancesGroup: meshInstanceGroups)
+	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
-		auto matrixData = matrixPerMesh.begin() + currentInstancesGroup.matrixStart;
-		Render::UpdateDynamicResource(instanceMatrixBuffer, matrixData, sizeof(StmMatrixBuffer) * currentInstancesGroup.instanceCount);
+		uint32_t levelData = (uint32_t)level;
+		Render::UpdateDynamicResource(levelBuffer, &levelData, sizeof(uint32_t));
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(currentInstancesGroup.meshData->vertex_buffer), 
-			&(currentInstancesGroup.meshData->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(currentInstancesGroup.meshData->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		for(auto& currentInstancesGroup: meshInstanceGroups[level])
+		{
+			auto matrixData = matrixPerMesh[level].begin() + currentInstancesGroup.matrixStart;
+			Render::UpdateDynamicResource(instanceMatrixBuffer, matrixData, sizeof(StmMatrixBuffer) * currentInstancesGroup.instanceCount);
 
-		currentInstancesGroup.meshData->material->SetMatrixBuffer(instanceMatrixBuffer);
-		currentInstancesGroup.meshData->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
+			Render::Context()->IASetVertexBuffers(0, 1, &(currentInstancesGroup.meshData->vertex_buffer), 
+				&(currentInstancesGroup.meshData->vertex_size), &offset);
+			Render::Context()->IASetIndexBuffer(currentInstancesGroup.meshData->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+
+			currentInstancesGroup.meshData->material->SetMatrixBuffer(instanceMatrixBuffer);
+			currentInstancesGroup.meshData->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
 		
-		Render::Context()->DrawIndexedInstanced(currentInstancesGroup.meshData->index_count, currentInstancesGroup.instanceCount, 0, 0, 0);
+			Render::Context()->DrawIndexedInstanced(currentInstancesGroup.meshData->index_count, currentInstancesGroup.instanceCount, 0, 0, 0);
+		}
 	}
 
 	Render::OMSetRenderTargetsAndUnorderedAccessViews(0, nullptr, nullptr, 0, 0, nullptr, nullptr);
@@ -324,34 +384,37 @@ void VoxelRenderer::SwapMeshes(VCTRenderMesh* first, VCTRenderMesh* second, SArr
 
 void VoxelRenderer::prepareMeshData()
 {
-	QSortSwap(meshesToRender.begin(), meshesToRender.end(), VoxelRenderer::CompareMeshes, 
-		VoxelRenderer::SwapMeshes, &meshesToRender, &matrixPerMesh);
-
-	uint32_t currentHash = 0;
-	uint32_t instancesCount = 0;
-	VCTInstanceGroup* currentInstance = nullptr;
-	
-	for(uint32_t mesh_i = 0; mesh_i < meshesToRender.size(); mesh_i++)
+	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
-		if( meshesToRender[mesh_i].meshHash == currentHash && instancesCount < VCT_MESH_MAX_INSTANCE)
+		QSortSwap(meshesToRender[level].begin(), meshesToRender[level].end(), VoxelRenderer::CompareMeshes, 
+			VoxelRenderer::SwapMeshes, &meshesToRender[level], &matrixPerMesh[level]);
+
+		uint32_t currentHash = 0;
+		uint32_t instancesCount = 0;
+		VCTInstanceGroup* currentInstance = nullptr;
+	
+		for(uint32_t mesh_i = 0; mesh_i < meshesToRender[level].size(); mesh_i++)
 		{
-			instancesCount++;
-			continue;
+			if( meshesToRender[level][mesh_i].meshHash == currentHash && instancesCount < VCT_MESH_MAX_INSTANCE)
+			{
+				instancesCount++;
+				continue;
+			}
+
+			if(currentInstance)
+				currentInstance->instanceCount = instancesCount;
+
+			currentInstance = meshInstanceGroups[level].push_back();
+			currentInstance->meshData = &meshesToRender[level][mesh_i];
+			currentInstance->matrixStart = mesh_i;
+
+			currentHash = meshesToRender[level][mesh_i].meshHash;
+			instancesCount = 1;
 		}
 
 		if(currentInstance)
 			currentInstance->instanceCount = instancesCount;
-
-		currentInstance = meshInstanceGroups.push_back();
-		currentInstance->meshData = &meshesToRender[mesh_i];
-		currentInstance->matrixStart = mesh_i;
-
-		currentHash = meshesToRender[mesh_i].meshHash;
-		instancesCount = 1;
 	}
-
-	if(currentInstance)
-		currentInstance->instanceCount = instancesCount;
 }
 
 void VoxelRenderer::ProcessEmittance()
@@ -366,7 +429,7 @@ void VoxelRenderer::ProcessEmittance()
 
 	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
 		(uint32_t)dirVoxel_array.size(), 0};
-	Render::UpdateDynamicResource(volumeInfo, lightCount, sizeof(uint32_t) * 4);
+	Render::UpdateDynamicResource(volumeLightInfo, lightCount, sizeof(uint32_t) * 4);
 
 	voxelInjectLight->BindUAV(voxelEmittanceUAV);
 
@@ -382,22 +445,23 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetShaderResources(6, 1, &pointLightInjectBuffer.srv);
 	Render::CSSetShaderResources(7, 1, &dirLightInjectBuffer.srv);
 
-	Render::CSSetConstantBuffers(0, 1, &volumeBuffer);
-	Render::CSSetConstantBuffers(1, 1, &volumeInfo);
+	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
+	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
 
-	voxelInjectLight->Dispatch( 8, 8, 8 );
+	voxelInjectLight->Dispatch( 8 * clipmapCount, 8, 8 );
 	voxelInjectLight->UnbindUAV();
 	
+
 	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	uint32_t downsampleBuffer[4] = {0, 0, 0, 0};
-	uint32_t currentRes = VOXEL_VOLUME_RES / 2;
+	uint32_t currentRes = volumeResolution / 2;
 	ID3D11ShaderResourceView* null_srv = nullptr;
 
-	Render::CSSetConstantBuffers(0, 1, &volumeBuffer);
+	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
 	
-	for(uint32_t level = 1; level < VOXEL_VOLUME_CLIPMAP_COUNT; level++)
+	for(uint32_t level = 1; level < clipmapCount; level++)
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
 
@@ -425,37 +489,70 @@ void VoxelRenderer::ProcessEmittance()
 
 		currentRes /= 2;
 	}
-
 }
 
-void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData)
+void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
 {
-	if(meshesToRender.full())
-		return;
+	for(uint8_t level = 0; level < clipmapCount; level++)
+	{
+		if( level < clipmapCount - 1 )
+		{
+			if( level > 0)
+			{
+				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
+					continue;
+			}
+			else
+			{
+				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT )
+					continue;
+			}
+		}
+		else
+		{
+			if(	volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
+				continue;
+		}
 
-	bool has_tq = false;
-	auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
-	if(!has_tq)
-		return;
+		if(meshesToRender[level].full())
+			return;
 
-	auto meshPtr = meshesToRender.push_back();
-	auto matixPtr = matrixPerMesh.push_back();
+		bool has_tq = false;
+		auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);
+		if(!has_tq)
+			return;
 
-	meshPtr->index_count = index_count;
-	meshPtr->vertex_size = vertex_size;
-	meshPtr->index_buffer = index_buffer;
-	meshPtr->vertex_buffer = vertex_buffer;
-	meshPtr->material = material;
-	meshPtr->arrayID = (uint32_t)meshesToRender.size() - 1;
+		auto meshPtr = meshesToRender[level].push_back();
+		auto matixPtr = matrixPerMesh[level].push_back();
 
-	matixPtr->world = matrixData.world;
-	matixPtr->norm = matrixData.norm;
+		meshPtr->index_count = index_count;
+		meshPtr->vertex_size = vertex_size;
+		meshPtr->index_buffer = index_buffer;
+		meshPtr->vertex_buffer = vertex_buffer;
+		meshPtr->material = material;
+		meshPtr->arrayID = (uint32_t)meshesToRender[level].size() - 1;
 
-	meshPtr->meshHash = calcMeshHash(meshPtr);
+		matixPtr->world = matrixData.world;
+		matixPtr->norm = matrixData.norm;
+
+		meshPtr->meshHash = calcMeshHash(meshPtr);
+	}
 }
 
-void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos)
+void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
 {
-	XMStoreFloat3(&bigVolume.Center, camPos);
-	bigVolume.Extents = XMFLOAT3(5.0f, 5.0f, 5.0f);
+	for(uint8_t i = 0; i < clipmapCount; i++)
+	{
+		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
+		float centerOffset = halfWorldSize - (volumesConfig[i].voxelSize * VCT_BACK_VOXEL_COUNT);
+
+		XMVECTOR center = camPos + camDir * centerOffset;
+		center = XMVectorFloor(center / volumesConfig[i].voxelSize) * volumesConfig[i].voxelSize;
+		XMStoreFloat3(&volumesConfig[i].volumeBox.Center, center);
+
+		XMVECTOR corner = center - XMVectorSet(halfWorldSize, halfWorldSize, halfWorldSize, 0.0f);
+		XMStoreFloat3(&volumesConfig[i].corner, corner);
+
+		volumeData[i].cornerOffset = volumesConfig[i].corner;
+	}
 }
