@@ -56,13 +56,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 
 	float3 specular = SpecularSample(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
-
-	/*float NoP[3];
-	NoP[0] = normal.x;
-	NoP[1] = normal.y;
-	NoP[2] = normal.z;
-	albedo *= abs(NoP[input.planeId]);*/
-	
+		
 	// emittance prepare
 	float emissiveLum = length(emissive);
 	emissive /= emissiveLum;
@@ -81,8 +75,9 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 	voxelNormal.z = normal.z * 255;
 
 	// coords 
-	uint3 uavCoords = uint3(input.worldPos.xyz);
+	uint3 uavCoords = uint3(input.voxelCoords.xyz);
 	uavCoords.y += volumeData[currentLevel].volumeRes * 2 * input.planeId;
+	uavCoords.x += volumeData[currentLevel].volumeRes * currentLevel;
 
 	if(!front)
 		uavCoords.y += volumeData[currentLevel].volumeRes;
@@ -100,15 +95,15 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 }
 
 // geometry
-[instance(3)]
+[instance(3)] 
 [maxvertexcount(3)]
 void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream, uint instanceId : SV_GSInstanceID )
 {
 	PI_Mesh_Voxel output = (PI_Mesh_Voxel)0;
 	for ( uint i = 0; i < 3; i++ )
 	{ 
-		output.worldPos.xyz = (input[i].position.xyz - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
-		output.worldPos.w = 1.0f;
+		output.voxelCoords.xyz = (input[i].position.xyz - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
+		output.voxelCoords.w = 1.0f;
 		output.position = mul(float4(input[i].position, 1.0f), volumeVP[currentLevel][instanceId]);
 		
 		output.tex = input[i].tex;

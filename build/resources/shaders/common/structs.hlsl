@@ -63,7 +63,7 @@ struct PI_Mesh_Voxel
    	sample float3 normal			: NORMAL;
 	sample float3 tangent			: TANGENT;
 	sample float3 binormal			: BINORMAL;
-	sample float4 worldPos			: POSITION;
+	sample float4 voxelCoords		: POSITION;
 	nointerpolation uint planeId	: TEXCOORD1;
 };
 

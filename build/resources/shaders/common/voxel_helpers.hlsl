@@ -151,7 +151,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	return coneColor;
 }
 
-#define RAY_TRACE_DISTANCE 25.0f
+#define RAY_TRACE_DISTANCE 300.0f
 #define RAY_TRACE_NEARCLIP 0.2f
 
 #define RAY_TRACE_EPCILON 0.00001f
@@ -184,10 +184,11 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	while( i < RAY_TRACE_MAX_I && currentLevel < VOXEL_LEVEL_COUNT )
 	{
 		float3 inVolumePoint = samplePoint - volumeData[currentLevel].cornerOffset;
-		float3 isNextLevel = saturate( abs(inVolumePoint) - volumeData[currentLevel].worldSize );
 		
 		[branch]
-		if( any(isNextLevel) )
+		if( inVolumePoint.x > volumeData[currentLevel].worldSize || inVolumePoint.x < 0 ||
+			inVolumePoint.y > volumeData[currentLevel].worldSize || inVolumePoint.y < 0 ||
+			inVolumePoint.z > volumeData[currentLevel].worldSize || inVolumePoint.z < 0 )
 		{
 			currentLevel++;
 			continue;

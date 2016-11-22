@@ -378,6 +378,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 	HRESULT hr = D3DCompile(pure_code, pure_code_size, file.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, 
 		entryPoint.c_str(), target.c_str(), 0, 0, &code_compiled, &code_errors);
 
+	bool has_warnings = false;
 	if( FAILED(hr) )
 	{
 		if(code_errors)
@@ -389,11 +390,20 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 		_DELETE_ARRAY(pure_code);
 		return nullptr;
 	}
+	else
+	{
+		if(code_errors)
+		{
+			WRN("Shader compilation warnings:\n%s", (char*)code_errors->GetBufferPointer() );
+			has_warnings = true;
+		}
+	}
+
 	_RELEASE(code_errors);
 	_DELETE_ARRAY(pure_code);
 	
 	uint32_t mdate = FileIO::GetDateModifRaw(file);
-	if(!FileIO::WriteFileData( binFile, (uint8_t*)code_compiled->GetBufferPointer(), (uint32_t)code_compiled->GetBufferSize(), mdate ))
+	if(!has_warnings && !FileIO::WriteFileData( binFile, (uint8_t*)code_compiled->GetBufferPointer(), (uint32_t)code_compiled->GetBufferSize(), mdate ))
 	{
 		ERR("Cant write shader file: %s", binFile.c_str() );
 		_RELEASE(code_compiled);

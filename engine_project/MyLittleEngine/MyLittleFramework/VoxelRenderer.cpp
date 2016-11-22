@@ -452,7 +452,7 @@ void VoxelRenderer::ProcessEmittance()
 	voxelInjectLight->UnbindUAV();
 	
 
-	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
+	/*PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	uint32_t downsampleBuffer[4] = {0, 0, 0, 0};
 	uint32_t currentRes = volumeResolution / 2;
@@ -488,7 +488,7 @@ void VoxelRenderer::ProcessEmittance()
 		Render::CSSetShaderResources(0, 1, &null_srv);
 
 		currentRes /= 2;
-	}
+	}*/
 }
 
 void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
