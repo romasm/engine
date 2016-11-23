@@ -127,7 +127,7 @@ float2 GetVoxelOpacity(float2 uv, uint level)
 }
     
 float4 GetVoxelEmittance(float2 uv, uint level)
-{
+{ 
 	float3 collidePosWS = 0;
 	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )

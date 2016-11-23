@@ -76,11 +76,11 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 
 	// coords 
 	uint3 uavCoords = uint3(input.voxelCoords.xyz);
-	uavCoords.y += volumeData[currentLevel].volumeRes * 2 * input.planeId;
-	uavCoords.x += volumeData[currentLevel].volumeRes * currentLevel;
+	uavCoords.y += volumeData[0].volumeRes * 2 * input.planeId;
+	uavCoords.x += volumeData[0].volumeRes * currentLevel;
 
 	if(!front)
-		uavCoords.y += volumeData[currentLevel].volumeRes;
+		uavCoords.y += volumeData[0].volumeRes;
 	
 	// write
 	InterlockedAdd( opacityVolume[uavCoords], (voxelNormal.z << 16) + 1 );
@@ -96,11 +96,17 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 
 // geometry
 [instance(3)] 
+//[maxvertexcount(18)]
 [maxvertexcount(3)]
 void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream, uint instanceId : SV_GSInstanceID )
 {
 	PI_Mesh_Voxel output = (PI_Mesh_Voxel)0;
-	for ( uint i = 0; i < 3; i++ )
+
+	output.planeId = instanceId; 
+	//output.level = currentLevel;
+
+	[unroll]
+	for ( int i = 0; i < 3; i++ )
 	{ 
 		output.voxelCoords.xyz = (input[i].position.xyz - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
 		output.voxelCoords.w = 1.0f;
@@ -109,11 +115,27 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 		output.tex = input[i].tex;
 		output.normal = input[i].normal; 
 		output.tangent = input[i].tangent; 
-		output.binormal = input[i].binormal; 
-
-		output.planeId = instanceId; 
+		output.binormal = input[i].binormal;  
 
 		outputStream.Append( output );
 	}
 	outputStream.RestartStrip(); 
+	/*
+	[loop]
+	for( int level = currentLevel - 1; level <= (int)volumeData[currentLevel].maxLevel; level++ )
+	{
+		output.level = level; 
+
+		[unroll]
+		for ( int i = 0; i < 3; i++ )
+		{ 
+			output.voxelCoords.xyz = (input[i].position.xyz - volumeData[level].cornerOffset) * volumeData[level].scaleHelper * 0.5f;
+			output.voxelCoords.xyz += volumeData[level].volumeOffset;
+			output.voxelCoords.w = 1.0f;
+			output.position = mul(float4(input[i].position, 1.0f), volumeVP[level][instanceId]);
+					
+			outputStream.Append( output );
+		}
+		outputStream.RestartStrip(); 
+	}*/
 }

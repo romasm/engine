@@ -65,6 +65,7 @@ struct PI_Mesh_Voxel
 	sample float3 binormal			: BINORMAL;
 	sample float4 voxelCoords		: POSITION;
 	nointerpolation uint planeId	: TEXCOORD1;
+	//nointerpolation uint level		: TEXCOORD2;
 };
 
 struct PO_Gbuffer
@@ -131,4 +132,7 @@ struct VolumeData
 	uint volumeRes;
 	float voxelSize;
 	float voxelDiag;
+
+	float3 volumeOffset;
+	uint maxLevel;
 };

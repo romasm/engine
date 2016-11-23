@@ -39,6 +39,9 @@ namespace EngineCore
 		uint32_t volumeRes;
 		float voxelSize;
 		float voxelDiag;
+
+		XMFLOAT3 volumeOffset;
+		uint32_t maxLevel;
 	};
 
 	struct VolumeDownsample

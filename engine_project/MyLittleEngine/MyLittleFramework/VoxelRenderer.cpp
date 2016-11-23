@@ -138,6 +138,7 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumeData[i].volumeRes = volumeResolution;
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / volumeResolution;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
+		volumeData[i].maxLevel = clipmapCount - 1;
 	}
 
 	viewport.TopLeftX = 0.0f;
@@ -451,8 +452,8 @@ void VoxelRenderer::ProcessEmittance()
 	voxelInjectLight->Dispatch( 8 * clipmapCount, 8 * 6, 8 );
 	voxelInjectLight->UnbindUAV();
 	
-
-	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
+	
+	/*PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
 	uint32_t currentRes = volumeResolution / 2;
@@ -506,18 +507,18 @@ void VoxelRenderer::ProcessEmittance()
 
 		voxelDownsampleMove->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
-	}
+	}*/
 }
 
 void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
 {
 	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
-		if( level < clipmapCount - 1 )
+		/*if( level < clipmapCount - 1 )
 		{
 			if( level > 0)
 			{
-				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
+				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) != DISJOINT )
 					continue;
 			}
 			else
@@ -528,9 +529,11 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 		}
 		else
 		{
-			if(	volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
+			if(	volumesConfig[level - 1].volumeBox.Contains(bbox) != DISJOINT )
 				continue;
-		}
+		}*/
+		if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT )
+			continue;
 
 		if(meshesToRender[level].full())
 			return;
@@ -559,6 +562,7 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 
 void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
 {
+	XMVECTOR prevCornerOffset = XMVectorZero();
 	for(uint8_t i = 0; i < clipmapCount; i++)
 	{
 		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
@@ -572,5 +576,20 @@ void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
 		XMStoreFloat3(&volumesConfig[i].corner, corner);
 
 		volumeData[i].cornerOffset = volumesConfig[i].corner;
+
+		XMVECTOR volumeOffset;
+		if( i > 0 )
+		{
+			volumeOffset = prevCornerOffset - corner;
+			volumeOffset = volumeOffset * volumeData[i].scaleHelper;
+		}
+		else
+		{
+			volumeOffset = prevCornerOffset;
+		}
+		
+		XMStoreFloat3(&volumeData[i].volumeOffset, volumeOffset);
+
+		prevCornerOffset = corner;
 	}
 }

@@ -45,6 +45,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 	uint3 voxelIDinLevel = voxelID;
 	voxelIDinLevel.x = voxelIDinLevel.x % volumeData[0].volumeRes;
+	voxelIDinLevel.y = voxelIDinLevel.y % volumeData[0].volumeRes;
 
 	float3 wpos = (float3(voxelIDinLevel) + 0.5f) * volumeData[level].voxelSize;
 	wpos += volumeData[level].cornerOffset;
@@ -113,7 +114,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 			offset = max(offset, abs(dot( voxelVector[h], L )));
 		samplePoint.xyz += L * offset;
 
-		float light_blocked = 1; 
+		float light_blocked = 0; 
 		[loop]
 		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize to piramid 4 points
 		{

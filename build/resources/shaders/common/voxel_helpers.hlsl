@@ -151,7 +151,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	return coneColor;
 }
 
-#define RAY_TRACE_DISTANCE 256.0f
+#define RAY_TRACE_DISTANCE 100.0f
 #define RAY_TRACE_NEARCLIP 0.2f
 
 #define RAY_TRACE_EPCILON 0.00001f
