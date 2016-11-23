@@ -38,14 +38,15 @@ cbuffer lightCountBuffer : register(b1)
 };
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, GROUP_THREAD_COUNT )]
-void InjectLightToVolume(uint3 treadID : SV_DispatchThreadID)
+void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 {
-	uint3 voxelID = treadID;
-	voxelID.x = treadID.x % volumeData[0].volumeRes;
+	uint level = voxelID.x / volumeData[0].volumeRes;
+	uint face = voxelID.y / volumeData[0].volumeRes;
 
-	uint level = treadID.x / volumeData[0].volumeRes;
+	uint3 voxelIDinLevel = voxelID;
+	voxelIDinLevel.x = voxelIDinLevel.x % volumeData[0].volumeRes;
 
-	float3 wpos = (float3(voxelID) + 0.5f) * volumeData[level].voxelSize;
+	float3 wpos = (float3(voxelIDinLevel) + 0.5f) * volumeData[level].voxelSize;
 	wpos += volumeData[level].cornerOffset;
 
 	const float3 voxelVector[4] = 
@@ -58,47 +59,28 @@ void InjectLightToVolume(uint3 treadID : SV_DispatchThreadID)
 
 	const float voxelSizeThird = 0.33333f * volumeData[level].voxelSize;
 
-	uint3 faceAdress[6];
-	float4 faceColor[6];
-	float faceOpacity[6];
-	float3 faceNormal[6];
-	float3 faceEmittance[6];
+	uint4 coorsd = uint4(voxelID, 0);
 
-	bool is_emissive = true;
-	bool is_empty = true;
-	[loop]			// [unroll] doesnt work: is_emissive becomes time unstable on 770GTX, WHY???
-	for(int i = 0; i < 6; i++)
-	{
-		faceAdress[i] = uint3(voxelID.x, voxelID.y + volumeData[0].volumeRes * i, voxelID.z);
-		uint4 coorsd = uint4(faceAdress[i], 0);
+	uint opacitySample = opacityVolume.Load(coorsd);
 
-		uint opacitySample = opacityVolume.Load(coorsd);
-
-		faceOpacity[i] = DecodeVoxelOpacity(opacitySample);
-		is_empty = is_empty && (faceOpacity[i] > 0.0f);
-
-		faceColor[i] = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity[i] );
-		is_emissive = is_emissive && (faceColor[i].w > 0.0f);
-
-		faceNormal[i] = DecodeVoxelNormal(normalVolume.Load(coorsd), opacitySample);
-
-		faceEmittance[i] = 0; 
-		faceOpacity[i] = saturate(faceOpacity[i] * VOXEL_SUBSAMPLES_COUNT_RCP);
-	}	
-
+	float faceOpacity = DecodeVoxelOpacity(opacitySample);
 	[branch]
-	if(is_empty)
+	if( faceOpacity == 0 )
 		return;
 
+	float4 faceColor = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity );
 	[branch]
-	if(is_emissive)
+	if( faceColor.w > 0 )
 	{
-		[unroll]
-		for(int k = 0; k < 6; k++)
-			emittanceVolume[faceAdress[k]] = float4(faceColor[k].rgb * faceColor[k].w, faceOpacity[k]);
+		emittanceVolume[voxelID] = float4(faceColor.rgb * faceColor.w, faceOpacity);
 		return;
 	}
 
+	float3 faceNormal = DecodeVoxelNormal(normalVolume.Load(coorsd), opacitySample);
+
+	faceOpacity = saturate(faceOpacity * VOXEL_SUBSAMPLES_COUNT_RCP);
+	float3 faceEmittance = 0;
+	
 	[loop]
 	for(int spotID = 0; spotID < (int)spotCount; spotID++)
 	{
@@ -126,38 +108,28 @@ void InjectLightToVolume(uint3 treadID : SV_DispatchThreadID)
 		float4 samplePoint = float4(wpos, 1.0f);
 
 		float offset = 0;
-		[unroll]
-		for(int h = 0; h < 4; h++)
+		[unroll] 
+		for(int h = 0; h < 4; h++) 
 			offset = max(offset, abs(dot( voxelVector[h], L )));
 		samplePoint.xyz += L * offset;
 
-		float light_blocked = 0;
-		[unroll]
+		float light_blocked = 1; 
+		[loop]
 		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize to piramid 4 points
 		{
-			float4 aaPoint = samplePoint;
+			float4 aaPoint = samplePoint;  
 			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
 			light_blocked += GetVoxelSpotShadow(samplerPointClamp, shadowsAtlas, aaPoint, lightData);
 		}
 		light_blocked *= VOXEL_SHADOW_AA_RCP;
-
+		
 		if(light_blocked == 0)
 			continue;		
 
 		float3 colorIlluminance = light_blocked * illuminance * lightData.ColorConeX.rgb;
 		
-		[unroll]
-		for(int k = 0; k < 6; k++)
-			faceEmittance[k] += faceColor[k].rgb * colorIlluminance * saturate(dot(faceNormal[k], L));
+		faceEmittance += faceColor.rgb * colorIlluminance * saturate(dot(faceNormal, L));
 	}
 
-	[unroll]
-	for(int j = 0; j < 6; j++)
-	{
-		float4 final = faceColor[j].w > 0.0f ? 
-			float4(faceColor[j].rgb * faceColor[j].w, faceOpacity[j]) :
-			float4(faceEmittance[j], faceOpacity[j]);
-
-		emittanceVolume[faceAdress[j]] = final;
-	}
+	emittanceVolume[voxelID] = float4(faceEmittance, faceOpacity);
 }

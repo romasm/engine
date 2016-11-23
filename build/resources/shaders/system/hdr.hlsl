@@ -146,19 +146,19 @@ float4 GetVoxelColor(float2 uv, out float depth)
 	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, 0, voxelEmittanceTex, collidePosWS);	 
 	if( sampleCoords.w < 0.0f )
 		return 0;
-	        
+	            
 	uint count = DecodeVoxelOpacity(voxelTex.Load(sampleCoords));
-	
+	 
 	uint color0 = voxelColor0Tex.Load(sampleCoords);
 	uint color1 = voxelColor1Tex.Load(sampleCoords);
 	float4 color = DecodeVoxelColor(color0, color1, count);
-
+		  
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	depth = collidePosPS.z / collidePosPS.w;
-	 
+	
 	return color;
 }  
-
+ 
 float4 GetVoxelNormal(float2 uv)
 {
 	float3 collidePosWS = 0;
@@ -267,12 +267,12 @@ PO_LDR HDRLDR(PI_PosTex input)
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
 		} 
 		else if(debugMode == 13) 
-		{      
+		{       
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
-		} 
+		}  
 		else if(debugMode == 14) 
 		{
 			float4 voxelNormal = GetVoxelNormal(input.tex);

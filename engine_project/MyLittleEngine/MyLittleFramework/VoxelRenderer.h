@@ -41,6 +41,20 @@ namespace EngineCore
 		float voxelDiag;
 	};
 
+	struct VolumeDownsample
+	{
+		XMFLOAT3 volumeOffset;
+		uint32_t _padding0;
+
+		uint32_t currentLevel;
+		uint32_t currentRes;
+		uint32_t currentResMore;
+		uint32_t _padding1;
+
+		uint32_t isShifted[3];
+		uint32_t _padding2;
+	};
+
 	class SceneRenderMgr;
 
 	class VoxelRenderer

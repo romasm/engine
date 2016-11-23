@@ -10,10 +10,16 @@ cbuffer volumeBuffer : register(b0)
 
 cbuffer downsampleBuffer : register(b1)
 {
+	float3 volumeOffset;
+	uint _padding0;
+
 	uint currentLevel;
 	uint currentRes;
-	uint _padding0;
+	uint currentResMore;
 	uint _padding1;
+
+	uint isShifted[3];
+	uint _padding2;
 };
 
 static const uint3 voxelOffset[2][8] = 
@@ -57,14 +63,23 @@ RWTexture3D <float4> downsampleVolumeRW : register(u0);
 [numthreads( 1, 1, 1 )]
 void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 {
-	uint face = treadID.y / currentRes;
+	const int vRes = volumeData[0].volumeRes;
+	uint3 dataRes = uint3(currentRes + isShifted[0],
+						currentRes + isShifted[1],
+						currentRes + isShifted[2]);
+
+	uint face = treadID.y / dataRes.y;
 	uint negative = face % 2;
 
+	uint3 destID = treadID;
+	uint inFaceOffset = treadID.y % dataRes.y;
+	destID.y = face * currentResMore + inFaceOffset;
+
 	uint3 voxelID = treadID;
-	voxelID.y = treadID.y % currentRes;
+	voxelID.y = inFaceOffset;
 	voxelID *= 2;
-	voxelID.y += volumeData[0].volumeRes * face;
-	voxelID.x += volumeData[0].volumeRes * (currentLevel - 1);
+	//voxelID.y += vRes * face;
+	//voxelID.x += vRes * (currentLevel - 1);
 
 	float3 emittanceWeight[4] = {
 		float3(0,0,0),
@@ -76,7 +91,19 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 	[unroll]
 	for(int i = 0; i < 8; i++)
 	{
-		float4 sampleEO = emittanceVolume.Load(int4(voxelID + voxelOffset[negative][i], 0));
+		int4 coords = int4(voxelID + voxelOffset[negative][i], 0);
+		coords.xyz -= int3(isShifted[0], isShifted[1], isShifted[2]);
+
+		if( coords.x < 0 || coords.y < 0 || coords.z < 0 ||
+			coords.x >= vRes || coords.y >= vRes || coords.z >= vRes )
+		{
+			coords.xyz = int3(treadID.x, inFaceOffset, treadID.z) + int3(volumeOffset);
+		}
+
+		coords.y += vRes * face;
+		coords.x += vRes * (currentLevel - 1);
+
+		float4 sampleEO = emittanceVolume.Load(coords);
 		uint opacityID = perFaceOpacity[face][i];
 
 		emittanceWeight[ opacityID ] = lerp( sampleEO.rgb, emittanceWeight[ opacityID ], opacity[ opacityID ] );
@@ -94,7 +121,7 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 	finalEmittance /= (finalOpacity > 0 ? finalOpacity : 1.0f);
 	finalOpacity *= 0.25f;
 	
-	downsampleVolumeRW[treadID] = float4(finalEmittance, finalOpacity);
+	downsampleVolumeRW[destID] = float4(finalEmittance, finalOpacity);
 }
 
 RWTexture3D <float4> emittanceVolumeRW : register(u0);  
@@ -105,10 +132,18 @@ void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
 {
 	uint3 emitID = treadID;
 
-	uint face = emitID.y / currentRes;
-	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
+	uint3 dataRes = uint3(currentRes + isShifted[0],
+						currentRes + isShifted[1],
+						currentRes + isShifted[2]);
 
+	uint face = emitID.y / dataRes.y;
+	emitID.y = face * volumeData[0].volumeRes + (emitID.y % dataRes.y);
 	emitID.x += volumeData[0].volumeRes * currentLevel;
 
-	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
+	emitID += uint3(volumeOffset);	
+
+	uint3 sourceID = treadID;
+	sourceID.y = face * currentResMore + (sourceID.y % dataRes.y);
+
+	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(sourceID, 0));
 }

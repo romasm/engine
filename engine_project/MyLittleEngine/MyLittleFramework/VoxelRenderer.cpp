@@ -244,7 +244,7 @@ bool VoxelRenderer::initVoxelBuffers()
 		return false;
 
 	// downsample
-	uint32_t downsampleRes = volumeResolution / 2;
+	uint32_t downsampleRes = volumeResolution / 2 + 1;
 
 	volumeDesc.Width = downsampleRes;
 	volumeDesc.Height = downsampleRes * 6;
@@ -264,7 +264,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	levelBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
 
 	volumeLightInfo = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
-	volumeDownsampleBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
+	volumeDownsampleBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeDownsample), true);
 
 	spotLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, SPOT_VOXEL_FRAME_MAX, sizeof(SpotVoxelBuffer), true);
 	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, POINT_VOXEL_FRAME_MAX, sizeof(PointVoxelBuffer), true);
@@ -448,16 +448,16 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
 
-	voxelInjectLight->Dispatch( 8 * clipmapCount, 8, 8 );
+	voxelInjectLight->Dispatch( 8 * clipmapCount, 8 * 6, 8 );
 	voxelInjectLight->UnbindUAV();
 	
 
-	/*PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
+	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
-	uint32_t downsampleBuffer[4] = {0, 0, 0, 0};
+	VolumeDownsample volumeDownsample;
 	uint32_t currentRes = volumeResolution / 2;
 	ID3D11ShaderResourceView* null_srv = nullptr;
-
+	
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
 	
@@ -465,15 +465,35 @@ void VoxelRenderer::ProcessEmittance()
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
 
-		downsampleBuffer[0] = level;
-		downsampleBuffer[1] = currentRes;
-		Render::UpdateDynamicResource(volumeDownsampleBuffer, downsampleBuffer, sizeof(uint32_t) * 4);
+		XMFLOAT3& prevCornerOffset = volumeData[level - 1].cornerOffset;
+		XMFLOAT3& currCornerOffset = volumeData[level].cornerOffset;
+		XMVECTOR volumeOffset = XMVectorSet(prevCornerOffset.x - currCornerOffset.x, 
+										prevCornerOffset.y - currCornerOffset.y,
+										prevCornerOffset.z - currCornerOffset.z, 0.0f);
+		volumeOffset = volumeOffset * volumeData[level].scaleHelper;
+		XMVECTOR volumeOffsetFloor = XMVectorFloor(volumeOffset);
+		XMVECTOR isShifted = volumeOffset - volumeOffsetFloor;
+
+		volumeDownsample.isShifted[0] = XMVectorGetX(isShifted) > 0.1f ? 1 : 0;
+		volumeDownsample.isShifted[1] = XMVectorGetY(isShifted) > 0.1f ? 1 : 0;
+		volumeDownsample.isShifted[2] = XMVectorGetZ(isShifted) > 0.1f ? 1 : 0;
+		
+		XMStoreFloat3(&volumeDownsample.volumeOffset, volumeOffsetFloor);
+		volumeDownsample.currentLevel = level;
+		volumeDownsample.currentRes = currentRes;
+		volumeDownsample.currentResMore = currentRes + 1;
+
+		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
+
+		uint32_t processRes[3];
+		for(uint8_t k = 0; k < 3; k++)
+			processRes[k] = currentRes + (volumeDownsample.isShifted[k] ? 1 : 0);
 
 		// downsample
 		voxelDownsample->BindUAV(voxelDownsampleTempUAV);
 		Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
 				
-		voxelDownsample->Dispatch( currentRes, currentRes * 6, currentRes );
+		voxelDownsample->Dispatch( processRes[0], processRes[1] * 6, processRes[2] );
 
 		voxelDownsample->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
@@ -482,13 +502,11 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsampleMove->BindUAV(voxelEmittanceUAV);
 		Render::CSSetShaderResources(0, 1, &voxelDownsampleTempSRV);
 
-		voxelDownsampleMove->Dispatch( currentRes, currentRes * 6, currentRes );
+		voxelDownsampleMove->Dispatch( processRes[0], processRes[1] * 6, processRes[2] );
 
 		voxelDownsampleMove->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
-
-		currentRes /= 2;
-	}*/
+	}
 }
 
 void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
