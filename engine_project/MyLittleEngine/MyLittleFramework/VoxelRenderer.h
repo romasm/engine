@@ -38,7 +38,12 @@ namespace EngineCore
 		float scaleHelper;
 		uint32_t volumeRes;
 		float voxelSize;
+		float voxelSizeRcp;
+
 		float voxelDiag;
+		float voxelDiagRcp;
+		float worldSizeRcp;
+		float _padding0;
 
 		XMFLOAT3 volumeOffset;
 		uint32_t maxLevel;

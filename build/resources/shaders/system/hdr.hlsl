@@ -11,7 +11,7 @@ TECHNIQUE_DEFAULT
 
 #include "../common/voxel_helpers.hlsl"
 
-#define VOXEL_ALPHA 1.0
+#define VOXEL_ALPHA 0.75
 
 Texture2D opaqueTex : register(t0); 
 Texture2D transparentTex : register(t1); 
@@ -137,8 +137,8 @@ float4 GetVoxelEmittance(float2 uv, uint level)
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	   
 	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
-}     
-        
+}      
+          
 float4 GetVoxelColor(float2 uv, out float depth)
 {
 	depth = 0;

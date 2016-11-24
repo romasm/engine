@@ -134,10 +134,13 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumesConfig[i].volumeBox.Extents = XMFLOAT3(halfWorldSize, halfWorldSize, halfWorldSize);
 
 		volumeData[i].worldSize = volumesConfig[i].worldSize;
+		volumeData[i].worldSizeRcp = 1.0f / volumesConfig[i].worldSize;
 		volumeData[i].scaleHelper = (float)volumeResolution / volumesConfig[i].worldSize;
 		volumeData[i].volumeRes = volumeResolution;
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / volumeResolution;
+		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
+		volumeData[i].voxelDiagRcp = 1.0f / volumeData[i].voxelDiag;
 		volumeData[i].maxLevel = clipmapCount - 1;
 	}
 

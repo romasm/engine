@@ -66,7 +66,7 @@ static const float diffuseConeWeights[6] =
 
 #define VOXEL_FACE_COUNT_RCP 1.0f / 6
 
-float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, float voxelDiag, float4 volumeData, 
+float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
 					  Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
 	float faces[3];
@@ -83,34 +83,38 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	dirWeight[2] = direction.z * direction.z;
 
 	const float apertureDouble = 2.0f * aperture;
-	const float voxelDiagRcp = rcp(voxelDiag);
 
-	float3 coneStart = origin + surfaceNormal * voxelDiag;
+	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelDiag;
 
 	float maxConeStart = max(coneStart.x, max(coneStart.y, coneStart.z));
 	float minConeStart = min(coneStart.x, min(coneStart.y, coneStart.z));
 	if(maxConeStart > 10.0f || minConeStart < 0.0f)
 		return 0;
 	
-	float distance = voxelDiag;
+	float distance = volumeData[0].voxelDiag;
 	float4 coneColor = 0;
-	float level = 0;
+	float level = 0; // todo: start level
 
 	int i = 0;
-	while(coneColor.a < 1.0f/* && level < VOXEL_LEVEL_COUNT*/ && i <= VOXEL_CONE_TRACING_MAX_STEPS)
+	[loop]
+	while(coneColor.a < 1.0f && level < VOXEL_LEVEL_COUNT && i <= VOXEL_CONE_TRACING_MAX_STEPS)
     {
         float3 currentConePos = coneStart + direction * distance;
 
         float diameter = apertureDouble * distance;
-        level = log2(diameter * voxelDiagRcp);
+        level = log2(diameter * volumeData[level].voxelSizeRcp);
 		level = clamp(level, 0.0f, VOXEL_LEVEL_COUNT);
         
-        float3 sampleCoords = (currentConePos - volumeData.xyz) * volumeData.w;
-		sampleCoords = clamp(sampleCoords, 0, 1);
-		/*float maxCoord = max(sampleCoords.x, max(sampleCoords.y, sampleCoords.z));
+        float3 sampleCoords = (currentConePos - volumeData[level].cornerOffset) * volumeData[level].worldSizeRcp;
+
+		float maxCoord = max(sampleCoords.x, max(sampleCoords.y, sampleCoords.z));
 		float minCoord = min(sampleCoords.x, min(sampleCoords.y, sampleCoords.z));
+		[branch]
 		if(maxCoord > 1.0f || minCoord < 0.0f)
-			break;*/
+		{
+			level++;
+			sampleCoords = (currentConePos - volumeData[level].cornerOffset) * volumeData[level].worldSizeRcp;
+		}
 
 		sampleCoords.xy *= float2(VOXEL_LEVEL_COUNT_RCP, VOXEL_FACE_COUNT_RCP);
 
@@ -140,7 +144,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		}
 		        
 		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
-        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb /* finalColor.a*/);
+        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb /* finalColor.a*/); // todo: correct accumulation
 		coneColor.a += finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;

@@ -1382,8 +1382,8 @@ PO_final DefferedLighting(PI_PosTex input)
         coneDirection += diffuseConeDirections[diffuseCones].x * tangent + diffuseConeDirections[diffuseCones].z * binormal;
         coneDirection = normalize(coneDirection);
         
-		float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, volumeData[0].voxelSize, 
-			float4(volumeData[0].cornerOffset, 1.0f / volumeData[0].worldSize), volumeEmittance, samplerBilinearVolumeClamp);
+		//volumeData[0].voxelSize, float4(volumeData[0].cornerOffset, 1.0f / volumeData[0].worldSize),
+		float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
 		diffuseVCT += lerp( Indir.diffuse, VCTdiffuse.rgb, VCTdiffuse.a) * diffuseConeWeights[diffuseCones];
     }
 	
@@ -1393,8 +1393,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	float3 coneReflDirection = normalize(Refl);
 
 	float apertureSpecular = tan( clamp( PIDIV2 * avgR, 0.0174533f, PI) );
-	float4 specularVCT = VoxelConeTrace(wpos, coneReflDirection, apertureSpecular, normal, volumeData[0].voxelSize, 
-			float4(volumeData[0].cornerOffset, 1.0f / volumeData[0].worldSize), volumeEmittance, samplerBilinearVolumeClamp);
+	float4 specularVCT = VoxelConeTrace(wpos, coneReflDirection, apertureSpecular, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
 	
 	Indir.specular = lerp( Indir.specular, specularVCT.rgb, specularVCT.a);
 	Indir.specular *= specBrdf * SO;

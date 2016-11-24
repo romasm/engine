@@ -131,7 +131,12 @@ struct VolumeData
 	float scaleHelper;
 	uint volumeRes;
 	float voxelSize;
+	float voxelSizeRcp;
+
 	float voxelDiag;
+	float voxelDiagRcp;
+	float worldSizeRcp;
+	float _padding0;
 
 	float3 volumeOffset;
 	uint maxLevel;
