@@ -131,7 +131,7 @@ return GuiEntity({
             align = GUI_ALIGN.RIGHT,
 
             list = {
-                "Final frame",
+                "Lit",
                 "Albedo",
                 "Specular",
                 "Roughness",
@@ -158,6 +158,10 @@ return GuiEntity({
                 "Voxels Emittance 3",
                 "Voxels Emittance 4",
                 "Voxels Emittance 5",
+                "Diffuse",
+                "Indirect Diffuse",
+                "Specular",
+                "Indirect Specular",
             },
             alt = "Frame components",
 

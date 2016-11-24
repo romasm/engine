@@ -155,7 +155,22 @@ end
 function Viewport:SetMode(combo, ev)
     if not self.lua_world then return end
 
-    self.lua_world.scenepl.mode = combo:GetSelected() - 1
+    local mode = combo:GetSelected() - 1
+
+    if mode < 27 then
+        self.lua_world.scenepl:SetComponents(true, true, true, true)
+        self.lua_world.scenepl.mode = mode
+    else
+        if mode == 27 then
+            self.lua_world.scenepl:SetComponents(false, false, true, true)
+        elseif mode == 28 then
+            self.lua_world.scenepl:SetComponents(false, false, false, true)
+        elseif mode == 29 then
+            self.lua_world.scenepl:SetComponents(true, true, false, false)
+        elseif mode == 30 then
+            self.lua_world.scenepl:SetComponents(false, true, false, false)
+        end
+    end
 end
 
 -- callbacks

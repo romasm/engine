@@ -290,9 +290,9 @@ PO_LDR HDRLDR(PI_PosTex input)
 			float4 voxelEmittance = GetVoxelEmittance(input.tex, debugMode - 21);
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
 				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
-		}
-	}
-
+		} 
+	}           
+	                 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	

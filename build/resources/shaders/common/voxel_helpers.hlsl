@@ -151,10 +151,10 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	return coneColor;
 }
 
-#define RAY_TRACE_DISTANCE 100.0f
+#define RAY_TRACE_DISTANCE 350.0f
 #define RAY_TRACE_NEARCLIP 0.2f
 
-#define RAY_TRACE_EPCILON 0.00001f
+#define RAY_TRACE_EPCILON 0.00005f
 #define RAY_TRACE_MAX_I 512
 
 int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], uint minLevel, Texture3D <float4> voxelEmittance, out float3 collideWS)
@@ -173,7 +173,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 
 	step = saturate(step);
 	
-	float3 samplePoint = origin + ray * RAY_TRACE_NEARCLIP + epcilon;
+	float3 samplePoint = origin + ray * RAY_TRACE_NEARCLIP;
 	float3 voxelSnap = 0;
 	float3 prevVoxel = 0;
 
@@ -186,9 +186,9 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 		float3 inVolumePoint = samplePoint - volumeData[currentLevel].cornerOffset;
 		
 		[branch]
-		if( inVolumePoint.x >= volumeData[currentLevel].worldSize || inVolumePoint.x <= 0 ||
-			inVolumePoint.y >= volumeData[currentLevel].worldSize || inVolumePoint.y <= 0 ||
-			inVolumePoint.z >= volumeData[currentLevel].worldSize || inVolumePoint.z <= 0 )
+		if( inVolumePoint.x > volumeData[currentLevel].worldSize || inVolumePoint.x < 0 ||
+			inVolumePoint.y > volumeData[currentLevel].worldSize || inVolumePoint.y < 0 ||
+			inVolumePoint.z > volumeData[currentLevel].worldSize || inVolumePoint.z < 0 )
 		{
 			currentLevel++;
 			continue;
@@ -224,7 +224,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 		float3 delta = currentRay / ray;
 		float d = min(delta.x, min(delta.y, delta.z));
 		
-		samplePoint = origin + ray * d + epcilon;
+		samplePoint = origin + ray * d + epcilon * volumeData[currentLevel].voxelSize;
 		i++;
 	}
 	
