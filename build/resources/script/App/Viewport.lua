@@ -161,6 +161,7 @@ function Viewport:SetMode(combo, ev)
         self.lua_world.scenepl:SetComponents(true, true, true, true)
         self.lua_world.scenepl.mode = mode
     else
+        self.lua_world.scenepl.mode = 0
         if mode == 27 then
             self.lua_world.scenepl:SetComponents(false, false, true, true)
         elseif mode == 28 then

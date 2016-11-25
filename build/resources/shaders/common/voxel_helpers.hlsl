@@ -50,25 +50,24 @@ static const float3 diffuseConeDirections[6] =
 
 static const float diffuseConeWeights[6] =
 {
-    1.0f / 4.0f,
-    3.0f / 20.0f,
-    3.0f / 20.0f,
-    3.0f / 20.0f,
-    3.0f / 20.0f,
-    3.0f / 20.0f,
+    4.0f / 20.0f,
+    3.2f / 20.0f,
+    3.2f / 20.0f,
+    3.2f / 20.0f,
+    3.2f / 20.0f,
+    3.2f / 20.0f,
 };
 
 #define VOXEL_CONE_TRACING_STEP 0.5f
 #define VOXEL_CONE_TRACING_MAX_STEPS 64
-
-#define VOXEL_LEVEL_COUNT 6
-#define VOXEL_LEVEL_COUNT_RCP 1.0f / VOXEL_LEVEL_COUNT
 
 #define VOXEL_FACE_COUNT_RCP 1.0f / 6
 
 float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
 					  Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
+	uint levelCount = volumeData[0].maxLevel + 1;
+
 	float faces[3];
 	faces[0] = (direction.x >= 0) ? 0 : 1;
     faces[1] = (direction.y >= 0) ? 2 : 3;
@@ -84,53 +83,71 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 	const float apertureDouble = 2.0f * aperture;
 
-	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelDiag;
+	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelSize;
 
-	float maxConeStart = max(coneStart.x, max(coneStart.y, coneStart.z));
-	float minConeStart = min(coneStart.x, min(coneStart.y, coneStart.z));
-	if(maxConeStart > 10.0f || minConeStart < 0.0f)
+	uint startLevel;
+	[unroll]
+	for(startLevel = 0; startLevel < levelCount; startLevel++)
+	{
+		float3 startCoords = (coneStart - volumeData[startLevel].cornerOffset) * volumeData[startLevel].worldSizeRcp;
+
+		float maxStartCoord = max(startCoords.x, max(startCoords.y, startCoords.z));
+		float minStartCoord = min(startCoords.x, min(startCoords.y, startCoords.z));
+		[branch]
+		if(maxStartCoord <= 1.0f && minStartCoord >= 0.0f)
+			break;
+	}
+
+	if( startLevel == levelCount )
 		return 0;
-	
-	float distance = volumeData[0].voxelDiag;
+
+	float distance = volumeData[startLevel].voxelSize;
 	float4 coneColor = 0;
-	float level = 0; // todo: start level
+	float level = 0;
+
+	// temp 
+	float levelCountRcp = 1.0f / levelCount;
 
 	int i = 0;
 	[loop]
-	while(coneColor.a < 1.0f && level < VOXEL_LEVEL_COUNT && i <= VOXEL_CONE_TRACING_MAX_STEPS)
+	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel <= volumeData[0].maxLevel)
     {
         float3 currentConePos = coneStart + direction * distance;
 
         float diameter = apertureDouble * distance;
-        level = log2(diameter * volumeData[level].voxelSizeRcp);
-		level = clamp(level, 0.0f, VOXEL_LEVEL_COUNT);
-        
-        float3 sampleCoords = (currentConePos - volumeData[level].cornerOffset) * volumeData[level].worldSizeRcp;
-
-		float maxCoord = max(sampleCoords.x, max(sampleCoords.y, sampleCoords.z));
-		float minCoord = min(sampleCoords.x, min(sampleCoords.y, sampleCoords.z));
-		[branch]
-		if(maxCoord > 1.0f || minCoord < 0.0f)
-		{
-			level++;
-			sampleCoords = (currentConePos - volumeData[level].cornerOffset) * volumeData[level].worldSizeRcp;
-		}
-
-		sampleCoords.xy *= float2(VOXEL_LEVEL_COUNT_RCP, VOXEL_FACE_COUNT_RCP);
-
+        level = log2(diameter * volumeData[0].voxelSizeRcp);
+		level = clamp(level, startLevel, volumeData[0].maxLevel);
+				
 		float levelUpDown[2];
 		levelUpDown[0] = ceil(level);
 		levelUpDown[1] = floor(level);
 
+		uint iDownLevel = (uint)levelUpDown[1];
+
+		float3 sampleCoords[2];
+        sampleCoords[1] = (currentConePos - volumeData[iDownLevel].cornerOffset) * volumeData[iDownLevel].worldSizeRcp;
+
+		float maxCoord = max(sampleCoords[1].x, max(sampleCoords[1].y, sampleCoords[1].z));
+		float minCoord = min(sampleCoords[1].x, min(sampleCoords[1].y, sampleCoords[1].z));
+		[branch]
+		if(maxCoord > 1.0f || minCoord < 0.0f)
+		{
+			startLevel++;
+			continue;
+		}
+
+		uint iUpLevel = levelUpDown[0];
+		sampleCoords[0] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
+		
 		float levelLerp = saturate(level - levelUpDown[1]);
 		
 		float4 voxelSample[2];
 		[unroll]
 		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
 		{
-			float3 coordsLevel = sampleCoords;
-			coordsLevel /= exp2(levelUpDown[voxelLevel]);
-			coordsLevel.x += VOXEL_LEVEL_COUNT_RCP * levelUpDown[voxelLevel];
+			float3 coordsLevel = sampleCoords[voxelLevel];
+			coordsLevel.xy *= float2(levelCountRcp, VOXEL_FACE_COUNT_RCP);
+			coordsLevel.x += levelCountRcp * levelUpDown[voxelLevel];
 
 			voxelSample[voxelLevel] = 0;
 			[unroll]
@@ -144,7 +161,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		}
 		        
 		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
-        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb /* finalColor.a*/); // todo: correct accumulation
+        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a); // todo: correct accumulation
 		coneColor.a += finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
@@ -164,7 +181,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], uint minLevel, Texture3D <float4> voxelEmittance, out float3 collideWS)
 {
 	collideWS = 0;
-
+	
+	uint levelCount = volumeData[0].maxLevel + 1;
 	uint currentLevel = minLevel;
 		
 	float3 epcilon = RAY_TRACE_EPCILON;
@@ -185,7 +203,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	
 	int i = 0;
 	[loop]
-	while( i < RAY_TRACE_MAX_I && currentLevel < VOXEL_LEVEL_COUNT )
+	while( i < RAY_TRACE_MAX_I && currentLevel < levelCount )
 	{
 		float3 inVolumePoint = samplePoint - volumeData[currentLevel].cornerOffset;
 		
@@ -233,7 +251,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	}
 	
 	[branch]
-	if( i == RAY_TRACE_MAX_I || currentLevel >= VOXEL_LEVEL_COUNT )
+	if( i == RAY_TRACE_MAX_I || currentLevel >= levelCount )
 		return -1;
 
 	float3 voxelExtend = volumeData[currentLevel].voxelSize * 0.5f;

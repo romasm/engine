@@ -43,7 +43,7 @@ TECHNIQUE_DEFAULT
 StructuredBuffer<MaterialParamsStructBuffer> MAT_PARAMS : register(t0);
 
 // from material configs
-//Texture2D noiseTex : register(t1); 
+//Texture2D noiseTex : register(t1);  
 //#define noiseResInv 1.0/512
 Texture2D envbrdfLUT : register(t1);
 #define DFG_TEXTURE_SIZE 256
@@ -1367,7 +1367,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	}
 
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff);
-		  
+		   
 	/*if(params.subscattering != 0)
 	{
 		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, VtoWP, ao, 0, envprobsDistDiff, 2, envprobsDist);
@@ -1387,8 +1387,12 @@ PO_final DefferedLighting(PI_PosTex input)
 		diffuseVCT += lerp( Indir.diffuse, VCTdiffuse.rgb, VCTdiffuse.a) * diffuseConeWeights[diffuseCones];
     }
 	
-	Indir.diffuse = diffuseVCT * diffBrdf * ao;  
-
+	Indir.diffuse = diffuseVCT * diffBrdf * ao; 
+	// temp
+	if(Indir.specular.r != 0)
+	{
+		Indir.diffuse = diffuseVCT * diffBrdf;
+	}  
 
 	float3 coneReflDirection = normalize(Refl);
 
@@ -1397,13 +1401,7 @@ PO_final DefferedLighting(PI_PosTex input)
 	
 	Indir.specular = lerp( Indir.specular, specularVCT.rgb, specularVCT.a);
 	Indir.specular *= specBrdf * SO;
-	 
-	/*if(diffuseVCT.r > -1)  
-	{ 
-		res.diffuse.rgb = Indir.diffuse;
-		return res; 
-	}*/
-
+	
 	// ----------------- FINAL -------------------------
 	res.diffuse.rgb = Light.diffuse * dirDiff + (emissive + Indir.diffuse) * indirDiff;
 	res.specular.rgb = Indir.specular * indirSpec;
@@ -1413,10 +1411,6 @@ PO_final DefferedLighting(PI_PosTex input)
 	res.diffuse.a = specSecond.r;
 	res.specular.a = specSecond.g;
 	res.specularMore.rg = specSecond.ba;
-
-	//res.diffuse *= 1 - indirDiff;
-	//res.diffuse.rgb += shadows.Sample(samplerPointClamp, float3(input.tex, 0)).r;
-	//res.specular *= 1 - indirDiff;
 
 	return res; 
 }
