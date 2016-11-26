@@ -1374,25 +1374,30 @@ PO_final DefferedLighting(PI_PosTex input)
 	}*/ 
 	 
 	// Voxel Cone Tracing
-	float3 diffuseVCT = 0;
+	float4 diffuseVCT = 0;
 	const float apertureDiffuse = 0.57735f;
-	for(int diffuseCones = 0; diffuseCones < 6; diffuseCones++)
+	for(int diffuseCones = 0; diffuseCones < 4; diffuseCones++)
     {
 		float3 coneDirection = normal;
-        coneDirection += diffuseConeDirections[diffuseCones].x * tangent + diffuseConeDirections[diffuseCones].z * binormal;
+        coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * tangent + diffuseConeDirectionsCheap[diffuseCones].z * binormal;
         coneDirection = normalize(coneDirection);
         
 		float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
-		diffuseVCT += lerp( Indir.diffuse, VCTdiffuse.rgb, VCTdiffuse.a) * diffuseConeWeights[diffuseCones];
+		diffuseVCT += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
     } 
-	        
-	Indir.diffuse = diffuseVCT * diffBrdf * ao; 
-	// temp  
-	if(Indir.specular.r != 0)
+	   
+	if(Indir.specular.r != 0) 
+		Indir.diffuse = 0;
+
+	Indir.diffuse = lerp( Indir.diffuse, diffuseVCT.rgb, diffuseVCT.a);
+
+	Indir.diffuse *= diffBrdf;// * ao; 
+	// temp    
+	if(Indir.specular.r == 0) 
 	{
-		Indir.diffuse = diffuseVCT * diffBrdf;
+		Indir.diffuse = ao;
 	}         
-	                    
+	                     
 	float3 coneReflDirection = normalize(Refl);
 
 	float apertureSpecular = tan( clamp( PIDIV2 * avgR, 0.0174533f, PI) );

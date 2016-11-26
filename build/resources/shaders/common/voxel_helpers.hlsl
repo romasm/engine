@@ -58,6 +58,22 @@ static const float diffuseConeWeights[6] =
     3.0f / 20.0f,
 };
 
+static const float3 diffuseConeDirectionsCheap[4] =
+{
+    float3(1.0f, 1.0f, 1.0f),
+    float3(1.0f, 1.0f, -1.0f),
+    float3(-1.0f, 1.0f, 1.0f),
+    float3(-1.0f, 1.0f, -1.0f),
+};
+
+static const float diffuseConeWeightsCheap[4] =
+{
+    1.0f / 4.0f,
+    1.0f / 4.0f,
+    1.0f / 4.0f,
+    1.0f / 4.0f
+};
+
 #define VOXEL_CONE_TRACING_STEP 0.5f
 #define VOXEL_CONE_TRACING_MAX_STEPS 64
 
@@ -121,7 +137,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
         float diameter = apertureDouble * distance;
         level = log2(diameter * volumeData[0].voxelSizeRcp);
 		level = clamp(level, startLevel, volumeData[0].maxLevel);
-			//level = startLevel;
+		
 		float levelUpDown[2];
 		levelUpDown[0] = ceil(level);
 		levelUpDown[1] = floor(level);
@@ -166,7 +182,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		        
 		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
 		
-		coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a); // todo: correct accumulation
+		coneColor.rgb += (1.0f - coneColor.a) * finalColor.rgb; // todo: correct accumulation
 		coneColor.a += finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
