@@ -107,6 +107,10 @@ function MaterialProps:SetSelected(mat)
         end
     end
 
+    if self.material then
+        self.material:Save()
+    end
+
     local history = {
         s_oldval = self.material,
         s_newval = mat,

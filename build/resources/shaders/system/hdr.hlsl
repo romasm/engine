@@ -11,7 +11,7 @@ TECHNIQUE_DEFAULT
 
 #include "../common/voxel_helpers.hlsl"
 
-#define VOXEL_ALPHA 0.75
+#define VOXEL_ALPHA 1.0
 
 Texture2D opaqueTex : register(t0); 
 Texture2D transparentTex : register(t1); 

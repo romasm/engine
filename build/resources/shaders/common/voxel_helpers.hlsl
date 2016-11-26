@@ -50,16 +50,20 @@ static const float3 diffuseConeDirections[6] =
 
 static const float diffuseConeWeights[6] =
 {
-    4.0f / 20.0f,
-    3.2f / 20.0f,
-    3.2f / 20.0f,
-    3.2f / 20.0f,
-    3.2f / 20.0f,
-    3.2f / 20.0f,
+    5.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
+    3.0f / 20.0f,
 };
 
 #define VOXEL_CONE_TRACING_STEP 0.5f
 #define VOXEL_CONE_TRACING_MAX_STEPS 64
+
+#define VOXEL_CONE_TRACING_LEVEL_FADE 0.05f
+#define VOXEL_CONE_TRACING_LEVEL_FADE_RPC 1.0f / VOXEL_CONE_TRACING_LEVEL_FADE
+#define VOXEL_CONE_TRACING_LEVEL_FADE_INV 1 - VOXEL_CONE_TRACING_LEVEL_FADE
 
 #define VOXEL_FACE_COUNT_RCP 1.0f / 6
 
@@ -107,7 +111,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 	// temp 
 	float levelCountRcp = 1.0f / levelCount;
-
+	
 	int i = 0;
 	[loop]
 	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel <= volumeData[0].maxLevel)
@@ -117,7 +121,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
         float diameter = apertureDouble * distance;
         level = log2(diameter * volumeData[0].voxelSizeRcp);
 		level = clamp(level, startLevel, volumeData[0].maxLevel);
-				
+			//level = startLevel;
 		float levelUpDown[2];
 		levelUpDown[0] = ceil(level);
 		levelUpDown[1] = floor(level);
@@ -136,7 +140,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 			continue;
 		}
 
-		uint iUpLevel = levelUpDown[0];
+		uint iUpLevel = (uint)levelUpDown[0];
 		sampleCoords[0] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
 		
 		float levelLerp = saturate(level - levelUpDown[1]);
@@ -161,13 +165,14 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		}
 		        
 		float4 finalColor = lerp( voxelSample[1], voxelSample[0], levelLerp);
-        coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a); // todo: correct accumulation
+		
+		coneColor.rgb += (1.0f - coneColor.a) * (finalColor.rgb * finalColor.a); // todo: correct accumulation
 		coneColor.a += finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
 		i++;
     }
-
+	
 	coneColor.a = saturate(coneColor.a);
 	return coneColor;
 }

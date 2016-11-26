@@ -65,21 +65,21 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 	uint opacitySample = opacityVolume.Load(coorsd);
 
 	float faceOpacity = DecodeVoxelOpacity(opacitySample);
-	[branch]
+	[branch] 
 	if( faceOpacity == 0 )
 		return;
 
 	float4 faceColor = DecodeVoxelColor( colorVolume0.Load(coorsd), colorVolume1.Load(coorsd), faceOpacity );
+	faceOpacity = saturate(faceOpacity * VOXEL_SUBSAMPLES_COUNT_RCP);
 	[branch]
 	if( faceColor.w > 0 )
 	{
 		emittanceVolume[voxelID] = float4(faceColor.rgb * faceColor.w, faceOpacity);
 		return;
-	}
-
+	} 
+	 
 	float3 faceNormal = DecodeVoxelNormal(normalVolume.Load(coorsd), opacitySample);
 
-	faceOpacity = saturate(faceOpacity * VOXEL_SUBSAMPLES_COUNT_RCP);
 	float3 faceEmittance = 0;
 	
 	[loop]

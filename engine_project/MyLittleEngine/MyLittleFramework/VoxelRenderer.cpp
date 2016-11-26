@@ -535,6 +535,10 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 			if(	volumesConfig[level - 1].volumeBox.Contains(bbox) != DISJOINT )
 				continue;
 		}*/
+		float meshSize = max(max(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 2;
+		if( meshSize < volumesConfig[level].voxelSize )
+			continue;
+
 		if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT )
 			continue;
 
