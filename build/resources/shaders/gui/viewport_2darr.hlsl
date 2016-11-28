@@ -65,7 +65,7 @@ float4 Viewport(PI_PosTex input) : SV_TARGET
 	color.rgb *= mulColor;
 
 	if(powVal != 1.0)
-		color.rgb = pow(color.rgb, powVal);
+		color.rgb = PowAbs(color.rgb, powVal);
 
 	if(isMulAlpha > 0)
 		color.a *= mulAlpha;

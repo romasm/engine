@@ -1386,8 +1386,8 @@ PO_final DefferedLighting(PI_PosTex input)
 		diffuseVCT += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
     } 
 	   
-	if(Indir.specular.r != 0) 
-		Indir.diffuse = 0;
+	//if(Indir.specular.r != 0) 
+	//	Indir.diffuse = 0;
 
 	Indir.diffuse = lerp( Indir.diffuse, diffuseVCT.rgb, diffuseVCT.a);
 
