@@ -216,7 +216,7 @@
     <ClInclude Include="ShadowsRenderer.h">
       <Filter>Render System</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\HRectMgr.h">
+    <ClInclude Include="GUI\HVisuals.h">
       <Filter>Gui</Filter>
     </ClInclude>
   </ItemGroup>
@@ -379,7 +379,7 @@
     <ClCompile Include="ShadowsRenderer.cpp">
       <Filter>Render System</Filter>
     </ClCompile>
-    <ClCompile Include="GUI\HRectMgr.cpp">
+    <ClCompile Include="GUI\HVisuals.cpp">
       <Filter>Gui</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,12 +1,12 @@
 #include "stdafx.h"
 
-#include "HRectMgr.h"
+#include "HVisuals.h"
 
 using namespace EngineCore;
 
-HRectMgr* HRectMgr::instance = nullptr;
+HVisuals* HVisuals::instance = nullptr;
 
-HRectMgr::HRectMgr()
+HVisuals::HVisuals()
 {
 	if(instance)
 	{
@@ -16,15 +16,14 @@ HRectMgr::HRectMgr()
 	instance = this;
 
 	rectsPerWindow.reserve(1);
-	winIDs.reserve(10);
 }
 
-HRectMgr::~HRectMgr()
+HVisuals::~HVisuals()
 {
 
 }
 
-uint16_t HRectMgr::AddRect(HWND hwnd)
+uint16_t HVisuals::AddRect(uint16_t hwnd)
 {
 	SArray<RectData, MAX_RECTS_PER_WINDOW>* rectArr;
 
@@ -39,10 +38,19 @@ uint16_t HRectMgr::AddRect(HWND hwnd)
 		rectArr = &rectsPerWindow[win_id->second];
 	}
 
-	// add rect
+	if(rectArr->full())
+	{
+		ERR("Rect array overflow!");
+		return;
+	}
+	
+	uint16_t rect_id = rectArr->size();
+	auto rect = rectArr->push_back();
+	
+	return rect_id;
 }
 
-void HRectMgr::DeleteRect(uint16_t id)
+void HVisuals::DeleteRect(uint16_t winId, uint16_t id)
 {
 
 }
