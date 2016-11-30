@@ -8,7 +8,6 @@
 using namespace EngineCore;
 
 #define GUI_MINIMUM_FREE_INDICES 128
-#define GUI_ENTITY_COUNT 4096
 
 #define HENTITY_FOCUSMODE_NONE 0
 #define HENTITY_FOCUSMODE_NORMAL 1

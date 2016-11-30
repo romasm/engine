@@ -146,8 +146,6 @@ namespace EngineCore
 
 		m_stmeshmgr = new StMeshMgr;
 
-		wim_map = WindowsMgr::Get()->GetMap();
-
 		BufferObj = new Buffer();
 		
 		m_fontmgr->PreloadFonts();

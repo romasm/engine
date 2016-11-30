@@ -100,26 +100,9 @@ static void EndColorRead() {
 
 static Window* CreateSysWindow()
 {
-	bool ismain = true;
-	if(GetMainSysWindow())
-		ismain = false;
-
-	Window* wnd = new Window();
-	
-	DescWindow desc;
-
-	RECT captionR;
-	captionR.left = 0;
-	captionR.top = 0;
-	captionR.right = 0;
-	captionR.bottom = 25;
-	desc.captionRect = captionR;
-
-	if ( !wnd->Create(desc, ismain) )
-	{
-		ERR("Unable to create window");
-		return nullptr;
-	}
+	auto wnd = WindowsMgr::Get()->AddWindow();
+	if(!wnd)
+		return wnd;
 
 	Hud::Get()->CreateRoot(wnd);
 	wnd->UpdateWindowState();
@@ -357,7 +340,7 @@ void Hud::Update(bool force_update_gui, bool no_gui_gc)
 
 void Hud::Draw(HWND win)
 {
-	auto it = rootEnts.find(win);
+	auto it = rootEnts.find(win); // todo
 	if(it == rootEnts.end())
 	{
 		ERR("Wrong HWND!");

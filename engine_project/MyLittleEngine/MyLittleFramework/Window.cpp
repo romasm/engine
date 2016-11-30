@@ -23,6 +23,8 @@ namespace EngineCore
 		m_pSwapChain(nullptr),
 		b_main(false)
 	{
+		systemId = -1;
+
 		rendertime = 0;
 		fpslock = 1000.0f / EngineSettings::EngSets.fpslock;
 		m_timer = Timer::Get();
@@ -44,10 +46,8 @@ namespace EngineCore
 		ZeroMemory(&presetParams, sizeof(presetParams));
 	}
 
-	bool Window::Create(const DescWindow &desc, bool main)
-	{
-		WindowsMgr::Get()->RegJustCreatedWindow(this);
-		
+	bool Window::Create(int16_t id, const DescWindow &desc, bool main)
+	{		
 		crs_arrow = WindowsMgr::Get()->GetCursors(CURSOR_ARROW);
 
 		LOG("Window Create");
@@ -100,10 +100,9 @@ namespace EngineCore
 		m_dropTarget = new DropTarget(this);
 		RegisterDragDrop(m_hwnd, m_dropTarget);
 
-		WindowsMgr::Get()->ClearJustCreatedWindow();
-		WindowsMgr::Get()->AddWindow(m_hwnd, this);
+		systemId = id;
 
-		return CreateSwapChain();
+		return true;
 	}
 
 	bool Window::CreateSwapChain()
@@ -190,6 +189,9 @@ namespace EngineCore
 
 	void Window::Close()
 	{
+		if( IsNull() )
+			return;
+
 		Hud::Get()->DestroyRoot(this);
 
 		if (m_hwnd)
@@ -205,7 +207,8 @@ namespace EngineCore
 			_RELEASE(m_dropTarget);
 		}
 
-		m_hwnd = nullptr;
+		m_hwnd = 0;
+		systemId = -1;
 
 		LOG("Window Close");
 	}
@@ -544,6 +547,7 @@ namespace EngineCore
 		if(!(win = WindowsMgr::Get()->GetWindowByHwnd(hwnd)))
 			return 0;
 
+		// remove
 		Render::Get()->CurrentHudWindow = win;
 
 		return win->WndProc( hwnd, nMsg, wParam, lParam );

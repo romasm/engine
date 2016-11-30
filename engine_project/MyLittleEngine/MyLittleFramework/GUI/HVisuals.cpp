@@ -4,9 +4,9 @@
 
 using namespace EngineCore;
 
-HVisuals* HVisuals::instance = nullptr;
+HRectMgr* HRectMgr::instance = nullptr;
 
-HVisuals::HVisuals()
+HRectMgr::HRectMgr()
 {
 	if(instance)
 	{
@@ -15,42 +15,86 @@ HVisuals::HVisuals()
 	}
 	instance = this;
 
-	rectsPerWindow.reserve(1);
+	rectsPerWindow.resize(MAX_GUI_WINDOWS);
+	rectsPerWindow.assign(nullptr);
 }
 
-HVisuals::~HVisuals()
+HRectMgr::~HRectMgr()
 {
-
+	for(auto& i: rectsPerWindow)
+		_DELETE(i);
 }
 
-uint16_t HVisuals::AddRect(uint16_t hwnd)
+void HRectMgr::allocWindow(int16_t winId)
 {
-	SArray<RectData, MAX_RECTS_PER_WINDOW>* rectArr;
+	if(rectsPerWindow[winId])
+		return;
 
-	auto win_id = winIDs.find(hwnd);
-	if( win_id == winIDs.end() )
-	{
-		winIDs.insert(make_pair( hwnd, (uint16_t)rectsPerWindow.size() ));
-		rectArr = &rectsPerWindow.push_back();
-	}
-	else
-	{
-		rectArr = &rectsPerWindow[win_id->second];
-	}
+	rectsPerWindow[winId] = new RectsPerWin;
+	rectsPerWindow[winId]->ids.resize(MAX_RECTS_PER_WINDOW);
+	rectsPerWindow[winId]->ids.assign(MAX_RECTS_PER_WINDOW);
+	for(uint16_t i = 0; i < MAX_RECTS_PER_WINDOW; i++)
+		rectsPerWindow[winId]->free_ids.push_back(i);
+}
 
-	if(rectArr->full())
+RectData* HRectMgr::AddRect(int16_t winId)
+{
+	if( winId < 0 )
+		return nullptr;
+
+	if(!rectsPerWindow[winId])
+		allocWindow(winId);
+
+	auto rectArr = rectsPerWindow[winId];
+	
+	if(rectArr->data.full())
 	{
 		ERR("Rect array overflow!");
-		return;
+		return nullptr;
 	}
 	
-	uint16_t rect_id = rectArr->size();
-	auto rect = rectArr->push_back();
+	uint16_t idx = rectArr->free_ids.front();
+	rectArr->free_ids.pop_front();
 	
-	return rect_id;
+	rectArr->ids[idx] = rectArr->data.size();
+	rectArr->data.push_back();
+
+	rectArr->data[ rectArr->ids[idx] ].id = idx;
+
+	return &rectArr->data[ rectArr->ids[idx] ];
 }
 
-void HVisuals::DeleteRect(uint16_t winId, uint16_t id)
+void HRectMgr::DeleteRects(int16_t winId, uint16_t id)
 {
+	if( winId < 0 )
+		return;
+	auto rectArr = rectsPerWindow[winId];
+	if(!rectArr)
+		return;
 
+	auto arrId = rectArr->ids[id];
+	if(arrId == MAX_RECTS_PER_WINDOW)
+		return;
+
+	rectArr->data[arrId] = RectData();
+	rectArr->ids[id] = MAX_RECTS_PER_WINDOW;
+	rectArr->free_ids.push_back(id);
+
+	if(rectArr->data.empty())
+		_DELETE(rectsPerWindow[winId]);
+}
+
+RectData* HRectMgr::GetRect(int16_t winId, uint16_t id)
+{
+	if( winId < 0 )
+		return nullptr;
+	auto rectArr = rectsPerWindow[winId];
+	if(!rectArr)
+		return nullptr;
+
+	auto arrId = rectArr->ids[id];
+	if(arrId == MAX_RECTS_PER_WINDOW)
+		return nullptr;
+
+	return &rectArr->data[arrId];
 }

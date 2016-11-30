@@ -93,9 +93,7 @@ namespace EngineCore
 		bool m_createdevice();
 
 		void m_resize();
-
-		map<HWND, Window*>* wim_map;
-
+		
 	public:
 		// isolate gapi calls
 		inline static ID3D11Device* Device() {return m_instance->m_pd3dDevice;}

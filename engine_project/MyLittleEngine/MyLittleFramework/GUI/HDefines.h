@@ -2,6 +2,7 @@
 #include "stdafx.h"
 
 #define DOUBLE_CLICK_INTERVAL 400.0f
+#define GUI_ENTITY_COUNT 4096
 
 namespace EngineCore
 {

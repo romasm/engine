@@ -42,13 +42,9 @@ public:
 			return;
 		}
 
+		m_wins = new WindowsMgr();
+
 		m_hud = new Hud;
-	
-		if(!m_wins.Init())
-		{
-			ERR("Unable to initialize WindowsMgr");
-			return;
-		}
 
 		if(!m_hud || !m_hud->Init())
 		{
@@ -94,6 +90,8 @@ public:
 	{
 		_DELETE(tick_func);
 		_DELETE(main_table);
+		_DELETE(m_wins);
+
 		_CLOSE(m_hud);
 		_CLOSE(m_render);
 		_CLOSE(jobSystem);
@@ -143,7 +141,7 @@ public:
 			if(!force_update_gui)
 			{
 				// Events
-				if(!m_wins.Frame())
+				if(!m_wins->Tick())
 					return false;
 			}
 			PERF_CPU_END(_WIN_MSG);
@@ -162,11 +160,12 @@ public:
 
 			PERF_CPU_BEGIN(_GUI_DRAW);
 			PERF_GPU_TIMESTAMP(_GUI);		
-			for(auto& window : *WindowsMgr::Get()->GetMap())
+			for(auto& winId : *m_wins->GetMap())
 			{
-				window.second->ClearRenderTarget();
+				auto window = m_wins->GetWindowByID(winId.second);
+				window->ClearRenderTarget();
 
-				m_hud->Draw(window.first);
+				m_hud->Draw(winId.first);
 			}
 			PERF_CPU_END(_GUI_DRAW);	
 			
@@ -174,8 +173,11 @@ public:
 			//PERF_GPU_TIMESTAMP(_PRESENT);	
 			PERF_GPU_FRAME_END;
 
-			for(auto& window : *WindowsMgr::Get()->GetMap())
-				window.second->Swap();
+			for(auto& winId : *WindowsMgr::Get()->GetMap())
+			{
+				auto window = m_wins->GetWindowByID(winId.second);
+				window->Swap();
+			}
 			PERF_CPU_END(_PRESENT);	
 
 			PERF_GPU_GRABDATA;
@@ -194,12 +196,12 @@ private:
 	static MainLoop *m_instance;
 
 	Timer m_timer;
-	WindowsMgr m_wins;
 	EngineSettings m_esets;
 	LuaVM Lua_VM;
 
 	JobSystem* jobSystem;
-
+	
+	WindowsMgr* m_wins;
 	Render* m_render;
 	Hud* m_hud;
 

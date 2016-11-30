@@ -74,8 +74,13 @@ namespace EngineCore
 	{
 	public:
 		Window();
+		~Window() { Close(); }
 
-		bool Create(const DescWindow &desc, bool main = false);
+		bool Create(int16_t id, const DescWindow &desc, bool main = false);
+		bool CreateSwapChain();
+
+		inline bool IsNull() {return m_hwnd == 0;}
+		inline int16_t GetSystemId() {return systemId;}
 
 		void SetRenderTarget();
 		void ClearRenderTarget();
@@ -276,7 +281,6 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 
 	private:
-		bool CreateSwapChain();
 
 		inline void ForceRedraw();
 
@@ -287,23 +291,25 @@ namespace EngineCore
 			//m_isresize = true;
 			resize();
 		}
-
-		DXGI_PRESENT_PARAMETERS presetParams;
-
+		
 		bool resize();
+		
+		int16_t systemId;
+		HWND m_hwnd;
+		bool b_main;
+
+		bool m_isexit;
+		bool m_active;
+		bool m_minimized;
+		bool m_maximized;
+		bool m_isresize;
 
 		XMMATRIX m_ortho;
 
 		IDXGISwapChain1 *m_pSwapChain;
 		RenderTarget* m_RTmain;
 		
-		HWND m_hwnd;		// дескриптор окна	
-		bool m_isexit;		// флаг сообщающий о событии выхода	
-		bool m_active;		// окно активно?
-		bool m_minimized;
-		bool m_maximized;
-		bool m_isresize;	// если окно изменило размер
-		bool b_main;
+		DXGI_PRESENT_PARAMETERS presetParams;
 
 		double rendertime;
 		float fpslock;
@@ -322,7 +328,5 @@ namespace EngineCore
 		bool is_press_captured;
 	};
 
-	// обработка событий
 	static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
-//------------------------------------------------------------------
 }

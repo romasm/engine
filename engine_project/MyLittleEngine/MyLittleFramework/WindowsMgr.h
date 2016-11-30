@@ -7,50 +7,51 @@
 
 namespace EngineCore
 {
-
-#define START_HWND HWND(-10000)
+	
+#define MAX_GUI_WINDOWS 16
 
 	class WindowsMgr
 	{
 	public:
 		WindowsMgr();
+		~WindowsMgr();
 		
 		inline static WindowsMgr* Get(){return m_instance;}
 		
-		inline map<HWND, Window*>* GetMap(){return &app_windows;}
+		inline unordered_map<HWND, int16_t>* GetMap(){return &windows_map;}
+		
+		int16_t GetWindowID(HWND hwnd);
 		Window* GetWindowByHwnd(HWND hwnd);
-		inline Window* GetMainWindow(){return main_window;}
+		inline Window* GetWindowByID(int16_t id) {return &app_windows[id];}
+		
+		inline Window* GetMainWindow() {return &app_windows[main_window];}
 
-		void AddWindow(HWND hwnd, Window* win)
-		{
-			app_windows.insert(make_pair(hwnd, win));
-			if(!main_window)
-				main_window = win;
-		}
+		Window* AddWindow();
+		void DeleteWindow(HWND hwnd);
 
-		void RegJustCreatedWindow(Window* win) { just_created = win; }
-		void ClearJustCreatedWindow() { just_created = nullptr; }
-		bool IsJustCreated(HWND hwnd) { return just_created && app_windows.find(hwnd) == app_windows.end(); }
+		bool IsJustCreated(HWND hwnd) { return just_created >= 0 && windows_map.find(hwnd) == windows_map.end(); }
 
-		void Close();
-		bool Init();
-		bool Frame();
+		bool Tick();
 
 		static WindowsMgr* GetWindowsMgr(){return WindowsMgr::Get();}
 
 		HCURSOR GetCursors(HCursors cursorid);
 
 	private:
-		void LoadCursors();
-
-		map<HCursors, HCURSOR> cursors;
-
 		static WindowsMgr *m_instance;
 
-		map<HWND, Window*> app_windows;
-		DArray<HWND> windows_to_delete;
+		void loadCursors();
+		void closeAll();
 
-		Window* main_window;
-		Window* just_created;
+		unordered_map<HCursors, HCURSOR> cursors;
+		
+		unordered_map<HWND, int16_t> windows_map;
+		SArray< Window, MAX_GUI_WINDOWS > app_windows;
+		SDeque< int16_t, MAX_GUI_WINDOWS > free_ids;
+
+		SArray< HWND, MAX_GUI_WINDOWS > windows_to_delete;
+
+		int16_t main_window;
+		int16_t just_created;
 	};
 }

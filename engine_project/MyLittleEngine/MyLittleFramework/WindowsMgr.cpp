@@ -12,30 +12,32 @@ WindowsMgr::WindowsMgr()
 	if(!m_instance)
 	{
 		m_instance = this;
-		main_window = nullptr;
-		just_created = nullptr;
-		windows_to_delete.reserve(10);
+		main_window = -1;
+		just_created = -1;
+		loadCursors();
+
+		windows_map.reserve(MAX_GUI_WINDOWS);
+
+		for(uint16_t i = 0; i < MAX_GUI_WINDOWS; i++)
+			free_ids.push_back(i);
 	}
 	else
 		ERR("Only one instance of WindowsMgr is allowed!");
 }
 
-void WindowsMgr::Close()
+WindowsMgr::~WindowsMgr()
 {
-	for(auto& it : app_windows)
-		_CLOSE(it.second);
-	app_windows.erase(app_windows.begin(), app_windows.end());
-
+	closeAll();
 	m_instance = nullptr;
 }
 
-bool WindowsMgr::Init()
+void WindowsMgr::closeAll()
 {
-	LoadCursors();
-	return true;
+	for(auto& it : windows_map)
+		DeleteWindow(it.first);
 }
 
-bool WindowsMgr::Frame()
+bool WindowsMgr::Tick()
 {
 	MSG msg;
 	while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -44,48 +46,54 @@ bool WindowsMgr::Frame()
 		DispatchMessage(&msg);
 	}
 
-	if(just_created)
-		just_created->AfterRunEvent();
+	if( just_created > -1 )
+		app_windows[just_created].AfterRunEvent();
 	
 	windows_to_delete.clear();
 
-	for(auto& it : app_windows)
+	for(auto& it: windows_map)
 	{
-		it.second->AfterRunEvent();
-		
-		// если окно неактивно - завершаем кадр
-		//if (!it.second->IsActive())
-		//	return true;
+		app_windows[it.second].AfterRunEvent();
 
-		if (it.second->IsExit())
+		if( app_windows[it.second].IsExit() )
 		{
-			if(it.second->IsMain())
+			if( app_windows[it.second].IsMain() )
+			{
+				closeAll();
 				return false;
+			}
 
-			_CLOSE(it.second);
 			windows_to_delete.push_back(it.first);
 		}
 	}
 
 	for(auto& hwnd: windows_to_delete)
-		app_windows.erase(hwnd);
+		DeleteWindow(hwnd);
 
 	return true;
 }
 
-Window* WindowsMgr::GetWindowByHwnd(HWND hwnd)
+int16_t WindowsMgr::GetWindowID(HWND hwnd)
 {
-	auto it = app_windows.find(hwnd);
-	if(it == app_windows.end())
+	auto it = windows_map.find(hwnd);
+	if(it == windows_map.end())
 	{
-		if(just_created)
+		if( just_created > 0 )
 			return just_created;
-		return nullptr;
+		return -1;
 	}
 	return it->second;
 }
 
-void WindowsMgr::LoadCursors()
+Window* WindowsMgr::GetWindowByHwnd(HWND hwnd)
+{
+	auto id = GetWindowID(hwnd);
+	if( id < 0 )
+		return nullptr;
+	return GetWindowByID(id);
+}
+
+void WindowsMgr::loadCursors()
 {
 	cursors[CURSOR_ARROW] = LoadCursor(0, IDC_ARROW);
 	cursors[CURSOR_HAND] = LoadCursor(0, IDC_HAND);
@@ -106,4 +114,73 @@ HCURSOR WindowsMgr::GetCursors(HCursors cursorid)
 	if(it == cursors.end())
 		return cursors[CURSOR_ARROW];
 	return it->second;
+}
+
+Window* WindowsMgr::AddWindow()
+{
+	if(free_ids.empty())
+		return nullptr;
+
+	int16_t idx = free_ids.front();
+	free_ids.pop_front();
+	
+	app_windows[idx] = Window();
+	just_created = idx;
+		
+	// desc TODO
+	DescWindow desc;
+	RECT captionR;
+	captionR.left = 0;
+	captionR.top = 0;
+	captionR.right = 0;
+	captionR.bottom = 25;
+	desc.captionRect = captionR;
+	
+	if ( !app_windows[idx].Create(idx, desc, main_window < 0) )
+	{
+		ERR("Unable to create window");
+		return nullptr;
+	}
+
+	if( main_window < 0 )
+		main_window = idx;
+
+	auto hwnd = app_windows[idx].GetHWND();
+	windows_map.insert(make_pair(hwnd, idx));
+
+	just_created = -1;
+
+	if ( !app_windows[idx].CreateSwapChain() )
+	{
+		ERR("Unable to create swap chain for window");
+		DeleteWindow(hwnd);
+		return nullptr;
+	}
+}
+
+void WindowsMgr::DeleteWindow(HWND hwnd)
+{
+	int16_t winId = -1;
+	auto it = windows_map.find(hwnd);
+	if(it == windows_map.end())
+	{
+		winId = just_created;
+		just_created = -1;
+	}
+	else
+	{
+		winId = it->second;
+		windows_map.erase(it);
+	}
+
+	if(winId < 0)
+		return;
+
+	app_windows[winId].Close();
+	app_windows[winId] = Window();
+
+	free_ids.push_back(winId);
+
+	if( main_window == winId )
+		main_window = -1;
 }
