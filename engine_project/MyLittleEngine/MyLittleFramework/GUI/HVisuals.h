@@ -7,7 +7,11 @@
 
 using namespace EngineCore;
 
+#define DEPTH_LAYER_MAX 4096
+
 #define MAX_RECTS_PER_WINDOW 4096
+#define MAX_RECT_INSTANCE 1024
+
 #define MAX_TEXTS_PER_WINDOW 1024
 
 struct ScreenRect
@@ -26,26 +30,57 @@ struct ScreenRect
 		h = r.h;
 		return *this;
 	}
+	ScreenRect& operator=(const MLRECT& r)
+	{
+		l = r.left;
+		t = r.top;
+		w = r.width;
+		h = r.height;
+		return *this;
+	}
 };
 
-struct RectData // 18 bites
+struct RectData
 {
 	ScreenRect rect;
 	uint16_t depth;
 	SimpleShaderInst* shaderInst;
 	uint16_t id;
+	uint16_t arrId;
 	uint32_t rectHash;
 
-	RectData(): depth(0), shaderInst(nullptr), id(MAX_RECTS_PER_WINDOW), rectHash(0) {}
+	RectData(): depth(0), shaderInst(nullptr), id(MAX_RECTS_PER_WINDOW), 
+		arrId(MAX_RECTS_PER_WINDOW), rectHash(0) {}
 	RectData& operator=(const RectData& r)
 	{
 		rect = r.rect;
 		depth = r.depth;
 		shaderInst = r.shaderInst;
 		id = r.id;
+		arrId = r.arrId;
 		rectHash = r.rectHash;
 		return *this;
 	}
+};
+
+struct RectInstData
+{
+	XMFLOAT4 rect;
+	XMFLOAT4 depth;
+
+	RectInstData(): rect(0,0,0,0), depth(0,0,0,0) {}
+	RectInstData& operator=(const RectInstData& r)
+	{
+		rect = r.rect;
+		depth = r.depth;
+		return *this;
+	}
+};
+
+struct GuiGroups
+{
+	uint16_t begin;
+	uint16_t end;
 };
 
 class HRectMgr
@@ -54,48 +89,33 @@ public:
 	HRectMgr();
 	~HRectMgr();
 
-	RectData* AddRect(int16_t winId);
+	RectData* AddRect(int16_t winId, SimpleShaderInst* shInst);
 	void DeleteRects(int16_t winId, uint16_t id);
 
 	RectData* GetRect(int16_t winId, uint16_t id);
+	bool SetRect(int16_t winId, uint16_t id, MLRECT& rect);
 
 	inline static HRectMgr* Get() {return instance;}
+
+	static bool HRectMgr::CompareRects(RectData& a, RectData& b);
+	static void HRectMgr::SwapRects(RectData* first, RectData* second, SArray<uint16_t, MAX_RECTS_PER_WINDOW>* idsArr, 
+		SArray<RectInstData, MAX_RECTS_PER_WINDOW>* gpuArr);
 
 private:
 	static HRectMgr* instance;
 
 	void allocWindow(int16_t winId);
-
-	struct GuiQuadVertex
-	{
-		XMFLOAT4 vertex[4];
-	};
-	struct GuiQuadIndex
-	{
-		uint32_t index[6];
-	};
-	struct GuiGroups
-	{
-		uint16_t begin;
-		uint16_t end;
-		SimpleShaderInst* shaderInst;
-	};
-
+	void updateGPUData(Window* win, int16_t winId, uint16_t arrId);
+	void sortRects();
+	
 	struct RectsPerWin
 	{
-		// 112 kb
 		SArray<uint16_t, MAX_RECTS_PER_WINDOW> ids;
 		SDeque<uint16_t, MAX_RECTS_PER_WINDOW> free_ids;
 		SArray<RectData, MAX_RECTS_PER_WINDOW> data;
+		SArray<RectInstData, MAX_RECTS_PER_WINDOW> dataGPU;
 
-		// 400 kb
-		SArray<GuiQuadVertex, MAX_RECTS_PER_WINDOW> solidVertex;
-		SArray<GuiQuadIndex, MAX_RECTS_PER_WINDOW> solidIndex;
 		SArray<GuiGroups, MAX_RECTS_PER_WINDOW> solidGroups;
-		
-		// 400 kb
-		SArray<GuiQuadVertex, MAX_RECTS_PER_WINDOW> alphaVertex;
-		SArray<GuiQuadIndex, MAX_RECTS_PER_WINDOW> alphaIndex;
 		SArray<GuiGroups, MAX_RECTS_PER_WINDOW> alphaGroups;
 	};
 
