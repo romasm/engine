@@ -7,13 +7,15 @@
 
 using namespace EngineCore;
 
+#define MAX_RECTS 4096
+
 #define DEPTH_LAYER_MAX 4096
 
-#define MAX_RECTS_PER_WINDOW 4096
-#define MAX_RECT_INSTANCE 1024
+#define MAX_RECTS_PER_WINDOW 2048
+#define MAX_ALPHAS_PER_WINDOW 1024
 
-#define MAX_TEXTS_PER_WINDOW 1024
-
+#define MAX_RECT_GROUPS 512
+/*
 struct ScreenRect
 {
 	int16_t l;
@@ -63,6 +65,36 @@ struct RectData
 	}
 };
 
+class HRectMgr
+{
+public:
+	HRectMgr();
+	~HRectMgr();
+
+	uint16_t AddRect(string& shader);
+	void DeleteRects(uint16_t id);
+
+	RectData* GetRect(uint16_t id);
+	bool SetRect(uint16_t id, MLRECT& rect);
+
+	inline static HRectMgr* Get() {return instance;}
+	
+private:
+	static HRectMgr* instance;
+	
+	SArray<uint16_t, MAX_RECTS> ids;
+	SDeque<uint16_t, MAX_RECTS> free_ids;
+	SArray<RectData, MAX_RECTS> data;
+};
+*/
+//////////////////////////////////
+
+struct GuiGroups
+{
+	uint16_t begin;
+	uint16_t end;
+};
+
 struct RectInstData
 {
 	XMFLOAT4 rect;
@@ -77,47 +109,40 @@ struct RectInstData
 	}
 };
 
-struct GuiGroups
-{
-	uint16_t begin;
-	uint16_t end;
-};
-
-class HRectMgr
+class GuiRenderMgr
 {
 public:
-	HRectMgr();
-	~HRectMgr();
+	GuiRenderMgr();
+	~GuiRenderMgr();
 
-	RectData* AddRect(int16_t winId, SimpleShaderInst* shInst);
-	void DeleteRects(int16_t winId, uint16_t id);
+	void RegRect(RectData& rect);
+	void RegText(RectData& rect);
 
-	RectData* GetRect(int16_t winId, uint16_t id);
-	bool SetRect(int16_t winId, uint16_t id, MLRECT& rect);
+	void Draw();
 
-	inline static HRectMgr* Get() {return instance;}
+	inline static GuiRenderMgr* Get() {return instance;}
 
-	static bool HRectMgr::CompareRects(RectData& a, RectData& b);
-	static void HRectMgr::SwapRects(RectData* first, RectData* second, SArray<uint16_t, MAX_RECTS_PER_WINDOW>* idsArr, 
+	static bool CompareRects(RectData& a, RectData& b);
+	static void SwapRects(RectData* first, RectData* second, SArray<uint16_t, MAX_RECTS_PER_WINDOW>* idsArr, 
 		SArray<RectInstData, MAX_RECTS_PER_WINDOW>* gpuArr);
 
 private:
-	static HRectMgr* instance;
+	static GuiRenderMgr* instance;
 
 	void allocWindow(int16_t winId);
 	void updateGPUData(Window* win, int16_t winId, uint16_t arrId);
 	void sortRects();
-	
-	struct RectsPerWin
-	{
-		SArray<uint16_t, MAX_RECTS_PER_WINDOW> ids;
-		SDeque<uint16_t, MAX_RECTS_PER_WINDOW> free_ids;
-		SArray<RectData, MAX_RECTS_PER_WINDOW> data;
-		SArray<RectInstData, MAX_RECTS_PER_WINDOW> dataGPU;
 
-		SArray<GuiGroups, MAX_RECTS_PER_WINDOW> solidGroups;
-		SArray<GuiGroups, MAX_RECTS_PER_WINDOW> alphaGroups;
+	struct GuiPerWin
+	{
+		SArray<RectInstData, MAX_RECTS_PER_WINDOW> solidData;
+		SArray<MatData, MAX_RECTS_PER_WINDOW> solidMats;
+		SArray<RectExtraData, MAX_RECTS_PER_WINDOW> solidExtra;
+		SArray<GuiGroups, MAX_RECT_GROUPS> solidGroups;
+
+		SArray<RectTextData, MAX_ALPHAS_PER_WINDOW> alphaData;
+		SArray<MatData, MAX_ALPHAS_PER_WINDOW> alphaMats;
 	};
 
-	SArray< RectsPerWin*, MAX_GUI_WINDOWS > rectsPerWindow;
+	SArray< GuiPerWin*, MAX_GUI_WINDOWS > guiPerWindow;
 };
