@@ -34,7 +34,22 @@ WindowsMgr::~WindowsMgr()
 void WindowsMgr::closeAll()
 {
 	for(auto& it : windows_map)
-		DeleteWindow(it.first);
+	{
+		app_windows[it.second].Close();
+		app_windows[it.second] = Window();
+		free_ids.push_back(it.second);
+	}
+	windows_map.clear();
+
+	if(just_created >= 0)
+	{
+		app_windows[just_created].Close();
+		app_windows[just_created] = Window();
+		free_ids.push_back(just_created);
+		just_created = -1;
+	}
+
+	main_window = -1;
 }
 
 bool WindowsMgr::Tick()
@@ -78,7 +93,7 @@ int16_t WindowsMgr::GetWindowID(HWND hwnd)
 	auto it = windows_map.find(hwnd);
 	if(it == windows_map.end())
 	{
-		if( just_created > 0 )
+		if( just_created >= 0 )
 			return just_created;
 		return -1;
 	}
@@ -156,6 +171,8 @@ Window* WindowsMgr::AddWindow()
 		DeleteWindow(hwnd);
 		return nullptr;
 	}
+
+	return &app_windows[idx];
 }
 
 void WindowsMgr::DeleteWindow(HWND hwnd)

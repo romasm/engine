@@ -164,7 +164,11 @@
     <ClInclude Include="Generate_PBS_Env_LUT.h" />
     <ClInclude Include="GUI\HDefines.h" />
     <ClInclude Include="GUI\HEntity.h" />
-    <ClInclude Include="GUI\HVisuals.h" />
+    <ClInclude Include="GUI\HVisuals.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="JobSystem.h" />
     <ClInclude Include="MainLoop.h" />
     <ClInclude Include="MaterialMgr.h" />
@@ -237,7 +241,11 @@
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\TypeMgr.cpp" />
     <ClCompile Include="GUI\HEntity.cpp" />
-    <ClCompile Include="GUI\HVisuals.cpp" />
+    <ClCompile Include="GUI\HVisuals.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="JobSystem.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MaterialMgr.cpp" />
