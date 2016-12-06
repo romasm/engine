@@ -42,6 +42,17 @@ GuiStyles.solid_button = {
     },
 }
 
+GuiStyles.empty_button = {
+    styles = {
+        GuiStyles.common_button,
+        GuiStyles.no_border,
+    },
+    
+    text = {
+        font = "",
+    },
+}
+
 GuiStyles.color_button = {
     styles = {
         GuiStyles.common_button,

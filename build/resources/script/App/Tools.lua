@@ -1,6 +1,6 @@
 if not Tools then Tools = {} end
 
-function Tools.reload()
+function Tools.reloadToolbar()
     local root = CoreGui.GetMainRoot()
 
     if Tools.window then
@@ -46,40 +46,48 @@ function Tools.reload()
     end
 end
 
-function Tools:Init()
-    print("Tools:Init") 
-
-    loader.require("ToolBar", Tools.reload)
-    self.reload()
-
+function Tools.reloadSideArea()
     local root = CoreGui.GetMainRoot()
-    local top_rect = MainWindow.window.entity:GetCorners()
-    local props = {
-        ignore_events = false,
-        collide_through = false,
-        align = GUI_ALIGN.RIGHT,
-        right = 1,
-        width = 300,
-        valign = GUI_VALIGN.BOTH,
-        top = top_rect.b,
-        bottom = 1
-    }
-    self.side_area = GuiEntity(props)
-    root:AttachChild(self.side_area.entity)
 
-    self.side_area.onMoveResize = function(self, is_move, is_resize)
-        local rect = self.entity:GetRectAbsolute()
-        local middle = math.ceil( rect.h / 2 )
-        if self.props_win then self.props_win.bottom = middle + self.props_win.top / 2 end
-        if self.mats_win then self.mats_win.top = rect.h - middle + self.mats_win.bottom / 2 end
+    local reloadProps = false
+    local reloadMats = false
+
+    if Tools.side_area then
+        root:DetachChild(Tools.side_area.entity)
+        Tools.side_area.entity:Destroy()
+        Tools.side_area = nil
+        
+        if Properties.window then reloadProps = true end
+        if MaterialProps.window then reloadMats = true end
+
+        Properties.window = nil
+        MaterialProps.window = nil
     end
-    self.side_area.events = {}
-    self.side_area.events[GUI_EVENTS.UNFOCUS] = function(self, ev)
-        if ev.entity:is_eq(self.entity) then self.entity:SetFocus(HEntity()) end
-        return false
-    end
+
+    Tools.side_area = Gui.SideArea()
+    root:AttachChild(Tools.side_area.entity)
+    
+    local top_rect = MainWindow.window.entity:GetCorners()
+    Tools.side_area.entity.top = top_rect.b
+
+    if reloadProps then Properties.reload() end
+    if reloadMats then MaterialProps.reload() end
 
     CoreGui.UpdateLuaFuncs()
+
+    Tools.side_area.entity:UpdatePosSize()
+end
+
+function Tools:Init()
+    print("Tools:Init") 
+    
+    self.side_area_separator = 400
+
+    loader.require("ToolBar", Tools.reloadToolbar)
+    self.reloadToolbar()
+
+    loader.require("SideArea", Tools.reloadSideArea)
+    self.reloadSideArea()
 end
 
 function Tools:PostInitProperties()

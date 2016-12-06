@@ -55,11 +55,23 @@ void WindowsMgr::closeAll()
 bool WindowsMgr::Tick()
 {
 	MSG msg;
+	MSG mouseMoveMsg;
 	while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 	{
+		if(msg.message == WM_MOUSEMOVE)
+		{
+			mouseMoveMsg = msg;
+			continue;
+		}
+
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	// mouse move separate process (?)
+	// TODO: try move to Window messages switch: store mouse move, process move in AfterRunEvent
+	TranslateMessage(&mouseMoveMsg);
+	DispatchMessage(&mouseMoveMsg);
 
 	if( just_created > -1 )
 		app_windows[just_created].AfterRunEvent();
