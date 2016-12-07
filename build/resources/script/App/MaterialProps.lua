@@ -8,13 +8,13 @@ loader.require("ShadersProps.opaque_main", MaterialProps.reloadMatWin)
 
 function MaterialProps.reload()
     if MaterialProps.window then
-        Tools.side_area.entity:DetachChild(MaterialProps.window.entity)
+        Tools.left_side_area.entity:DetachChild(MaterialProps.window.entity)
         MaterialProps.window.entity:Destroy()
         MaterialProps.window = nil
     end
 
     MaterialProps.window = Gui.MaterialWindow()
-    Tools.side_area.entity:AttachChild(MaterialProps.window.entity)
+    Tools.left_side_area.entity:AttachChild(MaterialProps.window.entity)
 
     Tools:PostInitMaterialProps()
 
@@ -29,7 +29,6 @@ end
 function MaterialProps:Init()
     print("MaterialProps:Init") 
 
-    loader.require("MaterialWindow", MaterialProps.reload)
     self.reload()
 
     self.material = nil

@@ -17,14 +17,13 @@ function Viewport.reload()
     -- resize
     local Grect = root:GetRectAbsolute()
 
-    local top_rect = MainWindow.window.entity:GetRectRelative()
-    Viewport.window.entity.top = top_rect.t + top_rect.h
+    local tool_rect = Tools.window.entity:GetCorners()
+    Viewport.window.entity.top = tool_rect.b + Viewport.window.entity.top
 
-    local tool_rect = Tools.window.entity:GetRectRelative()
-    Viewport.window.entity.left = tool_rect.l + tool_rect.w
-
-    local props_rect = Tools.side_area.entity:GetRectAbsolute()
-    Viewport.window.entity.right = Grect.w - (props_rect.l - Grect.l)
+    local side_rect = Tools.right_side_area.entity:GetRectAbsolute()
+    Viewport.window.entity.right = Grect.w - (side_rect.l - Grect.l)
+    side_rect = Tools.left_side_area.entity:GetRectAbsolute()
+    Viewport.window.entity.left = side_rect.l - Grect.l + side_rect.w
 
     Viewport.window.entity:UpdatePosSize()
 

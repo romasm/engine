@@ -7,7 +7,7 @@ GuiStyles.tool_button = {
 
     height = 40,
     width = 40,
-    left = 4,
+    top = 0,
 
     background = {
         color = 'bg_01',
@@ -42,11 +42,12 @@ return GuiRect({
     styles = {
         GuiStyles.live,
     },
-    align = GUI_ALIGN.LEFT,
-    valign = GUI_VALIGN.BOTH,
+    align = GUI_ALIGN.BOTH,
+    valign = GUI_VALIGN.TOP,
 
-    width = 48,
-    left = 1,
+    height = 40,
+    top = 4,
+    bottom = 4,
 
     background = {
         color = 'bg_01',
@@ -59,7 +60,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        top = 23,
+        left = 4,
 
         icon = {material = GuiMaterials.select_icon},
 
@@ -85,7 +86,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        top = 67,
+        left = 48,
 
         icon = {material = GuiMaterials.move_icon},
 
@@ -111,7 +112,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        top = 111,
+        left = 92,
 
         icon = {material = GuiMaterials.rotate_icon},
 
@@ -137,7 +138,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        top = 155,
+        left = 136,
 
         icon = {material = GuiMaterials.scale_icon},
 

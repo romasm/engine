@@ -97,6 +97,9 @@
     <Compile Include="..\..\gui\SideArea.lua">
       <Link>Gui\SideArea.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\SideContainers.lua">
+      <Link>Gui\SideContainers.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\Styles\DefaultStyles.lua">
       <Link>Gui\Styles\DefaultStyles.lua</Link>
     </Compile>

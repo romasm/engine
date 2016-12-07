@@ -1,9 +1,15 @@
-function Gui.SideArea()
+SIDE_WIN_MIN_HEIGHT = 100
+
+function Gui.SideArea(is_left)
+
+local separator_id = is_left and 2 or 1
+
 local sidearea = GuiEntity({
     ignore_events = false,
     collide_through = false,
-    align = GUI_ALIGN.RIGHT,
+    align = is_left and GUI_ALIGN.LEFT or GUI_ALIGN.RIGHT,
     right = 1,
+    left = 1,
     width = 300,
     valign = GUI_VALIGN.BOTH,
     top = 0,
@@ -28,8 +34,10 @@ local sidearea = GuiEntity({
         left = 4,
         right = 4,
         height = 4,
+
+        id = 'resize_btn',
         
-        top = Tools.side_area_separator,
+        top = Tools.side_area_separator[separator_id],
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
                 self.entity:SetHierarchyFocusOnMe(true)
@@ -46,10 +54,11 @@ local sidearea = GuiEntity({
                 if self.mouse_offset then
                     local parent = self.entity:GetParent()
                     local parentRect = parent:GetRectAbsolute()
-                    Tools.side_area_separator = ev.coords.y - self.mouse_offset - parentRect.t
-                    Tools.side_area_separator = math.min(math.max(100, Tools.side_area_separator), parentRect.h - 100)
-                    if self.entity.top ~= Tools.side_area_separator then 
-                        self.entity.top = Tools.side_area_separator
+                    local separator_id = parent:GetInherited().separator_id
+
+                    Tools.side_area_separator[separator_id] = ev.coords.y - self.mouse_offset - parentRect.t
+                    Tools.side_area_separator[separator_id] = math.min(math.max(SIDE_WIN_MIN_HEIGHT, Tools.side_area_separator[separator_id]), parentRect.h - SIDE_WIN_MIN_HEIGHT)
+                    if self.entity.top ~= Tools.side_area_separator[separator_id] then
                         parent:UpdateSize()
                     end
                 end
@@ -59,10 +68,18 @@ local sidearea = GuiEntity({
     })
 })
 
+sidearea.separator_id = separator_id
+sidearea.resize_btn = sidearea.entity:GetChildById('resize_btn')
+
 sidearea.onMoveResize = function(self, is_move, is_resize)
         local rect = self.entity:GetRectAbsolute()
-        if self.props_win then self.props_win.bottom = rect.h - Tools.side_area_separator end
-        if self.mats_win then self.mats_win.top = Tools.side_area_separator + self.mats_win.bottom end
+
+        Tools.side_area_separator[self.separator_id] = math.min(math.max(SIDE_WIN_MIN_HEIGHT, Tools.side_area_separator[self.separator_id]), rect.h - SIDE_WIN_MIN_HEIGHT)
+        self.resize_btn.top = Tools.side_area_separator[self.separator_id]
+
+        if self.first_win then self.first_win.bottom = rect.h - Tools.side_area_separator[self.separator_id] end
+        if self.second_win then self.second_win.top = Tools.side_area_separator[self.separator_id] + self.second_win.bottom end
+
         return true
     end
 

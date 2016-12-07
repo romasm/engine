@@ -73,7 +73,7 @@ return GuiMenu({
         styles = {GuiStyles.menu_button_default,},
         id = "tb_exit",
         top = 127,
-        text = { str = "Выход", },
+        text = { str = "Exit", },
     }),
 })
 end

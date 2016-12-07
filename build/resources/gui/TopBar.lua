@@ -100,7 +100,7 @@ return GuiRect({
             GuiStyles.topmenu_button,
         },
 
-        left = 49,
+        left = 12,
         width = 62,
 
         text = {str = 'File'},
@@ -120,7 +120,7 @@ return GuiRect({
             GuiStyles.topmenu_button,
         },
 
-        left = 122,
+        left = 85,
         width = 102,
 
         text = {str = 'Configs'},

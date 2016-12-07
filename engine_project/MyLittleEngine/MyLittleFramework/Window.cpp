@@ -35,6 +35,7 @@ namespace EngineCore
 
 		mouseX = 0;
 		mouseY = 0;
+		mouseMoved = false;
 
 		m_ortho = XMMatrixIdentity();
 
@@ -185,6 +186,8 @@ namespace EngineCore
 			m_finResize = true;
 			m_begResize = true;
 		}
+
+		mouseMoveProcess();
 	}
 
 	void Window::Close()
@@ -308,12 +311,12 @@ namespace EngineCore
 					b_hover = true;
 					SetCursor(crs_arrow);
 				}
-				mouseMove();	
+				mouseMoved = true;
 				return 0;
 			}
 		case WM_MOUSELEAVE:
 			b_hover = false;
-			mouseMove();
+			mouseMoved = true;
 			is_tracking_mouse = false;
 			return 0;
 		/*case WM_NCMOUSEMOVE:
@@ -472,8 +475,11 @@ namespace EngineCore
 		return DefWindowProcW( hwnd, nMsg, wParam, lParam);
 	}
 
-	void Window::mouseMove()
+	void Window::mouseMoveProcess()
 	{
+		if(!mouseMoved)
+			return;
+
 		POINT Position;
 		GetCursorPos(&Position);
 
@@ -489,6 +495,8 @@ namespace EngineCore
 		mouseY = int16_t(Position.y);
 
 		Hud::Get()->MouseMove(MouseEvent(mouseX, mouseY, !IsHover()), this);
+		
+		mouseMoved = false;
 	}
 
 	void Window::ForceRedraw()

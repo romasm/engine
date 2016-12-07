@@ -13,13 +13,13 @@ loader.require("ComponentsGui.TestEnt", Properties.reloadComponents)
 
 function Properties.reload()
     if Properties.window then
-        Tools.side_area.entity:DetachChild(Properties.window.entity)
+        Tools.right_side_area.entity:DetachChild(Properties.window.entity)
         Properties.window.entity:Destroy()
         Properties.window = nil
     end
 
     Properties.window = Gui.PropertiesWindow()
-    Tools.side_area.entity:AttachChild(Properties.window.entity)
+    Tools.right_side_area.entity:AttachChild(Properties.window.entity)
 
     Tools:PostInitProperties()
 
@@ -34,7 +34,6 @@ end
 function Properties:Init()
     print("Properties:Init") 
 
-    loader.require("PropertiesWindow", Properties.reload)
     self.reload()
 
     self.update_time = 0

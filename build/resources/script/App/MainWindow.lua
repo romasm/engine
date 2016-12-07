@@ -48,9 +48,9 @@ function MainWindow:Init()
 	self.mainwin:SetPosSize(200, 100, 1920, 1080)
 
     if self.mainwin:IsMaximized() then
-        self.mainwin:SetCaptionBorderSize(235, 95, 0, 26 + SYSTEM_BORDER_SIZE, 4)
+        self.mainwin:SetCaptionBorderSize(200, 95, 0, 26 + SYSTEM_BORDER_SIZE, 4)
     else
-        self.mainwin:SetCaptionBorderSize(235, 95, 0, 26, 4)
+        self.mainwin:SetCaptionBorderSize(200, 95, 0, 26, 4)
     end
 
     local main_win_bg = CoreGui.GetColor('main_win_bg')

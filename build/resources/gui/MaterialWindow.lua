@@ -11,6 +11,7 @@ return GuiWindow({
     left = 4,
     bottom = 4,
     right = 4,
+    top = 4,
 
     id = "material_window",
 
@@ -52,8 +53,6 @@ return GuiWindow({
             width = 100,
             width_percent = true,
             groupstack = true,
-
-            
         }),
     }),
 })

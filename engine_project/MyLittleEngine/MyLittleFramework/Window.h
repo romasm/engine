@@ -320,7 +320,8 @@ namespace EngineCore
 
 		DropTarget* m_dropTarget;
 
-		inline void mouseMove();
+		bool mouseMoved;
+		void mouseMoveProcess();
 
 		int16_t mouseX, mouseY;
 

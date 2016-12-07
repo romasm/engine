@@ -41,6 +41,9 @@ return GuiEntity({
     align = GUI_ALIGN.BOTH,
     valign = GUI_VALIGN.BOTH,
 
+    top = 4,
+    bottom = 5,
+
     id = "viewport_window",
     
     GuiString({

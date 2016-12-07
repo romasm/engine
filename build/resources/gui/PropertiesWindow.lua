@@ -9,6 +9,7 @@ return GuiWindow({
     valign = GUI_VALIGN.BOTH,
 
     left = 4,
+    bottom = 4,
     top = 4,
     right = 4,
     
