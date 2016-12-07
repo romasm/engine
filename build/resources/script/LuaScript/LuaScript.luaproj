@@ -55,9 +55,6 @@
     <Compile Include="..\..\gui\ComponentsGui\TransformCallback.lua">
       <Link>Gui\ComponentsGui\TransformCallback.lua</Link>
     </Compile>
-    <Compile Include="..\..\gui\MaterialWindow.lua">
-      <Link>Gui\MaterialWindow.lua</Link>
-    </Compile>
     <Compile Include="..\..\gui\Menus\TB_File.lua">
       <Link>Gui\Menus\TB_File.lua</Link>
     </Compile>
@@ -84,9 +81,6 @@
     </Compile>
     <Compile Include="..\..\gui\ProfilerWindow.lua">
       <Link>Gui\ProfilerWindow.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\PropertiesWindow.lua">
-      <Link>Gui\PropertiesWindow.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\ShadersProps\opaque_main.lua">
       <Link>Gui\ShadersProps\opaque_main.lua</Link>
