@@ -118,6 +118,9 @@ function Tools:Init()
     self.right_side_area.entity:AttachChild(sceneBrowser.entity)
     self.right_side_area.second_win = sceneBrowser.entity
 
+    
+    loader.require("AssetBrowser")
+
     local assetBrowser = Gui.AssetBrowserWindow()
     self.left_side_area.entity:AttachChild(assetBrowser.entity)
     self.left_side_area.second_win = assetBrowser.entity

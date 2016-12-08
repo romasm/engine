@@ -25,6 +25,9 @@
     <OutputPath>bin\Developer\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\gui\AssetBrowser.lua">
+      <Link>Gui\AssetBrowser.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\GlobalLight.lua">
       <Link>Gui\ComponentsGui\GlobalLight.lua</Link>
     </Compile>
