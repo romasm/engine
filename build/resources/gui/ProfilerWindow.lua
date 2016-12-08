@@ -15,7 +15,7 @@ GuiStyles.perf_button = {
         color = 'text_01',
         color_hover = 'act_03',
         color_press = 'act_03',
-        font = "../content/materials/fonts/opensans_normal_25px",
+        font = "../resources/fonts/opensans_normal_25px",
     },
 }
 
@@ -32,7 +32,7 @@ GuiStyles.perf_id = {
         color_press = 'act_03',
         offset = { x = 2, y = 1 },
         center = { x = false, y = false },
-        font = "../content/materials/fonts/opensans_normal_12px",
+        font = "../resources/fonts/opensans_normal_12px",
     },
     
     background = {

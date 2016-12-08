@@ -29,7 +29,7 @@
 #define PATH_SCRIPTS PATH_ROOT "resources/script/"
 #define PATH_GUI PATH_ROOT "resources/gui/"
 #define PATH_CONFIG PATH_ROOT "config/"
-#define PATH_FONTS PATH_MATERIALS "fonts/"
+#define PATH_FONTS PATH_RSC "fonts/"
 
 #define PATH_MATERIAL_TECH PATH_MATERIALS "tech/"
 #define PATH_EDITOR_MATERIAL PATH_MATERIALS "editor/"

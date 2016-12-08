@@ -38,7 +38,7 @@ GuiStyles.solid_button = {
     text = {
         offset = { x = 0, y = 0 },
         center = { x = true, y = true },
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
     },
 }
 
@@ -93,31 +93,31 @@ GuiStyles.string_autosize = {
 }
 
 GuiStyles.string_16 = {
-    font = "../content/materials/fonts/opensans_normal_16px",
+    font = "../resources/fonts/opensans_normal_16px",
 }
 GuiStyles.string_18 = {
-    font = "../content/materials/fonts/opensans_normal_18px",
+    font = "../resources/fonts/opensans_normal_18px",
 }
 GuiStyles.string_20 = {
-    font = "../content/materials/fonts/opensans_normal_20px",
+    font = "../resources/fonts/opensans_normal_20px",
 }
 GuiStyles.string_25 = {
-    font = "../content/materials/fonts/opensans_normal_25px",
+    font = "../resources/fonts/opensans_normal_25px",
 }
 GuiStyles.string_40 = {
-    font = "../content/materials/fonts/opensans_normal_40px",
+    font = "../resources/fonts/opensans_normal_40px",
 }
 GuiStyles.string_70 = {
-    font = "../content/materials/fonts/opensans_normal_70px",
+    font = "../resources/fonts/opensans_normal_70px",
 }
 GuiStyles.string_25_l = {
-    font = "../content/materials/fonts/opensans_light_25px",
+    font = "../resources/fonts/opensans_light_25px",
 }
 GuiStyles.string_40_l = {
-    font = "../content/materials/fonts/opensans_light_40px",
+    font = "../resources/fonts/opensans_light_40px",
 }
 GuiStyles.string_70_l = {
-    font = "../content/materials/fonts/opensans_light_70px",
+    font = "../resources/fonts/opensans_light_70px",
 }
 
 GuiStyles.string_props_01 = {
@@ -186,7 +186,7 @@ GuiStyles.common_textfield = {
         center = { x = false, y = true },
         str = "",
         length = 64,
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
     },
 
     data = {
@@ -291,7 +291,7 @@ GuiStyles.common_combo = {
     text = {
         offset = { x = 5, y = 0 },
         center = { x = false, y = true },
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
         length = 64
     },
 }
@@ -364,7 +364,7 @@ GuiStyles.common_check = {
     text = {
         offset = { x = 5, y = 0 },
         center = true,
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
     },
 }
 
@@ -436,7 +436,7 @@ GuiStyles.common_dataslider = {
         offset = {x = 0, y = 0},
         center = {x = true, y = true},
         length = 10,
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
         color = 'act_02',
         color_live = 'bg_06',
         color_nonactive = 'text_02',

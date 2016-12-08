@@ -18,7 +18,7 @@ GuiStyles.topmenu_button = {
         color = 'text_01',
         color_hover = 'act_03',
         color_press = 'act_02',
-        font = "../content/materials/fonts/opensans_normal_20px",
+        font = "../resources/fonts/opensans_normal_20px",
     },
 }
 
@@ -83,7 +83,7 @@ return GuiRect({
         id = 'tb_caption',
 
         str = "caption here",
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
         static = false,
         length = 64,
 

@@ -9,7 +9,7 @@ GuiStyles.vp_header_colors = {
         color = 'act_02',
         color_hover = 'act_03',
         color_press = 'act_02',
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
     },
 }
 

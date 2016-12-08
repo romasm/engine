@@ -23,7 +23,7 @@ GuiStyles.group_button = {
         offset = { x = 25, y = 0 },
         center = { x = false, y = true },
         str = "Group",
-        font = "../content/materials/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_18px",
         color = 'text_01',
         color_hover = 'act_03',
         color_press = 'act_03',
