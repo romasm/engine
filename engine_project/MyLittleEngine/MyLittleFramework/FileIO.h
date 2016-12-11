@@ -4,6 +4,7 @@
 #include "macros.h"
 #include "Util.h"
 #include "LuaVM.h"
+#include "DataAlloc\Arrays.h"
 
 namespace EngineCore
 {
@@ -27,6 +28,39 @@ private:
 				node->clear();
 				delete node;
 			}
+		}
+	};
+
+	struct DirList
+	{
+		DArray<string> namesList;
+		uint32_t current;
+
+		DirList()
+		{ current = 0; }
+		~DirList(){}
+
+		string next()
+		{
+			if( current >= namesList.size() )
+			{
+				current = 0;
+				return "";
+			}
+			current++;
+			return namesList[current - 1];
+		}
+		void reset()
+		{
+			current = 0;
+		}
+		int32_t size()
+		{
+			return (int32_t)namesList.size();
+		}
+		void destruct()
+		{
+			delete this;
 		}
 	};
 
@@ -150,18 +184,28 @@ private:
 	string fileName;
 
 public:
-	static bool IsExist(string& filename);
-	inline static bool IsExistS(char* filename){return IsExist(string(filename));}
-	inline static bool IsExist_lua(string filename){return IsExist(filename);}
+	static bool IsExist(string& path);
+	inline static bool IsExistS(char* path){return IsExist(string(path));}
+	inline static bool IsExist_lua(string path){return IsExist(path);}
+	static bool IsFile(string& filename);
+	inline static bool IsFileS(char* filename){return IsFile(string(filename));}
+	inline static bool IsFile_lua(string filename){return IsFile(filename);}
+
+	static bool CreateDir(string& path);
+	inline static bool CreateDirS(char* path){return CreateDir(string(path));}
+	inline static bool CreateDir_lua(string path){return CreateDir(path);}
+
+	static DirList* GetDirList(string dirname);
+
 	static uint32_t GetDateModifRaw(string& filename);
 	inline static uint32_t GetDateModifRawS(char* filename){return GetDateModifRaw(string(filename));}
 	inline static uint32_t GetDateModifRaw_lua(string filename){return GetDateModifRaw(filename);}
 	static string GetDateModif(string& filename);
 	inline static string GetDateModifS(char* filename){return GetDateModif(string(filename));}
 	inline static string GetDateModif_lua(string filename){return GetDateModif(filename);}
-	static string GetDateCreate(string& filename);
-	inline static string GetDateCreateS(char* filename){return GetDateCreate(string(filename));}
-	inline static string GetDateCreate_lua(string filename){return GetDateCreate(filename);}
+	static string GetDateCreate(string& path);
+	inline static string GetDateCreateS(char* path){return GetDateCreate(string(path));}
+	inline static string GetDateCreate_lua(string path){return GetDateCreate(path);}
 	static uint32_t GetSize(string& filename);
 	inline static uint32_t GetSizeS(char* filename){return GetSize(string(filename));}
 	inline static uint32_t GetSize_lua(string filename){return GetSize(filename);}
@@ -175,11 +219,23 @@ public:
 	{
 		getGlobalNamespace(LSTATE)
 			.beginNamespace("FileIO")
-				.addFunction("IsFileExist", &FileIO::IsExist_lua)
+				.addFunction("IsExist", &FileIO::IsExist_lua)
+				.addFunction("IsFile", &FileIO::IsFile_lua)
+
+				.addFunction("CreateDir", &FileIO::CreateDir_lua)
+				.addFunction("GetDirList", &FileIO::GetDirList)
+
 				.addFunction("GetFileDateModifRaw", &FileIO::GetDateModifRaw_lua)
 				.addFunction("GetFileDateModif", &FileIO::GetDateModif_lua)
 				.addFunction("GetFileDateCreate", &FileIO::GetDateCreate_lua)
 				.addFunction("GetFileSize", &FileIO::GetSize_lua)
+
+				.beginClass<DirList>("DirList")
+					.addFunction("getnext", &DirList::next)
+					.addFunction("reset", &DirList::reset)
+					.addFunction("size", &DirList::size)
+					.addFunction("destruct", &DirList::destruct)
+				.endClass()
 			.endNamespace();
 	}
 };

@@ -20,8 +20,8 @@ function Properties.reload()
 
     Properties.window = Gui.PropertiesWindow()
     Tools.right_side_area.entity:AttachChild(Properties.window.entity)
-
-    Tools:PostInitProperties()
+    
+    Tools.right_side_area.first_win = Properties.window.entity
 
     Properties.window.entity:UpdatePosSize()
 

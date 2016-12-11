@@ -57,7 +57,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>core_d</TargetName>
-    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)\MyLittleFramework;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\Dirent;$(SolutionDir)..\Assimp\Inc;$(SolutionDir)\MyLittleFramework;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\debug;$(SolutionDir)..\DirectXTK\lib\x64\Debug;$(SolutionDir)..\DirectXTex\lib\x64\Debug;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
@@ -65,7 +65,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\Dirent;$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\release;$(SolutionDir)..\DirectXTK\lib\x64\Release;$(SolutionDir)..\DirectXTex\lib\x64\Release;$(LibraryPath)</LibraryPath>
     <TargetName>core</TargetName>
     <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>
@@ -73,7 +73,7 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|x64'">
-    <IncludePath>$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\Dirent;$(SolutionDir)..\Assimp\Inc;$(SolutionDir)..\Lua\LuaBridge;$(SolutionDir)..\Lua\LuaJIT\src;$(SolutionDir)..\DirectXTK\Inc;$(SolutionDir)..\DirectXTex\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Assimp\lib;$(SolutionDir)..\Lua\lib\release;$(SolutionDir)..\DirectXTK\lib\x64\Release;$(SolutionDir)..\DirectXTex\lib\x64\Release;$(LibraryPath)</LibraryPath>
     <TargetName>core_dev</TargetName>
     <OutDir>$(SolutionDir)..\..\build\bin\</OutDir>

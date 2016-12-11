@@ -117,27 +117,6 @@ function Tools:Init()
     local sceneBrowser = Gui.SceneBrowserWindow()
     self.right_side_area.entity:AttachChild(sceneBrowser.entity)
     self.right_side_area.second_win = sceneBrowser.entity
-
-    
-    loader.require("AssetBrowser")
-
-    local assetBrowser = Gui.AssetBrowserWindow()
-    self.left_side_area.entity:AttachChild(assetBrowser.entity)
-    self.left_side_area.second_win = assetBrowser.entity
-end
-
-function Tools:PostInitProperties()
-    self.right_side_area.first_win = self.right_side_area.entity:GetChildById('properties_window')
-    if self.right_side_area.first_win:is_null() then error("Require properties_window window!") end
-
-    self.right_side_area.entity:UpdatePosSize()
-end
-
-function Tools:PostInitMaterialProps()
-    self.left_side_area.first_win = self.left_side_area.entity:GetChildById('material_window')
-    if self.left_side_area.first_win:is_null() then error("Require material_window window!") end
-
-    self.left_side_area.entity:UpdatePosSize()
 end
 
 function Tools:UnpressAll(exclude)

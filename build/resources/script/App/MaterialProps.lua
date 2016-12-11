@@ -15,8 +15,8 @@ function MaterialProps.reload()
 
     MaterialProps.window = Gui.MaterialWindow()
     Tools.left_side_area.entity:AttachChild(MaterialProps.window.entity)
-
-    Tools:PostInitMaterialProps()
+    
+    Tools.left_side_area.first_win = MaterialProps.window.entity
 
     MaterialProps.window.entity:UpdatePosSize()
 

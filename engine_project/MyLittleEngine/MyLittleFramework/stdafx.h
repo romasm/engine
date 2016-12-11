@@ -20,6 +20,8 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <direct.h>
+#include <dirent.h>
 
 #include <thread>
 #include <mutex>

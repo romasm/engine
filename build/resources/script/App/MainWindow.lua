@@ -67,10 +67,10 @@ function MainWindow:Init()
     loader.require("TopBar", MainWindow.reloadTopBar)
     self.reloadTopBar()
     
-    -- viewport
     Tools:Init()
     Properties:Init()
     MaterialProps:Init()
+    AssetBrowser:Init()
     Viewport:Init()
 
     Resource.ForceTextureReload()

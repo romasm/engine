@@ -297,10 +297,18 @@ void FileIO::writeMap(ofstream* file, file_map* node, uint16_t depth)
 
 // static
 
-bool FileIO::IsExist(string& filename)
+bool FileIO::IsExist(string& path)
 {
 	struct _stat32 buffer;   
-	return (_stat32(filename.data(), &buffer) == 0);  
+	return (_stat32(path.data(), &buffer) == 0);  
+}
+
+bool FileIO::IsFile(string& filename)
+{
+	struct _stat32 buffer;   
+	if( _stat32(filename.data(), &buffer) != 0 )
+		return false;
+	return (buffer.st_mode & S_IFDIR) == 0;
 }
 
 uint32_t FileIO::GetDateModifRaw(string& filename)
@@ -321,10 +329,10 @@ string FileIO::GetDateModif(string& filename)
 	return string(str);
 }
 
-string FileIO::GetDateCreate(string& filename)
+string FileIO::GetDateCreate(string& path)
 {
 	struct _stat32 buffer;
-	if(_stat32(filename.data(), &buffer) != 0)
+	if(_stat32(path.data(), &buffer) != 0)
 		return 0;
 	char str[26];
 	ctime_s(str, 26, (const time_t*)(&buffer.st_ctime));
@@ -375,4 +383,47 @@ bool FileIO::WriteFileData(string& filename, uint8_t* data, uint32_t size, uint3
 	stream.close();
 	
 	return true;
+}
+
+bool FileIO::CreateDir(string& path)
+{
+	auto res = _mkdir(path.data());
+	if( res == ENOENT )
+	{
+		auto slash = path.rfind('\\');
+		if(slash == string::npos)
+			slash = 0;
+		slash = max(slash, path.rfind('/'));
+		if(slash == string::npos)
+			return false;
+
+		string newDir = path.substr(0, slash);
+
+		if( !CreateDir(newDir) )
+			return false;
+
+		return _mkdir(path.data()) == 0;
+	}
+	return res == 0;
+}
+
+FileIO::DirList* FileIO::GetDirList(string dirname)
+{
+	DirList* res = new DirList;
+
+	DIR *dir;
+	if( (dir = opendir( dirname.data() )) == nullptr )
+		return res;
+	
+	struct dirent *ent;
+	while( (ent = readdir(dir)) != nullptr )
+	{
+		string name(ent->d_name);
+		if( name[0] == '.' && ( name.size() == 1 ||	(name[1] == '.' && name.size() == 2) ) )
+			continue;
+		res->namesList.push_back(name);
+	}
+	closedir(dir);
+
+	return res;
 }
