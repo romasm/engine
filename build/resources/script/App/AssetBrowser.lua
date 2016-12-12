@@ -34,9 +34,9 @@ function AssetBrowser:Init()
     print("AssetBrowser:Init") 
     
     self.fileList = {}
-    self.matsDir = "../content/materials"
+    self.libDir = "../content/materials"
 
-    self:ScanDir(self.matsDir)
+    self:ScanDir(self.libDir)
 
     -- temp
     print("---------")
