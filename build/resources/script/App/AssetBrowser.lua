@@ -50,30 +50,7 @@ function AssetBrowser:FillBody()
             stringCounter = 0
         end
 
-        btn = GuiButton({
-            styles = { GuiStyles.material_button, },
-            icon = {material = {
-                shader = "../resources/shaders/gui/rect_color_icon_alpha",
-                textures = {self.fileList[i]..".dds"}
-            }},
-            text = {str = matName},
-            id = self.fileList[i],
-            alt = matName,
-
-            top = topOffset,
-            left = leftOffset,
-
-            events = {
-                [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                    AssetBrowser:SetSelected(self)
-                    return true 
-                end,
-                [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                    AssetBrowser:UnSelected()
-                    return true 
-                end,
-            },
-        })
+        btn = Gui.AssetBrowserMaterial( self.fileList[i], matName, topOffset, leftOffset )
 
         body:AttachChild( btn.entity )
 
@@ -103,7 +80,7 @@ function AssetBrowser:SetSelected(btn)
         self.selectedMatBtn:SetPressed(false)
     end
     
-    MaterialProps:SetSelected(btn.entity:GetID() .. ".mtb")
+    MaterialProps:SetSelected(btn.assetID .. ".mtb")
     self.selectedMatBtn = btn
 end
 
@@ -113,4 +90,8 @@ function AssetBrowser:UnSelected()
         self.selectedMatBtn:SetPressed(false)
         self.selectedMatBtn = nil
     end
+end
+
+function AssetBrowser:Rename(textfield)
+    local button = textfield.entity:GetParent():GetInherited()
 end
