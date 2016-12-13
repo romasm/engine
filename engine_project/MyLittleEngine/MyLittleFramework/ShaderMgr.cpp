@@ -72,6 +72,7 @@ void ShaderMgr::PreloadShaders()
 	GetShader(string(PATH_SHADERS"gui/h_picker"), true);
 	GetShader(string(PATH_SHADERS"gui/rect"), true);
 	GetShader(string(PATH_SHADERS"gui/rect_icon"), true);
+	GetShader(string(PATH_SHADERS"gui/rect_color_icon_alpha"), true);
 	GetShader(string(PATH_SHADERS"gui/rect_icon_bg"), true);
 	GetShader(string(PATH_SHADERS"gui/shadow"), true);
 	GetShader(string(PATH_SHADERS"gui/sv_picker"), true);

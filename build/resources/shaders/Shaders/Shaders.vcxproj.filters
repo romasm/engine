@@ -139,9 +139,6 @@
     <FxCompile Include="..\gui\h_picker.hlsl">
       <Filter>gui</Filter>
     </FxCompile>
-    <FxCompile Include="..\gui\rect_icon.hlsl">
-      <Filter>gui</Filter>
-    </FxCompile>
     <FxCompile Include="..\gui\rect_icon_bg.hlsl">
       <Filter>gui</Filter>
     </FxCompile>
@@ -315,6 +312,12 @@
     </FxCompile>
     <FxCompile Include="..\system\voxel_downsample.hlsl">
       <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\rect_icon.hlsl">
+      <Filter>gui</Filter>
+    </FxCompile>
+    <FxCompile Include="..\gui\rect_color_icon_alpha.hlsl">
+      <Filter>gui</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

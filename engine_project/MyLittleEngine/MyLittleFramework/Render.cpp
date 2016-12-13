@@ -23,6 +23,11 @@ namespace EngineCore
 	{
 		return RELOADABLE_TEXTURE(path, true); // todo
 	}
+	
+	void DropTextureLua(string path)
+	{
+		TEXTURE_NAME_DROP(path);
+	}
 
 	void ForceTextureReload()
 	{
@@ -39,11 +44,24 @@ namespace EngineCore
 		StMeshMgr::Get()->SaveSTMFile(file);
 	}
 
+	Material* GetMaterialLua(string name)
+	{
+		return MaterialMgr::Get()->GetMaterial(name);
+	}
+
+	void DropMaterialLua(string name)
+	{
+		MaterialMgr::Get()->DeleteMaterial(name);
+	}
+
 	void Render::RegLuaClass()
 	{
 		getGlobalNamespace(LSTATE)
 			.beginNamespace("Resource")
 				.addFunction("GetTexture", &GetTextureLua)
+				.addFunction("DropTexture", &DropTextureLua)
+				.addFunction("GetMaterial", &GetMaterialLua)
+				.addFunction("DropMaterial", &DropMaterialLua)
 				.addFunction("ForceTextureReload", &ForceTextureReload)
 				.addFunction("ForceTextureReloadBackground", &ForceTextureReloadBackground)
 

@@ -94,25 +94,26 @@ function MaterialProps:UpdateData(force)
     self.update_need = false
 end
 
-function MaterialProps:SetSelected(mat)
-    local mat_name = ""
-    if mat == nil then
-        mat_name = "none"
+function MaterialProps:SetSelected(name)
+    local newMaterial = nil
+    if name == nil then
         if self.material == nil then return end
+        newMaterial = nil
     else
-        mat_name = mat:GetName()
         if self.material then
-            if mat_name == self.material:GetName() then return end
+            if name == self.material:GetName() then return end
         end
+        newMaterial = Resource.GetMaterial( name )
     end
 
     if self.material then
         self.material:Save()
+        Resource.DropMaterial( self.material:GetName() )
     end
 
-    local history = {
+    --[[local history = { -- MOVE TO STATIC AND LIBRARY
         s_oldval = self.material,
-        s_newval = mat,
+        s_newval = newMaterial,
         
         undo = function(self) 
                 MaterialProps.material = self.s_oldval
@@ -124,11 +125,11 @@ function MaterialProps:SetSelected(mat)
                 MaterialProps:Update()
                 Properties:UpdateData(false, COMPONENTS.STATIC)
             end,
-        msg = "Select material " .. mat_name
+        msg = name and ("Select material " .. name) or "Unselect material"
     }
-
-    self.material = mat
-    History:Push(history)
+    --]]
+    self.material = newMaterial
+    --History:Push(history)
 
     self:Update()
 end

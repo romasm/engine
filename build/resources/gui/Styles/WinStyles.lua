@@ -115,7 +115,7 @@ GuiStyles.common_window = {
 
     header_size = 25,
 
-    cleintarea_padding = 2,
+    cleintarea_padding = { l = 2, t = 2, r = 2, b = 2 },
 
     focus_mode = GUI_FOCUS_MODE.NORMAL,
 
@@ -126,8 +126,8 @@ GuiStyles.common_window = {
         },
         orient = GUI_SLIDER_ORIENT.HORZ,
         height = 10,    
-        left = 2,
-        right = 2,     
+        left = 0,
+        right = 0,     
     },
     scrollY = {
         styles = {
@@ -136,8 +136,8 @@ GuiStyles.common_window = {
         },
         orient = GUI_SLIDER_ORIENT.VERT,
         width = 10, 
-        top = 2,
-        bottom = 2,
+        top = 0,
+        bottom = 0,
     },
 }
 

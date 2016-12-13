@@ -267,6 +267,6 @@ function StaticMeshCallback.SelectMat(self)
     end
 
     local material = Viewport.lua_world.world.staticMesh:GetMaterialObject(Viewport.selection_set[1], self.events.material_id)
-    MaterialProps:SetSelected(material) 
+    MaterialProps:SetSelected( material:GetName() ) 
     return true
 end

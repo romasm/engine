@@ -80,6 +80,7 @@
     <FxCompile Include="..\gui\group_arrow.hlsl" />
     <FxCompile Include="..\gui\h_picker.hlsl" />
     <FxCompile Include="..\gui\rect.hlsl" />
+    <FxCompile Include="..\gui\rect_color_icon_alpha.hlsl" />
     <FxCompile Include="..\gui\rect_icon.hlsl" />
     <FxCompile Include="..\gui\rect_icon_bg.hlsl" />
     <FxCompile Include="..\gui\shadow.hlsl" />

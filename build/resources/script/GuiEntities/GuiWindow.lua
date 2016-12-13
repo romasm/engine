@@ -57,7 +57,7 @@ function GuiWindow:init(props)
 
     self.header_size = 25
 
-    self.cleintarea_padding = 2
+    self.cleintarea_padding = { l = 2, r = 2, t = 2, b = 2 }
 
     self.close = {}
     self.header = {}
@@ -152,9 +152,9 @@ function GuiWindow:init(props)
         self.entity:AttachChild(self.scroll_x_sld.entity)
         self.scroll_x_sld.entity.align = GUI_ALIGN.BOTH
         self.scroll_x_sld.entity.valign = GUI_VALIGN.BOTTOM
-        self.scroll_x_sld.entity.bottom = self.border.width + (self.scrollX.bottom ~= nil and self.scrollX.bottom or 0)
-        self.scroll_x_sld.entity.left = self.border.width + (self.scrollX.left ~= nil and self.scrollX.left or 0)
-        self.scroll_x_sld.entity.right = self.border.width + ((self.scrollable.y and self.scrollY.width ~= nil) and self.scrollY.width or 0) + (self.scrollX.right ~= nil and self.scrollX.right or 0)
+        self.scroll_x_sld.entity.bottom = self.border.width + (self.scrollX.bottom ~= nil and self.scrollX.bottom or 0) + self.cleintarea_padding.b
+        self.scroll_x_sld.entity.left = self.border.width + (self.scrollX.left ~= nil and self.scrollX.left or 0) + self.cleintarea_padding.l
+        self.scroll_x_sld.entity.right = self.border.width + ((self.scrollable.y and self.scrollY.width ~= nil) and self.scrollY.width or 0) + (self.scrollX.right ~= nil and self.scrollX.right or 0) + self.cleintarea_padding.r
         
         self.clientarea_rect.b = self.scroll_x_sld.entity.bottom + self.scrollX.height + (self.scrollX.top ~= nil and self.scrollX.top or 0)
     end
@@ -165,9 +165,9 @@ function GuiWindow:init(props)
         self.entity:AttachChild(self.scroll_y_sld.entity)
         self.scroll_y_sld.entity.align = GUI_ALIGN.RIGHT
         self.scroll_y_sld.entity.valign = GUI_VALIGN.BOTH
-        self.scroll_y_sld.entity.right = self.border.width + (self.scrollY.right ~= nil and self.scrollY.right or 0)
-        self.scroll_y_sld.entity.bottom = self.border.width + ((self.scrollable.x and self.scrollX.height ~= nil) and self.scrollX.height or 0) + (self.scrollY.bottom ~= nil and self.scrollY.bottom or 0)
-        self.scroll_y_sld.entity.top = math.max(self.header_size, self.border.width) + (self.scrollY.top ~= nil and self.scrollY.top or 0)
+        self.scroll_y_sld.entity.right = self.border.width + (self.scrollY.right ~= nil and self.scrollY.right or 0) + self.cleintarea_padding.r
+        self.scroll_y_sld.entity.bottom = self.border.width + ((self.scrollable.x and self.scrollX.height ~= nil) and self.scrollX.height or 0) + (self.scrollY.bottom ~= nil and self.scrollY.bottom or 0) + self.cleintarea_padding.b
+        self.scroll_y_sld.entity.top = math.max(self.header_size, self.border.width) + (self.scrollY.top ~= nil and self.scrollY.top or 0) + self.cleintarea_padding.t
         
         self.clientarea_rect.r = self.scroll_y_sld.entity.right + self.scrollY.width + (self.scrollY.left ~= nil and self.scrollY.left or 0)
     end
@@ -181,10 +181,10 @@ function GuiWindow:init(props)
         self.resize_btn.entity.bottom = self.border.width + (self.resize.bottom ~= nil and self.resize.bottom or 0)
     end
 
-    self.clientarea_rect.l = self.clientarea_rect.l + self.cleintarea_padding
-    self.clientarea_rect.r = self.clientarea_rect.r + self.cleintarea_padding
-    self.clientarea_rect.t = self.clientarea_rect.t + self.cleintarea_padding
-    self.clientarea_rect.b = self.clientarea_rect.b + self.cleintarea_padding
+    self.clientarea_rect.l = self.clientarea_rect.l + self.cleintarea_padding.l
+    self.clientarea_rect.r = self.clientarea_rect.r + self.cleintarea_padding.r
+    self.clientarea_rect.t = self.clientarea_rect.t + self.cleintarea_padding.t
+    self.clientarea_rect.b = self.clientarea_rect.b + self.cleintarea_padding.b
 
     local cl_ent = self.entity:GetChildById("clientarea")
     if cl_ent:is_null() then return end
@@ -226,7 +226,12 @@ function GuiWindow:ApplyProps(props)
     if props.header_size ~= nil then self.header_size = props.header_size end
     if props.dragable ~= nil then self.dragable = props.dragable end
     if props.independent ~= nil then self.independent = props.independent end
-    if props.cleintarea_padding ~= nil then self.cleintarea_padding = props.cleintarea_padding end
+    if props.cleintarea_padding ~= nil then 
+        if props.cleintarea_padding.l ~= nil then self.cleintarea_padding.l = props.cleintarea_padding.l end
+        if props.cleintarea_padding.r ~= nil then self.cleintarea_padding.r = props.cleintarea_padding.r end
+        if props.cleintarea_padding.t ~= nil then self.cleintarea_padding.t = props.cleintarea_padding.t end
+        if props.cleintarea_padding.b ~= nil then self.cleintarea_padding.b = props.cleintarea_padding.b end
+    end
     if props.resizeable ~= nil then 
         if props.resizeable.x ~= nil then self.resizeable.x = props.resizeable.x end 
         if props.resizeable.y ~= nil then self.resizeable.y = props.resizeable.y end 

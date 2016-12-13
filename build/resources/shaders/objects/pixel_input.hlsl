@@ -38,11 +38,12 @@ cbuffer materialId : register(b2)
 
 bool AlphatestSample(SamplerState samplerTex, float2 uv)
 {
-	if( alpha_ref != 0 )
-	{
-		if( alphaTex.Sample(samplerTex, uv).r < alpha_ref )
-			return false;
-	}
+	if( alpha_ref == 0 )
+		return true;
+
+	if( alphaTex.Sample(samplerTex, uv).r < alpha_ref )
+		return false;
+
 	return true;
 }
 
@@ -56,7 +57,7 @@ float3 AlbedoSample(SamplerState samplerTex, float2 uv)
 
 float3 NormalSample(SamplerState samplerTex, float2 uv, float3 vertex_normal, float3 vertex_tangent, float3 vertex_binormal, matrix nMatrix )
 {
-	float3 normal;
+	float3 normal = 0;
 	if( normal_tex == 0 )
 	{
 		normal = vertex_normal;

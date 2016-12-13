@@ -92,4 +92,3 @@ GuiMaterials.t_picker = {
 GuiMaterials.data_slider = {
     shader = "../resources/shaders/gui/color",
 }
-
