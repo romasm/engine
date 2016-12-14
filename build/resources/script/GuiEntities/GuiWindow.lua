@@ -156,7 +156,7 @@ function GuiWindow:init(props)
         self.scroll_x_sld.entity.left = self.border.width + (self.scrollX.left ~= nil and self.scrollX.left or 0) + self.cleintarea_padding.l
         self.scroll_x_sld.entity.right = self.border.width + ((self.scrollable.y and self.scrollY.width ~= nil) and self.scrollY.width or 0) + (self.scrollX.right ~= nil and self.scrollX.right or 0) + self.cleintarea_padding.r
         
-        self.clientarea_rect.b = self.scroll_x_sld.entity.bottom + self.scrollX.height + (self.scrollX.top ~= nil and self.scrollX.top or 0)
+        self.clientarea_rect.b = self.scroll_x_sld.entity.bottom - self.cleintarea_padding.b + self.scrollX.height + (self.scrollX.top ~= nil and self.scrollX.top or 0)
     end
 
     if self.scrollable.y then
@@ -169,7 +169,7 @@ function GuiWindow:init(props)
         self.scroll_y_sld.entity.bottom = self.border.width + ((self.scrollable.x and self.scrollX.height ~= nil) and self.scrollX.height or 0) + (self.scrollY.bottom ~= nil and self.scrollY.bottom or 0) + self.cleintarea_padding.b
         self.scroll_y_sld.entity.top = math.max(self.header_size, self.border.width) + (self.scrollY.top ~= nil and self.scrollY.top or 0) + self.cleintarea_padding.t
         
-        self.clientarea_rect.r = self.scroll_y_sld.entity.right + self.scrollY.width + (self.scrollY.left ~= nil and self.scrollY.left or 0)
+        self.clientarea_rect.r = self.scroll_y_sld.entity.right - self.cleintarea_padding.r + self.scrollY.width + (self.scrollY.left ~= nil and self.scrollY.left or 0)
     end
 
     if self.resizeable.x or self.resizeable.y then

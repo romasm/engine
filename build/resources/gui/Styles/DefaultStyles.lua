@@ -80,6 +80,49 @@ GuiStyles.color_button = {
     },
 }
 
+GuiStyles.tool_button = {
+    styles = {
+        GuiStyles.common_button,
+    },
+
+    holded = true,
+
+    height = 40,
+    width = 40,
+    top = 0,
+
+    background = {
+        color = 'bg_01',
+        color_hover = 'act_01',
+        color_press = 'act_00',
+        color_nonactive = 'bg_01',
+    },
+
+    text = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        color_nonactive = 'text_02',
+        font = '',
+    },
+
+    border = {
+        width = 0,
+        color = 'bg_01',
+        color_hover = 'act_01',
+        color_press = 'act_02',
+        color_nonactive = 'bg_01',
+    },
+
+    icon = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        color_nonactive = 'text_02',
+        rect = { l = 0, t = 0, w = 40, h = 40 },
+    },
+}
+
 -- STRING
 GuiStyles.string_simple = {
     center = { x = true, y = true },

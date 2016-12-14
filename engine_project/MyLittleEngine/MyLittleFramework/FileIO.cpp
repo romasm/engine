@@ -303,7 +303,7 @@ bool FileIO::IsExist(string& path)
 	return (_stat32(path.data(), &buffer) == 0);  
 }
 
-bool FileIO::IsFile(string& filename)
+bool FileIO::IsFile(string filename)
 {
 	struct _stat32 buffer;   
 	if( _stat32(filename.data(), &buffer) != 0 )
@@ -319,7 +319,7 @@ uint32_t FileIO::GetDateModifRaw(string& filename)
 	return uint32_t(buffer.st_mtime);
 }
 
-string FileIO::GetDateModif(string& filename)
+string FileIO::GetDateModif(string filename)
 {
 	struct _stat32 buffer;
 	if(_stat32(filename.data(), &buffer) != 0)
@@ -329,7 +329,7 @@ string FileIO::GetDateModif(string& filename)
 	return string(str);
 }
 
-string FileIO::GetDateCreate(string& path)
+string FileIO::GetDateCreate(string path)
 {
 	struct _stat32 buffer;
 	if(_stat32(path.data(), &buffer) != 0)
@@ -339,7 +339,7 @@ string FileIO::GetDateCreate(string& path)
 	return string(str);
 }
 
-uint32_t FileIO::GetSize(string& filename)
+uint32_t FileIO::GetSize(string filename)
 {
 	struct _stat32 buffer;
 	if(_stat32(filename.data(), &buffer) != 0)
@@ -385,8 +385,14 @@ bool FileIO::WriteFileData(string& filename, uint8_t* data, uint32_t size, uint3
 	return true;
 }
 
-bool FileIO::CreateDir(string& path)
+bool FileIO::CreateDir(string path)
 {
+	if(IsExist(path))
+	{
+		WRN("Path %s allready exist", path.data());
+		return false;
+	}
+
 	auto res = _mkdir(path.data());
 	if( res == ENOENT )
 	{
@@ -395,15 +401,23 @@ bool FileIO::CreateDir(string& path)
 			slash = 0;
 		slash = max(slash, path.rfind('/'));
 		if(slash == string::npos)
+		{
+			WRN("Can't create directory %s", path.data());
 			return false;
+		}
 
 		string newDir = path.substr(0, slash);
 
 		if( !CreateDir(newDir) )
+		{
+			WRN("Can't create directory %s", path.data());
 			return false;
-
-		return _mkdir(path.data()) == 0;
+		}
+		
+		res = _mkdir(path.data());
 	}
+
+	LOG_GOOD("Successfully created directory %s", path.data());
 	return res == 0;
 }
 
@@ -424,6 +438,195 @@ FileIO::DirList* FileIO::GetDirList(string dirname)
 		res->namesList.push_back(name);
 	}
 	closedir(dir);
-
 	return res;
+}
+
+bool FileIO::Rename(string oldPath, string newPath)
+{
+	if(!IsExist(oldPath))
+	{
+		WRN("Path %s does not exist", oldPath.data());
+		return false;
+	}
+
+	if(IsExist(newPath))
+	{
+		WRN("Path %s allready exist", newPath.data());
+		return false;
+	}
+
+	auto slash = newPath.rfind('\\');
+	if(slash == string::npos)
+		slash = 0;
+	slash = max(slash, newPath.rfind('/'));
+	if(slash != string::npos)
+	{
+		string upDir = newPath.substr(0, slash);
+		if(!IsExist(upDir))
+			if(!CreateDir(upDir))
+			{
+				WRN("Can\'t rename %s to %s", oldPath.data(), newPath.data());
+				return false;
+			}
+	}
+
+	if( rename( oldPath.data(), newPath.data() ) != 0 )
+	{
+		WRN("Can\'t rename %s to %s", oldPath.data(), newPath.data());
+		return false;
+	}
+
+	LOG_GOOD("Successfully renamed %s to %s", oldPath.data(), newPath.data());
+	return true;
+}
+
+bool FileIO::copyDirContent(string& fromPath, string& toPath)
+{
+	if(!IsExist(toPath))
+		if(!CreateDir(toPath))
+			return false;
+
+	DIR *dir;
+	if( (dir = opendir( fromPath.data() )) == nullptr )
+		return false;
+	
+	struct dirent *ent;
+	while( (ent = readdir(dir)) != nullptr )
+	{
+		string name(ent->d_name);
+		if( name[0] == '.' && ( name.size() == 1 ||	(name[1] == '.' && name.size() == 2) ) )
+			continue;
+
+		name = fromPath + '/' + name;
+		string newName = toPath + '/' + name;
+
+		if(IsFile(name))
+		{
+			if( FAILED(CopyFileA( (LPCSTR)name.data(), (LPCSTR)newName.data(), TRUE )) )
+			{
+				closedir(dir);
+				return false;
+			}
+		}
+		else
+		{
+			if(!copyDirContent(name, newName))
+			{
+				closedir(dir);
+				return false;
+			}
+		}
+	}
+	closedir(dir);
+	return true;
+}
+
+bool FileIO::Copy(string fromPath, string toPath)
+{
+	if(!IsExist(fromPath))
+	{
+		WRN("Path %s doesn\'t exist", fromPath.data());
+		return false;
+	}
+
+	if(IsExist(toPath))
+	{
+		WRN("Path %s allready exist", toPath.data());
+		return false;
+	}
+
+	if(IsFile(fromPath))
+	{
+		if( FAILED(CopyFileA( (LPCSTR)fromPath.data(), (LPCSTR)toPath.data(), TRUE )) )
+		{
+			WRN("Can\'t copy file %s to %s", fromPath.data(), toPath.data());
+			return false;
+		}
+	}
+	else
+	{
+		if(!CreateDir(toPath))
+		{
+			WRN("Can\'t copy directory %s to %s", fromPath.data(), toPath.data());
+			return false;
+		}
+		if(!copyDirContent(fromPath, toPath))
+		{
+			WRN("Can\'t copy directory %s to %s", fromPath.data(), toPath.data());
+			return false;
+		}
+	}
+
+	LOG_GOOD("Successfully copied from %s to %s", fromPath.data(), toPath.data());
+	return true;
+}
+
+bool FileIO::deleteDirContent(string& path)
+{
+	DIR *dir;
+	if( (dir = opendir( path.data() )) == nullptr )
+		return false;
+	
+	struct dirent *ent;
+	while( (ent = readdir(dir)) != nullptr )
+	{
+		string name(ent->d_name);
+		if( name[0] == '.' && ( name.size() == 1 ||	(name[1] == '.' && name.size() == 2) ) )
+			continue;
+
+		name = path + '/' + name;
+
+		if(IsFile(name))
+		{
+			if( remove( name.data() ) != 0 )
+			{
+				closedir(dir);
+				return false;
+			}
+		}
+		else
+		{
+			if(!deleteDirContent(name))
+			{
+				closedir(dir);
+				return false;
+			}
+		}
+	}
+	closedir(dir);
+	return true;
+}
+
+bool FileIO::Delete(string path)
+{
+	if(!IsExist(path))
+	{
+		WRN("Path %s doesn\'t exist", path.data());
+		return false;
+	}
+
+	if(IsFile(path))
+	{
+		if( remove( path.data() ) != 0 )
+		{
+			WRN("Can\'t delete file %s", path.data());
+			return false;
+		}
+	}
+	else
+	{
+		if(!deleteDirContent(path))
+		{
+			WRN("Can\'t delete directory %s", path.data());
+			return false;
+		}
+		if( _rmdir( path.data() ) != 0 )
+		{
+			WRN("Can\'t delete directory %s", path.data());
+			return false;
+		}
+	}
+
+	LOG_GOOD("Successfully deleted %s", path.data());
+	return true;
 }

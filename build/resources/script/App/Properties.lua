@@ -29,6 +29,8 @@ function Properties.reload()
     Properties.body = body:GetInherited()
     Properties.none_msg = Properties.window.entity:GetChildById('none_msg')
     Properties:Update()
+
+    Tools.right_side_area.entity:UpdatePosSize()
 end
 
 function Properties:Init()

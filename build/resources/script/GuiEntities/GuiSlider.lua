@@ -149,7 +149,7 @@ function GuiSlider:onMoveResize(is_move, is_resize)
     if not self._base.onMoveResize(self, is_move, is_resize) then return false end
 
     self:SetSlider(self.value)
-
+    
     return true
 end
 

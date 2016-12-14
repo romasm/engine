@@ -180,6 +180,9 @@ private:
 
 	void writeMap(ofstream* file, file_map* node, uint16_t depth);		
 
+	static bool deleteDirContent(string& path);
+	static bool copyDirContent(string& fromPath, string& toPath);
+
 	file_map* fileMap;
 	string fileName;
 
@@ -187,28 +190,21 @@ public:
 	static bool IsExist(string& path);
 	inline static bool IsExistS(char* path){return IsExist(string(path));}
 	inline static bool IsExist_lua(string path){return IsExist(path);}
-	static bool IsFile(string& filename);
-	inline static bool IsFileS(char* filename){return IsFile(string(filename));}
-	inline static bool IsFile_lua(string filename){return IsFile(filename);}
+	static bool IsFile(string filename);
 
-	static bool CreateDir(string& path);
-	inline static bool CreateDirS(char* path){return CreateDir(string(path));}
-	inline static bool CreateDir_lua(string path){return CreateDir(path);}
-
+	static bool CreateDir(string path);
 	static DirList* GetDirList(string dirname);
+
+	static bool Rename(string oldPath, string newPath);
+	static bool Copy(string fromPath, string toPath);
+	static bool Delete(string path);
 
 	static uint32_t GetDateModifRaw(string& filename);
 	inline static uint32_t GetDateModifRawS(char* filename){return GetDateModifRaw(string(filename));}
 	inline static uint32_t GetDateModifRaw_lua(string filename){return GetDateModifRaw(filename);}
-	static string GetDateModif(string& filename);
-	inline static string GetDateModifS(char* filename){return GetDateModif(string(filename));}
-	inline static string GetDateModif_lua(string filename){return GetDateModif(filename);}
-	static string GetDateCreate(string& path);
-	inline static string GetDateCreateS(char* path){return GetDateCreate(string(path));}
-	inline static string GetDateCreate_lua(string path){return GetDateCreate(path);}
-	static uint32_t GetSize(string& filename);
-	inline static uint32_t GetSizeS(char* filename){return GetSize(string(filename));}
-	inline static uint32_t GetSize_lua(string filename){return GetSize(filename);}
+	static string GetDateModif(string filename);
+	static string GetDateCreate(string path);
+	static uint32_t GetSize(string filename);
 
 	static uint8_t* ReadFileData(string& filename, uint32_t *ret_size);
 	inline static uint8_t* ReadFileDataS(char* filename, uint32_t *ret_size){return ReadFileData(string(filename), ret_size);}
@@ -220,15 +216,19 @@ public:
 		getGlobalNamespace(LSTATE)
 			.beginNamespace("FileIO")
 				.addFunction("IsExist", &FileIO::IsExist_lua)
-				.addFunction("IsFile", &FileIO::IsFile_lua)
+				.addFunction("IsFile", &FileIO::IsFile)
 
-				.addFunction("CreateDir", &FileIO::CreateDir_lua)
+				.addFunction("CreateDir", &FileIO::CreateDir)
 				.addFunction("GetDirList", &FileIO::GetDirList)
 
+				.addFunction("Rename", &FileIO::Rename)
+				.addFunction("Copy", &FileIO::Copy)
+				.addFunction("Delete", &FileIO::Delete)
+
 				.addFunction("GetFileDateModifRaw", &FileIO::GetDateModifRaw_lua)
-				.addFunction("GetFileDateModif", &FileIO::GetDateModif_lua)
-				.addFunction("GetFileDateCreate", &FileIO::GetDateCreate_lua)
-				.addFunction("GetFileSize", &FileIO::GetSize_lua)
+				.addFunction("GetFileDateModif", &FileIO::GetDateModif)
+				.addFunction("GetFileDateCreate", &FileIO::GetDateCreate)
+				.addFunction("GetFileSize", &FileIO::GetSize)
 
 				.beginClass<DirList>("DirList")
 					.addFunction("getnext", &DirList::next)

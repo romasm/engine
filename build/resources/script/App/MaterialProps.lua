@@ -24,6 +24,8 @@ function MaterialProps.reload()
     MaterialProps.body = body:GetInherited()
     MaterialProps.none_msg = MaterialProps.window.entity:GetChildById('none_msg')
     MaterialProps:Update()
+
+    Tools.left_side_area.entity:UpdatePosSize()
 end
 
 function MaterialProps:Init()
@@ -94,7 +96,7 @@ function MaterialProps:UpdateData(force)
     self.update_need = false
 end
 
-function MaterialProps:SetSelected(name)
+function MaterialProps:SetSelected(name, unsave)
     local newMaterial = nil
     if name == nil then
         if self.material == nil then return end
@@ -107,7 +109,7 @@ function MaterialProps:SetSelected(name)
     end
 
     if self.material then
-        self.material:Save()
+        if unsave == nil then self.material:Save() end
         Resource.DropMaterial( self.material:GetName() )
     end
 

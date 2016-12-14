@@ -52,6 +52,25 @@ GuiStyles.assetname_textfield = {
     data = { d_type = GUI_TEXTFIELD.TEXT, },
 }
 
+GuiStyles.tool_text_button = {
+    styles = {
+        GuiStyles.tool_button,
+    },
+    holded = false,
+    height = 30,
+    width = 30,
+
+    text = {
+        offset = { x = 0, y = 0 },
+        center = { x = true, y = true },
+        font = "../resources/fonts/opensans_normal_25px",
+    },
+
+    icon = {
+        rect = { l = 0, t = 0, w = 0, h = 0 },
+    },
+}
+
 function Gui.AssetBrowserWindow()
 return GuiWindow({
     styles = {
@@ -85,6 +104,63 @@ return GuiWindow({
         end,
     },
     
+    GuiButton({
+        styles = {
+            GuiStyles.tool_text_button,
+        },
+
+        align = GUI_ALIGN.RIGHT,
+        right = 10,
+        top = 35,
+        text = {str = "D"},
+        alt = "Delete selected material",
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                AssetBrowser:DeleteSelected()
+                return true 
+            end,
+        },
+    }),
+    
+    GuiButton({
+        styles = {
+            GuiStyles.tool_text_button,
+        },
+
+        align = GUI_ALIGN.RIGHT,
+        right = 44,
+        top = 35,
+        text = {str = "C"},
+        alt = "Copy selected material",
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                AssetBrowser:CopySelected()
+                return true 
+            end,
+        },
+    }),
+    
+    GuiButton({
+        styles = {
+            GuiStyles.tool_text_button,
+        },
+
+        align = GUI_ALIGN.RIGHT,
+        right = 78,
+        top = 35,
+        text = {str = "N"},
+        alt = "Create new material",
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                AssetBrowser:CreateNew()
+                return true 
+            end,
+        },
+    }),
+
     GuiClientarea({
                 
         GuiBody({
@@ -95,7 +171,7 @@ return GuiWindow({
 })
 end
 
-function Gui.AssetBrowserMaterial(filename, matname, topOffset, leftOffset)
+function Gui.AssetBrowserMaterial(filename, matname, topOffset, leftOffset, num)
 local btn = GuiButton({
     styles = { GuiStyles.material_button, },
     icon = {material = {
@@ -105,7 +181,8 @@ local btn = GuiButton({
     alt = matname,
     top = topOffset,
     left = leftOffset,
-    
+    id = tostring(num),
+
     events = {
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
             AssetBrowser:SetSelected(self)

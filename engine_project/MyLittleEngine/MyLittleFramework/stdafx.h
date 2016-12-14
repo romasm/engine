@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <bitset>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
