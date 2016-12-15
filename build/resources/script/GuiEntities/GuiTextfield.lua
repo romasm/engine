@@ -256,6 +256,7 @@ function GuiTextfield:init(props)
     self.show_tail = false
         
     self.allow_none = false
+    self.dbclick_activation = false
 
     self.background = {
         color = Vector4(0.0, 0.0, 0.0, 1.0),
@@ -390,6 +391,7 @@ function GuiTextfield:ApplyProps(props)
     if props.color_cursor ~= nil then self.color_cursor = type(props.color_cursor) == 'string' and CoreGui.GetColor(props.color_cursor) or props.color_cursor end
     if props.show_tail ~= nil then self.show_tail = props.show_tail end
     if props.allow_none ~= nil then self.allow_none = props.allow_none end
+    if props.dbclick_activation ~= nil then self.dbclick_activation = props.dbclick_activation end
 
     if props.background ~= nil then
         if props.background.color ~= nil then 
@@ -481,6 +483,12 @@ function GuiTextfield:callback(eventData)
     if eventData.event == GUI_EVENTS.MOUSE_DOWN then 
         self.entity:SetHierarchyFocusOnMe(false)
 
+        if not self.state_live and self.dbclick_activation then 
+            res.event = GUI_EVENTS.TF_ACTIVATION_WAIT
+            res.entity = self.entity
+            return self._base.callback(self, res)
+        end
+
         if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
             local shift_selected = false
             local rect = self.entity:GetRectAbsolute()
@@ -521,7 +529,9 @@ function GuiTextfield:callback(eventData)
                     self.state_select = false
                     self.selecting = true
                 end
-                res.event = GUI_EVENTS.TF_CURSORMOVE
+                if res.event == GUI_EVENTS.MOUSE_DOWN then
+                    res.event = GUI_EVENTS.TF_CURSORMOVE
+                end
             end
 
             res.entity = self.entity
@@ -559,11 +569,21 @@ function GuiTextfield:callback(eventData)
         end
 
     elseif eventData.event == GUI_EVENTS.MOUSE_DBLCLICK then 
+        if not self.state_live and self.dbclick_activation then
+            self:ApplyLive()
+            self.state_live = true
+            self.oldstr = self.text.str
+            res.event = GUI_EVENTS.TF_ACTIVATE
+        end
+
         SelectAll(self)
         UpdateScroll(self)
         UpdateCursorSelect(self)
         UpdateTextPos(self)
-        res.event = GUI_EVENTS.TF_SELECTED
+
+        if res.event == GUI_EVENTS.MOUSE_DBLCLICK then
+            res.event = GUI_EVENTS.TF_SELECTED
+        end
         res.entity = self.entity
 
     elseif eventData.event == GUI_EVENTS.UNFOCUS then 

@@ -9,6 +9,7 @@
 #include "LuaVM.h"
 #include "macros.h"
 #include "JobSystem.h"
+#include "WorldMgr.h"
 
 #include "Utils\Profiler.h"
 
@@ -154,7 +155,7 @@ public:
 			PERF_CPU_BEGIN(_SCENE);	
 			PERF_GPU_TIMESTAMP(_SCENE);	
 
-			m_render->Draw();
+			WorldMgr::Get()->UpdateWorlds();
 
 			PERF_CPU_END(_SCENE);
 

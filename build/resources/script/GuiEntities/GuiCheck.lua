@@ -255,12 +255,6 @@ function GuiCheck:callback(eventData)
             res.coords.x = self.group_id
             res.coords.y = 0
         end
-     
-    --[[elseif eventData.event == GUI_EVENTS.MOUSE_MOVE then 
-        res.event = GUI_EVENTS.CB_MOVE
-        res.coords.x = self.group_id
-        res.coords.y = 0--]]
-
     end
 
     return self._base.callback(self, res)

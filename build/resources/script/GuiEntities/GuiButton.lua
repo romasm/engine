@@ -364,6 +364,10 @@ end
 
 function GuiButton:onDeactivate()
     self:ApplyDisable()
+    self.state_hover = false
+    if not self.holded then 
+        self.state_press = false 
+    end
     self.anim_progress = 0
     self.anim_go = 0
 end

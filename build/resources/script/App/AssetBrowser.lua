@@ -13,6 +13,8 @@ function AssetBrowser.reload()
     Tools.left_side_area.second_win = AssetBrowser.window.entity
 
     AssetBrowser.body = AssetBrowser.window.entity:GetChildById('body')
+    AssetBrowser.copyBtn = AssetBrowser.window.entity:GetChildById('copy_btn')
+    AssetBrowser.deleteBtn = AssetBrowser.window.entity:GetChildById('delete_btn')
 
     AssetBrowser:FillBody()
     AssetBrowser.window.entity:UpdatePosSize()
@@ -25,9 +27,18 @@ function AssetBrowser:ScanDir(matsDir)
     for i = 1, dirList:size() do
         local name = dirList:getnext()
 
+        local skip = false
+        if self.findstr:len() > 0 then
+            if name:gsub("%.mtb", ""):find(self.findstr) == nil then 
+                skip = true
+            end
+        end
+
         local path = matsDir.."/"..name
         if FileIO.IsFile(path) then
-            if path:find(".mtb") ~= nil then self.fileList[#self.fileList + 1] = path:gsub(".mtb", "") end
+            if path:find("%.mtb") ~= nil and skip == false then 
+                self.fileList[#self.fileList + 1] = path:gsub("%.mtb", "") 
+            end
         else
             self:ScanDir(path)
         end
@@ -52,6 +63,8 @@ function AssetBrowser:AddButton(num)
     self.stringCounter = self.stringCounter + 1
 
     self.lastHeight = btn.entity.height
+
+    return btn
 end
 
 function AssetBrowser:FillBody()
@@ -91,11 +104,15 @@ function AssetBrowser:Init()
     self.libDir = "../content/materials"
     self.fileList = {}
     self.selectedMatBtn = nil
+    self.findstr = ""
 
     self:ScanDir(self.libDir)
     
     loader.require("AssetBrowser", AssetBrowser.reload)
     self.reload()
+
+    self.copyBtn:Deactivate()
+    self.deleteBtn:Deactivate()
 end
 
 function AssetBrowser:SetSelected(btn)
@@ -104,8 +121,13 @@ function AssetBrowser:SetSelected(btn)
         self.selectedMatBtn:SetPressed(false)
     end
     
+    if not btn then return end
+
     MaterialProps:SetSelected(btn.assetID .. ".mtb")
     self.selectedMatBtn = btn
+
+    self.copyBtn:Activate()
+    self.deleteBtn:Activate()
 end
 
 function AssetBrowser:UnSelected()
@@ -113,6 +135,9 @@ function AssetBrowser:UnSelected()
         MaterialProps:SetSelected(nil)
         self.selectedMatBtn:SetPressed(false)
         self.selectedMatBtn = nil
+
+        self.copyBtn:Deactivate()
+        self.deleteBtn:Deactivate()
     end
 end
 
@@ -154,10 +179,11 @@ end
 function AssetBrowser:AddToList(assetID)
     self.fileList[#self.fileList + 1] = assetID
 
-    self:AddButton( #self.fileList )
+    local btn = self:AddButton( #self.fileList )
     self.body.height = self.topOffset + self.lastHeight + self.padding
 
     self.window.entity:UpdatePosSize()
+    return btn
 end
 
 function AssetBrowser:CreateNew()
@@ -169,7 +195,9 @@ function AssetBrowser:CreateNew()
 
     FileIO.Copy("../resources/materials/template_new.mtb", newAssetID..".mtb")
     self:GeneratePreview(newAssetID)
-    self:AddToList(newAssetID)
+    local btn = self:AddToList(newAssetID)
+    self:SetSelected(btn)
+    self.selectedMatBtn:SetPressed(true)
 end
 
 function AssetBrowser:DeleteSelected()
@@ -181,6 +209,9 @@ function AssetBrowser:DeleteSelected()
     MaterialProps:SetSelected(nil, true)
     self.selectedMatBtn:SetPressed(false)
     self.selectedMatBtn = nil
+    
+    self.copyBtn:Deactivate()
+    self.deleteBtn:Deactivate()
 
     self:Clear()
     
@@ -201,5 +232,26 @@ function AssetBrowser:CopySelected()
     FileIO.Copy( self.selectedMatBtn.assetID ..".dds", newAssetID ..".dds" )
     FileIO.Copy( self.selectedMatBtn.assetID ..".mtb", newAssetID ..".mtb" )
 
-    self:AddToList(newAssetID)
+    local btn = self:AddToList(newAssetID)
+    self:SetSelected(btn)
+    self.selectedMatBtn:SetPressed(true)
+end
+
+function AssetBrowser:Find(str)
+    self.findstr = str
+
+    self.findstr = self.findstr:gsub("%.", "%%%.")
+    self.findstr = self.findstr:gsub("%+", "%%%+")
+    self.findstr = self.findstr:gsub("%-", "%%%-")
+    self.findstr = self.findstr:gsub("%(", "%%%(")
+    self.findstr = self.findstr:gsub("%)", "%%%)")
+
+    self.findstr = self.findstr:gsub("%?", "%.%?")
+    self.findstr = self.findstr:gsub("%*", "%.%+")
+
+    self:Clear()
+    
+    self:ScanDir(self.libDir)
+    self:FillBody()
+    self.window.entity:UpdatePosSize()
 end

@@ -615,6 +615,183 @@ namespace EngineCore
 		T	m_data[S];
 	};
 
+	// -------------------------------------------
+	template <typename T>
+	// runtime deque
+	class RDeque
+	{
+	public:
+		RDeque()
+		{
+			m_capacity = 0;
+			m_size = 0;
+			m_begin = 0;
+			m_data = nullptr;
+		}
+
+		RDeque(size_t max_size)	{create(max_size);}
+		~RDeque() {destroy();}
+
+		inline void create(size_t max_size)
+		{
+			if(m_data)return;
+			m_capacity = max_size;
+			m_size = 0;
+			if (m_capacity > 0) m_data = new T[m_capacity];
+			else m_data = nullptr;
+		}
+
+		inline T& operator[] (const size_t i ) {return m_data[getIdx(i)];}
+		inline const T& operator[] (const size_t i ) const {return m_data[getIdx(i)];}
+
+		inline size_t size() const {return m_size;}
+
+		inline void resize( size_t N ) {m_size = min(N, m_capacity);}
+
+		inline bool empty() const {return m_size == 0 ? true : false;}
+		inline bool full() const {return m_size == m_capacity ? true : false;}
+
+		inline void push_back( const T& D )
+		{
+			m_data[ getIdx(m_size) ] = D;
+			if(m_capacity == m_size)
+			{
+				if(m_begin == m_capacity - 1) m_begin = 0;
+				else m_begin++;
+			}
+			else m_size++;
+		}
+		inline T& push_back( )
+		{
+			T& res = m_data[ getIdx(m_size) ];
+			if(m_capacity == m_size)
+			{
+				if(m_begin == m_capacity - 1) m_begin = 0;
+				else m_begin++;
+			}			
+			else m_size++;
+			return res;
+		}
+
+		inline void pop_back()
+		{
+			if (m_size > 0) --m_size;
+		}
+
+		inline void push_front( const T& D )
+		{
+			if(m_begin == 0) m_begin = m_capacity - 1;
+			else m_begin--;
+			m_data[ m_begin ] = D;
+			if(m_capacity > m_size) m_size++;
+		}
+		inline T& push_front( )
+		{
+			if(m_begin == 0) m_begin = m_capacity - 1;
+			else m_begin--;
+			T& res = m_data[ m_begin ];
+			if(m_capacity > m_size) m_size++;
+			return res;
+		}
+
+		inline void pop_front()
+		{
+			if (m_size > 0)
+			{
+				--m_size;
+				if(m_begin == m_capacity - 1) m_begin = 0;
+				else m_begin++;
+			}
+		}
+
+		inline const T& back() const {return m_data[ getIdx(m_size-1) ];}
+		inline T& back() {return m_data[ getIdx(m_size-1) ];}
+
+		inline size_t back_idx() {return getIdx(m_size-1);}
+
+		inline const T& front() const {return m_data[ m_begin ];}
+		inline T& front() {return m_data[ m_begin ];}
+
+		inline size_t front_idx() {return m_begin;}
+
+		inline void assign( T val )
+		{
+			for ( size_t i = 0; i < m_size; i++ )
+				m_data[getIdx(i)] = val;
+		}
+
+		inline size_t find( const T& val )
+		{
+			for ( size_t i = 0; i < m_size; i++ )
+				if (m_data[getIdx(i)] == val)
+					return i;
+			return m_capacity;
+		}
+
+		inline void push_back_unique( const T& val )
+		{
+			if(find( val ) == m_capacity)
+				push_back( val );
+		}
+
+		inline void push_front_unique( const T& val )
+		{
+			if(find( val ) == m_capacity)
+				push_front( val );
+		}
+
+		// NOT free mem
+		inline void	clear()
+		{
+			m_begin = 0; 
+			m_size = 0;
+		}
+		
+		// same as ~RDeque(), array become dead until create
+		inline void	destroy()
+		{
+			deallocate();
+			m_capacity = 0;
+			m_size = 0;	
+			m_begin = 0;
+		}
+		
+		inline void	erase_and_pop_back( size_t i )
+		{m_data[getIdx(i)] = m_data[getIdx(--m_size)];}
+		inline void	erase_and_pop_back( const T& val ) 
+		{
+			size_t it = find( val );
+			if(it != m_capacity) erase_and_pop_back( it );
+		}
+		inline void	erase( size_t i )
+		{
+			if(m_size == 0) return;
+			for ( size_t j = i; j < m_size-1; j++ )
+				m_data[getIdx(j)] = m_data[getIdx(j+1)];
+			--m_size;
+		}
+
+		inline T* data() {return m_data;}
+
+		inline size_t capacity() const {return m_capacity;}
+
+	private:
+		inline void	deallocate() {_DELETE_ARRAY(m_data);}
+
+		inline size_t getIdx(size_t i)
+		{
+			size_t idx = i + m_begin;
+			if(idx >= m_capacity)
+				idx -= m_capacity;
+			return idx;
+		}
+
+		size_t	m_begin;
+		size_t	m_size;
+		T*	m_data;
+		size_t	m_capacity;
+	};
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// COMPONENTS /////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////

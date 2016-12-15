@@ -12,15 +12,15 @@ namespace EngineCore
 		~WorldMgr();
 		
 		inline static WorldMgr* Get(){return m_instance;}
-
-		//World* GetWorld(UINT id);
-
+		
 		World* CreateWorld();
+		SmallWorld* CreateSmallWorld();
+
 		World* OpenWorld(string filename);
 		void CloseWorldByID(UINT id);
-		void CloseWorld(World* wrld){CloseWorldByID(wrld->GetID());}
+		void CloseWorld(BaseWorld* wrld){CloseWorldByID(wrld->GetID());}
 
-		inline World* GetWorld(UINT id) 
+		inline BaseWorld* GetWorld(UINT id) 
 		{
 			auto it = m_worldsMap.find(id);
 			if(it == m_worldsMap.end())
@@ -51,8 +51,10 @@ namespace EngineCore
 		static void RegLuaClass();
 
 	private:
+		void regWorld(BaseWorld* world);
+
 		static WorldMgr *m_instance;
-		std::map<UINT, World*> m_worldsMap;
+		std::map<UINT, BaseWorld*> m_worldsMap;
 		UINT nextID;
 	};
 }

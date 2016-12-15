@@ -223,6 +223,7 @@ GuiStyles.common_textfield = {
     
     show_tail = false,
     allow_none = true,
+    dbclick_activation = false,
     
     text = {
         offset = { x = 3, y = 0 },

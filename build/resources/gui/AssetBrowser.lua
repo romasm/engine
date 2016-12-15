@@ -11,7 +11,7 @@ GuiStyles.material_button = {
     background = {
         color = 'bg_01',
         color_hover = 'act_01',
-        color_press = 'act_00',
+        color_press = 'act_05',
         color_nonactive = 'bg_01',
     },
 
@@ -38,6 +38,7 @@ GuiStyles.assetname_textfield = {
 
     show_tail = false,
     allow_none = false,
+    dbclick_activation = true,
 
     text = {
         color = 'text_01',
@@ -60,14 +61,8 @@ GuiStyles.tool_text_button = {
     height = 30,
     width = 30,
 
-    text = {
-        offset = { x = 0, y = 0 },
-        center = { x = true, y = true },
-        font = "../resources/fonts/opensans_normal_25px",
-    },
-
     icon = {
-        rect = { l = 0, t = 0, w = 0, h = 0 },
+        rect = { l = 0, t = 0, w = 30, h = 30 },
     },
 }
 
@@ -78,7 +73,7 @@ return GuiWindow({
         GuiStyles.window_colors,
     },
 
-    cleintarea_padding = { t = 50, },
+    cleintarea_padding = { t = 38, },
     
     align = GUI_ALIGN.BOTH,
     valign = GUI_VALIGN.BOTH,
@@ -94,7 +89,7 @@ return GuiWindow({
         styles = {
             GuiStyles.window_header,
         },
-        str = "Asset Browser"
+        str = "Materials library"
     },
     
     events = {
@@ -110,10 +105,11 @@ return GuiWindow({
         },
 
         align = GUI_ALIGN.RIGHT,
-        right = 10,
-        top = 35,
-        text = {str = "D"},
+        right = 4,
+        top = 29,
+        icon = {material = GuiMaterials.delete_icon},
         alt = "Delete selected material",
+        id = 'delete_btn',
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
@@ -129,10 +125,11 @@ return GuiWindow({
         },
 
         align = GUI_ALIGN.RIGHT,
-        right = 44,
-        top = 35,
-        text = {str = "C"},
+        right = 38,
+        top = 29,
+        icon = {material = GuiMaterials.copy_mat_icon},
         alt = "Copy selected material",
+        id = 'copy_btn',
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
@@ -148,9 +145,9 @@ return GuiWindow({
         },
 
         align = GUI_ALIGN.RIGHT,
-        right = 78,
-        top = 35,
-        text = {str = "N"},
+        right = 72,
+        top = 29,
+        icon = {material = GuiMaterials.new_mat_icon},
         alt = "Create new material",
 
         events = {
@@ -159,6 +156,55 @@ return GuiWindow({
                 return true 
             end,
         },
+    }),
+
+    GuiTextfield({
+        styles = {
+            GuiStyles.props_textfield,
+            GuiStyles.text_textfield,
+        },
+        top = 35,
+        left = 5,
+        width = 150,
+        height = 20,
+        border = {
+            width = 0
+        },
+
+        events = {
+            [GUI_EVENTS.TF_EDITING]  = function(self, ev)
+                AssetBrowser:Find(self:GetText()) 
+                return true
+                end,
+            [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev)
+                if self:GetText():len() == 0 then 
+                    self.entity:GetParent():GetChildById('find_sign').enable = true
+                end
+                return true
+                end,
+            [GUI_EVENTS.TF_ACTIVATE]  = function(self, ev)
+                self.entity:GetParent():GetChildById('find_sign').enable = false
+                return true
+                end,
+        },
+    }),
+
+    GuiString({
+        styles = {
+            GuiStyles.ghost,
+            GuiStyles.string_autosize,
+            GuiStyles.string_18,
+        },
+        
+        id = 'find_sign',
+        str = "Type to find",
+        static = true,
+        color = 'text_02',
+
+        enable = true,
+
+        top = 36,
+        left = 8,
     }),
 
     GuiClientarea({
@@ -184,6 +230,14 @@ local btn = GuiButton({
     id = tostring(num),
 
     events = {
+        [GUI_EVENTS.TF_ACTIVATION_WAIT] = function(self, ev)
+            if not self.state_press then
+                self:SetPressed(true)
+                AssetBrowser:SetSelected(self)
+                self.entity:SetHierarchyFocusOnMe(false)
+            end
+            return true 
+        end,
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
             AssetBrowser:SetSelected(self)
             self.entity:SetFocus(HEntity())

@@ -10,14 +10,22 @@ namespace EngineCore
 	class EntityMgr 
 	{
 	public:
-		EntityMgr()
+		EntityMgr(uint32_t maxCount)
 		{
-			generation.resize(ENTITY_COUNT);
+			maxCount = min(ENTITY_COUNT, maxCount);
+			minFreeIdx = min(MINIMUM_FREE_INDICES, maxCount / 32);
+
+			generation.create(maxCount);
+			generation.resize(maxCount);
 			generation.assign(0);
-			free_id.resize(ENTITY_COUNT);
-			for(uint32_t i=0; i<ENTITY_COUNT; i++)
+
+			free_id.create(maxCount);
+			free_id.resize(maxCount);
+			for(uint32_t i=0; i<maxCount; i++)
 				free_id[i] = uint32_t(i);
-			entity_alive.resize(ENTITY_COUNT);
+
+			entity_alive.create(maxCount);
+			entity_alive.resize(maxCount);
 			entity_alive.assign(false);
 		}
 		~EntityMgr() {}
@@ -25,7 +33,7 @@ namespace EngineCore
 		Entity CreateEntity()
 		{
 			Entity res;
-			if(free_id.size() <= MINIMUM_FREE_INDICES)
+			if(free_id.size() <= minFreeIdx)
 			{
 				res.setnull();
 				return res;
@@ -43,7 +51,7 @@ namespace EngineCore
 		Entity RestoreEntity() // remove???
 		{
 			Entity res;
-			if(free_id.size() <= MINIMUM_FREE_INDICES)
+			if(free_id.size() <= minFreeIdx)
 			{
 				res.setnull();
 				return res;
@@ -78,7 +86,7 @@ namespace EngineCore
 			entity_alive[idx] = false;
 		}
 
-		inline uint32_t GetEntityCount() { return (uint32_t)(ENTITY_COUNT - free_id.size()); }
+		inline uint32_t GetEntityCount() { return (uint32_t)(free_id.capacity() - free_id.size()); }
 
 		Entity GetNextEntity(Entity e)
 		{
@@ -107,9 +115,11 @@ namespace EngineCore
 		}
 
 	private:
-		SDeque<uint32_t, ENTITY_COUNT> free_id;
-		SArray<uint32_t, ENTITY_COUNT> generation;
+		RDeque<uint32_t> free_id;
+		RArray<uint32_t> generation;
 
-		SArray<bool, ENTITY_COUNT> entity_alive;
+		RArray<bool> entity_alive;
+
+		uint32_t minFreeIdx;
 	};
 }

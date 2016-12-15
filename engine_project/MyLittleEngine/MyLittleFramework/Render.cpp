@@ -113,14 +113,7 @@ namespace EngineCore
 	{
 		m_instance = nullptr;
 	}
-
-	bool Render::Draw() // todo: remove?
-	{	
-		m_worldmgr->UpdateWorlds();
-
-		return true;
-	}
-
+	
 	bool Render::Init()
 	{
 		// DEVICE

@@ -46,7 +46,6 @@ namespace EngineCore
 		inline static Render* Get(){return m_instance;}
 		
 		bool Init();
-		bool Draw();
 		void Close();
 
 		void* operator new(size_t i)

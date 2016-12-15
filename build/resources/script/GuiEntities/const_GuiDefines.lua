@@ -106,10 +106,10 @@ GUI_EVENTS = {
     TF_CURSORMOVE         = 0x19,
     TF_DEACTIVATE         = 0x1A,
     TF_EDITING            = 0x1B,
+    TF_ACTIVATION_WAIT    = 0x1C,
 
-    CB_CHECKED            = 0x1C,
-    CB_UNCHECKED          = 0x1D,
-    CB_MOVE               = 0x1E, -- UNUSED
+    CB_CHECKED            = 0x1D,
+    CB_UNCHECKED          = 0x1E,
     CB_HOVER              = 0x1F,
     CB_OUT                = 0x20,
 

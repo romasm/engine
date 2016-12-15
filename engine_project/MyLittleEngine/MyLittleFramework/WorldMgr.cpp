@@ -18,6 +18,7 @@ void WorldMgr::RegLuaClass()
 		.addFunction("GetWorldMgr", &WorldMgr::GetWorldMgr)
 		.beginClass<WorldMgr>("WorldMgr")
 			.addFunction("CreateWorld", &WorldMgr::CreateWorld)
+			.addFunction("CreateSmallWorld", &WorldMgr::CreateSmallWorld)
 			.addFunction("OpenWorld", &WorldMgr::OpenWorld)
 			.addFunction("CloseWorld", &WorldMgr::CloseWorld)
 			.addFunction("CloseWorldByID", &WorldMgr::CloseWorldByID)
@@ -32,7 +33,11 @@ WorldMgr::WorldMgr()
 		nextID = 0;
 
 		RegLuaClass();
+
+		BaseWorld::RegLuaClass();
 		World::RegLuaClass();
+		SmallWorld::RegLuaClass();
+
 		ScenePipeline::RegLuaClass();
 
 		TransformSystem::RegLuaClass();
@@ -63,16 +68,30 @@ WorldMgr::~WorldMgr()
 	m_instance = nullptr;
 }
 
+void WorldMgr::regWorld(BaseWorld* world)
+{
+	world->SetID(nextID);
+	m_worldsMap.insert(make_pair(nextID, world));
+	nextID++;
+}
+
 World* WorldMgr::CreateWorld()
 {
 	World* world = new World();
 	if(!world->Init())
 		return nullptr;
 
-	world->SetID(nextID);
-	m_worldsMap.insert(make_pair(nextID, world));
-	nextID++;
+	regWorld(world);
+	return world;
+}
 
+SmallWorld* WorldMgr::CreateSmallWorld()
+{
+	SmallWorld* world = new SmallWorld();
+	if(!world->Init())
+		return nullptr;
+
+	regWorld(world);
 	return world;
 }
 
@@ -82,11 +101,7 @@ World* WorldMgr::OpenWorld(string filename)
 	if(!world->Init(filename))
 		return nullptr;
 
-	world->SetID(nextID);
-	m_worldsMap.insert(make_pair(nextID, world));
-	//if(worldID)*worldID = nextID;
-	nextID++;
-
+	regWorld(world);
 	return world;
 }
 
@@ -95,7 +110,7 @@ void WorldMgr::CloseWorldByID(UINT id)
 	auto i = m_worldsMap.find(id);
 	if(i == m_worldsMap.end())
 	{
-		ERR("Мира с идентификатором %i не существует", int(id));
+		ERR("World with id %u doesn\'t exist!", id);
 		return;
 	}
 	_CLOSE(i->second);

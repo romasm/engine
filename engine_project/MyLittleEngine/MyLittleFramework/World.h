@@ -35,27 +35,27 @@
 #define CAMERA_BYTE 'c'
 #define SCRIPT_BYTE 'u'
 
+#define SMALL_ENTITY_COUNT 128
+
 namespace EngineCore
 {
 	class TypeMgr;
-
-	class World
+	
+	class BaseWorld
 	{
 		friend TypeMgr;
 	public:
-		World();
+		BaseWorld();
 
 		bool Init(string filename);
 		bool Init();
-
-		void Snapshot(ScenePipeline* scene);
-		void Frame();
-		void Close();
-
+		
+		virtual void Snapshot(ScenePipeline* scene) = 0;
+		virtual void Frame() = 0;
+		virtual void Close();
+		
 		void SetDirty(Entity e);
-		
-		bool SaveWorld(string filename);
-		
+				
 		string GetWorldName() const {return world_name;}
 		UINT GetID() const {return ID;}
 		void SetID(UINT l_ID) {ID = l_ID;}
@@ -93,9 +93,7 @@ namespace EngineCore
 			if(m_staticMeshSystem)
 				m_staticMeshSystem->PostReload();
 		}
-
-		Entity GetMainCamera() const {return mainCamera;}
-		
+				
 		bool IsActive() const {return b_active;}
 		void SetActive(bool active) {b_active = active;}
 
@@ -115,8 +113,6 @@ namespace EngineCore
 		inline ShadowSystem* GetShadowSystem() const {return m_shadowSystem;}
 		inline GlobalLightSystem* GetGlobalLightSystem() const {return m_globalLightSystem;}
 		inline ScriptSystem* GetScriptSystem() const {return m_scriptSystem;}
-
-		inline TransformControls* GetTransformControls() const {return m_transformControls;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
 		inline NameMgr* GetNameMgr() const {return m_nameMgr;}
@@ -161,11 +157,6 @@ namespace EngineCore
 			return res;
 		}
 
-		void RebakeSky()
-		{
-			m_envProbSystem->Bake(skyEP);
-		}
-
 	#ifdef _DEV
 		void UpdateLuaFuncs()
 		{
@@ -173,58 +164,7 @@ namespace EngineCore
 			m_scriptSystem->UpdateLuaFuncs();
 		}
 	#endif
-
-		static void RegLuaClass()
-		{
-			getGlobalNamespace(LSTATE)
-				.beginClass<World>("World")
-					.addFunction("Save", &World::SaveWorld)
-					.addFunction("GetID", &World::GetID)
-					.addFunction("GetWorldName", &World::GetWorldName)
-
-					.addFunction("AddScene", &World::AddScene)
-					.addFunction("CreateScene", &World::CreateScene)
-					.addFunction("DeleteScene", &World::DeleteScene)
-
-					.addFunction("GetMainCamera", &World::GetMainCamera)
-
-					.addFunction("CreateEntity", &World::CreateEntity)
-					.addFunction("CreateNamedEntity", &World::CreateNamedEntity)
-					.addFunction("GetEntityName", &World::GetEntityName)
-					.addFunction("IsEntityAlive", &World::IsEntityAlive)
-					.addFunction("DestroyEntity", &World::DestroyEntity)
-					.addFunction("RestoreEntity", &World::RestoreEntity)
-					.addFunction("CopyEntity", &World::CopyEntity)
-					.addFunction("RenameEntity", &World::RenameEntity)
-					.addFunction("GetEntityByName", &World::GetEntityByName)
-
-					.addFunction("SetEntityType", &World::SetEntityType)
-					.addFunction("GetEntityType", &World::GetEntityType)
-					.addFunction("GetFirstEntityByType", &World::GetFirstEntityByType)
-					.addFunction("GetNextEntityByType", &World::GetNextEntityByType)
-
-					.addProperty("transform", &World::GetTransformSystem)
-					.addProperty("visibility", &World::GetVisibilitySystem)
-					.addProperty("earlyVisibility", &World::GetEarlyVisibilitySystem)
-					.addProperty("staticMesh", &World::GetStaticMeshSystem)
-					.addProperty("camera", &World::GetCameraSystem)
-					.addProperty("light", &World::GetLightSystem)
-					.addProperty("globalLight", &World::GetGlobalLightSystem)
-					.addProperty("lineGeometry", &World::GetLineGeometrySystem)
-					.addProperty("controller", &World::GetControllerSystem)
-					.addProperty("script", &World::GetScriptSystem)
-
-					.addProperty("transformControls", &World::GetTransformControls)
-
-					.addFunction("RebakeSky", &World::RebakeSky)
-
-					.addProperty("active", &World::IsActive, &World::SetActive)
-				.endClass();
-		}
-
-		ALIGNED_ALLOCATION
-
-	private:
+		
 		struct WorldHeader
 		{
 			wchar_t env_name[256];
@@ -234,9 +174,52 @@ namespace EngineCore
 			XMVECTOR free_cam_rot;
 		};
 
-		bool loadWorld(string filename, WorldHeader& header);
+		static void RegLuaClass()
+		{
+			getGlobalNamespace(LSTATE)
+				.beginClass<BaseWorld>("BaseWorld")
+					.addFunction("GetID", &BaseWorld::GetID)
+					.addFunction("GetWorldName", &BaseWorld::GetWorldName)
 
-		void initMainEntities(WorldHeader header);
+					.addFunction("AddScene", &BaseWorld::AddScene)
+					.addFunction("CreateScene", &BaseWorld::CreateScene)
+					.addFunction("DeleteScene", &BaseWorld::DeleteScene)
+					
+					.addFunction("CreateEntity", &BaseWorld::CreateEntity)
+					.addFunction("CreateNamedEntity", &BaseWorld::CreateNamedEntity)
+					.addFunction("GetEntityName", &BaseWorld::GetEntityName)
+					.addFunction("IsEntityAlive", &BaseWorld::IsEntityAlive)
+					.addFunction("DestroyEntity", &BaseWorld::DestroyEntity)
+					.addFunction("RestoreEntity", &BaseWorld::RestoreEntity)
+					.addFunction("CopyEntity", &BaseWorld::CopyEntity)
+					.addFunction("RenameEntity", &BaseWorld::RenameEntity)
+					.addFunction("GetEntityByName", &BaseWorld::GetEntityByName)
+
+					.addFunction("SetEntityType", &BaseWorld::SetEntityType)
+					.addFunction("GetEntityType", &BaseWorld::GetEntityType)
+					.addFunction("GetFirstEntityByType", &BaseWorld::GetFirstEntityByType)
+					.addFunction("GetNextEntityByType", &BaseWorld::GetNextEntityByType)
+
+					.addProperty("transform", &BaseWorld::GetTransformSystem)
+					.addProperty("visibility", &BaseWorld::GetVisibilitySystem)
+					.addProperty("earlyVisibility", &BaseWorld::GetEarlyVisibilitySystem)
+					.addProperty("staticMesh", &BaseWorld::GetStaticMeshSystem)
+					.addProperty("camera", &BaseWorld::GetCameraSystem)
+					.addProperty("light", &BaseWorld::GetLightSystem)
+					.addProperty("globalLight", &BaseWorld::GetGlobalLightSystem)
+					.addProperty("lineGeometry", &BaseWorld::GetLineGeometrySystem)
+					.addProperty("controller", &BaseWorld::GetControllerSystem)
+					.addProperty("script", &BaseWorld::GetScriptSystem)
+
+					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
+				.endClass();
+		}
+
+	protected:
+		bool loadWorld(string& filename, WorldHeader& header);
+		virtual void initMainEntities(WorldHeader header);
+		
+		bool saveWorld(string& filename, Entity editorCamera);
 
 		bool b_active;
 
@@ -246,7 +229,6 @@ namespace EngineCore
 		string world_name;
 		UINT ID;
 
-		Entity mainCamera;
 		Entity skyEP;
 
 		wstring envName;
@@ -268,10 +250,76 @@ namespace EngineCore
 		ShadowSystem* m_shadowSystem;
 		GlobalLightSystem* m_globalLightSystem;
 		ScriptSystem* m_scriptSystem;
+		
+		TypeMgr* m_typeMgr;
+		NameMgr* m_nameMgr;
+	};
+	
+	class World: public BaseWorld
+	{
+	public:
+		World();
+		
+		void Snapshot(ScenePipeline* scene);
+		void Frame();
+		void Close();
+		
+		bool SaveWorld(string filename)
+		{
+			return saveWorld(filename, mainCamera);
+		}
+
+		Entity GetMainCamera() const {return mainCamera;}
+
+		inline TransformControls* GetTransformControls() const {return m_transformControls;}
+		
+		void RebakeSky()
+		{
+			m_envProbSystem->Bake(skyEP);
+		}
+
+		static void RegLuaClass()
+		{
+			getGlobalNamespace(LSTATE)
+				.deriveClass<World, BaseWorld>("World")
+					.addFunction("Save", &World::SaveWorld)
+					.addFunction("GetMainCamera", &World::GetMainCamera)
+					.addFunction("RebakeSky", &World::RebakeSky)
+
+					.addProperty("transformControls", &World::GetTransformControls)
+				.endClass();
+		}
+
+	protected:
+		void initMainEntities(WorldHeader header);
 
 		TransformControls* m_transformControls;
 
-		TypeMgr* m_typeMgr;
-		NameMgr* m_nameMgr;
+		Entity mainCamera;
+	};
+
+	class SmallWorld: public BaseWorld
+	{
+	public:
+		SmallWorld();
+		
+		void Snapshot(ScenePipeline* scene);
+		void Frame();
+		void Close();
+		
+		bool SaveWorld(string filename)
+		{
+			Entity nullEnt;
+			nullEnt.setnull();
+			return saveWorld(filename, nullEnt);
+		}
+		
+		static void RegLuaClass()
+		{
+			getGlobalNamespace(LSTATE)
+				.deriveClass<SmallWorld, BaseWorld>("SmallWorld")
+					.addFunction("Save", &SmallWorld::SaveWorld)
+				.endClass();
+		}
 	};
 }

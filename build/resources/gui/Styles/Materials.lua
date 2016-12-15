@@ -92,3 +92,18 @@ GuiMaterials.t_picker = {
 GuiMaterials.data_slider = {
     shader = "../resources/shaders/gui/color",
 }
+
+GuiMaterials.new_mat_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/new_mat.dds"},
+}
+
+GuiMaterials.copy_mat_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/copy_mat.dds"},
+}
+
+GuiMaterials.delete_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/delete.dds"},
+}
