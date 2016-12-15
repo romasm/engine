@@ -111,9 +111,9 @@ function Tools:Init()
         
     loader.require("ToolBar", Tools.reloadToolbar)
     self.reloadToolbar()
-
+    
     -- temp
-
+    
     local sceneBrowser = Gui.SceneBrowserWindow()
     self.right_side_area.entity:AttachChild(sceneBrowser.entity)
     self.right_side_area.second_win = sceneBrowser.entity

@@ -60,13 +60,13 @@ namespace EngineCore
 				
 	};
 
-	class World;
+	class BaseWorld;
 
 	class LightSystem
 	{
-		friend World;
+		friend BaseWorld;
 	public:
-		LightSystem(World* wrd);
+		LightSystem(BaseWorld* w, uint32_t maxCount);
 
 		LightComponent* AddComponent(Entity e)
 		{
@@ -211,15 +211,11 @@ namespace EngineCore
 
 		void initShadows(Entity e, LightComponent* comp);
 
-		ComponentSArray<LightComponent, ENTITY_COUNT> components;
+		ComponentRArray<LightComponent> components;
 
 		TransformSystem* transformSys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
 		ShadowSystem* shadowSystem;
 		FrustumMgr* frustumMgr;
-
-		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
-
-		World* world;
 	};
 }

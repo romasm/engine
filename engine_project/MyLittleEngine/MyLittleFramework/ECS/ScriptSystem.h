@@ -32,12 +32,12 @@ namespace EngineCore
 		}
 	};
 
-	class World;
+	class BaseWorld;
 
 	class ScriptSystem
 	{
 	public:
-		ScriptSystem(World* w);
+		ScriptSystem(BaseWorld* w, uint32_t maxCount);
 
 		// from c++
 		ScriptComponent* AddComponent(Entity e, string& className);
@@ -98,8 +98,7 @@ namespace EngineCore
 	private:
 		void initLuaData(ScriptComponent& comp);
 
-		ComponentSArray<ScriptComponent, ENTITY_COUNT> components;
-		World* world;
+		ComponentRArray<ScriptComponent> components;
 		TypeMgr* typeMgr;
 	};
 }

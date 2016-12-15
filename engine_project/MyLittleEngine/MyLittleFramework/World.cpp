@@ -423,7 +423,7 @@ World::World() : BaseWorld()
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
-	m_controllerSystem = new ControllerSystem(this, ENTITY_COUNT);
+	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, ENTITY_COUNT);
 	m_shadowSystem = new ShadowSystem(this, ENTITY_COUNT);
 	m_lightSystem = new LightSystem(this, ENTITY_COUNT);
@@ -630,7 +630,7 @@ SmallWorld::SmallWorld() : BaseWorld()
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
-	m_controllerSystem = new ControllerSystem(this, SMALL_ENTITY_COUNT);
+	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, SMALL_ENTITY_COUNT);
 }
 

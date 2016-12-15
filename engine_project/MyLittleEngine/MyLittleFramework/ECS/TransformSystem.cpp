@@ -4,13 +4,22 @@
 
 using namespace EngineCore;
 
-TransformSystem::TransformSystem(World* w)
+TransformSystem::TransformSystem(BaseWorld* w, uint32_t maxCount)
 {	
 	world = w;
 	structureChanged = true;
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
 
-	lookup.resize(ENTITY_COUNT);
+	components.create(maxCount);
+
+	lookup.create(maxCount);
+	lookup.resize(maxCount);
 	lookup.assign(ENTITY_COUNT);
+
+	dirty.create(maxCount);
+	hierarchy_sort.create(maxCount);
+	links_fix.create(maxCount);
 
 	attachments_map = nullptr;
 }
@@ -75,29 +84,7 @@ void TransformSystem::Update()
 
 			TransformComponent temp_comp = components[move_to];
 			bool temp_dirty = dirty[move_to];
-
-			/*
-			while(true)
-			{
-				hierarchy_sort[move_to].hierarchy = -1;
-				uint32_t move_from = hierarchy_sort[move_to].new_id;
-				if( i == move_from)
-				{
-					components[move_to] = temp_comp;
-					dirty[move_to] = temp_dirty;
-
-					lookup[components[move_to].get_id()] = move_to;
-					break;
-				}
-				
-				components[move_to] = components[move_from];
-				dirty[move_to] = dirty[move_from];
-
-				lookup[components[move_to].get_id()] = move_to;
-				move_to = move_from;				
-			}
-			*/
-			
+						
 			uint32_t move_from;
 			while( (move_from = hierarchy_sort[move_to].new_id) != i )
 			{
@@ -387,7 +374,7 @@ void TransformSystem::PreLoad()
 		attachments_map->clear();
 	else
 		attachments_map = new unordered_map<uint32_t, string>;
-	attachments_map->reserve(ENTITY_COUNT); // too much space?
+	attachments_map->reserve(components.capacity()); // too much space?
 }
 
 bool TransformSystem::PostLoadParentsResolve()

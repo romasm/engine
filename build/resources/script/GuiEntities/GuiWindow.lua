@@ -84,9 +84,9 @@ function GuiWindow:init(props)
         color_nonactive = Vector4(0.0, 0.0, 0.0, 1.0),
         width = 0
     }
-
+    
     self._base.init(self, props)
-
+    
     if self.independent == true then
         self.sys_win = CoreGui.SysWindows.Create()
         
@@ -211,7 +211,7 @@ function GuiWindow:init(props)
 
     self.scroll = {x = 0, y = 0}
     self.scroll_enabled = {x = true, y = true}
-
+    
     self:UpdateProps()
     
 	if self.independent == true then
@@ -336,7 +336,13 @@ function GuiWindow:UpdateProps()
 end
 
 function GuiWindow:onActivate()
-    local focus = self.entity:GetParent():GetFocus()
+    local parent = self.entity:GetParent()
+    if parent:is_null() then
+        self:ApplyNone()
+        return
+    end
+    
+    local focus = parent:GetFocus()
     if focus:is_eq(self.entity) then self:ApplyFocus()
     else self:ApplyNone() end
 end

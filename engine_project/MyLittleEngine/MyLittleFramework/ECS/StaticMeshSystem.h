@@ -40,13 +40,13 @@ namespace EngineCore
 		}
 	};
 
-	class World;
+	class BaseWorld;
 
 	class StaticMeshSystem
 	{
-		friend World;
+		friend BaseWorld;
 	public:
-		StaticMeshSystem(World* wrd);
+		StaticMeshSystem(BaseWorld* w, uint32_t maxCount);
 		~StaticMeshSystem();
 
 		StaticMeshComponent* AddComponent(Entity e)
@@ -165,12 +165,12 @@ namespace EngineCore
 	private:
 		inline void destroyMeshData(StaticMeshComponent& comp);
 
-		ComponentSArray<StaticMeshComponent, ENTITY_COUNT> components;
+		ComponentRArray<StaticMeshComponent> components;
 
 		TransformSystem* transformSys;
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
 
-		SArray<Frustum, FRUSTUM_MAX_COUNT>* frustums;
+		FrustumMgr* frustumMgr;
 	};
 }

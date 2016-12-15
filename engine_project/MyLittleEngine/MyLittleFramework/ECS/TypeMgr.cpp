@@ -79,6 +79,7 @@ bool TypeMgr::UnregType(string& type)
 	entitiesPerType.erase(range.first, range.second);
 
 	reged_types.erase(it);
+	return true;
 }
 
 bool TypeMgr::SetType(Entity ent, string& type)

@@ -5,9 +5,11 @@
 
 using namespace EngineCore;
 
-EnvProbSystem::EnvProbSystem(World* wrd)
+EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 {
-	components.reserve(ENVPROBS_INIT_COUNT); // only dist?
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
+	components.reserve(ENVPROBS_INIT_COUNT); // only dist for now
 
 	world = wrd;
 

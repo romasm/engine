@@ -8,8 +8,7 @@ using namespace EngineCore;
 
 TransformControls::TransformControls(World* wrd)
 {
-	FrustumMgr* frustumMgr = wrd->GetFrustumMgr();
-	frustums = &frustumMgr->camDataArray;
+	frustumMgr = wrd->GetFrustumMgr();
 
 	camSys = wrd->GetCameraSystem();
 	transformSys = wrd->GetTransformSystem();
@@ -114,7 +113,7 @@ void TransformControls::RegToDraw()
 	switch (mode)
 	{
 	case TransformControls::E_MOVE:
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			if(frustCount >= TC_MAX_CAMS)
 				break;
@@ -179,7 +178,7 @@ void TransformControls::RegToDraw()
 		}
 		break;
 	case TransformControls::E_ROT:
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			if(frustCount >= TC_MAX_CAMS)
 				break;
@@ -230,7 +229,7 @@ void TransformControls::RegToDraw()
 		}
 		break;
 	case TransformControls::E_SCALE:
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			if(frustCount >= TC_MAX_CAMS)
 				break;

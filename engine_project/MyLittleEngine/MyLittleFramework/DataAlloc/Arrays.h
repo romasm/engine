@@ -796,15 +796,19 @@ namespace EngineCore
 	// COMPONENTS /////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	template <typename T, size_t S>
+	template <typename T>
 	// for components only! static indirect array: ids with holes, packed data
-	class ComponentSArray
+	class ComponentRArray
 	{
 	public:
-		ComponentSArray()
+		ComponentRArray(){}
+
+		void create(size_t max_size)
 		{
-			m_lookup.resize(S);
-			m_lookup.assign(S);
+			m_data.create(max_size);
+			m_lookup.create(max_size);
+			m_lookup.resize(max_size);
+			m_lookup.assign(max_size);
 		}
 		
 		inline size_t getArrayIdx(const size_t i) {return m_lookup[i];}
@@ -814,14 +818,14 @@ namespace EngineCore
 		inline size_t dataSize() const {return m_data.size();}
 
 		inline bool empty() const {return m_data.size() == 0 ? true : false;}
-		inline bool full() const {return m_data.size() == S ? true : false;}
+		inline bool full() const {return m_data.size() == m_data.capacity() ? true : false;}
 
-		inline bool has(const size_t i) const {return i < S && m_lookup[i] != S;}
+		inline bool has(const size_t i) const {return i < m_data.capacity() && m_lookup[i] != m_data.capacity();}
 
 		inline T* add(const size_t i)
 		{
-			if(i>=S) return nullptr;
-			if(m_lookup[i] == S)
+			if(i >= m_data.capacity()) return nullptr;
+			if(m_lookup[i] == m_data.capacity())
 			{
 				m_lookup[i] = m_data.size();
 				return m_data.push_back();
@@ -836,8 +840,8 @@ namespace EngineCore
 
 		inline void add(const size_t i, T D)
 		{
-			if(i>=S) return;
-			if(m_lookup[i] == S)
+			if(i >= m_data.capacity()) return;
+			if(m_lookup[i] == m_data.capacity())
 			{
 				m_lookup[i] = m_data.size();
 				m_data.push_back(D);
@@ -847,9 +851,9 @@ namespace EngineCore
 
 		inline void remove(const size_t i)
 		{
-			if(i>=S) return;
+			if(i >= m_data.capacity()) return;
 			size_t rmv_id = m_lookup[i];
-			if(rmv_id == S) return;
+			if(rmv_id == m_data.capacity()) return;
 			
 			if(rmv_id != m_data.size() - 1)
 			{
@@ -857,36 +861,40 @@ namespace EngineCore
 				m_lookup[m_data[old_id].get_id()] = rmv_id;
 			}
 			m_data.erase_and_pop_back(rmv_id);
-			m_lookup[i] = S;
+			m_lookup[i] = m_data.capacity();
 		}
 
 		// NOT free mem
 		inline void	clear()
 		{
 			m_data.clear();
-			m_lookup.assign(S);
+			m_lookup.assign(m_data.capacity());
 		}
 
-		inline SArray<T, S>* data() {return &m_data;}
-		inline SArray<size_t, S>* lookupTable() {return &m_lookup;}
+		inline RArray<T>* data() {return &m_data;}
+		inline RArray<size_t>* lookupTable() {return &m_lookup;}
 
-		inline size_t capacity() const {return S;}
+		inline size_t capacity() const {return m_data.capacity();}
 
 	private:
-		SArray<T, S> m_data;
-		SArray<size_t, S> m_lookup;
+		RArray<T> m_data;
+		RArray<size_t> m_lookup;
 	};
 
 	// -------------------------------------------
-	template <typename T, size_t S, size_t D>
+	template <typename T>
 	// for multiple components only! static indirect array: ids with holes, packed data
-	class MultiComponentSArray
+	class MultiComponentRArray
 	{
 	public:
-		MultiComponentSArray()
+		MultiComponentRArray() {}
+
+		void create(size_t max_size, size_t max_data)
 		{
-			m_lookup.resize(S);
-			m_lookup.assign(D);
+			m_data.create(max_data);
+			m_lookup.create(max_size);
+			m_lookup.resize(max_size);
+			m_lookup.assign(max_data);
 		}
 		
 		inline size_t getArrayIdx(const size_t i) {return m_lookup[i];}
@@ -895,11 +903,11 @@ namespace EngineCore
 		inline T* getDataById(const size_t i, const size_t num = 0)
 		{
 			size_t idx = m_lookup[i];
-			if(idx == D) return nullptr;
+			if(idx == m_data.capacity()) return nullptr;
 			T* res = &m_data[idx];
 			for(size_t j=0; j<num; j++)
 			{
-				if(res->next == D) return nullptr;
+				if(res->next == (uint32_t)m_data.capacity()) return nullptr;
 				res = &m_data[res->next];
 			}
 			return res;
@@ -908,20 +916,20 @@ namespace EngineCore
 		inline size_t dataSize() const {return m_data.size();}
 
 		inline bool empty() const {return m_data.size() == 0 ? true : false;}
-		inline bool full() const {return m_data.size() == D ? true : false;}
+		inline bool full() const {return m_data.size() == m_data.capacity() ? true : false;}
 
-		inline bool has(const size_t i) const {return i < S && m_lookup[i] != D;}
+		inline bool has(const size_t i) const {return i < m_lookup.capacity() && m_lookup[i] != m_data.capacity();}
 
 		inline T* add(const size_t i)
 		{
-			if(i>=S) return nullptr;
-			if(m_data.size() >= D) return nullptr;
-			if(m_lookup[i] == D)
+			if(i >= m_lookup.capacity()) return nullptr;
+			if(m_data.size() >= m_data.capacity()) return nullptr;
+			if(m_lookup[i] == m_data.capacity())
 			{
 				m_lookup[i] = m_data.size();
 				T* res = m_data.push_back();
-				res->prev = D;
-				res->next = D;
+				res->prev = (uint32_t)m_data.capacity();
+				res->next = (uint32_t)m_data.capacity();
 				res->num = 0;
 				return res;
 			}
@@ -931,7 +939,7 @@ namespace EngineCore
 				T* res = &m_data[idx];
 				T* prev = res;
 				uint num = 0;
-				while(prev->next != D)
+				while(prev->next != (uint32_t)m_data.capacity())
 				{
 					idx = prev->next;
 					prev = &m_data[idx];
@@ -940,7 +948,7 @@ namespace EngineCore
 				prev->next = (uint)m_data.size();
 				res = m_data.push_back();
 				res->prev = (uint)idx;
-				res->next = D;
+				res->next = (uint32_t)m_data.capacity();
 				res->num = num + 1;
 				return res;
 			}
@@ -956,11 +964,11 @@ namespace EngineCore
 		{
 			uint removed = 0;
 
-			if(i>=S) return removed;
+			if(i >= m_lookup.capacity()) return removed;
 			size_t rmv_id = m_lookup[i];
-			if(rmv_id == D) return removed;
+			if(rmv_id == m_data.capacity()) return removed;
 			
-			while(rmv_id != D)
+			while(rmv_id != m_data.capacity())
 			{
 				size_t t_next = m_data[rmv_id].next;
 
@@ -968,15 +976,15 @@ namespace EngineCore
 				{
 					size_t old_id = m_data.size() - 1;
 					T* alien_data = &m_data[old_id];
-					if(alien_data->prev == D)
+					if(alien_data->prev == (uint32_t)m_data.capacity())
 						m_lookup[alien_data->get_id()] = rmv_id;
 					else
 						m_data[alien_data->prev].next = (uint)rmv_id;
-					if(alien_data->next != D)
+					if(alien_data->next != (uint32_t)m_data.capacity())
 						m_data[alien_data->next].prev = (uint)rmv_id;
 				}
 
-				if(m_data[rmv_id].num == 0) m_lookup[i] = D;
+				if(m_data[rmv_id].num == 0) m_lookup[i] = m_data.capacity();
 				m_data.erase_and_pop_back(rmv_id);
 				
 				if(t_next != m_data.size()) // else: deleted item points to last that was moved
@@ -990,32 +998,35 @@ namespace EngineCore
 		inline void	clear()
 		{
 			m_data.clear();
-			m_lookup.assign(D);
+			m_lookup.assign(m_data.capacity());
 		}
 
-		inline SArray<T, S>* data() {return &m_data;}
-		inline SArray<size_t, S>* lookupTable() {return &m_lookup;}
+		inline RArray<T>* data() {return &m_data;}
+		inline RArray<size_t>* lookupTable() {return &m_lookup;}
 
-		inline size_t capacity() const {return D;}
+		inline size_t capacity() const {return m_data.capacity();}
 
 	private:
-		SArray<T, D> m_data;
-		SArray<size_t, S> m_lookup;
+		RArray<T> m_data;
+		RArray<size_t> m_lookup;
 	};
 
 	// -------------------------------------------
-	template <typename T, size_t S>
+	template <typename T>
 	// for components only! static indirect array with dynamic data: ids with holes, packed data
-	class ComponentSDArray
+	class ComponentRDArray
 	{
 	public:
-		ComponentSDArray()
+		ComponentRDArray() {}
+
+		void create(size_t max_size)
 		{
-			m_lookup.resize(S);
-			m_lookup.assign(S);
+			m_lookup.create(max_size);
+			m_lookup.resize(max_size);
+			m_lookup.assign(max_size);
 		}
 		
-		inline void reserve(size_t N) {m_data.reserve(min(S, N));}
+		inline void reserve(size_t N) {m_data.reserve(min(m_lookup.capacity(), N));}
 
 		inline size_t getArrayIdx(const size_t i) {return m_lookup[i];}
 		inline T& getDataByArrayIdx(const size_t i) {return m_data[i];}
@@ -1024,14 +1035,14 @@ namespace EngineCore
 		inline size_t dataSize() const {return m_data.size();}
 
 		inline bool empty() const {return m_data.size() == 0 ? true : false;}
-		inline bool full() const {return m_data.size() == S ? true : false;}
+		inline bool full() const {return m_data.size() == m_lookup.capacity() ? true : false;}
 
-		inline bool has(const size_t i) const {return i < S && m_lookup[i] != S;}
+		inline bool has(const size_t i) const {return i < m_lookup.capacity() && m_lookup[i] != m_lookup.capacity();}
 
 		inline T* add(const size_t i)
 		{
-			if(i>=S) return nullptr;
-			if(m_lookup[i] == S)
+			if(i >= m_lookup.capacity()) return nullptr;
+			if(m_lookup[i] == m_lookup.capacity())
 			{
 				m_lookup[i] = m_data.size();
 				return &m_data.push_back();
@@ -1046,8 +1057,8 @@ namespace EngineCore
 
 		inline void add(const size_t i, T D)
 		{
-			if(i>=S) return;
-			if(m_lookup[i] == S)
+			if(i >= m_lookup.capacity()) return;
+			if(m_lookup[i] == m_lookup.capacity())
 			{
 				m_lookup[i] = m_data.size();
 				m_data.push_back(D);
@@ -1057,9 +1068,9 @@ namespace EngineCore
 
 		inline void remove(const size_t i)
 		{
-			if(i>=S) return;
+			if(i >= m_lookup.capacity()) return;
 			size_t rmv_id = m_lookup[i];
-			if(rmv_id == S) return;
+			if(rmv_id == m_lookup.capacity()) return;
 			
 			if(rmv_id != m_data.size() - 1)
 			{
@@ -1067,24 +1078,24 @@ namespace EngineCore
 				m_lookup[m_data[old_id].get_id()] = rmv_id;
 			}
 			m_data.erase_and_pop_back(rmv_id);
-			m_lookup[i] = S;
+			m_lookup[i] = m_lookup.capacity();
 		}
 
 		// NOT free mem
 		inline void	clear()
 		{
 			m_data.clear();
-			m_lookup.assign(S);
+			m_lookup.assign(m_lookup.capacity());
 		}
 
 		inline DArray<T>* data() {return &m_data;}
-		inline SArray<size_t, S>* lookupTable() {return &m_lookup;}
+		inline RArray<size_t>* lookupTable() {return &m_lookup;}
 
-		inline size_t capacity() const {return S;}
+		inline size_t capacity() const {return m_lookup.capacity();}
 
 	private:
 		DArray<T> m_data;
-		SArray<size_t, S> m_lookup;
+		RArray<size_t> m_lookup;
 	};
 
 }

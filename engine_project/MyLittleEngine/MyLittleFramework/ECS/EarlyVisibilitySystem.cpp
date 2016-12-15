@@ -4,12 +4,14 @@
 
 using namespace EngineCore;
 
-EarlyVisibilitySystem::EarlyVisibilitySystem(World* world)
+EarlyVisibilitySystem::EarlyVisibilitySystem(BaseWorld* w, uint32_t maxCount)
 {
-	FrustumMgr* frustumMgr = world->GetFrustumMgr();
-	frustums = frustumMgr->m_frustums.data();
+	frustumMgr = w->GetFrustumMgr();
+	transformSys = w->GetTransformSystem();
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
 
-	transformSys = world->GetTransformSystem();
+	components.create(maxCount);
 }
 
 void EarlyVisibilitySystem::CheckEarlyVisibility()
@@ -45,7 +47,7 @@ void EarlyVisibilitySystem::CheckEarlyVisibility()
 		}
 
 		i.inFrust = 0;
-		for(auto& f: *frustums)
+		for(auto& f: *(frustumMgr->m_frustums.data()))
 			switch (i.type)
 			{
 			case BT_BOX:

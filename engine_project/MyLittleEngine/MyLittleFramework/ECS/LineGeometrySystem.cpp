@@ -6,14 +6,16 @@
 
 using namespace EngineCore;
 
-LineGeometrySystem::LineGeometrySystem(World* world)
+LineGeometrySystem::LineGeometrySystem(BaseWorld* w, uint32_t maxCount)
 {
-	FrustumMgr* frustumMgr = world->GetFrustumMgr();
-	frustums = &frustumMgr->camDataArray;
+	frustumMgr = w->GetFrustumMgr();
 
-	transformSys = world->GetTransformSystem();
-	visibilitySys = world->GetVisibilitySystem();
-	earlyVisibilitySys = world->GetEarlyVisibilitySystem();
+	transformSys = w->GetTransformSystem();
+	visibilitySys = w->GetVisibilitySystem();
+	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 }
 
 void LineGeometrySystem::RegToDraw()
@@ -61,14 +63,14 @@ void LineGeometrySystem::RegToDraw()
 		
 		if(bits == 0)
 		{
-			for(auto f: *frustums)
+			for(auto f: frustumMgr->camDataArray)
 				((SceneRenderMgr*)f->rendermgr)->RegMesh(i.index_count, i.vertexBuffer, i.indexBuffer, i.constantBuffer, sizeof(LineGeometryVertex), i.material, 
 					IA_TOPOLOGY::LINELIST);
 			
 			continue;
 		}
 
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			if((bits & f->bit) == f->bit)
 			{

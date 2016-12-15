@@ -399,7 +399,8 @@ class HEntityStorage
 			free_id.pop_front();
 
 			HEntity* ent = entities.add(idx);
-			if(!ent) return GUI_ENTITY_COUNT;
+			if(!ent) 
+				return GUI_ENTITY_COUNT;
 			ent->Close();
 			ent->sys_ID = idx;
 			return idx;
@@ -454,7 +455,7 @@ class HEntityStorage
 
 	private:
 		SDeque<uint32_t, GUI_ENTITY_COUNT> free_id;
-		ComponentSArray<HEntity, GUI_ENTITY_COUNT> entities;
+		ComponentRArray<HEntity> entities;
 		
 		DArray<uint32_t> deffered_destroy;
 

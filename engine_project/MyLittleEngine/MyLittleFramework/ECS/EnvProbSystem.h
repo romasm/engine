@@ -65,12 +65,12 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 	};
 
-	class World;
+	class BaseWorld;
 
 	class EnvProbSystem
 	{
 	public:
-		EnvProbSystem(World* wrd);
+		EnvProbSystem(BaseWorld* wrd, uint32_t maxCount);
 		~EnvProbSystem()
 		{
 			for(auto& i: *components.data())
@@ -162,11 +162,11 @@ namespace EngineCore
 
 	private:
 
-		ComponentSDArray<EnvProbComponent, ENTITY_COUNT> components;
+		ComponentRDArray<EnvProbComponent> components;
 
 		TransformSystem* transformSys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
 		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
-		World* world;
+		BaseWorld* world;
 	};
 }

@@ -4,12 +4,13 @@
 
 using namespace EngineCore;
 
-VisibilitySystem::VisibilitySystem(World* world)
+VisibilitySystem::VisibilitySystem(BaseWorld* w, uint32_t maxCount)
 {
+	frustumMgr = w->GetFrustumMgr();
+	transformSys = w->GetTransformSystem();
 
-	frustumMgr = world->GetFrustumMgr();
-
-	transformSys = world->GetTransformSystem();
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 }
 
 void VisibilitySystem::CheckVisibility()

@@ -5,14 +5,16 @@
 
 using namespace EngineCore;
 
-StaticMeshSystem::StaticMeshSystem(World* world)
+StaticMeshSystem::StaticMeshSystem(BaseWorld* w, uint32_t maxCount)
 {
-	FrustumMgr* frustumMgr = world->GetFrustumMgr();
-	frustums = frustumMgr->m_frustums.data();
+	frustumMgr = w->GetFrustumMgr();
 
-	transformSys = world->GetTransformSystem();
-	visibilitySys = world->GetVisibilitySystem();
-	earlyVisibilitySys = world->GetEarlyVisibilitySystem();
+	transformSys = w->GetTransformSystem();
+	visibilitySys = w->GetVisibilitySystem();
+	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
+
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 }
 
 StaticMeshSystem::~StaticMeshSystem()
@@ -89,7 +91,7 @@ void StaticMeshSystem::RegToDraw()
 		
 		if( bits == 0 )
 		{
-			for( auto& f: *frustums )
+			for( auto& f: *(frustumMgr->m_frustums.data()) )
 			{
 				if( !f.rendermgr->IsShadow() )
 				{
@@ -102,7 +104,7 @@ void StaticMeshSystem::RegToDraw()
 			continue;
 		}
 
-		for( auto& f: *frustums )
+		for( auto& f: *(frustumMgr->m_frustums.data()) )
 		{
 			if( (bits & f.bit) == f.bit )
 			{

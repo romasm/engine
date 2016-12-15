@@ -35,7 +35,7 @@ namespace EngineCore
 
 		bool active;
 		XMMATRIX transform;
-		World* world;
+		BaseWorld* world;
 
 		ALIGNED_ALLOCATION
 
@@ -44,12 +44,12 @@ namespace EngineCore
 		virtual void GetInput(ControllerComands cmd, float param1, float param2) = 0;
 	};
 
-	class World;
+	class BaseWorld;
 
 	class ControllerSystem
 	{
 	public:
-		ControllerSystem(World* wrd);
+		ControllerSystem(BaseWorld* w);
 		~ControllerSystem()
 		{
 			for(auto i: components)
@@ -108,7 +108,7 @@ namespace EngineCore
 	private:
 		map<UINT, Controller*> components;
 
-		World* world;
+		BaseWorld* world;
 		TransformSystem* transformSys;
 	};
 }

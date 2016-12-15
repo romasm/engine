@@ -4,20 +4,23 @@
 
 using namespace EngineCore;
 
-GlobalLightSystem::GlobalLightSystem(World* world)
+GlobalLightSystem::GlobalLightSystem(BaseWorld* w, uint32_t maxCount)
 {
+	maxCount = min(maxCount, ENTITY_COUNT);
+
+	components.create(maxCount);
 	components.reserve(LIGHT_DIR_FRAME_MAX);
 
-	cascadeNumForCamera.resize(ENTITY_COUNT);
+	cascadeNumForCamera.create(maxCount);
+	cascadeNumForCamera.resize(maxCount);
 	cascadeNumForCamera.assign(CAMERAS_MAX_COUNT);
 
 	projPerCamera.resize(0);
 
-	frustumMgr = world->GetFrustumMgr();
-	frustums = &frustumMgr->camDataArray;
+	frustumMgr = w->GetFrustumMgr();
 
-	transformSys = world->GetTransformSystem();
-	cameraSystem = world->GetCameraSystem();
+	transformSys = w->GetTransformSystem();
+	cameraSystem = w->GetCameraSystem();
 
 	camerasCount = 0;
 
@@ -234,7 +237,7 @@ void GlobalLightSystem::RegShadowMaps()
 		if(!i.active)
 			continue;
 		
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			CascadeShadow* shadowMap = &i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j < LIGHT_DIR_NUM_CASCADES; j++)
@@ -253,7 +256,7 @@ void GlobalLightSystem::RegToScene()
 		if(!i.active)
 			continue;
 
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			((SceneRenderMgr*)f->rendermgr)->RegDirLight(i.hdr_color, i.area_data, i.dir, cascade.view_proj, cascade.pos, i.get_id());
@@ -306,7 +309,7 @@ void GlobalLightSystem::RenderShadows()
 		if(!i.active)
 			continue;
 
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j<LIGHT_DIR_NUM_CASCADES; j++)
@@ -322,7 +325,7 @@ void GlobalLightSystem::ClearShadowsQueue()
 		if(!i.active)
 			continue;
 		
-		for(auto f: *frustums)
+		for(auto f: frustumMgr->camDataArray)
 		{
 			CascadeShadow* shadowMap = &i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
 			for(uint8_t j=0; j < LIGHT_DIR_NUM_CASCADES; j++)

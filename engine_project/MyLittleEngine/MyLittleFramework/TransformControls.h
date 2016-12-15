@@ -196,7 +196,7 @@ namespace EngineCore
 		} matricies[TC_MAX_CAMS];
 		int frust_ids[FRUSTUM_MAX_COUNT];
 
-		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
+		FrustumMgr* frustumMgr;
 		CameraSystem* camSys;
 		TransformSystem* transformSys;
 	};

@@ -39,6 +39,9 @@ HEntityStorage::HEntityStorage()
 		return;
 	}
 	instance = this;
+
+	entities.create(GUI_ENTITY_COUNT);
+
 	free_id.resize(GUI_ENTITY_COUNT);
 	for(uint32_t i=0; i<GUI_ENTITY_COUNT; i++)
 		free_id[i] = uint32_t(i);

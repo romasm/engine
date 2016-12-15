@@ -4,10 +4,10 @@
 
 using namespace EngineCore;
 
-ControllerSystem::ControllerSystem(World* wrd)
+ControllerSystem::ControllerSystem(BaseWorld* w)
 {
-	world = wrd;
-	transformSys = wrd->GetTransformSystem();
+	world = w;
+	transformSys = w->GetTransformSystem();
 };
 
 void ControllerSystem::Process()

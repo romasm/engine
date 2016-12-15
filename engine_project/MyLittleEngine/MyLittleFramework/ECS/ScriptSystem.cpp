@@ -4,10 +4,12 @@
 
 using namespace EngineCore;
 
-ScriptSystem::ScriptSystem(World* w)
+ScriptSystem::ScriptSystem(BaseWorld* w, uint32_t maxCount)
 {	
-	world = w;
-	typeMgr = world->GetTypeMgr();
+	typeMgr = w->GetTypeMgr();
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 }
 
 ScriptComponent* ScriptSystem::AddComponent(Entity e, string& className)

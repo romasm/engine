@@ -50,15 +50,15 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 	};
 
-	class World;
+	class BaseWorld;
 	class GlobalLightSystem;
 
 	class CameraSystem // TODO: share rndmgr between cameras (move rendermgr to scenepipeline???)
 	{
-		friend World;
+		friend BaseWorld;
 		friend GlobalLightSystem;
 	public:
-		CameraSystem(World* wrd);
+		CameraSystem(BaseWorld* w, uint32_t maxCount);
 		void SetGlobalLightSys(GlobalLightSystem* gls);
 		~CameraSystem();
 
@@ -211,7 +211,7 @@ namespace EngineCore
 		void regCamera(CameraComponent& comp);
 		void initCamera(CameraComponent* comp);
 
-		ComponentSDArray<CameraComponent, ENTITY_COUNT> components;
+		ComponentRDArray<CameraComponent> components;
 
 		TransformSystem* transformSys;
 		FrustumMgr* frustum_mgr;

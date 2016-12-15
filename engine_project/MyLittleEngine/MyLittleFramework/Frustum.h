@@ -29,6 +29,8 @@ namespace EngineCore
 	public:
 		FrustumMgr()
 		{
+			m_frustums.create(FRUSTUM_MAX_COUNT);
+
 			frustums_free_list.resize(FRUSTUM_MAX_COUNT);
 			for(int i=0; i<FRUSTUM_MAX_COUNT; i++)
 				frustums_free_list[i] = i;
@@ -165,7 +167,7 @@ namespace EngineCore
 
 		SArray<Frustum*, FRUSTUM_MAX_COUNT> camDataArray;
 
-		ComponentSArray<Frustum, FRUSTUM_MAX_COUNT> m_frustums;
+		ComponentRArray<Frustum> m_frustums;
 
 	private:
 		SDeque<size_t, FRUSTUM_MAX_COUNT> frustums_free_list;

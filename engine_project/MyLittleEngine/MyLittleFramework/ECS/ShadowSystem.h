@@ -37,13 +37,13 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 	};
 
-	class World;
+	class BaseWorld;
 	class LightSystem;
 
 	class ShadowSystem
 	{
 	public:
-		ShadowSystem(World* wrd);
+		ShadowSystem(BaseWorld* w, uint32_t maxCount);
 		~ShadowSystem()
 		{
 			for(auto& it: *components.data())
@@ -117,11 +117,11 @@ namespace EngineCore
 		
 		size_t shadow_casters;
 
-		MultiComponentSArray<ShadowComponent, ENTITY_COUNT, ENTITY_COUNT> components;
+		MultiComponentRArray<ShadowComponent> components;
 
 		EarlyVisibilitySystem* earlyVisibilitySys;
 		LightSystem* lightSys;
 
-		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
+		FrustumMgr* frustum_mgr;
 	};
 }

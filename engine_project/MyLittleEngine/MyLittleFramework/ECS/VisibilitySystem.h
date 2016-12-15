@@ -21,12 +21,12 @@ namespace EngineCore
 		BoundingOrientedBox worldBox;
 	};
 
-	class World;
+	class BaseWorld;
 
 	class VisibilitySystem
 	{
 	public:
-		VisibilitySystem(World* wrd);
+		VisibilitySystem(BaseWorld* w, uint32_t maxCount);
 
 		VisibilityComponent* AddComponent(Entity e)
 		{
@@ -123,11 +123,9 @@ namespace EngineCore
 	private:
 		void collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT3* colide_coord, Entity* ent);
 
-		ComponentSArray<VisibilityComponent, ENTITY_COUNT> components;
+		ComponentRArray<VisibilityComponent> components;
 
 		TransformSystem* transformSys;
 		FrustumMgr* frustumMgr;
-
-		SArray<Frustum, FRUSTUM_MAX_COUNT>* frustums;
 	};
 }

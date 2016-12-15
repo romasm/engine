@@ -5,22 +5,22 @@
 
 using namespace EngineCore;
 
-LightSystem::LightSystem(World* wld)
+LightSystem::LightSystem(BaseWorld* w, uint32_t maxCount)
 {
-	world = wld;
+	frustumMgr = w->GetFrustumMgr();
 
-	frustumMgr = world->GetFrustumMgr();
-	frustums = &frustumMgr->camDataArray;
-
-	transformSys = world->GetTransformSystem();
-	earlyVisibilitySys = world->GetEarlyVisibilitySystem();
-	shadowSystem = world->GetShadowSystem();
+	transformSys = w->GetTransformSystem();
+	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
+	shadowSystem = w->GetShadowSystem();
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 }
 
 #define UP_VECT XMVectorSet(1,0,0,0)
 #define DIR_VECT XMVectorSet(0,-1,0,0)
 
-#define ITERATE_FRUSTUMS(code) for(auto f: *frustums){ \
+#define ITERATE_FRUSTUMS(code) for(auto f: frustumMgr->camDataArray){ \
 	if((bits & f->bit) == f->bit){ \
 	code \
 	bits &= ~f->bit; if(bits == 0) break;}}

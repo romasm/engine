@@ -95,13 +95,13 @@ namespace EngineCore
 		DArray<CascadeShadow> cascadePerCamera;					
 	};
 
-	class World;
+	class BaseWorld;
 
 	class GlobalLightSystem
 	{
-		friend World;
+		friend BaseWorld;
 	public:
-		GlobalLightSystem(World* wrd);
+		GlobalLightSystem(BaseWorld* w, uint32_t maxCount);
 		~GlobalLightSystem()
 		{
 			for(auto& i: *components.data())
@@ -227,9 +227,9 @@ namespace EngineCore
 		
 		void matrixGenerate(GlobalLightComponent& comp, CascadeShadow& cascade, CascadeProj& projCascade);
 
-		ComponentSDArray<GlobalLightComponent, ENTITY_COUNT> components;
+		ComponentRDArray<GlobalLightComponent> components;
 
-		SArray<uint16_t, ENTITY_COUNT> cascadeNumForCamera;
+		RArray<uint16_t> cascadeNumForCamera;
 		uint16_t camerasCount;
 
 		SArray<CascadeProj, CAMERAS_MAX_COUNT> projPerCamera;
@@ -237,8 +237,6 @@ namespace EngineCore
 		TransformSystem* transformSys;
 		CameraSystem* cameraSystem;
 		FrustumMgr* frustumMgr;
-
-		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
 
 		float depth_cascade[LIGHT_DIR_NUM_CASCADES];
 		float depth_cascade_half[LIGHT_DIR_NUM_CASCADES];

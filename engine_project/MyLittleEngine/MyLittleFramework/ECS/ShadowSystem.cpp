@@ -5,13 +5,15 @@
 
 using namespace EngineCore;
 
-ShadowSystem::ShadowSystem(World* world)
+ShadowSystem::ShadowSystem(BaseWorld* w, uint32_t maxCount)
 {
 	shadow_casters = 0;
 
-	earlyVisibilitySys = world->GetEarlyVisibilitySystem();
-	auto frustum_mgr = world->GetFrustumMgr();
-	frustums = &frustum_mgr->camDataArray;
+	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
+	frustum_mgr = w->GetFrustumMgr();
+	
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount, maxCount);
 }
 
 void ShadowSystem::SetLightSys(LightSystem* ls)
@@ -77,12 +79,12 @@ void ShadowSystem::RenderShadows()
 		
 		if(bits == 0)
 		{
-			for(auto f: *frustums)
+			for(auto f: frustum_mgr->camDataArray)
 				((SceneRenderMgr*)f->rendermgr)->shadowsRenderer->RenderShadow(i.get_id(), i.num, (ShadowRenderMgr*)i.render_mgr, i.vp_buf);
 			continue;
 		}
 
-		for(auto f: *frustums)
+		for(auto f: frustum_mgr->camDataArray)
 		{
 			if((bits & f->bit) == f->bit)
 			{

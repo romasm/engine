@@ -53,12 +53,12 @@ namespace EngineCore
 		Material *material;
 	};
 
-	class World;
+	class BaseWorld;
 
 	class LineGeometrySystem
 	{
 	public:
-		LineGeometrySystem(World* wrd);
+		LineGeometrySystem(BaseWorld* w, uint32_t maxCount);
 		~LineGeometrySystem()
 		{
 			for(auto& i: *components.data())
@@ -140,12 +140,12 @@ namespace EngineCore
 	private:
 		void DestroyGeometry(LineGeometryComponent* comp, bool delete_all);
 
-		ComponentSArray<LineGeometryComponent, ENTITY_COUNT> components;
+		ComponentRArray<LineGeometryComponent> components;
 
 		TransformSystem* transformSys;
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
 
-		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
+		FrustumMgr* frustumMgr;
 	};
 }

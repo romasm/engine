@@ -35,12 +35,12 @@ namespace EngineCore
 		BoundingFrustum worldFrustum;
 	};
 
-	class World;
+	class BaseWorld;
 
 	class EarlyVisibilitySystem
 	{
 	public:
-		EarlyVisibilitySystem(World* wrd);
+		EarlyVisibilitySystem(BaseWorld* w, uint32_t maxCount);
 
 		EarlyVisibilityComponent* AddComponent(Entity e)
 		{
@@ -117,10 +117,9 @@ namespace EngineCore
 		}
 
 	private:
-		ComponentSArray<EarlyVisibilityComponent, ENTITY_COUNT> components;
+		ComponentRArray<EarlyVisibilityComponent> components;
 
 		TransformSystem* transformSys;
-
-		SArray<Frustum, FRUSTUM_MAX_COUNT>* frustums;
+		FrustumMgr* frustumMgr;
 	};
 }

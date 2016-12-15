@@ -32,12 +32,12 @@ namespace EngineCore
 		}
 	};
 
-	class World;
+	class BaseWorld;
 
 	class TransformSystem
 	{
 	public:
-		TransformSystem(World* w);
+		TransformSystem(BaseWorld* w, uint32_t maxCount);
 		~TransformSystem()
 		{
 			_DELETE(attachments_map);
@@ -307,21 +307,21 @@ namespace EngineCore
 
 		// ~ 12 MB total size
 
-		SArray<TransformComponent, ENTITY_COUNT> components;
+		RArray<TransformComponent> components;
 
-		SArray<bool, ENTITY_COUNT> dirty;
-		SArray<uint32_t, ENTITY_COUNT> lookup;
+		RArray<bool> dirty;
+		RArray<uint32_t> lookup;
 
 		struct sort_data { int16_t hierarchy; uint32_t new_id; };
-		SArray<sort_data, ENTITY_COUNT> hierarchy_sort;
-		SArray<uint32_t, ENTITY_COUNT> links_fix;
+		RArray<sort_data> hierarchy_sort;
+		RArray<uint32_t> links_fix;
 
 		SArray<uint32_t, MAX_HIERARCHY_DEPTH> hi_buffer;
 
 		// on load only
 		unordered_map<uint32_t, string>* attachments_map;
 
-		World* world;
+		BaseWorld* world;
 
 		bool structureChanged;
 	};
