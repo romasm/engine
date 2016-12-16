@@ -109,7 +109,10 @@ function MaterialProps:SetSelected(name, unsave)
     end
 
     if self.material then
-        if unsave == nil then self.material:Save() end
+        if unsave == nil then
+            self.material:Save() 
+            AssetBrowser:GeneratePreview( self.material:GetName() )
+        end
         Resource.DropMaterial( self.material:GetName() )
     end
 

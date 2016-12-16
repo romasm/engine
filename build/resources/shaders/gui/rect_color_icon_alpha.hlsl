@@ -16,7 +16,7 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 
 Texture2D colorTex : register(t0); 
-SamplerState samplerPointClamp : register(s0);
+SamplerState samplerBilinearClamp : register(s0);
 
 cbuffer materialBuffer : register(b0)
 {
@@ -31,7 +31,7 @@ float4 PS(PI_PosTex input) : SV_TARGET
 		input.pos.y > clip.a )
 		discard;
 
-	float4 color = colorTex.Sample(samplerPointClamp, input.tex);
+	float4 color = colorTex.Sample(samplerBilinearClamp, input.tex);
 	if( color.a == 0 )
 		discard;
 	

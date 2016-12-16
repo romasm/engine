@@ -40,7 +40,9 @@ function AssetBrowser:ScanDir(matsDir)
                 self.fileList[#self.fileList + 1] = path:gsub("%.mtb", "") 
             end
         else
-            self:ScanDir(path)
+            if not name:find("editor") then  -- TEMP
+                self:ScanDir(path)
+            end
         end
     end
     dirList:destruct()
@@ -190,7 +192,9 @@ function AssetBrowser:CreateNew()
     newAssetID = newAssetID .. tostring(newCounter)
 
     FileIO.Copy("../resources/materials/template_new.mtb", newAssetID..".mtb")
-    self:GeneratePreview(newAssetID, 86, 66)
+    
+    self:GeneratePreview(newAssetID..".mtb")
+
     local btn = self:AddToList(newAssetID)
     self:SetSelected(btn)
     self.selectedMatBtn:SetPressed(true)
@@ -227,7 +231,7 @@ function AssetBrowser:CopySelected()
 
     FileIO.Copy( self.selectedMatBtn.assetID ..".mtb", newAssetID ..".mtb" )
     
-    self:GeneratePreview(newAssetID, 86, 66)
+    self:GeneratePreview(newAssetID..".mtb")
 
     local btn = self:AddToList(newAssetID)
     self:SetSelected(btn)
@@ -253,34 +257,38 @@ function AssetBrowser:Find(str)
     self.window.entity:UpdatePosSize()
 end
 
-function AssetBrowser:GeneratePreview(assetID, width, height)
+function AssetBrowser:GeneratePreview(filename)
+    local width = 86 * 2
+    local height = 66 * 2
+
     local worldmgr = GetWorldMgr()
     
     local renderWorld = worldmgr:CreateSmallWorld()
     
     if not renderWorld then 
-        error("Cant generate preview image for material " .. assetID)
+        error("Cant generate preview image for material " .. filename)
         return
     end
     
     local camera = EntityTypes.Camera(renderWorld)
-    camera:SetPosition(0.0, 0.75, -1.3)
-    camera:SetFov(1.57)
+    camera:SetPosition(0.0, 0.0, -4.15)
+    camera:SetFov(0.25)
     camera:SetFar(100.0)
     camera:Activate()
     
     local scene = renderWorld:CreateScene(camera.ent, width * 2, height * 2, true)
+    scene:SetExposure(false, 0.2)
     
     local sphere = EntityTypes.StaticModel(renderWorld)
     sphere:SetMesh("../resources/meshes/mat_sphere.stm")
-    sphere:SetMaterial(assetID .. ".mtb", 0)
+    sphere:SetMaterial(filename, 0)
     
     Resource.ForceTextureReload()
     
     renderWorld:Snapshot(scene)
-    scene:SaveScreenshot(assetID .. ".tga", width, height)
+    scene:SaveScreenshot(filename:gsub("%.mtb", "%.tga"), width, height)
     
-    print("Material preview for " .. assetID .. " generated")
+    print("Material preview for " .. filename .. " generated")
 
     worldmgr:CloseWorld(renderWorld)
 end

@@ -84,6 +84,9 @@ ScenePipeline::ScenePipeline()
 
 	render_mode = 0;
 
+	cameraAdapt = true;
+	cameraExposure = 0.0f;
+
 	current_camera = nullptr;
 }
 
@@ -313,6 +316,12 @@ bool ScenePipeline::InitAvgRt()
 	if(!rt_AvgLumCurrent->Init(1, 1))return false;
 	if(!rt_AvgLumCurrent->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false;
 	rt_AvgLumCurrent->ClearRenderTargets(0.5,0.5,0.5,0.5);
+
+	if(!cameraAdapt)
+	{
+		rt_AvgLum->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
+		rt_AvgLumCurrent->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
+	}
 
 	sp_AvgLum = new ScreenPlane(SP_MATERIAL_AVGLUM);
 	sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
@@ -1085,21 +1094,25 @@ void ScenePipeline::OpaqueDefferedStage()
 	rt_OpaqueFinal->GenerateMipmaps(this); // !!!!!!!!!!!!!! TODO: separete blur
 	
 	PERF_GPU_TIMESTAMP(_HDR_BLOOM);
-	// avglum
-	rt_AvgLum->ClearRenderTargets();
 
-	ID3D11UnorderedAccessView* UAV = rt_AvgLumCurrent->GetUnorderedAccessView(0);
-	ID3D11RenderTargetView* r_target = rt_AvgLum->GetRenderTargetView(0);
-	if(!UAV)
-		return;
+	if(cameraAdapt)
+	{
+		// avglum
+		rt_AvgLum->ClearRenderTargets();
 
-	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
-	Render::RSSetViewports(1, &rt_AvgLum->m_viewport);
-	sp_AvgLum->Draw();
-	r_target = nullptr;
-	UAV = nullptr;
-	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
-	
+		ID3D11UnorderedAccessView* UAV = rt_AvgLumCurrent->GetUnorderedAccessView(0);
+		ID3D11RenderTargetView* r_target = rt_AvgLum->GetRenderTargetView(0);
+		if(!UAV)
+			return;
+
+		Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
+		Render::RSSetViewports(1, &rt_AvgLum->m_viewport);
+		sp_AvgLum->Draw();
+		r_target = nullptr;
+		UAV = nullptr;
+		Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
+	}
+
 	// bloom prepare
 	rt_Bloom->ClearRenderTargets(); // !!!!!!!!!!!! TODO: only opaque now!
 	rt_Bloom->SetRenderTarget();

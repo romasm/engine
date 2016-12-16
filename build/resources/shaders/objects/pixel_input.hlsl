@@ -50,9 +50,9 @@ bool AlphatestSample(SamplerState samplerTex, float2 uv)
 float3 AlbedoSample(SamplerState samplerTex, float2 uv)
 {
 	if( albedo_tex == 1 )
-		return GammaToLin(albedoTex.Sample(samplerTex, uv).rgb) * albedo_color.rgb;
+		return GammaToLin(albedoTex.Sample(samplerTex, uv).rgb * albedo_color.rgb);
 	else
-		return albedo_color.rgb;
+		return GammaToLin(albedo_color.rgb);
 }
 
 float3 NormalSample(SamplerState samplerTex, float2 uv, float3 vertex_normal, float3 vertex_tangent, float3 vertex_binormal, matrix nMatrix )
@@ -117,7 +117,7 @@ float3 SpecularSample(SamplerState samplerTex, float2 uv, inout float3 albedo)
 	}
 	else if( metal_tex == -1 )
 	{
-		specular = specular_color.rgb;
+		specular = GammaToLin(specular_color.rgb);
 	}
 	else
 	{

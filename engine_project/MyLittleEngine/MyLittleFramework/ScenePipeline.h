@@ -170,6 +170,18 @@ namespace EngineCore
 		}
 		int GetMode() const {return (int)render_mode;}
 
+		void SetExposure(bool adapt, float exp)
+		{
+			cameraAdapt = adapt;
+			cameraExposure = exp;
+
+			if(!cameraAdapt)
+			{
+				rt_AvgLum->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
+				rt_AvgLumCurrent->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
+			}
+		}
+
 		void Close();
 
 		bool Init(int t_width, int t_height, bool lightweight);
@@ -299,6 +311,7 @@ namespace EngineCore
 					.addProperty("mode", &ScenePipeline::GetMode, &ScenePipeline::SetMode)
 
 					.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
+					.addFunction("SetExposure", &ScenePipeline::SetExposure)
 				.endClass();
 		}
 
@@ -326,6 +339,9 @@ namespace EngineCore
 		uint8_t render_mode;
 
 		bool isLightweight;
+
+		bool cameraAdapt;
+		float cameraExposure;
 
 		ShaderCodeMgr* codemgr;
 	};

@@ -199,10 +199,12 @@ PO_final DefferedLighting(PI_PosTex input)
 	}*/   
 	
 
-	res.diffuse.rgb = (emissive + Indir.diffuse);// * indirDiff;
-	res.specular.rgb = Indir.specular;// * indirSpec;
+	res.diffuse.rgb = (emissive + Indir.diffuse) * indirDiff;
+	res.specular.rgb = Indir.specular * indirSpec;
 	
-	res.diffuse.rgb += subsurf.rgb;
+	// temp
+	if(subsurf_thick.a == 0.111f)
+		res.diffuse.rgb += subsurf.rgb * subsurf_thick.a;
 
 	res.diffuse.a = specSecond.r;
 	res.specular.a = specSecond.g;

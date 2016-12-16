@@ -481,15 +481,11 @@ void World::Snapshot(ScenePipeline* scene)
 
 	if(scene->StartFrame(&tempTimer))
 	{
-		scene->sp_AvgLum->SetFloat(9999.0f, 1); // todo: move to scenepipe
-
 		scene->OpaqueForwardStage();
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
 		scene->EndFrame();
-
-		scene->sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
 	}
 
 #ifdef _DEV
@@ -665,15 +661,11 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 	
 	if(scene->StartFrame(&tempTimer))
 	{
-		//scene->sp_AvgLum->SetFloat(9999.0f, 1);
-
 		scene->OpaqueForwardStage();
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
 		scene->EndFrame();
-
-		scene->sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
 	}
 
 #ifdef _DEV

@@ -218,6 +218,11 @@ return GuiWindow({
 end
 
 function Gui.AssetBrowserMaterial(filename, matname, topOffset, leftOffset, num)
+
+if not FileIO.IsExist(filename..".tga") then 
+    AssetBrowser:GeneratePreview(filename..".mtb")
+end
+
 local btn = GuiButton({
     styles = { GuiStyles.material_button, },
     icon = {material = {
