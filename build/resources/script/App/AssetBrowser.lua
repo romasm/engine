@@ -159,10 +159,10 @@ function AssetBrowser:Rename(textfield)
         end
     end
 
-    FileIO.Rename( button.assetID..".dds", newPath..".dds" )
+    FileIO.Rename( button.assetID..".tga", newPath..".tga" )
     FileIO.Rename( button.assetID..".mtb", newPath..".mtb" )
 
-    button.icon_mat:SetTextureByName(newPath .. ".dds", 0, 0)
+    button.icon_mat:SetTextureByName(newPath .. ".tga", 0, 0)
 
     button.assetID = newPath
 
@@ -170,10 +170,6 @@ function AssetBrowser:Rename(textfield)
         MaterialProps:SetSelected(nil, true)
         MaterialProps:SetSelected(button.assetID .. ".mtb")
     end
-end
-
-function AssetBrowser:GeneratePreview(assetID)
-    
 end
 
 function AssetBrowser:AddToList(assetID)
@@ -194,7 +190,7 @@ function AssetBrowser:CreateNew()
     newAssetID = newAssetID .. tostring(newCounter)
 
     FileIO.Copy("../resources/materials/template_new.mtb", newAssetID..".mtb")
-    self:GeneratePreview(newAssetID)
+    self:GeneratePreview(newAssetID, 86, 66)
     local btn = self:AddToList(newAssetID)
     self:SetSelected(btn)
     self.selectedMatBtn:SetPressed(true)
@@ -203,7 +199,7 @@ end
 function AssetBrowser:DeleteSelected()
     if self.selectedMatBtn == nil then return end
 
-    FileIO.Delete( self.selectedMatBtn.assetID ..".dds" )
+    FileIO.Delete( self.selectedMatBtn.assetID ..".tga" )
     FileIO.Delete( self.selectedMatBtn.assetID ..".mtb" )
 
     MaterialProps:SetSelected(nil, true)
@@ -229,8 +225,9 @@ function AssetBrowser:CopySelected()
     while FileIO.IsExist( newAssetID .. tostring(newCounter) .. ".mtb" ) do newCounter = newCounter + 1 end
     newAssetID = newAssetID .. tostring(newCounter)
 
-    FileIO.Copy( self.selectedMatBtn.assetID ..".dds", newAssetID ..".dds" )
     FileIO.Copy( self.selectedMatBtn.assetID ..".mtb", newAssetID ..".mtb" )
+    
+    self:GeneratePreview(newAssetID, 86, 66)
 
     local btn = self:AddToList(newAssetID)
     self:SetSelected(btn)
@@ -254,4 +251,36 @@ function AssetBrowser:Find(str)
     self:ScanDir(self.libDir)
     self:FillBody()
     self.window.entity:UpdatePosSize()
+end
+
+function AssetBrowser:GeneratePreview(assetID, width, height)
+    local worldmgr = GetWorldMgr()
+    
+    local renderWorld = worldmgr:CreateSmallWorld()
+    
+    if not renderWorld then 
+        error("Cant generate preview image for material " .. assetID)
+        return
+    end
+    
+    local camera = EntityTypes.Camera(renderWorld)
+    camera:SetPosition(0.0, 0.75, -1.3)
+    camera:SetFov(1.57)
+    camera:SetFar(100.0)
+    camera:Activate()
+    
+    local scene = renderWorld:CreateScene(camera.ent, width * 2, height * 2, true)
+    
+    local sphere = EntityTypes.StaticModel(renderWorld)
+    sphere:SetMesh("../resources/meshes/mat_sphere.stm")
+    sphere:SetMaterial(assetID .. ".mtb", 0)
+    
+    Resource.ForceTextureReload()
+    
+    renderWorld:Snapshot(scene)
+    scene:SaveScreenshot(assetID .. ".tga", width, height)
+    
+    print("Material preview for " .. assetID .. " generated")
+
+    worldmgr:CloseWorld(renderWorld)
 end

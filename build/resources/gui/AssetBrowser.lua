@@ -18,7 +18,7 @@ GuiStyles.material_button = {
     text = { font = "", },
 
     icon = {
-        rect = { l = 0, t = 0, w = 87, h = 67 },
+        rect = { l = 0, t = 0, w = 86, h = 66 },
     },
 }
 
@@ -222,7 +222,7 @@ local btn = GuiButton({
     styles = { GuiStyles.material_button, },
     icon = {material = {
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
-        textures = {filename..".dds"}
+        textures = {filename..".tga"}
     }},
     alt = matname,
     top = topOffset,

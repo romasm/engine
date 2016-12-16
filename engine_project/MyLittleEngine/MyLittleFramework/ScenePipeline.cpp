@@ -66,6 +66,16 @@ ScenePipeline::ScenePipeline()
 	b_indirectDiff = true;
 	b_renderHud = true;
 
+	lightSpotBuffer = nullptr;
+	lightPointBuffer = nullptr;
+	lightDirBuffer = nullptr;
+	casterSpotBuffer = nullptr;
+	casterDiskBuffer = nullptr;
+	casterRectBuffer = nullptr;
+	casterPointBuffer = nullptr;
+	casterSphereBuffer = nullptr;
+	casterTubeBuffer = nullptr;
+
 	m_CamMoveBuffer = nullptr;
 	m_SharedBuffer = nullptr;
 	m_AOBuffer = nullptr;
@@ -166,27 +176,32 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_Antialiased[2]);
 }
 
-bool ScenePipeline::Init(int t_width, int t_height)
+bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 {
+	isLightweight = lightweight;
+
 	codemgr = ShaderCodeMgr::Get();
 	
-	render_mgr = new SceneRenderMgr;
+	render_mgr = new SceneRenderMgr(isLightweight);
 	
 	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
 
 	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
 		
-	lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer) + sizeof(SpotLightDiskBuffer) + sizeof(SpotLightRectBuffer), true);
-	lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer) + sizeof(PointLightSphereBuffer) + sizeof(PointLightTubeBuffer), true);
-	lightDirBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DirLightBuffer), true);
+	if(!isLightweight)
+	{
+		lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer) + sizeof(SpotLightDiskBuffer) + sizeof(SpotLightRectBuffer), true);
+		lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer) + sizeof(PointLightSphereBuffer) + sizeof(PointLightTubeBuffer), true);
+		lightDirBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DirLightBuffer), true);
 
-	casterSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterBuffer), true);
-	casterDiskBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterDiskBuffer), true);
-	casterRectBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterRectBuffer), true);
-	casterPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterBuffer), true);
-	casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterSphereBuffer), true);
-	casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterTubeBuffer), true);
-	
+		casterSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterBuffer), true);
+		casterDiskBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterDiskBuffer), true);
+		casterRectBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterRectBuffer), true);
+		casterPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterBuffer), true);
+		casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterSphereBuffer), true);
+		casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterTubeBuffer), true);
+	}
+
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;
 	Materials[0].ss_direct_pow = 0;
@@ -362,15 +377,17 @@ bool ScenePipeline::InitRts()
 	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT, 0))return false;
 
 	// TRANSPARENT: TODO
+	
 	rt_TransparentForward = new RenderTarget;
 	if(!rt_TransparentForward->Init(width, height, DXGI_FORMAT_D32_FLOAT))return false;
 	if(!rt_TransparentForward->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false;
-
+	/*
 	rt_TransparentRecursive = new RenderTarget;
 	if(!rt_TransparentRecursive->Init(width, height))return false;
 	if(!rt_TransparentRecursive->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false; // r
 	if(!rt_TransparentRecursive->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false; // g
 	if(!rt_TransparentRecursive->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false; // b
+	*/
 
 	// FINAL
 	rt_Bloom = new RenderTarget;
@@ -411,22 +428,45 @@ bool ScenePipeline::InitRts()
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 6);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 7);
 
-	sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_DIR);
-	//sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_NOISE2D, 0);
-	sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 3);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 4);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 5);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 6);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 7);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 8);
-	sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 9);
-	sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 10);
-	sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
-	sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
+	if(!isLightweight)
+	{
+		sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_DIR);
+		
+		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
 
-	sp_OpaqueDefferedDirect->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
+		sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
+		sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 3);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 4);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 5);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 6);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 7);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 8);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 9);
+		sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 10);
+		sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
+		sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
+
+		sp_OpaqueDefferedDirect->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
+	}
+	else
+	{
+		sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_SIMPLE);
+
+		sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 1);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 2);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 3);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 4);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 5);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 6);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 7);
+		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 8);
+		sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 9);
+		sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 10);
+		sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 11);
+	}	
 
 	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
@@ -442,8 +482,8 @@ bool ScenePipeline::InitRts()
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(0), 0);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(1), 1);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(2), 2);
-	sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 3);
-	sp_FinalOpaque->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 4);
+	//sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 3);
+	sp_FinalOpaque->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 3);
 
 	sp_AvgLum->SetTexture(rt_OpaqueFinal->GetShaderResourceView(1), 0);
 	sp_AvgLum->SetFloat(float(rt_OpaqueFinal->GetMipsCountInFullChain() - 2), 0);
@@ -470,11 +510,15 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 12);
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
-	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelSRV(), 14);
-	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor0SRV(), 15);
-	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor1SRV(), 16);
-	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelNormalSRV(), 17);
-	sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 18);
+
+	if(!isLightweight)
+	{
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelSRV(), 14);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor0SRV(), 15);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor1SRV(), 16);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelNormalSRV(), 17);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 18);
+	}
 
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);
@@ -607,18 +651,21 @@ void ScenePipeline::HudStage()
 
 void ScenePipeline::OpaqueForwardStage()
 {
-	PERF_CPU_BEGIN(_VOXELIZATION);
-	PERF_GPU_TIMESTAMP(_VOXELIZATION);
+	if(!isLightweight)
+	{
+		PERF_CPU_BEGIN(_VOXELIZATION);
+		PERF_GPU_TIMESTAMP(_VOXELIZATION);
 
-	render_mgr->voxelRenderer->VoxelizeScene();
-	PERF_CPU_END(_VOXELIZATION);
+		render_mgr->voxelRenderer->VoxelizeScene();
+		PERF_CPU_END(_VOXELIZATION);
 	
-	PERF_CPU_BEGIN(_VOXELLIGHT);
-	PERF_GPU_TIMESTAMP(_VOXELLIGHT);
+		PERF_CPU_BEGIN(_VOXELLIGHT);
+		PERF_GPU_TIMESTAMP(_VOXELLIGHT);
 
-	render_mgr->voxelRenderer->ProcessEmittance();
-	PERF_CPU_END(_VOXELLIGHT);
-	
+		render_mgr->voxelRenderer->ProcessEmittance();
+		PERF_CPU_END(_VOXELLIGHT);
+	}
+
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
 	rt_OpaqueForward->ClearRenderTargets();
@@ -638,8 +685,8 @@ void ScenePipeline::OpaqueForwardStage()
 
 void ScenePipeline::TransparentForwardStage()
 {
-	/*rt_TransparentForward->ClearRenderTargets();
-	rt_TransparentForward->SetRenderTarget();
+	rt_TransparentForward->ClearRenderTargets();
+	/*rt_TransparentForward->SetRenderTarget();
 	rt_TransparentRecursive->ClearRenderTargets();
 
 	// рекурсивный рендеринг
@@ -742,8 +789,17 @@ void ScenePipeline::LoadEnvProbs()
 	if(distProb.mipsCount == 0)
 		return;
 
-	sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
-	sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
+	if(!isLightweight)
+	{
+		sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
+		sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
+	}
+	else
+	{
+		sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 12);
+		sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 13);
+	}
+
 	sp_OpaqueDefferedDirect->SetFloat(float(distProb.mipsCount), 13);
 	
 	// todo: distProb.matrix
@@ -992,17 +1048,22 @@ void ScenePipeline::OpaqueDefferedStage()
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 	
-	auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-	sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
-
-	LoadLights();
+	if(!isLightweight)
+		LoadLights();
 
 	LoadEnvProbs();
 	
-	Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
+	if(!isLightweight)
+	{
+		Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
 
-	auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-	Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
+		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
+		Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
+	}
+	else
+	{
+		Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
+	}
 	
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 	rt_OpaqueDefferedDirect->SetRenderTarget();
@@ -1063,8 +1124,11 @@ void ScenePipeline::HDRtoLDRStage()
 	r_target[1] = rt_Antialiased->GetRenderTargetView(0);
 	Render::OMSetRenderTargets(2, r_target, nullptr);
 
-	auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-	Render::PSSetConstantBuffers(2, 1, &volumeBuffer); 
+	if(!isLightweight)
+	{
+		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
+		Render::PSSetConstantBuffers(2, 1, &volumeBuffer); 
+	}
 
 	sp_HDRtoLDR->Draw();
 
@@ -1095,10 +1159,37 @@ void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
 	sp->ClearTex();
 }
 
-/*void ScenePipeline::AllCombineStage()
+bool ScenePipeline::SaveScreenshot(string path, uint32_t w, uint32_t h)
 {
-	// combine with 3dhud
-	rt_LDRandHud->ClearRenderTargets();
-	rt_LDRandHud->SetRenderTarget();
-	sp_3DHud->Draw(this);
-}*/
+	unique_ptr<ScreenPlane> sp(new ScreenPlane(SP_SHADER_SCREENSHOT));
+	unique_ptr<RenderTarget> rt(new RenderTarget);
+	if(!rt->Init(w, h))
+		return false;
+
+	if(!rt->AddRT(DXGI_FORMAT_R8G8B8A8_UNORM))
+		return false;
+
+	sp->SetTexture(rt_Antialiased->GetShaderResourceView(1), 0);
+	sp->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 1);
+
+	rt->ClearRenderTargets();
+	rt->SetRenderTarget();
+
+	sp->Draw();
+	sp->ClearTex();
+	
+	ID3D11Resource* resource = nullptr;
+	rt->GetShaderResourceView(0)->GetResource(&resource);
+
+	ScratchImage texture;
+	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
+	if ( FAILED(hr) )
+		return false;
+
+	//hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(WIC_CODEC_PNG), StringToWstring(path).data() );
+	hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(path).data() );
+	if ( FAILED(hr) )
+		return false;
+
+	return true;
+}

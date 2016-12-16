@@ -52,7 +52,8 @@ void StMeshMgr::PreloadStMeshes()
 	reload = true;
 #endif
 
-	//GetStMesh(string(TEX_NOISE2D), reload);
+	GetStMesh(string(ENV_MESH), reload);
+	GetStMesh(string(MAT_MESH), reload);
 }
 
 uint32_t StMeshMgr::GetStMesh(string& name, bool reload)

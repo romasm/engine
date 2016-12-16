@@ -319,5 +319,11 @@
     <FxCompile Include="..\gui\rect_color_icon_alpha.hlsl">
       <Filter>gui</Filter>
     </FxCompile>
+    <FxCompile Include="..\system\scene_to_color_alpha.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
+    <FxCompile Include="..\system\deffered_opaque_simple.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

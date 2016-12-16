@@ -122,7 +122,7 @@ void EnvProbSystem::LoadCubemap(EnvProbComponent* comp)
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
-	if(idx == ENTITY_COUNT)	return res;\
+	if(idx == components.capacity())	return res;\
 	auto& comp = components.getDataByArrayIdx(idx);
 
 bool EnvProbSystem::IsDirty(Entity e)
@@ -184,7 +184,7 @@ bool EnvProbSystem::Bake(Entity e)
 	camSys->SetNear(env_cam, comp.near_clip);
 	camSys->SetFov(env_cam, XM_PIDIV2);
 
-	auto env_scene = world->CreateScene(env_cam, comp.resolution, comp.resolution);
+	auto env_scene = world->CreateScene(env_cam, comp.resolution, comp.resolution, true);
 
 	env_scene->SetComponents(false, true, true, true); // TODO
 

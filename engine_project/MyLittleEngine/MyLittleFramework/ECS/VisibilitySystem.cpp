@@ -78,7 +78,7 @@ void VisibilitySystem::collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, 
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
-	if(idx == ENTITY_COUNT)	return res;\
+	if(idx == components.capacity())	return res;\
 	auto& comp = components.getDataByArrayIdx(idx);
 
 bool VisibilitySystem::IsDirty(Entity e)

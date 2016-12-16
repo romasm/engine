@@ -14,8 +14,8 @@ TECHNIQUE_DEFAULT
 Texture2D diffuse : register(t0); 
 Texture2D specular : register(t1); 
 Texture2D specularMore : register(t2); 
-Texture2D gb_matID_objID : register(t3); 
-Texture2D gb_depth : register(t4); 
+//Texture2D gb_matID_objID : register(t3); 
+Texture2D gb_depth : register(t3); 
 
 SamplerState samplerPointClamp : register(s0);
 
@@ -40,7 +40,7 @@ PO_opaque Combine(PI_PosTex input)
 	res.forNextFrame.a = d;
 
 	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + float3(diffSample.a, specSample.a, specSecondSample.r);
-	res.opaque.a = d;
+	res.opaque.a = d < 1.0f ? 1.0f : 0.0f;
 	
 	return res;
 }

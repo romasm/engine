@@ -53,13 +53,18 @@ void StaticMeshSystem::RegToDraw()
 		}
 		else
 		{
-			EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-
-			if(earlyVisibilityComponent)
+			if(earlyVisibilitySys)
 			{
-				bits = earlyVisibilityComponent->inFrust;	
-				if(bits == 0)
-					continue;
+				EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+
+				if(earlyVisibilityComponent)
+				{
+					bits = earlyVisibilityComponent->inFrust;	
+					if(bits == 0)
+						continue;
+				}
+				else
+					bits = 0;
 			}
 			else
 				bits = 0;
@@ -164,7 +169,7 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
-	if(idx == ENTITY_COUNT)	return res;\
+	if(idx == components.capacity())	return res;\
 	auto& comp = components.getDataByArrayIdx(idx);
 
 bool StaticMeshSystem::IsDirty(Entity e)

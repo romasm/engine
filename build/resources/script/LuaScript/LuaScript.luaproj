@@ -166,6 +166,9 @@
     <Compile Include="..\Entities\BaseEntity.lua">
       <Link>Entities\BaseEntity.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\Camera.lua">
+      <Link>Entities\Camera.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\GlobalLight.lua">
       <Link>Entities\GlobalLight.lua</Link>
     </Compile>

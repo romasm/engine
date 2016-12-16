@@ -89,7 +89,7 @@ namespace EngineCore
 		{return components.getDataById(e.index(), num);}
 		ShadowComponent* ShadowSystem::GetNextComponent(ShadowComponent* comp)
 		{
-			if(comp->next == ENTITY_COUNT) return nullptr;
+			if(comp->next == components.capacity()) return nullptr;
 			return &components.getDataByArrayIdx(comp->next);
 		}
 

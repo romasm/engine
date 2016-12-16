@@ -445,7 +445,9 @@ void World::Snapshot(ScenePipeline* scene)
 		Profiler::Get()->Stop();
 #endif
 
-	m_dt = 0;
+	LocalTimer tempTimer(m_world_timer);
+	tempTimer.Frame();
+	m_dt = 0.0f;
 	
 	m_transformSystem->Update();
 	m_lightSystem->Update();
@@ -477,13 +479,17 @@ void World::Snapshot(ScenePipeline* scene)
 	m_shadowSystem->ClearShadowsQueue();
 	m_globalLightSystem->ClearShadowsQueue();
 
-	if(scene->StartFrame(&m_world_timer))
+	if(scene->StartFrame(&tempTimer))
 	{
+		scene->sp_AvgLum->SetFloat(9999.0f, 1); // todo: move to scenepipe
+
 		scene->OpaqueForwardStage();
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
 		scene->EndFrame();
+
+		scene->sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
 	}
 
 #ifdef _DEV
@@ -642,7 +648,9 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 		Profiler::Get()->Stop();
 #endif
 
-	m_dt = 0;
+	LocalTimer tempTimer(m_world_timer);
+	tempTimer.Frame();
+	m_dt = 0.0f;
 	
 	m_transformSystem->Update();
 
@@ -655,13 +663,17 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 
 	m_staticMeshSystem->RegToDraw();
 	
-	if(scene->StartFrame(&m_world_timer))
+	if(scene->StartFrame(&tempTimer))
 	{
+		//scene->sp_AvgLum->SetFloat(9999.0f, 1);
+
 		scene->OpaqueForwardStage();
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
 		scene->EndFrame();
+
+		scene->sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
 	}
 
 #ifdef _DEV

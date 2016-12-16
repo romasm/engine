@@ -145,7 +145,7 @@ namespace EngineCore
 			ERR("Cant init profiler queries!");
 			return false;
 		}
-	#endif
+	#endif 
 
 		shaderCodeMgr->PreloadPureCodes();
 		shaderMgr->PreloadShaders();
@@ -156,6 +156,7 @@ namespace EngineCore
 		materialMgr = new MaterialMgr;
 
 		m_stmeshmgr = new StMeshMgr;
+		m_stmeshmgr->PreloadStMeshes();
 
 		BufferObj = new Buffer();
 		

@@ -6,37 +6,58 @@
 
 using namespace EngineCore;
 
-SceneRenderMgr::SceneRenderMgr() : BaseRenderMgr()
+SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 {
 	b_shadow = false;
 	
-	opaque_array.create(OPAQUE_FRAME_MAX);
-	alphatest_array.create(OPAQUE_FRAME_ALPHATEST_MAX);
-	transparent_array.create(TRANSPARENT_FRAME_MAX);
+	opaque_array.create(lightweight ? (OPAQUE_FRAME_MAX / 16) : OPAQUE_FRAME_MAX);
+	alphatest_array.create(lightweight ? (OPAQUE_FRAME_ALPHATEST_MAX / 16) : OPAQUE_FRAME_ALPHATEST_MAX);
+	transparent_array.create(lightweight ? (TRANSPARENT_FRAME_MAX / 16) : TRANSPARENT_FRAME_MAX);
 
-	hud_array.create(HUD_FRAME_MAX);
-	ovhud_array.create(OV_HUD_FRAME_MAX);
-
-	lightSpot_array = new SpotLightBuffer;
-	lightSpotDisk_array = new SpotLightDiskBuffer;
-	lightSpotRect_array = new SpotLightRectBuffer;
-	lightPoint_array = new PointLightBuffer;
-	lightPointSphere_array = new PointLightSphereBuffer;
-	lightPointTube_array = new PointLightTubeBuffer;
-	lightDir_array = new DirLightBuffer;
-
-	casterSpot_array = new SpotCasterBuffer;
-	casterSpotDisk_array = new SpotCasterDiskBuffer;
-	casterSpotRect_array = new SpotCasterRectBuffer;
-	casterPoint_array = new PointCasterBuffer;	
-	casterPointSphere_array = new PointCasterSphereBuffer;	
-	casterPointTube_array = new PointCasterTubeBuffer;	
+	hud_array.create(lightweight ? (HUD_FRAME_MAX / 16) : HUD_FRAME_MAX);
+	ovhud_array.create(lightweight ? (OV_HUD_FRAME_MAX / 16) : OV_HUD_FRAME_MAX);
 	
 	current_cam = nullptr;
 
-	shadowsRenderer = new ShadowsRenderer(this);
-	voxelRenderer = new VoxelRenderer(this);
+	if(lightweight)
+	{
+		lightSpot_array = nullptr;
+		lightSpotDisk_array = nullptr;
+		lightSpotRect_array = nullptr;
+		lightPoint_array = nullptr;
+		lightPointSphere_array = nullptr;
+		lightPointTube_array = nullptr;
+		lightDir_array = nullptr;
+		casterSpot_array = nullptr;
+		casterSpotDisk_array = nullptr;
+		casterSpotRect_array = nullptr;
+		casterPoint_array = nullptr;	
+		casterPointSphere_array = nullptr;	
+		casterPointTube_array = nullptr;	
+		shadowsRenderer = nullptr;
+		voxelRenderer = nullptr;
+	}
+	else
+	{
+		lightSpot_array = new SpotLightBuffer;
+		lightSpotDisk_array = new SpotLightDiskBuffer;
+		lightSpotRect_array = new SpotLightRectBuffer;
+		lightPoint_array = new PointLightBuffer;
+		lightPointSphere_array = new PointLightSphereBuffer;
+		lightPointTube_array = new PointLightTubeBuffer;
+		lightDir_array = new DirLightBuffer;
 
+		casterSpot_array = new SpotCasterBuffer;
+		casterSpotDisk_array = new SpotCasterDiskBuffer;
+		casterSpotRect_array = new SpotCasterRectBuffer;
+		casterPoint_array = new PointCasterBuffer;	
+		casterPointSphere_array = new PointCasterSphereBuffer;	
+		casterPointTube_array = new PointCasterTubeBuffer;	
+
+		shadowsRenderer = new ShadowsRenderer(this);
+		voxelRenderer = new VoxelRenderer(this);
+	}
+	
 	ClearAll();
 }
 
@@ -80,8 +101,10 @@ void SceneRenderMgr::cleanRenderArrayLights()
 	casterPointSphere_count = 0;
 	casterPointTube_count = 0;
 	
-	shadowsRenderer->ClearPerFrame();
-	voxelRenderer->ClearPerFrame();
+	if(shadowsRenderer)
+		shadowsRenderer->ClearPerFrame();
+	if(voxelRenderer)
+		voxelRenderer->ClearPerFrame();
 }
 
 bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 

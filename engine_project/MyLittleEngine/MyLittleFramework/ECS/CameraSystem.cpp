@@ -53,6 +53,7 @@ void CameraSystem::initCamera(CameraComponent* comp)
 	comp->projMatrix = XMMatrixPerspectiveFovLH(comp->fov, comp->aspect_ratio, comp->near_clip, comp->far_clip);
 	BoundingFrustum::CreateFromMatrix(comp->localFrustum, comp->projMatrix);
 	comp->render_mgr = nullptr;
+	comp->volume_id = FRUSTUM_MAX_COUNT;
 }
 
 void CameraSystem::RegToDraw()
@@ -88,7 +89,8 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 		comp.view_proj = XMMatrixMultiply(comp.viewMatrix, comp.projMatrix); // remove
 
-		comp.render_mgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
+		if(comp.render_mgr->voxelRenderer) // todo
+			comp.render_mgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
 
 		comp.dirty = false;
 	}
@@ -98,15 +100,18 @@ void CameraSystem::regCamera(CameraComponent& comp)
 	auto f = frustum_mgr->AddFrustum(ent, &comp.worldFrustum, comp.render_mgr, &comp.viewMatrix, &comp.projMatrix);
 	comp.frust_id = int32_t(f->get_frustum_id());
 
-	auto v = frustum_mgr->AddFrustum(ent, &comp.render_mgr->voxelRenderer->GetBigVolumeBox(), comp.render_mgr, nullptr, nullptr, true, true);
-	comp.volume_id = int32_t(v->get_frustum_id());
+	if(comp.render_mgr->voxelRenderer)
+	{
+		auto v = frustum_mgr->AddFrustum(ent, &comp.render_mgr->voxelRenderer->GetBigVolumeBox(), comp.render_mgr, nullptr, nullptr, true, true);
+		comp.volume_id = int32_t(v->get_frustum_id());
+	}
 
 	comp.render_mgr->UpdateCamera(&comp);
 	comp.render_mgr->ZeroMeshgroups();
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
-	if(idx == ENTITY_COUNT)	return res;\
+	if(idx == components.capacity())	return res;\
 	auto& comp = components.getDataByArrayIdx(idx);
 
 void CameraSystem::RegSingle(Entity e)

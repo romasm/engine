@@ -117,6 +117,7 @@
     <FxCompile Include="..\system\bloom_find.hlsl" />
     <FxCompile Include="..\system\combine.hlsl" />
     <FxCompile Include="..\system\deffered_opaque.hlsl" />
+    <FxCompile Include="..\system\deffered_opaque_simple.hlsl" />
     <FxCompile Include="..\system\depth_copy_hiz.hlsl" />
     <FxCompile Include="..\system\direct_brdf.hlsl" />
     <FxCompile Include="..\system\gblur\gblur.hlsl" />
@@ -159,6 +160,7 @@
     <FxCompile Include="..\system\null_shader.hlsl" />
     <FxCompile Include="..\system\old_deffered_opaque_indirect.hlsl" />
     <FxCompile Include="..\system\opaque_blur.hlsl" />
+    <FxCompile Include="..\system\scene_to_color_alpha.hlsl" />
     <FxCompile Include="..\system\screen_plane.hlsl" />
     <FxCompile Include="..\system\ssr.hlsl" />
     <FxCompile Include="..\system\ssr_compute.hlsl">

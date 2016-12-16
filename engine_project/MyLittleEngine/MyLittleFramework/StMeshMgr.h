@@ -6,6 +6,8 @@
 #define STMESH_INIT_COUNT 1024
 #define STMESH_NULL STMESH_MAX_COUNT
 
+#define MAT_MESH PATH_SYS_MESHES "mat_sphere" EXT_STATIC
+
 namespace EngineCore
 {
 	struct StMeshData

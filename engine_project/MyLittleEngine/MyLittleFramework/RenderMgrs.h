@@ -163,7 +163,7 @@ namespace EngineCore
 	class SceneRenderMgr: public BaseRenderMgr
 	{
 	public:
-		SceneRenderMgr();
+		SceneRenderMgr(bool lightweight);
 		~SceneRenderMgr();
 
 		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 

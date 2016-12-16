@@ -113,7 +113,7 @@ namespace EngineCore
 		LightComponent* GetComponent(Entity e)
 		{
 			size_t idx = components.getArrayIdx(e.index());
-			if(idx == ENTITY_COUNT) return nullptr;
+			if(idx == components.capacity()) return nullptr;
 			return &components.getDataByArrayIdx(idx);
 		}
 

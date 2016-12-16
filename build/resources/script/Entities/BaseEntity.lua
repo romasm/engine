@@ -82,3 +82,7 @@ end
 function EntityTypes.BaseEntity:GetScaleL()
     return self.transformSys:GetScaleL(self.ent, x, y, z)
 end
+
+function EntityTypes.BaseEntity:ForceUpdateTransform()
+    return self.transformSys:ForceUpdate(self.ent)
+end

@@ -20,6 +20,8 @@ namespace EngineCore
 #define SP_MATERIAL_DEPTH_OPAC_DIR PATH_SHADERS "system/depth_copy_hiz"
 
 #define SP_MATERIAL_DEFFERED_OPAC_DIR PATH_SHADERS "system/deffered_opaque"
+#define SP_MATERIAL_DEFFERED_OPAC_SIMPLE PATH_SHADERS "system/deffered_opaque_simple"
+
 #define TEX_NOISE2D PATH_SYS_TEXTURES "noise2d" EXT_TEXTURE
 #define TEX_PBSENVLUT PATH_SYS_TEXTURES "pbs_env_lut" EXT_TEXTURE
 
@@ -49,6 +51,8 @@ namespace EngineCore
 #define TEX_SMAA_SEARCH PATH_SYS_TEXTURES "aa/smaa_search" EXT_TEXTURE
 
 #define SP_SHADER_SSR PATH_SHADERS "system/ssr_compute"
+
+#define SP_SHADER_SCREENSHOT PATH_SHADERS "system/scene_to_color_alpha"
 
 	class ScenePipeline
 	{
@@ -168,7 +172,7 @@ namespace EngineCore
 
 		void Close();
 
-		bool Init(int t_width, int t_height);
+		bool Init(int t_width, int t_height, bool lightweight);
 
 		bool Resize(int t_width, int t_height);
 
@@ -202,6 +206,8 @@ namespace EngineCore
 		//static bool CompareEnvProbs(EnvProb* first, EnvProb* second);
 
 		uint8_t LoadLights();
+
+		bool SaveScreenshot(string path, uint32_t w, uint32_t h);
 
 		RenderTarget *rt_OpaqueForward;
 		RenderTarget *rt_AO;
@@ -291,6 +297,8 @@ namespace EngineCore
 					.addFunction("GetSpecularSRV", &ScenePipeline::GetSpecularSRV)
 					.addFunction("GetSubsurfaceSRV", &ScenePipeline::GetSubsurfaceSRV)
 					.addProperty("mode", &ScenePipeline::GetMode, &ScenePipeline::SetMode)
+
+					.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
 				.endClass();
 		}
 
@@ -316,6 +324,8 @@ namespace EngineCore
 		bool b_directSpec, b_indirectSpec, b_directDiff, b_indirectDiff, b_renderHud;
 
 		uint8_t render_mode;
+
+		bool isLightweight;
 
 		ShaderCodeMgr* codemgr;
 	};

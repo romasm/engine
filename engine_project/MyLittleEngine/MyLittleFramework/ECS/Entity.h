@@ -95,7 +95,7 @@ namespace EngineCore
 				index = e.index() + 1;
 
 			Entity res;
-			if(index >= ENTITY_COUNT)
+			if(index >= generation.capacity())
 			{
 				res.setnull();
 				return res;
@@ -104,7 +104,7 @@ namespace EngineCore
 			while(!entity_alive[index])
 			{
 				index++;
-				if(index >= ENTITY_COUNT)
+				if(index >= generation.capacity())
 				{
 					res.setnull();
 					return res;

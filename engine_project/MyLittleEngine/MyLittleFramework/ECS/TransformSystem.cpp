@@ -9,17 +9,17 @@ TransformSystem::TransformSystem(BaseWorld* w, uint32_t maxCount)
 	world = w;
 	structureChanged = true;
 	
-	maxCount = min(maxCount, ENTITY_COUNT);
+	capacity = min(maxCount, ENTITY_COUNT);
 
-	components.create(maxCount);
+	components.create(capacity);
 
-	lookup.create(maxCount);
-	lookup.resize(maxCount);
-	lookup.assign(ENTITY_COUNT);
+	lookup.create(capacity);
+	lookup.resize(capacity);
+	lookup.assign(capacity);
 
-	dirty.create(maxCount);
-	hierarchy_sort.create(maxCount);
-	links_fix.create(maxCount);
+	dirty.create(capacity);
+	hierarchy_sort.create(capacity);
+	links_fix.create(capacity);
 
 	attachments_map = nullptr;
 }
@@ -49,7 +49,7 @@ void TransformSystem::Update()
 			hi_buffer.resize(0);
 			hi_buffer.push_back(compID);
 
-			while( comp->parentID != ENTITY_COUNT && hierarchy_sort[comp->parentID].hierarchy < 0 )
+			while( comp->parentID < capacity && hierarchy_sort[comp->parentID].hierarchy < 0 )
 			{
 				compID = comp->parentID;
 				comp = &components[compID];
@@ -60,7 +60,7 @@ void TransformSystem::Update()
 				ERR("Scene hierarchy is too deep! Unpredictable behavior expected!");
 			
 			int16_t hi = 0;
-			if(comp->parentID != ENTITY_COUNT)
+			if(comp->parentID < capacity)
 				hi = hierarchy_sort[comp->parentID].hierarchy + 1;
 
 			for(int32_t j = (int32_t)hi_buffer.size() - 1; j >= 0; j--)
@@ -111,13 +111,13 @@ void TransformSystem::Update()
 		// fix links
 		for(uint32_t i = 0; i < components.size(); i++)
 		{
-			if(components[i].parentID != ENTITY_COUNT)
+			if(components[i].parentID < capacity)
 				components[i].parentID = links_fix[components[i].parentID];
-			if(components[i].firstChildID != ENTITY_COUNT)
+			if(components[i].firstChildID < capacity)
 				components[i].firstChildID = links_fix[components[i].firstChildID];
-			if(components[i].prevID != ENTITY_COUNT)
+			if(components[i].prevID < capacity)
 				components[i].prevID = links_fix[components[i].prevID];
-			if(components[i].nextID != ENTITY_COUNT)
+			if(components[i].nextID < capacity)
 				components[i].nextID = links_fix[components[i].nextID];
 		}
 
@@ -132,13 +132,13 @@ void TransformSystem::Update()
 }
 
 #define GET_COMPONENT(res) uint32_t idx = lookup[e.index()];\
-	if(idx == ENTITY_COUNT)	return res;\
+	if(idx >= capacity)	return res;\
 	auto& comp = components[idx];
 
 void TransformSystem::DeleteComponent(Entity e)
 {
 	uint32_t currentID = lookup[e.index()];
-	if(currentID == ENTITY_COUNT)
+	if(currentID >= capacity)
 		return;
 	auto& comp = components[currentID];
 
@@ -150,7 +150,7 @@ void TransformSystem::DeleteComponent(Entity e)
 		_moveComponentPrepare(lastID, currentID);
 
 	uint32_t rmv_id = lookup[e.index()];
-	if(rmv_id == ENTITY_COUNT)
+	if(rmv_id >= capacity)
 		return;
 		
 	if(rmv_id != lastID)
@@ -162,13 +162,13 @@ void TransformSystem::DeleteComponent(Entity e)
 	}
 	components.erase_and_pop_back(rmv_id);
 	dirty.erase_and_pop_back((size_t)rmv_id);
-	lookup[e.index()] = ENTITY_COUNT;
+	lookup[e.index()] = capacity;
 }
 
 bool TransformSystem::IsDirty(Entity e)
 {
 	uint32_t idx = lookup[e.index()];
-	if(idx == ENTITY_COUNT)
+	if(idx >= capacity)
 		return false;
 	return dirty[idx];
 }
@@ -176,14 +176,14 @@ bool TransformSystem::IsDirty(Entity e)
 bool TransformSystem::SetDirty(Entity e)
 {
 	uint32_t idx = lookup[e.index()];
-	if(idx == ENTITY_COUNT)
+	if(idx >= capacity)
 		return false;
 	dirty[idx] = true;
 
 	//	TODO???
 	auto& comp = components[idx];
 	uint32_t child = comp.firstChildID;
-	while( child != ENTITY_COUNT )
+	while( child < capacity )
 	{
 		auto& childComp = components[child];
 		world->SetDirty(childComp.get_entity());
@@ -196,7 +196,7 @@ bool TransformSystem::SetDirty(Entity e)
 bool TransformSystem::Attach(Entity child, Entity parent)
 {
 	uint32_t childID = lookup[child.index()];
-	if(childID == ENTITY_COUNT)
+	if(childID >= capacity)
 	{
 		ERR("Attachable component does not exist!");
 		return false;
@@ -208,7 +208,7 @@ bool TransformSystem::Attach(Entity child, Entity parent)
 	auto& childComp = components[childID];
 
 	uint32_t parentID = lookup[parent.index()];
-	if(parentID == ENTITY_COUNT)
+	if(parentID >= capacity)
 	{
 		ERR("Component to attach does not exist!");
 		return false;
@@ -219,11 +219,11 @@ bool TransformSystem::Attach(Entity child, Entity parent)
 	
 	childComp.parentID = parentID;
 
-	if(parentComp.firstChildID != ENTITY_COUNT)
+	if(parentComp.firstChildID < capacity)
 	{
 		uint32_t otherChildID = parentComp.firstChildID;
 		auto& otherChildComp = components[otherChildID];
-		while( otherChildComp.nextID != ENTITY_COUNT )
+		while( otherChildComp.nextID < capacity )
 		{
 			otherChildID = otherChildComp.nextID;
 			otherChildComp = components[otherChildID];
@@ -261,7 +261,7 @@ Entity TransformSystem::GetParent(Entity e)
 	Entity res;
 	res.setnull();
 	GET_COMPONENT(res)
-	if(comp.parentID == ENTITY_COUNT)
+	if(comp.parentID >= capacity)
 		return res;
 	return components[comp.parentID].get_entity();
 }
@@ -271,7 +271,7 @@ Entity TransformSystem::GetChildFirst(Entity e)
 	Entity res;
 	res.setnull();
 	GET_COMPONENT(res)
-	if(comp.firstChildID == ENTITY_COUNT)
+	if(comp.firstChildID >= capacity)
 		return res;
 	return components[comp.firstChildID].get_entity();
 }
@@ -281,7 +281,7 @@ Entity TransformSystem::GetChildNext(Entity e)
 	Entity res;
 	res.setnull();
 	GET_COMPONENT(res)
-	if(comp.nextID == ENTITY_COUNT)
+	if(comp.nextID >= capacity)
 		return res;
 	return components[comp.nextID].get_entity();
 }
@@ -303,7 +303,7 @@ uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
 		size += sizeof(XMFLOAT4);
 	}
 
-	if(comp.parentID == ENTITY_COUNT)
+	if(comp.parentID >= capacity)
 	{
 		*(uint32_t*)t_data = 0;
 		t_data += sizeof(uint32_t);

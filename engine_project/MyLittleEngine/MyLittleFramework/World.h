@@ -66,10 +66,10 @@ namespace EngineCore
 				m_scenes.push_back(scene);
 		}
 
-		ScenePipeline* CreateScene(Entity cam, int w, int h)
+		ScenePipeline* CreateScene(Entity cam, int w, int h, bool lightweight)
 		{
 			ScenePipeline* scene = new ScenePipeline();
-			if(!scene->Init(w, h))
+			if(!scene->Init(w, h, lightweight))
 			{_CLOSE(scene); return nullptr;}
 			m_cameraSystem->Activate(cam, scene);
 			m_scenes.push_back(scene);
@@ -184,6 +184,8 @@ namespace EngineCore
 					.addFunction("AddScene", &BaseWorld::AddScene)
 					.addFunction("CreateScene", &BaseWorld::CreateScene)
 					.addFunction("DeleteScene", &BaseWorld::DeleteScene)
+
+					.addFunction("Snapshot", &BaseWorld::Snapshot)
 					
 					.addFunction("CreateEntity", &BaseWorld::CreateEntity)
 					.addFunction("CreateNamedEntity", &BaseWorld::CreateNamedEntity)

@@ -109,7 +109,7 @@ function Viewport:SetWorld(WLD)
     if not WLD.world or WLD.scenepl then return end
     
     local vp_rect = self.viewport.entity:GetRectAbsolute()
-    WLD.scenepl = WLD.world:CreateScene(WLD.freecam, vp_rect.w, vp_rect.h)
+    WLD.scenepl = WLD.world:CreateScene(WLD.freecam, vp_rect.w, vp_rect.h, false)
     
     local srv = WLD.scenepl:GetSRV()
     self.viewport.rect_mat:SetTexture(srv, 0, SHADERS.PS)

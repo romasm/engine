@@ -48,6 +48,7 @@ loader.require("Entities.BaseEntity", Core.UpdateLuaFuncs)
 loader.require("Entities.LocalLight", Core.UpdateLuaFuncs)
 loader.require("Entities.GlobalLight", Core.UpdateLuaFuncs)
 loader.require("Entities.StaticModel", Core.UpdateLuaFuncs)
+loader.require("Entities.Camera", Core.UpdateLuaFuncs)
 
 --test
 loader.require("Entities.TestEnt", Core.UpdateLuaFuncs)

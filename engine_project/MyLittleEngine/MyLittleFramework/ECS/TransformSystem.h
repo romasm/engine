@@ -46,11 +46,11 @@ namespace EngineCore
 		TransformComponent* AddComponent(Entity e)
 		{
 			TransformComponent* res = nullptr;
-			if(e.index() >= ENTITY_COUNT)
+			if(e.index() >= capacity)
 				return res;
 
 			uint32_t& id = lookup[e.index()];
-			if(id == ENTITY_COUNT)
+			if(id >= capacity)
 			{
 				id = (uint32_t)components.size();
 				res = components.push_back();
@@ -76,13 +76,13 @@ namespace EngineCore
 		}
 		void DeleteComponent(Entity e);
 		bool HasComponent(Entity e) const
-		{ return e.index() < ENTITY_COUNT && lookup[e.index()] != ENTITY_COUNT; }
+		{ return e.index() < capacity && lookup[e.index()] < capacity; }
 		size_t ComponentsCount() {return components.size();}
 
 		inline TransformComponent* GetComponent(Entity e)
 		{
 			size_t idx = lookup[e.index()];
-			if(idx == ENTITY_COUNT) return nullptr;
+			if(idx >= capacity) return nullptr;
 			return &components[idx];
 		}
 		
@@ -93,7 +93,7 @@ namespace EngineCore
 		inline void UpdateComponent(uint32_t& id)
 		{
 			TransformComponent& comp = components[id];
-			if(comp.parentID != ENTITY_COUNT)
+			if(comp.parentID < capacity)
 				comp.worldMatrix = XMMatrixMultiply(comp.localMatrix, components[comp.parentID].worldMatrix);
 			else
 				comp.worldMatrix = comp.localMatrix;
@@ -103,7 +103,7 @@ namespace EngineCore
 		void ForceUpdate(Entity e)
 		{
 			uint32_t idx = lookup[e.index()];
-			if(idx == ENTITY_COUNT)
+			if(idx >= capacity)
 				return;
 			UpdateComponent(idx);
 		}
@@ -238,57 +238,57 @@ namespace EngineCore
 	private:
 		inline void _detach(TransformComponent& childComp, uint32_t childID)
 		{
-			if(childComp.parentID == ENTITY_COUNT)
+			if(childComp.parentID >= capacity)
 				return;
 			
 			auto& oldParentComp = components[childComp.parentID];
 			if(oldParentComp.firstChildID == childID)
 				oldParentComp.firstChildID = childComp.nextID;
-			if(childComp.prevID != ENTITY_COUNT)
+			if(childComp.prevID < capacity)
 			{
 				auto& prevComp = components[childComp.prevID];
 				prevComp.nextID = childComp.nextID;
 			}
-			if(childComp.nextID != ENTITY_COUNT)
+			if(childComp.nextID < capacity)
 			{
 				auto& nextComp = components[childComp.nextID];
 				nextComp.prevID = childComp.prevID;
 			}
-			childComp.parentID = ENTITY_COUNT;
-			childComp.prevID = ENTITY_COUNT;
-			childComp.nextID = ENTITY_COUNT;	
+			childComp.parentID = capacity;
+			childComp.prevID = capacity;
+			childComp.nextID = capacity;	
 		}
 
 		inline void _detachChildren(TransformComponent& parentComp)
 		{			
 			uint32_t child = parentComp.firstChildID;
-			while( child != ENTITY_COUNT )
+			while( child < capacity )
 			{
 				auto& childComp = components[child];
 				uint32_t next = childComp.nextID;
-				childComp.parentID = ENTITY_COUNT;
-				childComp.prevID = ENTITY_COUNT;
-				childComp.nextID = ENTITY_COUNT;	
+				childComp.parentID = capacity;
+				childComp.prevID = capacity;
+				childComp.nextID = capacity;	
 				child = next;
 			}
 
-			parentComp.firstChildID = ENTITY_COUNT;
+			parentComp.firstChildID = capacity;
 		}
 
 		inline void _moveComponentPrepare(uint32_t whatID, uint32_t whereID)
 		{
 			auto& whatComp = components[whatID];
-			if(whatComp.prevID != ENTITY_COUNT)
+			if(whatComp.prevID < capacity)
 			{
 				auto& prevComp = components[whatComp.prevID];
 				prevComp.nextID = whereID;
 			}
-			if(whatComp.nextID != ENTITY_COUNT)
+			if(whatComp.nextID < capacity)
 			{
 				auto& nextComp = components[whatComp.nextID];
 				nextComp.prevID = whereID;
 			}
-			if(whatComp.parentID != ENTITY_COUNT)
+			if(whatComp.parentID < capacity)
 			{
 				auto& parentComp = components[whatComp.parentID];
 				if(parentComp.firstChildID == whatID)
@@ -296,7 +296,7 @@ namespace EngineCore
 			}
 
 			uint32_t childID = whatComp.firstChildID;
-			while( childID != ENTITY_COUNT )
+			while( childID < capacity )
 			{
 				auto& childComp = components[childID];
 				childComp.parentID = whereID;
@@ -306,6 +306,7 @@ namespace EngineCore
 		}
 
 		// ~ 12 MB total size
+		uint32_t capacity;
 
 		RArray<TransformComponent> components;
 
