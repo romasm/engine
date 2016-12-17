@@ -1,3 +1,9 @@
+PREVIEW_SIZE = {
+    X = 88,
+    Y = 88,
+    PADDING = 4,
+}
+
 GuiStyles.material_button = {
     styles = {
         GuiStyles.solid_button,
@@ -5,8 +11,8 @@ GuiStyles.material_button = {
 
     holded = true,
 
-    height = 87,
-    width = 87,
+    height = PREVIEW_SIZE.X,
+    width = PREVIEW_SIZE.Y,
     
     background = {
         color = 'bg_01',
@@ -18,7 +24,7 @@ GuiStyles.material_button = {
     text = { font = "", },
 
     icon = {
-        rect = { l = 0, t = 0, w = 86, h = 66 },
+        rect = { l = 0, t = 0, w = PREVIEW_SIZE.X, h = PREVIEW_SIZE.Y },
     },
 }
 
@@ -29,7 +35,7 @@ GuiStyles.assetname_textfield = {
     color_cursor = 'bg_05',
 
     background = {
-        color = 'null',
+        color = 'bg_05_a4',
         color_live = 'act_02',
         color_nonactive = 'null'
     },
@@ -276,10 +282,10 @@ local btn = GuiButton({
         text = {str = matname},
         alt = matname,
 
-        top = 67,
-        left = 2,
-        width = 83,
         height = 18,
+        top = PREVIEW_SIZE.Y - 2 - 18,
+        left = 2,
+        width = PREVIEW_SIZE.X - 4,
 
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 

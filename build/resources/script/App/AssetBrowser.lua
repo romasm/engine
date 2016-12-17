@@ -70,7 +70,7 @@ function AssetBrowser:AddButton(num)
 end
 
 function AssetBrowser:FillBody()
-    self.padding = 4 -- temp
+    self.padding = PREVIEW_SIZE.PADDING
 
     self.stringCounter = 0
     self.topOffset = self.padding
@@ -258,8 +258,8 @@ function AssetBrowser:Find(str)
 end
 
 function AssetBrowser:GeneratePreview(filename)
-    local width = 86 * 2
-    local height = 66 * 2
+    local width = PREVIEW_SIZE.X * 2
+    local height = PREVIEW_SIZE.Y * 2
 
     local worldmgr = GetWorldMgr()
     
@@ -271,7 +271,7 @@ function AssetBrowser:GeneratePreview(filename)
     end
     
     local camera = EntityTypes.Camera(renderWorld)
-    camera:SetPosition(0.0, 0.0, -4.15)
+    camera:SetPosition(0.0, 0.0, -4.3)
     camera:SetFov(0.25)
     camera:SetFar(100.0)
     camera:Activate()
