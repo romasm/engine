@@ -45,8 +45,6 @@ HEntityStorage::HEntityStorage()
 	free_id.resize(GUI_ENTITY_COUNT);
 	for(uint32_t i=0; i<GUI_ENTITY_COUNT; i++)
 		free_id[i] = uint32_t(i);
-
-	deffered_destroy.reserve(128);
 }
 
 HEntity::HEntity() : lua_class(LSTATE)
@@ -271,7 +269,7 @@ void HEntity::Close()
 		HChild* it = first_child->next;
 		while(it != last_child)
 		{
-			HEntityStorage::Get()->DestroyEntity(it->e);
+			HEntityStorage::Get()->DefferedDestroy(it->e);
 			auto removedCh = it;
 			it = it->next;
 			_DELETE(removedCh);
@@ -283,6 +281,9 @@ void HEntity::Close()
 
 	_DELETE(unnamed_children);
 	_DELETE(named_children);
+
+	if(ID.find("15") != string::npos)
+		LOG("sdfhsdfh");
 
 	if(rects)
 	{

@@ -431,8 +431,14 @@ class HEntityStorage
 
 		void DefferedDestroyProcess()
 		{
-			for(auto& i: deffered_destroy)
-				DestroyEntity(i);
+			while( !deffered_destroy.empty() )
+			{
+				uint32_t e = deffered_destroy.front();
+				deffered_destroy.pop_front();
+
+				DestroyEntity(e);
+			}
+
 			deffered_destroy.clear();
 		}
 
@@ -457,7 +463,7 @@ class HEntityStorage
 		SDeque<uint32_t, GUI_ENTITY_COUNT> free_id;
 		ComponentRArray<HEntity> entities;
 		
-		DArray<uint32_t> deffered_destroy;
+		SDeque<uint32_t, GUI_ENTITY_COUNT> deffered_destroy;
 
 		static HEntityStorage* instance;
 };

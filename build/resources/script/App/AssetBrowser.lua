@@ -203,17 +203,19 @@ end
 function AssetBrowser:DeleteSelected()
     if self.selectedMatBtn == nil then return end
 
-    FileIO.Delete( self.selectedMatBtn.assetID ..".tga" )
-    FileIO.Delete( self.selectedMatBtn.assetID ..".mtb" )
-
     MaterialProps:SetSelected(nil, true)
     self.selectedMatBtn:SetPressed(false)
+
+    local assetID = self.selectedMatBtn.assetID
     self.selectedMatBtn = nil
-    
-    self.copyBtn:Deactivate()
-    self.deleteBtn:Deactivate()
 
     self:Clear()
+    
+    FileIO.Delete( assetID ..".mtb" )
+    FileIO.Delete( assetID ..".tga" ) -- TEXTURE NEED TO BE DROPED
+
+    self.copyBtn:Deactivate()
+    self.deleteBtn:Deactivate()
     
     self:ScanDir(self.libDir)
     self:FillBody()

@@ -37,15 +37,21 @@ cbuffer matrixBuffer : register(b2)
 // pixel
 float4 ToolMeshPS(PI_ToolMesh input) : SV_TARGET
 {
-	float4 color_opacity = colorTex.Sample(samplerAnisotropicWrap, input.tex);
+	float4 color_opacity = 0;
 	
-	if( color_opacity.a < colorMul.a )
-		discard;
-	
+	[branch]
 	if( useTexture > 0 )
+	{
+		color_opacity = colorTex.Sample(samplerAnisotropicWrap, input.tex);
+		if( color_opacity.a < colorMul.a )
+			discard;
+
 		color_opacity.rgb = color_opacity.rgb * colorMul.rgb;
+	}
 	else
+	{
 		color_opacity.rgb = colorMul.rgb;
+	}
 	
 	float4 res = 1;
 	
