@@ -282,9 +282,6 @@ void HEntity::Close()
 	_DELETE(unnamed_children);
 	_DELETE(named_children);
 
-	if(ID.find("15") != string::npos)
-		LOG("sdfhsdfh");
-
 	if(rects)
 	{
 		for(auto& it: *rects)
