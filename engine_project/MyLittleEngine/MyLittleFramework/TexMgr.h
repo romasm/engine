@@ -72,5 +72,8 @@ namespace EngineCore
 		uint32_t FindTextureInList(string& name);
 
 		ID3D11ShaderResourceView* LoadTexture(string& name);
+
+	public:
+		static bool SaveTexture(string& name, ID3D11ShaderResourceView* srv);
 	};
 }

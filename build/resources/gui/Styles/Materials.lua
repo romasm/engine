@@ -107,3 +107,18 @@ GuiMaterials.delete_icon = {
     shader = "../resources/shaders/gui/rect_icon",
     textures = {"../resources/textures/editor_hud/delete.dds"},
 }
+
+GuiMaterials.clear_str_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/clear_str.dds"},
+}
+
+GuiMaterials.assign_asset_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/assign_asset.dds"},
+}
+
+GuiMaterials.clear_asset_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/win_close.dds"},
+}

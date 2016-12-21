@@ -160,30 +160,85 @@ function StaticMeshCallback.ListMaterials(group)
         table.remove(group.material_slots, j)
     end
 
-    local hieght = 0
+    local height = 0
     for i = 0, mat_count - 1 do
         local arr_i = i + 1
-        group.material_slots[arr_i] = Gui.MaterialSlot(i, hieght + 135)
+        group.material_slots[arr_i] = Gui.MaterialSlot(i, height + 135)
         group.entity:AttachChild(group.material_slots[arr_i].entity)
-        hieght = hieght + 45
+        height = height + group.material_slots[arr_i].entity.height + 5
 
         local mat_field = group.material_slots[arr_i].entity:GetChildById('slot_mat'):GetInherited()
         mat_field.events[GUI_EVENTS.UPDATE](mat_field, nil)
+
+        --mat_field.entity:Deactivate() -- TEMP
     end
-    group:UpdateH(140 + hieght)
+    group:UpdateH(140 + height)
     group.entity:GetParent():GetInherited().window.entity:UpdateSize()
 end
 
 function StaticMeshCallback.SetMaterial(self, ev, mat_i)
-    local path = self:GetPath()
+    local path = self:GetText()
     if path:len() == 0 then 
         self.events[GUI_EVENTS.UPDATE](self, ev, mat_i)
         return true 
     end
 
     path = path:gsub(".mta", ".mtb")
-    self:SetPath(path)
+    self:SetText(path)
 
+    StaticMeshCallback.AssignMaterial(path, mat_i)
+    return true
+end
+
+function StaticMeshCallback.UpdMaterial(self, ev, mat_i)
+    local val = ""
+    for i, ent in ipairs(Viewport.selection_set) do
+        local mat = Viewport.lua_world.world.staticMesh:GetMaterial(ent, mat_i)
+        if i > 1 and val ~= mat then
+            self:SetText("")
+            return true
+        else val = mat end
+    end
+
+    if val == AssetBrowser.nullMat then
+        self:SetText("")
+    else
+        self:SetText(val)
+    end
+
+    local mat_btn = self.entity:GetParent():GetChildById('mat_btn'):GetInherited()
+    mat_btn.icon_mat:SetTextureByName(val:gsub("%.mtb", "%.tga"), 0, SHADERS.PS)
+    
+    local current_mat = MaterialProps:GetSelected()
+    if current_mat == nil then return true end
+
+    if current_mat:GetName() == Viewport.lua_world.world.staticMesh:GetMaterialObject(Viewport.selection_set[1], mat_i):GetName() then
+        StaticMeshCallback.UnselectAll(mat_btn, self.entity:GetParent())
+        mat_btn:SetPressed(true)
+    end
+    return true 
+end
+
+function StaticMeshCallback.AssignSelectedMaterial(self, ev, mat_i)
+    local matName = AssetBrowser:GetSelectedAssetName()
+    if not matName then return end
+
+    local path = AssetBrowser:GetPathFromAssetName(matName)
+
+    StaticMeshCallback.AssignMaterial(path, mat_i)
+
+    local slot_mat = self.entity:GetParent():GetChildById('slot_mat'):GetInherited()
+    slot_mat.events[GUI_EVENTS.UPDATE](slot_mat, ev, mat_i)
+end
+
+function StaticMeshCallback.ClearMaterial(self, ev, mat_i)
+    StaticMeshCallback.AssignMaterial(AssetBrowser.nullMat, mat_i)
+
+    local slot_mat = self.entity:GetParent():GetChildById('slot_mat'):GetInherited()
+    slot_mat.events[GUI_EVENTS.UPDATE](slot_mat, ev, mat_i)
+end
+
+function StaticMeshCallback.AssignMaterial(path, mat_i)
     local history = {
         s_oldval = {},
         s_newval = "",
@@ -222,29 +277,6 @@ function StaticMeshCallback.SetMaterial(self, ev, mat_i)
     end
 
     History:Push(history)
-    return true
-end
-
-function StaticMeshCallback.UpdMaterial(self, ev, mat_i)
-    local val = ""
-    for i, ent in ipairs(Viewport.selection_set) do
-        local mat = Viewport.lua_world.world.staticMesh:GetMaterial(ent, mat_i)
-        if i > 1 and val ~= mat then
-            self:SetPath("")
-            return true
-        else val = mat end
-    end
-    self:SetPath(val)
-    
-    local current_mat = MaterialProps:GetSelected()
-    if current_mat == nil then return true end
-
-    if current_mat:GetName() == Viewport.lua_world.world.staticMesh:GetMaterialObject(Viewport.selection_set[1], mat_i):GetName() then
-        local mat_btn = self.entity:GetParent():GetChildById('mat_btn'):GetInherited()
-        StaticMeshCallback.UnselectAll(mat_btn, self.entity:GetParent())
-        mat_btn:SetPressed(true)
-    end
-    return true 
 end
 
 function StaticMeshCallback.UnselectAll(self, mat_gui)
@@ -261,7 +293,7 @@ function StaticMeshCallback.SelectMat(self)
     local mat_gui = self.entity:GetParent()
     StaticMeshCallback.UnselectAll(self, mat_gui)
 
-    if mat_gui:GetChildById('slot_mat'):GetInherited():GetPath():len() == 0 then
+    if mat_gui:GetChildById('slot_mat'):GetInherited():GetText():len() == 0 then
         MaterialProps:SetSelected(nil) 
         return true 
     end

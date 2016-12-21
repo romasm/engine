@@ -85,6 +85,7 @@ public:
 
 	void addJob(jobMain func, void* obj = nullptr, uint16_t sync = MAX_SYNCS, JobPriority priority = JobPriority::FRAME);
 	
+	// TODO: callback system for periodical jobs for main thread(lua), dependent job system for others
 	void addPeriodicalJob(string name, jobMain func, void* obj = nullptr, float period = 1000, JobPriority priority = JobPriority::FRAME);
 	void deletePeriodicalJob(string name);
 	bool periodicalJobFillTimer(string name);

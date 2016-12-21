@@ -20,6 +20,9 @@ function AssetBrowser.reload()
     AssetBrowser.window.entity:UpdatePosSize()
 
     Tools.left_side_area.entity:UpdatePosSize()
+
+    AssetBrowser.copyBtn:Deactivate()
+    AssetBrowser.deleteBtn:Deactivate()
 end
 
 function AssetBrowser:ScanDir(matsDir)
@@ -70,7 +73,7 @@ function AssetBrowser:AddButton(num)
 end
 
 function AssetBrowser:FillBody()
-    self.padding = PREVIEW_SIZE.PADDING
+    self.padding = GUI_PREVIEW_SIZE.PADDING
 
     self.stringCounter = 0
     self.topOffset = self.padding
@@ -80,6 +83,8 @@ function AssetBrowser:FillBody()
     for i, file in ipairs(self.fileList) do
         self:AddButton(i)
     end
+
+    Resource.ForceTextureReloadBackground()
 
     self.body.height = self.topOffset + self.lastHeight + self.padding
 end
@@ -107,14 +112,26 @@ function AssetBrowser:Init()
     self.fileList = {}
     self.selectedMatBtn = nil
     self.findstr = ""
+    self.nullMat = "../resources/materials/template_new.mtb"
 
     self:ScanDir(self.libDir)
     
     loader.require("AssetBrowser", AssetBrowser.reload)
     self.reload()
 
-    self.copyBtn:Deactivate()
-    self.deleteBtn:Deactivate()
+    self:InitPreviewWorld()
+end
+
+function AssetBrowser:GetSelectedAssetName()
+    if not self.selectedMatBtn then
+        return nil
+    end
+    
+    return self.selectedMatBtn.assetID:gsub(self.libDir .. "/", "")
+end
+
+function AssetBrowser:GetPathFromAssetName(name)
+    return self.libDir .. "/" .. name .. ".mtb"
 end
 
 function AssetBrowser:SetSelected(btn)
@@ -191,7 +208,7 @@ function AssetBrowser:CreateNew()
     while FileIO.IsExist( newAssetID .. tostring(newCounter) .. ".mtb" ) do newCounter = newCounter + 1 end
     newAssetID = newAssetID .. tostring(newCounter)
 
-    FileIO.Copy("../resources/materials/template_new.mtb", newAssetID..".mtb")
+    FileIO.Copy(self.nullMat, newAssetID..".mtb")
     
     self:GeneratePreview(newAssetID..".mtb")
 
@@ -259,38 +276,56 @@ function AssetBrowser:Find(str)
     self.window.entity:UpdatePosSize()
 end
 
-function AssetBrowser:GeneratePreview(filename)
-    local width = PREVIEW_SIZE.X * 2
-    local height = PREVIEW_SIZE.Y * 2
+function AssetBrowser:InitPreviewWorld()
+    width = GUI_PREVIEW_SIZE.X * 2
+    height = GUI_PREVIEW_SIZE.Y * 2
 
     local worldmgr = GetWorldMgr()
     
-    local renderWorld = worldmgr:CreateSmallWorld()
+    self.previewWorld = worldmgr:CreateSmallWorld()
     
-    if not renderWorld then 
+    if not self.previewWorld then 
         error("Cant generate preview image for material " .. filename)
         return
     end
     
-    local camera = EntityTypes.Camera(renderWorld)
+    local camera = EntityTypes.Camera(self.previewWorld)
     camera:SetPosition(0.0, 0.0, -4.3)
     camera:SetFov(0.25)
     camera:SetFar(100.0)
     camera:Activate()
     
-    local scene = renderWorld:CreateScene(camera.ent, width * 2, height * 2, true)
-    scene:SetExposure(false, 0.2)
-    
-    local sphere = EntityTypes.StaticModel(renderWorld)
-    sphere:SetMesh("../resources/meshes/mat_sphere.stm")
-    sphere:SetMaterial(filename, 0)
-    
-    Resource.ForceTextureReload()
-    
-    renderWorld:Snapshot(scene)
-    scene:SaveScreenshot(filename:gsub("%.mtb", "%.tga"), width, height)
-    
-    print("Material preview for " .. filename .. " generated")
+    self.previewScene = self.previewWorld:CreateScene(camera.ent, width * 2, height * 2, true)
+    self.previewScene:SetExposure(false, 0.2)
 
-    worldmgr:CloseWorld(renderWorld)
+    self.previewSphere = EntityTypes.StaticModel(self.previewWorld)
+    self.previewSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+end
+
+-- NOT NEED?
+--[[function AssetBrowser:ClosePreviewWorld() 
+    local worldmgr = GetWorldMgr()
+    worldmgr:CloseWorld(self.previewWorld)
+end--]]
+
+function AssetBrowser:GeneratePreview(filename)  
+    if not self.previewWorld or self.waitingForPreview then 
+        return 
+    end
+
+    self.waitingForPreview = true
+    self.previewSphere:SetMaterial(filename, 0)
+
+    Resource.ForceTextureReloadBackground() -- TODO: use job callback system
+    self:PostGeneratePreview(filename:gsub("%.mtb", "%.tga"))
+end
+
+function AssetBrowser:PostGeneratePreview(filename)
+    self.previewWorld:Snapshot(self.previewScene)
+    self.previewScene:SaveScreenshot(filename, 2.0, 2.0)
+
+    self.previewSphere:SetMaterial(self.nullMat, 0)
+    self.waitingForPreview = false
+
+    print("Material preview " .. filename .. " generated")
 end

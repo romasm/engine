@@ -71,6 +71,11 @@ void TexMgr::PreloadTextures()
 	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/scale"EXT_TEXTURE), reload);
 	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/select"EXT_TEXTURE), reload);
 	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/win_close"EXT_TEXTURE), reload);
+	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/assign_asset"EXT_TEXTURE), reload);
+	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/clear_str"EXT_TEXTURE), reload);
+	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/delete"EXT_TEXTURE), reload);
+	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/copy_mat"EXT_TEXTURE), reload);
+	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/new_mat"EXT_TEXTURE), reload);
 }
 
 uint32_t TexMgr::GetTexture(string& name, bool reload)
@@ -102,18 +107,16 @@ uint32_t TexMgr::AddTextureToList(string& name, bool reload)
 
 	uint32_t idx = tex_free.front();
 	auto& handle = tex_array[idx];
-
-	//handle.tex = LoadTexture(name);
-	//if(handle.tex == nullptr)
-	//	return TEX_NULL;
+	
 	if(!FileIO::IsExist(name))
-		return TEX_NULL;
+	{
+		WRN("Texture file %s doesn\'t exist, creation expected in future.", name.data());
+	}
 	handle.tex = null_texture;
 	
 	handle.name = name;
 	handle.refcount = 1;
 
-	//handle.filedate = FileIO::GetDateModifRaw(name);
 	if(reload)
 		handle.filedate = NEED_RELOADING;
 	else
@@ -200,7 +203,7 @@ void TexMgr::DeleteTextureByName(string& name)
 		handle.refcount--;
 }
 
-void TexMgr::UpdateTextures()
+void TexMgr::UpdateTextures() // TODO!!!! CRASH!!! when map size chaged while iterating throw it
 {
 	for(auto& it: tex_map)
 	{
@@ -210,11 +213,16 @@ void TexMgr::UpdateTextures()
 			continue;
 
 		if(tex.filedate == NEED_LOADING_ONCE)
-			tex.filedate = NOT_RELOAD;
+		{
+			if(FileIO::IsExist(tex.name))
+				tex.filedate = NOT_RELOAD;
+			else
+				continue;
+		}
 		else
 		{
 			uint32_t last_date = FileIO::GetDateModifRaw(tex.name);
-			if(last_date == tex.filedate || tex.filedate == NOT_RELOAD)
+			if(last_date == tex.filedate || last_date == 0 || tex.filedate == NOT_RELOAD)
 				continue;
 			tex.filedate = last_date;
 		}
@@ -275,7 +283,65 @@ ID3D11ShaderResourceView* TexMgr::LoadTexture(string& name)
 		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &tex);
 	}	
 
-	LOG("Texture loaded %s", name.c_str());
+	LOG_GOOD("Texture loaded %s", name.c_str());
 
 	return tex;
+}
+
+bool TexMgr::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
+{
+	ID3D11Resource* resource = nullptr;
+	srv->GetResource(&resource);
+
+	ScratchImage texture;
+	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
+	if ( FAILED(hr) )
+		return false;
+	
+	if(name.find(".dds") != string::npos || name.find(".DDS") != string::npos)
+	{
+		HRESULT hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(name).data() );
+		if(FAILED(hr))
+		{
+			ERR("Cant save DDS texture %s !", name.c_str());
+			return false;
+		}
+	}
+	else if(name.find(".tga") != string::npos || name.find(".TGA") != string::npos)
+	{
+		HRESULT hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(name).data() );
+		if(FAILED(hr))
+		{
+			ERR("Cant save TGA texture %s !", name.c_str());
+			return false;
+		}
+	}
+	else
+	{
+		WICCodecs codec = WIC_CODEC_JPEG;
+		if( name.find(".bmp") != string::npos || name.find(".BMP") != string::npos )
+			codec = WIC_CODEC_BMP;
+		else if( name.find(".jpg") != string::npos || name.find(".JPG") != string::npos )
+			codec = WIC_CODEC_JPEG;
+		else if( name.find(".png") != string::npos || name.find(".PNG") != string::npos )
+			codec = WIC_CODEC_PNG;
+		else if( name.find(".tif") != string::npos || name.find(".TIF") != string::npos )
+			codec = WIC_CODEC_TIFF;
+		else if( name.find(".gif") != string::npos || name.find(".GIF") != string::npos )
+			codec = WIC_CODEC_GIF;
+		else if( name.find(".wmp") != string::npos || name.find(".WMP") != string::npos )
+			codec = WIC_CODEC_WMP;
+		else if( name.find(".ico") != string::npos || name.find(".ICO") != string::npos )
+			codec = WIC_CODEC_ICO;			
+
+		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(name).data() );
+		if(FAILED(hr))
+		{
+			ERR("Cant save WIC texture %s !", name.c_str());
+			return nullptr;
+		}
+	}	
+
+	LOG_GOOD("Texture saved %s", name.c_str());
+	return true;
 }

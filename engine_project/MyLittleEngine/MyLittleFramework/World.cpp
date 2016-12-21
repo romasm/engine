@@ -676,6 +676,11 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 
 void SmallWorld::Frame()
 {
+	//if( defferedProcessQueue.size() > 0 )
+	//{
+
+	//}
+
 #ifdef _DEV
 	bool profiler_state = Profiler::Get()->IsRunning();
 	if(profiler_state)

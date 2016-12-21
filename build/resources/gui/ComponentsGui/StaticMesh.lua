@@ -1,5 +1,37 @@
 loader.require("ComponentsGui.StaticMeshCallback")
 
+GuiStyles.material_list_button = {
+    styles = {
+        GuiStyles.common_button,
+    },
+
+    collide_through = true,
+    height = 25,
+    width = 25,
+
+    background = {
+        color = 'act_00_a0',
+        color_hover = 'act_00',
+        color_press = 'act_00',
+        color_nonactive = 'bg_01',
+    },
+
+    text = {
+        font = '',
+    },
+    border = {
+        width = 0,
+    },
+
+    icon = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        color_nonactive = 'text_02',
+        rect = { l = 0, t = 0, w = 25, h = 25 },
+    },
+}
+
 function Gui.StaticMeshComp()
 return GuiGroup({
     styles = {
@@ -71,8 +103,8 @@ return GuiGroup({
 
     GuiString({
         styles = {GuiStyles.string_props_01,},
-        str = "Materials list",
-        left = 105,
+        str = "Materials",
+        left = 115,
         top = 113,
     }), 
 
@@ -96,12 +128,12 @@ return GuiDumb({
     styles = {GuiStyles.live,},
     width = 100,
     width_percent = true,
-    height = 40,
+    height = 60,
     top = top_offset,
     id = 'mat_'..i_mat,
 
     GuiButton({
-        styles = {GuiStyles.common_button,},
+        styles = {GuiStyles.solid_button,},
         text = {font = "",},
         cursor = SYSTEM_CURSORS.NONE,
         holded = true,
@@ -110,16 +142,20 @@ return GuiDumb({
         height = 100,
         height_percent = true,
         id = 'mat_btn',
-        border = {
+
+        background = {
             color = 'bg_01',
             color_hover = 'act_01',
-            color_press = 'act_00',
-            width = 2,
+            color_press = 'act_05',
+            color_nonactive = 'bg_01',
         },
-        background = {
-            color = 'null',
-            color_hover = 'null',
-            color_press = 'null',
+
+        icon = {
+            rect = { l = -35, t = 0, w = GUI_PREVIEW_SIZE.X, h = GUI_PREVIEW_SIZE.Y },
+            material = {
+                shader = "../resources/shaders/gui/rect_color_icon_alpha",
+                textures = {""}
+            },
         },
 
         events = {
@@ -132,33 +168,80 @@ return GuiDumb({
         }
     }),
 
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "# " .. i_mat,
-        static = false,
-        length = 32,
-        left = 10,
-        top = 12,
-    }), 
-
-    GuiFilefield({
-        styles = {GuiStyles.common_filefield,},
+    GuiTextfield({
+        styles = {GuiStyles.props_textfield,},
         collide_through = true,
-        left = 50,
-        width = 225,
-        top = 10,
-        browse_header = "Choose material file",
-        filetypes = {
-            {"Material", "*.mta;*.mtb;"},
-        },
+        align = GUI_ALIGN.BOTH,
+        left = 70,
+        right = 10,
+        top = 5,
+        height = 20,
         allow_none = false,
+        show_tail = true,
+        text = {
+            length = 128,
+        },
+        data = { d_type = GUI_TEXTFIELD.TEXT, },
+
         id = 'slot_mat',
 
         events = {
-            [GUI_EVENTS.FF_SET] = function(self, ev) return StaticMeshCallback.SetMaterial(self, ev, self.events.material_id) end,
+            [GUI_EVENTS.TF_DEACTIVATE] = function(self, ev) return StaticMeshCallback.SetMaterial(self, ev, self.events.material_id) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return StaticMeshCallback.UpdMaterial(self, ev, self.events.material_id) end,
             material_id = i_mat,
         }
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.material_list_button,
+        },
+        collide_through = true,
+        holded = false,
+        height = 25,
+        width = 25,
+        left = 70,
+        top = 30,
+        alt = "Assign selected material",
+        icon = {
+            material = GuiMaterials.assign_asset_icon,
+            rect = { l = 0, t = 0, w = 25, h = 25 },
+        },
+        id = 'assign_btn',
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                StaticMeshCallback.AssignSelectedMaterial(self, ev, self.events.material_id)
+                return true 
+            end,
+            material_id = i_mat,
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.material_list_button,
+        },
+        collide_through = true,
+        holded = false,
+        height = 25,
+        width = 25,
+        left = 100,
+        top = 30,
+        alt = "Clear material",
+        icon = {
+            material = GuiMaterials.clear_asset_icon,
+            rect = { l = 0, t = 0, w = 25, h = 25 },
+        },
+        id = 'clear_btn',
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                StaticMeshCallback.ClearMaterial(self, ev, self.events.material_id)
+                return true 
+            end,
+            material_id = i_mat,
+        },
     }),
 })
 end

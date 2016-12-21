@@ -110,7 +110,7 @@ function MaterialProps:SetSelected(name, unsave)
 
     if self.material then
         if unsave == nil then
-            self.material:Save() 
+            self.material:Save()                    -- TODO: preprocess for ensure that no redundant textures are saved
             AssetBrowser:GeneratePreview( self.material:GetName() )
         end
         Resource.DropMaterial( self.material:GetName() )

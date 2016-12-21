@@ -1,9 +1,3 @@
-PREVIEW_SIZE = {
-    X = 88,
-    Y = 88,
-    PADDING = 4,
-}
-
 GuiStyles.material_button = {
     styles = {
         GuiStyles.solid_button,
@@ -11,8 +5,8 @@ GuiStyles.material_button = {
 
     holded = true,
 
-    height = PREVIEW_SIZE.X,
-    width = PREVIEW_SIZE.Y,
+    height = GUI_PREVIEW_SIZE.X,
+    width = GUI_PREVIEW_SIZE.Y,
     
     background = {
         color = 'bg_01',
@@ -24,7 +18,7 @@ GuiStyles.material_button = {
     text = { font = "", },
 
     icon = {
-        rect = { l = 0, t = 0, w = PREVIEW_SIZE.X, h = PREVIEW_SIZE.Y },
+        rect = { l = 0, t = 0, w = GUI_PREVIEW_SIZE.X, h = GUI_PREVIEW_SIZE.Y },
     },
 }
 
@@ -59,7 +53,7 @@ GuiStyles.assetname_textfield = {
     data = { d_type = GUI_TEXTFIELD.TEXT, },
 }
 
-GuiStyles.tool_text_button = {
+GuiStyles.tool_assets_button = {
     styles = {
         GuiStyles.tool_button,
     },
@@ -107,7 +101,7 @@ return GuiWindow({
     
     GuiButton({
         styles = {
-            GuiStyles.tool_text_button,
+            GuiStyles.tool_assets_button,
         },
 
         align = GUI_ALIGN.RIGHT,
@@ -127,7 +121,7 @@ return GuiWindow({
     
     GuiButton({
         styles = {
-            GuiStyles.tool_text_button,
+            GuiStyles.tool_assets_button,
         },
 
         align = GUI_ALIGN.RIGHT,
@@ -147,7 +141,7 @@ return GuiWindow({
     
     GuiButton({
         styles = {
-            GuiStyles.tool_text_button,
+            GuiStyles.tool_assets_button,
         },
 
         align = GUI_ALIGN.RIGHT,
@@ -169,13 +163,14 @@ return GuiWindow({
             GuiStyles.props_textfield,
             GuiStyles.text_textfield,
         },
-        top = 35,
+        top = 33,
         left = 5,
-        width = 150,
-        height = 20,
+        width = 170,
+        height = 24,
         border = {
             width = 0
         },
+        id = 'find_field',
 
         events = {
             [GUI_EVENTS.TF_EDITING]  = function(self, ev)
@@ -184,33 +179,70 @@ return GuiWindow({
                 end,
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev)
                 if self:GetText():len() == 0 then 
-                    self.entity:GetParent():GetChildById('find_sign').enable = true
+                    self.entity:GetChildById('find_sign').enable = true
+                    self.entity:GetParent():GetChildById('clear_btn').enable = false
+                else
+                    self.entity:GetParent():GetChildById('clear_btn').enable = true
                 end
                 return true
                 end,
             [GUI_EVENTS.TF_ACTIVATE]  = function(self, ev)
-                self.entity:GetParent():GetChildById('find_sign').enable = false
+                self.entity:GetChildById('find_sign').enable = false
+                self.entity:GetParent():GetChildById('clear_btn').enable = false
                 return true
                 end,
         },
+
+        GuiString({
+            styles = {
+                GuiStyles.ghost,
+                GuiStyles.string_autosize,
+                GuiStyles.string_18,
+            },
+        
+            id = 'find_sign',
+            str = "Type to find",
+            static = true,
+            color = 'text_02',
+
+            enable = true,
+
+            top = 3,
+            left = 3,
+        }),        
     }),
 
-    GuiString({
+    GuiButton({
         styles = {
-            GuiStyles.ghost,
-            GuiStyles.string_autosize,
-            GuiStyles.string_18,
+            GuiStyles.tool_button,
         },
-        
-        id = 'find_sign',
-        str = "Type to find",
-        static = true,
-        color = 'text_02',
+        holded = false,
+        height = 24,
+        width = 24,
+        align = GUI_ALIGN.LEFT,
+        left = 151,
+        top = 33,
+        icon = {
+            material = GuiMaterials.clear_str_icon,
+            rect = { l = 0, t = 0, w = 24, h = 24 },
+        },
+        background = {color = 'null',},
+        alt = "Clear",
+                
+        enable = false,
+        id = 'clear_btn',
 
-        enable = true,
-
-        top = 36,
-        left = 8,
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                local tf = self.entity:GetParent():GetChildById('find_field')
+                tf:GetInherited():SetText()
+                tf:GetChildById('find_sign').enable = true
+                self:SetPressed(false)
+                self.entity.enable = false
+                AssetBrowser:Find("")
+                return true 
+            end,
+        },
     }),
 
     GuiClientarea({
@@ -283,9 +315,9 @@ local btn = GuiButton({
         alt = matname,
 
         height = 18,
-        top = PREVIEW_SIZE.Y - 2 - 18,
+        top = GUI_PREVIEW_SIZE.Y - 2 - 18,
         left = 2,
-        width = PREVIEW_SIZE.X - 4,
+        width = GUI_PREVIEW_SIZE.X - 4,
 
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 

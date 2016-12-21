@@ -1172,8 +1172,11 @@ void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
 	sp->ClearTex();
 }
 
-bool ScenePipeline::SaveScreenshot(string path, uint32_t w, uint32_t h)
+bool ScenePipeline::SaveScreenshot(string path, float ssX, float ssY)
 {
+	uint32_t w = uint32_t(width / ssX);
+	uint32_t h = uint32_t(height / ssY);
+
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(SP_SHADER_SCREENSHOT));
 	unique_ptr<RenderTarget> rt(new RenderTarget);
 	if(!rt->Init(w, h))
@@ -1190,19 +1193,6 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t w, uint32_t h)
 
 	sp->Draw();
 	sp->ClearTex();
-	
-	ID3D11Resource* resource = nullptr;
-	rt->GetShaderResourceView(0)->GetResource(&resource);
-
-	ScratchImage texture;
-	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
-	if ( FAILED(hr) )
-		return false;
-
-	//hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(WIC_CODEC_PNG), StringToWstring(path).data() );
-	hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(path).data() );
-	if ( FAILED(hr) )
-		return false;
-
-	return true;
+		
+	return TexMgr::SaveTexture(path, rt->GetShaderResourceView(0));
 }

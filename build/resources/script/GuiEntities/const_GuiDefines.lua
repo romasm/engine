@@ -68,6 +68,12 @@ GUI_COLORPICKER = {
     OFFSET = 5,
 }
 
+GUI_PREVIEW_SIZE = {
+    X = 88,
+    Y = 88,
+    PADDING = 4,
+}
+
 GUI_EVENTS = {
     NULL                  = 0x00,
     ERROR                 = 0x01,
