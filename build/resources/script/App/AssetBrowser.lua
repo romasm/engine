@@ -229,7 +229,7 @@ function AssetBrowser:DeleteSelected()
     self:Clear()
     
     FileIO.Delete( assetID ..".mtb" )
-    FileIO.Delete( assetID ..".tga" ) -- TEXTURE NEED TO BE DROPED
+    FileIO.Delete( assetID ..".tga" )
 
     self.copyBtn:Deactivate()
     self.deleteBtn:Deactivate()
