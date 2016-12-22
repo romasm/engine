@@ -5,39 +5,56 @@ function Hotkeys:Init()
     -- todo: key map support
 end
 
-function Hotkeys:Process(eventData)
-    if eventData.key == KEYBOARD_CODES.KEY_Z and CoreGui.Keys.Ctrl() then 
+function Hotkeys:Process(eventData, root)
+    local resEvent = eventData
+    if eventData.key == KEYBOARD_CODES.KEY_C and CoreGui.Keys.Ctrl() then 
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.HK_COPY
+        root.entity:SendEventOnFocus(fake_event)
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_X and CoreGui.Keys.Ctrl() then 
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.HK_CUT
+        root.entity:SendEventOnFocus(fake_event)
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_V and CoreGui.Keys.Ctrl() then 
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.HK_PASTE
+        root.entity:SendEventOnFocus(fake_event)
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_N and CoreGui.Keys.Ctrl() then 
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.HK_NEW
+        root.entity:SendEventOnFocus(fake_event)
+        resEvent.event = GUI_EVENTS.NULL
+
+    elseif eventData.key == KEYBOARD_CODES.KEY_Z and CoreGui.Keys.Ctrl() then 
         History:Undo()
-        return
-    end
-    if eventData.key == KEYBOARD_CODES.KEY_Y and CoreGui.Keys.Ctrl() then 
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_Y and CoreGui.Keys.Ctrl() then 
         History:Redo()
-        return
-    end
+        resEvent.event = GUI_EVENTS.NULL
 
-    if eventData.key == KEYBOARD_CODES.KEY_Q then 
+    elseif eventData.key == KEYBOARD_CODES.KEY_Q then 
         Viewport:SetTransform(TRANSFORM_MODE.NONE, true)
-        return 
-    end
-	if eventData.key == KEYBOARD_CODES.KEY_W then 
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_W then 
         Viewport:SetTransform(TRANSFORM_MODE.MOVE, true)
-        return 
-    end
-	if eventData.key == KEYBOARD_CODES.KEY_E then 
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_E then 
         Viewport:SetTransform(TRANSFORM_MODE.ROT, true)
-        return 
-    end
-	if eventData.key == KEYBOARD_CODES.KEY_R then 
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_R then 
         Viewport:SetTransform(TRANSFORM_MODE.SCALE, true)
-        return 
-    end
-	if eventData.key == KEYBOARD_CODES.KEY_SPACE then 
+        resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_SPACE then 
         Viewport:SwitchTransform()
-        return 
-    end
-	if eventData.key == KEYBOARD_CODES.KEY_G then 
+        resEvent.event = GUI_EVENTS.NULL
+
+    elseif eventData.key == KEYBOARD_CODES.KEY_G then 
         Viewport:SwitchHud()
-        return 
+        resEvent.event = GUI_EVENTS.NULL
     end
 
+    return resEvent
 end

@@ -42,8 +42,9 @@ function GuiRoot:init(ent)
 end
 
 function GuiRoot:callback(eventData)
-    if eventData.event == GUI_EVENTS.KEY_DOWN then Hotkeys:Process(eventData) end
-    --elseif eventData.event == GUI_EVENTS.KEY_UP then Hotkeys:Process(eventData) end
+    if eventData.event == GUI_EVENTS.KEY_DOWN then 
+        eventData = Hotkeys:Process(eventData, self) 
+    end
     return eventData
 end
 

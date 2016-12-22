@@ -1,3 +1,5 @@
+loader.require("Menus.Asset")
+
 GuiStyles.material_button = {
     styles = {
         GuiStyles.solid_button,
@@ -96,6 +98,14 @@ return GuiWindow({
         [GUI_EVENTS.WIN_SCROLL_WHEEL] = function(self, ev) 
             self.entity:SetHierarchyFocusOnMe(false)
             return false
+        end,
+        [GUI_EVENTS.HK_COPY] = function(self, ev) 
+            AssetBrowser:CopySelected()
+            return true
+        end,
+        [GUI_EVENTS.HK_NEW] = function(self, ev) 
+            AssetBrowser:CreateNew()
+            return true
         end,
     },
     
@@ -302,9 +312,23 @@ local btn = GuiButton({
             if ev.entity:is_eq(self.entity) then
                 self.entity:SetHierarchyFocusOnMe(false)
                 self.entity:SetFocus(HEntity())
+
+                if ev.key == KEYBOARD_CODES.KEY_RBUTTON then
+                    local menu = Gui.AssetMenu()
+                    self:AttachOverlay(menu)
+                    menu:Open(ev.coords.x, ev.coords.y)
+                end
                 return true
             end
             return false
+        end,
+        [GUI_EVENTS.MENU_CLICK] = function(self, ev)
+            if ev.entity:GetID() == "asset_copy" then
+                AssetBrowser:Copy(self.assetID)
+            elseif ev.entity:GetID() == "asset_delete" then
+                AssetBrowser:Delete(self.assetID)
+            end
+            return true
         end,
     },
 

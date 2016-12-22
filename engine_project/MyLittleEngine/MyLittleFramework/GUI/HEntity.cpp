@@ -309,6 +309,9 @@ void HEntity::Close()
 
 HEvent HEntity::LocalCallback(HEvent e)
 {
+	if( e.event_id == GuiEvents::GE_NULL )
+		return e;
+
 	if(!callback_func)
 		return e;
 	return (*callback_func)(lua_class, e);
@@ -336,7 +339,7 @@ void HEntity::SendEvent(HEvent e)
 		auto fent = GET_HENTITY(focus->e);
 		if(!fent)
 			return;
-		fent->LocalCallback(e);
+		fent->SendEvent(e);
 		LocalCallback(e);
 		return;
 	}
@@ -360,6 +363,21 @@ void HEntity::SendEvent(HEvent e)
 		ent->SendEvent(e);
 	}
 
+	LocalCallback(e);
+}
+
+void HEntity::SendEventOnFocus(HEvent e)
+{
+	if(!focus)
+	{
+		LocalCallback(e);
+		return;
+	}
+	
+	auto fent = GET_HENTITY(focus->e);
+	if(!fent)
+		return;
+	fent->SendEventOnFocus(e);
 	LocalCallback(e);
 }
 	

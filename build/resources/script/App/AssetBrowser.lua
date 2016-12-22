@@ -25,6 +25,23 @@ function AssetBrowser.reload()
     AssetBrowser.deleteBtn:Deactivate()
 end
 
+function AssetBrowser:Init()
+    print("AssetBrowser:Init") 
+    
+    self.libDir = "../content/materials"
+    self.fileList = {}
+    self.selectedMatBtn = nil
+    self.findstr = ""
+    self.nullMat = "../resources/materials/template_new.mtb"
+
+    self:ScanDir(self.libDir)
+    
+    loader.require("AssetBrowser", AssetBrowser.reload)
+    self.reload()
+
+    self:InitPreviewWorld()
+end
+
 function AssetBrowser:ScanDir(matsDir)
     local dirList = FileIO.GetDirList(matsDir)
     for i = 1, dirList:size() do
@@ -103,23 +120,6 @@ function AssetBrowser:Clear()
     self.stringCounter = 0
     self.topOffset = self.padding
     self.leftOffset = self.padding
-end
-
-function AssetBrowser:Init()
-    print("AssetBrowser:Init") 
-    
-    self.libDir = "../content/materials"
-    self.fileList = {}
-    self.selectedMatBtn = nil
-    self.findstr = ""
-    self.nullMat = "../resources/materials/template_new.mtb"
-
-    self:ScanDir(self.libDir)
-    
-    loader.require("AssetBrowser", AssetBrowser.reload)
-    self.reload()
-
-    self:InitPreviewWorld()
 end
 
 function AssetBrowser:GetSelectedAssetName()
@@ -226,10 +226,14 @@ function AssetBrowser:DeleteSelected()
     local assetID = self.selectedMatBtn.assetID
     self.selectedMatBtn = nil
 
+    AssetBrowser:Delete(assetID)
+end
+
+function AssetBrowser:Delete(deleteAssetID)
     self:Clear()
     
-    FileIO.Delete( assetID ..".mtb" )
-    FileIO.Delete( assetID ..".tga" )
+    FileIO.Delete( deleteAssetID ..".mtb" )
+    FileIO.Delete( deleteAssetID ..".tga" )
 
     self.copyBtn:Deactivate()
     self.deleteBtn:Deactivate()
@@ -241,14 +245,17 @@ end
 
 function AssetBrowser:CopySelected()
     if self.selectedMatBtn == nil then return end
+    AssetBrowser:Copy(self.selectedMatBtn.assetID)
+end
 
-    local newAssetID = self.selectedMatBtn.assetID .. "_copy"
+function AssetBrowser:Copy(copyAssetID)
+    local newAssetID = copyAssetID .. "_copy"
     local newCounter = 0
     
     while FileIO.IsExist( newAssetID .. tostring(newCounter) .. ".mtb" ) do newCounter = newCounter + 1 end
     newAssetID = newAssetID .. tostring(newCounter)
 
-    FileIO.Copy( self.selectedMatBtn.assetID ..".mtb", newAssetID ..".mtb" )
+    FileIO.Copy( copyAssetID ..".mtb", newAssetID ..".mtb" )
     
     self:GeneratePreview(newAssetID..".mtb")
 

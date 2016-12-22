@@ -58,6 +58,9 @@
     <Compile Include="..\..\gui\ComponentsGui\TransformCallback.lua">
       <Link>Gui\ComponentsGui\TransformCallback.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\Menus\Asset.lua">
+      <Link>Gui\Menus\Asset.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\Menus\TB_File.lua">
       <Link>Gui\Menus\TB_File.lua</Link>
     </Compile>

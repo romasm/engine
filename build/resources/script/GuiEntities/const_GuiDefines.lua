@@ -181,6 +181,11 @@ GUI_EVENTS = {
 
     KILL                  = 0x4C,
 
+    HK_COPY                     = 0x4D,
+    HK_CUT                      = 0x4E,
+    HK_PASTE                    = 0x4F,
+    HK_NEW                      = 0x50,
+
 }
 
 KEYBOARD_CODES = {

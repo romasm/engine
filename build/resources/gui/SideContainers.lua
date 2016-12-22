@@ -65,6 +65,8 @@ return GuiWindow({
         GuiStyles.window_colors,
     },
     
+    cleintarea_padding = { t = 120, },
+
     align = GUI_ALIGN.BOTH,
     valign = GUI_VALIGN.BOTH,
 

@@ -14,7 +14,7 @@ function EntityTypes.StaticModel:init(world, ent)
         error("Cant init EntityTypes.StaticModel")
         self:Kill()
     end
-
+    self.staticMeshSys:SetMaterial(self.ent, 0, AssetBrowser.nullMat)
 end
 
 function EntityTypes.StaticModel:SetMaterial(material, id)

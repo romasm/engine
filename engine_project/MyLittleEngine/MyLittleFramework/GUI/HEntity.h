@@ -120,6 +120,7 @@ public:
 	inline HEvent LocalCallback(HEvent e);
 	void LocalCallbackHierarchy(HEvent e);
 	void SendEvent(HEvent e);
+	void SendEventOnFocus(HEvent e);
 	inline void SendKill()
 	{
 		HEvent ev;
@@ -524,6 +525,7 @@ public:
 
 	inline void CallbackHierarchy(HEvent e){GET_HENTITY(ID)->LocalCallbackHierarchy(e);}
 	inline void SendEvent(HEvent e){GET_HENTITY(ID)->SendEvent(e);}
+	inline void SendEventOnFocus(HEvent e){GET_HENTITY(ID)->SendEventOnFocus(e);}
 	inline void Callback(HEvent e){GET_HENTITY(ID)->LocalCallback(e);}
 
 	inline HEntityWraper GetFocus(){return HEntityWraper(GET_HENTITY(ID)->GetFocus());}
@@ -635,6 +637,7 @@ public:
 				.addFunction("CallbackHierarchy", &HEntityWraper::CallbackHierarchy)
 				.addFunction("Callback", &HEntityWraper::Callback)
 				.addFunction("SendEvent", &HEntityWraper::SendEvent)
+				.addFunction("SendEventOnFocus", &HEntityWraper::SendEventOnFocus)
 
 				.addFunction("GetFocus", &HEntityWraper::GetFocus)
 				.addFunction("GetFocusLock", &HEntityWraper::GetFocusLock)
