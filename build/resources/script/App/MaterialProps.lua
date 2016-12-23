@@ -4,7 +4,7 @@ function MaterialProps.reloadMatWin()
     MaterialProps:Update()
 end
 
-loader.require("ShadersProps.opaque_main", MaterialProps.reloadMatWin)
+loader.require("ComponentsGui.MaterialProps", MaterialProps.reloadMatWin)
 
 function MaterialProps.reload()
     if MaterialProps.window then
@@ -13,7 +13,7 @@ function MaterialProps.reload()
         MaterialProps.window = nil
     end
 
-    MaterialProps.window = Gui.MaterialWindow()
+    MaterialProps.window = Gui.AssetPropsWindow("Material")
     Tools.left_side_area.entity:AttachChild(MaterialProps.window.entity)
     
     Tools.left_side_area.first_win = MaterialProps.window.entity
@@ -31,6 +31,7 @@ end
 function MaterialProps:Init()
     print("MaterialProps:Init") 
 
+    loader.require("AssetProps", MaterialProps.reload)
     self.reload()
 
     self.material = nil
@@ -71,9 +72,7 @@ function MaterialProps:Update()
         shader_name = shader_name:sub(name_start+1)
     end
     
-    if Gui[shader_name.."Props"] == nil then return end
-    
-    local groups = Gui[shader_name.."Props"]()
+    local groups = Gui.MaterialProps()
     for i, gr in ipairs(groups) do
         self.body:AddGroup(gr)
     end

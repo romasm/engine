@@ -1,4 +1,4 @@
-loader.require("ShadersProps.opaque_mainCallback")
+loader.require("ComponentsGui.MaterialPropsCallback")
 
 GuiStyles.mat_dataslider = {
     styles = {
@@ -10,7 +10,7 @@ GuiStyles.mat_dataslider = {
     height = 20,
 }
 
-function Gui.opaque_mainProps()
+function Gui.MaterialProps()
 return {GuiGroup({
     styles = {
         GuiStyles.common_group,
@@ -58,7 +58,7 @@ return {GuiGroup({
         allow_none = false,
 
         events = {
-            [GUI_EVENTS.FF_SET] = function(self, ev) return opaque_mainCallback.SetShader(self, ev) end,
+            [GUI_EVENTS.FF_SET] = function(self, ev) return MaterialPropsCallback.SetShader(self, ev) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
                 self:SetPath("../content/shaders/objects/opaque_main.hlsl")
                 self.entity:Deactivate()
@@ -122,9 +122,9 @@ GuiGroup({
         str = "Albedo",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetAlbedoTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetAlbedoTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdAlbedoTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetAlbedoTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetAlbedoTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdAlbedoTex(self, ev) end,
         }
     }),
 
@@ -147,10 +147,10 @@ GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return opaque_mainCallback.StartColorPicking(self, 0, "Albedo") end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return opaque_mainCallback.ColorPicking(self, 0) end,
-            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return opaque_mainCallback.ColorPicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdColor(self, 0) end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialPropsCallback.StartColorPicking(self, 0, "Albedo") end,
+            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialPropsCallback.ColorPicking(self, 0) end,
+            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialPropsCallback.ColorPicked(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdColor(self, 0) end,
         },
     }),
 
@@ -213,9 +213,9 @@ GuiGroup({
         str = "Normal map",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetNormalTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetNormalTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdNormalTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetNormalTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetNormalTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdNormalTex(self, ev) end,
         }
     }),
 
@@ -242,8 +242,8 @@ GuiGroup({
         id = 'normal_space',
 
         events = {
-            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return opaque_mainCallback.SetNormalSpace(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdNormalSpace(self, ev) end,
+            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialPropsCallback.SetNormalSpace(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdNormalSpace(self, ev) end,
         },
     }),
 
@@ -311,8 +311,8 @@ GuiGroup({
         alt = "Roughness or glossiness (inverted roughness) parametrization",
 
         events = {
-            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return opaque_mainCallback.SetRoughnessType(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdRoughnessType(self, ev) end,
+            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialPropsCallback.SetRoughnessType(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughnessType(self, ev) end,
         },
     }),
 
@@ -325,9 +325,9 @@ GuiGroup({
         str = "Microfacets",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetRoughnessTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetRoughnessTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdRoughnessTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetRoughnessTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetRoughnessTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughnessTex(self, ev) end,
         }
     }),
 
@@ -341,9 +341,9 @@ GuiGroup({
         alt = "Separate for U and V",
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return opaque_mainCallback.SetAnisoRG(self, ev, true) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return opaque_mainCallback.SetAnisoRG(self, ev, false) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdAnisoRG(self, ev) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return MaterialPropsCallback.SetAnisoRG(self, ev, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return MaterialPropsCallback.SetAnisoRG(self, ev, false) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdAnisoRG(self, ev) end,
         }
     }),
 
@@ -371,10 +371,10 @@ GuiGroup({
         id = 'roughness_u',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartRoughU(self) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragRoughU(self) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndRoughU(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdRoughU(self) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartRoughU(self) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragRoughU(self) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndRoughU(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughU(self) end,
         },
     }),
 
@@ -402,10 +402,10 @@ GuiGroup({
         id = 'roughness_v',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartValue(self, 4, "Microfacets V") end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragValue(self, 4) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndValue(self, 4) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdValue(self, 4) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartValue(self, 4, "Microfacets V") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragValue(self, 4) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndValue(self, 4) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdValue(self, 4) end,
         },
     }),
 
@@ -473,8 +473,8 @@ GuiGroup({
         alt = "Metalness or Specular (F0) parametrization",
 
         events = {
-            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return opaque_mainCallback.SetReflectivityType(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdReflectivityType(self, ev) end,
+            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialPropsCallback.SetReflectivityType(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdReflectivityType(self, ev) end,
         },
     }),
 
@@ -486,9 +486,9 @@ GuiGroup({
         str = "Reflectivity",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetReflectivityTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetReflectivityTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdReflectivityTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetReflectivityTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetReflectivityTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdReflectivityTex(self, ev) end,
         }
     }),
 
@@ -516,10 +516,10 @@ GuiGroup({
         id = 'metalness_slider',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartMetalness(self, ev) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragMetalness(self, ev) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndMetalness(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdMetalness(self, ev) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartMetalness(self, ev) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragMetalness(self, ev) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndMetalness(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdMetalness(self, ev) end,
         },
     }),
     
@@ -536,10 +536,10 @@ GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return opaque_mainCallback.StartColorPicking(self, 1, "Specular") end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return opaque_mainCallback.ColorPicking(self, 1) end,
-            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return opaque_mainCallback.ColorPicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdColor(self, 1) end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialPropsCallback.StartColorPicking(self, 1, "Specular") end,
+            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialPropsCallback.ColorPicking(self, 1) end,
+            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialPropsCallback.ColorPicked(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdColor(self, 1) end,
         },
     }),
 
@@ -595,9 +595,9 @@ GuiGroup({
         str = "AO",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetAOTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetAOTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdAOTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetAOTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetAOTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdAOTex(self, ev) end,
         }
     }),
 
@@ -653,9 +653,9 @@ GuiGroup({
         str = "Emissive",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetEmissiveTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetEmissiveTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdEmissiveTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetEmissiveTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetEmissiveTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdEmissiveTex(self, ev) end,
         }
     }),
 
@@ -681,10 +681,10 @@ GuiGroup({
         id = 'emissive_intensity',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartEmissive(self) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragEmissive(self) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndEmissive(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdEmissive(self) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartEmissive(self) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragEmissive(self) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndEmissive(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdEmissive(self) end,
         },
     }),
 
@@ -708,10 +708,10 @@ GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return opaque_mainCallback.StartEmissivePicking(self) end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return opaque_mainCallback.EmissivePicking(self) end,
-            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return opaque_mainCallback.EmissivePicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdEmissiveColor(self) end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialPropsCallback.StartEmissivePicking(self) end,
+            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialPropsCallback.EmissivePicking(self) end,
+            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialPropsCallback.EmissivePicked(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdEmissiveColor(self) end,
         },
     }),
 
@@ -774,9 +774,9 @@ GuiGroup({
         str = "Subsurface",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetSubsurfaceTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetSubsurfaceTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdSubsurfaceTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetSubsurfaceTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetSubsurfaceTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdSubsurfaceTex(self, ev) end,
         }
     }),
 
@@ -799,10 +799,10 @@ GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return opaque_mainCallback.StartColorPicking(self, 3, "Subsurface") end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return opaque_mainCallback.ColorPicking(self, 3) end,
-            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return opaque_mainCallback.ColorPicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdColor(self, 3) end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialPropsCallback.StartColorPicking(self, 3, "Subsurface") end,
+            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialPropsCallback.ColorPicking(self, 3) end,
+            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialPropsCallback.ColorPicked(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdColor(self, 3) end,
         },
     }),
 
@@ -822,9 +822,9 @@ GuiGroup({
         str = "Thickness",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetThicknessTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetThicknessTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdThicknessTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetThicknessTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetThicknessTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdThicknessTex(self, ev) end,
         }
     }),
 
@@ -849,10 +849,10 @@ GuiGroup({
         id = 'thickness_slider',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartThickness(self, ev) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragThickness(self, ev) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndThickness(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdThickness(self, ev) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartThickness(self, ev) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragThickness(self, ev) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndThickness(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdThickness(self, ev) end,
         },
     }),
 
@@ -908,9 +908,9 @@ GuiGroup({
         str = "Alphatest",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return opaque_mainCallback.SetAlphatestTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return opaque_mainCallback.SetAlphatestTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdAlphatestTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetAlphatestTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetAlphatestTex(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdAlphatestTex(self, ev) end,
         }
     }),
 
@@ -936,10 +936,10 @@ GuiGroup({
         id = 'alpha_ref',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return opaque_mainCallback.StartValue(self, 6, "Alphatest") end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return opaque_mainCallback.DragValue(self, 6) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return opaque_mainCallback.EndValue(self, 6) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return opaque_mainCallback.UpdValue(self, 6) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartValue(self, 6, "Alphatest") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragValue(self, 6) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndValue(self, 6) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdValue(self, 6) end,
         },
     }),
 

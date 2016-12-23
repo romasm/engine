@@ -28,6 +28,9 @@
     <Compile Include="..\..\gui\AssetBrowser.lua">
       <Link>Gui\AssetBrowser.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\AssetProps.lua">
+      <Link>Gui\AssetProps.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\GlobalLight.lua">
       <Link>Gui\ComponentsGui\GlobalLight.lua</Link>
     </Compile>
@@ -39,6 +42,12 @@
     </Compile>
     <Compile Include="..\..\gui\ComponentsGui\LightCallback.lua">
       <Link>Gui\ComponentsGui\LightCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\MaterialProps.lua">
+      <Link>Gui\ComponentsGui\MaterialProps.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\MaterialPropsCallback.lua">
+      <Link>Gui\ComponentsGui\MaterialPropsCallback.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\ComponentsGui\StaticMesh.lua">
       <Link>Gui\ComponentsGui\StaticMesh.lua</Link>
@@ -87,12 +96,6 @@
     </Compile>
     <Compile Include="..\..\gui\ProfilerWindow.lua">
       <Link>Gui\ProfilerWindow.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\ShadersProps\opaque_main.lua">
-      <Link>Gui\ShadersProps\opaque_main.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\ShadersProps\opaque_mainCallback.lua">
-      <Link>Gui\ShadersProps\opaque_mainCallback.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\SideArea.lua">
       <Link>Gui\SideArea.lua</Link>
@@ -248,7 +251,6 @@
     <Folder Include="App\" />
     <Folder Include="Gui\Menus\" />
     <Folder Include="Gui\ComponentsGui\" />
-    <Folder Include="Gui\ShadersProps\" />
     <Folder Include="Gui\Pieces\" />
     <Folder Include="Gui\Styles\" />
     <Folder Include="Entities\" />

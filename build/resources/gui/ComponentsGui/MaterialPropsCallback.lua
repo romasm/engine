@@ -1,6 +1,6 @@
-if not opaque_mainCallback then opaque_mainCallback = {} end
+if not MaterialPropsCallback then MaterialPropsCallback = {} end
 
-function opaque_mainCallback.StartColorPicking(self, id, str)
+function MaterialPropsCallback.StartColorPicking(self, id, str)
     if self.picker then 
         self.picker = false
         return true
@@ -27,14 +27,14 @@ function opaque_mainCallback.StartColorPicking(self, id, str)
     return true
 end
 
-function opaque_mainCallback.ColorPicking(self, id)
+function MaterialPropsCallback.ColorPicking(self, id)
     local color = ColorPicker:GetColor()
     color.w = self.history.s_oldval.w
     MaterialProps.material:SetVector(color, id, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.ColorPicked(self)
+function MaterialPropsCallback.ColorPicked(self)
     if not ColorPicker:IsChanged() then return end
     self.history.s_newval.x = self.background.color.x
     self.history.s_newval.y = self.background.color.y
@@ -44,7 +44,7 @@ function opaque_mainCallback.ColorPicked(self)
     return true
 end
 
-function opaque_mainCallback.UpdColor(self, id)
+function MaterialPropsCallback.UpdColor(self, id)
     local val = MaterialProps.material:GetVector(id, SHADERS.PS)
     self.background.color = Vector4(val.x, val.y, val.z, 1)
     self.background.color_hover = self.background.color
@@ -53,7 +53,7 @@ function opaque_mainCallback.UpdColor(self, id)
     return true
 end
 
-function opaque_mainCallback.StartValue(self, id, str)
+function MaterialPropsCallback.StartValue(self, id, str)
     self.history = {
         s_oldval = 0,
         s_newval = 0,
@@ -73,12 +73,12 @@ function opaque_mainCallback.StartValue(self, id, str)
     return true
 end
 
-function opaque_mainCallback.DragValue(self, id)
+function MaterialPropsCallback.DragValue(self, id)
     MaterialProps.material:SetFloat(self:GetValue(), id, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.EndValue(self, id)
+function MaterialPropsCallback.EndValue(self, id)
     self.history.s_newval = self:GetValue()
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
     MaterialProps.material:SetFloat(self.history.s_newval, id, SHADERS.PS)
@@ -86,20 +86,20 @@ function opaque_mainCallback.EndValue(self, id)
     return true
 end
 
-function opaque_mainCallback.UpdValue(self, id)
+function MaterialPropsCallback.UpdValue(self, id)
     self:SetValue(MaterialProps.material:GetFloat(id, SHADERS.PS))
     return true
 end
 
 -----
 
-function opaque_mainCallback.SetShader(self, ev)
+function MaterialPropsCallback.SetShader(self, ev)
     
     return true
 end
 
 -- ALBEDO
-function opaque_mainCallback.SetAlbedoTex(self, ev)
+function MaterialPropsCallback.SetAlbedoTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -133,7 +133,7 @@ function opaque_mainCallback.SetAlbedoTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdAlbedoTex(self, ev)
+function MaterialPropsCallback.UpdAlbedoTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(0, SHADERS.PS)
     if is_tex == 0 then
         self:SetTexture(nil)
@@ -145,7 +145,7 @@ function opaque_mainCallback.UpdAlbedoTex(self, ev)
 end
 
 -- NORMAL
-function opaque_mainCallback.SetNormalTex(self, ev)
+function MaterialPropsCallback.SetNormalTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -192,7 +192,7 @@ function opaque_mainCallback.SetNormalTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdNormalTex(self, ev)
+function MaterialPropsCallback.UpdNormalTex(self, ev)
     local group = self.entity:GetParent()
     local space_sl = group:GetChildById('normal_space')
     local space_str = group:GetChildById('normal_space_str')
@@ -211,7 +211,7 @@ function opaque_mainCallback.UpdNormalTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.SetNormalSpace(self, ev)
+function MaterialPropsCallback.SetNormalSpace(self, ev)
     local selected = self:GetSelected()
 
     local history = {
@@ -239,7 +239,7 @@ function opaque_mainCallback.SetNormalSpace(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdNormalSpace(self, ev)
+function MaterialPropsCallback.UpdNormalSpace(self, ev)
     local space = MaterialProps.material:GetFloat(1, SHADERS.PS)
     if space == 2 then
         self:SetSelected(2)
@@ -253,17 +253,17 @@ function opaque_mainCallback.UpdNormalSpace(self, ev)
 end
 
 -- ROUGHNESS
-function opaque_mainCallback.SetRoughnessType(self, ev)
+function MaterialPropsCallback.SetRoughnessType(self, ev)
     
     return true
 end
 
-function opaque_mainCallback.UpdRoughnessType(self, ev)
+function MaterialPropsCallback.UpdRoughnessType(self, ev)
     self.entity:Deactivate()
     return true
 end
 
-function opaque_mainCallback.SetRoughnessTex(self, ev)
+function MaterialPropsCallback.SetRoughnessTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -297,7 +297,7 @@ function opaque_mainCallback.SetRoughnessTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdRoughnessTex(self, ev)
+function MaterialPropsCallback.UpdRoughnessTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(2, SHADERS.PS)
     if is_tex == 0 then
         self:SetTexture(nil)
@@ -308,7 +308,7 @@ function opaque_mainCallback.UpdRoughnessTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.SetAnisoRG(self, ev, aniso)
+function MaterialPropsCallback.SetAnisoRG(self, ev, aniso)
 
     local history = {
         s_val_changed = false,
@@ -363,7 +363,7 @@ function opaque_mainCallback.SetAnisoRG(self, ev, aniso)
     return true
 end
 
-function opaque_mainCallback.UpdAnisoRG(self, ev)
+function MaterialPropsCallback.UpdAnisoRG(self, ev)
     local aniso = MaterialProps.material:GetFloat(2, SHADERS.PS)
     local rU = MaterialProps.material:GetFloat(3, SHADERS.PS)
     local rV = MaterialProps.material:GetFloat(4, SHADERS.PS)
@@ -383,7 +383,7 @@ function opaque_mainCallback.UpdAnisoRG(self, ev)
     return true
 end
 
-function opaque_mainCallback.StartRoughU(self)
+function MaterialPropsCallback.StartRoughU(self)
     self.history = {
         s_oldval = 0,
         s_newval = 0,
@@ -419,7 +419,7 @@ function opaque_mainCallback.StartRoughU(self)
     return true
 end
 
-function opaque_mainCallback.DragRoughU(self)
+function MaterialPropsCallback.DragRoughU(self)
     local val = self:GetValue()
     MaterialProps.material:SetFloat(val, 3, SHADERS.PS)
     if self.history.s_sync_r then
@@ -430,7 +430,7 @@ function opaque_mainCallback.DragRoughU(self)
     return true
 end
 
-function opaque_mainCallback.EndRoughU(self)
+function MaterialPropsCallback.EndRoughU(self)
     self.history.s_newval = self:GetValue()
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
     MaterialProps.material:SetFloat(self.history.s_newval, 3, SHADERS.PS)
@@ -443,13 +443,13 @@ function opaque_mainCallback.EndRoughU(self)
     return true
 end
 
-function opaque_mainCallback.UpdRoughU(self)
+function MaterialPropsCallback.UpdRoughU(self)
     self:SetValue(MaterialProps.material:GetFloat(3, SHADERS.PS))
     return true
 end
 
 -- REFLECTIVITY
-function opaque_mainCallback.SetReflectivityType(self, ev)
+function MaterialPropsCallback.SetReflectivityType(self, ev)
     local selected = self:GetSelected()
 
     local history = {
@@ -482,7 +482,7 @@ function opaque_mainCallback.SetReflectivityType(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdReflectivityType(self, ev)
+function MaterialPropsCallback.UpdReflectivityType(self, ev)
     local input_type = MaterialProps.material:GetFloat(5, SHADERS.PS)
 
     local group = self.entity:GetParent()
@@ -504,7 +504,7 @@ function opaque_mainCallback.UpdReflectivityType(self, ev)
     return true
 end
 
-function opaque_mainCallback.SetReflectivityTex(self, ev)
+function MaterialPropsCallback.SetReflectivityTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -556,7 +556,7 @@ function opaque_mainCallback.SetReflectivityTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdReflectivityTex(self, ev)
+function MaterialPropsCallback.UpdReflectivityTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(5, SHADERS.PS)
 
     local group = self.entity:GetParent()
@@ -579,7 +579,7 @@ function opaque_mainCallback.UpdReflectivityTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.StartMetalness(self, ev)
+function MaterialPropsCallback.StartMetalness(self, ev)
     self.history = {
         s_oldval = 0,
         s_newval = 0,
@@ -599,12 +599,12 @@ function opaque_mainCallback.StartMetalness(self, ev)
     return true
 end
 
-function opaque_mainCallback.DragMetalness(self, ev)
+function MaterialPropsCallback.DragMetalness(self, ev)
     MaterialProps.material:SetVector(Vector4(self:GetValue(),0,0,0), 1, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.EndMetalness(self, ev)
+function MaterialPropsCallback.EndMetalness(self, ev)
     self.history.s_newval = self:GetValue()
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
     MaterialProps.material:SetVector(Vector4(self.history.s_newval,0,0,0), 1, SHADERS.PS)
@@ -612,14 +612,14 @@ function opaque_mainCallback.EndMetalness(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdMetalness(self, ev)
+function MaterialPropsCallback.UpdMetalness(self, ev)
     local metalness = MaterialProps.material:GetVector(1, SHADERS.PS)
     self:SetValue(metalness.x)
     return true
 end
 
 -- AO
-function opaque_mainCallback.SetAOTex(self, ev)
+function MaterialPropsCallback.SetAOTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -653,7 +653,7 @@ function opaque_mainCallback.SetAOTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdAOTex(self, ev)
+function MaterialPropsCallback.UpdAOTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(8, SHADERS.PS)
     if is_tex == 0 then
         self:SetTexture(nil)
@@ -665,7 +665,7 @@ function opaque_mainCallback.UpdAOTex(self, ev)
 end
 
 -- EMISSIVE
-function opaque_mainCallback.SetEmissiveTex(self, ev)
+function MaterialPropsCallback.SetEmissiveTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -699,7 +699,7 @@ function opaque_mainCallback.SetEmissiveTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdEmissiveTex(self, ev)
+function MaterialPropsCallback.UpdEmissiveTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(7, SHADERS.PS)
     if is_tex == 0 then
         self:SetTexture(nil)
@@ -710,7 +710,7 @@ function opaque_mainCallback.UpdEmissiveTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.StartEmissive(self)
+function MaterialPropsCallback.StartEmissive(self)
     self.history = {
         s_oldval = Vector4(0,0,0,0),
         s_newval = Vector4(0,0,0,0),
@@ -734,14 +734,14 @@ function opaque_mainCallback.StartEmissive(self)
     return true
 end
 
-function opaque_mainCallback.DragEmissive(self)
+function MaterialPropsCallback.DragEmissive(self)
     local color_btn = self.entity:GetParent():GetChildById('emissive_color'):GetInherited()
     local color = CMath.ColorDenormalize(color_btn.background.color, self:GetValue())
     MaterialProps.material:SetVector(color, 2, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.EndEmissive(self)
+function MaterialPropsCallback.EndEmissive(self)
     local color_btn = self.entity:GetParent():GetChildById('emissive_color'):GetInherited()
     self.history.s_newval = CMath.ColorDenormalize(color_btn.background.color, self:GetValue())
 
@@ -754,13 +754,13 @@ function opaque_mainCallback.EndEmissive(self)
     return true
 end
 
-function opaque_mainCallback.UpdEmissive(self)
+function MaterialPropsCallback.UpdEmissive(self)
     local color, val = CMath.ColorNormalize( MaterialProps.material:GetVector(2, SHADERS.PS) )
     self:SetValue(val)
     return true
 end
 
-function opaque_mainCallback.StartEmissivePicking(self)
+function MaterialPropsCallback.StartEmissivePicking(self)
     if self.picker then 
         self.picker = false
         return true
@@ -787,14 +787,14 @@ function opaque_mainCallback.StartEmissivePicking(self)
     return true
 end
 
-function opaque_mainCallback.EmissivePicking(self)
+function MaterialPropsCallback.EmissivePicking(self)
     local color = ColorPicker:GetColor()
     local intensity_sl = self.entity:GetParent():GetChildById('emissive_intensity'):GetInherited()
     MaterialProps.material:SetVector(CMath.ColorDenormalize(color, intensity_sl:GetValue()), 2, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.EmissivePicked(self)
+function MaterialPropsCallback.EmissivePicked(self)
     if not ColorPicker:IsChanged() then return end
     
     local intensity_sl = self.entity:GetParent():GetChildById('emissive_intensity'):GetInherited()
@@ -804,7 +804,7 @@ function opaque_mainCallback.EmissivePicked(self)
     return true
 end
 
-function opaque_mainCallback.UpdEmissiveColor(self)
+function MaterialPropsCallback.UpdEmissiveColor(self)
     local val = CMath.ColorNormalize( MaterialProps.material:GetVector(2, SHADERS.PS) )
     self.background.color = Vector4(val.x, val.y, val.z, 1)
     self.background.color_hover = self.background.color
@@ -814,7 +814,7 @@ function opaque_mainCallback.UpdEmissiveColor(self)
 end
 
 -- SUBSURFACE
-function opaque_mainCallback.SetSubsurfaceTex(self, ev)
+function MaterialPropsCallback.SetSubsurfaceTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -848,7 +848,7 @@ function opaque_mainCallback.SetSubsurfaceTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdSubsurfaceTex(self, ev)
+function MaterialPropsCallback.UpdSubsurfaceTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(9, SHADERS.PS)
     if is_tex <= 1 then
         self:SetTexture(nil)
@@ -859,7 +859,7 @@ function opaque_mainCallback.UpdSubsurfaceTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.SetThicknessTex(self, ev)
+function MaterialPropsCallback.SetThicknessTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -893,7 +893,7 @@ function opaque_mainCallback.SetThicknessTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdThicknessTex(self, ev)
+function MaterialPropsCallback.UpdThicknessTex(self, ev)
     local is_tex = MaterialProps.material:GetFloat(10, SHADERS.PS)
     if is_tex == 0 then
         self:SetTexture(nil)
@@ -904,7 +904,7 @@ function opaque_mainCallback.UpdThicknessTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.StartThickness(self, ev)
+function MaterialPropsCallback.StartThickness(self, ev)
     self.history = {
         s_oldval = 0,
         s_newval = 0,
@@ -930,14 +930,14 @@ function opaque_mainCallback.StartThickness(self, ev)
     return true
 end
 
-function opaque_mainCallback.DragThickness(self, ev)
+function MaterialPropsCallback.DragThickness(self, ev)
     local vect = MaterialProps.material:GetVector(3, SHADERS.PS)
     vect.w = self:GetValue()
     MaterialProps.material:SetVector(vect, 3, SHADERS.PS)
     return true
 end
 
-function opaque_mainCallback.EndThickness(self, ev)
+function MaterialPropsCallback.EndThickness(self, ev)
     self.history.s_newval = self:GetValue()
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
     local vect = MaterialProps.material:GetVector(3, SHADERS.PS)
@@ -947,14 +947,14 @@ function opaque_mainCallback.EndThickness(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdThickness(self, ev)
+function MaterialPropsCallback.UpdThickness(self, ev)
     local thickness = MaterialProps.material:GetVector(3, SHADERS.PS)
     self:SetValue(thickness.w)
     return true
 end
 
 -- ALPHATEST
-function opaque_mainCallback.SetAlphatestTex(self, ev)
+function MaterialPropsCallback.SetAlphatestTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -994,7 +994,7 @@ function opaque_mainCallback.SetAlphatestTex(self, ev)
     return true
 end
 
-function opaque_mainCallback.UpdAlphatestTex(self, ev)
+function MaterialPropsCallback.UpdAlphatestTex(self, ev)
     local texture = MaterialProps.material:GetTextureName(5, SHADERS.PS)
 
     local group = self.entity:GetParent()
