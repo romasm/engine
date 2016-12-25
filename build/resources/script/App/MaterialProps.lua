@@ -20,9 +20,10 @@ function MaterialProps.reload()
 
     MaterialProps.window.entity:UpdatePosSize()
 
-    local body = MaterialProps.window.entity:GetChildById('body')
+    local body = MaterialProps.window:GetBody().entity
     MaterialProps.body = body:GetInherited()
     MaterialProps.none_msg = MaterialProps.window.entity:GetChildById('none_msg')
+    MaterialProps.preview = MaterialProps.window.entity:GetChildById('asset_viewport'):GetInherited()
     MaterialProps:Update()
 
     Tools.left_side_area.entity:UpdatePosSize()
@@ -59,6 +60,11 @@ function MaterialProps:Update()
     
     if not self.material then
         self.none_msg.enable = true
+        self.preview.entity.enable = false
+        self.window:SetHeader("Material")
+
+        AssetBrowser:PreviewMaterial(false)
+        self.preview.rect_mat:ClearTextures()
         return 
     end
     
@@ -72,13 +78,21 @@ function MaterialProps:Update()
         shader_name = shader_name:sub(name_start+1)
     end
     
+    local matName = self.material:GetName()
+
+    self.window:SetHeader("Material  " .. AssetBrowser:GetAssetNameFromPath( matName ))
+    self.preview.entity.enable = true
+    self.none_msg.enable = false
+
+    local srv = AssetBrowser:PreviewMaterial(true, matName)
+    self.preview.rect_mat:SetTexture(srv, 0, SHADERS.PS)
+    
     local groups = Gui.MaterialProps()
     for i, gr in ipairs(groups) do
         self.body:AddGroup(gr)
     end
 
     self:UpdateData(true)
-    self.none_msg.enable = false
 end
 
 function MaterialProps:UpdateData(force)

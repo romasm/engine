@@ -484,8 +484,10 @@ function GuiTextfield:callback(eventData)
         self.entity:SetHierarchyFocusOnMe(false)
 
         if not self.state_live and self.dbclick_activation then 
-            res.event = GUI_EVENTS.TF_ACTIVATION_WAIT
-            res.entity = self.entity
+            if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
+                res.event = GUI_EVENTS.TF_ACTIVATION_WAIT
+                res.entity = self.entity
+            end
             return self._base.callback(self, res)
         end
 
@@ -712,11 +714,13 @@ function GuiTextfield:callback(eventData)
             return res
         end
 
-        self.entity:SetHierarchyFocusOnMe(false)
-        if self.selectable then
-            self.selecting = false
+        if self.state_live then
+            self.entity:SetHierarchyFocusOnMe(false)
+            if self.selectable then
+                self.selecting = false
+            end
+            res.entity = self.entity
         end
-        res.entity = self.entity
 
     elseif eventData.event == GUI_EVENTS.MOUSE_HOVER then 
         res.entity = self.entity

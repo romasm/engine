@@ -182,7 +182,7 @@ namespace EngineCore
 				.beginClass<CameraSystem>("CameraSystem")
 					.addFunction("IsActive", &CameraSystem::IsActive)
 					.addFunction("Activate", &CameraSystem::Activate)
-					//.addFunction("Deactivate", &CameraSystem::Deactivate)
+					.addFunction("Deactivate", &CameraSystem::Deactivate)
 					.addFunction("GetVectorFromScreen", &CameraSystem::_GetVectorFromScreen)
 
 					.addFunction("GetPos", &CameraSystem::GetPos)

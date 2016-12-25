@@ -286,18 +286,18 @@ local btn = GuiButton({
         [GUI_EVENTS.TF_ACTIVATION_WAIT] = function(self, ev)
             if not self.state_press then
                 self:SetPressed(true)
-                AssetBrowser:SetSelected(self, true)
+                AssetBrowser:SetSelected(self, true, false)
                 self.entity:SetHierarchyFocusOnMe(false)
             end
             return true 
         end,
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-            AssetBrowser:SetSelected(self, true)
+            AssetBrowser:SetSelected(self, true, false)
             self.entity:SetFocus(HEntity())
             return true 
         end,
         [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-            AssetBrowser:SetSelected(nil)
+            AssetBrowser:SetSelected(nil, false, false)
             self.entity:SetFocus(HEntity())
             return true 
         end,
@@ -309,7 +309,7 @@ local btn = GuiButton({
             return false
         end,
         [GUI_EVENTS.MOUSE_DOWN] = function(self, ev)
-            if ev.entity:is_eq(self.entity) then
+            if ev.entity:is_eq(self.entity) or ev.entity:GetID() == 'mat_name_tf' then
                 self.entity:SetHierarchyFocusOnMe(false)
                 self.entity:SetFocus(HEntity())
 
@@ -322,8 +322,28 @@ local btn = GuiButton({
             end
             return false
         end,
+        [GUI_EVENTS.HK_RENAME] = function(self, ev)
+            if AssetBrowser.selectedMatBtn ~= self then return false end
+
+            local name_tf = self.entity:GetChildById('mat_name_tf')
+            local fake_event = HEvent()
+            fake_event.entity = name_tf
+            fake_event.event = GUI_EVENTS.MOUSE_DBLCLICK
+            name_tf:SendEvent( fake_event )
+            self.entity:SetFocus( name_tf )
+            return true
+        end,
         [GUI_EVENTS.MENU_CLICK] = function(self, ev)
-            if ev.entity:GetID() == "asset_copy" then
+            if ev.entity:GetID() == "asset_new" then
+                AssetBrowser:CreateNew()
+            elseif ev.entity:GetID() == "asset_rename" then
+                local name_tf = self.entity:GetChildById('mat_name_tf')
+                local fake_event = HEvent()
+                fake_event.entity = name_tf
+                fake_event.event = GUI_EVENTS.MOUSE_DBLCLICK
+                name_tf:SendEvent( fake_event )
+                self.entity:SetFocus( name_tf )
+            elseif ev.entity:GetID() == "asset_copy" then
                 AssetBrowser:Copy(self.assetID)
             elseif ev.entity:GetID() == "asset_delete" then
                 AssetBrowser:Delete(self.assetID)
@@ -342,6 +362,8 @@ local btn = GuiButton({
         top = GUI_PREVIEW_SIZE.Y - 2 - 18,
         left = 2,
         width = GUI_PREVIEW_SIZE.X - 4,
+
+        id = 'mat_name_tf',
 
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 

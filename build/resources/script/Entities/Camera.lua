@@ -63,6 +63,10 @@ function EntityTypes.Camera:Activate(scene)
     self.cameraSys:Activate(self.ent, scene)
 end
 
+function EntityTypes.Camera:Deactivate(scene)
+    self.cameraSys:Deactivate(self.ent, scene)
+end
+
 function EntityTypes.Camera:IsActive()
     return self.cameraSys:IsActive(self.ent)
 end

@@ -25,7 +25,7 @@ function Properties.reload()
 
     Properties.window.entity:UpdatePosSize()
 
-    local body = Properties.window.entity:GetChildById('body')
+    local body = Properties.window:GetBody().entity
     Properties.body = body:GetInherited()
     Properties.none_msg = Properties.window.entity:GetChildById('none_msg')
     Properties:Update()

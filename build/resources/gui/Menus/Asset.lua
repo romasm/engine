@@ -7,7 +7,7 @@ return GuiMenu({
     id = "asset_menu",
     
     width = 135,
-    height = 50, 
+    height = 100, 
     
     -- children
     GuiButton({
@@ -15,9 +15,37 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "asset_copy",
+        id = "asset_new",
 
         top = 0,
+
+        text = {
+            str = "Create new",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "asset_rename",
+
+        top = 25,
+
+        text = {
+            str = "Rename",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "asset_copy",
+
+        top = 50,
 
         text = {
             str = "Make copy",
@@ -31,7 +59,7 @@ return GuiMenu({
 
         id = "asset_delete",
 
-        top = 25,
+        top = 75,
 
         text = {
             str = "Delete",

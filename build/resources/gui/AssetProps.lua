@@ -19,7 +19,7 @@ return GuiWindow({
 
     header = {
         styles = {
-            GuiStyles.window_header,
+            GuiStyles.window_header_dynamic,
         },
         str = header
     },
@@ -30,26 +30,48 @@ return GuiWindow({
             return false
         end,
     },
+
+    GuiString({
+        styles = {
+            GuiStyles.ghost,
+            GuiStyles.string_autosize,
+            GuiStyles.string_25,
+        },
+
+        id = 'none_msg',
+
+        str = header .. " isn\'t selected",
+
+        static = true,
+
+        align = GUI_ALIGN.CENTER,
+        valign = GUI_VALIGN.MIDDLE,
+
+        color = 'text_02',
+    }),
     
+    GuiRect({
+        styles = {
+            GuiStyles.live,
+        },
+        enable = false,
+        material = GuiMaterials.viewport,
+
+        id = "asset_viewport",
+
+        top = 29,
+        left = 4,
+        width = 284,
+        height = 112,
+
+        events = {            
+            [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) return true end,
+            [GUI_EVENTS.MOUSE_UP] = function(self, ev) return true end,
+            [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return true end,
+        },
+    }),
+
     GuiClientarea({
-        GuiString({
-            styles = {
-                GuiStyles.ghost,
-                GuiStyles.string_autosize,
-                GuiStyles.string_25,
-            },
-
-            id = 'none_msg',
-
-            str = header .. " isn\'t selected",
-
-            static = true,
-
-            align = GUI_ALIGN.CENTER,
-            valign = GUI_VALIGN.MIDDLE,
-
-            color = 'text_02',
-        }),
 
         GuiBody({
             width = 100,

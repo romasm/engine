@@ -148,7 +148,7 @@ function Viewport:ClearWorld()
     MainWindow:SetCaption()
     Tools:DeactivateAll()
     Properties:Update()
-    AssetBrowser:SetSelected(nil)
+    AssetBrowser:SetSelected(nil, false, false)
 end
 
 function Viewport:SetMode(combo, ev)
@@ -663,12 +663,16 @@ function Viewport:SetScalesToSelection(scales)
 end
 
 function Viewport:SwitchHud()
+    if not self.lua_world then return end
+
     self.drawhud = not self.drawhud
     self.lua_world.scenepl:SetHud(self.drawhud)
     self.overlay_gui.enable = self.drawhud
 end
 
 function Viewport:SwitchTransform()
+    if not self.lua_world then return end
+
     local cur_mode = self.lua_world.world.transformControls.mode
     cur_mode = cur_mode + 1
     if cur_mode > TRANSFORM_MODE.SCALE then cur_mode = TRANSFORM_MODE.NONE end
@@ -676,6 +680,8 @@ function Viewport:SwitchTransform()
 end
 
 function Viewport:SetTransform(mode, tools)
+    if not self.lua_world then return end
+
     if mode == TRANSFORM_MODE.NONE then
         self.lua_world.world.transformControls.mode = TRANSFORM_MODE.NONE
         if tools then Tools:SetTransform(TRANSFORM_MODE.NONE) end

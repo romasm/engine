@@ -111,7 +111,7 @@ end
 
 function GuiString:SetString(str)
     if self.static then return end
-
+    
     self.str = str
     self.entity:SetText(self.text, self.str)
     self:onMoveResize(false, true)

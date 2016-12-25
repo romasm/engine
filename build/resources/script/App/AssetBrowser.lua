@@ -11,8 +11,8 @@ function AssetBrowser.reload()
     Tools.left_side_area.entity:AttachChild(AssetBrowser.window.entity)
     
     Tools.left_side_area.second_win = AssetBrowser.window.entity
-
-    AssetBrowser.body = AssetBrowser.window.entity:GetChildById('body')
+    
+    AssetBrowser.body = AssetBrowser.window:GetBody().entity
     AssetBrowser.copyBtn = AssetBrowser.window.entity:GetChildById('copy_btn')
     AssetBrowser.deleteBtn = AssetBrowser.window.entity:GetChildById('delete_btn')
 
@@ -107,7 +107,7 @@ function AssetBrowser:FillBody()
 end
 
 function AssetBrowser:Clear()
-    self:SetSelected(nil)
+    self:SetSelected(nil, false, false)
 
     for i = 1, #self.fileList do
         local btn = self.body:GetChildById( tostring(i) )
@@ -132,6 +132,12 @@ end
 
 function AssetBrowser:GetPathFromAssetName(name)
     return self.libDir .. "/" .. name .. ".mtb"
+end
+
+function AssetBrowser:GetAssetNameFromPath(path)
+    local name = path:gsub(self.libDir .. "/", "")
+    name = name:gsub("%.mtb", "")
+    return name
 end
 
 function AssetBrowser:SetSelectedByName(name, noHistory)
@@ -199,6 +205,7 @@ function AssetBrowser:SetSelected(btn, noScroll, noHistory)
     
     history.msg = "Select material " .. btn.assetID
     history.s_newval = btn.assetID
+    print("eee" .. history.msg)
     if not noHistory then History:Push(history) end
 
     Properties:UpdateData(false, COMPONENTS.STATIC)
@@ -257,7 +264,7 @@ function AssetBrowser:CreateNew()
     self:GeneratePreview(newAssetID..".mtb")
 
     local btn = self:AddToList(newAssetID)
-    self:SetSelected(btn)
+    self:SetSelected(btn, false, false)
     self.selectedMatBtn:SetPressed(true)
 end
 
@@ -304,7 +311,7 @@ function AssetBrowser:Copy(copyAssetID)
     self:GeneratePreview(newAssetID..".mtb")
 
     local btn = self:AddToList(newAssetID)
-    self:SetSelected(btn)
+    self:SetSelected(btn, false, false)
     self.selectedMatBtn:SetPressed(true)
 end
 
@@ -340,17 +347,33 @@ function AssetBrowser:InitPreviewWorld()
         return
     end
     
-    local camera = EntityTypes.Camera(self.previewWorld)
-    camera:SetPosition(0.0, 0.0, -4.3)
-    camera:SetFov(0.25)
-    camera:SetFar(100.0)
-    camera:Activate()
+    -- for screenshots    
+    self.screenshotCamera = EntityTypes.Camera(self.previewWorld)
+    self.screenshotCamera:SetPosition(0.0, 0.0, -4.3)
+    self.screenshotCamera:SetFov(0.25)
+    self.screenshotCamera:SetFar(100.0)
     
-    self.previewScene = self.previewWorld:CreateScene(camera.ent, width * 2, height * 2, true)
-    self.previewScene:SetExposure(false, 0.2)
+    self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width * 2, height * 2, true)
+    self.screenshotScene:SetExposure(false, 0.2)
 
+    self.screenshotCamera:Deactivate(self.screenshotScene)
+
+    self.screenshotSphere = EntityTypes.StaticModel(self.previewWorld)
+    self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+
+    -- for preview    
+    self.previewCamera = EntityTypes.Camera(self.previewWorld)
+    self.previewCamera:SetPosition(100.0, 0.0, -4.3)
+    self.previewCamera:SetFov(0.15)
+    
+    self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, 284, 112, true)
+    self.previewScene:SetExposure(false, 0.2)
+    
     self.previewSphere = EntityTypes.StaticModel(self.previewWorld)
     self.previewSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+    self.previewSphere:SetPosition(100.0, 0.0, 0.0)
+
+    self.previewWorld.active = false
 end
 
 -- NOT NEED?
@@ -365,18 +388,34 @@ function AssetBrowser:GeneratePreview(filename)
     end
 
     self.waitingForPreview = true
-    self.previewSphere:SetMaterial(filename, 0)
+    
+    self.screenshotCamera:Activate(self.screenshotScene)
+    self.screenshotSphere:SetMaterial(filename, 0)
 
     Resource.ForceTextureReloadBackground() -- TODO: use job callback system
     self:PostGeneratePreview(filename:gsub("%.mtb", "%.tga"))
 end
 
 function AssetBrowser:PostGeneratePreview(filename)
-    self.previewWorld:Snapshot(self.previewScene)
-    self.previewScene:SaveScreenshot(filename, 2.0, 2.0)
+    self.previewWorld:Snapshot(self.screenshotScene)
+    self.screenshotScene:SaveScreenshot(filename, 2.0, 2.0)
 
-    self.previewSphere:SetMaterial(self.nullMat, 0)
+    self.screenshotSphere:SetMaterial(self.nullMat, 0)
+    self.screenshotCamera:Deactivate(self.screenshotScene)
+
     self.waitingForPreview = false
 
     print("Material preview " .. filename .. " generated")
+end
+
+function AssetBrowser:PreviewMaterial(live, path)
+    if not self.previewWorld then return nil end
+    self.previewWorld.active = live
+    if live then
+        self.previewSphere:SetMaterial(path, 0)
+        return self.previewScene:GetSRV()
+    else
+        self.previewSphere:SetMaterial(self.nullMat, 0)
+        return nil
+    end   
 end

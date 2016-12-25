@@ -662,3 +662,8 @@ function GuiWindow:SetScrollY(y)
     self.body_ent.entity.top = -self.scroll.y
     self.body_ent.entity:UpdatePos()    
 end
+
+function GuiWindow:SetHeader(str)
+    if not self.header_str then return end
+    self.header_str:SetString(str)
+end

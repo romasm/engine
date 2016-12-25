@@ -46,6 +46,15 @@ GuiStyles.window_header = {
     center = { x = true, y = true },
 }
 
+GuiStyles.window_header_dynamic = {
+    styles = {
+        GuiStyles.window_header,
+    },
+
+    static = false,
+    length = 128,
+}
+
 GuiStyles.close_button = {
     styles = {
         GuiStyles.solid_button,
