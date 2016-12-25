@@ -148,7 +148,7 @@ function Viewport:ClearWorld()
     MainWindow:SetCaption()
     Tools:DeactivateAll()
     Properties:Update()
-    MaterialProps:SetSelected(nil)
+    AssetBrowser:SetSelected(nil)
 end
 
 function Viewport:SetMode(combo, ev)

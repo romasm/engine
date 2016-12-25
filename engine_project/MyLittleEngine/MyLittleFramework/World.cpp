@@ -676,20 +676,15 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 
 void SmallWorld::Frame()
 {
-	//if( defferedProcessQueue.size() > 0 )
-	//{
-
-	//}
-
+	if(!b_active)
+		return;
+	
 #ifdef _DEV
 	bool profiler_state = Profiler::Get()->IsRunning();
 	if(profiler_state)
 		Profiler::Get()->Stop();
 #endif
 
-	if(!b_active)
-		return;
-	
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
 	

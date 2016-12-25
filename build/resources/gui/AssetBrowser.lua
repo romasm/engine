@@ -286,18 +286,18 @@ local btn = GuiButton({
         [GUI_EVENTS.TF_ACTIVATION_WAIT] = function(self, ev)
             if not self.state_press then
                 self:SetPressed(true)
-                AssetBrowser:SetSelected(self)
+                AssetBrowser:SetSelected(self, true)
                 self.entity:SetHierarchyFocusOnMe(false)
             end
             return true 
         end,
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-            AssetBrowser:SetSelected(self)
+            AssetBrowser:SetSelected(self, true)
             self.entity:SetFocus(HEntity())
             return true 
         end,
         [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-            AssetBrowser:UnSelected()
+            AssetBrowser:SetSelected(nil)
             self.entity:SetFocus(HEntity())
             return true 
         end,

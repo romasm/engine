@@ -165,7 +165,6 @@ function Profiler:FillWindow()
         })
         self.gru_rect:AttachChild( self.gpu_ids_btns[j].entity )
     end
-    
 end
 
 function Profiler:Init()
@@ -231,7 +230,7 @@ end
 function Profiler:Tick(dt)
     if not Profiler:IsInit() then return end
     if not self.profiler:IsRunning() or not self.realtime then return end
-
+    
 	self.update_time = self.update_time + dt
     
     local frame_time = self.profiler:GetCurrentTimeSlice(0, 0)

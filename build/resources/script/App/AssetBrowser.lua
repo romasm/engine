@@ -107,7 +107,7 @@ function AssetBrowser:FillBody()
 end
 
 function AssetBrowser:Clear()
-    self:UnSelected()
+    self:SetSelected(nil)
 
     for i = 1, #self.fileList do
         local btn = self.body:GetChildById( tostring(i) )
@@ -134,30 +134,74 @@ function AssetBrowser:GetPathFromAssetName(name)
     return self.libDir .. "/" .. name .. ".mtb"
 end
 
-function AssetBrowser:SetSelected(btn)
+function AssetBrowser:SetSelectedByName(name, noHistory)
+    if not name or name:len() == 0 then
+        self:SetSelected(nil, false, noHistory)
+        return
+    end
+
+    local founded = 0
+    for i, assetID in ipairs(self.fileList) do
+        if assetID == name then
+            founded = i
+            break
+        end
+    end
+
+    if founded == 0 then return end
+
+    local btn = self.body:GetChildById( tostring(founded) )
+    if btn:is_null() then return end
+
+    self:SetSelected(btn:GetInherited(), false, noHistory)
+end
+
+function AssetBrowser:SetSelected(btn, noScroll, noHistory)
+    local history = {        
+        undo = function(self) 
+                AssetBrowser:SetSelectedByName(self.s_oldval, true)
+            end,
+        redo = function(self)
+                AssetBrowser:SetSelectedByName(self.s_newval, true)
+            end,
+    }
+    
     if self.selectedMatBtn then
+        history.s_oldval = self.selectedMatBtn.assetID
+
         MaterialProps:SetSelected(nil)
         self.selectedMatBtn:SetPressed(false)
     end
-    
-    if not btn then return end
 
+    if not btn then
+        self.selectedMatBtn = nil
+        self.copyBtn:Deactivate()
+        self.deleteBtn:Deactivate()
+        
+        history.msg = "Unselect material"
+        history.s_newval = nil
+        if not noHistory then History:Push(history) end
+
+        Properties:UpdateData(false, COMPONENTS.STATIC)
+        return 
+    end
+    
     MaterialProps:SetSelected(btn.assetID .. ".mtb")
     self.selectedMatBtn = btn
+    self.selectedMatBtn:SetPressed(true)
+
+    if not noScroll then
+        self.window:SetScrollY( self.selectedMatBtn.entity.top )
+    end
 
     self.copyBtn:Activate()
     self.deleteBtn:Activate()
-end
+    
+    history.msg = "Select material " .. btn.assetID
+    history.s_newval = btn.assetID
+    if not noHistory then History:Push(history) end
 
-function AssetBrowser:UnSelected()
-    if self.selectedMatBtn then
-        MaterialProps:SetSelected(nil)
-        self.selectedMatBtn:SetPressed(false)
-        self.selectedMatBtn = nil
-
-        self.copyBtn:Deactivate()
-        self.deleteBtn:Deactivate()
-    end
+    Properties:UpdateData(false, COMPONENTS.STATIC)
 end
 
 function AssetBrowser:Rename(textfield)

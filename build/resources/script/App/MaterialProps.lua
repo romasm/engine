@@ -115,26 +115,7 @@ function MaterialProps:SetSelected(name, unsave)
         Resource.DropMaterial( self.material:GetName() )
     end
 
-    --[[local history = { -- MOVE TO STATIC AND LIBRARY
-        s_oldval = self.material,
-        s_newval = newMaterial,
-        
-        undo = function(self) 
-                MaterialProps.material = self.s_oldval
-                MaterialProps:Update()
-                Properties:UpdateData(false, COMPONENTS.STATIC)
-            end,
-        redo = function(self) 
-                MaterialProps.material = self.s_newval
-                MaterialProps:Update()
-                Properties:UpdateData(false, COMPONENTS.STATIC)
-            end,
-        msg = name and ("Select material " .. name) or "Unselect material"
-    }
-    --]]
     self.material = newMaterial
-    --History:Push(history)
-
     self:Update()
 end
 

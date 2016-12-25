@@ -642,3 +642,23 @@ end
 function GuiWindow:GetClient()
     return self.clientarea_ent
 end
+
+function GuiWindow:SetScrollX(x)
+    if not self.scrollable.x or not self.scroll_enabled.x then return end
+
+    self.scroll.x = math.min( self.body_ent.entity.width - self.clientarea_rect.w, x )
+
+    self.scroll_x_sld:SetSlider( self.scroll.x / (self.body_ent.entity.width - self.clientarea_rect.w) )
+    self.body_ent.entity.left = -self.scroll.x
+    self.body_ent.entity:UpdatePos()
+end
+
+function GuiWindow:SetScrollY(y)
+    if not self.scrollable.y or not self.scroll_enabled.y then return end
+
+    self.scroll.y = math.min( self.body_ent.entity.height - self.clientarea_rect.h, y )
+
+    self.scroll_y_sld:SetSlider( self.scroll.y / (self.body_ent.entity.height - self.clientarea_rect.h) )
+    self.body_ent.entity.top = -self.scroll.y
+    self.body_ent.entity:UpdatePos()    
+end
