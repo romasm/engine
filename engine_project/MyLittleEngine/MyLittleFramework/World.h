@@ -23,7 +23,7 @@
 #include "Frustum.h"
 #include "TransformControls.h"
 
-#define DEFAULT_ENV L"default"
+#define DEFAULT_ENV L"preview"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
 
 #define TRANSFORM_BYTE 't'

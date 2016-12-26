@@ -9,7 +9,6 @@ function GuiFilefield:init(props)
 
     self.ChildFilepath = {}
     self.ChildBrowse = {}
-    self.ChildReload = {}
     self.ChildDelete = {}
     
     self._base.init(self, props)
@@ -26,19 +25,9 @@ function GuiFilefield:init(props)
         end
     end
 
-    self.ChildReload.align = GUI_ALIGN.RIGHT
-    self.ChildReload.valign = GUI_VALIGN.TOP
-    self.ChildReload.right = (self.allow_none and self.ChildDelete.width or 0)
-    self.ChildReload.top = 0
-    self.ChildReload.height = 100
-    self.ChildReload.height_percent = true
-    if self.ChildReload.width == nil then 
-        self.ChildReload.width = 20
-    end
-
     self.ChildBrowse.align = GUI_ALIGN.RIGHT
     self.ChildBrowse.valign = GUI_VALIGN.TOP
-    self.ChildBrowse.right = (self.allow_none and self.ChildDelete.width or 0) + self.ChildReload.width
+    self.ChildBrowse.right = (self.allow_none and self.ChildDelete.width or 0)
     self.ChildBrowse.top = 0
     self.ChildBrowse.height = 100
     self.ChildBrowse.height_percent = true
@@ -49,7 +38,7 @@ function GuiFilefield:init(props)
     self.ChildFilepath.align = GUI_ALIGN.BOTH
     self.ChildFilepath.valign = GUI_VALIGN.TOP
     self.ChildFilepath.left = 0
-    self.ChildFilepath.right = (self.allow_none and self.ChildDelete.width or 0) + self.ChildReload.width + self.ChildBrowse.width
+    self.ChildFilepath.right = (self.allow_none and self.ChildDelete.width or 0) + self.ChildBrowse.width
     self.ChildFilepath.top = 0
     self.ChildFilepath.height = 100
     self.ChildFilepath.height_percent = true
@@ -62,9 +51,6 @@ function GuiFilefield:init(props)
 
     self.browse_btn = GuiButton(self.ChildBrowse)
     self.entity:AttachChild(self.browse_btn.entity)
-
-    self.reload_btn = GuiButton(self.ChildReload)
-    self.entity:AttachChild(self.reload_btn.entity)
     
     if self.allow_none then
         self.delete_btn = GuiButton(self.ChildDelete)
@@ -84,7 +70,6 @@ function GuiFilefield:ApplyProps(props)
 
     if props.ChildFilepath ~= nil then self.ChildFilepath = deep_copy(props.ChildFilepath) end
     if props.ChildBrowse ~= nil then self.ChildBrowse = deep_copy(props.ChildBrowse) end
-    if props.ChildReload ~= nil then self.ChildReload = deep_copy(props.ChildReload) end
     if props.ChildDelete ~= nil then self.ChildDelete = deep_copy(props.ChildDelete) end
 
     if props.filetypes ~= nil then self.filetypes = props.filetypes end
@@ -121,15 +106,7 @@ function GuiFilefield:callback(eventData)
                 res.event = GUI_EVENTS.NULL
             end
             res.entity = self.entity
-
-        elseif eventData.entity:is_eq(self.reload_btn.entity) then
-            if self.filepath_tf:GetText():len() > 0 then
-                res.event = GUI_EVENTS.FF_RELOAD
-            else
-                res.event = GUI_EVENTS.NULL
-            end
-            res.entity = self.entity
-
+            
         elseif self.delete_btn then
             if eventData.entity:is_eq(self.delete_btn.entity) then
                 if self.filepath_tf:GetText():len() > 0 then

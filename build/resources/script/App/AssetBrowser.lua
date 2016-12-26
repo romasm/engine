@@ -341,6 +341,7 @@ function AssetBrowser:InitPreviewWorld()
     local worldmgr = GetWorldMgr()
     
     self.previewWorld = worldmgr:CreateSmallWorld()
+    -- TODO: set sky
     
     if not self.previewWorld then 
         error("Cant generate preview image for material " .. filename)
@@ -358,15 +359,20 @@ function AssetBrowser:InitPreviewWorld()
 
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
+    -- TODO: hide sphere
     self.screenshotSphere = EntityTypes.StaticModel(self.previewWorld)
     self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere.stm")
 
-    -- for preview    
+    -- for preview   
+    self.previewNode = EntityTypes.Node(self.previewWorld)
+    self.previewNode:SetPosition(100.0, 0.0, 0.0)
+     
     self.previewCamera = EntityTypes.Camera(self.previewWorld)
-    self.previewCamera:SetPosition(100.0, 0.0, -4.3)
-    self.previewCamera:SetFov(0.15)
+    self.previewCamera:SetPosition(0.0, 0.0, -1.3)
+    self.previewCamera:Attach(self.previewNode)
+    self.previewCamera:SetFov(0.5)
     
-    self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, 284, 112, true)
+    self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, GUI_PREVIEW_SIZE.LIVE_X, GUI_PREVIEW_SIZE.LIVE_Y, true)
     self.previewScene:SetExposure(false, 0.2)
     
     self.previewSphere = EntityTypes.StaticModel(self.previewWorld)

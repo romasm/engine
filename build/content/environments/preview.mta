@@ -1,0 +1,12 @@
+shader = "../resources/shaders/objects/sky_sphere"
+
+deffered
+{
+	f0 = 1
+}
+
+ps
+{
+	v0 = "1.0 1.0 1.0 1.0"
+	t0 = "../content/environments/preview_sky.dds"
+}

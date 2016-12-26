@@ -86,3 +86,40 @@ end
 function EntityTypes.BaseEntity:ForceUpdateTransform()
     return self.transformSys:ForceUpdate(self.ent)
 end
+
+function EntityTypes.BaseEntity:Attach(parent)
+    return self.transformSys:Attach(self.ent, parent.ent)
+end
+
+function EntityTypes.BaseEntity:Detach()
+    return self.transformSys:Detach(self.ent)
+end
+
+function EntityTypes.BaseEntity:DetachChildren()
+    return self.transformSys:DetachChildren(self.ent)
+end
+
+function EntityTypes.BaseEntity:GetParent()
+    return self.transformSys:GetParent(self.ent)
+end
+
+function EntityTypes.BaseEntity:GetChildFirst()
+    return self.transformSys:GetChildFirst(self.ent)
+end
+
+function EntityTypes.BaseEntity:GetNext()
+    return self.transformSys:GetChildNext(self.ent)
+end
+
+-- Node
+if not EntityTypes.Node then EntityTypes.Node = class(EntityTypes.BaseEntity) end
+
+function EntityTypes.Node:init(world, ent)
+    if not self._base.init(self, world, ent) then 
+        return 
+    end
+
+    -- init
+    self.world:SetEntityType(self.ent, "Node")
+    self.transformSys:AddComponent(self.ent)
+end

@@ -22,7 +22,7 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 
 Texture2D skyTexture : register(t0);
-SamplerState samplerAnisotropicWrap : register(s0);
+SamplerState samplerAnisotropicClamp : register(s0);
 
 cbuffer materialBuffer : register(b1)
 {
@@ -52,7 +52,7 @@ PO_Gbuffer hdrSkyPS(PIsky input)
 {
 	PO_Gbuffer res;
 
-	float3 sky = skyTexture.Sample(samplerAnisotropicWrap, input.tex).rgb * color.rgb;
+	float3 sky = skyTexture.Sample(samplerAnisotropicClamp, input.tex).rgb * color.rgb;
 
 	res.albedo_roughY = 0;
 	res.tbn = 0;

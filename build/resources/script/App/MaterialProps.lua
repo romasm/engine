@@ -39,6 +39,12 @@ function MaterialProps:Init()
 
     self.update_time = 0
     self.update_need = false
+
+    self.previewMove = false
+    self.previewZoom = 1.3
+
+    self.previewRotSpeed = 0.01
+    self.previewZoomSpeed = 0.05
 end
 
 function MaterialProps:Tick(dt)
@@ -135,4 +141,51 @@ end
 
 function MaterialProps:GetSelected()
     return self.material
+end
+
+local CursorToCenter = function(viewport)
+    local vp_rect = viewport.entity:GetRectAbsolute()
+    local center = {
+        x = vp_rect.l + vp_rect.w / 2,
+        y = vp_rect.t + vp_rect.h / 2
+    }
+    CoreGui.SetCursorPos(viewport.entity, center.x, center.y)
+    return center
+end
+
+function MaterialProps:ProcessPreviewMove(viewport, ev)
+    if not self.previewMove then return end
+
+    local center = CursorToCenter(viewport)
+
+    local delta = {
+        x = ev.coords.x - center.x,
+        y = ev.coords.y - center.y
+    }
+    
+    local rotation = AssetBrowser.previewNode:GetRotationL()
+    rotation.x = rotation.x + delta.y * self.previewRotSpeed
+    rotation.y = rotation.y + delta.x * self.previewRotSpeed
+    rotation.x = math.max( -math.pi * 0.4, math.min( rotation.x, math.pi * 0.4 ) )
+
+    AssetBrowser.previewNode:SetRotation( rotation.x, rotation.y, rotation.z )
+end
+
+function MaterialProps:ProcessPreviewStartMove(viewport, ev)
+    MaterialProps.previewMove = true 
+    CoreGui.ShowCursor(false)
+    
+    CursorToCenter(viewport)
+end
+
+function MaterialProps:ProcessPreviewStopMove(viewport, ev)
+    MaterialProps.previewMove = false 
+    CoreGui.ShowCursor(true)
+end
+
+function MaterialProps:ProcessPreviewZoom(viewport, ev)
+    self.previewZoom = self.previewZoom + ev.coords.x * self.previewZoomSpeed
+    self.previewZoom = math.max( 0.7, math.min( self.previewZoom, 2.3 ) )
+
+    AssetBrowser.previewCamera:SetPosition( 0.0, 0.0, -self.previewZoom )
 end

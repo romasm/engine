@@ -72,6 +72,9 @@ GUI_PREVIEW_SIZE = {
     X = 88,
     Y = 88,
     PADDING = 4,
+
+    LIVE_X = 288,
+    LIVE_Y = 126,
 }
 
 GUI_EVENTS = {

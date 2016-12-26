@@ -60,11 +60,37 @@ return GuiGroup({
     
     height = 105,
 
+    -- mesh
+    GuiString({
+        styles = {GuiStyles.string_props_01,},
+        str = "Filepath",
+        left = 10,
+        top = 35,
+    }), 
+
+    GuiFilefield({
+        styles = {GuiStyles.common_filefield,},
+        align = GUI_ALIGN.BOTH,
+        left = 70,
+        right = 10,
+        top = 33,
+        browse_header = "Choose model file",
+        filetypes = {
+            {"Supported", "*.3ds;*.dae;*.dxf;*.fbx;*.obj;*.ply;*.mnogo_chego"},
+        },
+        allow_none = false,
+
+        events = {
+            [GUI_EVENTS.FF_SET] = function(self, ev) return StaticMeshCallback.SetMesh(self, ev) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return StaticMeshCallback.UpdMesh(self, ev) end,
+        }
+    }),
+    
     -- shadows
     GuiCheck({
         styles = {GuiStyles.props_check,},
         left = 10,
-        top = 35,
+        top = 71,
         width = 120,
         height = 18,
         text = { str = "Cast shadows" },
@@ -77,30 +103,6 @@ return GuiGroup({
         }
     }),
     
-    -- mesh
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Filepath",
-        left = 10,
-        top = 75,
-    }), 
-
-    GuiFilefield({
-        styles = {GuiStyles.common_filefield,},
-        left = 80,
-        top = 73,
-        browse_header = "Choose model file",
-        filetypes = {
-            {"Supported", "*.3ds;*.dae;*.dxf;*.fbx;*.obj;*.ply;*.mnogo_chego"},
-        },
-        allow_none = false,
-
-        events = {
-            [GUI_EVENTS.FF_SET] = function(self, ev) return StaticMeshCallback.SetMesh(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return StaticMeshCallback.UpdMesh(self, ev) end,
-        }
-    }),
-
     GuiString({
         styles = {GuiStyles.string_props_01,},
         str = "Materials",
