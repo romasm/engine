@@ -55,7 +55,7 @@ float3 GetPrevPos(float3 pos) // screen space
 	return res; 
 }
 
-float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float2 pixStep, bool is_negative)
+float3 intersectCellBoundParall(float3 o, float3 d, float2 cellIndex, float2 count, float2 step, float pixStep, bool is_negative)
 {
 	float2 index = cellIndex + step;
 	index /= count;
@@ -344,7 +344,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, floa
 	if(reflFade == 0)   
 		return 0;      
 	 
-	float3 newSamplePos = GetPrevPos(ray);  
+	float3 newSamplePos = GetPrevPos(ray.xyz);  
 
 	float2 borderDetectionPrev = 2 * abs(newSamplePos.xy - float2(0.5, 0.5));
 	float2 borderDetectionCurr = 2 * abs(ray.xy - float2(0.5, 0.5));
@@ -377,9 +377,7 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, floa
 
 float4 SSR(PI_PosTex input) : SV_TARGET 
 {   
-	// temp
 	return 0;
-
 	float2 inUV = input.tex;      
 		  
 	int2 pixCoords = 0; 

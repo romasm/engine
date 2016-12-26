@@ -1359,13 +1359,6 @@ PO_final DefferedLighting(PI_PosTex input)
 	specSecond.a = 1 - ssr.a;
 	specSecond.rgb *= specBrdf;
 
-	// temp
-	if(Indir.specular.r != 0)
-	{
-		specSecond = 0;
-		specSecond.a = 1;
-	}
-
 	Indir.diffuse = skyEnvProbDiff(normal, VtoWP, indirNoV, indirR, envprobsDistDiff);
 		   
 	/*if(params.subscattering != 0)
@@ -1373,37 +1366,35 @@ PO_final DefferedLighting(PI_PosTex input)
 		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, VtoWP, ao, 0, envprobsDistDiff, 2, envprobsDist);
 	}*/ 
 	 
-	// Voxel Cone Tracing
-	float4 diffuseVCT = 0;
-	const float apertureDiffuse = 0.57735f;
-	for(int diffuseCones = 0; diffuseCones < 4; diffuseCones++)
-    {
-		float3 coneDirection = normal;
-        coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * tangent + diffuseConeDirectionsCheap[diffuseCones].z * binormal;
-        coneDirection = normalize(coneDirection);
-        
-		float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
-		diffuseVCT += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
-    } 
-	   
-	//if(Indir.specular.r != 0) 
-	//	Indir.diffuse = 0;
-
-	Indir.diffuse = lerp( Indir.diffuse, diffuseVCT.rgb, diffuseVCT.a);
-
-	Indir.diffuse *= diffBrdf;// * ao; 
-	// temp    
-	if(Indir.specular.r == 0) 
+	if(Indir.specular.r >= 0)
 	{
-		Indir.diffuse = ao;
-	}         
-	                     
-	float3 coneReflDirection = normalize(Refl);
+		// Voxel Cone Tracing
+		float4 diffuseVCT = 0;
+		const float apertureDiffuse = 0.57735f;
+		for(int diffuseCones = 0; diffuseCones < 4; diffuseCones++)
+		{
+			float3 coneDirection = normal;
+			coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * tangent + diffuseConeDirectionsCheap[diffuseCones].z * binormal;
+			coneDirection = normalize(coneDirection);
+        
+			float4 VCTdiffuse = VoxelConeTrace(wpos, coneDirection, apertureDiffuse, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
+			diffuseVCT += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
+		} 
+	   
+		//if(Indir.specular.r != 0) 
+		//	Indir.diffuse = 0;
 
-	float apertureSpecular = tan( clamp( PIDIV2 * avgR, 0.0174533f, PI) );
-	float4 specularVCT = VoxelConeTrace(wpos, coneReflDirection, apertureSpecular, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
+		Indir.diffuse = lerp( Indir.diffuse, diffuseVCT.rgb, diffuseVCT.a);
+			                     
+		float3 coneReflDirection = normalize(Refl);
+
+		float apertureSpecular = tan( clamp( PIDIV2 * avgR, 0.0174533f, PI) );
+		float4 specularVCT = VoxelConeTrace(wpos, coneReflDirection, apertureSpecular, normal, volumeData, volumeEmittance, samplerBilinearVolumeClamp);
 	 
-	Indir.specular = lerp( Indir.specular, specularVCT.rgb, specularVCT.a);
+		Indir.specular = lerp( Indir.specular, specularVCT.rgb, specularVCT.a);
+	} 
+
+	Indir.diffuse *= diffBrdf * ao; 
 	Indir.specular *= specBrdf * SO;
 	  
 	// ----------------- FINAL -------------------------
