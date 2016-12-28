@@ -163,7 +163,7 @@ return GuiDumb({
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return StaticMeshCallback.SelectMat(self) end,
             [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) 
-                AssetBrowser:SetSelectedByName(nil, false) 
+                AssetBrowser:SetSelectedByName(nil, false, false) 
                 return true
             end,
             material_id = i_mat,

@@ -44,7 +44,7 @@ function MaterialProps:Init()
     self.previewZoom = 1.3
 
     self.previewRotSpeed = 0.01
-    self.previewZoomSpeed = 0.05
+    self.previewZoomSpeed = 0.1
 end
 
 function MaterialProps:Tick(dt)

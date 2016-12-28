@@ -33,7 +33,7 @@ GuiStyles.assetname_textfield = {
     background = {
         color = 'bg_05_a4',
         color_live = 'act_02',
-        color_nonactive = 'null'
+        color_nonactive = 'bg_05_a4'
     },
 
     border = { width = 0 },
@@ -214,6 +214,7 @@ return GuiWindow({
             str = "Type to find",
             static = true,
             color = 'text_02',
+            color_nonactive = 'text_02',
 
             enable = true,
 

@@ -19,6 +19,7 @@ GuiStyles.scroll_slider = {
             color = 'text_06',
             color_hover = 'text_01',
             color_press = 'act_00',
+            color_nonactive = 'text_02'
         }
     },
     axis = {
@@ -26,6 +27,7 @@ GuiStyles.scroll_slider = {
             color = 'bg_08',
             color_hover = 'bg_08',
             color_press = 'bg_08',
+            color_nonactive = 'bg_08',
         }
     },
     
@@ -39,6 +41,7 @@ GuiStyles.window_header = {
     },
 
     color = 'text_01',
+    color_nonactive = 'text_01',
 
     height = 24,
     width = 100,

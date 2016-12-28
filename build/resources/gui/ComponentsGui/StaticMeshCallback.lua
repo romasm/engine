@@ -294,11 +294,11 @@ function StaticMeshCallback.SelectMat(self)
     StaticMeshCallback.UnselectAll(self, mat_gui)
 
     if mat_gui:GetChildById('slot_mat'):GetInherited():GetText():len() == 0 then
-        AssetBrowser:SetSelectedByName(nil, false) 
+        AssetBrowser:SetSelectedByName(nil, false, false) 
         return true 
     end
 
     local material = Viewport.lua_world.world.staticMesh:GetMaterialObject(Viewport.selection_set[1], self.events.material_id)
-    AssetBrowser:SetSelectedByName( material:GetName():gsub("%.mtb", ""), false ) 
+    AssetBrowser:SetSelectedByName( material:GetName():gsub("%.mtb", ""), false, false ) 
     return true
 end

@@ -1,5 +1,3 @@
-loader.require("SideContainers")
-
 if not Tools then Tools = {} end
 
 function Tools.reloadToolbar()
@@ -113,7 +111,8 @@ function Tools:Init()
     self.reloadToolbar()
     
     -- temp
-    
+
+    loader.require("SceneBrowser")
     local sceneBrowser = Gui.SceneBrowserWindow()
     self.right_side_area.entity:AttachChild(sceneBrowser.entity)
     self.right_side_area.second_win = sceneBrowser.entity

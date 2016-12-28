@@ -30,6 +30,7 @@ function AssetBrowser:Init()
     
     self.libDir = "../content/materials"
     self.fileList = {}
+    self.filtredList = {}
     self.selectedMatBtn = nil
     self.findstr = ""
     self.nullMat = "../resources/materials/template_new.mtb"
@@ -40,6 +41,16 @@ function AssetBrowser:Init()
     self.reload()
 
     self:InitPreviewWorld()
+
+    self:Deactivate()
+end
+
+function AssetBrowser:Deactivate()
+    self.window.entity:Deactivate()
+end
+
+function AssetBrowser:Activate()
+    self.window.entity:Activate()
 end
 
 function AssetBrowser:ScanDir(matsDir)
@@ -47,16 +58,9 @@ function AssetBrowser:ScanDir(matsDir)
     for i = 1, dirList:size() do
         local name = dirList:getnext()
 
-        local skip = false
-        if self.findstr:len() > 0 then
-            if name:gsub("%.mtb", ""):find(self.findstr) == nil then 
-                skip = true
-            end
-        end
-
         local path = matsDir.."/"..name
         if FileIO.IsFile(path) then
-            if path:find("%.mtb") ~= nil and skip == false then 
+            if path:find("%.mtb") ~= nil then 
                 self.fileList[#self.fileList + 1] = path:gsub("%.mtb", "") 
             end
         else
@@ -69,7 +73,7 @@ function AssetBrowser:ScanDir(matsDir)
 end
 
 function AssetBrowser:AddButton(num)
-    local matName = self.fileList[num]:gsub(self.libDir.."/", "")
+    local matName = self.filtredList[num]:gsub(self.libDir.."/", "")
 
     if self.stringCounter > 2 then
         self.topOffset = self.topOffset + self.lastHeight + self.padding
@@ -77,7 +81,7 @@ function AssetBrowser:AddButton(num)
         self.stringCounter = 0
     end
 
-    local btn = Gui.AssetBrowserMaterial( self.fileList[num], matName, self.topOffset, self.leftOffset, num )
+    local btn = Gui.AssetBrowserMaterial( self.filtredList[num], matName, self.topOffset, self.leftOffset, num )
 
     self.body:AttachChild( btn.entity )
 
@@ -92,12 +96,25 @@ end
 function AssetBrowser:FillBody()
     self.padding = GUI_PREVIEW_SIZE.PADDING
 
+    self.filtredList = {}
+    for i, file in ipairs(self.fileList) do
+        if self.findstr:len() > 0 then
+            if file:find(self.findstr) ~= nil then 
+                self.filtredList[#self.filtredList + 1] = file
+            end
+        else
+            self.filtredList[#self.filtredList + 1] = file
+        end
+    end
+
+    table.sort(self.filtredList, function (a, b) return a:upper() < b:upper() end)
+    
     self.stringCounter = 0
     self.topOffset = self.padding
     self.leftOffset = self.padding
 
     self.lastHeight = 0
-    for i, file in ipairs(self.fileList) do
+    for i, file in ipairs(self.filtredList) do
         self:AddButton(i)
     end
 
@@ -109,13 +126,13 @@ end
 function AssetBrowser:Clear()
     self:SetSelected(nil, false, false)
 
-    for i = 1, #self.fileList do
+    for i = 1, #self.filtredList do
         local btn = self.body:GetChildById( tostring(i) )
         self.body:DetachChild(btn)
         btn:Destroy()
     end
 
-    self.fileList = {}
+    self.filtredList = {}
 
     self.stringCounter = 0
     self.topOffset = self.padding
@@ -140,14 +157,14 @@ function AssetBrowser:GetAssetNameFromPath(path)
     return name
 end
 
-function AssetBrowser:SetSelectedByName(name, noHistory)
+function AssetBrowser:SetSelectedByName(name, noScroll, noHistory)
     if not name or name:len() == 0 then
         self:SetSelected(nil, false, noHistory)
         return
     end
 
     local founded = 0
-    for i, assetID in ipairs(self.fileList) do
+    for i, assetID in ipairs(self.filtredList) do
         if assetID == name then
             founded = i
             break
@@ -159,16 +176,16 @@ function AssetBrowser:SetSelectedByName(name, noHistory)
     local btn = self.body:GetChildById( tostring(founded) )
     if btn:is_null() then return end
 
-    self:SetSelected(btn:GetInherited(), false, noHistory)
+    self:SetSelected(btn:GetInherited(), noScroll, noHistory)
 end
 
 function AssetBrowser:SetSelected(btn, noScroll, noHistory)
     local history = {        
         undo = function(self) 
-                AssetBrowser:SetSelectedByName(self.s_oldval, true)
+                AssetBrowser:SetSelectedByName(self.s_oldval, false, true)
             end,
         redo = function(self)
-                AssetBrowser:SetSelectedByName(self.s_newval, true)
+                AssetBrowser:SetSelectedByName(self.s_newval, false, true)
             end,
     }
     
@@ -180,6 +197,8 @@ function AssetBrowser:SetSelected(btn, noScroll, noHistory)
     end
 
     if not btn then
+        if not self.selectedMatBtn then return end
+
         self.selectedMatBtn = nil
         self.copyBtn:Deactivate()
         self.deleteBtn:Deactivate()
@@ -214,42 +233,73 @@ end
 function AssetBrowser:Rename(textfield)
     local button = textfield.entity:GetParent():GetInherited()
     local newName = textfield:GetText()
-    
+        
     local newPath = self.libDir .. "/" .. newName
+    local oldPath = button.assetID
 
-    if button.assetID == newPath then return end
+    if oldPath == newPath then return end
 
-    textfield.alt = newName
-    button.alt = newName
-
-    for i, filePath in ipairs(self.fileList) do
-        if filePath == button.assetID then
-            self.fileList[i] = newPath
-            break
-        end
+    local selection = ""
+    if self.selectedMatBtn then 
+        selection = self.selectedMatBtn.assetID
+        self:SetSelected(nil, true, true)
     end
 
-    FileIO.Rename( button.assetID..".tga", newPath..".tga" )
-    FileIO.Rename( button.assetID..".mtb", newPath..".mtb" )
+        
+    if selection == oldPath then
+        selection = newPath
+    end
 
-    button.icon_mat:SetTextureByName(newPath .. ".tga", 0, 0)
+    FileIO.Rename( oldPath..".tga", newPath..".tga" )
+    FileIO.Rename( oldPath..".mtb", newPath..".mtb" )
 
-    button.assetID = newPath
-
-    if self.selectedMatBtn == button then
-        MaterialProps:SetSelected(nil, true)
-        MaterialProps:SetSelected(button.assetID .. ".mtb")
+    self:RenameInList(oldPath, newPath)
+    
+    if selection:len() > 0 then
+        self:SetSelectedByName(selection, selection ~= newPath, true)
     end
 end
 
 function AssetBrowser:AddToList(assetID)
     self.fileList[#self.fileList + 1] = assetID
 
-    local btn = self:AddButton( #self.fileList )
-    self.body.height = self.topOffset + self.lastHeight + self.padding
-
+    self:Clear()
+    self:FillBody()
     self.window.entity:UpdatePosSize()
-    return btn
+end
+
+function AssetBrowser:DeleteFromList(assetID)
+    local founded = 0
+    for i, file in ipairs(self.fileList) do
+        if file == assetID then
+            founded = i
+            break 
+        end
+    end
+    
+    if founded == 0 then return end
+    table.remove(self.fileList, founded)
+
+    self:Clear()
+    self:FillBody()
+    self.window.entity:UpdatePosSize()
+end
+
+function AssetBrowser:RenameInList(oldAssetID, newAssetID)
+    local founded = 0
+    for i, file in ipairs(self.fileList) do
+        if file == oldAssetID then
+            founded = i
+            break 
+        end
+    end
+    
+    if founded == 0 then return end
+    self.fileList[founded] = newAssetID
+
+    self:Clear()
+    self:FillBody()
+    self.window.entity:UpdatePosSize()
 end
 
 function AssetBrowser:CreateNew()
@@ -263,9 +313,11 @@ function AssetBrowser:CreateNew()
     
     self:GeneratePreview(newAssetID..".mtb")
 
-    local btn = self:AddToList(newAssetID)
-    self:SetSelected(btn, false, false)
-    self.selectedMatBtn:SetPressed(true)
+    self:AddToList(newAssetID)
+    self:SetSelectedByName(newAssetID, false, false)
+    if self.selectedMatBtn then
+        self.selectedMatBtn:SetPressed(true)
+    end
 end
 
 function AssetBrowser:DeleteSelected()
@@ -281,17 +333,13 @@ function AssetBrowser:DeleteSelected()
 end
 
 function AssetBrowser:Delete(deleteAssetID)
-    self:Clear()
-    
     FileIO.Delete( deleteAssetID ..".mtb" )
     FileIO.Delete( deleteAssetID ..".tga" )
 
     self.copyBtn:Deactivate()
     self.deleteBtn:Deactivate()
     
-    self:ScanDir(self.libDir)
-    self:FillBody()
-    self.window.entity:UpdatePosSize()
+    self:DeleteFromList(deleteAssetID)
 end
 
 function AssetBrowser:CopySelected()
@@ -310,9 +358,11 @@ function AssetBrowser:Copy(copyAssetID)
     
     self:GeneratePreview(newAssetID..".mtb")
 
-    local btn = self:AddToList(newAssetID)
-    self:SetSelected(btn, false, false)
-    self.selectedMatBtn:SetPressed(true)
+    self:AddToList(newAssetID)
+    self:SetSelectedByName(newAssetID, false, false)
+    if self.selectedMatBtn then
+        self.selectedMatBtn:SetPressed(true)
+    end
 end
 
 function AssetBrowser:Find(str)
@@ -328,8 +378,6 @@ function AssetBrowser:Find(str)
     self.findstr = self.findstr:gsub("%*", "%.%+")
 
     self:Clear()
-    
-    self:ScanDir(self.libDir)
     self:FillBody()
     self.window.entity:UpdatePosSize()
 end
@@ -381,12 +429,6 @@ function AssetBrowser:InitPreviewWorld()
 
     self.previewWorld.active = false
 end
-
--- NOT NEED?
---[[function AssetBrowser:ClosePreviewWorld() 
-    local worldmgr = GetWorldMgr()
-    worldmgr:CloseWorld(self.previewWorld)
-end--]]
 
 function AssetBrowser:GeneratePreview(filename)  
     if not self.previewWorld or self.waitingForPreview then 

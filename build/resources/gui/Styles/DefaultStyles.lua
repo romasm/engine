@@ -297,7 +297,7 @@ GuiStyles.props_textfield = {
     background = {
         color = 'bg_05',
         color_live = 'act_02',
-        color_nonactive = 'bg_03'
+        color_nonactive = 'bg_08'
     },
 
     border = {

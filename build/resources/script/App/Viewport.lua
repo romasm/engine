@@ -127,6 +127,8 @@ function Viewport:SetWorld(WLD)
 
     MainWindow:SetCaption(WLD.path)
     Tools:ActivateAll()
+    AssetBrowser:Activate()
+
     Tools:SetTransform(TRANSFORM_MODE.NONE)
     self:SetTransform(TRANSFORM_MODE.NONE)
 
@@ -147,6 +149,7 @@ function Viewport:ClearWorld()
 
     MainWindow:SetCaption()
     Tools:DeactivateAll()
+    AssetBrowser:Deactivate()
     Properties:Update()
     AssetBrowser:SetSelected(nil, false, false)
 end

@@ -4,6 +4,8 @@ function Properties.reloadComponents()
     Properties:Update()
 end
 
+loader.require("EntityProps")
+
 loader.require("ComponentsGui.Transform", Properties.reloadComponents)
 loader.require("ComponentsGui.Light", Properties.reloadComponents)
 loader.require("ComponentsGui.GlobalLight", Properties.reloadComponents)
@@ -18,7 +20,7 @@ function Properties.reload()
         Properties.window = nil
     end
 
-    Properties.window = Gui.PropertiesWindow()
+    Properties.window = Gui.EntityPropsWindow()
     Tools.right_side_area.entity:AttachChild(Properties.window.entity)
     
     Tools.right_side_area.first_win = Properties.window.entity
