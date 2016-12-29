@@ -18,7 +18,7 @@ namespace EngineCore
 		uint32_t firstChildID;
 		uint32_t nextID;
 		uint32_t prevID;
-
+		
 		ALIGNED_ALLOCATION
 
 		TransformComponent()
@@ -309,7 +309,7 @@ namespace EngineCore
 		uint32_t capacity;
 
 		RArray<TransformComponent> components;
-
+		
 		RArray<bool> dirty;
 		RArray<uint32_t> lookup;
 

@@ -237,6 +237,7 @@ namespace EngineCore
 		TransformSystem* transformSys;
 		CameraSystem* cameraSystem;
 		FrustumMgr* frustumMgr;
+		BaseWorld* world;
 
 		float depth_cascade[LIGHT_DIR_NUM_CASCADES];
 		float depth_cascade_half[LIGHT_DIR_NUM_CASCADES];

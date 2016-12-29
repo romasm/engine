@@ -6,6 +6,7 @@ using namespace EngineCore;
 
 VisibilitySystem::VisibilitySystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	frustumMgr = w->GetFrustumMgr();
 	transformSys = w->GetTransformSystem();
 
@@ -17,6 +18,9 @@ void VisibilitySystem::CheckVisibility()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(i.dirty)
 		{
 			TransformComponent* tranform = transformSys->GetComponent(i.get_entity());

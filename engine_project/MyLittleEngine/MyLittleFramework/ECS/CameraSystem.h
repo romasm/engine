@@ -215,6 +215,7 @@ namespace EngineCore
 
 		TransformSystem* transformSys;
 		FrustumMgr* frustum_mgr;
+		BaseWorld* world;
 
 		GlobalLightSystem* globalLightSystem;
 	};

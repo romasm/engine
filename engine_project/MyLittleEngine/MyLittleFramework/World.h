@@ -131,6 +131,16 @@ namespace EngineCore
 			return m_nameMgr->GetName(e);
 		}
 		Entity GetEntityByName(string name) { return m_nameMgr->GetEntityByName(name); }
+				
+		inline void SetEntityEnable(Entity e, bool enable) {m_entityMgr->SetEnable(e, enable);}
+		inline bool IsEntityEnable(Entity e) {return m_entityMgr->IsEnable(e);}
+
+		inline bool IsEntityNeedProcess(Entity e) {return m_entityMgr->IsNeedProcess(e);}
+
+	#ifdef _EDITOR
+		inline void SetEntityEditorVisible(Entity e, bool visible) {m_entityMgr->SetEditorVisible(e, visible);}
+		inline bool IsEntityEditorVisible(Entity e) {return m_entityMgr->IsEditorVisible(e);}
+	#endif
 
 		inline Entity RestoreEntity() {return m_entityMgr->RestoreEntity();}
 
@@ -201,6 +211,14 @@ namespace EngineCore
 					.addFunction("GetEntityType", &BaseWorld::GetEntityType)
 					.addFunction("GetFirstEntityByType", &BaseWorld::GetFirstEntityByType)
 					.addFunction("GetNextEntityByType", &BaseWorld::GetNextEntityByType)
+
+					.addFunction("SetEntityEnable", &BaseWorld::SetEntityEnable)
+					.addFunction("IsEntityEnable", &BaseWorld::IsEntityEnable)
+
+				#ifdef _EDITOR
+					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)
+					.addFunction("IsEntityEditorVisible", &BaseWorld::IsEntityEditorVisible)
+				#endif
 
 					.addProperty("transform", &BaseWorld::GetTransformSystem)
 					.addProperty("visibility", &BaseWorld::GetVisibilitySystem)

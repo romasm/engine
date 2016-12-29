@@ -123,5 +123,6 @@ namespace EngineCore
 		LightSystem* lightSys;
 
 		FrustumMgr* frustum_mgr;
+		BaseWorld* world;
 	};
 }

@@ -7,6 +7,7 @@ using namespace EngineCore;
 
 StaticMeshSystem::StaticMeshSystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	frustumMgr = w->GetFrustumMgr();
 
 	transformSys = w->GetTransformSystem();
@@ -42,6 +43,9 @@ void StaticMeshSystem::RegToDraw()
 
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
 
 		bitset<FRUSTUM_MAX_COUNT> bits;
@@ -72,7 +76,7 @@ void StaticMeshSystem::RegToDraw()
 
 		StMeshData* meshPtr = nullptr;
 
-		if(i.dirty || true) // temp
+		if(i.dirty || true) // TEMP FOR VCTGI
 		{
 			meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
 			TransformComponent* transformComponent = transformSys->GetComponent(i.get_entity());

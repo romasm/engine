@@ -121,5 +121,6 @@ namespace EngineCore
 
 		TransformSystem* transformSys;
 		FrustumMgr* frustumMgr;
+		BaseWorld* world;
 	};
 }

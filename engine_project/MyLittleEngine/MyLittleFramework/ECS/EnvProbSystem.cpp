@@ -24,6 +24,9 @@ void EnvProbSystem::RegToScene()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+				
 		if(!i.active)
 			continue;
 

@@ -111,6 +111,24 @@ function EntityTypes.BaseEntity:GetNext()
     return self.transformSys:GetChildNext(self.ent)
 end
 
+function EntityTypes.BaseEntity:Enable(enable)
+    return self.world:SetEntityEnable(self.ent, enable)
+end
+
+function EntityTypes.BaseEntity:IsEnabled()
+    return self.world:IsEntityEnable(self.ent)
+end
+
+-- EDITOR ONLY
+function EntityTypes.BaseEntity:Visible(visible)
+    return self.world:SetEntityEditorVisible(self.ent, visible)
+end
+
+function EntityTypes.BaseEntity:IsVisible()
+    return self.world:IsEntityEditorVisible(self.ent)
+end
+
+
 -- Node
 if not EntityTypes.Node then EntityTypes.Node = class(EntityTypes.BaseEntity) end
 

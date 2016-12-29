@@ -172,5 +172,6 @@ namespace EngineCore
 		EarlyVisibilitySystem* earlyVisibilitySys;
 
 		FrustumMgr* frustumMgr;
+		BaseWorld* world;
 	};
 }

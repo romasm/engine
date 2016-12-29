@@ -226,6 +226,11 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 		if(!SetEntityType(ent, type))
 			WRN("Cant set type %s to entity %s", type.c_str(), name.c_str());
 
+		bool enableState = (*(uint8_t*)t_data) > 0;
+		t_data += sizeof(uint8_t);
+
+		m_entityMgr->SetEnable(ent, enableState);
+
 		uint32_t comp_count = *(uint32_t*)t_data;
 		t_data += sizeof(uint32_t);
 		string components((char*)t_data, comp_count);
@@ -342,6 +347,9 @@ bool BaseWorld::saveWorld(string& filename, Entity editorCamera)
 		file.write( (char*)&name_size, sizeof(uint32_t) );
 		if(name_size > 0)
 			file.write( (char*)name.data(), name_size * sizeof(char) );
+
+		uint8_t enableState = m_entityMgr->IsEnable(iterator) ? 1 : 0;
+		file.write( (char*)&enableState, sizeof(uint8_t) );
 
 		////////////////
 		bool editor_mesh = m_staticMeshSystem->IsEditorOnly(iterator);		// TODO !!!!!!!!!!!!

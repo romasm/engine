@@ -7,6 +7,7 @@ using namespace EngineCore;
 
 LightSystem::LightSystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	frustumMgr = w->GetFrustumMgr();
 
 	transformSys = w->GetTransformSystem();
@@ -29,6 +30,9 @@ void LightSystem::RegShadowMaps()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active || !i.cast_shadows)
 			continue;
 		
@@ -80,6 +84,9 @@ void LightSystem::RegToScene()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 
@@ -221,6 +228,9 @@ void LightSystem::Update()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active || !i.dirty)
 			continue;
 

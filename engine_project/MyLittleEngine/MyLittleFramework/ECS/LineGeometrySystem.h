@@ -145,6 +145,7 @@ namespace EngineCore
 		TransformSystem* transformSys;
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
+		BaseWorld* world;
 
 		FrustumMgr* frustumMgr;
 	};

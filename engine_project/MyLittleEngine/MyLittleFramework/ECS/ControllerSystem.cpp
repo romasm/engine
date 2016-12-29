@@ -14,6 +14,9 @@ void ControllerSystem::Process()
 {
 	for(auto& i: components)
 	{
+		if( !world->IsEntityNeedProcess(i.second->get_entity()) )
+			continue;
+
 		if(!i.second->active) continue;
 
 		TransformComponent* transf = transformSys->GetComponent(i.second->get_entity());

@@ -407,9 +407,9 @@ function AssetBrowser:InitPreviewWorld()
 
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
-    -- TODO: hide sphere
     self.screenshotSphere = EntityTypes.StaticModel(self.previewWorld)
     self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+    self.screenshotSphere:Enable(false)
 
     -- for preview   
     self.previewNode = EntityTypes.Node(self.previewWorld)
@@ -438,6 +438,7 @@ function AssetBrowser:GeneratePreview(filename)
     self.waitingForPreview = true
     
     self.screenshotCamera:Activate(self.screenshotScene)
+    self.screenshotSphere:Enable(true)
     self.screenshotSphere:SetMaterial(filename, 0)
 
     Resource.ForceTextureReloadBackground() -- TODO: use job callback system
@@ -449,6 +450,7 @@ function AssetBrowser:PostGeneratePreview(filename)
     self.screenshotScene:SaveScreenshot(filename, 2.0, 2.0)
 
     self.screenshotSphere:SetMaterial(self.nullMat, 0)
+    self.screenshotSphere:Enable(false)
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
     self.waitingForPreview = false

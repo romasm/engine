@@ -16,7 +16,7 @@ TransformSystem::TransformSystem(BaseWorld* w, uint32_t maxCount)
 	lookup.create(capacity);
 	lookup.resize(capacity);
 	lookup.assign(capacity);
-
+	
 	dirty.create(capacity);
 	hierarchy_sort.create(capacity);
 	links_fix.create(capacity);
@@ -126,6 +126,9 @@ void TransformSystem::Update()
 
 	for(uint32_t i = 0; i < dirty.size(); i++)
 	{
+		if( !world->IsEntityNeedProcess(components[i].get_entity()) )
+			continue;
+
 		if(dirty[i])
 			UpdateComponent(i);
 	}

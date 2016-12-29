@@ -8,6 +8,7 @@ using namespace EngineCore;
 
 CameraSystem::CameraSystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	maxCount = min(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 	components.reserve(CAMERAS_INIT_COUNT);
@@ -59,7 +60,12 @@ void CameraSystem::initCamera(CameraComponent* comp)
 void CameraSystem::RegToDraw()
 {
 	for(auto& i: *components.data())
+	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		regCamera(i);
+	}
 }
 
 void CameraSystem::regCamera(CameraComponent& comp)

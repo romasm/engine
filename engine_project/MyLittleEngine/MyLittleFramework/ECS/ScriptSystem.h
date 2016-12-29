@@ -100,5 +100,6 @@ namespace EngineCore
 
 		ComponentRArray<ScriptComponent> components;
 		TypeMgr* typeMgr;
+		BaseWorld* world;
 	};
 }

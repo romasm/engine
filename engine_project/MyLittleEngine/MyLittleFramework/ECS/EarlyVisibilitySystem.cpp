@@ -6,6 +6,7 @@ using namespace EngineCore;
 
 EarlyVisibilitySystem::EarlyVisibilitySystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	frustumMgr = w->GetFrustumMgr();
 	transformSys = w->GetTransformSystem();
 	
@@ -18,6 +19,9 @@ void EarlyVisibilitySystem::CheckEarlyVisibility()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+				
 		if(i.dirty)
 		{
 			TransformComponent* tranform = transformSys->GetComponent(i.get_entity());

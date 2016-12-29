@@ -7,6 +7,7 @@ using namespace EngineCore;
 
 ShadowSystem::ShadowSystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	shadow_casters = 0;
 
 	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
@@ -32,6 +33,9 @@ void ShadowSystem::Update()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		i.render_mgr->ZeroMeshgroups();
 
 		if(!i.dirty)

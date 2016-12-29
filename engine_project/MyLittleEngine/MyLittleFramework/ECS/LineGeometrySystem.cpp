@@ -8,6 +8,7 @@ using namespace EngineCore;
 
 LineGeometrySystem::LineGeometrySystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	frustumMgr = w->GetFrustumMgr();
 
 	transformSys = w->GetTransformSystem();
@@ -22,6 +23,9 @@ void LineGeometrySystem::RegToDraw()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
 		
 		bitset<FRUSTUM_MAX_COUNT> bits;

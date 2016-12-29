@@ -6,6 +6,7 @@ using namespace EngineCore;
 
 GlobalLightSystem::GlobalLightSystem(BaseWorld* w, uint32_t maxCount)
 {
+	world = w;
 	maxCount = min(maxCount, ENTITY_COUNT);
 
 	components.create(maxCount);
@@ -234,6 +235,9 @@ void GlobalLightSystem::RegShadowMaps()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 		
@@ -253,6 +257,9 @@ void GlobalLightSystem::RegToScene()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 
@@ -268,6 +275,9 @@ void GlobalLightSystem::Update()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active || !i.dirty)
 			continue;
 
@@ -306,6 +316,9 @@ void GlobalLightSystem::RenderShadows()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 
@@ -322,6 +335,9 @@ void GlobalLightSystem::ClearShadowsQueue()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 		

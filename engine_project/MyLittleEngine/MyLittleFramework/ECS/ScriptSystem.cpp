@@ -6,6 +6,7 @@ using namespace EngineCore;
 
 ScriptSystem::ScriptSystem(BaseWorld* w, uint32_t maxCount)
 {	
+	world = w;
 	typeMgr = w->GetTypeMgr();
 	
 	maxCount = min(maxCount, ENTITY_COUNT);
@@ -124,6 +125,9 @@ void ScriptSystem::Update(float dt)
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.tickFunc.isNil())
 			i.tickFunc(i.classInstanceRef, dt);
 	}
