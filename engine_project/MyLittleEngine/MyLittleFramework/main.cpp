@@ -13,6 +13,15 @@ inline char* GetCommand(int i, int argc, char** argv)
 	return argv[i];
 }
 
+void configLocal()
+{
+	setlocale(LC_ALL,""); 
+	setlocale(LC_NUMERIC,"C"); 
+
+	locale loc("", locale::all & (~locale::numeric));
+	locale::global(loc);
+}
+
 int main(int argc, char* argv[])
 {
 	auto hr = SetCurrentProcessExplicitAppUserModelID(L"MLE.Renderer"); // TEMP
@@ -27,6 +36,9 @@ int main(int argc, char* argv[])
 	if(cmd && strlen(cmd) > 1 && cmd[1] == 'c')
 		console = true;
 #endif
+
+	configLocal();
+
 	Log* log = new Log(console);
 
 	MainLoop* loop = new MainLoop();

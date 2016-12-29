@@ -834,7 +834,6 @@ function GuiTextfield:SetNum(num)
     elseif self.data.d_type == GUI_TEXTFIELD.FLOAT then
         self.has_point = true
         local str = string.format("%f", val)
-        str = str:gsub(',', '%.')
         return self:SetText(str)
     end
     return false

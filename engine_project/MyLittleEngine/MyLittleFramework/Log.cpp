@@ -19,11 +19,7 @@ namespace EngineCore
 		}
 		
 		instance = this;
-
-		//setlocale(LC_ALL, "rus");
-		setlocale(LC_ALL,"Russian"); // force lua string.format() separate floats with comma, only in release
-		//setlocale( LC_ALL,".1251" );
-
+		
 		// CONSOLE ----------------
 		if(has_console)
 		{

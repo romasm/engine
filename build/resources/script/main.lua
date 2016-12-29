@@ -79,7 +79,7 @@ function Main:Start()
     History:Init()
     Hotkeys:Init()
     SceneMgr:Init()
-
+    
     self.reload_time = 0
 end
 
