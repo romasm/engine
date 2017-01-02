@@ -71,6 +71,7 @@ function MainWindow:Init()
     Properties:Init()
     MaterialProps:Init()
     AssetBrowser:Init()
+    SceneBrowser:Init()
     Viewport:Init()
 
     Resource.ForceTextureReload()

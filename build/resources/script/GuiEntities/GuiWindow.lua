@@ -95,6 +95,8 @@ function GuiWindow:init(props)
         else
             self.sys_win:SetCaptionBorderSize(0, self.header_size, 0, self.header_size, 4)
         end
+
+        self.sys_win.caption_text = self.header.str ~= nil and self.header.str or "[empty header]"
         
         self.sys_win:SetPosSize(self.entity.left, self.entity.top, self.entity.width, self.entity.height)
         self.entity.width = 100
@@ -664,6 +666,11 @@ function GuiWindow:SetScrollY(y)
 end
 
 function GuiWindow:SetHeader(str)
-    if not self.header_str then return end
-    self.header_str:SetString(str)
+    if self.header_str then
+        self.header_str:SetString(str)
+    end
+
+    if self.independent == true then
+        self.sys_win.caption_text = str
+    end
 end

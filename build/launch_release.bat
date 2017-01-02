@@ -1,3 +1,3 @@
 @echo off
 cd bin
-START core.exe
+START core.exe -c

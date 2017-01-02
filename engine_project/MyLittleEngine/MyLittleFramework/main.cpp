@@ -13,7 +13,7 @@ inline char* GetCommand(int i, int argc, char** argv)
 	return argv[i];
 }
 
-void configLocal()
+void configLocale()
 {
 	setlocale(LC_ALL,""); 
 	setlocale(LC_NUMERIC,"C"); 
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 		console = true;
 #endif
 
-	configLocal();
+	configLocale();
 
 	Log* log = new Log(console);
 

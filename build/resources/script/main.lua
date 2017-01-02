@@ -67,6 +67,7 @@ loader.require("App.Tools")
 loader.require("App.Properties")
 loader.require("App.MaterialProps")
 loader.require("App.AssetBrowser")
+loader.require("App.SceneBrowser")
 
 loader.require("App.Profiler")
 

@@ -773,7 +773,10 @@ bool HEntity::DetachChild(uint32_t e)
 uint32_t HEntity::GetChildById(string id)
 {
 	if(!named_children)
+	{
+		DBG("Child with id \"%s\" do not exist", id.data());
 		return GUI_ENTITY_COUNT;
+	}
 
 	auto it = named_children->find(id);
 	if(it != named_children->end())
