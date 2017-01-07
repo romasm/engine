@@ -278,7 +278,7 @@ local btn = GuiButton({
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
         textures = {filename..".tga"}
     }},
-    alt = matname,
+    --alt = matname,
     top = topOffset,
     left = leftOffset,
     id = tostring(num),

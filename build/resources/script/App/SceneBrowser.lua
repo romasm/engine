@@ -28,6 +28,8 @@ end
 function SceneBrowser:Init()
     print("SceneBrowser:Init") 
     
+    self.entTypes = {"Node", "Camera", "LocalLight", "GlobalLight", "TestEnt", "StaticModel"}
+
     self.filtredList = {}
     self.findstr = ""
     self.entList = {}
@@ -37,9 +39,61 @@ function SceneBrowser:Init()
     self.prevSelectedNum = 0
 
     self.active = false
+    self.world = nil
         
     loader.require("SceneBrowser", SceneBrowser.reload)
     self.reload()
+end
+
+function SceneBrowser:Deactivate()
+    self:Clear()
+    self.window.entity:Deactivate()
+    self.none_msg.enable = true
+    self.world = nil
+end
+
+function SceneBrowser:Activate(world)
+    self.window.entity:Activate()
+    self.none_msg.enable = false
+
+    self.world = world
+
+    self.entList = {}
+    for i, entType in ipairs(self.entTypes) do
+        local currentEnt = self.world:GetFirstEntityByType( entType )
+        print(tostring(currentEnt))
+        while not currentEnt:IsNull() do
+            self.entList[#self.entList + 1] = currentEnt
+            currentEnt = self.world:GetNextEntityByType()
+        end
+    end
+    
+    self:FillBody()
+    self.window.entity:UpdatePosSize()
+end
+
+function SceneBrowser:HideEnt(btn)
+    local parent = btn.entity:GetParent():GetInherited()
+    if self:FindSelected( parent ) == 0 then
+        self.world:SetEntityEditorVisible( parent.linked_ent, false )
+    else
+        for i, selected in ipairs(self.selectedBtns) do
+            selected.vis_btn:SetPressed(true)
+            self.world:SetEntityEditorVisible( selected.linked_ent, false )
+        end
+    end
+end
+
+function SceneBrowser:ShowEnt(btn)
+    local parent = btn.entity:GetParent():GetInherited()
+    if self:FindSelected( parent ) == 0 then
+        self.world:SetEntityEditorVisible( parent.linked_ent, true )
+    else
+        for i, selected in ipairs(self.selectedBtns) do
+            selected.vis_btn:SetPressed(false)
+            self.world:SetEntityEditorVisible( selected.linked_ent, true )
+        end
+    end
 end
 
 function SceneBrowser:GetSelectedCount()
@@ -112,26 +166,6 @@ function SceneBrowser:FindSelected(btn)
     return founded
 end
 
-function SceneBrowser:Deactivate()
-    self:Clear()
-    self.window.entity:Deactivate()
-    self.none_msg.enable = true
-end
-
-function SceneBrowser:Activate()
-    self.window.entity:Activate()
-    self.none_msg.enable = false
-
-    --temp
-    self.entList = {}
-    for i = 1, 20 do
-        self.entList[#self.entList + 1] = "Test"
-    end
-
-    self:FillBody()
-    self.window.entity:UpdatePosSize()
-end
-
 function SceneBrowser:Clear()
     for i = 1, #self.filtredList do
         local btn = self.body:GetChildById( tostring(i) )
@@ -148,7 +182,10 @@ end
 
 function SceneBrowser:AddButton(num)
     self.topOffset = self.topOffset + GUI_SCENELIST_SIZE.PADDING
-    local btn = Gui.SceneBrowserEntity( self.filtredList[num], "Static model", 0, self.topOffset, num )
+
+    local name = self.world:GetEntityName( self.filtredList[num] )
+    local entType = self.world:GetEntityType( self.filtredList[num] )
+    local btn = Gui.SceneBrowserEntity( name, entType, self.filtredList[num], self.topOffset, num )
 
     self.body:AttachChild( btn.entity )
     self.topOffset = self.topOffset + GUI_SCENELIST_SIZE.Y
@@ -159,7 +196,8 @@ function SceneBrowser:FillBody()
     self.filtredList = {}
     for i, ent in ipairs(self.entList) do
         if self.findstr:len() > 0 then
-            if ent:find(self.findstr) ~= nil then 
+            local name = self.world:GetEntityName(ent)
+            if name:find(self.findstr) ~= nil then 
                 self.filtredList[#self.filtredList + 1] = ent
             end
         else
@@ -167,7 +205,7 @@ function SceneBrowser:FillBody()
         end
     end
 
-    table.sort(self.filtredList, function (a, b) return a:upper() < b:upper() end)
+    --table.sort(self.filtredList, function (a, b) return a:upper() < b:upper() end)
     
     self.topOffset = 0
     for i, ent in ipairs(self.filtredList) do

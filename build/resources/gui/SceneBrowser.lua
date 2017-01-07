@@ -376,11 +376,11 @@ local btn = GuiButton({
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                --SceneBrowser:HideEnt(self)
+                SceneBrowser:HideEnt(self)
                 return true 
             end,
             [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                --SceneBrowser:ShowEnt(self)
+                SceneBrowser:ShowEnt(self)
                 return true 
             end,
         },

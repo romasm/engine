@@ -128,7 +128,7 @@ function Viewport:SetWorld(WLD)
     MainWindow:SetCaption(WLD.path)
     Tools:ActivateAll()
     AssetBrowser:Activate()
-    SceneBrowser:Activate()
+    SceneBrowser:Activate( self.lua_world.world )
 
     Tools:SetTransform(TRANSFORM_MODE.NONE)
     self:SetTransform(TRANSFORM_MODE.NONE)
