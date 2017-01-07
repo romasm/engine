@@ -19,7 +19,7 @@ GuiStyles.entity_button = {
     text = { font = "", },
 
     icon = {
-        rect = { l = 24, t = 0, w = 20, h = 20 },
+        rect = { l = 26, t = 0, w = 20, h = 20 },
     },
 }
 
@@ -240,7 +240,7 @@ local btn = GuiButton({
     styles = { GuiStyles.entity_button, },
     icon = {material = {
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
-        textures = {"../resources/textures/editor_hud/" .. ent_type .. ".dds"}
+        textures = {"../resources/textures/editor_hud/types/" .. ent_type .. ".dds"}
     }},
     top = topOffset,
     id = tostring(num),
