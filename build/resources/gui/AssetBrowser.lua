@@ -7,8 +7,8 @@ GuiStyles.material_button = {
 
     holded = true,
 
-    height = GUI_PREVIEW_SIZE.X,
-    width = GUI_PREVIEW_SIZE.Y,
+    height = GUI_PREVIEW_SIZE.Y,
+    width = GUI_PREVIEW_SIZE.X,
     
     background = {
         color = 'bg_01',

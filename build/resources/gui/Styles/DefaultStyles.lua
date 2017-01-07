@@ -123,6 +123,32 @@ GuiStyles.tool_button = {
     },
 }
 
+GuiStyles.alt_button = {
+    ignore_events = false,
+    collide_through = true,
+    hover_only = true,
+    cursor = SYSTEM_CURSORS.ARROW,
+    fadein_time = 0,
+    fadeout_time = 0,
+    holded = false,
+
+    background = {
+        color = 'null',
+        color_hover = 'null',
+        color_press = 'null',
+        color_nonactive = 'null',
+    },
+    text = {
+        font = '',
+    },
+    border = {
+        width = 0,
+    },
+    icon = {
+        rect = { l = 0, t = 0, w = 0, h = 0 },
+    },
+}
+
 -- STRING
 GuiStyles.string_simple = {
     center = { x = true, y = true },

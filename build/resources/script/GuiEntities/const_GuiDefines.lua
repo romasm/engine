@@ -77,6 +77,11 @@ GUI_PREVIEW_SIZE = {
     LIVE_Y = 126,
 }
 
+GUI_SCENELIST_SIZE = {
+    Y = 20,
+    PADDING = 2,
+}
+
 GUI_EVENTS = {
     NULL                  = 0x00,
     ERROR                 = 0x01,

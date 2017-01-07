@@ -76,7 +76,7 @@ function AssetBrowser:AddButton(num)
     local matName = self.filtredList[num]:gsub(self.libDir.."/", "")
 
     if self.stringCounter > 2 then
-        self.topOffset = self.topOffset + self.lastHeight + self.padding
+        self.topOffset = self.topOffset + GUI_PREVIEW_SIZE.Y + self.padding
         self.leftOffset = self.padding
         self.stringCounter = 0
     end
@@ -87,9 +87,7 @@ function AssetBrowser:AddButton(num)
 
     self.leftOffset = self.leftOffset + btn.entity.width + self.padding
     self.stringCounter = self.stringCounter + 1
-
-    self.lastHeight = btn.entity.height
-
+    
     return btn
 end
 
@@ -113,14 +111,13 @@ function AssetBrowser:FillBody()
     self.topOffset = self.padding
     self.leftOffset = self.padding
 
-    self.lastHeight = 0
     for i, file in ipairs(self.filtredList) do
         self:AddButton(i)
     end
 
     Resource.ForceTextureReloadBackground()
 
-    self.body.height = self.topOffset + self.lastHeight + self.padding
+    self.body.height = self.topOffset + GUI_PREVIEW_SIZE.Y + self.padding
 end
 
 function AssetBrowser:Clear()

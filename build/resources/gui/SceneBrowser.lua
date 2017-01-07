@@ -6,7 +6,7 @@ GuiStyles.entity_button = {
 
     holded = true,
 
-    height = 20,
+    height = GUI_SCENELIST_SIZE.Y,
     align = GUI_ALIGN.BOTH,
     
     background = {
@@ -19,20 +19,25 @@ GuiStyles.entity_button = {
     text = { font = "", },
 
     icon = {
-        rect = { l = 20, t = 0, w = 20, h = 20 },
+        rect = { l = 24, t = 0, w = 20, h = 20 },
     },
 }
 
 GuiStyles.entityname_textfield = {
-    styles = { GuiStyles.common_textfield, },
+    styles = { 
+        GuiStyles.common_textfield, 
+    },
+    
+    collide_through = true,
+    ignore_events = true,
 
     color_selection = 'act_00',
     color_cursor = 'bg_05',
 
     background = {
-        color = 'bg_05_a4',
+        color = 'null',
         color_live = 'act_02',
-        color_nonactive = 'bg_05_a4'
+        color_nonactive = 'null'
     },
 
     border = { width = 0 },
@@ -44,7 +49,7 @@ GuiStyles.entityname_textfield = {
     text = {
         color = 'text_01',
         color_live = 'bg_06',
-        color_nonactive = 'text_02',
+        color_nonactive = 'text_01',
         offset = { x = 3, y = 0 },
         center = { x = false, y = true },
         length = 128,
@@ -222,41 +227,51 @@ return GuiWindow({
         bottom = 1,
         left = 10,
 
-        color = 'text_02',
+        color = 'text_01',
         color_nonactive = 'text_02',
     }),
 })
 end
 
-function Gui.SceneBrowserEntity(name, ent_type, ent, topOffset, leftOffset)
+function Gui.SceneBrowserEntity(name, ent_type, ent, topOffset, num)
 local label = name:len() > 0 and name or ent_type
 
 local btn = GuiButton({
     styles = { GuiStyles.entity_button, },
     icon = {material = {
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
-        textures = {ent_type..".tga"}
+        textures = {"../resources/textures/editor_hud/" .. ent_type .. ".dds"}
     }},
-    alt = label,
     top = topOffset,
-    --id = tostring(num),
+    id = tostring(num),
 
-    --[[events = {
-        [GUI_EVENTS.TF_ACTIVATION_WAIT] = function(self, ev)
-            if not self.state_press then
-                self:SetPressed(true)
-                SceneBrowser:SetSelected(self, true, false)
-                self.entity:SetHierarchyFocusOnMe(false)
-            end
-            return true 
-        end,
+    events = {
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-            SceneBrowser:SetSelected(self, true, false)
+            if not CoreGui.Keys.Shift() then
+                if not CoreGui.Keys.Ctrl() then
+                    SceneBrowser:SetSelected(self)
+                else
+                    SceneBrowser:AddSelected(self)
+                end
+            else
+                SceneBrowser:GroupSelected(self)
+            end
+
             self.entity:SetFocus(HEntity())
             return true 
         end,
         [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-            SceneBrowser:SetSelected(nil, false, false)
+            if not CoreGui.Keys.Shift() then
+                if not CoreGui.Keys.Ctrl() and SceneBrowser:GetSelectedCount() > 1 then
+                    SceneBrowser:SetSelected(self)
+                    self:SetPressed(true)
+                else
+                    SceneBrowser:DeleteSelected(self)
+                end
+            else
+                self:SetPressed(true)
+                SceneBrowser:GroupSelected(self)
+            end
             self.entity:SetFocus(HEntity())
             return true 
         end,
@@ -267,11 +282,12 @@ local btn = GuiButton({
             end 
             return false
         end,
+        --[[
         [GUI_EVENTS.MOUSE_DOWN] = function(self, ev)
-            if ev.entity:is_eq(self.entity) or ev.entity:GetID() == 'mat_name_tf' then
+            if ev.entity:is_eq(self.entity) or ev.entity:GetID() == 'ent_name_tf' then
                 self.entity:SetHierarchyFocusOnMe(false)
                 self.entity:SetFocus(HEntity())
-
+                
                 if ev.key == KEYBOARD_CODES.KEY_RBUTTON then
                     local menu = Gui.AssetMenu()
                     self:AttachOverlay(menu)
@@ -308,18 +324,17 @@ local btn = GuiButton({
                 SceneBrowser:Delete(self.assetID)
             end
             return true
-        end,
-    },--]]
+        end,--]]
+    },
 
     GuiTextfield({
         styles = { GuiStyles.entityname_textfield, },
         
         text = {str = label},
-        alt = label,
 
         height = 18,
         top = 1,
-        left = 40,
+        left = 48,
         align = GUI_ALIGN.BOTH,
 
         id = 'ent_name_tf',
@@ -327,11 +342,62 @@ local btn = GuiButton({
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 
                 --SceneBrowser:Rename(self)
+                self.entity:Deactivate()
                 return true
             end,
         },
     }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.tool_button,
+        },
+        holded = true,
+        height = 20,
+        width = 20,
+        icon = {
+            color = 'text_04_a5',
+            color_hover = 'act_02',
+            color_press = 'act_04',
+            color_nonactive = 'text_02',
+            rect = { l = 0, t = 0, w = 20, h = 20 },
+            material = GuiMaterials.visibility_icon,
+        },
+
+        background = {
+            color = 'null',
+            color_hover = 'null',
+            color_press = 'null',
+            color_nonactive = 'null',
+        },
+        align = GUI_ALIGN.LEFT,
+        alt = "Hide / Show",
+        id = 'vis_btn',
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+                --SceneBrowser:HideEnt(self)
+                return true 
+            end,
+            [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
+                --SceneBrowser:ShowEnt(self)
+                return true 
+            end,
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.alt_button,
+        },
+        height = 20,
+        align = GUI_ALIGN.BOTH,
+        left = 24,
+        alt = ent_type,
+    }),
 })
+
 btn.linked_ent = ent
+btn.vis_btn = btn.entity:GetChildById('vis_btn'):GetInherited()
 return btn
 end

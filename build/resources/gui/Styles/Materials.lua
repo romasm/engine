@@ -122,3 +122,8 @@ GuiMaterials.clear_asset_icon = {
     shader = "../resources/shaders/gui/rect_icon",
     textures = {"../resources/textures/editor_hud/win_close.dds"},
 }
+
+GuiMaterials.visibility_icon = {
+    shader = "../resources/shaders/gui/rect_icon",
+    textures = {"../resources/textures/editor_hud/visibility.dds"},
+}
