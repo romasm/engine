@@ -47,10 +47,6 @@ function SceneMgr:CreateWorld()
 end
 
 function SceneMgr:InitWorld(WLD)      
-    -- create editor camera
-    WLD.freecam = WLD.world:GetMainCamera()
-    WLD.scenepl = nil
-
     Resource.ForceTextureReloadBackground()
 
     Viewport:SetWorld(WLD)
@@ -67,7 +63,6 @@ function SceneMgr:CloseWorld(id)
     self.worldmgr:CloseWorld(WLD.world)
     WLD.world = nil
 
-    WLD.freecam = nil
     WLD.scenepl = nil
     
     Viewport:ClearWorld()

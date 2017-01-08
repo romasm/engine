@@ -237,9 +237,9 @@ namespace EngineCore
 
 	protected:
 		bool loadWorld(string& filename, WorldHeader& header);
-		virtual void initMainEntities(WorldHeader header);
+		void initMainEntities(WorldHeader header);
 		
-		bool saveWorld(string& filename, Entity editorCamera);
+		bool saveWorld(string& filename);
 
 		bool b_active;
 
@@ -286,11 +286,9 @@ namespace EngineCore
 		
 		bool SaveWorld(string filename)
 		{
-			return saveWorld(filename, mainCamera);
+			return saveWorld(filename);
 		}
-
-		Entity GetMainCamera() const {return mainCamera;}
-
+		
 		inline TransformControls* GetTransformControls() const {return m_transformControls;}
 		
 		void RebakeSky()
@@ -303,7 +301,6 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.deriveClass<World, BaseWorld>("World")
 					.addFunction("Save", &World::SaveWorld)
-					.addFunction("GetMainCamera", &World::GetMainCamera)
 					.addFunction("RebakeSky", &World::RebakeSky)
 
 					.addProperty("transformControls", &World::GetTransformControls)
@@ -311,11 +308,7 @@ namespace EngineCore
 		}
 
 	protected:
-		void initMainEntities(WorldHeader header);
-
 		TransformControls* m_transformControls;
-
-		Entity mainCamera;
 	};
 
 	class SmallWorld: public BaseWorld
@@ -329,9 +322,7 @@ namespace EngineCore
 		
 		bool SaveWorld(string filename)
 		{
-			Entity nullEnt;
-			nullEnt.setnull();
-			return saveWorld(filename, nullEnt);
+			return saveWorld(filename);
 		}
 		
 		static void RegLuaClass()

@@ -52,7 +52,6 @@ function SceneBrowser:Refill()
     self.entList = {}
     for i, entType in ipairs(self.entTypes) do
         local currentEnt = self.world:GetFirstEntityByType( entType )
-        print(tostring(currentEnt))
         while not currentEnt:IsNull() do
             self.entList[#self.entList + 1] = currentEnt
             currentEnt = self.world:GetNextEntityByType()

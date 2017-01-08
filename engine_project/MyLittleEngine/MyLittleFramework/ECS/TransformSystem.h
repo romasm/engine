@@ -142,6 +142,8 @@ namespace EngineCore
 		bool AddPosition(Entity e, float x, float y, float z);
 		bool AddPosition(Entity e, XMVECTOR p);
 
+		bool AddPositionLocal(Entity e, float x, float y, float z);
+
 		bool AddRotation(Entity e, float p, float y, float r);
 		bool AddRotation(Entity e, XMVECTOR normalAxis, float angle);
 		inline bool AddRotation(Entity e, XMFLOAT3 axis, float angle) 
@@ -220,6 +222,8 @@ namespace EngineCore
 					.addFunction("AddRotation", &TransformSystem::_AddRotation1)
 					.addFunction("AddRotationAxis", &TransformSystem::_AddRotation2)
 					.addFunction("AddScale", &TransformSystem::_AddScale)
+
+					.addFunction("AddPositionLocal", &TransformSystem::AddPositionLocal)
 
 					.addFunction("Attach", &TransformSystem::Attach)
 					.addFunction("Detach", &TransformSystem::Detach)

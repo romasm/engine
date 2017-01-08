@@ -221,7 +221,7 @@ function AssetBrowser:SetSelected(btn, noScroll, noHistory)
     
     history.msg = "Select material " .. btn.assetID
     history.s_newval = btn.assetID
-    print("eee" .. history.msg)
+    
     if not noHistory then History:Push(history) end
 
     Properties:UpdateData(false, COMPONENTS.STATIC)

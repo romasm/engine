@@ -55,8 +55,32 @@ function EntityTypes.BaseEntity:SetRotation(p, y, r)
     return self.transformSys:SetRotation(self.ent, p, y, r)
 end
 
+function EntityTypes.BaseEntity:SetRotationAxis(axis, angle)
+    return self.transformSys:SetRotationAxis(self.ent, axis, angle)
+end
+
 function EntityTypes.BaseEntity:SetScale(x, y, z)
     return self.transformSys:SetScale(self.ent, x, y, z)
+end
+
+function EntityTypes.BaseEntity:AddPositionLocal(x, y, z)
+    return self.transformSys:AddPositionLocal(self.ent, x, y, z)
+end
+
+function EntityTypes.BaseEntity:AddPosition(x, y, z)
+    return self.transformSys:AddPosition(self.ent, x, y, z)
+end
+
+function EntityTypes.BaseEntity:AddRotation(p, y, r)
+    return self.transformSys:AddRotation(self.ent, p, y, r)
+end
+
+function EntityTypes.BaseEntity:AddRotationAxis(axis, angle)
+    return self.transformSys:AddRotationAxis(self.ent, axis, angle)
+end
+
+function EntityTypes.BaseEntity:AddScale(x, y, z)
+    return self.transformSys:AddScale(self.ent, x, y, z)
 end
 
 function EntityTypes.BaseEntity:GetPositionW()

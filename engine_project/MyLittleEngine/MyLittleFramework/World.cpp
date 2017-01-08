@@ -299,7 +299,7 @@ void BaseWorld::initMainEntities(WorldHeader header)
 	m_envProbSystem->SetActive(skyEP, true);
 }
 
-bool BaseWorld::saveWorld(string& filename, Entity editorCamera)
+bool BaseWorld::saveWorld(string& filename)
 {
 	ofstream file;
 	file.open(filename, std::ios::trunc | std::ios::binary );
@@ -312,9 +312,14 @@ bool BaseWorld::saveWorld(string& filename, Entity editorCamera)
 	WorldHeader header;
 	wcscpy_s(header.env_name, envName.data());
 	header.env_rot = m_transformSystem->GetVectRotationW(skyEP);
-	XMMATRIX cam_mat = m_transformSystem->GetTransformW(editorCamera);
-	XMVECTOR temp;
-	XMMatrixDecompose(&temp, &header.free_cam_rot, &header.free_cam_pos, cam_mat);
+
+	Entity editorCamera = GetEntityByName("_unsave_EditorCamera");
+	if(!editorCamera.isnull())
+	{
+		XMMATRIX cam_mat = m_transformSystem->GetTransformW(editorCamera);
+		XMVECTOR temp;
+		XMMatrixDecompose(&temp, &header.free_cam_rot, &header.free_cam_pos, cam_mat);
+	}
 
 	file.write( (char*)&header, sizeof(WorldHeader) );
 
@@ -333,7 +338,11 @@ bool BaseWorld::saveWorld(string& filename, Entity editorCamera)
 	iterator.setnull();
 	while( !(iterator = m_entityMgr->GetNextEntity(iterator)).isnull() )
 	{
-		if( iterator == editorCamera || iterator == skyEP )
+		if( iterator == skyEP )
+			continue;
+
+		string name = m_nameMgr->GetName(iterator);
+		if( name.find("_unsave_") != string::npos )
 			continue;
 
 		string type = m_typeMgr->GetType(iterator);
@@ -342,7 +351,6 @@ bool BaseWorld::saveWorld(string& filename, Entity editorCamera)
 		if(type_size > 0)
 			file.write( (char*)type.data(), type_size * sizeof(char) );
 
-		string name = m_nameMgr->GetName(iterator);
 		uint32_t name_size = (uint32_t)name.size();
 		file.write( (char*)&name_size, sizeof(uint32_t) );
 		if(name_size > 0)
@@ -586,37 +594,6 @@ void World::Close()
 	_DELETE(m_transformControls);
 
 	BaseWorld::Close();
-}
-
-void World::initMainEntities(WorldHeader header)
-{
-	mainCamera = m_entityMgr->CreateEntity();
-	m_transformSystem->AddComponent(mainCamera);
-	m_transformSystem->SetPosition(mainCamera, header.free_cam_pos);
-	m_transformSystem->SetRotation(mainCamera, header.free_cam_rot);
-
-	const float far_clip = EngineSettings::EngSets.cam_far_clip;
-	const float near_clip = EngineSettings::EngSets.cam_near_clip;
-	const float fov = EngineSettings::EngSets.cam_fov;
-
-	m_cameraSystem->AddComponent(mainCamera);
-	CameraComponent D;
-	D.aspect_ratio = 1.0f;
-	D.far_clip = far_clip;
-	D.near_clip = near_clip;
-	D.fov = fov;
-	D.active = false;
-	m_cameraSystem->SetProps(mainCamera, D);
-
-	FreeCamController* free_ctrl = new FreeCamController();
-	free_ctrl->SetPlayerStand(0,0,0);
-	free_ctrl->rot_speed = EngineSettings::EngSets.cam_rot_speed;
-	free_ctrl->move_speed = EngineSettings::EngSets.cam_move_speed;
-
-	m_controllerSystem->AddComponent(mainCamera, free_ctrl);
-	m_controllerSystem->SetActive(mainCamera, true);
-
-	BaseWorld::initMainEntities(header);
 }
 
 // World ---------------------

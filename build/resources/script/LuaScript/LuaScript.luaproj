@@ -136,6 +136,9 @@
     <Compile Include="..\App\const_Defines.lua">
       <Link>App\const_Defines.lua</Link>
     </Compile>
+    <Compile Include="..\App\EditorCamera.lua">
+      <Link>App\EditorCamera.lua</Link>
+    </Compile>
     <Compile Include="..\App\History.lua">
       <Link>App\History.lua</Link>
     </Compile>

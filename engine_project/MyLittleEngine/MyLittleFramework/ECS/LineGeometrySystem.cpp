@@ -149,7 +149,10 @@ bool LineGeometrySystem::SetFromVis(Entity e, bool forceEVS)
 			}
 		}
 		else
+		{
+			SetPoint(e);
 			return false;
+		}
 	}
 
 	return true;

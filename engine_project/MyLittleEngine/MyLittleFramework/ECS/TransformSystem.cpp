@@ -507,6 +507,15 @@ bool TransformSystem::AddPosition(Entity e, XMVECTOR p)
 	return true;
 }
 
+bool TransformSystem::AddPositionLocal(Entity e, float x, float y, float z)
+{
+	GET_COMPONENT(false)
+	comp.localMatrix = XMMatrixTranslation(x, y, z) * comp.localMatrix;
+
+	world->SetDirty(e);
+	return true;
+}
+
 bool TransformSystem::AddRotation(Entity e, float p, float y, float r)
 {
 	GET_COMPONENT(false)

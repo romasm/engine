@@ -1,3 +1,5 @@
+loader.require("App.EditorCamera")
+
 if not Viewport then Viewport = {} end
 
 function Viewport.reload()
@@ -92,6 +94,8 @@ end
 function Viewport:Tick(dt)
     if not self.lua_world then return end
 
+    EditorCamera:Tick(dt)
+
     if self.frame_ms < 100 then
         self.frame_ms = self.frame_ms + dt
         self.frame_count = self.frame_count + 1
@@ -108,16 +112,17 @@ end
 function Viewport:SetWorld(WLD)
     if not WLD.world or WLD.scenepl then return end
     
+    EditorCamera:Init( WLD.world )
+
     local vp_rect = self.viewport.entity:GetRectAbsolute()
-    WLD.scenepl = WLD.world:CreateScene(WLD.freecam, vp_rect.w, vp_rect.h, false)
-    
+    WLD.scenepl = WLD.world:CreateScene(EditorCamera.cameraEntity, vp_rect.w, vp_rect.h, false)
+
     local srv = WLD.scenepl:GetSRV()
     self.viewport.rect_mat:SetTexture(srv, 0, SHADERS.PS)
     self.viewport.entity.visible = true
 
     WLD.world.active = true
 
-    WLD.world.controller:SendInput(WLD.freecam, CTRL_CMDS.CC_MOVE_SPEED_CHANGE, self.movespeed, 0)
     WLD.world.transformControls.scale = self.arrows_scale
 
     self.lua_world = WLD
@@ -142,6 +147,8 @@ function Viewport:SetWorld(WLD)
 end
 
 function Viewport:ClearWorld()
+    EditorCamera:Close()
+
     self.lua_world = nil
     self.viewport.rect_mat:ClearTextures()
     self.viewport.entity.visible = false
@@ -255,9 +262,9 @@ end
 function Viewport:PlaceEntity(entity, mouse_coords)
     local mcoords = self:GetMouseInVP(mouse_coords)
 
-    local cam_dir = self.lua_world.world.camera:GetVectorFromScreen(self.lua_world.freecam, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
-    local cam_origin = self.lua_world.world.camera:GetPos(self.lua_world.freecam)
-    local coords = self.lua_world.world.visibility:CollideRayCoords(cam_origin, cam_dir, self.lua_world.world.camera:GetFrustumId(self.lua_world.freecam))
+    local cam_dir = self.lua_world.world.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+    local cam_origin = self.lua_world.world.camera:GetPos(EditorCamera.cameraEntity)
+    local coords = self.lua_world.world.visibility:CollideRayCoords(cam_origin, cam_dir, self.lua_world.world.camera:GetFrustumId(EditorCamera.cameraEntity))
     
     local size = self.lua_world.world.visibility:GetBoxSizeL(entity)
     local center = self.lua_world.world.visibility:GetBoxCenterL(entity)
@@ -300,7 +307,7 @@ function Viewport:onMouseDown(eventData)
 		    end
 
             local mcoords = self:GetMouseInVP(eventData.coords)
-			self.tc_prevray = self.lua_world.world.camera:GetVectorFromScreen(self.lua_world.freecam, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+			self.tc_prevray = self.lua_world.world.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
 		else		
 			self.selection_mode = SELECTION_MODE.SIMPLE
 			self:Select(eventData.coords)
@@ -325,13 +332,7 @@ function Viewport:onMouseUp(eventData)
             self.rmouse_down = false
         else
             self:SetFreelook(false)
-
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_FORWARD_END, 0, 0)
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_BACK_END, 0, 0)
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_LEFT_END, 0, 0)
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_RIGHT_END, 0, 0)
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_UP_END, 0, 0)
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_DOWN_END, 0, 0)
+            EditorCamera:onStopMove()
 
             self.viewport.entity:SetHierarchyFocusOnMe(false)
         end
@@ -354,13 +355,9 @@ function Viewport:onKeyDown(eventData)
     if not self.lua_world then return false end
     
     if self.freelook then
-        if eventData.key == KEYBOARD_CODES.KEY_W then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_FORWARD_START, 0, 0) return true end
-        if eventData.key == KEYBOARD_CODES.KEY_S then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_BACK_START, 0, 0) return true end
-        if eventData.key == KEYBOARD_CODES.KEY_A then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_LEFT_START, 0, 0) return true end
-        if eventData.key == KEYBOARD_CODES.KEY_D then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_RIGHT_START, 0, 0) return true end
-        if eventData.key == KEYBOARD_CODES.KEY_E then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_UP_START, 0, 0) return true end
-        if eventData.key == KEYBOARD_CODES.KEY_Q then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_DOWN_START, 0, 0) return true end
-    end
+        EditorCamera:onStartMove(eventData.key)
+        return true
+     end
 
     if eventData.key == KEYBOARD_CODES.KEY_ESCAPE and self.drawhud then
         self:RememberSelection()
@@ -414,12 +411,8 @@ function Viewport:onKeyUp(eventData)
     if not self.lua_world then return true end
     
     if self.freelook then
-        if eventData.key == KEYBOARD_CODES.KEY_W then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_FORWARD_END, 0, 0) return end
-        if eventData.key == KEYBOARD_CODES.KEY_S then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_BACK_END, 0, 0) return end
-        if eventData.key == KEYBOARD_CODES.KEY_A then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_LEFT_END, 0, 0) return end
-        if eventData.key == KEYBOARD_CODES.KEY_D then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_RIGHT_END, 0, 0) return end
-        if eventData.key == KEYBOARD_CODES.KEY_E then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_UP_END, 0, 0) return end
-        if eventData.key == KEYBOARD_CODES.KEY_Q then self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_DOWN_END, 0, 0) return end
+        EditorCamera:onStopMove(eventData.key)
+        return true
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_CONTROL then 
@@ -453,7 +446,7 @@ function Viewport:onMouseMove(eventData)
     end
     
 	local mcoords = self:GetMouseInVP(mouse_pos)
-	local ray_dir = self.lua_world.world.camera:GetVectorFromScreen(self.lua_world.freecam, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+	local ray_dir = self.lua_world.world.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
 	
 	if self.tc_action then
         if is_ctrl and not self.tc_copied then
@@ -492,7 +485,7 @@ function Viewport:onMouseMove(eventData)
 		if tc_mode == TRANSFORM_MODE.NONE then
 			self.tc_action = false
 		elseif tc_mode == TRANSFORM_MODE.MOVE then		
-			local tc_move = self.lua_world.world.transformControls:CalcMove(ray_dir, self.tc_prevray, self.lua_world.freecam)
+			local tc_move = self.lua_world.world.transformControls:CalcMove(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
 				self.lua_world.world.transformControls:ApplyMove(tc_move, ent)
 			end
@@ -504,7 +497,7 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetPositionsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.ROT then
-			local tc_rot = self.lua_world.world.transformControls:CalcRot(ray_dir, self.tc_prevray, self.lua_world.freecam)
+			local tc_rot = self.lua_world.world.transformControls:CalcRot(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
 				self.lua_world.world.transformControls:ApplyRot(tc_rot, ent)
 			end
@@ -516,7 +509,7 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetRotationsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.SCALE then
-			local tc_scale = self.lua_world.world.transformControls:CalcScale(ray_dir, self.tc_prevray, self.lua_world.freecam)
+			local tc_scale = self.lua_world.world.transformControls:CalcScale(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
 				self.lua_world.world.transformControls:ApplyScale(tc_scale, ent)
 			end
@@ -548,21 +541,21 @@ function Viewport:onMouseMove(eventData)
             local delta_x = mouse_pos.x - center_x
             local delta_y = -mouse_pos.y + center_y
 
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_DELTA_ROT, delta_x, delta_y)
+            EditorCamera:onDeltaRot(delta_x, delta_y)
 
             CoreGui.SetCursorPos(self.viewport.entity, center_x, center_y)
         else
             local delta_x = mouse_pos.x - self.prev_coords.x
             local delta_y = -mouse_pos.y + self.prev_coords.y
 
-            self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_DELTA_ROT, delta_x, delta_y)
+            EditorCamera:onDeltaRot(delta_x, delta_y)
 
             self.prev_coords.x = mouse_pos.x
             self.prev_coords.y = mouse_pos.y
         end
     else
 		if not self.tc_action then
-			self.tc_hover = self.lua_world.world.transformControls:CheckHover(ray_dir, self.lua_world.freecam)
+			self.tc_hover = self.lua_world.world.transformControls:CheckHover(ray_dir, EditorCamera.cameraEntity)
 		end
     end
     return true
@@ -572,14 +565,7 @@ function Viewport:onMouseWheel(eventData)
     if not self.lua_world then return true end
 
     if self.freelook then
-        if eventData.coords.x > 0 then
-            self.movespeed = self.movespeed * 1.25
-            self.movespeed = math.min(self.movespeed, 2.0)
-        else
-            self.movespeed = self.movespeed * 0.75
-            self.movespeed = math.max(self.movespeed, 0.0002)
-        end
-        self.lua_world.world.controller:SendInput(self.lua_world.freecam, CTRL_CMDS.CC_MOVE_SPEED_CHANGE, self.movespeed, 0)
+        EditorCamera:onMoveSpeed(eventData.coords.x)
     end
     return true
 end
@@ -738,8 +724,8 @@ function Viewport:Select(coords)
     if self.selection_mode ~= SELECTION_MODE.SNAKE then self:RememberSelection() end
 
     local mcoords = self:GetMouseInVP(coords)
-    local click_dir = self.lua_world.world.camera:GetVectorFromScreen(self.lua_world.freecam, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
-    local click_origin = self.lua_world.world.camera:GetPos(self.lua_world.freecam)
+    local click_dir = self.lua_world.world.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+    local click_origin = self.lua_world.world.camera:GetPos(EditorCamera.cameraEntity)
 
     local is_ctrl = CoreGui.Keys.Ctrl()
 
@@ -747,7 +733,7 @@ function Viewport:Select(coords)
         self:UnselectAll()
     end
 
-    local s_ent = self.lua_world.world.visibility:CollideRay(click_origin, click_dir, self.lua_world.world.camera:GetFrustumId(self.lua_world.freecam))
+    local s_ent = self.lua_world.world.visibility:CollideRay(click_origin, click_dir, self.lua_world.world.camera:GetFrustumId(EditorCamera.cameraEntity))
     if not s_ent:IsNull() then
         if is_ctrl then
             for i, e_ent in ipairs(self.selection_set) do
