@@ -32,6 +32,11 @@ function Hotkeys:Process(eventData, root)
         fake_event.event = GUI_EVENTS.HK_RENAME
         root.entity:SendEventOnFocus(fake_event)
         resEvent.event = GUI_EVENTS.NULL
+    elseif eventData.key == KEYBOARD_CODES.KEY_DELETE then 
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.HK_DELETE
+        root.entity:SendEventOnFocus(fake_event)
+        resEvent.event = GUI_EVENTS.NULL
 
     elseif eventData.key == KEYBOARD_CODES.KEY_Z and CoreGui.Keys.Ctrl() then 
         History:Undo()

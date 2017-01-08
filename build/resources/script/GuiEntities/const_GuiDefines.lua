@@ -194,6 +194,7 @@ GUI_EVENTS = {
     HK_PASTE                    = 0x4F,
     HK_NEW                      = 0x50,
     HK_RENAME                   = 0x51,
+    HK_DELETE                   = 0x52,
 
 }
 

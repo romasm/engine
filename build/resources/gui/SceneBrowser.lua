@@ -90,6 +90,10 @@ return GuiWindow({
             self.entity:SetHierarchyFocusOnMe(false)
             return false
         end,
+        [GUI_EVENTS.HK_DELETE] = function(self, ev) 
+            Viewport:DeleteSelection()
+            return true
+        end,
     },
 
     GuiTextfield({
@@ -234,8 +238,6 @@ return GuiWindow({
 end
 
 function Gui.SceneBrowserEntity(name, ent_type, ent, topOffset, num)
-local label = name:len() > 0 and name or ent_type
-
 local btn = GuiButton({
     styles = { GuiStyles.entity_button, },
     icon = {material = {
@@ -244,6 +246,10 @@ local btn = GuiButton({
     }},
     top = topOffset,
     id = tostring(num),
+
+    background = {
+        color = 'bg_01_v1',
+    },
 
     events = {
         [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
@@ -266,7 +272,7 @@ local btn = GuiButton({
                     SceneBrowser:SetSelected(self)
                     self:SetPressed(true)
                 else
-                    SceneBrowser:DeleteSelected(self)
+                    SceneBrowser:ClearSelected(self)
                 end
             else
                 self:SetPressed(true)
@@ -327,10 +333,11 @@ local btn = GuiButton({
         end,--]]
     },
 
+    name:len() > 0 and 
     GuiTextfield({
         styles = { GuiStyles.entityname_textfield, },
         
-        text = {str = label},
+        text = {str = name},
 
         height = 18,
         top = 1,
@@ -346,6 +353,27 @@ local btn = GuiButton({
                 return true
             end,
         },
+    }) 
+    or 
+    GuiString({
+        styles = {
+            GuiStyles.ghost,
+            GuiStyles.string_16,
+        },
+
+        str = ent_type,
+        static = true,
+        
+        offset = { x = 3, y = 0 },
+        center = { x = false, y = true },
+
+        height = 18,
+        top = 1,
+        left = 48,
+        align = GUI_ALIGN.BOTH,
+
+        color = 'text_07',
+        color_nonactive = 'text_02',
     }),
 
     GuiButton({
@@ -386,6 +414,7 @@ local btn = GuiButton({
         },
     }),
 
+    name:len() > 0 and 
     GuiButton({
         styles = {
             GuiStyles.alt_button,
@@ -394,7 +423,7 @@ local btn = GuiButton({
         align = GUI_ALIGN.BOTH,
         left = 24,
         alt = ent_type,
-    }),
+    }) or nil,
 })
 
 btn.linked_ent = ent

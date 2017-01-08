@@ -2,7 +2,7 @@ if not SceneBrowser then SceneBrowser = {} end
 
 function SceneBrowser.reload()
     if SceneBrowser.window then
-        SceneBrowser:Clear()
+        SceneBrowser:Deactivate()
         Tools.right_side_area.entity:DetachChild(SceneBrowser.window.entity)
         SceneBrowser.window.entity:Destroy()
         SceneBrowser.window = nil
@@ -45,18 +45,9 @@ function SceneBrowser:Init()
     self.reload()
 end
 
-function SceneBrowser:Deactivate()
+function SceneBrowser:Refill()
     self:Clear()
-    self.window.entity:Deactivate()
-    self.none_msg.enable = true
-    self.world = nil
-end
-
-function SceneBrowser:Activate(world)
-    self.window.entity:Activate()
-    self.none_msg.enable = false
-
-    self.world = world
+    self.entList = {}
 
     self.entList = {}
     for i, entType in ipairs(self.entTypes) do
@@ -70,6 +61,23 @@ function SceneBrowser:Activate(world)
     
     self:FillBody()
     self.window.entity:UpdatePosSize()
+end
+
+function SceneBrowser:Deactivate()
+    self:Clear()
+    self.entList = {}
+    self.window.entity:Deactivate()
+    self.none_msg.enable = true
+    self.world = nil
+end
+
+function SceneBrowser:Activate(world)
+    self.window.entity:Activate()
+    self.none_msg.enable = false
+
+    self.world = world
+    
+    self:Refill()
 end
 
 function SceneBrowser:HideEnt(btn)
@@ -96,6 +104,8 @@ function SceneBrowser:ShowEnt(btn)
     end
 end
 
+--------------------------------------------------------------------------------SELECTION [
+
 function SceneBrowser:GetSelectedCount()
     return #self.selectedBtns
 end
@@ -110,12 +120,16 @@ function SceneBrowser:SetSelected(btn)
     self.prevSelectedNum = tonumber( btn.entity:GetID() )
     self.selectedBtns[1] = btn
     self.selected_counter:SetString( "1 selected" )
+
+    self:SelectEntities({btn.linked_ent}, false)
 end
 
 function SceneBrowser:AddSelected(btn)
     self.selectedBtns[#self.selectedBtns + 1] = btn
     self.prevSelectedNum = tonumber( btn.entity:GetID() )
     self.selected_counter:SetString( tostring(#self.selectedBtns) .. " selected" )
+
+    self:SelectEntities({btn.linked_ent}, true)
 end
 
 function SceneBrowser:GroupSelected(btn)
@@ -134,25 +148,31 @@ function SceneBrowser:GroupSelected(btn)
         toNum = temp
     end
 
+    local entities = {}
     for i = fromNum, toNum do
         local shiftBtn = self.body:GetChildById( tostring(i) ):GetInherited()
         if self:FindSelected(shiftBtn) == 0 then
             self.selectedBtns[#self.selectedBtns + 1] = shiftBtn
+            entities[#entities + 1] = shiftBtn.linked_ent
         end
         shiftBtn:SetPressed(true)
     end
 
     self.prevSelectedNum = nextNum
     self.selected_counter:SetString( tostring(#self.selectedBtns) .. " selected" )
+    
+    self:SelectEntities(entities, true)
 end
 
-function SceneBrowser:DeleteSelected(btn)
+function SceneBrowser:ClearSelected(btn)
     local founded = self:FindSelected(btn)
     if founded == 0 then return end
     
     self.prevSelectedNum = 0
     table.remove(self.selectedBtns, founded)
     self.selected_counter:SetString( tostring(#self.selectedBtns) .. " selected" )
+
+    self:SelectEntities({}, false)
 end
 
 function SceneBrowser:FindSelected(btn)
@@ -166,6 +186,48 @@ function SceneBrowser:FindSelected(btn)
     return founded
 end
 
+function SceneBrowser:SelectEntities(entities, add)
+    Viewport:RememberSelection()
+
+    if add ~= true then Viewport:UnselectAll() end
+    if #entities > 0 then Viewport:AddSelection(entities) end
+
+    Viewport:PushSelectHistory()
+    Viewport:PlaceArrows()
+    Properties:Update()
+end
+
+function SceneBrowser:SyncSelection()
+    for i, selected in ipairs(self.selectedBtns) do
+        selected:SetPressed(false)
+    end
+    self.selectedBtns = {}
+    self.prevSelectedNum = 0
+
+    for i, ent in ipairs(Viewport.selection_set) do
+        local entNum = self:GetEntityNum(ent)
+        if entNum > 0 then
+            local btn = self.body:GetChildById( tostring(entNum) ):GetInherited()
+            self.selectedBtns[#self.selectedBtns + 1] = btn
+            btn:SetPressed(true)
+        end
+    end
+    self.selected_counter:SetString( #self.selectedBtns .. " selected" )
+end
+
+function SceneBrowser:GetEntityNum(entity)
+    local founded = 0
+    for i, ent in ipairs(self.filtredList) do
+        if EntIsEq(ent, entity) then
+            founded = i
+            break
+        end
+    end
+    return founded
+end
+
+--------------------------------------------------------------------------------SELECTION ]
+
 function SceneBrowser:Clear()
     for i = 1, #self.filtredList do
         local btn = self.body:GetChildById( tostring(i) )
@@ -176,7 +238,6 @@ function SceneBrowser:Clear()
     self.selectedBtns = {}
     self.filtredList = {}
     self.findstr = ""
-    self.entList = {}
     self.topOffset = 0
 end
 

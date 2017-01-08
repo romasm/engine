@@ -248,6 +248,8 @@ function Viewport:PlaceAndSelect(entity, mouse_coords)
     self:PushSelectHistory() -- temp
     self:PlaceArrows()
     Properties:Update()
+    SceneBrowser:Refill()
+    SceneBrowser:SyncSelection()
 end
 
 function Viewport:PlaceEntity(entity, mouse_coords)
@@ -366,37 +368,46 @@ function Viewport:onKeyDown(eventData)
         self:PushSelectHistory()
         self:PlaceArrows()
         Properties:Update()
+        SceneBrowser:SyncSelection()
         return true 
     end
 
-    if eventData.key == KEYBOARD_CODES.KEY_DELETE and self.drawhud then -- to history
-        self.history.transform_type = TRANSFORM_MODE.NONE
-        self.history.msg = "Delete"
-        self.history.undo = function(self)
-            local ents = {}
-            for i = #self.old_ents, 1, -1 do
-                ents[#self.old_ents - i + 1] = Viewport.lua_world.world:RestoreEntity()
-                -- deserialize from historypool
-            end
-            Viewport:SetSelection(ents)
-        end
-        self.history.redo = function(self)
-            for i = #Viewport.selection_set, 1, -1 do 
-                self.old_ents[#Viewport.selection_set - i + 1] = 1 -- serialize to historypool
-                Viewport.lua_world.world:DestroyEntity(Viewport.selection_set[i])
-                table.remove(Viewport.selection_set, i) 
-            end
-		    Viewport:PlaceArrows()
-            Properties:Update()
-        end
-
-        self.history_push = true
-        self.history:redo()
-        self:PushHistory()
+    if eventData.key == KEYBOARD_CODES.KEY_DELETE and self.drawhud then
+        self:DeleteSelection()
         return true 
     end
 
     return false
+end
+
+function Viewport:DeleteSelection() -- to history
+    if not self.lua_world then return end
+
+    self.history.transform_type = TRANSFORM_MODE.NONE
+    self.history.msg = "Delete"
+    self.history.undo = function(self)
+        local ents = {}
+        for i = #self.old_ents, 1, -1 do
+            ents[#self.old_ents - i + 1] = Viewport.lua_world.world:RestoreEntity()
+            -- deserialize from historypool
+        end
+        Viewport:SetSelection(ents)
+    end
+    self.history.redo = function(self)
+        for i = #Viewport.selection_set, 1, -1 do 
+            self.old_ents[#Viewport.selection_set - i + 1] = 1 -- serialize to historypool
+            Viewport.lua_world.world:DestroyEntity(Viewport.selection_set[i])
+            table.remove(Viewport.selection_set, i) 
+        end
+		Viewport:PlaceArrows()
+        Properties:Update()
+        SceneBrowser:Refill()
+        SceneBrowser:SyncSelection()
+    end
+
+    self.history_push = true
+    self.history:redo()
+    self:PushHistory()
 end
 
 function Viewport:onKeyUp(eventData)
@@ -472,6 +483,8 @@ function Viewport:onMouseMove(eventData)
                 end
 
             Properties:Update()
+            SceneBrowser:Refill()
+            SceneBrowser:SyncSelection()
         end 
 
 		local tc_mode = self.lua_world.world.transformControls.mode
@@ -605,6 +618,8 @@ function Viewport:onItemDroped(eventData)
         self:PushSelectHistory() -- temp
         self:PlaceArrows()
         Properties:Update()
+        SceneBrowser:Refill()
+        SceneBrowser:SyncSelection()
     end
     return true
 end
@@ -745,6 +760,7 @@ function Viewport:Select(coords)
 						
 						self:PlaceArrows()
                         Properties:Update()
+                        SceneBrowser:SyncSelection()
                     end
                     return
                 end
@@ -762,6 +778,7 @@ function Viewport:Select(coords)
     
     if self.selection_mode ~= SELECTION_MODE.SNAKE then self:PushSelectHistory() end
     Properties:Update()
+    SceneBrowser:SyncSelection()
 end
 
 function Viewport:RememberSelection()
@@ -816,9 +833,11 @@ function Viewport:SetSelection(ents)
     if #ents == 0 then 
         self:PlaceArrows()
         Properties:Update()
+        SceneBrowser:SyncSelection()
         return
     end
     self:AddSelection(ents)
+    SceneBrowser:SyncSelection()
 end
 
 function Viewport:CopySelection(history)

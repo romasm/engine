@@ -46,3 +46,7 @@ end
 function CMath.Round(value)
     return math.floor(value + 0.5)
 end
+
+function CMath.IsEven(value)
+    return value - math.floor(value / 2) * 2 == 0
+end

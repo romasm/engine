@@ -61,6 +61,9 @@ void ShadowSystem::ClearShadowsQueue()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		i.render_mgr->ClearAll();
 	}
 }
@@ -69,6 +72,9 @@ void ShadowSystem::RenderShadows()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
 
 		bitset<FRUSTUM_MAX_COUNT> bits;
