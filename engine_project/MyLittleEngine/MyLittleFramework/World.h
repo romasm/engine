@@ -93,6 +93,11 @@ namespace EngineCore
 				m_staticMeshSystem->PostReload();
 		}
 				
+		void RawInput(RawInputData& data)
+		{
+			m_controllerSystem->RawInput(data);
+		}
+
 		bool IsActive() const {return b_active;}
 		void SetActive(bool active) {b_active = active;}
 

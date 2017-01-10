@@ -26,6 +26,11 @@ void ControllerSystem::Process()
 		// TODO: call funcs from func map
 	}
 }
+
+void ControllerSystem::RawInput(RawInputData& data)
+{
+	//LOG("Raw Input");
+}
 		
 void ControllerSystem::AddComponent(Entity e, string keyMapName)
 {
@@ -47,10 +52,10 @@ void ControllerSystem::AddComponent(Entity e, string keyMapName)
 	cntr.funcMap = new FuncMap;
 	// TODO: fill func map
 	// itarate throw keymap
-	LuaRef func = scriptSys->GetLuaFunction(scriptComp, /*on[EventName]*/);
+	/*LuaRef func = scriptSys->GetLuaFunction(scriptComp, on[EventName]);
 	if(!func.isNil())
 		cntr.funcMap[keyID] = new LuaRef(func);
-
+	*/
 	components.insert(make_pair(e.index(), cntr));
 }
 

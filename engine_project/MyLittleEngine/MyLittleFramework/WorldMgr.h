@@ -47,6 +47,12 @@ namespace EngineCore
 				it.second->UpdateLuaFuncs();
 		#endif
 		}
+
+		static void RawInput(RawInputData& data) 
+		{
+			for(auto& it: m_instance->m_worldsMap)
+				it.second->RawInput(data);
+		}
 	
 		static void RegLuaClass();
 

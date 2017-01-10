@@ -170,26 +170,22 @@ namespace EngineCore
 		KEY_MAX			= 0x100
 	};
 
-	// события мыши
 	struct MouseEvent
 	{
 		MouseEvent(int nx, int ny, bool m_out = false) :  x(nx), y(ny), out(m_out) {}
 
-		// координаты мыши
 		int x;				
 		int y;
 		bool out;
 	};
 
-	// событие нажатия кнопки мыши
 	struct MouseEventClick : public MouseEvent
 	{
 		MouseEventClick(eMouseKeyCodes b, int nx, int ny) : MouseEvent(nx,ny), btn(b) {}
 
-		const eMouseKeyCodes btn;	// Клавиша
+		const eMouseKeyCodes btn;
 	};
 
-	// событие прокрутки мыши
 	struct MouseEventWheel : public MouseEvent
 	{
 		MouseEventWheel(int nwheel, int nx, int ny) : MouseEvent(nx,ny), wheel(nwheel) {}
@@ -197,7 +193,6 @@ namespace EngineCore
 		int wheel;
 	};
 
-	// событие клавиши
 	struct KeyEvent
 	{
 		KeyEvent(wchar_t c, eKeyCodes kc) : wc(c), code(kc) {}
@@ -206,5 +201,24 @@ namespace EngineCore
 		const eKeyCodes code;
 	};
 
-//------------------------------------------------------------------
+
+
+	// RAW INPUT
+	enum USER_DEVICES
+	{
+		KEYBOARD = 0,
+		MOUSE,
+		GAMEPAD
+	};
+
+	struct RawInputData
+	{
+		USER_DEVICES type;
+
+		bool pressed;
+		uint32_t key;
+		int32_t deltaX;
+		int32_t deltaY;
+		int32_t deltaZ;
+	};
 }

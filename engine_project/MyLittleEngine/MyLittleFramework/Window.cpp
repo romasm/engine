@@ -6,6 +6,7 @@
 #include "Hud.h"
 #include "RenderTarget.h"
 #include "MainLoop.h"
+#include "WorldMgr.h"
 
 #define wndClass L"MLE"
 
@@ -102,6 +103,30 @@ namespace EngineCore
 		RegisterDragDrop(m_hwnd, m_dropTarget);
 
 		systemId = id;
+
+		// RAW INPUT
+		RAWINPUTDEVICE Rid[3];
+        
+		Rid[0].usUsagePage = 0x01; 
+		Rid[0].usUsage = 0x02; 
+		Rid[0].dwFlags = 0;					// adds HID mouse
+		Rid[0].hwndTarget = 0;
+
+		Rid[1].usUsagePage = 0x01; 
+		Rid[1].usUsage = 0x06; 
+		Rid[1].dwFlags = 0;					// adds HID keyboard
+		Rid[1].hwndTarget = 0;
+
+		Rid[2].usUsagePage = 0x01; 
+		Rid[2].usUsage = 0x05; 
+		Rid[2].dwFlags = 0;                 // adds game pad
+		Rid[2].hwndTarget = 0;
+
+		if( RegisterRawInputDevices(Rid, 3, sizeof(Rid[0])) == FALSE ) 
+		{
+			ERR("Registration of RawInput devices failed!");
+			return false;
+		}
 
 		return true;
 	}
@@ -470,6 +495,51 @@ namespace EngineCore
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_MBUTTONUP, wParam, lParam);
 			break;
+
+		case WM_INPUT:
+			{
+				UINT dwSize;
+				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+
+				LPBYTE lpb = new BYTE[dwSize];
+				if(!lpb) 
+					return 0;
+
+				if( GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize )
+					 WRN("GetRawInputData does not return correct size!"); 
+
+				RAWINPUT* raw = (RAWINPUT*)lpb;
+				
+				RawInputData rawData;
+				switch (raw->header.dwType)
+				{
+				case RIM_TYPEKEYBOARD:
+					rawData.type = USER_DEVICES::KEYBOARD;
+					rawData.pressed = (raw->data.keyboard.Flags & RI_KEY_BREAK) == 0;
+					rawData.key = (uint32_t)raw->data.keyboard.VKey;
+					
+					WorldMgr::Get()->RawInput(rawData);
+					break;
+
+				case RIM_TYPEMOUSE:
+					rawData.type = USER_DEVICES::MOUSE;
+					rawData.key = (uint32_t)raw->data.mouse.usButtonFlags;
+					rawData.deltaX = (int32_t)raw->data.mouse.lLastX;
+					rawData.deltaY = (int32_t)raw->data.mouse.lLastY;
+					rawData.deltaZ = (SHORT)raw->data.mouse.usButtonData;
+					
+					WorldMgr::Get()->RawInput(rawData);
+					break;
+
+				case RIM_TYPEHID:
+					rawData.type = USER_DEVICES::GAMEPAD;
+					LOG("Gamepad input TODO!");
+					break;
+				} 
+				delete[] lpb; 
+
+				return 0;
+			} 
 		}
 
 		return DefWindowProcW( hwnd, nMsg, wParam, lParam);

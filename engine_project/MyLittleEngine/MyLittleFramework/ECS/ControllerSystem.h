@@ -4,14 +4,11 @@
 #include "Entity.h"
 #include "TransformSystem.h"
 #include "ScriptSystem.h"
+#include "InputCodes.h"
 
 namespace EngineCore
 {
-#define USER_DEVICE_KEYBOARD	0
-#define USER_DEVICE_MOUSE		1
-#define USER_DEVICE_GAMEPAD		2
-
-	class KeyMap
+	struct KeyMap
 	{
 		
 	};
@@ -67,6 +64,8 @@ namespace EngineCore
 		}
 		
 		void Process();
+
+		void RawInput(RawInputData& data);
 
 		bool IsActive(Entity e);
 		bool SetActive(Entity e, bool active);
