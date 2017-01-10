@@ -131,9 +131,6 @@
     <ClInclude Include="ECS\ControllerSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
-    <ClInclude Include="ECS\FreeCamController.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
     <ClInclude Include="ECS\EnvProbSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
@@ -310,9 +307,6 @@
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\ControllerSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS\FreeCamController.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\EnvProbSystem.cpp">

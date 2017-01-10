@@ -12,7 +12,6 @@
 #include "ECS/CameraSystem.h"
 #include "ECS/StaticMeshSystem.h"
 #include "ECS/ControllerSystem.h"
-#include "ECS/FreeCamController.h"
 #include "ECS/EnvProbSystem.h"
 #include "ECS/LightSystem.h"
 #include "ECS/LineGeometrySystem.h"
@@ -172,6 +171,7 @@ namespace EngineCore
 		{
 			m_typeMgr->UpdateLuaFuncs();
 			m_scriptSystem->UpdateLuaFuncs();
+			m_controllerSystem->UpdateLuaFuncs();
 		}
 	#endif
 		

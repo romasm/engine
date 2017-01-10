@@ -22,6 +22,11 @@ float3 Diffuse_Burley( float3 DiffuseColor, float Roughness, float NoV, float No
 	return DiffuseColor * FdV * FdL * energyFactor * INV_PI;
 }
 
+float3 Diffuse_Lambert( float3 DiffuseColor )
+{
+	return DiffuseColor * INV_PI;
+}
+
 // GGX / Trowbridge-Reitz
 // [Walter et al. 2007, "Microfacet models for refraction through rough surfaces"]
 float D_GGX( float Roughness, float NoH )

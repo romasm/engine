@@ -31,6 +31,8 @@
 #define PATH_CONFIG PATH_ROOT "config/"
 #define PATH_FONTS PATH_RSC "fonts/"
 
+#define PATH_KEYMAPS PATH_CONFIG "keymaps/"
+
 #define PATH_MATERIAL_TECH PATH_MATERIALS "tech/"
 #define PATH_EDITOR_MATERIAL PATH_MATERIALS "editor/"
 #define PATH_MATERIALS_GUI PATH_MATERIALS "hud/"

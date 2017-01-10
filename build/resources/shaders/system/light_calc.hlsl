@@ -726,14 +726,14 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 	if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 0 cascede
 	{
 		viewproj = vp0;
-		LPos = pos0;
+		//LPos = pos0;
 		adress = adress0;
 #if DEBUG_CASCADE_LIGHTS != 0
 		res = 1.0;
 #endif
 		normalShadowOffsetDir = normalShadowOffsetDir0;
 		//shadowBiasDir = shadowBiasDir0;
-		halfPix = texelSizes.x;
+		//halfPix = texelSizes.x;
 	}
 	else
 	{
@@ -741,14 +741,14 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 		if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 1 cascede
 		{
 			viewproj = vp1;
-			LPos = pos1;
+			//LPos = pos1;
 			adress = adress1;
 #if DEBUG_CASCADE_LIGHTS != 0
 			res = 0.75;
 #endif
 			normalShadowOffsetDir = normalShadowOffsetDir1;
 			//shadowBiasDir = shadowBiasDir1;
-			halfPix = texelSizes.y;
+			//halfPix = texelSizes.y;
 		}
 		else
 		{
@@ -756,28 +756,28 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 			if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 2 cascede
 			{
 				viewproj = vp2;
-				LPos = pos2;
+				//LPos = pos2;
 				adress = adress2;
 #if DEBUG_CASCADE_LIGHTS != 0
 				res = 0.5;
 #endif
 				normalShadowOffsetDir = normalShadowOffsetDir2;
 				//shadowBiasDir = shadowBiasDir2;
-				halfPix = texelSizes.z;
+				//halfPix = texelSizes.z;
 			}
 			else // 3 cascade
 			{
 				lightViewProjPos = mul(wpos4, vp3);
 				
 				viewproj = vp3;
-				LPos = pos3;
+				//LPos = pos3;
 				adress = adress3;
 #if DEBUG_CASCADE_LIGHTS != 0
 				res = 0.25;
 #endif
 				normalShadowOffsetDir = normalShadowOffsetDir3;
 				//shadowBiasDir = shadowBiasDir3;
-				halfPix = texelSizes.w;
+				//halfPix = texelSizes.w;
 			}
 		}
 	}
@@ -804,6 +804,5 @@ float DirlightShadow(float3 wpos, float3 dir, float3 pos0, float3 pos1, float3 p
 	return res * PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
 #else
 	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
-	//return GatherFilter(shadowmapCoords, reprojCoords.xy, halfPix, depthView);
 #endif
 }

@@ -5,9 +5,11 @@
 
 #include "../common/voxel_helpers.hlsl"
 #include "../common/light_helpers.hlsl" 
+
+#include "direct_brdf.hlsl" 
  
     
-#define GROUP_THREAD_COUNT 8
+#define GROUP_THREAD_COUNT 2
 
 RWTexture3D <float4> emittanceVolume : register(u0);  
 
@@ -82,27 +84,29 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 	float3 faceEmittance = 0;
 	
+	float3 diffuseColor = Diffuse_Lambert(faceColor.rgb);
+
 	[loop]
 	for(int spotID = 0; spotID < (int)spotCount; spotID++)
 	{
-		SpotVoxelBuffer lightData = spotLightInjectBuffer[spotID];
+		SpotVoxelBuffer spotLightData = spotLightInjectBuffer[spotID];
 	
-		const float3 unnormL = lightData.PosRange.xyz - wpos;
+		const float3 unnormL = spotLightData.PosRange.xyz - wpos;
 		
-		const float DoUL = dot(lightData.DirConeY.xyz, -unnormL);
+		const float DoUL = dot(spotLightData.DirConeY.xyz, -unnormL);
 		if(DoUL <= 0)
 			continue;
 		 
-		float illuminance = getDistanceAtt( unnormL, lightData.PosRange.w );
+		float illuminance = getDistanceAtt( unnormL, spotLightData.PosRange.w );
 		if(illuminance <= 0) 
 			continue;
 		
 		const float3 L = normalize(unnormL);
 			 
-		const float3 virtUnnormL = lightData.Virtpos.xyz - wpos;
+		const float3 virtUnnormL = spotLightData.Virtpos.xyz - wpos;
 		const float3 virtL = normalize(virtUnnormL);
 
-		illuminance *= getAngleAtt(virtL, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
+		illuminance *= getAngleAtt(virtL, -spotLightData.DirConeY.xyz, spotLightData.ColorConeX.w, spotLightData.DirConeY.w);
 		if(illuminance <= 0)
 			continue; 
 
@@ -120,16 +124,43 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		{
 			float4 aaPoint = samplePoint;  
 			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
-			light_blocked += GetVoxelSpotShadow(samplerPointClamp, shadowsAtlas, aaPoint, lightData);
+			light_blocked += GetVoxelSpotShadow(samplerPointClamp, shadowsAtlas, aaPoint, spotLightData);
 		}
 		light_blocked *= VOXEL_SHADOW_AA_RCP;
 		
-		if(light_blocked == 0)
-			continue;		
-
-		float3 colorIlluminance = light_blocked * illuminance * lightData.ColorConeX.rgb;
+		float3 colorIlluminance = light_blocked * illuminance * spotLightData.ColorConeX.rgb;
 		
-		faceEmittance += faceColor.rgb * colorIlluminance * saturate(dot(faceNormal, L));
+		faceEmittance += diffuseColor * colorIlluminance * saturate(dot(faceNormal, L));
+	}
+
+	[loop]
+	for(int dirID = 0; dirID < (int)dirCount; dirID++)
+	{
+		DirVoxelBuffer dirLightData = dirLightInjectBuffer[dirID];
+
+		float4 samplePoint = float4(wpos, 1.0f);
+
+		const float3 L = -dirLightData.Dir.xyz;
+
+		float offset = 0;
+		[unroll] 
+		for(int h = 0; h < 4; h++) 
+			offset = max(offset, abs(dot( voxelVector[h], L )));
+		samplePoint.xyz += L * offset;
+		
+		float light_blocked = 0; 
+		[loop]
+		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize to piramid 4 points
+		{ 
+			float4 aaPoint = samplePoint;  
+			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
+			light_blocked += GetVoxelDirShadow(samplerPointClamp, shadowsAtlas, aaPoint, dirLightData);
+		}
+		light_blocked *= VOXEL_SHADOW_AA_RCP;
+
+		float3 colorIlluminance = light_blocked * dirLightData.Color.rgb;
+		
+		faceEmittance += diffuseColor * colorIlluminance * saturate(dot(faceNormal, L));
 	}
 
 	emittanceVolume[voxelID] = float4(faceEmittance, faceOpacity);

@@ -90,6 +90,10 @@ namespace EngineCore
 		uint32_t Deserialize(Entity e, uint8_t* data);
 
 		void Update();
+
+		// TODO: prevent non-uniform scaling for parents
+		// 1 - dont inherit scaling
+		// 2 - inherit uniformed scaling
 		inline void UpdateComponent(uint32_t& id)
 		{
 			TransformComponent& comp = components[id];

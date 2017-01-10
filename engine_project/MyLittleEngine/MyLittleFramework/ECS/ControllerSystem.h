@@ -3,26 +3,22 @@
 #include "ECS_defines.h"
 #include "Entity.h"
 #include "TransformSystem.h"
+#include "ScriptSystem.h"
 
 namespace EngineCore
 {
-	enum ControllerComands
+#define USER_DEVICE_KEYBOARD	0
+#define USER_DEVICE_MOUSE		1
+#define USER_DEVICE_GAMEPAD		2
+
+	class KeyMap
 	{
-		CC_NOPE						= 0x00,
-		CC_DELTA_ROT				= 0x01,		
-		CC_FORWARD_START			= 0x02,
-		CC_FORWARD_END				= 0x03,		
-		CC_BACK_START				= 0x04,
-		CC_BACK_END					= 0x05,		
-		CC_LEFT_START				= 0x06,
-		CC_LEFT_END					= 0x07,		
-		CC_RIGHT_START				= 0x08,
-		CC_RIGHT_END				= 0x09,		
-		CC_UP_START					= 0x0A,
-		CC_UP_END					= 0x0B,
-		CC_DOWN_START				= 0x0C,
-		CC_DOWN_END					= 0x0D,
-		CC_MOVE_SPEED_CHANGE		= 0x0E
+		
+	};
+
+	class FuncMap
+	{
+		
 	};
 
 	class Controller
@@ -30,18 +26,10 @@ namespace EngineCore
 		friend class ControllerSystem;
 		ENTITY_IN_COMPONENT	
 	public:
-		Controller()
-		{}
-
 		bool active;
-		XMMATRIX transform;
-		BaseWorld* world;
+		FuncMap* funcMap;
 
-		ALIGNED_ALLOCATION
-
-	protected:
-		virtual void Process() = 0;
-		virtual void GetInput(ControllerComands cmd, float param1, float param2) = 0;
+		Controller() : active(false), funcMap(nullptr) {}
 	};
 
 	class BaseWorld;
@@ -53,27 +41,27 @@ namespace EngineCore
 		~ControllerSystem()
 		{
 			for(auto i: components)
-			{
-				_DELETE(i.second)
-			}
+				_DELETE(i.second.funcMap);
+			components.clear();
+
+			for(auto i: keyMaps)
+				_DELETE(i.second);
+			keyMaps.clear();
 		}
 
-		void AddComponent(Entity e, Controller* D)
-		{
-			D->world = world;
-			D->parent = e;
-			components.insert(make_pair(e.index(), D));
-		}
+		void AddComponent(Entity e, string keyMapName);
+
 		void DeleteComponent(Entity e)
 		{
-			Controller* comp = GetComponent(e);
-			_DELETE(comp)
+			Controller& comp = GetComponent(e);
+			comp.active = false;
+			comp.funcMap = nullptr;
 			components.erase(e.index());
 		}
 		bool HasComponent(Entity e) const {return components.find(e.index()) != components.end();}
 		size_t ComponentsCount() {return components.size();}
 
-		inline Controller* GetComponent(Entity e)
+		inline Controller& GetComponent(Entity e)
 		{
 			return components[e.index()];
 		}
@@ -83,10 +71,9 @@ namespace EngineCore
 		bool IsActive(Entity e);
 		bool SetActive(Entity e, bool active);
 
-		void SendInput(Entity e, ControllerComands cmd, float param1, float param2);
-		void _SendInput(Entity e, UINT cmd, float param1, float param2) {SendInput(e, ControllerComands(cmd), param1, param2);}
-		void SendInputToAll(ControllerComands cmd, float param1, float param2);
-		void _SendInputToAll(UINT cmd, float param1, float param2) {SendInputToAll(ControllerComands(cmd), param1, param2);}
+		#ifdef _DEV
+			void UpdateLuaFuncs();
+		#endif
 
 		static void RegLuaClass()
 		{
@@ -94,10 +81,8 @@ namespace EngineCore
 				.beginClass<ControllerSystem>("ControllerSystem")
 					.addFunction("IsActive", &ControllerSystem::IsActive)
 					.addFunction("SetActive", &ControllerSystem::SetActive)
-					.addFunction("SendInput", &ControllerSystem::_SendInput)
-					.addFunction("SendInputToAll", &ControllerSystem::_SendInputToAll)
 
-					//.addFunction("AddComponent", &ControllerSystem::AddComponent)
+					.addFunction("AddComponent", &ControllerSystem::AddComponent)
 					.addFunction("DeleteComponent", &ControllerSystem::DeleteComponent)
 					.addFunction("HasComponent", &ControllerSystem::HasComponent)
 				.endClass();
@@ -106,9 +91,13 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 
 	private:
-		map<UINT, Controller*> components;
+		KeyMap* GetKeyMap(string& keyMapName);
+
+		unordered_map<UINT, Controller> components;
+
+		unordered_map<string, KeyMap*> keyMaps;
 
 		BaseWorld* world;
-		TransformSystem* transformSys;
+		ScriptSystem* scriptSys;
 	};
 }

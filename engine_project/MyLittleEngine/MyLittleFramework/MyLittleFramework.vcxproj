@@ -185,7 +185,6 @@
     <ClInclude Include="ECS\ECS_defines.h" />
     <ClInclude Include="ECS\Entity.h" />
     <ClInclude Include="ECS\EnvProbSystem.h" />
-    <ClInclude Include="ECS\FreeCamController.h" />
     <ClInclude Include="ECS\LightSystem.h" />
     <ClInclude Include="ECS\LineGeometrySystem.h" />
     <ClInclude Include="ECS\StaticMeshSystem.h" />
@@ -256,7 +255,6 @@
     <ClCompile Include="ECS\ControllerSystem.cpp" />
     <ClCompile Include="ECS\EarlyVisibilitySystem.cpp" />
     <ClCompile Include="ECS\EnvProbSystem.cpp" />
-    <ClCompile Include="ECS\FreeCamController.cpp" />
     <ClCompile Include="ECS\LightSystem.cpp" />
     <ClCompile Include="ECS\LineGeometrySystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />

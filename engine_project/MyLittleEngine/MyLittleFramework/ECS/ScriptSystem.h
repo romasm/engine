@@ -79,6 +79,9 @@ namespace EngineCore
 
 		void Update(float dt);
 
+		LuaRef GetLuaFunction(Entity e, string& funcName);
+		LuaRef GetLuaFunction(ScriptComponent& comp, string& funcName);
+
 	#ifdef _DEV
 		void UpdateLuaFuncs();
 	#endif

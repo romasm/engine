@@ -38,6 +38,50 @@ float GetVoxelSpotShadow(sampler samp, Texture2DArray <float> shadowmap, float4 
 	return float(shmDepth > lightViewProjPos.z);
 }
 
+
+float GetVoxelDirShadow(sampler samp, Texture2DArray <float> shadowmap, float4 wpos, DirVoxelBuffer lightData)
+{
+	float4 adress = 0;
+
+	float4 lightViewProjPos = mul(wpos, lightData.ViewProj0);	
+	if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 0 cascede
+	{
+		adress = lightData.ShadowmapAdress0;
+	}
+	else
+	{
+		lightViewProjPos = mul(wpos, lightData.ViewProj1);
+		if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 1 cascede
+		{
+			adress = lightData.ShadowmapAdress1;
+		}
+		else
+		{
+			lightViewProjPos = mul(wpos, lightData.ViewProj2);
+			if(abs(lightViewProjPos.x) < 1 && abs(lightViewProjPos.y) < 1 && lightViewProjPos.z < 1) // 2 cascede
+			{
+				adress = lightData.ShadowmapAdress2;
+			}
+			else // 3 cascade
+			{
+				lightViewProjPos = mul(wpos, lightData.ViewProj3);
+				adress = lightData.ShadowmapAdress3;
+			}
+		}
+	}
+
+	lightViewProjPos.xyz /= lightViewProjPos.w;
+		
+	float2 reprojCoords = reproj[0] * lightViewProjPos.xy + reproj[1];
+			
+	float3 shadowmapCoords;
+	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
+	shadowmapCoords.z = adress.w;
+
+	float shmDepth = shadowmap.SampleLevel(samp, shadowmapCoords, 0);
+	return float(shmDepth > lightViewProjPos.z);
+}
+
 float smoothDistanceAtt( float squaredDistance, float invSqrAttRadius )
 {
 	float factor = squaredDistance * invSqrAttRadius;

@@ -428,8 +428,8 @@ void VoxelRenderer::ProcessEmittance()
 	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, XMFLOAT4(0,0,0,0));
 
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
-	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(SpotVoxelBuffer));
-	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(SpotVoxelBuffer));
+	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
+	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(DirVoxelBuffer));
 
 	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
 		(uint32_t)dirVoxel_array.size(), 0};
@@ -452,7 +452,7 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
 
-	voxelInjectLight->Dispatch( 8 * clipmapCount, 8 * 6, 8 );
+	voxelInjectLight->Dispatch( 32 * clipmapCount, 32 * 6, 32 );
 	voxelInjectLight->UnbindUAV();
 	
 	

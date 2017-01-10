@@ -269,7 +269,9 @@ inline void BoundingOrientedBoxTransformFixed( BoundingOrientedBox& In, CXMMATRI
 
     // Composite the box rotation and the transform rotation.
     XMVECTOR Rotation, Scale, Translate;
-	XMMatrixDecompose(&Scale, &Rotation, &Translate, M);
+	Rotation = XMVectorSet(0, 0, 0, 1.0f);
+	if(!XMMatrixDecompose(&Scale, &Rotation, &Translate, M))
+		ERR("XMMatrixDecompose failed!");
 
     vOrientation = XMQuaternionMultiply( vOrientation, Rotation );
 

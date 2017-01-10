@@ -7,57 +7,106 @@ using namespace EngineCore;
 ControllerSystem::ControllerSystem(BaseWorld* w)
 {
 	world = w;
-	transformSys = w->GetTransformSystem();
+	scriptSys = w->GetScriptSystem();
+
+	components.reserve(1);
+	keyMaps.reserve(4);
 };
 
 void ControllerSystem::Process()
 {
 	for(auto& i: components)
 	{
-		if( !world->IsEntityNeedProcess(i.second->get_entity()) )
+		if( !world->IsEntityNeedProcess(i.second.get_entity()) )
 			continue;
 
-		if(!i.second->active) continue;
+		if(!i.second.active)
+			continue;
 
-		TransformComponent* transf = transformSys->GetComponent(i.second->get_entity());
-		i.second->transform = transf->localMatrix;
-
-		i.second->Process();
-
-		transf->localMatrix = i.second->transform;
-		world->SetDirty(i.second->get_entity());
+		// TODO: call funcs from func map
 	}
+}
+		
+void ControllerSystem::AddComponent(Entity e, string keyMapName)
+{
+	auto scriptComp = scriptSys->GetComponent(e);
+	if(!scriptComp)
+	{
+		ERR("Can\'t add controller component %s, script component needed!", keyMapName.c_str());
+		return;
+	}
+
+	Controller cntr;
+	auto keyMap = GetKeyMap(keyMapName);
+	if(!keyMap)
+	{
+		ERR("Can\'t add controller component %s, can\'t get key map!", keyMapName.c_str());
+		return;
+	}
+
+	cntr.funcMap = new FuncMap;
+	// TODO: fill func map
+	// itarate throw keymap
+	LuaRef func = scriptSys->GetLuaFunction(scriptComp, /*on[EventName]*/);
+	if(!func.isNil())
+		cntr.funcMap[keyID] = new LuaRef(func);
+
+	components.insert(make_pair(e.index(), cntr));
 }
 
 #define GET_COMPONENT(res) auto& it = components.find(e.index());\
 	if(it == components.end())	return res;\
 	auto comp = it->second;
 
-void ControllerSystem::SendInput(Entity e, ControllerComands cmd, float param1, float param2)
-{
-	GET_COMPONENT(void())
-	if(!comp->active) return;
-	comp->GetInput(cmd, param1, param2);
-}
-
-void ControllerSystem::SendInputToAll(ControllerComands cmd, float param1, float param2)
-{
-	for(auto& i: components)
-	{
-		if(!i.second->active) continue;
-		i.second->GetInput(cmd, param1, param2);
-	}
-}
-
 bool ControllerSystem::IsActive(Entity e)
 {
 	GET_COMPONENT(false)
-	return comp->active;
+	return comp.active;
 }
 
 bool ControllerSystem::SetActive(Entity e, bool active)
 {
 	GET_COMPONENT(false)
-	comp->active = active;
+	comp.active = active;
 	return true;
+}
+
+#ifdef _DEV
+void ControllerSystem::UpdateLuaFuncs()
+{
+	for(auto& i: components)
+	{
+		if(!i.second.funcMap)
+			return;
+		
+		// TODO: update funcs
+		// itarate throw funcmap
+
+	}
+}
+#endif
+
+KeyMap* ControllerSystem::GetKeyMap(string& keyMapName)
+{
+	auto& it = keyMaps.find(keyMapName);
+	if(it != keyMaps.end())
+	{
+		return it->second;
+	}
+
+	string path(PATH_KEYMAPS);
+	path += keyMapName;
+	path += ".cfg";
+
+	FileIO file(path);
+	auto root = file.Root();
+	if(!root)
+		return nullptr;
+
+	KeyMap* res = new KeyMap;
+
+	// TODO: fill key map
+
+	keyMaps.insert(make_pair(keyMapName, res));
+	return res;
 }

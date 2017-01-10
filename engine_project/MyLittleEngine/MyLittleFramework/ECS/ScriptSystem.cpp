@@ -133,6 +133,24 @@ void ScriptSystem::Update(float dt)
 	}
 }
 
+LuaRef ScriptSystem::GetLuaFunction(Entity e, string& funcName)
+{
+	auto comp = GetComponent(e);
+	if(!comp)
+		return LuaRef(LSTATE);
+
+	return GetLuaFunction(*comp, funcName);
+}
+
+LuaRef ScriptSystem::GetLuaFunction(ScriptComponent& comp, string& funcName)
+{
+	LuaRef luaFunc = comp.classInstanceRef[funcName.c_str()];
+	if(!luaFunc.isFunction())
+		return LuaRef(LSTATE);
+
+	return luaFunc;
+}
+
 #ifdef _DEV
 void ScriptSystem::UpdateLuaFuncs()
 {
