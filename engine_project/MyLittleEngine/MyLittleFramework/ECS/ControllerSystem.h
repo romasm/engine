@@ -8,14 +8,36 @@
 
 namespace EngineCore
 {
-	struct KeyMap
+	enum MouseEvents
 	{
-		
+		LEFT = 0,
+		RIGHT,
+		MIDDLE,
+		MOVE_X,
+		MOVE_Y,
+		WHEEL,
+		COUNT
 	};
 
-	class FuncMap
+	struct KeyMap
 	{
-		
+		string keyboardEvents[eKeyCodes::KEY_MAX];
+		string mouseEvents[MouseEvents::COUNT];
+		//string gamepadEvents[];
+	};
+
+	struct FuncMap
+	{
+		LuaRef* keyboardEvents[eKeyCodes::KEY_MAX];
+		LuaRef* mouseEvents[MouseEvents::COUNT];		
+
+		FuncMap()
+		{
+			for(uint16_t i = 0; i < eKeyCodes::KEY_MAX; i++)
+				keyboardEvents[i] = nullptr;
+			for(uint16_t i = 0; i < MouseEvents::COUNT; i++)
+				mouseEvents[i] = nullptr;
+		}
 	};
 
 	class Controller
@@ -25,23 +47,43 @@ namespace EngineCore
 	public:
 		bool active;
 		FuncMap* funcMap;
+		LuaRef classInstanceRef;
+		string keyMapName;
 
-		Controller() : active(false), funcMap(nullptr) {}
+		Controller() : active(false), funcMap(nullptr), classInstanceRef(LSTATE) {}
 	};
 
 	class BaseWorld;
 
+	// Lua func: PlayerClass:onEvent(key, pressed, x, y, z)
 	class ControllerSystem
 	{
+		struct KeyboardState
+		{
+			bool isPressed[eKeyCodes::KEY_MAX];
+
+			KeyboardState()
+			{
+				for(uint16_t i = 0; i < eKeyCodes::KEY_MAX; i++)
+					isPressed[i] = false;
+			}
+		};
+
 	public:
 		ControllerSystem(BaseWorld* w);
 		~ControllerSystem()
 		{
-			for(auto i: components)
+			for(auto& i: components)
+			{
+				for(uint16_t j = 0; j < eKeyCodes::KEY_MAX; j++)
+					_DELETE(i.second.funcMap->keyboardEvents[j]);
+				for(uint16_t j = 0; j < MouseEvents::COUNT; j++)
+					_DELETE(i.second.funcMap->mouseEvents[j]);
 				_DELETE(i.second.funcMap);
+			}
 			components.clear();
 
-			for(auto i: keyMaps)
+			for(auto& i: keyMaps)
 				_DELETE(i.second);
 			keyMaps.clear();
 		}
@@ -52,7 +94,11 @@ namespace EngineCore
 		{
 			Controller& comp = GetComponent(e);
 			comp.active = false;
-			comp.funcMap = nullptr;
+			for(uint16_t j = 0; j < eKeyCodes::KEY_MAX; j++)
+				_DELETE(comp.funcMap->keyboardEvents[j]);
+			for(uint16_t j = 0; j < MouseEvents::COUNT; j++)
+				_DELETE(comp.funcMap->mouseEvents[j]);
+			_DELETE(comp.funcMap);
 			components.erase(e.index());
 		}
 		bool HasComponent(Entity e) const {return components.find(e.index()) != components.end();}
@@ -62,8 +108,6 @@ namespace EngineCore
 		{
 			return components[e.index()];
 		}
-		
-		void Process();
 
 		void RawInput(RawInputData& data);
 
@@ -90,13 +134,21 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 
 	private:
+		void SendMouseEvent(MouseEvents me, bool pressed, int32_t d);
 		KeyMap* GetKeyMap(string& keyMapName);
+		bool AttachLuaFuncs(Entity e, Controller& comp, ScriptComponent& script);
 
-		unordered_map<UINT, Controller> components;
+		unordered_map<uint32_t, Controller> components;
 
 		unordered_map<string, KeyMap*> keyMaps;
 
+		KeyboardState lastKeyboardState;
+
 		BaseWorld* world;
 		ScriptSystem* scriptSys;
+
+		static unordered_map<string, uint32_t> keyboardMap;
+		static unordered_map<string, uint32_t> mouseMap;
+		void FillControlMap();
 	};
 }

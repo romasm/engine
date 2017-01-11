@@ -242,6 +242,10 @@ function Viewport:MenuClick(ent, ev) -- to history
         local test_ent = EntityTypes.TestEnt(self.lua_world.world)
         self:PlaceAndSelect(test_ent.ent, self.prev_coords)
 
+     elseif ev.id == "vp_player" then
+        local player = EntityTypes.TestPlayer(self.lua_world.world)
+        self:PlaceAndSelect(player.ent, self.prev_coords)
+
     end
     return true
 end

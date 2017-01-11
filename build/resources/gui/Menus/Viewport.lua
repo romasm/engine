@@ -25,7 +25,7 @@ return GuiMenu({
             id = "vp_create_sub",
     
             width = 135,
-            height = 75, 
+            height = 100, 
     
             offset = {x = 250, y = -25},
 
@@ -48,6 +48,13 @@ return GuiMenu({
                 id = "vp_create_glight",
                 top = 50,
                 text = {str = "Global light",},
+            }),
+
+            GuiButton({
+                styles = {GuiStyles.menu_button_default,},
+                id = "vp_player",
+                top = 75,
+                text = {str = "Player",},
             }),
         }),
     }),

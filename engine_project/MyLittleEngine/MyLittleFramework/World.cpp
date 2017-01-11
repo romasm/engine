@@ -522,8 +522,6 @@ void World::Frame()
 	
 	// start update
 
-	m_controllerSystem->Process();
-
 	m_scriptSystem->Update(m_dt);
 
 	m_transformSystem->Update();
@@ -674,8 +672,6 @@ void SmallWorld::Frame()
 	m_dt = m_world_timer.dt();
 	
 	// start update
-
-	m_controllerSystem->Process();
 
 	m_scriptSystem->Update(m_dt);
 

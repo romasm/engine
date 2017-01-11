@@ -52,6 +52,7 @@ loader.require("Entities.Camera", Core.UpdateLuaFuncs)
 
 --test
 loader.require("Entities.TestEnt", Core.UpdateLuaFuncs)
+loader.require("Entities.TestPlayer", Core.UpdateLuaFuncs)
 
 
 -- app logic

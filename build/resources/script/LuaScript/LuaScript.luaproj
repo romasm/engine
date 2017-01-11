@@ -196,6 +196,9 @@
     <Compile Include="..\Entities\TestEnt.lua">
       <Link>Entities\TestEnt.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\TestPlayer.lua">
+      <Link>Entities\TestPlayer.lua</Link>
+    </Compile>
     <Compile Include="..\GuiEntities\const_GuiDefines.lua">
       <Link>GuiEntities\const_GuiDefines.lua</Link>
     </Compile>
