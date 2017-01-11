@@ -47,6 +47,10 @@ function EntityTypes.BaseEntity:IsAlive()
     return self.ent ~= nil
 end
 
+function EntityTypes.BaseEntity:Rename(name)
+    return self.world:RenameEntity(self.ent, name)
+end
+
 function EntityTypes.BaseEntity:SetPosition(x, y, z)
     return self.transformSys:SetPosition(self.ent, x, y, z)
 end

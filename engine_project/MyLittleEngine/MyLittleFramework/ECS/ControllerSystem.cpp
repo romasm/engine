@@ -122,6 +122,8 @@ void ControllerSystem::AddComponent(Entity e, string keyMapName)
 	cntr.classInstanceRef = scriptComp->classInstanceRef;
 	cntr.keyMapName = keyMapName;
 	cntr.funcMap = new FuncMap;
+	cntr.active = false;
+	cntr.parent = e;
 
 	if( !AttachLuaFuncs(e, cntr, *scriptComp) )
 	{

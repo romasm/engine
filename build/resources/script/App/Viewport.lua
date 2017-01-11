@@ -68,13 +68,15 @@ function Viewport:Init()
     self.freelook = false
     self.drawhud = true
 
+    self.gamemode = false
+
     self.tc_action = false
 	self.tc_hover = false
 	self.tc_prevray = Vector3(0,0,0)
     self.tc_local = false
     self.tc_copied = false
     
-    self.selection_mode = SELECTION_MODE.SIMPLE
+    self.selection_mode = SELECTION_MODE.NONE
     self.selection_set = {}
 
     self.history = {
@@ -185,6 +187,39 @@ function Viewport:SetMode(combo, ev)
     end
 end
 
+function Viewport:ToggleFullscreen()
+    if not self.lua_world then return end
+
+    -- TODO
+end
+
+function Viewport:ToggleGamemode()
+    if not self.lua_world then return end
+
+    local player = self.lua_world.world:GetLuaEntity( self.lua_world.world:GetEntityByName("Player0") )
+    if player == nil then return end
+
+    if self.gamemode == true then
+        player:Deactivate()
+        EditorCamera.camera:Activate(self.lua_world.scenepl)
+
+        self.drawhud = true
+        self.lua_world.scenepl:SetHud(true)
+        self.overlay_gui.enable = true
+
+        self.gamemode = false
+    else
+        player.camera:Activate(self.lua_world.scenepl)
+        player:Activate()
+
+        self.drawhud = false
+        self.lua_world.scenepl:SetHud(false)
+        self.overlay_gui.enable = false
+
+        self.gamemode = true
+    end
+end
+
 -- callbacks
 function Viewport:onResize(force)
     if MainWindow.mainwin:IsMinimized() then
@@ -244,6 +279,7 @@ function Viewport:MenuClick(ent, ev) -- to history
 
      elseif ev.id == "vp_player" then
         local player = EntityTypes.TestPlayer(self.lua_world.world)
+        player:Rename("Player0")
         self:PlaceAndSelect(player.ent, self.prev_coords)
 
     end
@@ -363,14 +399,18 @@ function Viewport:onKeyDown(eventData)
         return true
      end
 
-    if eventData.key == KEYBOARD_CODES.KEY_ESCAPE and self.drawhud then
-        self:RememberSelection()
-        self:UnselectAll()
-        self:PushSelectHistory()
-        self:PlaceArrows()
-        Properties:Update()
-        SceneBrowser:SyncSelection()
-        return true 
+    if eventData.key == KEYBOARD_CODES.KEY_ESCAPE then
+        if self.gamemode then
+            self:ToggleGamemode()
+        elseif self.drawhud then
+            self:RememberSelection()
+            self:UnselectAll()
+            self:PushSelectHistory()
+            self:PlaceArrows()
+            Properties:Update()
+            SceneBrowser:SyncSelection()
+            return true 
+        end
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_DELETE and self.drawhud then
@@ -382,7 +422,7 @@ function Viewport:onKeyDown(eventData)
 end
 
 function Viewport:DeleteSelection() -- to history
-    if not self.lua_world then return end
+    if not self.lua_world or self.gamemode then return end
 
     self.history.transform_type = TRANSFORM_MODE.NONE
     self.history.msg = "Delete"
@@ -427,7 +467,7 @@ function Viewport:onKeyUp(eventData)
 end
 
 function Viewport:onMouseMove(eventData)
-    if not self.lua_world then return true end
+    if not self.lua_world or self.gamemode then return true end
     
     local mouse_pos = {x = eventData.coords.x, y = eventData.coords.y}
 
@@ -566,7 +606,7 @@ function Viewport:onMouseMove(eventData)
 end
 
 function Viewport:onMouseWheel(eventData)
-    if not self.lua_world then return true end
+    if not self.lua_world or self.gamemode then return true end
 
     if self.freelook then
         EditorCamera:onMoveSpeed(eventData.coords.x)
@@ -673,7 +713,7 @@ function Viewport:SetScalesToSelection(scales)
 end
 
 function Viewport:SwitchHud()
-    if not self.lua_world then return end
+    if not self.lua_world or self.gamemode then return end
 
     self.drawhud = not self.drawhud
     self.lua_world.scenepl:SetHud(self.drawhud)
@@ -855,6 +895,8 @@ function Viewport:PlaceArrows()
 end
 
 function Viewport:SetFreelook(look)
+    if self.gamemode == true then return end
+
     self.freelook = look
     if self.hidemouse then
         local corners = self.viewport.entity:GetCorners()

@@ -60,6 +60,14 @@ function Hotkeys:Process(eventData, root)
     elseif eventData.key == KEYBOARD_CODES.KEY_SPACE then 
         Viewport:SwitchTransform()
         resEvent.event = GUI_EVENTS.NULL
+        
+    elseif eventData.key == KEYBOARD_CODES.KEY_F and CoreGui.Keys.Alt() then 
+        Viewport:ToggleFullscreen()
+        resEvent.event = GUI_EVENTS.NULL
+
+    elseif eventData.key == KEYBOARD_CODES.KEY_G and CoreGui.Keys.Ctrl() then 
+        Viewport:ToggleGamemode()
+        resEvent.event = GUI_EVENTS.NULL
 
     elseif eventData.key == KEYBOARD_CODES.KEY_G then 
         Viewport:SwitchHud()

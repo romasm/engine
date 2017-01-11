@@ -159,7 +159,7 @@ namespace EngineCore
 		inline Entity GetFirstEntityByType(string type) {return m_typeMgr->GetFirstByType(type);}
 		inline Entity GetNextEntityByType() {return m_typeMgr->GetNextByType();}
 
-		inline LuaRef WrapEntityForLua(Entity e) // must be used somewhere
+		inline LuaRef WrapEntityForLua(Entity e)
 		{
 			LuaRef res = m_scriptSystem->GetLuaClassInstance(e);
 			if(res.isNil())
@@ -219,6 +219,8 @@ namespace EngineCore
 
 					.addFunction("SetEntityEnable", &BaseWorld::SetEntityEnable)
 					.addFunction("IsEntityEnable", &BaseWorld::IsEntityEnable)
+
+					.addFunction("GetLuaEntity", &BaseWorld::WrapEntityForLua)
 
 				#ifdef _EDITOR
 					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)

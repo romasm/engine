@@ -71,6 +71,9 @@ namespace EngineCore
 		
 		inline LuaRef GetLuaClassInstance(Entity e)
 		{
+			if(e.isnull())
+				return LuaRef(LSTATE);
+
 			auto comp = GetComponent(e);
 			if(!comp)
 				return LuaRef(LSTATE);
