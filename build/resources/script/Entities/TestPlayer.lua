@@ -26,6 +26,7 @@ function EntityTypes.TestPlayer:init(world, ent)
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)
     self.camera:SetPosition(0.0, 1.8, 0.0)
+    self.camera:SetFov(1.3)
     self.camera:Attach(self)
 end
 
@@ -34,7 +35,7 @@ function EntityTypes.TestPlayer:initVars()
     self.p_jump_power = 0.3
     self.p_jump_speed = 2.0
     self.p_move_speed = 4.0
-    self.p_rot_sence = 0.03
+    self.p_rot_sence = 0.02
 
     -- lifetime only exist vars
     self.jumping = false

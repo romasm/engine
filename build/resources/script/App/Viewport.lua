@@ -206,6 +206,8 @@ function Viewport:ToggleGamemode()
         self.drawhud = true
         self.lua_world.scenepl:SetHud(true)
         self.overlay_gui.enable = true
+        
+        self:SetMouseVis(true)
 
         self.gamemode = false
     else
@@ -215,6 +217,9 @@ function Viewport:ToggleGamemode()
         self.drawhud = false
         self.lua_world.scenepl:SetHud(false)
         self.overlay_gui.enable = false
+
+        self:SetFreelook(false)
+        self:SetMouseVis(false)
 
         self.gamemode = true
     end
@@ -403,12 +408,7 @@ function Viewport:onKeyDown(eventData)
         if self.gamemode then
             self:ToggleGamemode()
         elseif self.drawhud then
-            self:RememberSelection()
-            self:UnselectAll()
-            self:PushSelectHistory()
-            self:PlaceArrows()
-            Properties:Update()
-            SceneBrowser:SyncSelection()
+            self:DropSelection()
             return true 
         end
     end
@@ -419,6 +419,15 @@ function Viewport:onKeyDown(eventData)
     end
 
     return false
+end
+
+function Viewport:DropSelection()
+    self:RememberSelection()
+    self:UnselectAll()
+    self:PushSelectHistory()
+    self:PlaceArrows()
+    Properties:Update()
+    SceneBrowser:SyncSelection()
 end
 
 function Viewport:DeleteSelection() -- to history
@@ -467,7 +476,12 @@ function Viewport:onKeyUp(eventData)
 end
 
 function Viewport:onMouseMove(eventData)
-    if not self.lua_world or self.gamemode then return true end
+    if not self.lua_world then return true end
+
+    if self.gamemode then
+        self:CenterMouse()
+        return true
+    end
     
     local mouse_pos = {x = eventData.coords.x, y = eventData.coords.y}
 
@@ -570,7 +584,8 @@ function Viewport:onMouseMove(eventData)
 		
 		self.tc_prevray = ray_dir
 	end
-	
+
+    
     if self.freelook then
 		if not self.tc_action then
 			self.lua_world.world.transformControls:Unhover()
@@ -581,13 +596,12 @@ function Viewport:onMouseMove(eventData)
             local rect = self.viewport.entity:GetCorners()
             local center_x = (rect.l + rect.r) / 2
             local center_y = (rect.t + rect.b) / 2  
-        
+
             local delta_x = mouse_pos.x - center_x
             local delta_y = -mouse_pos.y + center_y
 
             EditorCamera:onDeltaRot(delta_x, delta_y)
-
-            CoreGui.SetCursorPos(self.viewport.entity, center_x, center_y)
+            self:CenterMouse()
         else
             local delta_x = mouse_pos.x - self.prev_coords.x
             local delta_y = -mouse_pos.y + self.prev_coords.y
@@ -602,6 +616,7 @@ function Viewport:onMouseMove(eventData)
 			self.tc_hover = self.lua_world.world.transformControls:CheckHover(ray_dir, EditorCamera.cameraEntity)
 		end
     end
+
     return true
 end
 
@@ -899,12 +914,20 @@ function Viewport:SetFreelook(look)
 
     self.freelook = look
     if self.hidemouse then
-        local corners = self.viewport.entity:GetCorners()
-        local center_x = (corners.l + corners.r) / 2
-        local center_y = (corners.t + corners.b) / 2
-        CoreGui.SetCursorPos(self.viewport.entity, center_x, center_y)
-        CoreGui.ShowCursor(not self.freelook)
+        self:SetMouseVis(not self.freelook)
     end
+end
+
+function Viewport:SetMouseVis(show)
+    self:CenterMouse()
+    CoreGui.ShowCursor(show)
+end
+
+function Viewport:CenterMouse()
+    local corners = self.viewport.entity:GetCorners()
+    local center_x = (corners.l + corners.r) / 2
+    local center_y = (corners.t + corners.b) / 2
+    CoreGui.SetCursorPos(self.viewport.entity, center_x, center_y)
 end
 
 function Viewport:GetMouseInVP(coords)

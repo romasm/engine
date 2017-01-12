@@ -94,6 +94,12 @@ return GuiWindow({
             Viewport:DeleteSelection()
             return true
         end,
+        [GUI_EVENTS.KEY_DOWN] = function(self, ev) 
+            if ev.key == KEYBOARD_CODES.KEY_ESCAPE then
+                Viewport:DropSelection()
+            end
+            return true
+        end,
     },
 
     GuiTextfield({
@@ -112,7 +118,7 @@ return GuiWindow({
 
         events = {
             [GUI_EVENTS.TF_EDITING]  = function(self, ev)
-                --SceneBrowser:Find(self:GetText()) 
+                SceneBrowser:Find(self:GetText()) 
                 return true
                 end,
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev)
@@ -178,7 +184,7 @@ return GuiWindow({
                 tf:GetChildById('find_sign').enable = true
                 self:SetPressed(false)
                 self.entity.enable = false
-                --SceneBrowser:Find("")
+                SceneBrowser:Find("")
                 return true 
             end,
         },

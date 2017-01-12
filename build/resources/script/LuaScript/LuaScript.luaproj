@@ -175,8 +175,8 @@
     <Compile Include="..\class.lua">
       <Link>class.lua</Link>
     </Compile>
-    <Compile Include="..\common_math.lua">
-      <Link>common_math.lua</Link>
+    <Compile Include="..\common.lua">
+      <Link>common.lua</Link>
     </Compile>
     <Compile Include="..\Entities\BaseEntity.lua">
       <Link>Entities\BaseEntity.lua</Link>
@@ -266,13 +266,17 @@
     <Folder Include="Gui\Pieces\" />
     <Folder Include="Gui\Styles\" />
     <Folder Include="Entities\" />
+    <Folder Include="CFG\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\config\engine_settings.cfg">
-      <Link>engine_settings.cfg</Link>
+      <Link>CFG\engine_settings.cfg</Link>
+    </Content>
+    <Content Include="..\..\..\config\keymaps\FirstPerson.cfg">
+      <Link>CFG\FirstPerson.cfg</Link>
     </Content>
     <Content Include="..\..\colors.rsc">
-      <Link>colors.rsc</Link>
+      <Link>CFG\colors.rsc</Link>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

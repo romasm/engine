@@ -103,6 +103,17 @@ function SceneBrowser:ShowEnt(btn)
     end
 end
 
+function SceneBrowser:Find(str)
+    self:Clear()
+
+    self.findstr = CStr.MakeFindMask(str)
+
+    self:FillBody()
+    self.window.entity:UpdatePosSize()
+
+    self:SyncSelection()
+end
+
 --------------------------------------------------------------------------------SELECTION [
 
 function SceneBrowser:GetSelectedCount()
@@ -217,7 +228,7 @@ end
 function SceneBrowser:GetEntityNum(entity)
     local founded = 0
     for i, ent in ipairs(self.filtredList) do
-        if EntIsEq(ent, entity) then
+        if EntIsEq(ent[1], entity) then
             founded = i
             break
         end
@@ -243,9 +254,9 @@ end
 function SceneBrowser:AddButton(num)
     self.topOffset = self.topOffset + GUI_SCENELIST_SIZE.PADDING
 
-    local name = self.world:GetEntityName( self.filtredList[num] )
-    local entType = self.world:GetEntityType( self.filtredList[num] )
-    local btn = Gui.SceneBrowserEntity( name, entType, self.filtredList[num], self.topOffset, num )
+    local name = self.world:GetEntityName( self.filtredList[num][1] )
+    local entType = self.world:GetEntityType( self.filtredList[num][1] )
+    local btn = Gui.SceneBrowserEntity( name, entType, self.filtredList[num][1], self.topOffset, num )
 
     self.body:AttachChild( btn.entity )
     self.topOffset = self.topOffset + GUI_SCENELIST_SIZE.Y
@@ -258,14 +269,29 @@ function SceneBrowser:FillBody()
         if self.findstr:len() > 0 then
             local name = self.world:GetEntityName(ent)
             if name:find(self.findstr) ~= nil then 
-                self.filtredList[#self.filtredList + 1] = ent
+                local entType = self.world:GetEntityType(ent)
+                self.filtredList[#self.filtredList + 1] = {ent, name, entType}
             end
         else
-            self.filtredList[#self.filtredList + 1] = ent
+            local name = self.world:GetEntityName(ent)
+            local entType = self.world:GetEntityType(ent)
+            self.filtredList[#self.filtredList + 1] = {ent, name, entType}
         end
     end
 
-    --table.sort(self.filtredList, function (a, b) return a:upper() < b:upper() end)
+    table.sort(self.filtredList, function (a, b)
+        local a_name = a[2]:upper()
+        local b_name = b[2]:upper()
+        if a_name:len() == 0 and b_name:len() == 0 then 
+            a_name = a[3]:upper()
+            b_name = b[3]:upper()
+        elseif a_name:len() == 0 then
+            return false
+        elseif b_name:len() == 0 then
+            return true
+        end
+        return a_name:upper() < b_name:upper() 
+    end)
     
     self.topOffset = 0
     for i, ent in ipairs(self.filtredList) do

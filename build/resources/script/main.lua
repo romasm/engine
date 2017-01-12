@@ -15,7 +15,7 @@ require "script_loader"
 Gui = {}
 Main = {}
 
-loader.require("common_math")
+loader.require("common")
 
 -- base entities
 loader.require("GuiEntities.const_GuiDefines")

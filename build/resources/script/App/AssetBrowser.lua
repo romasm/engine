@@ -363,16 +363,7 @@ function AssetBrowser:Copy(copyAssetID)
 end
 
 function AssetBrowser:Find(str)
-    self.findstr = str
-
-    self.findstr = self.findstr:gsub("%.", "%%%.")
-    self.findstr = self.findstr:gsub("%+", "%%%+")
-    self.findstr = self.findstr:gsub("%-", "%%%-")
-    self.findstr = self.findstr:gsub("%(", "%%%(")
-    self.findstr = self.findstr:gsub("%)", "%%%)")
-
-    self.findstr = self.findstr:gsub("%?", "%.%?")
-    self.findstr = self.findstr:gsub("%*", "%.%+")
+    self.findstr = CStr.MakeFindMask(str)
 
     self:Clear()
     self:FillBody()

@@ -116,7 +116,14 @@ static void _SetCursorPos(HEntityWraper e, int x, int y)
 	SetCursorPos(x + win->GetLeft(), y + win->GetTop());
 }
 
-static void _ShowCursor(bool b) {ShowCursor(b);}
+static void _ShowCursor(bool b) 
+{
+	if(b)
+		SetCursor(WindowsMgr::Get()->GetCursors(HCursors::CURSOR_ARROW));
+	else
+		SetCursor(NULL);
+	//ShowCursor(b);
+}
 
 void Hud::RegLuaClass()
 {	

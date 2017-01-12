@@ -50,3 +50,21 @@ end
 function CMath.IsEven(value)
     return value - math.floor(value / 2) * 2 == 0
 end
+
+
+if not CStr then CStr = {} end
+
+function CStr.MakeFindMask(str)
+    local mask = str
+
+    mask = mask:gsub("%.", "%%%.")
+    mask = mask:gsub("%+", "%%%+")
+    mask = mask:gsub("%-", "%%%-")
+    mask = mask:gsub("%(", "%%%(")
+    mask = mask:gsub("%)", "%%%)")
+
+    mask = mask:gsub("%?", "%.%?")
+    mask = mask:gsub("%*", "%.%+")
+
+    return mask
+end
