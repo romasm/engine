@@ -216,6 +216,12 @@
     <ClInclude Include="GUI\HVisuals.h">
       <Filter>Gui</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\SkeletalMeshSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="SkeletalMeshMgr.h">
+      <Filter>Resource managment</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -375,6 +381,12 @@
     </ClCompile>
     <ClCompile Include="GUI\HVisuals.cpp">
       <Filter>Gui</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="SkeletalMeshMgr.cpp">
+      <Filter>Resource managment</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

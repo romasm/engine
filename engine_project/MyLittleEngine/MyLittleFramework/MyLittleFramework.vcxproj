@@ -160,6 +160,7 @@
     <ClInclude Include="Compute.h" />
     <ClInclude Include="ECS\GlobalLightSystem.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
+    <ClInclude Include="ECS\SkeletalMeshSystem.h" />
     <ClInclude Include="ECS\TypeMgr.h" />
     <ClInclude Include="Generate_PBS_Env_LUT.h" />
     <ClInclude Include="GUI\HDefines.h" />
@@ -174,6 +175,7 @@
     <ClInclude Include="MaterialMgr.h" />
     <ClInclude Include="ResourceProcessor.h" />
     <ClInclude Include="ShadowsRenderer.h" />
+    <ClInclude Include="SkeletalMeshMgr.h" />
     <ClInclude Include="StringToData.h" />
     <ClInclude Include="TransformControls.h" />
     <ClInclude Include="DataAlloc\Arrays.h" />
@@ -238,6 +240,7 @@
   <ItemGroup>
     <ClCompile Include="ECS\GlobalLightSystem.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
+    <ClCompile Include="ECS\SkeletalMeshSystem.cpp" />
     <ClCompile Include="ECS\TypeMgr.cpp" />
     <ClCompile Include="GUI\HEntity.cpp" />
     <ClCompile Include="GUI\HVisuals.cpp">
@@ -250,6 +253,7 @@
     <ClCompile Include="MaterialMgr.cpp" />
     <ClCompile Include="ResourceProcessor.cpp" />
     <ClCompile Include="ShadowsRenderer.cpp" />
+    <ClCompile Include="SkeletalMeshMgr.cpp" />
     <ClCompile Include="TransformControls.cpp" />
     <ClCompile Include="ECS\CameraSystem.cpp" />
     <ClCompile Include="ECS\ControllerSystem.cpp" />
