@@ -105,3 +105,12 @@ workspace "Engine"
 		
 		pchheader "stdafx.h"
 		pchsource "source/stdafx.cpp"
+		
+	project "Shaders"
+		kind "Utility"
+		location "build/resources/shaders"
+		language "C++"
+		
+		files {
+			"build/resources/shaders/**.hlsl"
+		}
