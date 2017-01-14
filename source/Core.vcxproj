@@ -1,0 +1,313 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Development|x64">
+      <Configuration>Development</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Core</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\build\bin\</OutDir>
+    <IntDir>obj\x64\Debug\</IntDir>
+    <TargetName>core_d</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\build\bin\</OutDir>
+    <IntDir>obj\x64\Development\</IntDir>
+    <TargetName>core_dev</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\build\bin\</OutDir>
+    <IntDir>obj\x64\Release\</IntDir>
+    <TargetName>core</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Common\Arrays.h" />
+    <ClInclude Include="Common\Common.h" />
+    <ClInclude Include="Common\DataTypes.h" />
+    <ClInclude Include="Common\Pathes.h" />
+    <ClInclude Include="Common\StringToData.h" />
+    <ClInclude Include="Common\macros.h" />
+    <ClInclude Include="Config\EngineSettings.h" />
+    <ClInclude Include="Config\GlobalColor.h" />
+    <ClInclude Include="ECS\CameraSystem.h" />
+    <ClInclude Include="ECS\ControllerSystem.h" />
+    <ClInclude Include="ECS\ECS_defines.h" />
+    <ClInclude Include="ECS\EarlyVisibilitySystem.h" />
+    <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\EnvProbSystem.h" />
+    <ClInclude Include="ECS\GlobalLightSystem.h" />
+    <ClInclude Include="ECS\LightSystem.h" />
+    <ClInclude Include="ECS\LineGeometrySystem.h" />
+    <ClInclude Include="ECS\ScriptSystem.h" />
+    <ClInclude Include="ECS\ShadowSystem.h" />
+    <ClInclude Include="ECS\SkeletalMeshSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="ECS\StaticMeshSystem.h" />
+    <ClInclude Include="ECS\TransformSystem.h" />
+    <ClInclude Include="ECS\TypeMgr.h" />
+    <ClInclude Include="ECS\VisibilitySystem.h" />
+    <ClInclude Include="ECS\World.h" />
+    <ClInclude Include="GUI\Font.h" />
+    <ClInclude Include="GUI\HDefines.h" />
+    <ClInclude Include="GUI\HEntity.h" />
+    <ClInclude Include="GUI\HVisuals.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="GUI\Hud.h" />
+    <ClInclude Include="GUI\Image.h" />
+    <ClInclude Include="GUI\Text.h" />
+    <ClInclude Include="Input\InputCodes.h" />
+    <ClInclude Include="Input\Window.h" />
+    <ClInclude Include="MainLoop.h" />
+    <ClInclude Include="Managers\FontMgr.h" />
+    <ClInclude Include="Managers\MaterialMgr.h" />
+    <ClInclude Include="Managers\ResourceProcessor.h" />
+    <ClInclude Include="Managers\ShaderCodeMgr.h" />
+    <ClInclude Include="Managers\ShaderMgr.h" />
+    <ClInclude Include="Managers\SkeletalMeshMgr.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Managers\StMeshMgr.h" />
+    <ClInclude Include="Managers\TexMgr.h" />
+    <ClInclude Include="Managers\WindowsMgr.h" />
+    <ClInclude Include="Managers\WorldMgr.h" />
+    <ClInclude Include="Render\Buffer.h" />
+    <ClInclude Include="Render\Compute.h" />
+    <ClInclude Include="Render\Frustum.h" />
+    <ClInclude Include="Render\Material.h" />
+    <ClInclude Include="Render\Render.h" />
+    <ClInclude Include="Render\RenderMgrs.h" />
+    <ClInclude Include="Render\RenderState.h" />
+    <ClInclude Include="Render\RenderTarget.h" />
+    <ClInclude Include="Render\ScenePipeline.h" />
+    <ClInclude Include="Render\Shader.h" />
+    <ClInclude Include="Render\ShadowsRenderer.h" />
+    <ClInclude Include="Render\Support\GaussianBlur.h" />
+    <ClInclude Include="Render\Support\LightBuffers.h" />
+    <ClInclude Include="Render\Support\MaterialData.h" />
+    <ClInclude Include="Render\Support\ScreenPlane.h" />
+    <ClInclude Include="Render\VoxelRenderer.h" />
+    <ClInclude Include="System\FileIO.h" />
+    <ClInclude Include="System\JobSystem.h" />
+    <ClInclude Include="System\LocalTimer.h" />
+    <ClInclude Include="System\LuaVM.h" />
+    <ClInclude Include="System\Timer.h" />
+    <ClInclude Include="Utils\Generate_PBS_Env_LUT.h" />
+    <ClInclude Include="Utils\Log.h" />
+    <ClInclude Include="Utils\MathGeometry.h" />
+    <ClInclude Include="Utils\Profiler.h" />
+    <ClInclude Include="Utils\ProfilerIDs.h" />
+    <ClInclude Include="Utils\TransformControls.h" />
+    <ClInclude Include="Utils\Util.h" />
+    <ClInclude Include="Utils\WinAPIDialogs.h" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Config\GlobalColor.cpp" />
+    <ClCompile Include="ECS\CameraSystem.cpp" />
+    <ClCompile Include="ECS\ControllerSystem.cpp" />
+    <ClCompile Include="ECS\EarlyVisibilitySystem.cpp" />
+    <ClCompile Include="ECS\EnvProbSystem.cpp" />
+    <ClCompile Include="ECS\GlobalLightSystem.cpp" />
+    <ClCompile Include="ECS\LightSystem.cpp" />
+    <ClCompile Include="ECS\LineGeometrySystem.cpp" />
+    <ClCompile Include="ECS\ScriptSystem.cpp" />
+    <ClCompile Include="ECS\ShadowSystem.cpp" />
+    <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="ECS\StaticMeshSystem.cpp" />
+    <ClCompile Include="ECS\TransformSystem.cpp" />
+    <ClCompile Include="ECS\TypeMgr.cpp" />
+    <ClCompile Include="ECS\VisibilitySystem.cpp" />
+    <ClCompile Include="ECS\World.cpp" />
+    <ClCompile Include="GUI\Font.cpp" />
+    <ClCompile Include="GUI\HEntity.cpp" />
+    <ClCompile Include="GUI\HVisuals.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GUI\Hud.cpp" />
+    <ClCompile Include="GUI\Image.cpp" />
+    <ClCompile Include="GUI\Text.cpp" />
+    <ClCompile Include="Input\Window.cpp" />
+    <ClCompile Include="Managers\FontMgr.cpp" />
+    <ClCompile Include="Managers\MaterialMgr.cpp" />
+    <ClCompile Include="Managers\ResourceProcessor.cpp" />
+    <ClCompile Include="Managers\ShaderCodeMgr.cpp" />
+    <ClCompile Include="Managers\ShaderMgr.cpp" />
+    <ClCompile Include="Managers\SkeletalMeshMgr.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Managers\StMeshMgr.cpp" />
+    <ClCompile Include="Managers\TexMgr.cpp" />
+    <ClCompile Include="Managers\WindowsMgr.cpp" />
+    <ClCompile Include="Managers\WorldMgr.cpp" />
+    <ClCompile Include="Render\Buffer.cpp" />
+    <ClCompile Include="Render\Material.cpp" />
+    <ClCompile Include="Render\Render.cpp" />
+    <ClCompile Include="Render\RenderMgrs.cpp" />
+    <ClCompile Include="Render\RenderState.cpp" />
+    <ClCompile Include="Render\RenderTarget.cpp" />
+    <ClCompile Include="Render\ScenePipeline.cpp" />
+    <ClCompile Include="Render\SceneRenderMgr.cpp" />
+    <ClCompile Include="Render\Shader.cpp" />
+    <ClCompile Include="Render\ShadowsRenderer.cpp" />
+    <ClCompile Include="Render\Support\GaussianBlur.cpp" />
+    <ClCompile Include="Render\Support\ScreenPlane.cpp" />
+    <ClCompile Include="Render\VoxelRenderer.cpp" />
+    <ClCompile Include="System\FileIO.cpp" />
+    <ClCompile Include="System\JobSystem.cpp" />
+    <ClCompile Include="System\LocalTimer.cpp" />
+    <ClCompile Include="System\LuaVM.cpp" />
+    <ClCompile Include="System\Timer.cpp" />
+    <ClCompile Include="Utils\Log.cpp" />
+    <ClCompile Include="Utils\Profiler.cpp" />
+    <ClCompile Include="Utils\TransformControls.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
