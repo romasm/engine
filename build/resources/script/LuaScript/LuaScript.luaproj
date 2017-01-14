@@ -19,11 +19,6 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Developer' ">
-    <DebugSymbols>true</DebugSymbols>
-    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
-    <OutputPath>bin\Developer\</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\gui\AssetBrowser.lua">
       <Link>Gui\AssetBrowser.lua</Link>
