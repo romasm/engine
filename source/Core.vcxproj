@@ -162,6 +162,7 @@
     <ClInclude Include="ECS\GlobalLightSystem.h" />
     <ClInclude Include="ECS\LightSystem.h" />
     <ClInclude Include="ECS\LineGeometrySystem.h" />
+    <ClInclude Include="ECS\SceneGraph.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
     <ClInclude Include="ECS\SkeletalMeshSystem.h">
@@ -242,6 +243,7 @@
     <ClCompile Include="ECS\GlobalLightSystem.cpp" />
     <ClCompile Include="ECS\LightSystem.cpp" />
     <ClCompile Include="ECS\LineGeometrySystem.cpp" />
+    <ClCompile Include="ECS\SceneGraph.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />
     <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
