@@ -24,7 +24,7 @@ void EarlyVisibilitySystem::CheckEarlyVisibility()
 				
 		if(i.dirty)
 		{
-			TransformComponent* tranform = transformSys->GetComponent(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			switch (i.type)
 			{
@@ -32,18 +32,18 @@ void EarlyVisibilitySystem::CheckEarlyVisibility()
 				{
 					BoundingOrientedBox::CreateFromBoundingBox(i.worldBox, i.localBox);
 					//i.worldBox.Transform(i.worldBox, tranform->worldMatrix); // broken DX func
-					BoundingOrientedBoxTransformFixed(i.worldBox, tranform->worldMatrix);
+					BoundingOrientedBoxTransformFixed(i.worldBox, worldMatrix);
 				}
 				break;
 			case BT_SPHERE:
-				i.localSphere.Transform(i.worldSphere, tranform->worldMatrix);
+				i.localSphere.Transform(i.worldSphere, worldMatrix);
 				break;
 			case BT_FRUSTUM:
-				i.localFrustum.Transform(i.worldFrustum, tranform->worldMatrix);
+				i.localFrustum.Transform(i.worldFrustum, worldMatrix);
 				break;
 			case BT_FRUSTUM_SPHERE:
-				i.localSphere.Transform(i.worldSphere, tranform->worldMatrix);
-				i.localFrustum.Transform(i.worldFrustum, tranform->worldMatrix);
+				i.localSphere.Transform(i.worldSphere, worldMatrix);
+				i.localFrustum.Transform(i.worldFrustum, worldMatrix);
 				break;
 			}
 

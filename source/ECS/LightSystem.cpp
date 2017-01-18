@@ -254,10 +254,10 @@ void LightSystem::Update()
 
 void LightSystem::updateSpot(LightComponent& comp)
 {
-	TransformComponent* transformComponent = transformSys->GetComponent(comp.get_entity());
+	XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
 
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, transformComponent->worldMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
 	XMMATRIX transform = XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
 
 	XMVECTOR lightPos = XMVector3TransformCoord(XMVectorSet(0,0,0,1), transform);
@@ -283,10 +283,10 @@ void LightSystem::updateSpot(LightComponent& comp)
 
 void LightSystem::updatePoint(LightComponent& comp)
 {
-	TransformComponent* transformComponent = transformSys->GetComponent(comp.get_entity());
+	XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
 
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, transformComponent->worldMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
 	XMMATRIX transform = XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
 
 	XMVECTOR lightPos = XMVector3TransformCoord(XMVectorSet(0,0,0,1), transform);

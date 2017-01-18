@@ -2,33 +2,19 @@
 
 #include "ECS_defines.h"
 #include "Entity.h"
-
-#define MAX_HIERARCHY_DEPTH 128
+#include "SceneGraph.h"
 
 namespace EngineCore
 {
 	struct TransformComponent
 	{
 		ENTITY_IN_COMPONENT
-			
-		XMMATRIX localMatrix;
-		XMMATRIX worldMatrix;
-		
-		uint32_t parentID; 
-		uint32_t firstChildID;
-		uint32_t nextID;
-		uint32_t prevID;
-		
-		ALIGNED_ALLOCATION
+				
+		uint32_t nodeID; 
 
 		TransformComponent()
 		{
-			localMatrix = XMMatrixIdentity();
-			worldMatrix = XMMatrixIdentity();
-			parentID = ENTITY_COUNT;
-			firstChildID = ENTITY_COUNT;
-			nextID = ENTITY_COUNT;
-			prevID = ENTITY_COUNT;
+			nodeID = SCENEGRAPH_NULL_ID;
 		}
 	};
 
@@ -45,71 +31,49 @@ namespace EngineCore
 
 		TransformComponent* AddComponent(Entity e)
 		{
-			TransformComponent* res = nullptr;
-			if(e.index() >= capacity)
-				return res;
+			if(HasComponent(e))
+				return &components.getDataById(e.index());
 
-			uint32_t& id = lookup[e.index()];
-			if(id >= capacity)
-			{
-				id = (uint32_t)components.size();
-				res = components.push_back();
-				dirty.push_back(true);
-			}
-			else
-			{
-				res = &components[id];
-				dirty[id] = true;
-			}			
-
-			*res = TransformComponent();
+			TransformComponent* res = components.add(e.index());
+			res->nodeID = sceneGraph->AddNode(e);
 			res->parent = e;
 			return res;
 		}
 		void CopyComponent(Entity src, Entity dest)
 		{
 			auto comp = GetComponent(src);
-			if(!comp) return;
-			auto res = AddComponent(dest);
-			res->localMatrix = comp->localMatrix;
-			res->worldMatrix = comp->worldMatrix;
+			if(!comp || HasComponent(dest)) 
+				return;
+
+			TransformComponent* res = components.add(dest.index());
+			res->nodeID = sceneGraph->CopyNode(comp->nodeID, dest);
+			res->parent = dest;
 		}
-		void DeleteComponent(Entity e);
-		bool HasComponent(Entity e) const
-		{ return e.index() < capacity && lookup[e.index()] < capacity; }
-		size_t ComponentsCount() {return components.size();}
+		void DeleteComponent(Entity e)
+		{
+			auto& comp = components.getDataById(e.index());
+			sceneGraph->DeleteNode(comp.nodeID);
+			components.remove(e.index());
+		}
+		bool HasComponent(Entity e) const { return components.has(e.index()); }
+		size_t ComponentsCount() {return components.dataSize();}
 
 		inline TransformComponent* GetComponent(Entity e)
 		{
-			size_t idx = lookup[e.index()];
-			if(idx >= capacity) return nullptr;
-			return &components[idx];
+			size_t idx = components.getArrayIdx(e.index());
+			if(idx == components.capacity()) return nullptr;
+			return &components.getDataByArrayIdx(idx);
 		}
 		
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
-
-		void Update();
-
-		// TODO: prevent non-uniform scaling for parents
-		// 1 - dont inherit scaling
-		// 2 - inherit uniformed scaling
-		inline void UpdateComponent(uint32_t& id)
-		{
-			TransformComponent& comp = components[id];
-			if(comp.parentID < capacity)
-				comp.worldMatrix = XMMatrixMultiply(comp.localMatrix, components[comp.parentID].worldMatrix);
-			else
-				comp.worldMatrix = comp.localMatrix;
-			dirty[id] = false;
-		}
-
+				
 		void ForceUpdate(Entity e)
 		{
-			uint32_t idx = lookup[e.index()];
-			if(idx >= capacity)
+			TransformComponent* comp = GetComponent(e);
+			if(!comp)
 				return;
-			UpdateComponent(idx);
+			sceneGraph->ForceUpdate(comp->nodeID);
 		}
 
 		void PreLoad();
@@ -244,94 +208,13 @@ namespace EngineCore
 				.endClass();
 		}
 	private:
-		inline void _detach(TransformComponent& childComp, uint32_t childID)
-		{
-			if(childComp.parentID >= capacity)
-				return;
-			
-			auto& oldParentComp = components[childComp.parentID];
-			if(oldParentComp.firstChildID == childID)
-				oldParentComp.firstChildID = childComp.nextID;
-			if(childComp.prevID < capacity)
-			{
-				auto& prevComp = components[childComp.prevID];
-				prevComp.nextID = childComp.nextID;
-			}
-			if(childComp.nextID < capacity)
-			{
-				auto& nextComp = components[childComp.nextID];
-				nextComp.prevID = childComp.prevID;
-			}
-			childComp.parentID = capacity;
-			childComp.prevID = capacity;
-			childComp.nextID = capacity;	
-		}
 
-		inline void _detachChildren(TransformComponent& parentComp)
-		{			
-			uint32_t child = parentComp.firstChildID;
-			while( child < capacity )
-			{
-				auto& childComp = components[child];
-				uint32_t next = childComp.nextID;
-				childComp.parentID = capacity;
-				childComp.prevID = capacity;
-				childComp.nextID = capacity;	
-				child = next;
-			}
-
-			parentComp.firstChildID = capacity;
-		}
-
-		inline void _moveComponentPrepare(uint32_t whatID, uint32_t whereID)
-		{
-			auto& whatComp = components[whatID];
-			if(whatComp.prevID < capacity)
-			{
-				auto& prevComp = components[whatComp.prevID];
-				prevComp.nextID = whereID;
-			}
-			if(whatComp.nextID < capacity)
-			{
-				auto& nextComp = components[whatComp.nextID];
-				nextComp.prevID = whereID;
-			}
-			if(whatComp.parentID < capacity)
-			{
-				auto& parentComp = components[whatComp.parentID];
-				if(parentComp.firstChildID == whatID)
-					parentComp.firstChildID = whereID;
-			}
-
-			uint32_t childID = whatComp.firstChildID;
-			while( childID < capacity )
-			{
-				auto& childComp = components[childID];
-				childComp.parentID = whereID;
-				childID = childComp.nextID;
-			}
-			
-		}
-
-		// ~ 12 MB total size
-		uint32_t capacity;
-
-		RArray<TransformComponent> components;
+		ComponentRArray<TransformComponent> components;
 		
-		RArray<bool> dirty;
-		RArray<uint32_t> lookup;
-
-		struct sort_data { int16_t hierarchy; uint32_t new_id; };
-		RArray<sort_data> hierarchy_sort;
-		RArray<uint32_t> links_fix;
-
-		SArray<uint32_t, MAX_HIERARCHY_DEPTH> hi_buffer;
-
 		// on load only
 		unordered_map<uint32_t, string>* attachments_map;
 
 		BaseWorld* world;
-
-		bool structureChanged;
+		SceneGraph* sceneGraph;
 	};
 }

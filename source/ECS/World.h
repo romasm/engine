@@ -21,6 +21,7 @@
 #include "ScriptSystem.h"
 #include "Frustum.h"
 #include "TransformControls.h"
+#include "SceneGraph.h"
 
 #define DEFAULT_ENV L"preview"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
@@ -35,6 +36,9 @@
 #define SCRIPT_BYTE 'u'
 
 #define SMALL_ENTITY_COUNT 128
+#define SMALL_SCENEGRAPH_SIZE SMALL_ENTITY_COUNT * 4
+
+#define SCENEGRAPH_SIZE ENTITY_COUNT * 4
 
 namespace EngineCore
 {
@@ -54,6 +58,7 @@ namespace EngineCore
 		virtual void Close();
 		
 		void SetDirty(Entity e);
+		void SetDirtyFromSceneGraph(Entity e);
 				
 		string GetWorldName() const {return world_name;}
 		UINT GetID() const {return ID;}
@@ -104,6 +109,8 @@ namespace EngineCore
 		inline float GetDT() const {return m_dt;} 
 
 		inline FrustumMgr* GetFrustumMgr() const {return m_frustumMgr;}
+		inline SceneGraph* GetSceneGraph() const {return m_sceneGraph;}
+
 		inline EntityMgr* GetEntityMgr() const {return m_entityMgr;}
 		inline TransformSystem* GetTransformSystem() const {return m_transformSystem;}
 		inline VisibilitySystem* GetVisibilitySystem() const {return m_visibilitySystem;}
@@ -263,7 +270,9 @@ namespace EngineCore
 		DArray<ScenePipeline*> m_scenes;
 
 		FrustumMgr* m_frustumMgr;
-
+		
+		SceneGraph* m_sceneGraph;
+		
 		EntityMgr* m_entityMgr;
 		TransformSystem* m_transformSystem;
 		VisibilitySystem* m_visibilitySystem;
@@ -277,7 +286,7 @@ namespace EngineCore
 		ShadowSystem* m_shadowSystem;
 		GlobalLightSystem* m_globalLightSystem;
 		ScriptSystem* m_scriptSystem;
-		
+
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;
 	};

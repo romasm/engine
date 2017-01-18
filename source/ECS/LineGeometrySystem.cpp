@@ -51,15 +51,10 @@ void LineGeometrySystem::RegToDraw()
 
 		if(i.dirty)
 		{
-			TransformComponent* transformComponent = transformSys->GetComponent(i.get_entity());
-			if(!transformComponent)
-			{
-				ERR("No transform component!");
-				continue;
-			}
+			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			LineGeometryBuffer mb;
-			mb.world = XMMatrixTranspose(transformComponent->worldMatrix);
+			mb.world = XMMatrixTranspose(worldMatrix);
 			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(LineGeometryBuffer));			
 					
 			i.dirty = false;

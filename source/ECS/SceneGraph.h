@@ -5,12 +5,12 @@
 
 #define MAX_HIERARCHY_DEPTH 256
 
-#define SCENEGRAPH_NULL_ID numeric_limits<uint32_t>::max()
-
-#undef max
+#define SCENEGRAPH_NULL_ID (numeric_limits<uint32_t>::max)()
 
 namespace EngineCore
 {
+	class BaseWorld;
+
 	class SceneGraph
 	{
 		struct Relation
@@ -41,15 +41,13 @@ namespace EngineCore
 		};
 
 	public:
-		SceneGraph(uint32_t maxCount);
+		SceneGraph(uint32_t maxCount, BaseWorld* w);
 		~SceneGraph()
-		{
-			_DELETE(attachments_map);
-		}
+		{}
 
-		uint32_t AddNode();
-		uint32_t CopyNode(uint32_t srcNodeID);
-		void DeleteComponent(uint32_t nodeID);
+		uint32_t AddNode(Entity e);
+		uint32_t CopyNode(uint32_t srcNodeID, Entity dest);
+		void DeleteNode(uint32_t nodeID);
 
 		inline bool IsValidNode(uint32_t nodeID)
 		{
@@ -59,14 +57,17 @@ namespace EngineCore
 			return true;
 		}
 
-		inline uint32_t GetNodesCount() const {return dirty.size();}
+		inline Entity GetEntityByNode(uint32_t nodeID)
+		{ return entityForNode[nodeID]; }
+
+		inline uint32_t GetNodesCount() const {return (uint32_t)dirty.size();}
 		
 		void Update();
 
 		// TODO: prevent non-uniform scaling for parents
 		// 1 - dont inherit scaling
 		// 2 - inherit uniformed scaling
-		inline void UpdateComponent(uint32_t& lookupID)
+		inline void UpdateNode(uint32_t& lookupID)
 		{
 			Relation& relt = relations[lookupID];
 			if( relt.parentID != SCENEGRAPH_NULL_ID )
@@ -81,14 +82,12 @@ namespace EngineCore
 			uint32_t lookupID = lookup[nodeID];
 			if(lookupID == SCENEGRAPH_NULL_ID)
 				return;
-			UpdateComponent(lookupID);
+			UpdateNode(lookupID);
 		}
 
+		bool IsDirty(uint32_t nodeID);
 		bool SetDirty(uint32_t nodeID);
-
-		void PreLoad();
-		bool PostLoadParentsResolve();
-		
+				
 		bool Attach(uint32_t child, uint32_t parent);
 		bool Detach(uint32_t child);
 		bool DetachChildren(uint32_t parent);
@@ -104,6 +103,7 @@ namespace EngineCore
 				return false;
 			localTransformation[lookupID] = matrix;
 			dirty[lookupID] = true;
+			return true;
 		}
 		
 		inline const XMMATRIX* GetLocalTransformation(uint32_t nodeID)
@@ -122,18 +122,6 @@ namespace EngineCore
 		}
 		
 	private:
-		inline void setDirty(uint32_t lookupID)
-		{
-			dirty[lookupID] = true;
-
-			uint32_t child = relations[lookupID].firstChildID;
-			while( child != SCENEGRAPH_NULL_ID )
-			{
-				setDirty(child);
-				child = relations[child].nextID;
-			}
-		}
-
 		inline void detach(Relation& childRelation, uint32_t childID)
 		{
 			if(childRelation.parentID == SCENEGRAPH_NULL_ID)
@@ -220,9 +208,10 @@ namespace EngineCore
 
 		SArray<uint32_t, MAX_HIERARCHY_DEPTH> hi_buffer;
 
-		// on load only
-		unordered_map<uint32_t, string>* attachments_map;
-		
+		RArray<Entity> entityForNode;
+				
 		bool structureChanged;
+
+		BaseWorld* world;
 	};
 }

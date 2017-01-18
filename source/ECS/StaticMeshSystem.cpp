@@ -79,19 +79,19 @@ void StaticMeshSystem::RegToDraw()
 		if(i.dirty || true) // TEMP FOR VCTGI
 		{
 			meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
-			TransformComponent* transformComponent = transformSys->GetComponent(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			XMVECTOR scale, pos, rot;
-			XMMatrixDecompose(&scale, &rot, &pos, transformComponent->worldMatrix);
+			XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
 			XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
 			XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
 
 			XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
 			normalMatrix = normalMatrix * rotM;
 
-			i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), transformComponent->worldMatrix);
+			i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), worldMatrix);
 
-			matrixBuffer.world = XMMatrixTranspose(transformComponent->worldMatrix);
+			matrixBuffer.world = XMMatrixTranspose(worldMatrix);
 			matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
 			Render::UpdateDynamicResource(i.constantBuffer, (void*)&matrixBuffer, sizeof(StmMatrixBuffer));
 					

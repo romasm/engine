@@ -7,286 +7,91 @@ using namespace EngineCore;
 TransformSystem::TransformSystem(BaseWorld* w, uint32_t maxCount)
 {	
 	world = w;
-	structureChanged = true;
+	sceneGraph = world->GetSceneGraph();
 	
-	capacity = min(maxCount, ENTITY_COUNT);
-
-	components.create(capacity);
-
-	lookup.create(capacity);
-	lookup.resize(capacity);
-	lookup.assign(capacity);
-	
-	dirty.create(capacity);
-	hierarchy_sort.create(capacity);
-	links_fix.create(capacity);
+	maxCount = min(maxCount, ENTITY_COUNT);
+	components.create(maxCount);
 
 	attachments_map = nullptr;
 }
 
-void TransformSystem::Update()
-{
-	if(structureChanged)
-	{
-		hierarchy_sort.resize(components.size());
-		links_fix.resize(components.size());
-		
-		// build hierarchy params
-		for(uint32_t i = 0; i < hierarchy_sort.size(); i++)
-		{
-			hierarchy_sort[i].new_id = i;
-			hierarchy_sort[i].hierarchy = -1;
-		}
-
-		for(uint32_t i = 0; i < components.size(); i++)
-		{
-			if(hierarchy_sort[i].hierarchy >= 0)
-				continue;
-			
-			uint32_t compID = i;
-			auto comp = &components[compID];
-
-			hi_buffer.resize(0);
-			hi_buffer.push_back(compID);
-
-			while( comp->parentID < capacity && hierarchy_sort[comp->parentID].hierarchy < 0 )
-			{
-				compID = comp->parentID;
-				comp = &components[compID];
-				hi_buffer.push_back(compID);
-			}
-			
-			if(hi_buffer.full())
-				ERR("Scene hierarchy is too deep! Unpredictable behavior expected!");
-			
-			int16_t hi = 0;
-			if(comp->parentID < capacity)
-				hi = hierarchy_sort[comp->parentID].hierarchy + 1;
-
-			for(int32_t j = (int32_t)hi_buffer.size() - 1; j >= 0; j--)
-			{
-				hierarchy_sort[hi_buffer[j]].hierarchy = hi;
-				hi++;
-			}
-		}
-
-		// sorting IDs
-		sort(hierarchy_sort.begin(), hierarchy_sort.end(), 
-			[](const sort_data& a, const sort_data& b) -> bool { return a.hierarchy < b.hierarchy;});
-		
-		// reorder components
-		for (uint32_t i = 0; i < components.size(); i++)
-		{
-			if (hierarchy_sort[i].hierarchy < 0)
-				continue;
-			
-			uint32_t move_to = i;
-
-			TransformComponent temp_comp = components[move_to];
-			bool temp_dirty = dirty[move_to];
-						
-			uint32_t move_from;
-			while( (move_from = hierarchy_sort[move_to].new_id) != i )
-			{
-				hierarchy_sort[move_from].hierarchy = -1;
-
-				components[move_to] = components[move_from];
-				dirty[move_to] = dirty[move_from];
-				lookup[components[move_to].get_id()] = move_to;
-
-				links_fix[move_from] = move_to;
-
-				move_to = move_from;				
-			}
-
-			hierarchy_sort[move_from].hierarchy = -1;
-
-			components[move_to] = temp_comp;
-			dirty[move_to] = temp_dirty;
-			lookup[components[move_to].get_id()] = move_to;
-
-			links_fix[i] = move_to;
-		}
-
-		// fix links
-		for(uint32_t i = 0; i < components.size(); i++)
-		{
-			if(components[i].parentID < capacity)
-				components[i].parentID = links_fix[components[i].parentID];
-			if(components[i].firstChildID < capacity)
-				components[i].firstChildID = links_fix[components[i].firstChildID];
-			if(components[i].prevID < capacity)
-				components[i].prevID = links_fix[components[i].prevID];
-			if(components[i].nextID < capacity)
-				components[i].nextID = links_fix[components[i].nextID];
-		}
-
-		structureChanged = false;
-	}
-
-	for(uint32_t i = 0; i < dirty.size(); i++)
-	{
-		if( !world->IsEntityNeedProcess(components[i].get_entity()) )
-			continue;
-
-		if(dirty[i])
-			UpdateComponent(i);
-	}
-}
-
-#define GET_COMPONENT(res) uint32_t idx = lookup[e.index()];\
-	if(idx >= capacity)	return res;\
-	auto& comp = components[idx];
-
-void TransformSystem::DeleteComponent(Entity e)
-{
-	uint32_t currentID = lookup[e.index()];
-	if(currentID >= capacity)
-		return;
-	auto& comp = components[currentID];
-
-	_detach(comp, currentID);
-	_detachChildren(comp);
-	
-	uint32_t lastID = (uint32_t)components.size() - 1;
-	if(lastID != currentID)
-		_moveComponentPrepare(lastID, currentID);
-
-	uint32_t rmv_id = lookup[e.index()];
-	if(rmv_id >= capacity)
-		return;
-		
-	if(rmv_id != lastID)
-	{
-		uint32_t old_id = lastID;
-		lookup[components[old_id].get_id()] = rmv_id;
-
-		structureChanged = true;
-	}
-	components.erase_and_pop_back(rmv_id);
-	dirty.erase_and_pop_back((size_t)rmv_id);
-	lookup[e.index()] = capacity;
-}
+#define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
+	if(idx == components.capacity())	return res;\
+	auto& comp = components.getDataByArrayIdx(idx);
 
 bool TransformSystem::IsDirty(Entity e)
 {
-	uint32_t idx = lookup[e.index()];
-	if(idx >= capacity)
-		return false;
-	return dirty[idx];
+	GET_COMPONENT(false);
+	return sceneGraph->IsDirty(comp.nodeID);
 }
 
 bool TransformSystem::SetDirty(Entity e)
 {
-	uint32_t idx = lookup[e.index()];
-	if(idx >= capacity)
-		return false;
-	dirty[idx] = true;
-
-	//	TODO???
-	auto& comp = components[idx];
-	uint32_t child = comp.firstChildID;
-	while( child < capacity )
-	{
-		auto& childComp = components[child];
-		world->SetDirty(childComp.get_entity());
-		child = childComp.nextID;
-	}
-
-	return true;
+	GET_COMPONENT(false);
+	return sceneGraph->SetDirty(comp.nodeID);
 }
 
 bool TransformSystem::Attach(Entity child, Entity parent)
 {
-	uint32_t childID = lookup[child.index()];
-	if(childID >= capacity)
-	{
-		ERR("Attachable component does not exist!");
+	size_t idx = components.getArrayIdx(child.index());
+	if(idx == components.capacity())
 		return false;
-	}
+	auto& childComp = components.getDataByArrayIdx(idx);
 
 	if(parent.isnull())
-		return Detach(child);
+		return sceneGraph->Attach(childComp.nodeID, SCENEGRAPH_NULL_ID); 
 
-	auto& childComp = components[childID];
-
-	uint32_t parentID = lookup[parent.index()];
-	if(parentID >= capacity)
-	{
-		ERR("Component to attach does not exist!");
+	idx = components.getArrayIdx(parent.index());
+	if(idx == components.capacity())
 		return false;
-	}
-	auto& parentComp = components[parentID];
+	auto& parentComp = components.getDataByArrayIdx(idx);
 
-	_detach(childComp, childID);
-	
-	childComp.parentID = parentID;
-
-	if(parentComp.firstChildID < capacity)
-	{
-		uint32_t otherChildID = parentComp.firstChildID;
-		auto& otherChildComp = components[otherChildID];
-		while( otherChildComp.nextID < capacity )
-		{
-			otherChildID = otherChildComp.nextID;
-			otherChildComp = components[otherChildID];
-		}
-
-		otherChildComp.nextID = childID;
-		childComp.prevID = otherChildID;
-	}
-	else
-	{
-		parentComp.firstChildID = childID;
-	}
-
-	if(childID != components.size() - 1)
-		structureChanged = true;
-	return true;
+	return sceneGraph->Attach(childComp.nodeID, parentComp.nodeID); 
 }
 
 bool TransformSystem::Detach(Entity e)
 {
-	GET_COMPONENT(false)
-	_detach(comp, (uint32_t)idx);
-	return true;
+	GET_COMPONENT(false);
+	return sceneGraph->Detach(comp.nodeID);
 }
 
 bool TransformSystem::DetachChildren(Entity e)
 {
-	GET_COMPONENT(false)
-	_detachChildren(comp);
-	return true;
+	GET_COMPONENT(false);
+	return sceneGraph->DetachChildren(comp.nodeID);
 }
 
 Entity TransformSystem::GetParent(Entity e)
 {
 	Entity res;
 	res.setnull();
-	GET_COMPONENT(res)
-	if(comp.parentID >= capacity)
+	GET_COMPONENT(res);
+	uint32_t nodeID = sceneGraph->GetParent(comp.nodeID);
+	if(nodeID == SCENEGRAPH_NULL_ID)
 		return res;
-	return components[comp.parentID].get_entity();
+	return sceneGraph->GetEntityByNode(nodeID);
 }
 
 Entity TransformSystem::GetChildFirst(Entity e)
 {
 	Entity res;
 	res.setnull();
-	GET_COMPONENT(res)
-	if(comp.firstChildID >= capacity)
+	GET_COMPONENT(res);
+	uint32_t nodeID = sceneGraph->GetChildFirst(comp.nodeID);
+	if(nodeID == SCENEGRAPH_NULL_ID)
 		return res;
-	return components[comp.firstChildID].get_entity();
+	return sceneGraph->GetEntityByNode(nodeID);
 }
 
 Entity TransformSystem::GetChildNext(Entity e)
 {
 	Entity res;
 	res.setnull();
-	GET_COMPONENT(res)
-	if(comp.nextID >= capacity)
+	GET_COMPONENT(res);
+	uint32_t nodeID = sceneGraph->GetChildNext(comp.nodeID);
+	if(nodeID == SCENEGRAPH_NULL_ID)
 		return res;
-	return components[comp.nextID].get_entity();
+	return sceneGraph->GetEntityByNode(nodeID);
 }
 
 uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
@@ -296,17 +101,21 @@ uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
 	uint8_t* t_data = data;
 	uint32_t size = 0;
 
+	const XMMATRIX* localMatrix = sceneGraph->GetLocalTransformation(comp.nodeID);
+
 	for(uint32_t row = 0; row < 4; row++)
 	{
 		XMFLOAT4 row_data;
-		XMStoreFloat4(&row_data, comp.localMatrix.r[row]);
+		XMStoreFloat4(&row_data, localMatrix->r[row]);
 
 		*(XMFLOAT4*)t_data = row_data;
 		t_data += sizeof(XMFLOAT4);
 		size += sizeof(XMFLOAT4);
 	}
 
-	if(comp.parentID >= capacity)
+	uint32_t parentNode = sceneGraph->GetParent(comp.nodeID);
+
+	if(parentNode == SCENEGRAPH_NULL_ID)
 	{
 		*(uint32_t*)t_data = 0;
 		t_data += sizeof(uint32_t);
@@ -314,8 +123,8 @@ uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
 	}
 	else
 	{
-		auto& parentComp = components[comp.parentID];
-		string name = world->GetNameMgr()->GetName(parentComp.get_entity());
+		Entity parentEntity = sceneGraph->GetEntityByNode(parentNode);
+		string name = world->GetNameMgr()->GetName(parentEntity);
 
 		uint32_t name_size = (uint32_t)name.size();
 		*(uint32_t*)t_data = name_size;
@@ -342,6 +151,7 @@ uint32_t TransformSystem::Deserialize(Entity e, uint8_t* data)
 	uint8_t* t_data = data;
 	uint32_t size = 0;
 
+	XMMATRIX localMatrix;
 	for(uint32_t row = 0; row < 4; row++)
 	{
 		XMFLOAT4 row_data;
@@ -349,8 +159,10 @@ uint32_t TransformSystem::Deserialize(Entity e, uint8_t* data)
 		t_data += sizeof(XMFLOAT4);
 		size += sizeof(XMFLOAT4);
 
-		comp->localMatrix.r[row] = XMLoadFloat4(&row_data);
+		localMatrix.r[row] = XMLoadFloat4(&row_data);
 	}
+
+	sceneGraph->SetTransformation(comp->nodeID, localMatrix);
 
 	uint32_t parentName_size = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
@@ -403,8 +215,9 @@ bool TransformSystem::SetPosition(Entity e, float x, float y, float z)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslation(x, y, z);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslation(x, y, z);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -414,8 +227,9 @@ bool TransformSystem::SetPosition(Entity e, XMVECTOR p)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -425,8 +239,9 @@ bool TransformSystem::SetRotation(Entity e, float p, float y, float r)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -436,8 +251,9 @@ bool TransformSystem::SetRotation(Entity e, XMVECTOR normalAxis, float angle)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -447,8 +263,9 @@ bool TransformSystem::SetRotation(Entity e, XMVECTOR quat)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -458,8 +275,9 @@ bool TransformSystem::SetScale(Entity e, float x, float y, float z)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -469,8 +287,9 @@ bool TransformSystem::SetScale(Entity e, XMVECTOR s)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -479,7 +298,7 @@ bool TransformSystem::SetScale(Entity e, XMVECTOR s)
 bool TransformSystem::SetTransform(Entity e, CXMMATRIX mat)
 {
 	GET_COMPONENT(false)
-	comp.localMatrix = mat;
+	sceneGraph->SetTransformation(comp.nodeID, mat);
 
 	world->SetDirty(e);
 	return true;
@@ -489,8 +308,9 @@ bool TransformSystem::AddPosition(Entity e, float x, float y, float z)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslation(x, y, z);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslation(x, y, z);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -500,8 +320,9 @@ bool TransformSystem::AddPosition(Entity e, XMVECTOR p)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -510,7 +331,8 @@ bool TransformSystem::AddPosition(Entity e, XMVECTOR p)
 bool TransformSystem::AddPositionLocal(Entity e, float x, float y, float z)
 {
 	GET_COMPONENT(false)
-	comp.localMatrix = XMMatrixTranslation(x, y, z) * comp.localMatrix;
+	XMMATRIX matrix = XMMatrixTranslation(x, y, z) * (*sceneGraph->GetLocalTransformation(comp.nodeID));
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -520,8 +342,9 @@ bool TransformSystem::AddRotation(Entity e, float p, float y, float r)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -531,8 +354,9 @@ bool TransformSystem::AddRotation(Entity e, XMVECTOR normalAxis, float angle)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -542,8 +366,9 @@ bool TransformSystem::AddRotation(Entity e, XMVECTOR quat)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -553,8 +378,9 @@ bool TransformSystem::AddScale(Entity e, float x, float y, float z)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -564,8 +390,9 @@ bool TransformSystem::AddScale(Entity e, XMVECTOR s)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
-	comp.localMatrix = XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 
 	world->SetDirty(e);
 	return true;
@@ -574,7 +401,7 @@ bool TransformSystem::AddScale(Entity e, XMVECTOR s)
 bool TransformSystem::AddTransform(Entity e, CXMMATRIX mat)
 {
 	GET_COMPONENT(false)
-	comp.localMatrix *= mat;
+	sceneGraph->SetTransformation(comp.nodeID, mat);
 
 	world->SetDirty(e);
 	return true;
@@ -584,7 +411,7 @@ XMVECTOR TransformSystem::GetVectPositionL(Entity e)
 {
 	GET_COMPONENT(XMVECTOR())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return pos;
 }
 
@@ -592,7 +419,7 @@ XMFLOAT3 TransformSystem::GetRotationL(Entity e)
 {
 	GET_COMPONENT(XMFLOAT3())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return PYRFromQuat(rot);
 }
 
@@ -600,21 +427,21 @@ XMVECTOR TransformSystem::GetVectScaleL(Entity e)
 {
 	GET_COMPONENT(XMVECTOR())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.localMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return scale;
 }
 
 XMMATRIX TransformSystem::GetTransformL(Entity e)
 {
 	GET_COMPONENT(XMMatrixIdentity())
-	return comp.localMatrix;
+	return *sceneGraph->GetLocalTransformation(comp.nodeID);
 }
 
 XMVECTOR TransformSystem::GetVectPositionW(Entity e)
 {
 	GET_COMPONENT(XMVECTOR())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.worldMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return pos;
 }
 
@@ -622,7 +449,7 @@ XMFLOAT3 TransformSystem::GetRotationW(Entity e)
 {
 	GET_COMPONENT(XMFLOAT3())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.worldMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return PYRFromQuat(rot);
 }
 
@@ -630,12 +457,12 @@ XMVECTOR TransformSystem::GetVectScaleW(Entity e)
 {
 	GET_COMPONENT(XMVECTOR())
 	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, comp.worldMatrix);
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return scale;
 }
 
 XMMATRIX TransformSystem::GetTransformW(Entity e)
 {
 	GET_COMPONENT(XMMatrixIdentity())
-	return comp.worldMatrix;
+	return *sceneGraph->GetWorldTransformation(comp.nodeID);
 }

@@ -4,8 +4,10 @@
 
 using namespace EngineCore;
 
-SceneGraph::SceneGraph(uint32_t maxCount)
+SceneGraph::SceneGraph(uint32_t maxCount, BaseWorld* w)
 {	
+	world = w;
+
 	structureChanged = true;
 	capacity = maxCount;
 	
@@ -26,10 +28,15 @@ SceneGraph::SceneGraph(uint32_t maxCount)
 	hierarchy_sort.create(capacity);
 	links_fix.create(capacity);
 
-	attachments_map = nullptr;
+	entityForNode.create(capacity);
+	entityForNode.resize(capacity);
+
+	Entity e;
+	e.setnull();
+	entityForNode.assign(e);
 }
 
-uint32_t SceneGraph::AddNode()
+uint32_t SceneGraph::AddNode(Entity e)
 {
 	if(free_id.size() == 0)
 	{
@@ -40,23 +47,25 @@ uint32_t SceneGraph::AddNode()
 	UINT nodeID = free_id.front();
 	free_id.pop_front();
 
-	lookup[nodeID] = dirty.size();
+	lookup[nodeID] = (uint32_t)dirty.size();
 
 	dirty.push_back(true);
 	localTransformation.push_back(XMMatrixIdentity());			
 	worldTransformation.push_back(XMMatrixIdentity());		
 	relations.push_back(Relation(nodeID));	
 
+	entityForNode[nodeID] = e;
+
 	return nodeID;
 }
 
-uint32_t SceneGraph::CopyNode(uint32_t srcNodeID)
+uint32_t SceneGraph::CopyNode(uint32_t srcNodeID, Entity dest)
 {
 	uint32_t lookupSrcID = lookup[srcNodeID];
 	if(lookupSrcID == SCENEGRAPH_NULL_ID)
 		return SCENEGRAPH_NULL_ID;
 
-	uint32_t resID = AddNode();
+	uint32_t resID = AddNode(dest);
 	if(resID == SCENEGRAPH_NULL_ID)
 		return SCENEGRAPH_NULL_ID;
 
@@ -175,11 +184,11 @@ void SceneGraph::Update()
 	for(uint32_t i = 0; i < dirty.size(); i++)
 	{
 		if(dirty[i])
-			UpdateComponent(i);
+			UpdateNode(i);
 	}
 }
 
-void SceneGraph::DeleteComponent(uint32_t nodeID)
+void SceneGraph::DeleteNode(uint32_t nodeID)
 {
 	uint32_t lookupID = lookup[nodeID];
 	if(lookupID == SCENEGRAPH_NULL_ID)
@@ -211,6 +220,16 @@ void SceneGraph::DeleteComponent(uint32_t nodeID)
 
 	free_id.push_back(nodeID);
 	lookup[nodeID] = SCENEGRAPH_NULL_ID;
+	entityForNode[nodeID].setnull();
+}
+
+bool SceneGraph::IsDirty(uint32_t nodeID)
+{
+	uint32_t lookupID = lookup[nodeID];
+	if(lookupID == SCENEGRAPH_NULL_ID)
+		return false;
+
+	return dirty[lookupID];
 }
 
 bool SceneGraph::SetDirty(uint32_t nodeID)
@@ -219,7 +238,21 @@ bool SceneGraph::SetDirty(uint32_t nodeID)
 	if(lookupID == SCENEGRAPH_NULL_ID)
 		return false;
 
-	setDirty(lookupID);
+	dirty[lookupID] = true;
+	Entity& e = entityForNode[nodeID];
+	if(e.isnull())
+	{
+		ERR("Scene graph corruption: entityForNode");
+		return false;
+	}
+	world->SetDirtyFromSceneGraph(e);
+
+	uint32_t child = relations[lookupID].firstChildID;
+	while( child != SCENEGRAPH_NULL_ID )
+	{
+		SetDirty(relations[child].nodeID);
+		child = relations[child].nextID;
+	}
 	return true;
 }
 
@@ -330,32 +363,4 @@ uint32_t SceneGraph::GetChildNext(uint32_t child)
 		return SCENEGRAPH_NULL_ID;
 
 	return relations[relt.nextID].nodeID;
-}
-
-void SceneGraph::PreLoad()
-{
-	if(attachments_map)
-		attachments_map->clear();
-	else
-		attachments_map = new unordered_map<uint32_t, string>;
-	attachments_map->reserve(components.capacity()); // too much space?
-}
-
-bool SceneGraph::PostLoadParentsResolve()
-{
-	if(!attachments_map)
-		return false;
-
-	for(auto& it: *attachments_map)
-	{
-		Entity parent = world->GetNameMgr()->GetEntityByName(it.second);
-		if(parent.isnull())
-			ERR("Parent entity %s does not exist!", it.second.c_str());
-		else
-			Attach(EntityFromUint(it.first), parent);
-	}
-
-	attachments_map->clear();
-	_DELETE(attachments_map);
-	return true;
 }

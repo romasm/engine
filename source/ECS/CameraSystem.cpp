@@ -77,10 +77,10 @@ void CameraSystem::regCamera(CameraComponent& comp)
 	
 	if(comp.dirty)
 	{
-		TransformComponent* tranform = transformSys->GetComponent(comp.get_entity());
-		comp.camPos = XMVector3TransformCoord(XMVectorZero(), tranform->worldMatrix);
-		comp.camLookDir = XMVector3TransformNormal(XMVectorSet(0,0,1,0), tranform->worldMatrix);
-		comp.camUp = XMVector3TransformNormal(XMVectorSet(0,1,0,0), tranform->worldMatrix);
+		XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
+		comp.camPos = XMVector3TransformCoord(XMVectorZero(), worldMatrix);
+		comp.camLookDir = XMVector3TransformNormal(XMVectorSet(0,0,1,0), worldMatrix);
+		comp.camUp = XMVector3TransformNormal(XMVectorSet(0,1,0,0), worldMatrix);
 
 		comp.viewMatrix = XMMatrixLookAtLH( comp.camPos, comp.camPos + comp.camLookDir, comp.camUp );
 			

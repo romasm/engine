@@ -39,10 +39,10 @@ void EnvProbSystem::RegToScene()
 
 		if(i.is_distant) // to do: env rotation
 		{
-			TransformComponent* transfComponent = transformSys->GetComponent(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			for(auto f: *frustums)
-				((SceneRenderMgr*)f->rendermgr)->RegDistEnvProb(TEXTURE_GETPTR(i.specCube), TEXTURE_GETPTR(i.diffCube), i.mips_count, transfComponent->worldMatrix);
+				((SceneRenderMgr*)f->rendermgr)->RegDistEnvProb(TEXTURE_GETPTR(i.specCube), TEXTURE_GETPTR(i.diffCube), i.mips_count, worldMatrix);
 			continue;
 		}
 

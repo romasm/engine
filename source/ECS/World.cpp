@@ -21,6 +21,10 @@ BaseWorld::BaseWorld()
 void BaseWorld::SetDirty(Entity e)
 {
 	m_transformSystem->SetDirty(e);
+}
+
+void BaseWorld::SetDirtyFromSceneGraph(Entity e)
+{
 	m_visibilitySystem->SetDirty(e);
 
 	if(m_earlyVisibilitySystem)
@@ -95,6 +99,7 @@ void BaseWorld::Close()
 	m_scenes.clear();
 
 	_DELETE(m_frustumMgr);
+	_DELETE(m_sceneGraph);
 	_DELETE(m_entityMgr);
 	_DELETE(m_transformSystem);
 	_DELETE(m_visibilitySystem);
@@ -427,6 +432,8 @@ bool BaseWorld::saveWorld(string& filename)
 World::World() : BaseWorld()
 {
 	m_frustumMgr = new FrustumMgr;
+	
+	m_sceneGraph = new SceneGraph(SCENEGRAPH_SIZE, this);
 
 	m_entityMgr = new EntityMgr(ENTITY_COUNT);
 	m_typeMgr = new TypeMgr(this, ENTITY_COUNT);
@@ -465,7 +472,8 @@ void World::Snapshot(ScenePipeline* scene)
 	tempTimer.Frame();
 	m_dt = 0.0f;
 	
-	m_transformSystem->Update();
+	m_sceneGraph->Update();
+
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
 
@@ -523,8 +531,9 @@ void World::Frame()
 	// start update
 
 	m_scriptSystem->Update(m_dt);
+	
+	m_sceneGraph->Update();
 
-	m_transformSystem->Update();
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
 
@@ -604,6 +613,8 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_lineGeometrySystem = nullptr;
 
 	m_frustumMgr = new FrustumMgr;
+	
+	m_sceneGraph = new SceneGraph(SMALL_SCENEGRAPH_SIZE, this);
 
 	m_entityMgr = new EntityMgr(SMALL_ENTITY_COUNT);
 	m_typeMgr = new TypeMgr(this, SMALL_ENTITY_COUNT);
@@ -631,8 +642,8 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 	tempTimer.Frame();
 	m_dt = 0.0f;
 	
-	m_transformSystem->Update();
-
+	m_sceneGraph->Update();
+	
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegSingle(scene->GetSceneCamera().e);
 	
@@ -674,9 +685,9 @@ void SmallWorld::Frame()
 	// start update
 
 	m_scriptSystem->Update(m_dt);
-
-	m_transformSystem->Update();
-
+	
+	m_sceneGraph->Update();
+	
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegToDraw();
 	

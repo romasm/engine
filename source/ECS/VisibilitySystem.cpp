@@ -23,11 +23,11 @@ void VisibilitySystem::CheckVisibility()
 
 		if(i.dirty)
 		{
-			TransformComponent* tranform = transformSys->GetComponent(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 			
 			BoundingOrientedBox::CreateFromBoundingBox(i.worldBox, i.localBox);
-			//i.worldBox.Transform(i.worldBox, tranform->worldMatrix); // broken DX func
-			BoundingOrientedBoxTransformFixed(i.worldBox, tranform->worldMatrix);
+			//i.worldBox.Transform(i.worldBox, worldMatrix); // broken DX func
+			BoundingOrientedBoxTransformFixed(i.worldBox, worldMatrix);
 
 			i.dirty = false;
 		}
