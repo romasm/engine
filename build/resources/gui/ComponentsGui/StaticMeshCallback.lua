@@ -207,7 +207,7 @@ function StaticMeshCallback.UpdMaterial(self, ev, mat_i)
     end
 
     local mat_btn = self.entity:GetParent():GetChildById('mat_btn'):GetInherited()
-    mat_btn.icon_mat:SetTextureByName(val:gsub("%.mtb", "%.tga"), 0, SHADERS.PS)
+    mat_btn.icon_mat:SetTextureNameByID(val:gsub("%.mtb", "%.tga"), 0, SHADERS.PS)
     
     local current_mat = MaterialProps:GetSelected()
     if current_mat == nil then return true end

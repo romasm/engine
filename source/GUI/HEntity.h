@@ -155,6 +155,7 @@ public:
 	bool DetachChild(uint32_t e);
 
 	uint32_t GetChildById(string id);
+	uint32_t GetChildByIdSilent(string id);
 
 	void SetFocus(uint32_t e, bool lock, bool overlay);
 

@@ -294,7 +294,7 @@ function GuiTextfield:init(props)
     self.bgrect = self.entity:AddRect(BG_MAT)
     self.bgrect_mat = self:SetRectMaterial(self.bgrect)
     local shader_data = Vector4(0, 0, 1, 1)
-    self.bgrect_mat:SetVector(shader_data, 1)
+    self.bgrect_mat:SetVectorByID(shader_data, 1)
 
     self.border_rect = GuiRect({
         ignore_events = true,
@@ -317,11 +317,11 @@ function GuiTextfield:init(props)
     
     self.select_r = self.entity:AddRect(SELECT_MAT)
     self.select_mat = self:SetRectMaterial(self.select_r)
-    self.select_mat:SetVector(self.color_selection, 1)
+    self.select_mat:SetVectorByID(self.color_selection, 1)
 
     self.cursor = self.entity:AddRect(CURSOR_MAT)
     self.cursor_mat = self:SetRectMaterial(self.cursor)
-    self.cursor_mat:SetVector(self.color_cursor, 1)
+    self.cursor_mat:SetVectorByID(self.color_cursor, 1)
     
     if self.text.font:len() == 0 then
         error("Font is undefined for GuiTextfield named "..self.entity:GetID())
@@ -354,7 +354,7 @@ function GuiTextfield:init(props)
 end
 
 function GuiTextfield:ApplyDisable()
-    self.bgrect_mat:SetVector(self.background.color_nonactive, 2)
+    self.bgrect_mat:SetVectorByID(self.background.color_nonactive, 2)
     
     self.entity:SetRect(self.cursor, Rect(0,0,0,0))
     self.entity:SetRect(self.select_r, Rect(0,0,0,0))
@@ -363,7 +363,7 @@ function GuiTextfield:ApplyDisable()
 end
 
 function GuiTextfield:ApplyNone()
-    self.bgrect_mat:SetVector(self.background.color, 2)
+    self.bgrect_mat:SetVectorByID(self.background.color, 2)
     self.border_rect.border.color = self.border.color
     self.border_rect:UpdateProps()
     
@@ -374,7 +374,7 @@ function GuiTextfield:ApplyNone()
 end
 
 function GuiTextfield:ApplyLive()
-    self.bgrect_mat:SetVector(self.background.color_live, 2)
+    self.bgrect_mat:SetVectorByID(self.background.color_live, 2)
     self.border_rect.border.color = self.border.color_live
     self.border_rect:UpdateProps()
     

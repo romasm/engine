@@ -248,7 +248,7 @@ local btn = GuiButton({
     styles = { GuiStyles.entity_button, },
     icon = {material = {
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
-        textures = {"../resources/textures/editor_hud/types/" .. ent_type .. ".dds"}
+        textures = {colorTex = "../resources/textures/editor_hud/types/" .. ent_type .. ".dds"}
     }},
     top = topOffset,
     id = tostring(num),

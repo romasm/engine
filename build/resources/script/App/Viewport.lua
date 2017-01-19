@@ -43,7 +43,7 @@ function Viewport.reload()
 
     if Viewport.lua_world then
         local srv = Viewport.lua_world.scenepl:GetSRV()
-        Viewport.viewport.rect_mat:SetTexture(srv, 0, SHADERS.PS)
+        Viewport.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
         Viewport.viewport.entity.visible = true
     end
 end
@@ -120,7 +120,7 @@ function Viewport:SetWorld(WLD)
     WLD.scenepl = WLD.world:CreateScene(EditorCamera.cameraEntity, vp_rect.w, vp_rect.h, false)
 
     local srv = WLD.scenepl:GetSRV()
-    self.viewport.rect_mat:SetTexture(srv, 0, SHADERS.PS)
+    self.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
     self.viewport.entity.visible = true
 
     WLD.world.active = true
@@ -247,7 +247,7 @@ function Viewport:onResize(force)
             self.viewport.rect_mat:ClearTextures()
             self.lua_world.scenepl:Resize(vp_w, vp_h)
             local srv = self.lua_world.scenepl:GetSRV()
-            self.viewport.rect_mat:SetTexture(srv, 0, SHADERS.PS)
+            self.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
 
             local rendermode_btn = self.overlay_gui:GetChildById('vp_rendermode')
             self.lua_world.scenepl.mode = rendermode_btn:GetInherited():GetSelected() - 1

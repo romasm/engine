@@ -62,7 +62,7 @@ function GuiRect:onMoveResize(is_move, is_resize)
     shader_data.y = self.border.width / rect.h
     shader_data.z = 1 - shader_data.x
     shader_data.w = 1 - shader_data.y
-    self.rect_mat:SetVector(shader_data, 1)
+    self.rect_mat:SetVectorByID(shader_data, 1)
 
     return true
 end
@@ -84,11 +84,11 @@ function GuiRect:callback(eventData)
 end
 
 function GuiRect:onActivate()
-    self.rect_mat:SetVector(self.background.color, 2)
-    self.rect_mat:SetVector(self.border.color, 3)
+    self.rect_mat:SetVectorByID(self.background.color, 2)
+    self.rect_mat:SetVectorByID(self.border.color, 3)
 end
 
 function GuiRect:onDeactivate()
-    self.rect_mat:SetVector(self.background.color_nonactive, 2)
-    self.rect_mat:SetVector(self.border.color_nonactive, 3)
+    self.rect_mat:SetVectorByID(self.background.color_nonactive, 2)
+    self.rect_mat:SetVectorByID(self.border.color_nonactive, 3)
 end

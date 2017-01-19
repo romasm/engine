@@ -22,10 +22,14 @@ namespace EngineCore
 	{
 		uint8_t matInfo_Register;
 		uint8_t matInfo_FloatCount;
+		unordered_map<string, uint8_t> matFloatMap;
+
 		uint8_t matInfo_VectorCount;
+		unordered_map<string, uint8_t> matVectorMap;
 
 		uint8_t matTextures_StartRegister;
 		uint8_t matTextures_Count;
+		unordered_map<string, uint8_t> matTextureMap;
 
 		uint8_t matId_Register;
 

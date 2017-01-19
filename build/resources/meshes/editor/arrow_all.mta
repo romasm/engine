@@ -2,7 +2,7 @@ shader = "../resources/shaders/objects/editor/3d_hud"
 
 ps
 {
-	v0 = "1.0 1.0 1.0 1.0"
-	f0 = 0
-	t0 = ""
+	dcolor = "1.0 1.0 1.0 1.0"
+	useTexture = 0
+	colorTex = ""
 }

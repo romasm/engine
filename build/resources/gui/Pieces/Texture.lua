@@ -87,7 +87,7 @@ local res = GuiDumb({
                     local tr = self.entity:GetParent():GetChildById('texture_rect'):GetInherited()
                     tr.entity.enable = false
                     
-                    if tr.rect_mat:SetTextureByName(self:GetPath(), 0, SHADERS.PS) == true then 
+                    if tr.rect_mat:SetTextureNameByID(self:GetPath(), 0, SHADERS.PS) == true then 
                         tr.entity.enable = true
                     end
 
@@ -134,9 +134,11 @@ res.SetTexture = function(self, texture)
         
         local tr = self.entity:GetChildById('texture_rect'):GetInherited()
         tr.entity.enable = false
-        if texture == nil then return end
-
-        tr.entity.enable = tr.rect_mat:SetTextureByName(texture, 0, SHADERS.PS)
+        if texture == nil then 
+            tr.rect_mat:SetTextureNameByID("", 0, SHADERS.PS)
+        else
+            tr.entity.enable = tr.rect_mat:SetTextureNameByID(texture, 0, SHADERS.PS)
+        end
     end
 
 -- temp 

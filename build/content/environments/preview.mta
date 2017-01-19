@@ -2,11 +2,11 @@ shader = "../resources/shaders/objects/sky_sphere"
 
 deffered
 {
-	f0 = 1
+	unlit = 1
 }
 
 ps
 {
-	v0 = "1.0 1.0 1.0 1.0"
-	t0 = "../content/environments/preview_sky.dds"
+	color = "1.0 1.0 1.0 1.0"
+	skyTexture = "../content/environments/preview_sky.dds"
 }

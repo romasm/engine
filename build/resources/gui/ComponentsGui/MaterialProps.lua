@@ -10,82 +10,8 @@ GuiStyles.mat_dataslider = {
     height = 20,
 }
 
-function Gui.MaterialProps()
-return {GuiGroup({
-    styles = {
-        GuiStyles.common_group,
-    },
-    
-    id = "general",
-    
-    header = {
-        styles = {
-            GuiStyles.group_button,
-        },
-        align = GUI_ALIGN.BOTH,
-        top = 0,
-        left = 0,
-        right = 0,
-        height = 23,
-
-        text = {
-            str = "General",
-            offset = { x = 22, y = 1 },
-            center = { x = false, y = false },
-        },
-    },
-
-    width = 100,
-    width_percent = true,
-
-    height = 70,
-
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Shader",
-        left = 10,
-        top = 35,
-    }),
-    
-    GuiFilefield({
-        styles = {GuiStyles.common_filefield,},
-        left = 80,
-        top = 33,
-        browse_header = "Choose shader file",
-        filetypes = {
-            {"Shader", "*.hlsl"},
-        },
-        allow_none = false,
-
-        events = {
-            [GUI_EVENTS.FF_SET] = function(self, ev) return MaterialPropsCallback.SetShader(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) 
-                self:SetPath("../content/shaders/objects/opaque_main.hlsl")
-                self.entity:Deactivate()
-                local group = self.entity:GetParent()
-                group:GetInherited():SetState(false)
-                --group:GetInherited():UpdateH()
-                return true
-            end,
-        }
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
-    }),
-}),
-
--- ALBEDO
-GuiGroup({
+function Gui.MaterialAlbedo()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -166,10 +92,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- NORMAL
-GuiGroup({
+function Gui.MaterialNormal()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -259,10 +186,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- ROUGHNESS
-GuiGroup({
+function Gui.MaterialRoughness()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -421,10 +349,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- SPECULAR
-GuiGroup({
+function Gui.MaterialReflectivity()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -555,10 +484,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- AO
-GuiGroup({
+function Gui.MaterialAO()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -613,10 +543,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- EMISSIVE
-GuiGroup({
+function Gui.MaterialEmissive()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -727,10 +658,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- SUBSURFACE
-GuiGroup({
+function Gui.MaterialSubsurf()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -868,10 +800,11 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
+})
+end
 
--- ALPHATEST
-GuiGroup({
+function Gui.MaterialAlphatest()
+return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
@@ -955,7 +888,5 @@ GuiGroup({
         bottom = 0,
         background = {color = 'text_06'},
     }),
-}),
-
-}
+})
 end

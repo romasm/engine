@@ -65,6 +65,12 @@
     <Compile Include="..\..\gui\EntityProps.lua">
       <Link>Gui\EntityProps.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Albedo.lua">
+      <Link>Gui\MaterialGui\Albedo.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\AlbedoCallback.lua">
+      <Link>Gui\MaterialGui\AlbedoCallback.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\Menus\Asset.lua">
       <Link>Gui\Menus\Asset.lua</Link>
     </Compile>
@@ -258,6 +264,7 @@
     <Folder Include="App\" />
     <Folder Include="Gui\Menus\" />
     <Folder Include="Gui\ComponentsGui\" />
+    <Folder Include="Gui\MaterialGui\" />
     <Folder Include="Gui\Pieces\" />
     <Folder Include="Gui\Styles\" />
     <Folder Include="Entities\" />

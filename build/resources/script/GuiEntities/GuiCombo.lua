@@ -173,12 +173,12 @@ end
 
 function GuiCombo:ApplyDisable()
     if self.rect_mat ~= nil then
-        self.rect_mat:SetVector(self.background.color_nonactive, 2)
-        self.rect_mat:SetVector(self.border.color_nonactive, 3)
+        self.rect_mat:SetVectorByID(self.background.color_nonactive, 2)
+        self.rect_mat:SetVectorByID(self.border.color_nonactive, 3)
     end
     if self.icon_mat ~= nil then
-        self.icon_mat:SetVector(self.icon.color_nonactive, 2)
-        self.icon_mat:SetVector(self.icon.background.color_nonactive, 1)
+        self.icon_mat:SetVectorByID(self.icon.color_nonactive, 2)
+        self.icon_mat:SetVectorByID(self.icon.background.color_nonactive, 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color_nonactive)
@@ -187,12 +187,12 @@ end
 
 function GuiCombo:ApplyNone()
     if self.rect_mat ~= nil then
-        self.rect_mat:SetVector(self.background.color, 2)
-        self.rect_mat:SetVector(self.border.color, 3)
+        self.rect_mat:SetVectorByID(self.background.color, 2)
+        self.rect_mat:SetVectorByID(self.border.color, 3)
     end
     if self.icon_mat ~= nil then
-        self.icon_mat:SetVector(self.icon.color, 2)
-        self.icon_mat:SetVector(self.icon.background.color, 1)
+        self.icon_mat:SetVectorByID(self.icon.color, 2)
+        self.icon_mat:SetVectorByID(self.icon.background.color, 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color)
@@ -201,12 +201,12 @@ end
 
 function GuiCombo:ApplyPress()
     if self.rect_mat ~= nil then
-        self.rect_mat:SetVector(self.background.color_press, 2)
-        self.rect_mat:SetVector(self.border.color_press, 3)
+        self.rect_mat:SetVectorByID(self.background.color_press, 2)
+        self.rect_mat:SetVectorByID(self.border.color_press, 3)
     end
     if self.icon_mat ~= nil then
-        self.icon_mat:SetVector(self.icon.color_press, 2)
-        self.icon_mat:SetVector(self.icon.background.color_press, 1)
+        self.icon_mat:SetVectorByID(self.icon.color_press, 2)
+        self.icon_mat:SetVectorByID(self.icon.background.color_press, 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color_press)
@@ -215,12 +215,12 @@ end
 
 function GuiCombo:ApplyHover()
     if self.rect_mat ~= nil then
-        self.rect_mat:SetVector(self.background.color_hover, 2)
-        self.rect_mat:SetVector(self.border.color_hover, 3)
+        self.rect_mat:SetVectorByID(self.background.color_hover, 2)
+        self.rect_mat:SetVectorByID(self.border.color_hover, 3)
     end
     if self.icon_mat ~= nil then
-        self.icon_mat:SetVector(self.icon.color_hover, 2)
-        self.icon_mat:SetVector(self.icon.background.color_hover, 1)
+        self.icon_mat:SetVectorByID(self.icon.color_hover, 2)
+        self.icon_mat:SetVectorByID(self.icon.background.color_hover, 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color_hover)
@@ -328,7 +328,7 @@ function GuiCombo:onMoveResize(is_move, is_resize)
             local shader_data = Vector4(self.border.width / r.w, self.border.width / r.h, 0, 0)
             shader_data.z = 1 - shader_data.x
             shader_data.w = 1 - shader_data.y
-            self.rect_mat:SetVector(shader_data, 1)
+            self.rect_mat:SetVectorByID(shader_data, 1)
         end
     end
 
@@ -536,12 +536,12 @@ function GuiCombo:onTick(dt)
         local color_text = Vector4Lerp(self.text.color, self.text.color_hover, self.anim_progress)
         
         if self.rect_mat ~= nil then
-            self.rect_mat:SetVector(color_background, 2)
-            self.rect_mat:SetVector(color_border, 3)
+            self.rect_mat:SetVectorByID(color_background, 2)
+            self.rect_mat:SetVectorByID(color_border, 3)
         end
         if self.icon_mat ~= nil then
-            self.icon_mat:SetVector(color_icon, 2)
-            self.icon_mat:SetVector(color_icon_bg, 1)
+            self.icon_mat:SetVectorByID(color_icon, 2)
+            self.icon_mat:SetVectorByID(color_icon_bg, 1)
         end
         if self.str ~= nil then
             self.entity:SetTextColor(self.str, color_text)

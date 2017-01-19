@@ -341,12 +341,12 @@ bool Material::ñonvertMat(string& nameBin)
 	{
 		defferedParams = new MaterialParamsStructBuffer;
 		
-		defferedParams->unlit = (uint32_t)file.ReadFloat("f0", nodeDeffered);
-		defferedParams->subscattering = (uint32_t)file.ReadFloat("f1", nodeDeffered);
-		defferedParams->ss_distortion = file.ReadFloat("f2", nodeDeffered);
-		defferedParams->ss_direct_translucency = file.ReadFloat("f3", nodeDeffered);
-		defferedParams->ss_direct_pow = file.ReadFloat("f4", nodeDeffered);
-		defferedParams->ss_indirect_translucency = file.ReadFloat("f5", nodeDeffered);
+		defferedParams->unlit = (uint32_t)file.ReadFloat(DEFFERED_UNLIT_0, nodeDeffered);
+		defferedParams->subscattering = (uint32_t)file.ReadFloat(DEFFERED_SS_1, nodeDeffered);
+		defferedParams->ss_distortion = file.ReadFloat(DEFFERED_SS_DISTORTION_2, nodeDeffered);
+		defferedParams->ss_direct_translucency = file.ReadFloat(DEFFERED_SS_DTRANSLUSENCY_3, nodeDeffered);
+		defferedParams->ss_direct_pow = file.ReadFloat(DEFFERED_SS_DPOWER_4, nodeDeffered);
+		defferedParams->ss_indirect_translucency = file.ReadFloat(DEFFERED_SS_ITRANSLUCENCY_5, nodeDeffered);
 	}
 	
 	const char node_names[5][3] = { "ps", "vs", "ds", "hs", "gs" };
@@ -355,21 +355,39 @@ bool Material::ñonvertMat(string& nameBin)
 	{
 		auto stageNode = file.Node(node_names[i], root);
 
-		for(uint8_t j = 0; j < offsetFloat[i]; j++)
-			dataVector[i][j] = file.ReadFloat4("v" + IntToString(j), stageNode);
+		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
+		
+		for(auto& it: Hcode.input.matVectorMap)
+			dataVector[i][it.second] = file.ReadFloat4(it.first, stageNode);
 
-		for(uint8_t j = 0; j < 4 * (dataVector[i].size() - offsetFloat[i]); j++)
+		//for(uint8_t j = 0; j < offsetFloat[i]; j++)
+		//	dataVector[i][j] = file.ReadFloat4("v" + IntToString(j), stageNode);
+				
+		for(auto& it: Hcode.input.matFloatMap)
+		{
+			float fdata = file.ReadFloat(it.first, stageNode);
+			SetFloat(fdata, it.second, i);
+		}
+
+		/*for(uint8_t j = 0; j < 4 * (dataVector[i].size() - offsetFloat[i]); j++)
 		{
 			float fdata = file.ReadFloat("f" + IntToString(j), stageNode);
 			SetFloat(fdata, j, i);
+		}*/
+
+		for(auto& it: Hcode.input.matTextureMap)
+		{
+			string texName = file.ReadString(it.first, stageNode);
+			TextureHandle& tex = textures[i][it.second];
+			tex.texture = (uint64_t)RELOADABLE_TEXTURE(texName, true); // todo
 		}
 
-		for(uint8_t j = 0; j < textures[i].size(); j++)
+		/*for(uint8_t j = 0; j < textures[i].size(); j++)
 		{			
 			string texName = file.ReadString("t" + IntToString(j), stageNode);
 			TextureHandle& tex = textures[i][j];
 			tex.texture = (uint64_t)RELOADABLE_TEXTURE(texName, true); // todo
-		}
+		}*/
 	}
 
 	return Save();
@@ -399,7 +417,19 @@ bool Material::initBuffers()
 	return true;
 }
 
-bool Material::SetTextureByName(string& name, uint8_t id, uint8_t shader)
+bool Material::SetTextureByNameWithSlotName(string name, string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot, shaderType);
+	if(id < 0)
+	{
+		ERR("Texture slot %s does not exist!", slot.data());
+		return false;
+	}
+	else
+		return SetTextureByName(name, (uint8_t)id, shaderType);
+}
+
+bool Material::SetTextureByName(string name, uint8_t id, uint8_t shader)
 {
 	if(id >= textures[shader].size())
 		return false;
@@ -415,6 +445,15 @@ bool Material::SetTextureByName(string& name, uint8_t id, uint8_t shader)
 	return true;
 }
 
+void Material::SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot, shaderType);
+	if(id < 0)
+		ERR("Texture slot %s does not exist!", slot.data());
+	else
+		SetTexture(texture, (uint8_t)id, shaderType);
+}
+
 void Material::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id, uint8_t shader)
 {
 	if(id >= textures[shader].size())
@@ -425,6 +464,18 @@ void Material::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id, uint8_t
 
 	tex.texture = reinterpret_cast<uint64_t>(texture);
 	tex.is_ptr = true;
+}
+
+string Material::GetTextureNameWithSlotName(string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot, shaderType);
+	if(id < 0)
+	{
+		ERR("Texture slot %s does not exist!", slot.data());
+		return "";
+	}
+	else
+		return GetTextureName((uint8_t)id, shaderType);
 }
 
 string Material::GetTextureName(uint8_t id, uint8_t shader)
@@ -533,12 +584,30 @@ void Material::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
 		Render::Context()->GSSetConstantBuffers(matrixReg[SHADER_GS], 1, &matrixBuf);	
 }
 
+void Material::SetVectorWithSlotName(XMFLOAT4& vect, string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot, shaderType);
+	if(id < 0)
+		ERR("Vector slot %s does not exist!", slot.data());
+	else
+		SetVector(vect, (uint8_t)id, shaderType);
+}
+
 void Material::SetVector(XMFLOAT4& vect, uint8_t id, uint8_t shader)
 {
 	if(id >= offsetFloat[shader])
 		return;
 	dataVector[shader][id] = vect;
 	b_dirty = true;
+}
+
+void Material::SetFloatWithSlotName(float f, string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetFloatIdBySlot(slot, shaderType);
+	if(id < 0)
+		ERR("Float slot %s does not exist!", slot.data());
+	else
+		SetFloat(f, (uint8_t)id, shaderType);
 }
 
 void Material::SetFloat(float f, uint8_t id, uint8_t shader)
@@ -568,11 +637,35 @@ void Material::SetFloat(float f, uint8_t id, uint8_t shader)
 	b_dirty = true;
 }
 
+XMFLOAT4 Material::GetVectorWithSlotName(string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot, shaderType);
+	if(id < 0)
+	{
+		ERR("Vector slot %s does not exist!", slot.data());
+		return XMFLOAT4(0,0,0,0);
+	}
+	else
+		return GetVector((uint8_t)id, shaderType);
+}
+
 XMFLOAT4 Material::GetVector(uint8_t id, uint8_t shader)
 {
 	if(id >= offsetFloat[shader])
 		return XMFLOAT4(0,0,0,0);
 	return dataVector[shader][id];
+}
+
+float Material::GetFloatWithSlotName(string slot, uint8_t shaderType)
+{
+	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetFloatIdBySlot(slot, shaderType);
+	if(id < 0)
+	{
+		ERR("Float slot %s does not exist!", slot.data());
+		return 0;
+	}
+	else
+		return GetFloat((uint8_t)id, shaderType);
 }
 
 float Material::GetFloat(uint8_t id, uint8_t shader)
@@ -628,6 +721,23 @@ void Material::SetDefferedParam(float data, uint8_t i)
 	}
 }
 
+void Material::SetDefferedParamWithSlotName(float data, string slot)
+{
+	if(!defferedParams) return;
+	if(slot == DEFFERED_UNLIT_0)
+		defferedParams->unlit = unsigned int(data);
+	else if(slot == DEFFERED_SS_1)
+		defferedParams->subscattering = unsigned int(data);
+	else if(slot == DEFFERED_SS_DISTORTION_2)
+		defferedParams->ss_distortion = data;
+	else if(slot == DEFFERED_SS_DTRANSLUSENCY_3)
+		defferedParams->ss_direct_translucency = data;
+	else if(slot == DEFFERED_SS_DPOWER_4)
+		defferedParams->ss_direct_pow = data;
+	else if(slot == DEFFERED_SS_ITRANSLUCENCY_5)
+		defferedParams->ss_indirect_translucency = data;
+}
+
 float Material::GetDefferedParam(uint8_t i)
 {
 	if(!defferedParams) return 0;
@@ -640,6 +750,24 @@ float Material::GetDefferedParam(uint8_t i)
 	case 4:	return defferedParams->ss_direct_pow;
 	case 5:	return defferedParams->ss_indirect_translucency;
 	}
+	return 0;
+}
+
+float Material::GetDefferedParamWithSlotName(string slot)
+{
+	if(!defferedParams) return 0;
+	if(slot == DEFFERED_UNLIT_0)
+		return float(defferedParams->unlit);
+	else if(slot == DEFFERED_SS_1)
+		return float(defferedParams->subscattering);
+	else if(slot == DEFFERED_SS_DISTORTION_2)
+		return defferedParams->ss_distortion;
+	else if(slot == DEFFERED_SS_DTRANSLUSENCY_3)
+		return defferedParams->ss_direct_translucency;
+	else if(slot == DEFFERED_SS_DPOWER_4)
+		return defferedParams->ss_direct_pow;
+	else if(slot == DEFFERED_SS_ITRANSLUCENCY_5)
+		return defferedParams->ss_indirect_translucency;
 	return 0;
 }
 
@@ -778,12 +906,30 @@ void SimpleShaderInst::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
 		Render::Context()->VSSetConstantBuffers(matrixReg, 1, &matrixBuf);
 }
 
+void SimpleShaderInst::SetVectorWithSlotName(XMFLOAT4& vect, string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot);
+	if(id < 0)
+		ERR("Vector slot %s does not exist!", slot.data());
+	else
+		SetVector(vect, (uint8_t)id);
+}
+
 void SimpleShaderInst::SetVector(XMFLOAT4& vect, uint8_t id)
 {
 	if(id >= offsetFloat)
 		return;
 	dataVector[id] = vect;
 	b_dirty = true;
+}
+
+void SimpleShaderInst::SetFloatWithSlotName(float f, string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetFloatIdBySlot(slot);
+	if(id < 0)
+		ERR("Float slot %s does not exist!", slot.data());
+	else
+		SetFloat(f, (uint8_t)id);
 }
 
 void SimpleShaderInst::SetFloat(float f, uint8_t id)
@@ -813,11 +959,35 @@ void SimpleShaderInst::SetFloat(float f, uint8_t id)
 	b_dirty = true;
 }
 
+XMFLOAT4 SimpleShaderInst::GetVectorWithSlotName(string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot);
+	if(id < 0)
+	{
+		ERR("Vector slot %s does not exist!", slot.data());
+		return XMFLOAT4(0,0,0,0);
+	}
+	else
+		return GetVector((uint8_t)id);
+}
+
 XMFLOAT4 SimpleShaderInst::GetVector(uint8_t id)
 {
 	if(id >= offsetFloat)
 		return XMFLOAT4(0,0,0,0);
 	return dataVector[id];
+}
+
+float SimpleShaderInst::GetFloatWithSlotName(string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetFloatIdBySlot(slot);
+	if(id < 0)
+	{
+		ERR("Float slot %s does not exist!", slot.data());
+		return 0;
+	}
+	else
+		return GetFloat((uint8_t)id);
 }
 
 float SimpleShaderInst::GetFloat(uint8_t id)
@@ -847,7 +1017,19 @@ float SimpleShaderInst::GetFloat(uint8_t id)
 	return 0.0f;
 }
 
-bool SimpleShaderInst::SetTextureByName(string& name, uint8_t id)
+bool SimpleShaderInst::SetTextureByNameWithSlotName(string name, string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot);
+	if(id < 0)
+	{
+		ERR("Texture slot %s does not exist!", slot.data());
+		return false;
+	}
+	else
+		return SetTextureByName(name, (uint8_t)id);
+}
+
+bool SimpleShaderInst::SetTextureByName(string name, uint8_t id)
 {
 	if(id >= textures.size())
 		return false;
@@ -863,6 +1045,15 @@ bool SimpleShaderInst::SetTextureByName(string& name, uint8_t id)
 	return true;
 }
 
+void SimpleShaderInst::SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot);
+	if(id < 0)
+		ERR("Texture slot %s does not exist!", slot.data());
+	else
+		SetTexture(texture, (uint8_t)id);
+}
+
 void SimpleShaderInst::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id)
 {
 	if(id >= textures.size())
@@ -873,6 +1064,18 @@ void SimpleShaderInst::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id)
 
 	tex.texture = reinterpret_cast<uint64_t>(texture);
 	tex.is_ptr = true;
+}
+
+string SimpleShaderInst::GetTextureNameWithSlotName(string slot)
+{
+	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetTextureIdBySlot(slot);
+	if(id < 0)
+	{
+		ERR("Texture slot %s does not exist!", slot.data());
+		return "";
+	}
+	else
+		return GetTextureName((uint8_t)id);
 }
 
 string SimpleShaderInst::GetTextureName(uint8_t id)

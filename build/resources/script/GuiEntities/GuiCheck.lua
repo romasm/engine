@@ -67,11 +67,11 @@ end
 
 function GuiCheck:ApplyDisable()
     if self.boxrect_mat ~= nil then
-        self.boxrect_mat:SetVector(self.box.color_nonactive, 2)
-        self.boxrect_mat:SetVector(self.border.color_nonactive, 3)
+        self.boxrect_mat:SetVectorByID(self.box.color_nonactive, 2)
+        self.boxrect_mat:SetVectorByID(self.border.color_nonactive, 3)
     end
     if self.checkrect_mat ~= nil then
-        self.checkrect_mat:SetVector(self.undef and self.check.color_nonactive or (self.state_check and self.check.color_nonactive or self.box.color_nonactive), 1)
+        self.checkrect_mat:SetVectorByID(self.undef and self.check.color_nonactive or (self.state_check and self.check.color_nonactive or self.box.color_nonactive), 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color_nonactive)
@@ -80,11 +80,11 @@ end
 
 function GuiCheck:ApplyNone()
     if self.boxrect_mat ~= nil then
-        self.boxrect_mat:SetVector(self.box.color, 2)
-        self.boxrect_mat:SetVector(self.border.color, 3)
+        self.boxrect_mat:SetVectorByID(self.box.color, 2)
+        self.boxrect_mat:SetVectorByID(self.border.color, 3)
     end
     if self.checkrect_mat ~= nil then
-        self.checkrect_mat:SetVector(self.undef and self.check.color_nonactive or (self.state_check and self.check.color or self.box.color), 1)
+        self.checkrect_mat:SetVectorByID(self.undef and self.check.color_nonactive or (self.state_check and self.check.color or self.box.color), 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color)
@@ -93,11 +93,11 @@ end
 
 function GuiCheck:ApplyHover()
     if self.boxrect_mat ~= nil then
-        self.boxrect_mat:SetVector(self.box.color_hover, 2)
-        self.boxrect_mat:SetVector(self.border.color_hover, 3)
+        self.boxrect_mat:SetVectorByID(self.box.color_hover, 2)
+        self.boxrect_mat:SetVectorByID(self.border.color_hover, 3)
     end
     if self.checkrect_mat ~= nil then
-        self.checkrect_mat:SetVector(self.undef and self.check.color_nonactive or (self.state_check and self.check.color_hover or self.box.color_hover), 1)
+        self.checkrect_mat:SetVectorByID(self.undef and self.check.color_nonactive or (self.state_check and self.check.color_hover or self.box.color_hover), 1)
     end
     if self.str ~= nil then
         self.entity:SetTextColor(self.str, self.text.color_hover)
@@ -179,7 +179,7 @@ function GuiCheck:onMoveResize(is_move, is_resize)
         local shader_data = Vector4(self.border.width / r.w, self.border.width / r.h, 0, 0)
         shader_data.z = 1 - shader_data.x
         shader_data.w = 1 - shader_data.y
-        self.boxrect_mat:SetVector(shader_data, 1)
+        self.boxrect_mat:SetVectorByID(shader_data, 1)
     end
 
     if self.checkrect_mat ~= nil then
@@ -284,11 +284,11 @@ function GuiCheck:onTick(dt)
         local color_text = Vector4Lerp(self.text.color, self.text.color_hover, self.anim_progress)
         
         if self.boxrect_mat ~= nil then
-            self.boxrect_mat:SetVector(color_box, 2)
-            self.boxrect_mat:SetVector(color_border, 3)
+            self.boxrect_mat:SetVectorByID(color_box, 2)
+            self.boxrect_mat:SetVectorByID(color_border, 3)
         end
         if self.checkrect_mat ~= nil then
-            self.checkrect_mat:SetVector(color_check, 1)
+            self.checkrect_mat:SetVectorByID(color_check, 1)
         end
         if self.str ~= nil then
             self.entity:SetTextColor(self.str, color_text)

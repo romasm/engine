@@ -11,6 +11,13 @@
 
 #define MATERIALS_COUNT 1024
 
+#define DEFFERED_UNLIT_0 "unlit"
+#define DEFFERED_SS_1 "subscattering"
+#define DEFFERED_SS_DISTORTION_2 "ss_distortion"
+#define DEFFERED_SS_DTRANSLUSENCY_3 "ss_direct_translucency"
+#define DEFFERED_SS_DPOWER_4 "ss_direct_pow"
+#define DEFFERED_SS_ITRANSLUCENCY_5 "ss_indirect_translucency"
+
 namespace EngineCore
 {
 	struct MaterialParamsStructBuffer
@@ -70,22 +77,33 @@ namespace EngineCore
 		void AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i);
 		
 		void SetTexture(ID3D11ShaderResourceView *texture, uint8_t id, uint8_t shaderType);
+		void SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot, uint8_t shaderType);
+
 		string GetTextureName(uint8_t id, uint8_t shader);
-		bool SetTextureByName(string& name, uint8_t id, uint8_t shader);
-		inline bool SetTextureByName_lua(string name, uint8_t id, uint8_t shader)
-		{return SetTextureByName(name, id, shader);}
+		string GetTextureNameWithSlotName(string slot, uint8_t shaderType);
+
+		bool SetTextureByName(string name, uint8_t id, uint8_t shader);
+		bool SetTextureByNameWithSlotName(string name, string slot, uint8_t shaderType);
+
 		void ClearTextures();
 
 		void SetVector(XMFLOAT4& vect, uint8_t id, uint8_t shaderType);
 		void SetFloat(float f, uint8_t id, uint8_t shaderType);
+		void SetVectorWithSlotName(XMFLOAT4& vect, string slot, uint8_t shaderType);
+		void SetFloatWithSlotName(float f, string slot, uint8_t shaderType);
 
 		XMFLOAT4 GetVector(uint8_t id, uint8_t shader);
 		float GetFloat(uint8_t id, uint8_t shader);
+		XMFLOAT4 GetVectorWithSlotName(string slot, uint8_t shaderType);
+		float GetFloatWithSlotName(string slot, uint8_t shaderType);
 
 		inline void SetSR(luaSRV view, uint8_t id, uint8_t shader) {SetTexture(view.srv, id, shader);}
+		inline void SetSRWithSlotName(luaSRV view, string slot, uint8_t shader) {SetTextureWithSlotName(view.srv, slot, shader);}
 
 		void SetDefferedParam(float data, uint8_t i);
+		void SetDefferedParamWithSlotName(float data, string slot);
 		float GetDefferedParam(uint8_t i);
+		float GetDefferedParamWithSlotName(string slot);
 
 		inline string GetName() {return materialName;}
 		inline string GetShaderName() {return ShaderMgr::Get()->GetShaderName(shaderID);}
@@ -98,15 +116,27 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<Material>("Material")
-					.addFunction("SetVector", &Material::SetVector)
-					.addFunction("SetFloat", &Material::SetFloat)
-					.addFunction("GetVector", &Material::GetVector)
-					.addFunction("GetFloat", &Material::GetFloat)
-					.addFunction("SetDefferedParam", &Material::SetDefferedParam)
-					.addFunction("GetDefferedParam", &Material::GetDefferedParam)
-					.addFunction("SetTextureByName", &Material::SetTextureByName_lua)
-					.addFunction("SetTexture", &Material::SetSR)
-					.addFunction("GetTextureName", &Material::GetTextureName)
+					.addFunction("SetVectorByID", &Material::SetVector)
+					.addFunction("SetVector", &Material::SetVectorWithSlotName)
+					.addFunction("SetFloatByID", &Material::SetFloat)
+					.addFunction("SetFloat", &Material::SetFloatWithSlotName)
+					.addFunction("GetVectorByID", &Material::GetVector)
+					.addFunction("GetVector", &Material::GetVectorWithSlotName)
+					.addFunction("GetFloatByID", &Material::GetFloat)
+					.addFunction("GetFloat", &Material::GetFloatWithSlotName)
+
+					.addFunction("SetDefferedParamByID", &Material::SetDefferedParam)
+					.addFunction("SetDefferedParam", &Material::SetDefferedParamWithSlotName)
+					.addFunction("GetDefferedParamByID", &Material::GetDefferedParam)
+					.addFunction("GetDefferedParam", &Material::GetDefferedParamWithSlotName)
+
+					.addFunction("SetTextureNameByID", &Material::SetTextureByName)
+					.addFunction("SetTextureName", &Material::SetTextureByNameWithSlotName)
+					.addFunction("SetShaderResourceByID", &Material::SetSR)
+					.addFunction("SetShaderResource", &Material::SetSRWithSlotName)
+					.addFunction("GetTextureNameByID", &Material::GetTextureName)
+					.addFunction("GetTextureName", &Material::GetTextureNameWithSlotName)
+
 					.addFunction("ClearTextures", &Material::ClearTextures)
 					.addFunction("GetName", &Material::GetName)
 					.addFunction("GetShaderName", &Material::GetShaderName)
@@ -159,30 +189,46 @@ namespace EngineCore
 		void SetMatrixBuffer(ID3D11Buffer* matrixBuf);
 
 		void SetTexture(ID3D11ShaderResourceView *texture, uint8_t id);
+		void SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot);
+		
 		string GetTextureName(uint8_t id);
-		bool SetTextureByName(string& name, uint8_t id);
-		inline bool SetTextureByName_lua(string name, uint8_t id){return SetTextureByName(name, id);}
+		string GetTextureNameWithSlotName(string slot);
+
+		bool SetTextureByName(string name, uint8_t id);
+		bool SetTextureByNameWithSlotName(string name, string slot);
 		void ClearTextures();
 
 		void SetVector(XMFLOAT4& vect, uint8_t id);
+		void SetVectorWithSlotName(XMFLOAT4& vect, string slot);
 		void SetFloat(float f, uint8_t id);
+		void SetFloatWithSlotName(float f, string slot);
 
 		XMFLOAT4 GetVector(uint8_t id);
+		XMFLOAT4 GetVectorWithSlotName(string slot);
 		float GetFloat(uint8_t id);
+		float GetFloatWithSlotName(string slot);
 
 		inline void SetSR(luaSRV view, uint8_t id) {SetTexture(view.srv, id);}
+		inline void SetSRWithSlotName(luaSRV view, string slot) {SetTextureWithSlotName(view.srv, slot);}
 		
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<SimpleShaderInst>("SimpleShaderInst")
-					.addFunction("SetVector", &SimpleShaderInst::SetVector)
-					.addFunction("SetFloat", &SimpleShaderInst::SetFloat)
-					.addFunction("GetVector", &SimpleShaderInst::GetVector)
-					.addFunction("GetFloat", &SimpleShaderInst::GetFloat)
-					.addFunction("SetTextureByName", &SimpleShaderInst::SetTextureByName_lua)
-					.addFunction("SetTexture", &SimpleShaderInst::SetSR)
-					.addFunction("GetTextureName", &SimpleShaderInst::GetTextureName)
+					.addFunction("SetVectorByID", &SimpleShaderInst::SetVector)
+					.addFunction("SetVector", &SimpleShaderInst::SetVectorWithSlotName)
+					.addFunction("SetFloatByID", &SimpleShaderInst::SetFloat)
+					.addFunction("SetFloat", &SimpleShaderInst::SetFloatWithSlotName)
+					.addFunction("GetVectorByID", &SimpleShaderInst::GetVector)
+					.addFunction("GetVector", &SimpleShaderInst::GetVectorWithSlotName)
+					.addFunction("GetFloatByID", &SimpleShaderInst::GetFloat)
+					.addFunction("GetFloat", &SimpleShaderInst::GetFloatWithSlotName)
+					.addFunction("SetTextureNameByID", &SimpleShaderInst::SetTextureByName)
+					.addFunction("SetTextureName", &SimpleShaderInst::SetTextureByNameWithSlotName)
+					.addFunction("SetShaderResourceByID", &SimpleShaderInst::SetSR)
+					.addFunction("SetShaderResource", &SimpleShaderInst::SetSRWithSlotName)
+					.addFunction("GetTextureNameByID", &SimpleShaderInst::GetTextureName)
+					.addFunction("GetTextureName", &SimpleShaderInst::GetTextureNameWithSlotName)
 					.addFunction("ClearTextures", &SimpleShaderInst::ClearTextures)
 				.endClass();
 		}

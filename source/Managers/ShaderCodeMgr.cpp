@@ -474,9 +474,15 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 					switch(descVar.Size)
 					{
 					case 4:
-						HInput.matInfo_FloatCount++;
-						break;
+						{
+							string floatName(descVar.Name);
+							if(floatName.find("_padding") == string::npos)
+								HInput.matFloatMap.insert(make_pair(floatName, HInput.matInfo_FloatCount));
+							HInput.matInfo_FloatCount++;
+							break;
+						}
 					case 16:
+						HInput.matVectorMap.insert(make_pair(descVar.Name, HInput.matInfo_VectorCount));
 						HInput.matInfo_VectorCount++;
 						break;
 					default:
@@ -522,6 +528,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 				if(bufName.find("sys_") != string::npos)
 					WRN("System texture %s must be in the beginning, interpreted like user texture!", desc.Name);
 				
+				HInput.matTextureMap.insert(make_pair(desc.Name, HInput.matTextures_Count));
 				HInput.matTextures_Count++;
 			}
 			break;

@@ -156,7 +156,7 @@ return GuiDumb({
             rect = { l = -35, t = 0, w = GUI_PREVIEW_SIZE.X, h = GUI_PREVIEW_SIZE.Y },
             material = {
                 shader = "../resources/shaders/gui/rect_color_icon_alpha",
-                textures = {""}
+                textures = {colorTex = ""}
             },
         },
 

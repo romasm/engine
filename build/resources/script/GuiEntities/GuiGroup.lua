@@ -203,7 +203,7 @@ end
 
 function GuiGroup:UpdateProps()
     if self.btn_header ~= nil and self.btn_header.icon_mat ~= nil then
-        self.btn_header.icon_mat:SetVector(Vector4(self.anim_progress * ICON_ANGEL, 0,0,0), 2)
+        self.btn_header.icon_mat:SetVectorByID(Vector4(self.anim_progress * ICON_ANGEL, 0,0,0), 2)
     end
 end
 
@@ -292,7 +292,7 @@ function GuiGroup:onTick(dt)
         end
 
         if self.btn_header ~= nil and self.btn_header.icon_mat ~= nil then
-            self.btn_header.icon_mat:SetVector(Vector4(self.anim_progress * ICON_ANGEL, 0,0,0), 2)
+            self.btn_header.icon_mat:SetVectorByID(Vector4(self.anim_progress * ICON_ANGEL, 0,0,0), 2)
         end
 
         self.entity.height = self.closed_h + (self.opened_h - self.closed_h) * self.anim_progress

@@ -788,11 +788,33 @@ uint32_t HEntity::GetChildById(string id)
 			auto ent = GET_HENTITY(ch_it.second->e);
 			if(!ent) continue;
 			uint32_t res = GUI_ENTITY_COUNT;
-			if( (res = ent->GetChildById(id)) != GUI_ENTITY_COUNT )
+			if( (res = ent->GetChildByIdSilent(id)) != GUI_ENTITY_COUNT )
 				return res;
 		}
 
 	DBG("Child with id \"%s\" do not exist", id.data());
+	return GUI_ENTITY_COUNT;
+}
+
+uint32_t HEntity::GetChildByIdSilent(string id)
+{
+	if(!named_children)
+		return GUI_ENTITY_COUNT;
+
+	auto it = named_children->find(id);
+	if(it != named_children->end())
+		return it->second->e;
+	
+	if(named_children)
+		for(auto& ch_it: *named_children)
+		{
+			auto ent = GET_HENTITY(ch_it.second->e);
+			if(!ent) continue;
+			uint32_t res = GUI_ENTITY_COUNT;
+			if( (res = ent->GetChildByIdSilent(id)) != GUI_ENTITY_COUNT )
+				return res;
+		}
+
 	return GUI_ENTITY_COUNT;
 }
 

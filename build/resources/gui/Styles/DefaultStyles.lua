@@ -522,6 +522,16 @@ GuiStyles.common_dataslider = {
     },
 }
 
+GuiStyles.mat_dataslider = {
+    styles = {
+        GuiStyles.common_dataslider,
+    },
+
+    left = 120,
+    width = 155,
+    height = 20,
+}
+
 -- filefield
 GuiStyles.filefield_button = {
     styles = {

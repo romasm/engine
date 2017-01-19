@@ -14,16 +14,16 @@ cbuffer matrixBuffer : register(b3)
 
 PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 {
-	if(!AlphatestSample(samplerAnisotropicWrap, input.tex))
+	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
 		discard;
 	
-	float3 albedo = AlbedoSample(samplerAnisotropicWrap, input.tex);
-	float3 normal = NormalSample(samplerAnisotropicWrap, input.tex, input.normal, input.tangent, input.binormal, normalMatrix);
-	float2 roughtness = RoughnessSample(samplerAnisotropicWrap, input.tex);
-	float3 specular = SpecularSample(samplerAnisotropicWrap, input.tex, albedo);
-	float3 emissive = EmissiveSample(samplerAnisotropicWrap, input.tex);
-	float ao = AOSample(samplerAnisotropicWrap, input.tex);
-	float4 subsurface = SSSSample(samplerAnisotropicWrap, input.tex);
+	float3 albedo = AlbedoCalculate(samplerAnisotropicWrap, input.tex);
+	float3 normal = NormalCalculate(samplerAnisotropicWrap, input.tex, input.normal, input.tangent, input.binormal, normalMatrix);
+	float2 roughtness = RoughnessCalculate(samplerAnisotropicWrap, input.tex);
+	float3 reflectivity = ReflectivityCalculate(samplerAnisotropicWrap, input.tex, albedo);
+	float3 emissive = EmissiveCalculate(samplerAnisotropicWrap, input.tex);
+	float ao = AOCalculate(samplerAnisotropicWrap, input.tex);
+	float4 subsurface = SSSCalculate(samplerAnisotropicWrap, input.tex);
 	
 	// normal final
 	if(!front)normal = -normal;
@@ -35,7 +35,7 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 	res.albedo_roughY = float4(albedo, roughtness.y);
 	res.tbn = EncodeTBNasFloat4(normal, nTangent);
 	res.vnormXY = vnorm.xy;
-	res.spec_roughX = float4(specular, roughtness.x);
+	res.spec_roughX = float4(reflectivity, roughtness.x);
 	res.emiss_vnormZ = float4(emissive, vnorm.z);
 	res.id = iddata.x;
 	res.subs_thick = float4(subsurface.rgb * saturate(1 - subsurface.a), 0); // a - unused
@@ -47,6 +47,6 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 // shadow
 void AlphatestShadowPS(PI_Mesh input)
 {
-	if(!AlphatestSample(samplerAnisotropicWrap, input.tex))
+	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
 		discard;
 }

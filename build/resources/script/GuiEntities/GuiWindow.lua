@@ -301,35 +301,35 @@ end
 
 function GuiWindow:ApplyDisable()
     if self.header_rect_mat ~= nil then
-        self.header_rect_mat:SetVector(self.border.color_nonactive, 1)
+        self.header_rect_mat:SetVectorByID(self.border.color_nonactive, 1)
     end
     if self.shadow_mat ~= nil then
-        self.shadow_mat:SetVector(self.shadow.color_nonactive, 2)
+        self.shadow_mat:SetVectorByID(self.shadow.color_nonactive, 2)
     end
-    self.bg_rect_mat:SetVector(self.background.color_nonactive, 2)
-    self.bg_rect_mat:SetVector(self.border.color_nonactive, 3)
+    self.bg_rect_mat:SetVectorByID(self.background.color_nonactive, 2)
+    self.bg_rect_mat:SetVectorByID(self.border.color_nonactive, 3)
 end
 
 function GuiWindow:ApplyNone()
     if self.header_rect_mat ~= nil then
-        self.header_rect_mat:SetVector(self.border.color, 1)
+        self.header_rect_mat:SetVectorByID(self.border.color, 1)
     end
     if self.shadow_mat ~= nil then
-        self.shadow_mat:SetVector(self.shadow.color, 2)
+        self.shadow_mat:SetVectorByID(self.shadow.color, 2)
     end
-    self.bg_rect_mat:SetVector(self.background.color, 2)
-    self.bg_rect_mat:SetVector(self.border.color, 3)
+    self.bg_rect_mat:SetVectorByID(self.background.color, 2)
+    self.bg_rect_mat:SetVectorByID(self.border.color, 3)
 end
 
 function GuiWindow:ApplyFocus()
     if self.header_rect_mat ~= nil then
-        self.header_rect_mat:SetVector(self.border.color_live, 1)
+        self.header_rect_mat:SetVectorByID(self.border.color_live, 1)
     end
     if self.shadow_mat ~= nil then
-        self.shadow_mat:SetVector(self.shadow.color_live, 2)
+        self.shadow_mat:SetVectorByID(self.shadow.color_live, 2)
     end
-    self.bg_rect_mat:SetVector(self.background.color_live, 2)
-    self.bg_rect_mat:SetVector(self.border.color_live, 3)
+    self.bg_rect_mat:SetVectorByID(self.background.color_live, 2)
+    self.bg_rect_mat:SetVectorByID(self.border.color_live, 3)
 end
 
 function GuiWindow:UpdateProps()
@@ -366,7 +366,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
             local shader_data = Vector4(self.border.width / r.w, self.border.width / r.h, 0, 0)
             shader_data.z = 1 - shader_data.x
             shader_data.w = 1 - shader_data.y
-            self.bg_rect_mat:SetVector(shader_data, 1)
+            self.bg_rect_mat:SetVectorByID(shader_data, 1)
         end
     end
 
@@ -384,7 +384,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
 
         if is_resize then
             local shader_data = Vector4(self.shadow.width / r.w, self.shadow.width / r.h, 0, 0)
-            self.shadow_mat:SetVector(shader_data, 1)
+            self.shadow_mat:SetVectorByID(shader_data, 1)
         end
     end
 

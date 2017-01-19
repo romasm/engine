@@ -2,6 +2,6 @@ shader = "../resources/shaders/objects/editor/tools_mesh"
 
 ps
 {
-	f0 = 0
-	v0 = "0.9 0.9 0.7 0.5"
+	useTexture = 0
+	colorMul = "0.9 0.9 0.7 0.5"
 }

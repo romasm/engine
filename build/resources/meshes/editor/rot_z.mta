@@ -2,7 +2,7 @@ shader = "../resources/shaders/objects/editor/3d_hud"
 
 ps
 {
-	v0 = "1.0 1.0 1.0 1.0"
-	f0 = 1
-	t0 = "../resources/textures/editor_hud/3d_rot.dds"
+	useTexture = "1.0 1.0 1.0 1.0"
+	dcolor = 1
+	colorTex = "../resources/textures/editor_hud/3d_rot.dds"
 }

@@ -48,13 +48,13 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 	if(!opaque)
 		discard;
 
-	float3 albedo = AlbedoSample(samplerTrilinearWrap, input.tex);
+	float3 albedo = AlbedoCalculate(samplerTrilinearWrap, input.tex);
 
-	float3 normal = NormalSample(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal, matrixPerInstance[instID].normalMatrix );
+	float3 normal = NormalCalculate(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal, matrixPerInstance[instID].normalMatrix );
 	
-	float3 emissive = EmissiveSample(samplerTrilinearWrap, input.tex);
+	float3 emissive = EmissiveCalculate(samplerTrilinearWrap, input.tex);
 
-	float3 specular = SpecularSample(samplerTrilinearWrap, input.tex, albedo);
+	float3 specular = ReflectivityCalculate(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
 		
 	// emittance prepare

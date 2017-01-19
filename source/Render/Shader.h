@@ -76,6 +76,36 @@ namespace EngineCore
 			return tq.shadersID;
 		}
 
+		inline int16_t GetTextureIdBySlot(string& slot, uint8_t shaderType)
+		{
+			auto& tq = techs_array[TECHNIQUE_DEFAULT];
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[shaderType]);
+			auto it = code.input.matTextureMap.find(slot);
+			if( it == code.input.matTextureMap.end() )
+				return -1;
+			return (int16_t)it->second;
+		}
+
+		inline int16_t GetFloatIdBySlot(string& slot, uint8_t shaderType)
+		{
+			auto& tq = techs_array[TECHNIQUE_DEFAULT];
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[shaderType]);
+			auto it = code.input.matFloatMap.find(slot);
+			if( it == code.input.matFloatMap.end() )
+				return -1;
+			return (int16_t)it->second;
+		}
+
+		inline int16_t GetVectorIdBySlot(string& slot, uint8_t shaderType)
+		{
+			auto& tq = techs_array[TECHNIQUE_DEFAULT];
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[shaderType]);
+			auto it = code.input.matVectorMap.find(slot);
+			if( it == code.input.matVectorMap.end() )
+				return -1;
+			return (int16_t)it->second;
+		}
+
 	private:
 		bool initShader();
 		
@@ -118,6 +148,33 @@ namespace EngineCore
 			if(data.depthState == STATE_NULL)
 				return nullptr;
 			return data.shadersID;
+		}
+		
+		inline int16_t GetTextureIdBySlot(string& slot)
+		{
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_PS]);
+			auto it = code.input.matTextureMap.find(slot);
+			if( it == code.input.matTextureMap.end() )
+				return -1;
+			return (int16_t)it->second;
+		}
+
+		inline int16_t GetFloatIdBySlot(string& slot)
+		{
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_PS]);
+			auto it = code.input.matFloatMap.find(slot);
+			if( it == code.input.matFloatMap.end() )
+				return -1;
+			return (int16_t)it->second;
+		}
+
+		inline int16_t GetVectorIdBySlot(string& slot)
+		{
+			auto& code = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_PS]);
+			auto it = code.input.matVectorMap.find(slot);
+			if( it == code.input.matVectorMap.end() )
+				return -1;
+			return (int16_t)it->second;
 		}
 
 	private:

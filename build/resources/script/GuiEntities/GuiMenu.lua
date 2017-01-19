@@ -104,14 +104,14 @@ function GuiMenu:Open(x, y)
         if self.shadow.width > 0 then
             self.shadow_rect = self.entity:AddRect(SHADOW_MAT)
             self.shadow_mat = self:SetRectMaterial(self.shadow_rect)
-            self.shadow_mat:SetVector(self.shadow.color, 2, 0)
+            self.shadow_mat:SetVectorByID(self.shadow.color, 2, 0)
         end
     
         self.rect = self.entity:AddRect(BG_MAT)
         self.rect_mat = self:SetRectMaterial(self.rect)
     
-        self.rect_mat:SetVector(self.background.color, 2)
-        self.rect_mat:SetVector(self.border.color, 3)
+        self.rect_mat:SetVectorByID(self.background.color, 2)
+        self.rect_mat:SetVectorByID(self.border.color, 3)
 
         -- positioning
         root:AttachChild(self.entity)
@@ -127,7 +127,7 @@ function GuiMenu:Open(x, y)
     shader_data.y = self.border.width / rect.h
     shader_data.z = 1 - shader_data.x
     shader_data.w = 1 - shader_data.y
-    self.rect_mat:SetVector(shader_data, 1)
+    self.rect_mat:SetVectorByID(shader_data, 1)
 
     self.entity.left = x - Grect.l
     if self.adapt_horz and x + rect.w > Grect.w then
@@ -155,7 +155,7 @@ function GuiMenu:Open(x, y)
 
         shader_data.x = self.shadow.width / rect.w
         shader_data.y = self.shadow.width / rect.h
-        self.shadow_mat:SetVector(shader_data, 1)
+        self.shadow_mat:SetVectorByID(shader_data, 1)
     end
 
     self.entity:SetHierarchyFocusOnMe(false, true)

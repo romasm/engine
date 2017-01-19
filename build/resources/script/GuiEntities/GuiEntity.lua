@@ -111,20 +111,20 @@ function GuiEntity:SetRectMaterial(rect_id, mat_desc)
     if mat_desc == nil then return mat end
     
     if mat_desc.textures then
-        for i, tex in ipairs(mat_desc.textures) do
-            mat:SetTextureByName(tex, i-1)
+        for slot, tex in pairs(mat_desc.textures) do
+            mat:SetTextureName(tex, slot)
         end
     end
     
     if mat_desc.vectors then
-        for i, vect in ipairs(mat_desc.vectors) do
-            mat:SetVector(vect, i-1)
+        for slot, vect in pairs(mat_desc.vectors) do
+            mat:SetVector(vect, slot)
         end
     end
     
     if mat_desc.floats then
-        for i, f in ipairs(mat_desc.floats) do
-            mat:SetFloat(f, i-1)
+        for slot, f in pairs(mat_desc.floats) do
+            mat:SetFloat(f, slot)
         end
     end
     

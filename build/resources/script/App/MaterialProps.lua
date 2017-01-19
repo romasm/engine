@@ -92,7 +92,7 @@ function MaterialProps:Update()
     self.none_msg.enable = false
 
     local srv = AssetBrowser:PreviewMaterial(true, matName)
-    self.preview.rect_mat:SetTexture(srv, 0, SHADERS.PS)
+    self.preview.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
     
     local groups = Gui.MaterialProps()
     for i, gr in ipairs(groups) do
@@ -194,4 +194,89 @@ function MaterialProps:ProcessPreviewZoom(viewport, ev)
     self.previewZoom = math.max( 0.7, math.min( self.previewZoom, 2.3 ) )
 
     AssetBrowser.previewCamera:SetPosition( 0.0, 0.0, -self.previewZoom )
+end
+
+-- MATERIAL EDIT
+
+function MaterialProps.StartColorPicking(colorPicker, shaderSlot, str)
+    if colorPicker.picker then 
+        colorPicker.picker = false
+        return true
+    else
+        ColorPicker:Show(colorPicker, colorPicker.background.color, false)
+        colorPicker.picker = true
+    end
+
+    colorPicker.history = {
+        s_oldval = Vector4(0,0,0,0),
+        s_newval = Vector4(0,0,0,0),
+        undo = function(self) 
+                MaterialProps.material:SetVector(self.s_oldval, shaderSlot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetVector(self.s_newval, shaderSlot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = str.. " color"
+    }
+
+    colorPicker.history.s_oldval = MaterialProps.material:GetVector(shaderSlot, SHADERS.PS)
+    return true
+end
+
+function MaterialProps.ColorPicking(colorPicker, shaderSlot)
+    local color = ColorPicker:GetColor()
+    color.w = colorPicker.history.s_oldval.w
+    MaterialProps.material:SetVector(color, shaderSlot, SHADERS.PS)
+    return true
+end
+
+function MaterialProps.ColorPicked(colorPicker)
+    if not ColorPicker:IsChanged() then return end
+    colorPicker.history.s_newval.x = colorPicker.background.color.x
+    colorPicker.history.s_newval.y = colorPicker.background.color.y
+    colorPicker.history.s_newval.z = colorPicker.background.color.z
+    colorPicker.history.s_newval.w = colorPicker.history.s_oldval.w
+    History:Push(colorPicker.history)
+    return true
+end
+
+function MaterialProps.UpdColor(colorPicker, shaderSlot)
+    local val = MaterialProps.material:GetVector(shaderSlot, SHADERS.PS)
+    colorPicker.background.color = Vector4(val.x, val.y, val.z, 1)
+    colorPicker.background.color_hover = colorPicker.background.color
+    colorPicker.background.color_press = colorPicker.background.color
+    colorPicker:UpdateProps()
+    return true
+end
+
+function MaterialProps:SetAlbedoTexture(name)
+    self.material:SetTextureName(name, "albedoTexture", SHADERS.PS)
+    self.material:SetFloat(name:len() > 0 and 1.0 or 0.0, "hasAlbedoTexture", SHADERS.PS)
+end
+
+function MaterialProps:GetAlbedoTexture()
+    if self.material:GetFloat("hasAlbedoTexture", SHADERS.PS) == 0.0 then return "" end 
+    return self.material:GetTextureName("albedoTexture", SHADERS.PS)
+end
+
+function MaterialProps:SetNormalTexture(name)
+    self.material:SetTextureName(name, "normalTexture", SHADERS.PS)
+    self.material:SetFloat(name:len() > 0 and 1.0 or 0.0, "hasNormalTexture", SHADERS.PS)
+end
+
+function MaterialProps:GetNormalTexture()
+    if self.material:GetFloat("hasNormalTexture", SHADERS.PS) == 0.0 then return "" end 
+    return self.material:GetTextureName("normalTexture", SHADERS.PS)
+end
+
+function MaterialProps:SetNormalSpace(isObject)
+    self.material:SetFloat(isObject and 1.0 or 0.0, "objectSpaceNormalMap", SHADERS.PS)
+end
+
+-- if object -> true
+function MaterialProps:GetNormalSpace()
+    if self.material:GetFloat("objectSpaceNormalMap", SHADERS.PS) == 0.0 then return false
+    else return true end 
 end

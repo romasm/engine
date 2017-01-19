@@ -132,8 +132,8 @@ function GuiRoot:onTick(dt)
         color_rect_border.w = color_rect_border.w * self.alt_anim_progress
         color_str.w = color_str.w * self.alt_anim_progress
 
-        self.alt.rect_mat:SetVector(color_rect, 2)
-        self.alt.rect_mat:SetVector(color_rect_border, 3)
+        self.alt.rect_mat:SetVectorByID(color_rect, 2)
+        self.alt.rect_mat:SetVectorByID(color_rect_border, 3)
         self.altstring.entity:SetTextColor(self.altstring.text, color_str)
 
         if self.alt_anim_progress == 1 then 
