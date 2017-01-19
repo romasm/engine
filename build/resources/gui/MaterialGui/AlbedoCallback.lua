@@ -1,6 +1,6 @@
 if not AlbedoCallback then AlbedoCallback = {} end
 
-function AlbedoCallback.SetAlbedoTex(self)
+function AlbedoCallback.SetAlbedoTex(self, ev)
     local texture = self:GetTexture()
 
     local history = {
@@ -26,7 +26,7 @@ function AlbedoCallback.SetAlbedoTex(self)
     return true
 end
 
-function AlbedoCallback.UpdAlbedoTex(self)
+function AlbedoCallback.UpdAlbedoTex(self, ev)
     self:SetTexture( MaterialProps:GetAlbedoTexture() )
     return true
 end
