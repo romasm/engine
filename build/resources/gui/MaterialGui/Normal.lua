@@ -45,9 +45,26 @@ return GuiGroup({
         str = "Normal map",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = NormalCallback.SetNormalTex,
-            [GUI_EVENTS.TEXTURE_DELETE] = NormalCallback.SetNormalTex,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "normalTexture", "hasNormalTexture", "Normal map") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "normalTexture", "hasNormalTexture", "Normal map") end,
             [GUI_EVENTS.UPDATE] = NormalCallback.UpdNormalTex,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.props_check,},
+        left = 120,
+        top = 85,
+        width = 75,
+        height = 18,
+        id = 'normal_y',
+        text = { str = "Invert Y" },
+        alt = "Invert Y in normal map",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, false) end,
+            [GUI_EVENTS.UPDATE] = NormalCallback.UpdInvertY,
         }
     }),
 
@@ -74,8 +91,8 @@ return GuiGroup({
         id = 'normal_space',
 
         events = {
-            [GUI_EVENTS.COMBO_SELECT] = NormalCallback.SetNormalSpace,
-            [GUI_EVENTS.UPDATE] = NormalCallback.UpdNormalSpace,
+            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialProps.SetSelector(self, "objectSpaceNormalMap", "Normals space") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdSelector(self, "objectSpaceNormalMap") end,
         },
     }),
 

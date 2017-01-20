@@ -68,14 +68,17 @@
     <Compile Include="..\..\gui\MaterialGui\Albedo.lua">
       <Link>Gui\MaterialGui\Albedo.lua</Link>
     </Compile>
-    <Compile Include="..\..\gui\MaterialGui\AlbedoCallback.lua">
-      <Link>Gui\MaterialGui\AlbedoCallback.lua</Link>
-    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Normal.lua">
       <Link>Gui\MaterialGui\Normal.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\MaterialGui\NormalCallback.lua">
       <Link>Gui\MaterialGui\NormalCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Reflectivity.lua">
+      <Link>Gui\MaterialGui\Reflectivity.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\ReflectivityCallback.lua">
+      <Link>Gui\MaterialGui\ReflectivityCallback.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\MaterialGui\Roughness.lua">
       <Link>Gui\MaterialGui\Roughness.lua</Link>

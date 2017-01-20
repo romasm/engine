@@ -47,11 +47,11 @@ return GuiGroup({
             "Roughness",
             "Glossiness",
         },
-        alt = "Roughness or glossiness (inverted roughness) parametrization",
+        alt = "Roughness or Glossiness(inverted roughness) parametrization",
 
         events = {
-            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialPropsCallback.SetRoughnessType(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughnessType(self, ev) end,
+            [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return MaterialProps.SetSelector(self, "isGlossiness", "Microfacets type") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdSelector(self, "isGlossiness") end,
         },
     }),
 
@@ -64,9 +64,9 @@ return GuiGroup({
         str = "Microfacets",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialPropsCallback.SetRoughnessTex(self, ev) end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialPropsCallback.SetRoughnessTex(self, ev) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughnessTex(self, ev) end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "roughnessTexture", "hasRoughnessTexture", "Microfacets") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "roughnessTexture", "hasRoughnessTexture", "Microfacets") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "roughnessTexture", "hasRoughnessTexture") end,
         }
     }),
 
@@ -80,9 +80,9 @@ return GuiGroup({
         alt = "Separate for U and V",
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return MaterialPropsCallback.SetAnisoRG(self, ev, true) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return MaterialPropsCallback.SetAnisoRG(self, ev, false) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdAnisoRG(self, ev) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, false) end,
+            [GUI_EVENTS.UPDATE] = RoughnessCallback.UpdRoughnessAniso,
         }
     }),
 
@@ -110,10 +110,10 @@ return GuiGroup({
         id = 'roughness_u',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartRoughU(self) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragRoughU(self) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndRoughU(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdRoughU(self) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "roughnessX", "Roughness / Glossiness U") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "roughnessX") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "roughnessX") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "roughnessX") end,
         },
     }),
 
@@ -141,10 +141,10 @@ return GuiGroup({
         id = 'roughness_v',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialPropsCallback.StartValue(self, 4, "Microfacets V") end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialPropsCallback.DragValue(self, 4) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialPropsCallback.EndValue(self, 4) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialPropsCallback.UpdValue(self, 4) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "roughnessY", "Roughness / Glossiness V") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "roughnessY") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "roughnessY") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "roughnessY") end,
         },
     }),
 

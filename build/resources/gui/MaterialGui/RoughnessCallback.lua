@@ -1,91 +1,52 @@
 if not RoughnessCallback then RoughnessCallback = {} end
 
-function RoughnessCallback.SetNormalTex(self)
-    local texture = self:GetTexture()
-
-    local history = {
-        s_oldval = "",
-        s_newval = "",
-        undo = function(self) 
-                MaterialProps:SetNormalTexture(self.s_oldval)
-                MaterialProps:UpdateData(false)
-            end,
-        redo = function(self) 
-                MaterialProps:SetNormalTexture(self.s_newval)
-                MaterialProps:UpdateData(false)
-            end,
-        msg = "Albedo texture"
-    }
-
-    history.s_oldval = MaterialProps:GetNormalTexture()
-    history.s_newval = texture
-    
-    MaterialProps:SetNormalTexture(texture)
-
-    local group = self.entity:GetParent()
-    local space_sl = group:GetChildById('normal_space')
-    local space_str = group:GetChildById('normal_space_str')
-    if texture:len() == 0 then
-        space_sl:Deactivate()
-        space_str:Deactivate()
-    else
-        space_sl:Activate()
-        space_str:Activate()
+function RoughnessCallback.SetAnisoFlag(isAniso)
+    MaterialProps.material:SetFloat(isAniso and 1.0 or 0.0, "roughnessAnisotropic", SHADERS.PS)
+    if isAniso then 
+        local rx = MaterialProps.material:GetFloat("roughnessX", SHADERS.PS)
+        MaterialProps.material:SetFloat(rx, "roughnessY", SHADERS.PS) 
     end
-
-    History:Push(history)
-    return true
 end
 
-function RoughnessCallback.UpdNormalTex(self)
-    local group = self.entity:GetParent()
-    local space_sl = group:GetChildById('normal_space')
-    local space_str = group:GetChildById('normal_space_str')
-
-    local texture = MaterialProps:GetNormalTexture()
-    self:SetTexture( texture )
-
-    if texture:len() == 0 then
-        space_sl:Deactivate()
-        space_str:Deactivate()
-    else
-        space_sl:Activate()
-        space_str:Activate()
-    end
-    return true
-end
-
-function RoughnessCallback.SetNormalSpace(self)
-    local selected = self:GetSelected()
-
+function RoughnessCallback.SetRoughnessAniso(self, checked)
     local history = {
         s_oldval = false,
         s_newval = false,
         undo = function(self) 
-                MaterialProps:SetNormalSpace(self.s_oldval)
+                RoughnessCallback.SetAnisoFlag(self.s_oldval)
                 MaterialProps:UpdateData(false)
             end,
         redo = function(self) 
-                MaterialProps:SetNormalSpace(self.s_newval)
+                RoughnessCallback.SetAnisoFlag(self.s_newval)
                 MaterialProps:UpdateData(false)
             end,
-        msg = "Normals space"
+        msg = "Microfacets type"
     }
 
-    history.s_oldval = MaterialProps:GetNormalSpace()
-    history.s_newval = (selected > 1)
+    history.s_oldval = (MaterialProps.material:GetFloat("roughnessAnisotropic", SHADERS.PS) > 0.0)
+    history.s_newval = checked
 
     if history.s_oldval == history.s_newval then return true end
 
-    MaterialProps:SetNormalSpace(history.s_newval)
+    history:redo()
 
     History:Push(history)
     return true
 end
 
-function RoughnessCallback.UpdNormalSpace(self)
-    local space = MaterialProps:GetNormalSpace()
-    if space == true then self:SetSelected(2)
-    else self:SetSelected(1) end
+function RoughnessCallback.UpdRoughnessAniso(self, ev)
+    local checked = (MaterialProps.material:GetFloat("roughnessAnisotropic", SHADERS.PS) > 0.0)
+    self:SetCheck( checked )
+
+    local group = self.entity:GetParent()
+    local v_str = group:GetChildById('roughness_v_str')
+    local v_slider = group:GetChildById('roughness_v')
+
+    v_slider.enable = checked
+    v_str.enable = checked
+
+    group:GetInherited():UpdateH(checked and 277 or 247)
+    group:GetParent():GetInherited().window.entity:UpdateSize()
+
     return true
 end

@@ -109,19 +109,6 @@ local res = GuiDumb({
                 end,
         }
     }),
-
-    GuiCheck({
-        styles = {GuiStyles.props_check,},
-        enable = props.allow_autoreload,
-        left = 110,
-        top = 30,
-        width = 120,
-        height = 18,
-        text = { str = "Auto reload" },
-        alt = "Auto reload texture on changes",        
-        -- temp
-        id = 'reload_check',
-    }),
 })
 
 res.GetTexture = function(self)
@@ -140,9 +127,6 @@ res.SetTexture = function(self, texture)
             tr.entity.enable = tr.rect_mat:SetTextureNameByID(texture, 0, SHADERS.PS)
         end
     end
-
--- temp 
-res.entity:GetChildById('reload_check'):Deactivate()
-
+    
 return res
 end

@@ -4,7 +4,10 @@ function MaterialProps.reloadMatWin()
     MaterialProps:Update()
 end
 
-loader.require("ComponentsGui.MaterialProps", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Albedo", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Normal", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Roughness", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Reflectivity", MaterialProps.reloadMatWin)
 
 function MaterialProps.reload()
     if MaterialProps.window then
@@ -94,10 +97,10 @@ function MaterialProps:Update()
     local srv = AssetBrowser:PreviewMaterial(true, matName)
     self.preview.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
     
-    local groups = Gui.MaterialProps()
-    for i, gr in ipairs(groups) do
-        self.body:AddGroup(gr)
-    end
+    self.body:AddGroup(Gui.MaterialReflectivity())
+    self.body:AddGroup(Gui.MaterialNormal())
+    self.body:AddGroup(Gui.MaterialRoughness())
+    self.body:AddGroup(Gui.MaterialAlbedo())
 
     self:UpdateData(true)
 end
@@ -196,8 +199,86 @@ function MaterialProps:ProcessPreviewZoom(viewport, ev)
     AssetBrowser.previewCamera:SetPosition( 0.0, 0.0, -self.previewZoom )
 end
 
--- MATERIAL EDIT
+-- 2 SELECTOR
+function MaterialProps.SetSelector(self, shaderSlot, str)
+    local selected = self:GetSelected()
 
+    local history = {
+        s_oldval = false,
+        s_newval = false,
+        slot = shaderSlot,
+        undo = function(self) 
+                MaterialProps.material:SetFloat(self.s_oldval and 1.0 or 0.0, self.slot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetFloat(self.s_newval and 1.0 or 0.0, self.slot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = str
+    }
+
+    history.s_oldval = (MaterialProps.material:GetFloat(shaderSlot, SHADERS.PS) > 0.0)
+    history.s_newval = (selected > 1)
+
+    if history.s_oldval == history.s_newval then return true end
+
+    history:redo()
+
+    History:Push(history)
+    return true
+end
+
+function MaterialProps.UpdSelector(self, shaderSlot)
+    local space = (MaterialProps.material:GetFloat(shaderSlot, SHADERS.PS) > 0.0)
+    if space == true then self:SetSelected(2)
+    else self:SetSelected(1) end
+    return true
+end
+
+-- TEXTURE
+function MaterialProps.SetTexture(self, textureSlot, flagSlot, str)
+    local texture = self:GetTexture()
+
+    local history = {
+        s_oldval = "",
+        s_newval = "",
+        slotT = textureSlot,
+        slotF = flagSlot,
+        undo = function(self)
+                MaterialProps.material:SetTextureName(self.s_oldval, self.slotT, SHADERS.PS)
+                MaterialProps.material:SetFloat(self.s_oldval:len() > 0 and 1.0 or 0.0, self.slotF, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetTextureName(self.s_newval, self.slotT, SHADERS.PS)
+                MaterialProps.material:SetFloat(self.s_newval:len() > 0 and 1.0 or 0.0, self.slotF, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = str .. " texture"
+    }
+
+    if MaterialProps.material:GetFloat(flagSlot, SHADERS.PS) == 0.0 then history.s_oldval = "" 
+    else history.s_oldval = MaterialProps.material:GetTextureName(textureSlot, SHADERS.PS) end
+
+    history.s_newval = texture
+    
+    history:redo()
+
+    History:Push(history)
+    return true
+end
+
+function MaterialProps.UpdTexture(self, textureSlot, flagSlot)
+    if MaterialProps.material:GetFloat(flagSlot, SHADERS.PS) == 0.0 then 
+        self:SetTexture( "" ) 
+    else
+        self:SetTexture( MaterialProps.material:GetTextureName(textureSlot, SHADERS.PS) ) 
+    end 
+    return true
+end
+
+-- COLOR PICKER
 function MaterialProps.StartColorPicking(colorPicker, shaderSlot, str)
     if colorPicker.picker then 
         colorPicker.picker = false
@@ -210,12 +291,13 @@ function MaterialProps.StartColorPicking(colorPicker, shaderSlot, str)
     colorPicker.history = {
         s_oldval = Vector4(0,0,0,0),
         s_newval = Vector4(0,0,0,0),
+        slot = shaderSlot,
         undo = function(self) 
-                MaterialProps.material:SetVector(self.s_oldval, shaderSlot, SHADERS.PS)
+                MaterialProps.material:SetVector(self.s_oldval, self.slot, SHADERS.PS)
                 MaterialProps:UpdateData(false)
             end,
         redo = function(self) 
-                MaterialProps.material:SetVector(self.s_newval, shaderSlot, SHADERS.PS)
+                MaterialProps.material:SetVector(self.s_newval, self.slot, SHADERS.PS)
                 MaterialProps:UpdateData(false)
             end,
         msg = str.. " color"
@@ -251,32 +333,42 @@ function MaterialProps.UpdColor(colorPicker, shaderSlot)
     return true
 end
 
-function MaterialProps:SetAlbedoTexture(name)
-    self.material:SetTextureName(name, "albedoTexture", SHADERS.PS)
-    self.material:SetFloat(name:len() > 0 and 1.0 or 0.0, "hasAlbedoTexture", SHADERS.PS)
+-- SLIDER
+function MaterialProps.StartValue(self, shaderSlot, str)
+    self.history = {
+        s_oldval = 0,
+        s_newval = 0,
+        slot = shaderSlot,
+        undo = function(self) 
+                MaterialProps.material:SetFloat(self.s_oldval, self.slot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetFloat(self.s_newval, self.slot, SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = str.. " value"
+    }
+
+    self.history.s_oldval = MaterialProps.material:GetFloat(shaderSlot, SHADERS.PS)
+    MaterialProps.material:SetFloat(self:GetValue(), shaderSlot, SHADERS.PS)
+    return true
 end
 
-function MaterialProps:GetAlbedoTexture()
-    if self.material:GetFloat("hasAlbedoTexture", SHADERS.PS) == 0.0 then return "" end 
-    return self.material:GetTextureName("albedoTexture", SHADERS.PS)
+function MaterialProps.DragValue(self, shaderSlot)
+    MaterialProps.material:SetFloat(self:GetValue(), shaderSlot, SHADERS.PS)
+    return true
 end
 
-function MaterialProps:SetNormalTexture(name)
-    self.material:SetTextureName(name, "normalTexture", SHADERS.PS)
-    self.material:SetFloat(name:len() > 0 and 1.0 or 0.0, "hasNormalTexture", SHADERS.PS)
+function MaterialProps.EndValue(self, shaderSlot)
+    self.history.s_newval = self:GetValue()
+    if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
+    MaterialProps.material:SetFloat(self.history.s_newval, shaderSlot, SHADERS.PS)
+    History:Push(self.history)
+    return true
 end
 
-function MaterialProps:GetNormalTexture()
-    if self.material:GetFloat("hasNormalTexture", SHADERS.PS) == 0.0 then return "" end 
-    return self.material:GetTextureName("normalTexture", SHADERS.PS)
-end
-
-function MaterialProps:SetNormalSpace(isObject)
-    self.material:SetFloat(isObject and 1.0 or 0.0, "objectSpaceNormalMap", SHADERS.PS)
-end
-
--- if object -> true
-function MaterialProps:GetNormalSpace()
-    if self.material:GetFloat("objectSpaceNormalMap", SHADERS.PS) == 0.0 then return false
-    else return true end 
+function MaterialProps.UpdValue(self, shaderSlot)
+    self:SetValue( MaterialProps.material:GetFloat(shaderSlot, SHADERS.PS) )
+    return true
 end

@@ -19,23 +19,28 @@ cbuffer materialBuffer : register(b1)
 
 	float hasAlbedoTexture;
 	float hasNormalTexture;
+	float normalMapInvertY;
 	float objectSpaceNormalMap;
-	float hasRoughnessTexture;
 
+	float hasRoughnessTexture;
 	float roughnessAnisotropic;
 	float roughnessX;
 	float roughnessY;
-	float hasReflectivityTexture;
 
+	float isGlossiness;
+	float hasReflectivityTexture;
 	float isMetalPipeline;
+	float metalnessValue;
+
 	float hasAlphatestTexture;
 	float alphatestThreshold;
 	float hasEmissiveTexture;
-
 	float hasAOTexture;
+
 	float hasSubsurfTexture;
 	float hasThicknessTexture;
 	float thicknessValue;
+	float _padding0;
 };
 
 cbuffer materialId : register(b2)
@@ -70,8 +75,10 @@ float3 NormalCalculate(SamplerState samplerTex, float2 uv, float3 vertex_normal,
 
 	if( hasNormalTexture > 0 )
 	{
-		float3 normal_sample = normalTexture.Sample(samplerTex, uv).rbg * 2.0f - 1.0f;
-
+		float3 normal_sample = normalTexture.Sample(samplerTex, uv).rgb * 2.0f - 1.0f;
+		if( normalMapInvertY > 0 )
+			normal_sample.y = -normal_sample.y;
+		
 		if( objectSpaceNormalMap > 0 )
 		{
 			const float3x3 nM = (float3x3)nMatrix;
@@ -79,9 +86,7 @@ float3 NormalCalculate(SamplerState samplerTex, float2 uv, float3 vertex_normal,
 		}
 		else
 		{
-			if( normal_sample.z != 0.0f )
-				normal_sample = normal_sample / normal_sample.z;
-			normal = vertex_normal + normal_sample.x * vertex_tangent + normal_sample.y * vertex_binormal;
+			normal = normal_sample.z * vertex_normal + normal_sample.x * vertex_tangent + normal_sample.y * vertex_binormal;
 		}
 	}
 
@@ -95,13 +100,15 @@ float2 RoughnessCalculate(SamplerState samplerTex, float2 uv)
 	if( hasRoughnessTexture > 0 )
 	{
 		float2 rough_sample = roughnessTexture.Sample(samplerTex, uv).rg;
-		roughtness.x *= rough_tex.r;
-		roughtness.y *= rough_tex.g;
+		roughtness.x *= rough_sample.r;
+		roughtness.y *= rough_sample.g;
 	}
 
 	if( roughnessAnisotropic == 0 )
 		roughtness.y = roughtness.x;
 	
+	if( isGlossiness > 0 )
+		roughtness = float2(1.0, 1.0) - roughtness;
 	return roughtness;
 }
 
@@ -111,7 +118,7 @@ float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 al
 
 	if( isMetalPipeline > 0 )
 	{
-		float metallic = reflectivityColor.r;
+		float metallic = metalnessValue;
 		if( hasReflectivityTexture > 0 )
 			metallic = reflectivityTexture.Sample(samplerTex, uv).r;
 
@@ -132,10 +139,10 @@ float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 al
 
 float3 EmissiveCalculate(SamplerState samplerTex, float2 uv)
 {
-	float3 emissive = emissive_color.rgb;
+	float3 emissive = emissiveColor.rgb;
 	if( hasEmissiveTexture > 0 )
 		emissive *= emissiveTexture.Sample(samplerTex, uv).rgb;
-	return emissive
+	return emissive;
 }
 
 float AOCalculate(SamplerState samplerTex, float2 uv)

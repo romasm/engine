@@ -1,5 +1,3 @@
-loader.require("MaterialGui.AlbedoCallback")
-
 function Gui.MaterialAlbedo()
 return GuiGroup({
     styles = {
@@ -38,9 +36,9 @@ return GuiGroup({
         str = "Albedo",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = AlbedoCallback.SetAlbedoTex,
-            [GUI_EVENTS.TEXTURE_DELETE] = AlbedoCallback.SetAlbedoTex,
-            [GUI_EVENTS.UPDATE] = AlbedoCallback.UpdAlbedoTex,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "albedoTexture", "hasAlbedoTexture", "Albedo") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "albedoTexture", "hasAlbedoTexture", "Albedo") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "albedoTexture", "hasAlbedoTexture") end,
         }
     }),
 
