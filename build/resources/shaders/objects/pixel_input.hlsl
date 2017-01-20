@@ -37,10 +37,12 @@ cbuffer materialBuffer : register(b1)
 	float hasEmissiveTexture;
 	float hasAOTexture;
 
+	float aoPower;
 	float hasSubsurfTexture;
 	float hasThicknessTexture;
 	float thicknessValue;
-	float _padding0;
+
+	//float _padding0;
 };
 
 cbuffer materialId : register(b2)
@@ -149,7 +151,7 @@ float AOCalculate(SamplerState samplerTex, float2 uv)
 {
 	if( hasAOTexture == 0 )
 		return 1;
-	return GammaToLin(aoTexture.Sample(samplerTex, uv).r);
+	return PowAbs( GammaToLin(aoTexture.Sample(samplerTex, uv).r), aoPower );
 }
 
 float4 SSSCalculate(SamplerState samplerTex, float2 uv)

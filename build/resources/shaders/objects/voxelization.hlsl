@@ -11,7 +11,7 @@ RWTexture3D <uint> opacityVolume : register(u1);
 RWTexture3D <uint> colorVolume0 : register(u2);  
 RWTexture3D <uint> colorVolume1 : register(u3);  
 RWTexture3D <uint> normalVolume : register(u4);  
- 
+  
 cbuffer matrixBuffer : register(b3)
 {
 	StmInstanceMatrix matrixPerInstance[VCT_MESH_MAX_INSTANCE];

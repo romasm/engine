@@ -11,7 +11,7 @@ cbuffer matrixBuffer : register(b3)
 	matrix worldMatrix;
 	matrix normalMatrix;  
 };    
-           
+            
 PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 {
 	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))

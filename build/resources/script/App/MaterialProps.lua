@@ -8,6 +8,9 @@ loader.require("MaterialGui.Albedo", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Normal", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Roughness", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Reflectivity", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.AO", MaterialProps.reloadMatWin)
+
+loader.require("Menus.Material")
 
 function MaterialProps.reload()
     if MaterialProps.window then
@@ -197,6 +200,29 @@ function MaterialProps:ProcessPreviewZoom(viewport, ev)
     self.previewZoom = math.max( 0.7, math.min( self.previewZoom, 2.3 ) )
 
     AssetBrowser.previewCamera:SetPosition( 0.0, 0.0, -self.previewZoom )
+end
+
+-- MENU
+function MaterialProps:OpenMenu(ent, coords)
+    if self.material == nil then return end
+
+    local menu = Gui.MaterialMenu()
+    ent:AttachOverlay(menu)
+    menu:Open(coords.x, coords.y)
+end
+
+function MaterialProps:MenuClick(id)
+    if id == "add_ao" then
+        self.body:AddGroup(Gui.MaterialAO())
+        self:UpdateData(true)
+    elseif id == "add_emissive" then
+        print("sfhs")
+    elseif id == "add_sss" then
+        print("sfhs")
+    elseif id == "add_alphatest" then
+        print("sfhs")
+    end
+    return true
 end
 
 -- 2 SELECTOR

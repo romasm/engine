@@ -68,6 +68,12 @@
     <Compile Include="..\..\gui\MaterialGui\Albedo.lua">
       <Link>Gui\MaterialGui\Albedo.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\AO.lua">
+      <Link>Gui\MaterialGui\AO.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\AOCallback.lua">
+      <Link>Gui\MaterialGui\AOCallback.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Normal.lua">
       <Link>Gui\MaterialGui\Normal.lua</Link>
     </Compile>
@@ -88,6 +94,9 @@
     </Compile>
     <Compile Include="..\..\gui\Menus\Asset.lua">
       <Link>Gui\Menus\Asset.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Menus\Material.lua">
+      <Link>Gui\Menus\Material.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\Menus\TB_File.lua">
       <Link>Gui\Menus\TB_File.lua</Link>

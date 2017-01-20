@@ -1,9 +1,11 @@
-function Gui.MaterialAlbedo()
+loader.require("MaterialGui.AOCallback")
+
+function Gui.MaterialAO()
 return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
-    id = "albedo",
+    id = "ao",
     
     header = {
         styles = {
@@ -16,12 +18,12 @@ return GuiGroup({
         height = 23,
 
         text = {
-            str = "Albedo",
+            str = "Ambient Occlusion",
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },
     },
-
+    
     events = {
         [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) 
             self.entity:SetHierarchyFocusOnMe(false)
@@ -47,40 +49,45 @@ return GuiGroup({
         width = 265,
         top = 35,
         left = 10,
-        id = 'albedo_texture',
+        id = 'ao_texture',
         allow_autoreload = true,
-        str = "Albedo",
+        str = "AO",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "albedoTexture", "hasAlbedoTexture", "Albedo") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "albedoTexture", "hasAlbedoTexture", "Albedo") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "albedoTexture", "hasAlbedoTexture") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "aoTexture", "hasAOTexture", "AO") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "aoTexture", "hasAOTexture", "AO") end,
+            [GUI_EVENTS.UPDATE] = AOCallback.UpdAOTex,
         }
     }),
 
     GuiString({
         styles = {GuiStyles.string_props_01,},
-        str = "Albedo color",
+        str = "Power",
+        static = false,
+        length = 16,
         left = 10,
         top = 152,
+        id = 'power_str',
     }),
-    
-    GuiButton({
-        styles = {GuiStyles.color_button,},
-        left = 120,
-        top = 150,
-        width = 155,
-        alt = "Pick albedo color (multiplier)",
 
-        background = {
-            color_nonactive = 'bg_03',
+    GuiDataSlider({
+        styles = {
+            GuiStyles.mat_dataslider,
         },
+        top = 150,
+        data = {
+            min = 0,
+            max = 3,
+            decimal = 3,
+        },
+        alt = "Ambient Occlusion power",
+        id = 'power_sld',
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "albedoColor", "Albedo") end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialProps.ColorPicking(self, "albedoColor") end,
-            [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialProps.ColorPicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "albedoColor") end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "aoPower", "Ambient Occlusion power") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "aoPower") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "aoPower") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "aoPower") end,
         },
     }),
 

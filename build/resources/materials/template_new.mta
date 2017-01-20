@@ -18,22 +18,19 @@ ps
 	normalMapInvertY = 0
 	objectSpaceNormalMap = 0
 	hasRoughnessTexture = 0
-
 	roughnessAnisotropic = 0
 	roughnessX = 0.5
 	roughnessY = 0.5
 	isGlossiness = 0
-
 	hasReflectivityTexture = 0
 	isMetalPipeline = 1
 	metalnessValue = 0
 	hasAlphatestTexture = 0
-
 	alphatestThreshold = 0
 	hasEmissiveTexture = 0
 	hasAOTexture = 0
+	aoPower = 1.0
 	hasSubsurfTexture = 0
-
 	hasThicknessTexture = 0
 	thicknessValue = 0
 }

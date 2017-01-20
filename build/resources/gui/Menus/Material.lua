@@ -1,12 +1,12 @@
-function Gui.AssetMenu()
+function Gui.MaterialMenu()
 return GuiMenu({
     styles = {
         GuiStyles.menu_default,
     },
 
-    id = "asset_menu",
+    id = "material_menu",
     
-    width = 135,
+    width = 180,
     height = 102, 
     
     -- children
@@ -15,12 +15,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "asset_new",
+        id = "add_ao",
 
         top = 1,
 
         text = {
-            str = "Create new",
+            str = "+ Ambient Occlusion",
         },
     }),
 
@@ -29,12 +29,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "asset_rename",
+        id = "add_emissive",
 
         top = 26,
 
         text = {
-            str = "Rename",
+            str = "+ Emission",
         },
     }),
 
@@ -43,12 +43,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "asset_copy",
+        id = "add_sss",
 
         top = 51,
 
         text = {
-            str = "Make copy",
+            str = "+ Light Transmittance",
         },
     }),
 
@@ -57,12 +57,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "asset_delete",
+        id = "add_alphatest",
 
         top = 76,
 
         text = {
-            str = "Delete",
+            str = "+ Alphatest",
         },
     }),
 })
