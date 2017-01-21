@@ -417,7 +417,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		const float NoL = saturate(dot(normal, L));
 		if(NoL == 0.0f)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -431,7 +431,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 		
@@ -490,7 +490,7 @@ PO_final DefferedLighting(PI_PosTex input)
 			
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -509,7 +509,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -571,7 +571,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -590,7 +590,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -613,7 +613,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		const float NoL = saturate(dot(normal, L));
 		if(NoL == 0.0f)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -627,7 +627,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -671,7 +671,7 @@ PO_final DefferedLighting(PI_PosTex input)
 			
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -690,7 +690,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -746,7 +746,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -765,7 +765,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 
@@ -808,7 +808,7 @@ PO_final DefferedLighting(PI_PosTex input)
 
 		if(specNoL == 0.0f)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += colorLight * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -830,7 +830,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorLight * specNoL * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorLight * NoL * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += colorLight * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 		
@@ -867,7 +867,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		
 		if(NoL == 0.0f) 
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -889,7 +889,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -963,7 +963,7 @@ PO_final DefferedLighting(PI_PosTex input)
 			
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -982,7 +982,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -1060,7 +1060,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -1079,7 +1079,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -1113,7 +1113,7 @@ PO_final DefferedLighting(PI_PosTex input)
 			
 		if(NoL == 0.0f)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -1135,7 +1135,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -1197,7 +1197,7 @@ PO_final DefferedLighting(PI_PosTex input)
 			
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_texelProj.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -1216,7 +1216,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_texelProj.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
@@ -1292,7 +1292,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		
 		if(illuminance == 0)
 		{
-			if(params.subscattering != 0)
+			//if(params.subscattering != 0)
 				Light.diffuse += noDirIlluminance * color_texelProj.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 			continue;
 		}
@@ -1311,7 +1311,7 @@ PO_final DefferedLighting(PI_PosTex input)
 		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
 		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
 		
-		if(params.subscattering != 0)
+		//if(params.subscattering != 0)
 			Light.diffuse += noDirIlluminance * color_texelProj.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	

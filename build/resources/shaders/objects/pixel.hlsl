@@ -1,7 +1,7 @@
 #include "../common/math.hlsl"
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
-
+ 
 #include "pixel_input.hlsl"
 
 SamplerState samplerAnisotropicWrap : register(s0);

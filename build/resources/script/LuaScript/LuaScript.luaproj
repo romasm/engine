@@ -74,6 +74,9 @@
     <Compile Include="..\..\gui\MaterialGui\AOCallback.lua">
       <Link>Gui\MaterialGui\AOCallback.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Emissive.lua">
+      <Link>Gui\MaterialGui\Emissive.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Normal.lua">
       <Link>Gui\MaterialGui\Normal.lua</Link>
     </Compile>
@@ -91,6 +94,9 @@
     </Compile>
     <Compile Include="..\..\gui\MaterialGui\RoughnessCallback.lua">
       <Link>Gui\MaterialGui\RoughnessCallback.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\SSS.lua">
+      <Link>Gui\MaterialGui\SSS.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\Menus\Asset.lua">
       <Link>Gui\Menus\Asset.lua</Link>

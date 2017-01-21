@@ -35,14 +35,17 @@ cbuffer materialBuffer : register(b1)
 	float hasAlphatestTexture;
 	float alphatestThreshold;
 	float hasEmissiveTexture;
-	float hasAOTexture;
+	float emissiveIntensity;
 
+	float hasAOTexture;
 	float aoPower;
 	float hasSubsurfTexture;
 	float hasThicknessTexture;
-	float thicknessValue;
 
-	//float _padding0;
+	float thicknessValue;
+	float _padding0;
+	float _padding1;
+	float _padding2;
 };
 
 cbuffer materialId : register(b2)
@@ -141,7 +144,7 @@ float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 al
 
 float3 EmissiveCalculate(SamplerState samplerTex, float2 uv)
 {
-	float3 emissive = emissiveColor.rgb;
+	float3 emissive = emissiveColor.rgb * emissiveIntensity;
 	if( hasEmissiveTexture > 0 )
 		emissive *= emissiveTexture.Sample(samplerTex, uv).rgb;
 	return emissive;

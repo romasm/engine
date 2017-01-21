@@ -79,6 +79,7 @@ return GuiWindow({
             width = 100,   
             height = 100,  
             alt = "Drag to rotate, scroll to zoom",
+            rbutton = true,
 
             events = {
                 [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 

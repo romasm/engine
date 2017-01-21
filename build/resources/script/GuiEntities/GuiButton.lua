@@ -13,6 +13,9 @@ function GuiButton:init(props)
 
     self.fadein_time = 0
     self.fadeout_time = 0
+
+    self.rbutton = false
+    self.mbutton = false
     
     self.icon = {
         color = Vector4(0.0, 0.0, 0.0, 1.0),
@@ -143,6 +146,9 @@ function GuiButton:ApplyProps(props)
     if props.fadein_time ~= nil then self.fadein_time = props.fadein_time end
     if props.fadeout_time ~= nil then self.fadeout_time = props.fadeout_time end
 
+    if props.rbutton ~= nil then self.rbutton = props.rbutton end
+    if props.mbutton ~= nil then self.mbutton = props.mbutton end
+
     if props.icon ~= nil then
         if props.icon.material ~= nil then self.icon.material = props.icon.material end
         if props.icon.rect ~= nil then 
@@ -272,7 +278,10 @@ function GuiButton:callback(eventData)
         
         self.entity:SetHierarchyFocusOnMe(false)
 
-        if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
+        if eventData.key == KEYBOARD_CODES.KEY_LBUTTON or 
+            (eventData.key == KEYBOARD_CODES.KEY_RBUTTON and self.rbutton) or
+            (eventData.key == KEYBOARD_CODES.KEY_MBUTTON and self.mbutton) then
+
             res.entity = self.entity
             
             if self.holded and self.state_press then
@@ -302,7 +311,11 @@ function GuiButton:callback(eventData)
             return self._base.callback(self, res)
         end
 
-        if eventData.key == KEYBOARD_CODES.KEY_LBUTTON and not self.holded and self.state_press then
+        if ( eventData.key == KEYBOARD_CODES.KEY_LBUTTON or 
+            (eventData.key == KEYBOARD_CODES.KEY_RBUTTON and self.rbutton) or
+            (eventData.key == KEYBOARD_CODES.KEY_MBUTTON and self.mbutton) ) and 
+            not self.holded and self.state_press then
+
             -- set hover color
             self:ApplyHover()
             self.anim_go = 0

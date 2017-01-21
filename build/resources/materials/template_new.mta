@@ -3,6 +3,11 @@ shader = "../resources/shaders/objects/opaque_main"
 deffered
 {
 	unlit = 0
+	subscattering = 0
+	ss_distortion = 0.1
+	ss_direct_translucency = 0.1
+	ss_direct_pow = 1.0
+	ss_indirect_translucency = 0.1
 }
 
 
@@ -28,6 +33,7 @@ ps
 	hasAlphatestTexture = 0
 	alphatestThreshold = 0
 	hasEmissiveTexture = 0
+	emissiveIntensity = 0
 	hasAOTexture = 0
 	aoPower = 1.0
 	hasSubsurfTexture = 0

@@ -2,7 +2,7 @@
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/voxel_helpers.hlsl"
-
+ 
 #include "pixel_input.hlsl"
 
 SamplerState samplerTrilinearWrap : register(s0);

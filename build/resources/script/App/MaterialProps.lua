@@ -9,6 +9,8 @@ loader.require("MaterialGui.Normal", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Roughness", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Reflectivity", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.AO", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Emissive", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.SSS", MaterialProps.reloadMatWin)
 
 loader.require("Menus.Material")
 
@@ -213,15 +215,15 @@ end
 
 function MaterialProps:MenuClick(id)
     if id == "add_ao" then
-        self.body:AddGroup(Gui.MaterialAO())
-        self:UpdateData(true)
+        self.body:AddGroup( Gui.MaterialAO() )
     elseif id == "add_emissive" then
-        print("sfhs")
+        self.body:AddGroup( Gui.MaterialEmissive() )
     elseif id == "add_sss" then
-        print("sfhs")
+        self.body:AddGroup( Gui.MaterialSubsurf() )
     elseif id == "add_alphatest" then
         print("sfhs")
     end
+    self:UpdateData(true)
     return true
 end
 
