@@ -23,23 +23,7 @@ return GuiGroup({
             center = { x = false, y = false },
         },
     },
-
-    events = {
-        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) 
-            self.entity:SetHierarchyFocusOnMe(false)
-            self.entity:SetFocus(HEntity())
-
-            if ev.key == KEYBOARD_CODES.KEY_RBUTTON then
-                MaterialProps:OpenMenu(self, ev.coords)
-            end
-            return true
-        end,
-        [GUI_EVENTS.MENU_CLICK] = function(self, ev)
-            MaterialProps:MenuClick(ev.entity:GetID())
-            return true
-        end,
-    },
-
+    
     width = 100,
     width_percent = true,
 

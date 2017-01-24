@@ -178,11 +178,11 @@ function SceneBrowser:ClearSelected(btn)
     local founded = self:FindSelected(btn)
     if founded == 0 then return end
     
+    self:UnselectEntity(self.selectedBtns[founded].linked_ent)
+
     self.prevSelectedNum = 0
     table.remove(self.selectedBtns, founded)
     self.selected_counter:SetString( tostring(#self.selectedBtns) .. " selected" )
-
-    self:SelectEntities({}, false)
 end
 
 function SceneBrowser:FindSelected(btn)
@@ -202,6 +202,16 @@ function SceneBrowser:SelectEntities(entities, add)
     if add ~= true then Viewport:UnselectAll() end
     if #entities > 0 then Viewport:AddSelection(entities) end
 
+    Viewport:PushSelectHistory()
+    Viewport:PlaceArrows()
+    Properties:Update()
+end
+
+function SceneBrowser:UnselectEntity(entity)
+    Viewport:RememberSelection()
+    
+    Viewport:Unselect(entity)
+    
     Viewport:PushSelectHistory()
     Viewport:PlaceArrows()
     Properties:Update()

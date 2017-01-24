@@ -7,7 +7,7 @@ return GuiMenu({
     id = "material_menu",
     
     width = 180,
-    height = 102, 
+    height = 202, 
     
     -- children
     GuiButton({
@@ -15,9 +15,68 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "add_ao",
+        id = "albedo",
 
         top = 1,
+
+        text = {
+            str = "+ Albedo",
+        },
+    }),
+
+    
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "roughness",
+
+        top = 26,
+
+        text = {
+            str = "+ Microfacets",
+        },
+    }),
+
+    
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "reflectivity",
+
+        top = 51,
+
+        text = {
+            str = "+ Reflectivity",
+        },
+    }),
+
+    
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "normal",
+
+        top = 76,
+
+        text = {
+            str = "+ Normal map",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "ao",
+
+        top = 101,
 
         text = {
             str = "+ Ambient Occlusion",
@@ -29,9 +88,9 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "add_emissive",
+        id = "emissive",
 
-        top = 26,
+        top = 126,
 
         text = {
             str = "+ Emission",
@@ -43,9 +102,9 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "add_sss",
+        id = "sss",
 
-        top = 51,
+        top = 151,
 
         text = {
             str = "+ Light Transmittance",
@@ -57,9 +116,9 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "add_alphatest",
+        id = "alphatest",
 
-        top = 76,
+        top = 176,
 
         text = {
             str = "+ Alphatest",

@@ -105,6 +105,8 @@ namespace EngineCore
 		float GetDefferedParam(uint8_t i);
 		float GetDefferedParamWithSlotName(string slot);
 
+		bool SetShader(string shaderName);
+
 		inline string GetName() {return materialName;}
 		inline string GetShaderName() {return ShaderMgr::Get()->GetShaderName(shaderID);}
 		
@@ -140,6 +142,7 @@ namespace EngineCore
 					.addFunction("ClearTextures", &Material::ClearTextures)
 					.addFunction("GetName", &Material::GetName)
 					.addFunction("GetShaderName", &Material::GetShaderName)
+					.addFunction("SetShader", &Material::SetShader)
 					.addFunction("Save", &Material::Save)
 				.endClass();
 		}
@@ -153,6 +156,7 @@ namespace EngineCore
 	#endif
 
 		bool initBuffers();
+		void closeBuffers();
 		void updateBuffers();
 
 		string materialName;

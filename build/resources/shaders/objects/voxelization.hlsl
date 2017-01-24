@@ -26,7 +26,7 @@ cbuffer volumeBuffer : register(b5)
 {
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
-
+ 
 cbuffer levelData : register(b6)
 {
 	uint currentLevel;

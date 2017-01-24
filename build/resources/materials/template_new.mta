@@ -31,7 +31,7 @@ ps
 	isMetalPipeline = 1
 	metalnessValue = 0
 	hasAlphatestTexture = 0
-	alphatestThreshold = 0
+	alphatestThreshold = 0.5
 	hasEmissiveTexture = 0
 	emissiveIntensity = 0
 	hasAOTexture = 0

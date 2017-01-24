@@ -682,6 +682,7 @@ void ScenePipeline::OpaqueForwardStage()
 	Materials_Count = 1;
 
 	render_mgr->DrawOpaque(this);
+	render_mgr->DrawAlphatest(this);
 
 	PERF_GPU_TIMESTAMP(_DEPTH_COPY);
 

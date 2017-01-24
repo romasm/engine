@@ -1,9 +1,9 @@
-function Gui.MaterialSubsurf()
+function Gui.MaterialSSS()
 return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
-    id = "subsurf",
+    id = "sss",
     
     header = {
         styles = {
@@ -20,22 +20,6 @@ return GuiGroup({
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },
-    },
-
-    events = {
-        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) 
-            self.entity:SetHierarchyFocusOnMe(false)
-            self.entity:SetFocus(HEntity())
-
-            if ev.key == KEYBOARD_CODES.KEY_RBUTTON then
-                MaterialProps:OpenMenu(self, ev.coords)
-            end
-            return true
-        end,
-        [GUI_EVENTS.MENU_CLICK] = function(self, ev)
-            MaterialProps:MenuClick(ev.entity:GetID())
-            return true
-        end,
     },
 
     width = 100,
@@ -84,7 +68,7 @@ return GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "subsurfaceColor", "Subsurface") end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "subsurfaceColor", "Subsurface", false) end,
             [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialProps.ColorPicking(self, "subsurfaceColor") end,
             [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialProps.ColorPicked(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "subsurfaceColor") end,

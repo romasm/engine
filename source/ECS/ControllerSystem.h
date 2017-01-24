@@ -92,21 +92,30 @@ namespace EngineCore
 
 		void DeleteComponent(Entity e)
 		{
-			Controller& comp = GetComponent(e);
-			comp.active = false;
-			for(uint16_t j = 0; j < eKeyCodes::KEY_MAX; j++)
-				_DELETE(comp.funcMap->keyboardEvents[j]);
-			for(uint16_t j = 0; j < MouseEvents::COUNT; j++)
-				_DELETE(comp.funcMap->mouseEvents[j]);
-			_DELETE(comp.funcMap);
+			Controller* comp = GetComponent(e);
+			if(!comp)
+				return;
+
+			comp->active = false;
+			if(comp->funcMap)
+			{
+				for(uint16_t j = 0; j < eKeyCodes::KEY_MAX; j++)
+					_DELETE(comp->funcMap->keyboardEvents[j]);
+				for(uint16_t j = 0; j < MouseEvents::COUNT; j++)
+					_DELETE(comp->funcMap->mouseEvents[j]);
+				_DELETE(comp->funcMap);
+			}
 			components.erase(e.index());
 		}
 		bool HasComponent(Entity e) const {return components.find(e.index()) != components.end();}
 		size_t ComponentsCount() {return components.size();}
 
-		inline Controller& GetComponent(Entity e)
+		inline Controller* GetComponent(Entity e)
 		{
-			return components[e.index()];
+			auto comp = components.find(e.index());
+			if(comp == components.end())
+				return nullptr;
+			return &comp->second;
 		}
 
 		void RawInput(RawInputData& data);

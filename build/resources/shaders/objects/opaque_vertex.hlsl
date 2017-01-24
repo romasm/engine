@@ -13,9 +13,8 @@ PI_Mesh OpaqueVS(VI_Mesh input)
 {
     PI_Mesh output;
 
-    output.position = mul(float4(input.position, 1), worldMatrix);
-	output.worldPos = output.position;
-    output.position = mul(output.position, g_viewProj);
+	output.worldPos = mul(float4(input.position, 1), worldMatrix);
+    output.position = mul(output.worldPos, g_viewProj);
 	
 	output.tex = input.tex;
 	
@@ -45,10 +44,12 @@ float4 OpaqueShadowVS(VI_Mesh input) : SV_POSITION
 PI_Mesh AlphatestShadowVS(VI_Mesh input)
 {
     PI_Mesh output;
-    output.position = mul(float4(input.position, 1), worldMatrix);
-    output.position = mul(output.position, shadowVP);
+
+    output.worldPos = mul(float4(input.position, 1), worldMatrix);
+    output.position = mul(output.worldPos, shadowVP);
 
 	output.tex = input.tex;
+
 	output.normal = 0;
 	output.tangent = 0;
 	output.binormal = 0;

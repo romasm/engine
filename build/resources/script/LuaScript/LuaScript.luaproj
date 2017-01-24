@@ -38,12 +38,6 @@
     <Compile Include="..\..\gui\ComponentsGui\LightCallback.lua">
       <Link>Gui\ComponentsGui\LightCallback.lua</Link>
     </Compile>
-    <Compile Include="..\..\gui\ComponentsGui\MaterialProps.lua">
-      <Link>Gui\ComponentsGui\MaterialProps.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\ComponentsGui\MaterialPropsCallback.lua">
-      <Link>Gui\ComponentsGui\MaterialPropsCallback.lua</Link>
-    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\StaticMesh.lua">
       <Link>Gui\ComponentsGui\StaticMesh.lua</Link>
     </Compile>
@@ -67,6 +61,9 @@
     </Compile>
     <Compile Include="..\..\gui\MaterialGui\Albedo.lua">
       <Link>Gui\MaterialGui\Albedo.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Alphatest.lua">
+      <Link>Gui\MaterialGui\Alphatest.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\MaterialGui\AO.lua">
       <Link>Gui\MaterialGui\AO.lua</Link>

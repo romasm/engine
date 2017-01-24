@@ -11,6 +11,7 @@ loader.require("MaterialGui.Reflectivity", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.AO", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Emissive", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.SSS", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Alphatest", MaterialProps.reloadMatWin)
 
 loader.require("Menus.Material")
 
@@ -44,6 +45,19 @@ function MaterialProps:Init()
     self.reload()
 
     self.material = nil
+    self.components = {}
+    self.hasProps = {
+        albedo = false,
+        roughness = false,
+        reflectivity = false,
+        normal = false,
+        ao = false,
+        emissive = false,
+        sss = false,
+        alphatest = false,
+    }
+
+    self.scrollTo = nil
 
     self.update_time = 0
     self.update_need = false
@@ -71,8 +85,6 @@ function MaterialProps:Tick(dt)
 end
 
 function MaterialProps:Update()
-    self.body:ClearGroups()
-    
     if not self.material then
         self.none_msg.enable = true
         self.preview.entity.enable = false
@@ -80,19 +92,11 @@ function MaterialProps:Update()
 
         AssetBrowser:PreviewMaterial(false)
         self.preview.rect_mat:ClearTextures()
+
+        self:RecreateProps()
         return 
     end
-    
-    local shader_name = self.material:GetShaderName()
-    while shader_name:len() > 0 do
-        local name_start = shader_name:find("\\")
-        if name_start == nil then name_start = shader_name:find("/") end
-        if name_start == nil then
-            break
-        end            
-        shader_name = shader_name:sub(name_start+1)
-    end
-    
+        
     local matName = self.material:GetName()
 
     self.window:SetHeader("Material  " .. AssetBrowser:GetAssetNameFromPath( matName ))
@@ -102,12 +106,150 @@ function MaterialProps:Update()
     local srv = AssetBrowser:PreviewMaterial(true, matName)
     self.preview.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
     
-    self.body:AddGroup(Gui.MaterialReflectivity())
-    self.body:AddGroup(Gui.MaterialNormal())
-    self.body:AddGroup(Gui.MaterialRoughness())
-    self.body:AddGroup(Gui.MaterialAlbedo())
+    self:MarkProps()
+    self:RecreateProps()
+end
+
+function MaterialProps:RecreateProps()
+    self.components = {}
+    self.body:ClearGroups()
+
+    if not self.material then return end
+
+    if self.hasProps.albedo then 
+        self.components.albedo = Gui.MaterialAlbedo() 
+        self.body:AddGroup(self.components.albedo)
+    end
+    if self.hasProps.roughness then 
+        self.components.roughness = Gui.MaterialRoughness() 
+        self.body:AddGroup(self.components.roughness)
+    end
+    if self.hasProps.reflectivity then 
+        self.components.reflectivity = Gui.MaterialReflectivity() 
+        self.body:AddGroup(self.components.reflectivity)
+    end
+    if self.hasProps.normal then 
+        self.components.normal = Gui.MaterialNormal() 
+        self.body:AddGroup(self.components.normal)
+    end
+    if self.hasProps.ao then 
+        self.components.ao = Gui.MaterialAO() 
+        self.body:AddGroup(self.components.ao)
+    end
+    if self.hasProps.emissive then 
+        self.components.emissive = Gui.MaterialEmissive() 
+        self.body:AddGroup(self.components.emissive)
+    end
+    if self.hasProps.sss then 
+        self.components.sss = Gui.MaterialSSS() 
+        self.body:AddGroup(self.components.sss)
+    end
+    if self.hasProps.alphatest then 
+        self.components.alphatest = Gui.MaterialAlphatest() 
+        self.body:AddGroup(self.components.alphatest)
+    end
 
     self:UpdateData(true)
+
+    if self.scrollTo ~= nil then
+        local target = self.body.entity:GetChildById(self.scrollTo)
+        if target:is_null() then return end
+
+        self.window:SetScrollY( target.top )
+
+        self.scrollTo = nil
+    end
+end
+
+function MaterialProps:MarkProps()
+    local albedoColor = self.material:GetVector("albedoColor", SHADERS.PS)
+    if albedoColor.x + albedoColor.y + albedoColor.z == 0.0 then self.hasProps.albedo = false
+    else self.hasProps.albedo = true end
+
+    self.hasProps.normal = self.material:GetFloat("hasNormalTexture", SHADERS.PS) > 0
+
+    self.hasProps.roughness = (self.material:GetFloat("roughnessX", SHADERS.PS) + self.material:GetFloat("roughnessY", SHADERS.PS)) > 0
+
+    self.hasProps.reflectivity = self.material:GetFloat("hasReflectivityTexture", SHADERS.PS) > 0
+    if not self.hasProps.reflectivity then 
+        if self.material:GetFloat("isMetalPipeline", SHADERS.PS) > 0 then
+            self.hasProps.reflectivity = self.material:GetFloat("metalnessValue", SHADERS.PS) > 0
+        else
+            local specColor = self.material:GetVector("reflectivityColor", SHADERS.PS)
+            if not (specColor.x == 0.23 and specColor.y == 0.23 and specColor.z == 0.23) then self.hasProps.reflectivity = true end
+        end
+    end
+    
+    self.hasProps.ao = self.material:GetFloat("hasAOTexture", SHADERS.PS) > 0
+
+    self.hasProps.emissive = self.material:GetFloat("emissiveIntensity", SHADERS.PS) > 0
+    
+    local sssColor = self.material:GetVector("subsurfaceColor", SHADERS.PS)
+    if sssColor.x + sssColor.y + sssColor.z == 0.0 then self.hasProps.sss = false
+    else self.hasProps.sss = true end
+    
+    self.hasProps.alphatest = self.material:GetFloat("hasAlphatestTexture", SHADERS.PS) > 0
+end
+
+function MaterialProps:InitProp(propName)
+    self:ZeroProp(propName)
+    if propName == "albedo" then
+        self.material:SetVector(Vector4(1,1,1,0), "albedoColor", SHADERS.PS)
+    elseif propName == "emissive" then
+        self.material:SetVector(Vector4(1,1,1,0), "emissiveColor", SHADERS.PS)
+        self.material:SetFloat(1.0, "emissiveIntensity", SHADERS.PS)
+    elseif propName == "sss" then
+        self.material:SetVector(Vector4(1,1,1,0), "subsurfaceColor", SHADERS.PS)
+        self.material:SetFloat(0.5, "thicknessValue", SHADERS.PS)
+    elseif propName == "alphatest" then
+        self.material:SetShader("../resources/shaders/objects/alphatest_main")
+    end
+end
+
+function MaterialProps:ZeroProp(propName)
+    if propName == "albedo" then
+        self.material:SetVector(Vector4(0,0,0,0), "albedoColor", SHADERS.PS)
+        self.material:SetFloat(0, "hasAlbedoTexture", SHADERS.PS)
+        self.material:SetTextureName("", "albedoTexture", SHADERS.PS)
+    elseif propName == "roughness" then
+        self.material:SetFloat(0, "hasRoughnessTexture", SHADERS.PS)
+        self.material:SetFloat(0, "roughnessAnisotropic", SHADERS.PS)
+        self.material:SetFloat(0, "roughnessX", SHADERS.PS)
+        self.material:SetFloat(0, "roughnessY", SHADERS.PS)
+        self.material:SetTextureName("", "roughnessTexture", SHADERS.PS)
+    elseif propName == "reflectivity" then
+        self.material:SetFloat(1, "isMetalPipeline", SHADERS.PS)
+        self.material:SetFloat(0, "metalnessValue", SHADERS.PS)
+        self.material:SetFloat(0, "hasReflectivityTexture", SHADERS.PS)
+        self.material:SetVector(Vector4(0.23,0.23,0.23,0), "reflectivityColor", SHADERS.PS)
+        self.material:SetTextureName("", "reflectivityTexture", SHADERS.PS)
+    elseif propName == "normal" then
+        self.material:SetFloat(0, "hasNormalTexture", SHADERS.PS)
+        self.material:SetFloat(0, "normalMapInvertY", SHADERS.PS)
+        self.material:SetFloat(0, "objectSpaceNormalMap", SHADERS.PS)
+        self.material:SetTextureName("", "normalTexture", SHADERS.PS)
+    elseif propName == "ao" then
+        self.material:SetFloat(0, "hasAOTexture", SHADERS.PS)
+        self.material:SetFloat(1.0, "aoPower", SHADERS.PS)
+        self.material:SetTextureName("", "aoTexture", SHADERS.PS)
+    elseif propName == "emissive" then
+        self.material:SetVector(Vector4(0,0,0,0), "emissiveColor", SHADERS.PS)
+        self.material:SetFloat(0, "hasEmissiveTexture", SHADERS.PS)
+        self.material:SetFloat(0, "emissiveIntensity", SHADERS.PS)
+        self.material:SetTextureName("", "emissiveTexture", SHADERS.PS)
+    elseif propName == "sss" then
+        self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
+        self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)
+        self.material:SetFloat(0, "thicknessValue", SHADERS.PS)
+        self.material:SetFloat(0, "hasThicknessTexture", SHADERS.PS)
+        self.material:SetTextureName("", "subsurfTexture", SHADERS.PS)
+        self.material:SetTextureName("", "thicknessTexture", SHADERS.PS)
+    elseif propName == "alphatest" then
+        self.material:SetShader("../resources/shaders/objects/opaque_main")
+        self.material:SetFloat(0.5, "alphatestThreshold", SHADERS.PS)
+        self.material:SetFloat(0, "hasAlphatestTexture", SHADERS.PS)
+        self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
+    end
 end
 
 function MaterialProps:UpdateData(force)
@@ -135,7 +277,7 @@ function MaterialProps:SetSelected(name, unsave)
         end
         newMaterial = Resource.GetMaterial( name )
     end
-
+    
     if self.material then
         if unsave == nil then
             self.material:Save()                    -- TODO: preprocess for ensure that no redundant textures are saved
@@ -143,7 +285,7 @@ function MaterialProps:SetSelected(name, unsave)
         end
         Resource.DropMaterial( self.material:GetName() )
     end
-
+    
     self.material = newMaterial
     self:Update()
 end
@@ -165,8 +307,6 @@ end
 function MaterialProps:ProcessPreviewMove(viewport, ev)
     if not self.previewMove then return end
 
-    --local center = CursorToCenter(viewport)
-
     local delta = {
         x = ev.coords.x - self.previewPrevCoords.x,
         y = ev.coords.y - self.previewPrevCoords.y
@@ -185,16 +325,13 @@ end
 
 function MaterialProps:ProcessPreviewStartMove(viewport, ev)
     MaterialProps.previewMove = true 
-    --CoreGui.ShowCursor(false)
     
-    --CursorToCenter(viewport)
     self.previewPrevCoords.x = ev.coords.x
     self.previewPrevCoords.y = ev.coords.y
 end
 
 function MaterialProps:ProcessPreviewStopMove(viewport, ev)
     MaterialProps.previewMove = false 
-    --CoreGui.ShowCursor(true)
 end
 
 function MaterialProps:ProcessPreviewZoom(viewport, ev)
@@ -214,16 +351,17 @@ function MaterialProps:OpenMenu(ent, coords)
 end
 
 function MaterialProps:MenuClick(id)
-    if id == "add_ao" then
-        self.body:AddGroup( Gui.MaterialAO() )
-    elseif id == "add_emissive" then
-        self.body:AddGroup( Gui.MaterialEmissive() )
-    elseif id == "add_sss" then
-        self.body:AddGroup( Gui.MaterialSubsurf() )
-    elseif id == "add_alphatest" then
-        print("sfhs")
+    if self.hasProps[id] == nil then return end
+
+    self.hasProps[id] = not self.hasProps[id]
+    if self.hasProps[id] == true then 
+        self.scrollTo = id
+        self:InitProp(id)
+    else
+        self:ZeroProp(id)
     end
-    self:UpdateData(true)
+
+    self:RecreateProps()
     return true
 end
 
@@ -307,12 +445,12 @@ function MaterialProps.UpdTexture(self, textureSlot, flagSlot)
 end
 
 -- COLOR PICKER
-function MaterialProps.StartColorPicking(colorPicker, shaderSlot, str)
+function MaterialProps.StartColorPicking(colorPicker, shaderSlot, str, allow_temperature)
     if colorPicker.picker then 
         colorPicker.picker = false
         return true
     else
-        ColorPicker:Show(colorPicker, colorPicker.background.color, false)
+        ColorPicker:Show(colorPicker, colorPicker.background.color, allow_temperature)
         colorPicker.picker = true
     end
 

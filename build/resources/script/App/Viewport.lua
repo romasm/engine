@@ -873,6 +873,16 @@ function Viewport:AddSelection(ents)
     Properties:Update()
 end
 
+function Viewport:Unselect(s_ent)
+    for i, e_ent in ipairs(self.selection_set) do
+        if EntIsEq(s_ent, e_ent) then
+            self.lua_world.world.lineGeometry:DeleteComponent(e_ent)
+            table.remove(self.selection_set, i)
+            return
+        end
+    end
+end
+
 function Viewport:SetSelection(ents)
     self:UnselectAll()
     if #ents == 0 then 

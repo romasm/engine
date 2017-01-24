@@ -144,10 +144,11 @@ float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 al
 
 float3 EmissiveCalculate(SamplerState samplerTex, float2 uv)
 {
-	float3 emissive = emissiveColor.rgb * emissiveIntensity;
+	float3 emissive = emissiveColor.rgb;
 	if( hasEmissiveTexture > 0 )
 		emissive *= emissiveTexture.Sample(samplerTex, uv).rgb;
-	return emissive;
+	emissive = GammaToLin(emissive);
+	return emissive * emissiveIntensity;
 }
 
 float AOCalculate(SamplerState samplerTex, float2 uv)

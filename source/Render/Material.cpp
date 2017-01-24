@@ -57,15 +57,13 @@ Material::~Material()
 
 	_DELETE(defferedParams);
 
+	closeBuffers();
+
 	for(uint8_t i = 0; i < 5; i++)
 	{
 		textures[i].destroy();
 		dataVector[i].destroy();
-		
-		_RELEASE(inputBuf[i]);
 	}
-
-	_RELEASE(idBuf);
 
 	ShaderMgr::Get()->DeleteShader(shaderID);
 	materialName.clear();
@@ -413,6 +411,104 @@ bool Material::initBuffers()
 	idBuf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(uint32_t) * 4, true);
 	if (!idBuf)
 		return false;
+
+	return true;
+}
+
+void Material::closeBuffers()
+{
+	for(uint8_t i = 0; i < 5; i++)
+		_RELEASE(inputBuf[i]);
+	_RELEASE(idBuf);
+}
+
+bool Material::SetShader(string shaderName)
+{
+	if( GetShaderName() == shaderName )
+		return true;
+
+	uint16_t oldShaderID = shaderID;
+
+	shaderID = ShaderMgr::Get()->GetShader(shaderName, false);
+	if(shaderID == SHADER_NULL)
+		return false;
+	auto shaderPtr = (Shader*) ShaderMgr::Get()->GetShaderPtr(shaderID);
+	if(!shaderPtr)
+		return false;
+	uint16_t* codeIds = shaderPtr->GetCode();
+	if(!codeIds)
+		return false;
+
+	RArray<TextureHandle> oldTextures[5];
+	RArray<XMFLOAT4> oldDataVector[5];
+	uint8_t oldOffsetFloat[5];
+
+	for(uint8_t i = 0; i < 5; i++)
+	{
+		textures[i].swap(oldTextures[i]);
+		dataVector[i].swap(oldDataVector[i]);
+		oldOffsetFloat[i] = offsetFloat[i];
+	}
+
+	for(uint8_t i = 0; i < 5; i++)
+	{
+		if(codeIds[i] == SHADER_NULL)
+			continue;
+
+		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
+		if(!Hcode.code)
+			return false;
+
+		vectorsReg[i] = Hcode.input.matInfo_Register;
+		texReg[i] = Hcode.input.matTextures_StartRegister;
+		matrixReg[i] = Hcode.input.matrixBuf_Register;
+
+		if(i == SHADER_PS)
+			sceneReg = Hcode.input.matId_Register;
+
+		textures[i].create(Hcode.input.matTextures_Count);
+		textures[i].resize(Hcode.input.matTextures_Count);
+
+		if(Hcode.input.matInfo_FloatCount / 4 * 4 != Hcode.input.matInfo_FloatCount)
+		{
+			WRN("Material data buffer does not aligned, floats count must be multiples of 4 in %s !", materialName.c_str());
+		}
+
+		uint16_t vects_count = Hcode.input.matInfo_FloatCount / 4 + Hcode.input.matInfo_VectorCount;
+		
+		dataVector[i].create(vects_count);
+		dataVector[i].resize(vects_count);
+		offsetFloat[i] = Hcode.input.matInfo_VectorCount;
+		
+		dataVector[i].assign(XMFLOAT4(0,0,0,0));
+		
+		uint8_t oldVectorCount = min(offsetFloat[i], oldOffsetFloat[i]);
+		for(uint8_t j = 0; j < oldVectorCount; j++)
+			dataVector[i][j] = oldDataVector[i][j];
+
+		uint8_t oldFloatCount = min(Hcode.input.matInfo_FloatCount / 4, (uint8_t)oldDataVector[i].size() - oldOffsetFloat[i]);
+		for(uint8_t j = 0; j < oldFloatCount; j++)
+			dataVector[i][offsetFloat[i] + j] = oldDataVector[i][oldOffsetFloat[i] + j];
+
+		for(uint8_t j = 0; j < oldTextures[i].size(); j++)
+		{
+			if( j >= textures[i].size() )
+				TEXTURE_DROP(oldTextures[i][j].texture)
+			else
+				textures[i][j] = oldTextures[i][j];
+		}
+	}
+
+	ShaderMgr::Get()->DeleteShader(oldShaderID);
+
+	closeBuffers();
+	if(!initBuffers())
+	{
+		ERR("Cant initialize buffers for material %s", materialName.c_str());
+		return false;
+	}
+
+	b_dirty = true;
 
 	return true;
 }
