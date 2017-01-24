@@ -103,6 +103,10 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		
 		const float3 L = normalize(unnormL);
 			 
+		const float NoL = saturate(dot(faceNormal, L));
+		if(NoL == 0.0f)
+			continue;
+
 		const float3 virtUnnormL = spotLightData.Virtpos.xyz - wpos;
 		const float3 virtL = normalize(virtUnnormL);
 
@@ -130,7 +134,48 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		
 		float3 colorIlluminance = light_blocked * illuminance * spotLightData.ColorConeX.rgb;
 		
-		faceEmittance += diffuseColor * colorIlluminance * saturate(dot(faceNormal, L));
+		faceEmittance += diffuseColor * colorIlluminance * NoL;
+	}
+
+	[loop]
+	for(int pointID=0; pointID < (int)pointCount; pointID++)
+	{
+		PointVoxelBuffer pointLightData = pointLightInjectBuffer[pointID];
+	
+		const float3 unnormL = pointLightData.PosRange.xyz - wpos;
+		
+		const float illuminance = getDistanceAtt( unnormL, pointLightData.PosRange.w );
+		if(illuminance == 0)
+			continue;
+		
+		const float3 L = normalize(unnormL);
+		const float NoL = saturate(dot(faceNormal, L));
+			
+		if(NoL == 0.0f)
+			continue;
+		
+		float4 samplePoint = float4(wpos, 1.0f);
+
+		float offset = 0;
+		[unroll] 
+		for(int h = 0; h < 4; h++) 
+			offset = max(offset, abs(dot( voxelVector[h], L )));
+		samplePoint.xyz += L * offset;
+
+		float light_blocked = 0; 
+		[loop]
+		for(int shadowAA = 0; shadowAA < VOXEL_SHADOW_AA; shadowAA++) // optimize to piramid 4 points
+		{ 
+			float4 aaPoint = samplePoint;  
+			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
+			aaPoint.xyz -= pointLightData.PosRange.xyz;
+			light_blocked += GetVoxelPointShadow(samplerPointClamp, shadowsAtlas, aaPoint, pointLightData);
+		}
+		light_blocked *= VOXEL_SHADOW_AA_RCP;
+		
+		float3 colorIlluminance = light_blocked * illuminance * pointLightData.ColorShadowmapProj.rgb;
+			
+		faceEmittance += diffuseColor * colorIlluminance * NoL;
 	}
 
 	[loop]
@@ -141,6 +186,10 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		float4 samplePoint = float4(wpos, 1.0f);
 
 		const float3 L = -dirLightData.Dir.xyz;
+
+		const float NoL = saturate(dot(faceNormal, L));
+		if(NoL == 0.0f)
+			continue;
 
 		float offset = 0;
 		[unroll] 
@@ -160,7 +209,7 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 
 		float3 colorIlluminance = light_blocked * dirLightData.Color.rgb;
 		
-		faceEmittance += diffuseColor * colorIlluminance * saturate(dot(faceNormal, L));
+		faceEmittance += diffuseColor * colorIlluminance * NoL;
 	}
 
 	emittanceVolume[voxelID] = float4(faceEmittance, faceOpacity);

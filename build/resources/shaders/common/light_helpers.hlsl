@@ -38,6 +38,75 @@ float GetVoxelSpotShadow(sampler samp, Texture2DArray <float> shadowmap, float4 
 	return float(shmDepth > lightViewProjPos.z);
 }
 
+float GetVoxelPointShadow(sampler samp, Texture2DArray <float> shadowmap, float4 posInLight, PointVoxelBuffer lightData)
+{
+	const float zInLSq[3] = {posInLight.x, posInLight.z, posInLight.y};
+	float zInLSqAbs[3];
+	[unroll]
+	for(uint q=0; q<3; q++) 
+		zInLSqAbs[q] = abs(zInLSq[q]);
+
+	float4 adress = 0;
+	float4 pil = 0;
+	[branch]
+	if(zInLSqAbs[0]>=zInLSqAbs[1] && zInLSqAbs[0]>=zInLSqAbs[2])
+	{
+		[branch]
+		if(zInLSq[0]>0)
+		{
+			pil = float4(-posInLight.z,posInLight.y,posInLight.x,1);
+			adress = lightData.ShadowmapAdress0;
+		}
+		else
+		{
+			pil = float4(posInLight.z,posInLight.y,-posInLight.x,1);
+			adress = lightData.ShadowmapAdress1;
+		}
+	}
+	else if(zInLSqAbs[1]>=zInLSqAbs[2])
+	{
+		[branch]
+		if(zInLSq[1]>0)
+		{
+			pil = posInLight;
+			adress = lightData.ShadowmapAdress2;
+		}
+		else
+		{
+			pil = float4(-posInLight.x,posInLight.y,-posInLight.z,1);
+			adress = lightData.ShadowmapAdress3;
+		}
+	}
+	else
+	{
+		[branch]
+		if(zInLSq[2]>0)
+		{
+			pil = float4(posInLight.z,posInLight.x,posInLight.y,1);
+			adress = lightData.ShadowmapAdress4;
+		}
+		else
+		{
+			pil = float4(posInLight.z,-posInLight.x,-posInLight.y,1);
+			adress = lightData.ShadowmapAdress5;
+		}
+	}
+
+	float4 lightViewProjPos = mul(pil, lightData.matProj);
+	lightViewProjPos.xyz /= lightViewProjPos.w;
+
+	float2 reprojCoords = reproj[0] * lightViewProjPos.xy + reproj[1];
+	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
+		return 0;
+
+	float3 shadowmapCoords;
+	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
+	shadowmapCoords.z = adress.w;
+	
+	float shmDepth = shadowmap.SampleLevel(samp, shadowmapCoords, 0);
+	return float(shmDepth > lightViewProjPos.z);
+}
+
 
 float GetVoxelDirShadow(sampler samp, Texture2DArray <float> shadowmap, float4 wpos, DirVoxelBuffer lightData)
 {

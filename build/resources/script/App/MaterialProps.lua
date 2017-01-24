@@ -350,7 +350,7 @@ function MaterialProps:OpenMenu(ent, coords)
     menu:Open(coords.x, coords.y)
 end
 
-function MaterialProps:MenuClick(id)
+function MaterialProps:MenuClick(id) -- TODO: to history
     if self.hasProps[id] == nil then return end
 
     self.hasProps[id] = not self.hasProps[id]
