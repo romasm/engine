@@ -196,6 +196,7 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapHPix0;
 		XMFLOAT4 ShadowmapHPix1;
 		XMMATRIX matProj;
+		XMMATRIX matView;
 	};
 
 	struct DirVoxelBuffer

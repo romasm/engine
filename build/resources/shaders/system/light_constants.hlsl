@@ -80,6 +80,7 @@ struct PointVoxelBuffer
 	float4 ShadowmapHPix0;
 	float4 ShadowmapHPix1;
 	matrix matProj;
+	matrix matView;
 };
 
 struct DirVoxelBuffer

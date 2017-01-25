@@ -240,7 +240,7 @@ bool SceneRenderMgr::regToDraw(uint32_t* index_count,
 
 #define PIXEL_HALF 0.5f
 
-bool SceneRenderMgr::RegSpotLight(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos,	XMFLOAT3 dir)
+bool SceneRenderMgr::RegSpotLight(XMFLOAT4& color, float range, XMFLOAT2& cone, XMFLOAT3& pos,	XMFLOAT3& dir)
 {
 	if(lightSpot_count >= LIGHT_SPOT_FRAME_MAX)
 		return false;
@@ -254,7 +254,7 @@ bool SceneRenderMgr::RegSpotLight(XMFLOAT4 color, float range, XMFLOAT2 cone, XM
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpot_count >= CASTER_SPOT_FRAME_MAX)
 		return false;
@@ -264,7 +264,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, X
 	// to voxels
 	SpotVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	vData.ColorConeX = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
 	vData.DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
 	vData.Virtpos = vData.PosRange;
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
@@ -276,7 +276,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, X
 
 	// to deffered
 	casterSpot_array->Pos_Range[casterSpot_count] = vData.PosRange;
-	casterSpot_array->Color_ConeX[casterSpot_count] = vData.ColorConeX;
+	casterSpot_array->Color_ConeX[casterSpot_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
 	casterSpot_array->Dir_ConeY[casterSpot_count] = vData.DirConeY;
 	casterSpot_array->ShadowmapAdress[casterSpot_count] = vData.ShadowmapAdress;
 	casterSpot_array->ShadowmapParams[casterSpot_count] = vData.ShadowmapHPixProjNearclip;
@@ -287,7 +287,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4 color, float range, XMFLOAT2 cone, X
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotLightDisk(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 virtpos)
+bool SceneRenderMgr::RegSpotLightDisk(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos)
 {
 	if(lightSpotDisk_count >= LIGHT_SPOT_DISK_FRAME_MAX)
 		return false;
@@ -303,7 +303,7 @@ bool SceneRenderMgr::RegSpotLightDisk(XMFLOAT4 color, float range, XMFLOAT3 area
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 virtpos, float nearclip,
+bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos, float nearclip,
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpotDisk_count >= CASTER_SPOT_DISK_FRAME_MAX)
@@ -314,7 +314,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 are
 	// to voxels
 	SpotVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	vData.ColorConeX = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
 	vData.DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
 	vData.Virtpos = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
@@ -326,7 +326,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 are
 
 	// to deffered
 	casterSpotDisk_array->Pos_Range[casterSpotDisk_count] = vData.PosRange;
-	casterSpotDisk_array->Color_ConeX[casterSpotDisk_count] = vData.ColorConeX;
+	casterSpotDisk_array->Color_ConeX[casterSpotDisk_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
 	casterSpotDisk_array->Dir_ConeY[casterSpotDisk_count] = vData.DirConeY;
 	casterSpotDisk_array->AreaInfo_Empty[casterSpotDisk_count] = XMFLOAT4(area.x, area.y, 0, 0);
 	casterSpotDisk_array->Virtpos_Empty[casterSpotDisk_count] = vData.Virtpos;
@@ -339,7 +339,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4 color, float range, XMFLOAT3 are
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotLightRect(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 up, XMFLOAT3 side, XMFLOAT3 virtpos)
+bool SceneRenderMgr::RegSpotLightRect(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos)
 {
 	if(lightSpotRect_count >= LIGHT_SPOT_RECT_FRAME_MAX)
 		return false;
@@ -356,7 +356,7 @@ bool SceneRenderMgr::RegSpotLightRect(XMFLOAT4 color, float range, XMFLOAT3 area
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT2 cone, XMFLOAT3 pos, XMFLOAT3 dir, XMFLOAT3 up, XMFLOAT3 side, XMFLOAT3 virtpos, float nearclip, 
+bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos, float nearclip, 
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpotRect_count >= CASTER_SPOT_RECT_FRAME_MAX) // proj tex coords wrong calc
@@ -367,7 +367,7 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 are
 	// to voxels
 	SpotVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	vData.ColorConeX = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
 	vData.DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
 	vData.Virtpos = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
@@ -379,7 +379,7 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 are
 
 	// to deffered
 	casterSpotRect_array->Pos_Range[casterSpotRect_count] = vData.PosRange;
-	casterSpotRect_array->Color_ConeX[casterSpotRect_count] = vData.ColorConeX;
+	casterSpotRect_array->Color_ConeX[casterSpotRect_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
 	casterSpotRect_array->Dir_ConeY[casterSpotRect_count] = vData.DirConeY;
 	casterSpotRect_array->DirUp_AreaX[casterSpotRect_count] = XMFLOAT4(up.x, up.y, up.z, area.x);
 	casterSpotRect_array->DirSide_AreaY[casterSpotRect_count] = XMFLOAT4(side.x, side.y, side.z, area.y);
@@ -393,7 +393,7 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4 color, float range, XMFLOAT3 are
 	return true;
 }
 
-bool SceneRenderMgr::RegPointLight(XMFLOAT4 color, float range, XMFLOAT3 pos)
+bool SceneRenderMgr::RegPointLight(XMFLOAT4& color, float range, XMFLOAT3& pos)
 {
 	if(lightPoint_count >= LIGHT_POINT_FRAME_MAX)
 		return false;
@@ -406,7 +406,7 @@ bool SceneRenderMgr::RegPointLight(XMFLOAT4 color, float range, XMFLOAT3 pos)
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& pos, CXMMATRIX proj, uint64_t id)
 {
 	if(casterPoint_count >= CASTER_POINT_FRAME_MAX)
 		return false;
@@ -419,7 +419,7 @@ bool SceneRenderMgr::RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, C
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = XMFLOAT4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = XMFLOAT4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = XMFLOAT4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
@@ -435,12 +435,13 @@ bool SceneRenderMgr::RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, C
 	vData.ShadowmapHPix0 = XMFLOAT4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
 	vData.ShadowmapHPix1 = XMFLOAT4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
 	vData.matProj = proj;
+	vData.matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
 
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
 	casterPoint_array->Pos_Range[casterPoint_count] = vData.PosRange;
-	casterPoint_array->Color_ShParams[casterPoint_count] = vData.ColorShadowmapProj;	
+	casterPoint_array->Color_ShParams[casterPoint_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
 	casterPoint_array->ShadowmapParams0[casterPoint_count] = vData.ShadowmapHPix0;
 	casterPoint_array->ShadowmapParams1[casterPoint_count] = vData.ShadowmapHPix1;
 	casterPoint_array->Proj[casterPoint_count] = proj;
@@ -456,7 +457,7 @@ bool SceneRenderMgr::RegPointCaster(XMFLOAT4 color, float range, XMFLOAT3 pos, C
 	return true;
 }
 
-bool SceneRenderMgr::RegPointLightSphere(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos)
+bool SceneRenderMgr::RegPointLightSphere(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT3& pos)
 {
 	if(lightPointSphere_count >= LIGHT_POINT_SPHERE_FRAME_MAX)
 		return false;
@@ -470,7 +471,7 @@ bool SceneRenderMgr::RegPointLightSphere(XMFLOAT4 color, float range, XMFLOAT3 a
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, CXMMATRIX proj, uint64_t id)
 {
 	if(casterPointSphere_count >= CASTER_POINT_SPHERE_FRAME_MAX)
 		return false;
@@ -483,7 +484,7 @@ bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = XMFLOAT4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = XMFLOAT4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = XMFLOAT4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
@@ -499,12 +500,13 @@ bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 
 	vData.ShadowmapHPix0 = XMFLOAT4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
 	vData.ShadowmapHPix1 = XMFLOAT4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
 	vData.matProj = proj;
+	vData.matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
 
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
 	casterPointSphere_array->Pos_Range[casterPointSphere_count] = vData.PosRange;
-	casterPointSphere_array->Color_ShParams[casterPointSphere_count] = vData.ColorShadowmapProj;
+	casterPointSphere_array->Color_ShParams[casterPointSphere_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
 	casterPointSphere_array->AreaInfo_ShParams[casterPointSphere_count] = XMFLOAT4(area.x, area.x * area.x, vData.ShadowmapHPix1.x, vData.ShadowmapHPix1.y);
 	casterPointSphere_array->ShadowmapParams[casterPointSphere_count] = vData.ShadowmapHPix0;
 	casterPointSphere_array->Proj[casterPointSphere_count] = proj;
@@ -520,7 +522,7 @@ bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4 color, float range, XMFLOAT3 
 	return true;
 }
 		
-bool SceneRenderMgr::RegPointLightTube(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, XMFLOAT3 dir)
+bool SceneRenderMgr::RegPointLightTube(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir)
 {
 	if(lightPointTube_count >= LIGHT_POINT_TUBE_FRAME_MAX)
 		return false;
@@ -535,7 +537,7 @@ bool SceneRenderMgr::RegPointLightTube(XMFLOAT4 color, float range, XMFLOAT3 are
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 area, XMFLOAT3 pos, XMFLOAT3 dir, CXMMATRIX proj, CXMMATRIX view, uint64_t id)
+bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir, CXMMATRIX proj, CXMMATRIX view, uint64_t id)
 {
 	if(casterPointTube_count >= CASTER_POINT_TUBE_FRAME_MAX)
 		return false;
@@ -548,7 +550,7 @@ bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 ar
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = XMFLOAT4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = XMFLOAT4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = XMFLOAT4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = XMFLOAT4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
@@ -564,12 +566,13 @@ bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 ar
 	vData.ShadowmapHPix0 = XMFLOAT4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
 	vData.ShadowmapHPix1 = XMFLOAT4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
 	vData.matProj = proj;
+	vData.matView = view;
 
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
 	casterPointTube_array->Pos_Range[casterPointTube_count] = vData.PosRange;
-	casterPointTube_array->Color_ShParams[casterPointTube_count] = vData.ColorShadowmapProj;
+	casterPointTube_array->Color_ShParams[casterPointTube_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
 	casterPointTube_array->AreaInfo[casterPointTube_count] = XMFLOAT4(area.x, area.y, area.z, area.y * area.y);
 	casterPointTube_array->Dir_AreaA[casterPointTube_count] = XMFLOAT4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
 	casterPointTube_array->ShadowmapParams0[casterPointTube_count] = vData.ShadowmapHPix0;
@@ -588,7 +591,7 @@ bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4 color, float range, XMFLOAT3 ar
 	return true;
 }
 
-bool SceneRenderMgr::RegDirLight(XMFLOAT4 color, XMFLOAT2 area, XMFLOAT3 dir, XMMATRIX* view_proj, XMFLOAT3* pos, uint64_t id)
+bool SceneRenderMgr::RegDirLight(XMFLOAT4& color, XMFLOAT2& area, XMFLOAT3& dir, XMMATRIX* view_proj, XMFLOAT3* pos, uint64_t id)
 {
 	if(lightDir_count >= LIGHT_DIR_FRAME_MAX)
 		return false;

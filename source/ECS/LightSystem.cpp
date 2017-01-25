@@ -89,7 +89,7 @@ void LightSystem::RegToScene()
 
 		if(!i.active)
 			continue;
-
+		
 		switch (i.type)
 		{
 		case LIGHT_TYPE_SPOT:
@@ -103,7 +103,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.rangeInvSqr, i.cone_data, i.pos, i.dir, SHADOW_NEARCLIP, 
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.cone_data, i.pos, i.dir, SHADOW_NEARCLIP, 
 							shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
@@ -125,7 +125,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterDisk(i.hdr_color, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.virt_pos, 
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterDisk(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.virt_pos, 
 							SHADOW_NEARCLIP + i.virt_clip, shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
@@ -147,7 +147,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterRect(i.hdr_color, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos, 
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterRect(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos, 
 							SHADOW_NEARCLIP + i.virt_clip, shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
@@ -169,7 +169,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.hdr_color, i.rangeInvSqr, i.pos, shadowComp->proj, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.pos, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -190,7 +190,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterSphere(i.hdr_color, i.rangeInvSqr, i.area_data, i.pos, shadowComp->proj, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCasterSphere(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -211,7 +211,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterTube(i.hdr_color, i.rangeInvSqr, i.area_data, i.pos, i.dir, shadowComp->proj, shadowComp->view, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCasterTube(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.dir, shadowComp->proj, shadowComp->view, i.get_id());
 					)
 				}
 				else
@@ -388,7 +388,11 @@ uint32_t LightSystem::Deserialize(Entity e, uint8_t* data)
 	t_data += sizeof(bool);
 	size += sizeof(bool);
 
+	// temp
+	calcNonAreaBrightness(comp);
+
 	AddComponent(e, comp);
+
 	return size;
 }
 
@@ -431,12 +435,41 @@ XMFLOAT3 LightSystem::GetColor(Entity e)
 	return comp.color;
 }
 
-bool LightSystem::SetBrightness(Entity e, float brightness)
+bool LightSystem::SetBrightness(Entity e, float brightness) // TODO: move intensity calc code in c++ from lua
 {
 	GET_COMPONENT(false)
 	comp.brightness = brightness;
+
+	// temp
+	calcNonAreaBrightness(comp);
+
 	comp.dirty = true;
 	return true;
+}
+
+void LightSystem::calcNonAreaBrightness(LightComponent& comp)
+{
+	switch (comp.type)
+	{
+	case LIGHT_TYPE_SPOT:
+		comp.nonAreaBrightness = comp.brightness;
+		break;
+	case LIGHT_TYPE_DISK:
+		comp.nonAreaBrightness = comp.brightness * comp.area.x * comp.area.x * XM_PI;
+		break;
+	case LIGHT_TYPE_RECT:
+		comp.nonAreaBrightness = comp.brightness * comp.area.x * comp.area.y;
+		break;
+	case LIGHT_TYPE_POINT:
+		comp.nonAreaBrightness = comp.brightness;
+		break;
+	case LIGHT_TYPE_SPHERE:
+		comp.nonAreaBrightness = comp.brightness * comp.area.x * comp.area.x * XM_PI;
+		break;
+	case LIGHT_TYPE_TUBE:
+		comp.nonAreaBrightness = comp.brightness *  0.5f * XM_PI * comp.area.x * (comp.area.y + 2 * comp.area.x);
+		break;
+	}
 }
 
 float LightSystem::GetBrightness(Entity e)
@@ -583,6 +616,11 @@ void LightSystem::UpdateLightProps(Entity e)
 	comp.hdr_color.y = comp.color.y * comp.brightness;
 	comp.hdr_color.z = comp.color.z * comp.brightness;
 
+	comp.nonAreaColor.w = comp.nonAreaBrightness;
+	comp.nonAreaColor.x = comp.color.x * comp.nonAreaBrightness;
+	comp.nonAreaColor.y = comp.color.y * comp.nonAreaBrightness;
+	comp.nonAreaColor.z = comp.color.z * comp.nonAreaBrightness;
+
 	comp.range = max(comp.range, 0.001f);
 	comp.rangeInvSqr = 1.0f / (comp.range * comp.range);
 
@@ -721,7 +759,7 @@ XMMATRIX LightSystem::GetView(Entity e, uchar num, XMVECTOR* pos)
 			*pos = XMLoadFloat3(&comp.pos);
 			return XMMatrixLookAtLH( *pos, *pos + dir, up );
 		}
-	case LIGHT_TYPE_TUBE:
+	case LIGHT_TYPE_TUBE: // TODO: broked in voxels
 		{
 			XMVECTOR dir = XMLoadFloat3(&comp.dir);
 			XMVECTOR up = XMLoadFloat3(&comp.dir_up);

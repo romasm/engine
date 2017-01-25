@@ -168,7 +168,6 @@ void InjectLightToVolume(uint3 voxelID : SV_DispatchThreadID)
 		{ 
 			float4 aaPoint = samplePoint;  
 			aaPoint.xyz += shadowVoxelOffsets[shadowAA] * voxelSizeThird;
-			aaPoint.xyz -= pointLightData.PosRange.xyz;
 			light_blocked += GetVoxelPointShadow(samplerPointClamp, shadowsAtlas, aaPoint, pointLightData);
 		}
 		light_blocked *= VOXEL_SHADOW_AA_RCP;

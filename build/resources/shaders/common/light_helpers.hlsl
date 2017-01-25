@@ -38,8 +38,10 @@ float GetVoxelSpotShadow(sampler samp, Texture2DArray <float> shadowmap, float4 
 	return float(shmDepth > lightViewProjPos.z);
 }
 
-float GetVoxelPointShadow(sampler samp, Texture2DArray <float> shadowmap, float4 posInLight, PointVoxelBuffer lightData)
+float GetVoxelPointShadow(sampler samp, Texture2DArray <float> shadowmap, float4 wpos, PointVoxelBuffer lightData)
 {
+	const float4 posInLight = mul(wpos, lightData.matView);
+
 	const float zInLSq[3] = {posInLight.x, posInLight.z, posInLight.y};
 	float zInLSqAbs[3];
 	[unroll]

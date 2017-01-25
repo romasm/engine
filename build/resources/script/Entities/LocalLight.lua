@@ -93,30 +93,34 @@ function EntityTypes.LocalLight.ConeToAngle(cone)
     return cone * 360 / math.pi
 end
 
-function EntityTypes.LocalLight.LumPowerToLumIntensity(power, ent, world)
+function EntityTypes.LocalLight.LumPowerToLumIntensity(power, ent, world) -- TODO: move intensity calc code in c++ from lua
     local lt = world.light:GetType(ent) + 1
     local areax = world.light:GetAreaX(ent)
     local areay = world.light:GetAreaY(ent)
     
-    if lt == LIGHT_TYPE.POINT then return power / (4 * math.pi)
-    elseif lt == LIGHT_TYPE.SPOT then return power / (4 * math.pi) -- div 4 for power sync
-    elseif lt == LIGHT_TYPE.SPHERE then return power / (4 * areax * areax * math.pi * math.pi)
-    elseif lt == LIGHT_TYPE.TUBE then return power / ( 2 * math.pi * math.pi * areax *(areay + 2 * areax) )
-    elseif lt == LIGHT_TYPE.DISK then return power / (4 * areax * areax * math.pi * math.pi)
-    elseif lt == LIGHT_TYPE.RECT then return power / (4 * math.pi * areax * areay)
+    local basicIntensity = power / (4 * math.pi)
+
+    if lt == LIGHT_TYPE.POINT then return basicIntensity
+    elseif lt == LIGHT_TYPE.SPOT then return basicIntensity -- div 4 for power sync
+    elseif lt == LIGHT_TYPE.SPHERE then return basicIntensity / (areax * areax * math.pi)
+    elseif lt == LIGHT_TYPE.TUBE then return basicIntensity / ( 0.5 * math.pi * areax *(areay + 2 * areax) )
+    elseif lt == LIGHT_TYPE.DISK then return basicIntensity / (areax * areax * math.pi)
+    elseif lt == LIGHT_TYPE.RECT then return basicIntensity / (areax * areay)
     end
 end
 
-function EntityTypes.LocalLight.LumIntensityToLumPower(intensity, ent, world)
+function EntityTypes.LocalLight.LumIntensityToLumPower(intensity, ent, world) -- TODO: move intensity calc code in c++ from lua
     local lt = world.light:GetType(ent) + 1
     local areax = world.light:GetAreaX(ent)
     local areay = world.light:GetAreaY(ent)
 
-    if lt == LIGHT_TYPE.POINT then return intensity * (4 * math.pi)
-    elseif lt == LIGHT_TYPE.SPOT then return intensity * (4 * math.pi)
-    elseif lt == LIGHT_TYPE.SPHERE then return intensity * (4 * areax * areax * math.pi * math.pi)
-    elseif lt == LIGHT_TYPE.TUBE then return intensity * ( 2 * math.pi * math.pi * areax *(areay + 2 * areax) )
-    elseif lt == LIGHT_TYPE.DISK then return intensity * (4 * areax * areax * math.pi * math.pi)
-    elseif lt == LIGHT_TYPE.RECT then return intensity * (4 * math.pi * areax * areay)
+    local basicPower = intensity * (4 * math.pi)
+
+    if lt == LIGHT_TYPE.POINT then return basicPower
+    elseif lt == LIGHT_TYPE.SPOT then return basicPower
+    elseif lt == LIGHT_TYPE.SPHERE then return basicPower * (areax * areax * math.pi)
+    elseif lt == LIGHT_TYPE.TUBE then return basicPower * ( 0.5 * math.pi * areax *(areay + 2 * areax) )
+    elseif lt == LIGHT_TYPE.DISK then return basicPower * (areax * areax * math.pi)
+    elseif lt == LIGHT_TYPE.RECT then return basicPower * (areax * areay)
     end
 end

@@ -32,6 +32,7 @@ namespace EngineCore
 
 		XMFLOAT3 color;
 		float brightness;
+		float nonAreaBrightness;
 		float range;
 		XMFLOAT2 area; 
 		XMFLOAT2 cone; // x - in, y - out
@@ -46,6 +47,7 @@ namespace EngineCore
 		XMFLOAT3 dir_side;
 
 		XMFLOAT4 hdr_color;
+		XMFLOAT4 nonAreaColor;
 		float rangeInvSqr;
 		XMFLOAT2 cone_data;
 
@@ -82,6 +84,7 @@ namespace EngineCore
 			res->active = true;
 			res->color = XMFLOAT3(0,0,0);
 			res->brightness = 1.0f;
+			res->nonAreaBrightness = 1.0f;
 
 			UpdateLightProps(e);
 			initShadows(e, res);
@@ -206,6 +209,8 @@ namespace EngineCore
 		}
 
 	private:
+		void calcNonAreaBrightness(LightComponent& comp);
+
 		inline void updateSpot(LightComponent& comp);
 		inline void updatePoint(LightComponent& comp);
 
