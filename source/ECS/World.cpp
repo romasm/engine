@@ -487,7 +487,8 @@ void World::Snapshot(ScenePipeline* scene)
 	m_lightSystem->RegShadowMaps();
 	m_globalLightSystem->RegShadowMaps();
 
-	scene->ResolveShadowmaps();
+	if(!scene->IsLighweight())
+		scene->ResolveShadowmaps();
 
 	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
 	m_lightSystem->RegToScene();
@@ -547,8 +548,12 @@ void World::Frame()
 	m_lightSystem->RegShadowMaps();
 	m_globalLightSystem->RegShadowMaps();
 
-	for(auto& it: m_scenes)
+	for(auto it: m_scenes)
+	{
+		if(it->IsLighweight())
+			continue;
 		it->ResolveShadowmaps();
+	}
 
 	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
 	m_lightSystem->RegToScene();

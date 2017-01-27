@@ -45,7 +45,6 @@ void ShaderMgr::PreloadShaders()
 {
 	GetShader(string(SP_MATERIAL_DEPTH_OPAC_DIR), true);
 	GetShader(string(SP_MATERIAL_DEFFERED_OPAC_DIR), true);
-	GetShader(string(SP_MATERIAL_DEFFERED_OPAC_SIMPLE), true);
 	GetShader(string(SP_MATERIAL_HBAO), true);
 	GetShader(string(SP_MATERIAL_HBAO_PERPECTIVE_CORRECT), true);
 	GetShader(string(SP_MATERIAL_AO), true);
@@ -129,7 +128,8 @@ uint16_t ShaderMgr::AddShaderToList(string& name, bool simple)
 		_DELETE(handle.shader);
 		return SHADER_NULL;
 	}
-	LOG("Shader loaded %s", name.c_str());
+	else
+		LOG("Shader loaded %s", name.c_str());
 
 	handle.name = name;
 	handle.refcount = 1;

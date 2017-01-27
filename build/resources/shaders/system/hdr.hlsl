@@ -292,7 +292,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
 		} 
 	}           
-	                 
+
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	

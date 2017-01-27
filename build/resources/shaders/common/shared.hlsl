@@ -70,3 +70,8 @@ float2 UVforSamplePow2(float2 uv)
 {
 	return uv * g_uvCorrectionForPow2;
 }
+
+float2 pixelCoordsFromThreadID(uint3 threadID)
+{
+	return g_PixSize.xy * (float2(threadID.xy) + 0.5f);
+}

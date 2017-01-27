@@ -88,6 +88,9 @@ ScenePipeline::ScenePipeline()
 	cameraExposure = 0.0f;
 
 	current_camera = nullptr;
+
+	defferedOpaqueCompute = nullptr;
+	defferedConfigBuffer = nullptr;
 }
 
 ScenePipeline::~ScenePipeline()
@@ -103,6 +106,11 @@ void ScenePipeline::Close()
 	CloseRts();
 	CloseAvgRt();
 	
+	TEXTURE_DROP(textureIBLLUT);
+
+	_DELETE(defferedOpaqueCompute);
+	_RELEASE(defferedConfigBuffer);
+
 	_RELEASE(lightSpotBuffer);
 	_RELEASE(lightPointBuffer);
 	_RELEASE(lightDirBuffer);
@@ -212,6 +220,12 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 	Materials[0].ss_distortion = 0;
 	Materials[0].ss_indirect_translucency = 0;
 	Materials[0].subscattering = 0;
+	
+	defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
+	defferedConfigBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(DefferedConfigData), true);
+	ZeroMemory(&defferedConfigData, sizeof(DefferedConfigData));
+
+	textureIBLLUT = TEXTURE(string(TEX_PBSENVLUT));
 
 	if(!InitAvgRt())
 		return false;
@@ -375,9 +389,9 @@ bool ScenePipeline::InitRts()
 	// OPAQUE
 	rt_OpaqueDefferedDirect = new RenderTarget;
 	if(!rt_OpaqueDefferedDirect->Init(width, height))return false;
-	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0))return false; // diffuse, second specular
-	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false; // specular, second specular
-	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32_FLOAT))return false; // second specular
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0, true))return false; // diffuse, second specular
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 1, true))return false; // specular, second specular
+	if(!rt_OpaqueDefferedDirect->AddRT(DXGI_FORMAT_R32G32_FLOAT, 1, true))return false; // second specular
 
 	rt_OpaqueFinal = new RenderTarget;
 	if(!rt_OpaqueFinal->Init(width, height))return false;
@@ -459,10 +473,10 @@ bool ScenePipeline::InitRts()
 
 		sp_OpaqueDefferedDirect->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
 	}
-	else
+	/*else
 	{
-		sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_SIMPLE);
-
+		sp_OpaqueDefferedDirect = new ScreenPlane(SHADER_DEFFERED_OPAC_IBL);
+		
 		sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
 		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 1);
 		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 2);
@@ -475,7 +489,7 @@ bool ScenePipeline::InitRts()
 		sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 9);
 		sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 10);
 		sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 11);
-	}	
+	}*/	
 
 	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
@@ -799,19 +813,11 @@ void ScenePipeline::LoadEnvProbs()
 	if(distProb.mipsCount == 0)
 		return;
 
-	if(!isLightweight)
-	{
-		sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
-		sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
-	}
-	else
-	{
-		sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 12);
-		sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 13);
-	}
-
+	sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
+	sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
 	sp_OpaqueDefferedDirect->SetFloat(float(distProb.mipsCount), 13);
-	
+
+		
 	// todo: distProb.matrix
 
 	/*D3D11_MAPPED_SUBRESOURCE mappedResourceEP;
@@ -1016,10 +1022,7 @@ void ScenePipeline::HiZMips()
 }
 
 void ScenePipeline::OpaqueDefferedStage()
-{
-	int t_width = EngineSettings::EngSets.wres;
-	int t_height = EngineSettings::EngSets.hres;
-	
+{	
 	PERF_GPU_TIMESTAMP(_HIZ_GEN);
 	HiZMips();
 
@@ -1044,7 +1047,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	// ao
 	PERF_GPU_TIMESTAMP(_AO);
 
-	rt_AO->ClearRenderTargets();
+	rt_AO->ClearRenderTargets(1.0f,1.0f,1.0f,1.0f);
 	rt_AO->SetRenderTarget();
 
 	Render::PSSetConstantBuffers(1, 1, &m_AOBuffer); 
@@ -1054,37 +1057,82 @@ void ScenePipeline::OpaqueDefferedStage()
 #ifdef AO_FILTER
 	g_AO->blur(rt_AO, 0, rt_HiZDepth->GetShaderResourceView(0));
 #endif
-	
+
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
-	
-	if(!isLightweight)
-		LoadLights();
-
-	LoadEnvProbs();
-	
+		
 	if(!isLightweight)
 	{
+		LoadLights();
+		LoadEnvProbs();
+
 		Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
+	
+		rt_OpaqueDefferedDirect->ClearRenderTargets();
+		rt_OpaqueDefferedDirect->SetRenderTarget();
+	
+		sp_OpaqueDefferedDirect->SetFloat(b_directDiff ? 1.0f : 0.0f, 14);
+		sp_OpaqueDefferedDirect->SetFloat(b_directSpec ? 1.0f : 0.0f, 15);
+		sp_OpaqueDefferedDirect->SetFloat(b_indirectDiff ? 1.0f : 0.0f, 16);
+		sp_OpaqueDefferedDirect->SetFloat(b_indirectSpec ? 1.0f : 0.0f, 17);
+
+		sp_OpaqueDefferedDirect->Draw();
 	}
 	else
 	{
-		Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
+		Render::OMUnsetRenderTargets();
+
+		rt_OpaqueDefferedDirect->ClearRenderTargets();
+
+		ID3D11ShaderResourceView* srvs[15];
+		srvs[0] = m_MaterialBuffer.srv;
+		srvs[1] = TEXTURE_GETPTR(textureIBLLUT);
+		srvs[2] = rt_OpaqueForward->GetShaderResourceView(0);
+		srvs[3] = rt_OpaqueForward->GetShaderResourceView(1);
+		srvs[4] = rt_OpaqueForward->GetShaderResourceView(2);
+		srvs[5] = rt_OpaqueForward->GetShaderResourceView(3);
+		srvs[6] = rt_OpaqueForward->GetShaderResourceView(4);
+		srvs[7] = rt_OpaqueForward->GetShaderResourceView(5);
+		srvs[8] = rt_OpaqueForward->GetShaderResourceView(6);
+		srvs[9] = rt_OpaqueForward->GetShaderResourceView(7);
+		srvs[10] = rt_HiZDepth->GetShaderResourceView(0);
+		srvs[11] = rt_AO->GetShaderResourceView(0);
+		srvs[12] = rt_SSR->GetShaderResourceView(0);
+		srvs[13] = nullptr;
+		srvs[14] = nullptr;
+				
+		auto& distProb = render_mgr->GetDistEnvProb();
+		if(distProb.mipsCount != 0)
+		{
+			srvs[13] = distProb.specCube;
+			srvs[14] = distProb.diffCube;
+		}
+
+		defferedConfigData.distMip = float(distProb.mipsCount);
+
+		defferedConfigData.dirDiff = b_directDiff ? 1.0f : 0.0f;
+		defferedConfigData.dirSpec = b_directSpec ? 1.0f : 0.0f;
+		defferedConfigData.indirDiff = b_indirectDiff ? 1.0f : 0.0f;
+		defferedConfigData.indirSpec = b_indirectSpec ? 1.0f : 0.0f;
+
+		Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
+	
+		Render::CSSetShaderResources(0, 15, srvs);
+
+		Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
+		Render::CSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
+		Render::CSSetConstantBuffers(2, 1, &defferedConfigBuffer); 
+		
+		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
+		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );
+		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(2) );
+
+		defferedOpaqueCompute->Dispatch(width/2, height/2, 1);
+		defferedOpaqueCompute->UnbindUAV();
 	}
-	
-	rt_OpaqueDefferedDirect->ClearRenderTargets();
-	rt_OpaqueDefferedDirect->SetRenderTarget();
-	
-	sp_OpaqueDefferedDirect->SetFloat(b_directDiff ? 1.0f : 0.0f, 14);
-	sp_OpaqueDefferedDirect->SetFloat(b_directSpec ? 1.0f : 0.0f, 15);
-	sp_OpaqueDefferedDirect->SetFloat(b_indirectDiff ? 1.0f : 0.0f, 16);
-	sp_OpaqueDefferedDirect->SetFloat(b_indirectSpec ? 1.0f : 0.0f, 17);
-
-	sp_OpaqueDefferedDirect->Draw();
-
 	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
 	// final 
 	rt_OpaqueFinal->ClearRenderTargets();

@@ -2,10 +2,6 @@
 #define PARALLAX_BOX 1
 #define PARALLAX_NONE 2
 
-float computeSpecularOcclusion( float NoV, float AO, float R ) // ????
-{
-	return saturate( PowAbs( NoV + AO , R ) - 1 + AO );
-}
 /* for skin
 const float SpecularPow = 8.0;
 float NdotV = dot(normal, view);
@@ -20,22 +16,6 @@ float computeDistanceBaseRoughness( float distInteresectionToShadedPoint, float 
 	return lerp( newLinearRoughness, linearRoughness, linearRoughness );
 }
 
-float3 getSpecularDominantDir( float3 N, float3 Refl, float R, float NoV ) // NOT per cubmap!!!!
-{
-	float smoothness = saturate(1 - R );
-	float lerpFactor = smoothness * ( sqrt( smoothness ) + R );
-	
-	return lerp(N, Refl, lerpFactor );
-}
-
-float3 getDiffuseDominantDir( float3 N, float3 V, float NoV , float R ) // NOT per cubmap!!!!
-{
-	float a = 1.02341f * R - 1.51174f;
-	float b = -0.511705f * R + 0.755868f;
-	float lerpFactor = saturate(( NoV * a + b) * R );
-	// The result is not normalized as we fetch in a cubemap
-	return lerp(N, V, lerpFactor );
-}
 /*
 float4 indirectDiffuseBRDF( float3 A, float3 N, float3 V, float NoV, float R, float mip, TextureCube diffuseCube )
 {

@@ -163,6 +163,10 @@ namespace EngineCore
 		// OM
 		inline static void OMSetRenderTargets(UINT NumViews, ID3D11RenderTargetView *const *ppRenderTargetViews, ID3D11DepthStencilView *pDepthStencilView)
 		{m_instance->m_pImmediateContext->OMSetRenderTargets(NumViews, ppRenderTargetViews, pDepthStencilView);}
+
+		static ID3D11RenderTargetView** rts_null;
+		inline static void OMUnsetRenderTargets()
+		{m_instance->m_pImmediateContext->OMSetRenderTargets(8, rts_null, nullptr);}
 	
 		inline static void OMSetRenderTargetsAndUnorderedAccessViews(UINT NumRTVs, 
 			ID3D11RenderTargetView *const *ppRenderTargetViews,

@@ -20,7 +20,6 @@ namespace EngineCore
 #define SP_MATERIAL_DEPTH_OPAC_DIR PATH_SHADERS "system/depth_copy_hiz"
 
 #define SP_MATERIAL_DEFFERED_OPAC_DIR PATH_SHADERS "system/deffered_opaque"
-#define SP_MATERIAL_DEFFERED_OPAC_SIMPLE PATH_SHADERS "system/deffered_opaque_simple"
 
 #define TEX_NOISE2D PATH_SYS_TEXTURES "noise2d" EXT_TEXTURE
 #define TEX_PBSENVLUT PATH_SYS_TEXTURES "pbs_env_lut" EXT_TEXTURE
@@ -53,6 +52,11 @@ namespace EngineCore
 #define SP_SHADER_SSR PATH_SHADERS "system/ssr_compute"
 
 #define SP_SHADER_SCREENSHOT PATH_SHADERS "system/scene_to_color_alpha"
+
+
+
+
+#define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
 
 	class ScenePipeline
 	{
@@ -96,12 +100,45 @@ namespace EngineCore
 			XMFLOAT3 g_CamFrust3;
 			float padding4;
 		};
+
+		struct DefferedConfigData
+		{
+			float spot_count;
+			float disk_count;
+			float rect_count;
+			float point_count;
+
+			float sphere_count;
+			float tube_count;
+			float dir_count;
+			float caster_spot_count;
+
+			float caster_disk_count;
+			float caster_rect_count;
+			float caster_point_count;
+			float caster_sphere_count;
+
+			float caster_tube_count;
+			float distMip;
+			float dirDiff;
+			float dirSpec;
+
+			float indirDiff;
+			float indirSpec;
+			float _padding0;
+			float _padding1;
+		};
 		
 	public:
 		ScenePipeline();
 		~ScenePipeline();
 
-		void ResolveShadowmaps() {render_mgr->shadowsRenderer->ResolveShadowMaps();}
+		inline void ResolveShadowmaps() 
+		{
+			render_mgr->shadowsRenderer->ResolveShadowMaps();
+		}
+
+		inline bool IsLighweight() {return isLightweight;}
 		
 		void HudStage();
 
@@ -323,9 +360,15 @@ namespace EngineCore
 		void CloseAvgRt();
 		void HiZMips();
 
+		uint32_t textureIBLLUT;
+
 		ID3D11Texture2D* sceneDepth;
 		ID3D11ShaderResourceView* sceneDepthSRV;
 		ID3D11DepthStencilView* sceneDepthDSV;
+
+		Compute* defferedOpaqueCompute;
+		DefferedConfigData defferedConfigData;
+		ID3D11Buffer* defferedConfigBuffer;
 		
 		CameraLink camera;
 		CameraComponent* current_camera;

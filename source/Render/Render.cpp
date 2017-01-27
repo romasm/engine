@@ -69,7 +69,8 @@ namespace EngineCore
 			.endNamespace();
 	}
 	
-	Render *Render::m_instance = nullptr;
+	Render* Render::m_instance = nullptr;
+	ID3D11RenderTargetView** Render::rts_null = nullptr;
 
 	Render::Render()
 	{
@@ -101,6 +102,10 @@ namespace EngineCore
 
 			BufferObj = nullptr;
 
+			rts_null = new ID3D11RenderTargetView*[8];
+			for(uint8_t i = 0; i < 8; i++)
+				rts_null[i] = nullptr;
+
 			RegLuaClass();
 		}
 		else
@@ -112,6 +117,7 @@ namespace EngineCore
 	Render::~Render()
 	{
 		m_instance = nullptr;
+		_DELETE(rts_null);
 	}
 	
 	bool Render::Init()

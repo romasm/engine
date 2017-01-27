@@ -50,6 +50,7 @@ void ShaderCodeMgr::PreloadPureCodes()
 	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT );
 	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE );
 	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE );
+	Compute::Preload( SHADER_DEFFERED_OPAQUE_IBL );
 }
 
 uint16_t ShaderCodeMgr::GetShaderCode(string& name, uint8_t type)

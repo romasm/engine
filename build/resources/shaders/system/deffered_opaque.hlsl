@@ -10,6 +10,7 @@ TECHNIQUE_DEFAULT
 #include "../common/shared.hlsl"
 #include "light_constants.hlsl"
 #include "../common/voxel_helpers.hlsl"
+#include "../common/ibl_helpers.hlsl"
 
 // DEBUG
 #define DEBUG_CASCADE_LIGHTS 0
