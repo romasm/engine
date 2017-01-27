@@ -141,3 +141,23 @@ struct VolumeData
 	float3 volumeOffset;
 	uint maxLevel;
 };
+
+struct GBufferData
+{
+	float3 albedo;
+	float3 reflectivity;
+	float2 roughness;
+	float3 emissive;
+	float3 subsurf;
+	float thickness;
+	float ao;
+	float4 ssr;
+
+	float3 normal;
+	float3 tangent;
+	float3 binormal;
+
+	float3 wpos;
+	float depth;
+	float3 vertex_normal;
+};

@@ -1,9 +1,6 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
-#include "../common/ibl_helpers.hlsl"
-#include "../common/common_helpers.hlsl"
-#include "light_constants.hlsl"
 
 #define GROUP_THREAD_COUNT 2
 
@@ -36,6 +33,11 @@ SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
+
+#define GBUFFER_READ
+#include "../common/ibl_helpers.hlsl"
+#include "../common/common_helpers.hlsl"
+#include "light_constants.hlsl"
 
 cbuffer camMove : register(b1)
 {
@@ -74,84 +76,51 @@ cbuffer configBuffer : register(b2)
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 {
 	float2 coords = pixelCoordsFromThreadID(threadID);
+	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
+	MaterialParamsStructBuffer materialParams = ReadMaterialParams(int2(threadID.xy));
 
-	// SAMPLE
-	const float4 albedo_roughY_Sample = gb_albedo_roughY.SampleLevel(samplerPointClamp, coords, 0);
-	const float4 TBN = gb_tbn.SampleLevel(samplerPointClamp, coords, 0);
-	const float2 vertex_normal_Sample = gb_vnXY.SampleLevel(samplerPointClamp, coords, 0).xy;
-	const float4 spec_roughX_Sample = gb_spec_roughX.SampleLevel(samplerPointClamp, coords, 0);
-	const float4 emiss_vnZ_Sample = gb_emiss_vnZ.SampleLevel(samplerPointClamp, coords, 0);
-	const float4 subsurf_thick_Sample = gb_subs_thick.SampleLevel(samplerPointClamp, coords, 0);
-	const float materiaAO_Sample = gb_ao.SampleLevel(samplerPointClamp, coords, 0).r;
-	const float sceneAO_Sample = dynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
-	const float depth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(coords), 0).r;
-	const float4 SSR = ssr_buf.SampleLevel(samplerPointClamp, coords, 0);
-	
-	const uint matID_objID = gb_mat_obj.Load(int3(threadID.x, threadID.y, 0));
-	const uint matID = GetMatID(matID_objID);
-	const uint objID = GetObjID(matID_objID);
-	MaterialParamsStructBuffer materialParams = MAT_PARAMS[matID];
-
-	// PREPARE DATA
-	float3 vertex_normal = float3(vertex_normal_Sample, emiss_vnZ_Sample.a);
-	const float3 wpos = GetWPos(coords, depth);
-	
-	float AO = min( materiaAO_Sample, sceneAO_Sample );	
-	
-	float3 normal;
-	float3 tangent;   
-	float3 binormal;
-	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);
-			
-	float3 albedo = albedo_roughY_Sample.rgb;
-	float3 spec = spec_roughX_Sample.rgb;
-	float3 emissive = emiss_vnZ_Sample.rgb;
-	float3 subsurf = subsurf_thick_Sample.rgb;
-	
-	float2 wildRoughnessXY = float2(spec_roughX_Sample.a, albedo_roughY_Sample.a);
-	
 	if(materialParams.unlit == 1)
 	{  
-		diffuseOutput[threadID.xy] = float4(emissive, 0);
+		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
 		return;
 	}
 		
-	float3 ViewVector = normalize(g_CamPos - wpos);
+	float3 ViewVector = normalize(g_CamPos - gbuffer.wpos);
 		
 	// IBL
-	float NoV = calculateNoV( normal, ViewVector );
-	float3 specularNormal = calculateAnisotropicNormal(wildRoughnessXY, normal, binormal, tangent, ViewVector);
+	float NoV = calculateNoV( gbuffer.normal, ViewVector );
+	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, ViewVector);
 		
-	float Roughness = clamp( min(wildRoughnessXY.x, wildRoughnessXY.y), 0.0001f, 0.9999f);
+	float Roughness = clamp( min(gbuffer.roughness.x, gbuffer.roughness.y), 0.0001f, 0.9999f);
 	
 	float3 envBrdf = envbrdfLUT.SampleLevel( samplerBilinearClamp, float2(NoV, Roughness), 0).xyz;
-	float3 specularBrdf = spec * envBrdf.x + saturate(50.0 * spec.g) * envBrdf.y;
-	float3 diffuseBrdf = albedo * envBrdf.z;
+	float3 specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
+	float3 diffuseBrdf = gbuffer.albedo * envBrdf.z;
 	
 	// SPECULAR
 	float3 specular = distantProbSpecular(samplerTrilinearWrap, envprobsDist, samplerBilinearWrap, envprobsDistDiff,
-		specularNormal, ViewVector, NoV, Roughness, sqrt(Roughness), distMip, vertex_normal);
+		specularNormal, ViewVector, NoV, Roughness, sqrt(Roughness), distMip, gbuffer.vertex_normal);
 
-	float SO = computeSpecularOcclusion(NoV, AO, Roughness);
+	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, Roughness);
 	specular *= specularBrdf * SO;
 	
-	float4 specularSecond = float4( (SSR.rgb * SO) * SSR.a, 1 - SSR.a );
+	float4 specularSecond = float4( (gbuffer.ssr.rgb * SO) * gbuffer.ssr.a, 1 - gbuffer.ssr.a );
 	specularSecond.rgb *= specularBrdf;
 
 	// DIFFUSE
-	float3 diffuse = distantProbDiffuse(samplerBilinearWrap, envprobsDistDiff, normal, ViewVector, NoV, Roughness);
-	diffuse *= diffuseBrdf * AO; 
+	float3 diffuse = distantProbDiffuse(samplerBilinearWrap, envprobsDistDiff, gbuffer.normal, ViewVector, NoV, Roughness);
+	diffuse *= diffuseBrdf * gbuffer.ao; 
 	
 	/*if(params.subscattering != 0)
 	{
 		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, ViewVector, ao, 0, envprobsDistDiff, 2, envprobsDist);
 	}*/   
 	// temp
-	if(subsurf_thick_Sample.a == 0.111f)
-		diffuse += subsurf.rgb * subsurf_thick_Sample.a;
+	if(gbuffer.thickness == 0.111f)
+		diffuse += gbuffer.subsurf * gbuffer.thickness;
 
 	// OUTPUT
-	diffuseOutput[threadID.xy] = float4( (emissive + diffuse) * indirDiff, specularSecond.r);
+	diffuseOutput[threadID.xy] = float4( (gbuffer.emissive + diffuse) * indirDiff, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular * indirSpec, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba; 
 }
