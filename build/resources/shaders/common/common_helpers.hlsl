@@ -13,23 +13,19 @@ GBufferData ReadGBuffer(sampler gbufferSampler, float2 coords)
 {
 	GBufferData res;
 
-	const float4 albedo_roughY_Sample = gb_albedo_roughY.SampleLevel(gbufferSampler, coords, 0);
-	const float4 TBN = gb_tbn.SampleLevel(gbufferSampler, coords, 0);
-	const float2 vertex_normal_Sample = gb_vnXY.SampleLevel(gbufferSampler, coords, 0).xy;
-	const float4 spec_roughX_Sample = gb_spec_roughX.SampleLevel(gbufferSampler, coords, 0);
-	const float4 emiss_vnZ_Sample = gb_emiss_vnZ.SampleLevel(gbufferSampler, coords, 0);
-	const float4 subsurf_thick_Sample = gb_subs_thick.SampleLevel(gbufferSampler, coords, 0);
-	const float materiaAO_Sample = gb_ao.SampleLevel(gbufferSampler, coords, 0).r;
-	const float sceneAO_Sample = dynamicAO.SampleLevel(gbufferSampler, coords, 0).r;
-	res.depth = gb_depth.SampleLevel(gbufferSampler, UVforSamplePow2(coords), 0).r;
-	res.ssr = ssr_buf.SampleLevel(gbufferSampler, coords, 0);
+	const float4 albedo_roughY_Sample = gb_AlbedoRoughnesY.SampleLevel(gbufferSampler, coords, 0);
+	const float4 TBN = gb_TBN.SampleLevel(gbufferSampler, coords, 0);
+	const float2 vertex_normal_Sample = gb_VertexNormalXY.SampleLevel(gbufferSampler, coords, 0).xy;
+	const float4 spec_roughX_Sample = gb_ReflectivityRoughnessX.SampleLevel(gbufferSampler, coords, 0);
+	const float4 emiss_vnZ_Sample = gb_EmissiveVertexNormalZ.SampleLevel(gbufferSampler, coords, 0);
+	const float4 subsurf_thick_Sample = gb_SubsurfaceThickness.SampleLevel(gbufferSampler, coords, 0);
+	res.ao = gb_AmbientOcclusion.SampleLevel(gbufferSampler, coords, 0).r;
+	res.depth = gb_Depth.SampleLevel(gbufferSampler, UVforSamplePow2(coords), 0).r;
 	
 	// PREPARE DATA
 	res.vertex_normal = float3(vertex_normal_Sample, emiss_vnZ_Sample.a);
 	res.wpos = GetWPos(coords, res.depth);
-	
-	res.ao = min( materiaAO_Sample, sceneAO_Sample );	
-	
+		
 	DecodeTBNfromFloat4(res.tangent, res.binormal, res.normal, TBN);
 			
 	res.albedo = albedo_roughY_Sample.rgb;
@@ -37,18 +33,17 @@ GBufferData ReadGBuffer(sampler gbufferSampler, float2 coords)
 	res.emissive = emiss_vnZ_Sample.rgb;
 	res.subsurf = subsurf_thick_Sample.rgb;
 	res.thickness = subsurf_thick_Sample.a;
-	
 	res.roughness = float2(spec_roughX_Sample.a, albedo_roughY_Sample.a);
 
 	return res;
 }
 
-MaterialParamsStructBuffer ReadMaterialParams(int2 coords)
+MaterialParams ReadMaterialParams(uint2 pixelID)
 {
-	const uint matID_objID = gb_mat_obj.Load(int3(coords, 0));
+	const uint matID_objID = gb_MaterialObjectID.Load(int3(pixelID, 0));
 	const uint matID = GetMatID(matID_objID);
 	const uint objID = GetObjID(matID_objID);
-	MaterialParamsStructBuffer materialParams = MAT_PARAMS[matID];
+	MaterialParams materialParams = gb_MaterialParamsBuffer[matID];
 	return materialParams;
 }
 #endif

@@ -105,7 +105,7 @@ struct triple_vect
 	float3 zdir;
 };
 
-struct MaterialParamsStructBuffer
+struct MaterialParams
 {
 	uint unlit;
 	uint subscattering;
@@ -151,7 +151,6 @@ struct GBufferData
 	float3 subsurf;
 	float thickness;
 	float ao;
-	float4 ssr;
 
 	float3 normal;
 	float3 tangent;

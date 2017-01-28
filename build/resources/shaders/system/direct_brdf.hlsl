@@ -91,7 +91,7 @@ float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)
 	return Diffuse_Burley( A, R, NoV, NoL, VoH );
 }
 
-float3 directSubScattering(float3 color, MaterialParamsStructBuffer params, float3 L, float3 N, float3 V)
+float3 directSubScattering(float3 color, MaterialParams params, float3 L, float3 N, float3 V)
 {
 	float3 vLight = L + N * params.ss_distortion;
 	float VoL = pow(saturate(dot(V, -vLight)), params.ss_direct_pow) * params.ss_direct_translucency;

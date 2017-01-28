@@ -23,152 +23,153 @@
 
 namespace EngineCore
 {
+	// for deffered
 	struct SpotLightBuffer
 	{
-		XMFLOAT4 Pos_Range[LIGHT_SPOT_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[LIGHT_SPOT_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[LIGHT_SPOT_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+	};
+
+	struct DiskLightBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 AreaInfoEmpty;
+		XMFLOAT4 VirtposEmpty;
+	};
+
+	struct RectLightBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 DirUpAreaX;
+		XMFLOAT4 DirSideAreaY;
+		XMFLOAT4 VirtposAreaZ;
 	};
 
 	struct SpotCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[CASTER_SPOT_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[CASTER_SPOT_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[CASTER_SPOT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress[CASTER_SPOT_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams[CASTER_SPOT_FRAME_MAX];
-		XMMATRIX ViewProj[CASTER_SPOT_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 ShadowmapAdress;
+		XMFLOAT4 ShadowmapParams;
+		XMMATRIX matViewProj;
 	};
 
-	struct SpotLightDiskBuffer
+	struct DiskCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[LIGHT_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[LIGHT_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[LIGHT_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 AreaInfo_Empty[LIGHT_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Virtpos_Empty[LIGHT_SPOT_DISK_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 AreaInfoEmpty;
+		XMFLOAT4 VirtposEmpty;
+		XMFLOAT4 ShadowmapAdress;
+		XMFLOAT4 ShadowmapParams;
+		XMMATRIX matViewProj;
 	};
 
-	struct SpotCasterDiskBuffer
+	struct RectCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 AreaInfo_Empty[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 Virtpos_Empty[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress[CASTER_SPOT_DISK_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams[CASTER_SPOT_DISK_FRAME_MAX];
-		XMMATRIX ViewProj[CASTER_SPOT_DISK_FRAME_MAX];
-	};
-	
-	struct SpotLightRectBuffer
-	{
-		XMFLOAT4 Pos_Range[LIGHT_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[LIGHT_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[LIGHT_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 DirUp_AreaX[LIGHT_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 DirSide_AreaY[LIGHT_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Virtpos_AreaZ[LIGHT_SPOT_RECT_FRAME_MAX];
-	};
-
-	struct SpotCasterRectBuffer
-	{
-		XMFLOAT4 Pos_Range[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Color_ConeX[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Dir_ConeY[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 DirUp_AreaX[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 DirSide_AreaY[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 Virtpos_AreaZ[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress[CASTER_SPOT_RECT_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams[CASTER_SPOT_RECT_FRAME_MAX];
-		XMMATRIX ViewProj[CASTER_SPOT_RECT_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorConeX;
+		XMFLOAT4 DirConeY;
+		XMFLOAT4 DirUpAreaX;
+		XMFLOAT4 DirSideAreaY;
+		XMFLOAT4 VirtposAreaZ;
+		XMFLOAT4 ShadowmapAdress;
+		XMFLOAT4 ShadowmapParams;
+		XMMATRIX matViewProj;
 	};
 
 	struct PointLightBuffer
 	{
-		XMFLOAT4 Pos_Range[LIGHT_POINT_FRAME_MAX];
-		XMFLOAT4 Color[LIGHT_POINT_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 Color;
+	};
+
+	struct SphereLightBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorEmpty;
+		XMFLOAT4 AreaInfoEmpty;
+	};
+
+	struct TubeLightBuffer
+	{
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorEmpty;
+		XMFLOAT4 AreaInfo;
+		XMFLOAT4 DirAreaA;
 	};
 
 	struct PointCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 Color_ShParams[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams0[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams1[CASTER_POINT_FRAME_MAX];
-		XMMATRIX Proj[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress0[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress1[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress2[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress3[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress4[CASTER_POINT_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress5[CASTER_POINT_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorShParams;
+		XMFLOAT4 ShadowmapParams0;
+		XMFLOAT4 ShadowmapParams1;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMFLOAT4 ShadowmapAdress4;
+		XMFLOAT4 ShadowmapAdress5;
+		XMMATRIX matProj;
 	};
 
-	struct PointLightSphereBuffer
+	struct SphereCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[LIGHT_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 Color_Empty[LIGHT_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 AreaInfo_Empty[LIGHT_POINT_SPHERE_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorShParams;
+		XMFLOAT4 AreaInfoShParams;
+		XMFLOAT4 ShadowmapParams;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMFLOAT4 ShadowmapAdress4;
+		XMFLOAT4 ShadowmapAdress5;
+		XMMATRIX matProj;
 	};
 
-	struct PointCasterSphereBuffer
+	struct TubeCasterBuffer
 	{
-		XMFLOAT4 Pos_Range[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 Color_ShParams[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 AreaInfo_ShParams[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMMATRIX Proj[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress0[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress1[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress2[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress3[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress4[CASTER_POINT_SPHERE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress5[CASTER_POINT_SPHERE_FRAME_MAX];
-	};
-
-	struct PointLightTubeBuffer
-	{
-		XMFLOAT4 Pos_Range[LIGHT_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 Color_Empty[LIGHT_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 AreaInfo[LIGHT_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 Dir_AreaA[LIGHT_POINT_TUBE_FRAME_MAX];
-	};
-	
-	struct PointCasterTubeBuffer
-	{
-		XMFLOAT4 Pos_Range[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 Color_ShParams[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 AreaInfo[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 Dir_AreaA[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams0[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapParams1[CASTER_POINT_TUBE_FRAME_MAX];
-		XMMATRIX Proj[CASTER_POINT_TUBE_FRAME_MAX];
-		XMMATRIX View[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress0[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress1[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress2[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress3[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress4[CASTER_POINT_TUBE_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress5[CASTER_POINT_TUBE_FRAME_MAX];
+		XMFLOAT4 PosRange;
+		XMFLOAT4 ColorShParams;
+		XMFLOAT4 AreaInfo;
+		XMFLOAT4 DirAreaA;
+		XMFLOAT4 ShadowmapParams0;
+		XMFLOAT4 ShadowmapParams1;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMFLOAT4 ShadowmapAdress4;
+		XMFLOAT4 ShadowmapAdress5;
+		XMMATRIX matProj;
+		XMMATRIX matView;
 	};
 
 	struct DirLightBuffer
 	{
-		XMFLOAT4 Color_AreaX[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 Dir_AreaY[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 Pos0[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 Pos1[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 Pos2[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 Pos3[LIGHT_DIR_FRAME_MAX];
-		XMMATRIX ViewProj0[LIGHT_DIR_FRAME_MAX];
-		XMMATRIX ViewProj1[LIGHT_DIR_FRAME_MAX];
-		XMMATRIX ViewProj2[LIGHT_DIR_FRAME_MAX];
-		XMMATRIX ViewProj3[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress0[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress1[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress2[LIGHT_DIR_FRAME_MAX];
-		XMFLOAT4 ShadowmapAdress3[LIGHT_DIR_FRAME_MAX];
+		XMFLOAT4 ColorAreaX;
+		XMFLOAT4 DirAreaY;
+		XMFLOAT4 Pos0;
+		XMFLOAT4 Pos1;
+		XMFLOAT4 Pos2;
+		XMFLOAT4 Pos3;
+		XMFLOAT4 ShadowmapAdress0;
+		XMFLOAT4 ShadowmapAdress1;
+		XMFLOAT4 ShadowmapAdress2;
+		XMFLOAT4 ShadowmapAdress3;
+		XMMATRIX matViewProj0;
+		XMMATRIX matViewProj1;
+		XMMATRIX matViewProj2;
+		XMMATRIX matViewProj3;
 	};
 
 	// voxels

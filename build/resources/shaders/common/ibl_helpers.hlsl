@@ -68,3 +68,27 @@ float3 distantProbDiffuse(sampler cubemapSampler, TextureCube cubemap, float3 N,
 	float3 dominantN = getDiffuseDominantDir(N, V, NoV, R );
 	return cubemap.SampleLevel( cubemapSampler, dominantN, 0 ).rgb;
 }
+
+float3 CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSampler, sampler cubeBlurredSampler, 
+							   float NoV, float R, float3 V, GBufferData gbuffer, float cubeMaxMip, 
+							   out float3 specular, out float3 diffuse)
+{
+	float3 envBrdf = g_envbrdfLUT.SampleLevel(lutSampler, float2(NoV, R), 0).xyz;
+	
+	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
+	float3 specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
+	
+	// SPECULAR
+	specular = distantProbSpecular(cubeSampler, g_envprobsDist, cubeBlurredSampler, g_envprobsDistBlurred,
+		specularNormal, V, NoV, R, sqrt(R), cubeMaxMip, gbuffer.vertex_normal);
+
+	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, R);
+	specular *= specularBrdf * SO;
+	
+	// DIFFUSE
+	float3 diffuseBrdf = gbuffer.albedo * envBrdf.z;
+	diffuse = distantProbDiffuse(cubeSampler, g_envprobsDistBlurred, gbuffer.normal, V, NoV, R);
+	diffuse *= diffuseBrdf * gbuffer.ao; 
+
+	return specularBrdf;
+}

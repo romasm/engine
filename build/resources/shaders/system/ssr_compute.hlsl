@@ -9,7 +9,7 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
 
-StructuredBuffer<MaterialParamsStructBuffer> MAT_PARAMS : register(t0);
+StructuredBuffer<MaterialParams> MAT_PARAMS : register(t0);
 
 Texture2D <float4> gb_normal : register(t1); 
 Texture2D <float4> gb_roughnessX : register(t2); 
@@ -386,7 +386,7 @@ float4 SSR(PI_PosTex input) : SV_TARGET
 	 
 	const uint matID_objID = gb_mat_obj.Load(int3(pixCoords, 0));  
 	const uint matID = GetMatID(matID_objID); 
-	MaterialParamsStructBuffer params = MAT_PARAMS[matID];   
+	MaterialParams params = MAT_PARAMS[matID];   
 	if(params.unlit == 1)          
 		return 0; 
 	

@@ -1089,18 +1089,18 @@ void ScenePipeline::OpaqueDefferedStage()
 
 		ID3D11ShaderResourceView* srvs[15];
 		srvs[0] = m_MaterialBuffer.srv;
-		srvs[1] = TEXTURE_GETPTR(textureIBLLUT);
-		srvs[2] = rt_OpaqueForward->GetShaderResourceView(0);
-		srvs[3] = rt_OpaqueForward->GetShaderResourceView(1);
-		srvs[4] = rt_OpaqueForward->GetShaderResourceView(2);
-		srvs[5] = rt_OpaqueForward->GetShaderResourceView(3);
-		srvs[6] = rt_OpaqueForward->GetShaderResourceView(4);
-		srvs[7] = rt_OpaqueForward->GetShaderResourceView(5);
-		srvs[8] = rt_OpaqueForward->GetShaderResourceView(6);
-		srvs[9] = rt_OpaqueForward->GetShaderResourceView(7);
-		srvs[10] = rt_HiZDepth->GetShaderResourceView(0);
-		srvs[11] = rt_AO->GetShaderResourceView(0);
-		srvs[12] = rt_SSR->GetShaderResourceView(0);
+		srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
+		srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
+		srvs[3] = rt_OpaqueForward->GetShaderResourceView(2);
+		srvs[4] = rt_OpaqueForward->GetShaderResourceView(3);
+		srvs[5] = rt_OpaqueForward->GetShaderResourceView(4);
+		srvs[6] = rt_OpaqueForward->GetShaderResourceView(5);
+		srvs[7] = rt_OpaqueForward->GetShaderResourceView(6);
+		srvs[8] = rt_OpaqueForward->GetShaderResourceView(7);
+		srvs[9] = rt_HiZDepth->GetShaderResourceView(0);
+		srvs[10] = rt_AO->GetShaderResourceView(0);
+		srvs[11] = rt_SSR->GetShaderResourceView(0);
+		srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
 		srvs[13] = nullptr;
 		srvs[14] = nullptr;
 				

@@ -1,81 +1,54 @@
-TECHNIQUE_DEFAULT
-{
-	VertexShader = "../resources/shaders/system/screen_plane Main";
-	PixelShader = "DefferedLighting";
-}
-
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
 #include "light_constants.hlsl"
 #include "../common/voxel_helpers.hlsl"
-#include "../common/ibl_helpers.hlsl"
+#include "direct_brdf.hlsl"
+
+#define GROUP_THREAD_COUNT 2
 
 // DEBUG
 #define DEBUG_CASCADE_LIGHTS 0
-////////
-
-#define LIGHT_SPOT_FRAME_MAX 128
-#define LIGHT_SPOT_DISK_FRAME_MAX 128
-#define LIGHT_SPOT_RECT_FRAME_MAX 128
-#define LIGHT_POINT_FRAME_MAX 128
-#define LIGHT_POINT_SPHERE_FRAME_MAX 128
-#define LIGHT_POINT_TUBE_FRAME_MAX 128
-#define LIGHT_DIR_FRAME_MAX 8
-#define LIGHT_DIR_NUM_CASCADES 4
-
-#define CASTER_SPOT_FRAME_MAX 64
-#define CASTER_SPOT_DISK_FRAME_MAX 64
-#define CASTER_SPOT_RECT_FRAME_MAX 64
-#define CASTER_POINT_FRAME_MAX 32
-#define CASTER_POINT_SPHERE_FRAME_MAX 32
-#define CASTER_POINT_TUBE_FRAME_MAX 32
-
-#define SHADOW_NEARCLIP 0.01
-
-#define SHADOWS_BUFFER_RES 4096
-#define SHADOWS_MAXRES 2048
-#define SHADOWS_MINRES 64
-
-#define SHADOWS_RES_BIAS_SCALE SHADOWS_MAXRES / 2
-
-// from c++
-StructuredBuffer<MaterialParamsStructBuffer> MAT_PARAMS : register(t0);
-
-// from material configs
-//Texture2D noiseTex : register(t1);  
-//#define noiseResInv 1.0/512
-Texture2D envbrdfLUT : register(t1);
-#define DFG_TEXTURE_SIZE 256
-#define NOV_MIN 0.5f/DFG_TEXTURE_SIZE
-#define NOV_MAX 1.0f - NOV_MIN
- 
-Texture2DArray <float> shadows: register(t2); 
-
-Texture2D <float4> gb_albedo_roughY : register(t3); 
-Texture2D <float4> gb_tbn : register(t4); 
-Texture2D <float2> gb_vnXY : register(t5); 
-Texture2D <float4> gb_spec_roughX : register(t6); 
-Texture2D <float4> gb_emiss_vnZ : register(t7); 
-Texture2D <uint> gb_mat_obj : register(t8); 
-Texture2D <float4> gb_subs_thick : register(t9); 
-Texture2D <float> gb_ao : register(t10); 
-Texture2D <float2> gb_depth : register(t11);
-
-Texture2D <float> dynamicAO : register(t12); 
-Texture2D <float4> ssr_buf : register(t13); 
-
-TextureCube envprobsDist : register(t14); 
-TextureCube envprobsDistDiff : register(t15); 
-
-Texture3D <float4> volumeEmittance : register(t16); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 SamplerState samplerBilinearVolumeClamp : register(s4);
+
+// GBUFFER
+#define GBUFFER_READ
+
+StructuredBuffer<MaterialParams> gb_MaterialParamsBuffer : register(t0);
+
+Texture2D <float4> gb_AlbedoRoughnesY : register(t1); 
+Texture2D <float4> gb_TBN : register(t2); 
+Texture2D <float2> gb_VertexNormalXY : register(t3); 
+Texture2D <float4> gb_ReflectivityRoughnessX : register(t4); 
+Texture2D <float4> gb_EmissiveVertexNormalZ : register(t5); 
+Texture2D <uint> gb_MaterialObjectID : register(t6); 
+Texture2D <float4> gb_SubsurfaceThickness : register(t7); 
+Texture2D <float> gb_AmbientOcclusion : register(t8); 
+Texture2D <float2> gb_Depth : register(t9);
+
+#include "../common/common_helpers.hlsl"
+
+
+Texture2D <float> DynamicAO : register(t10); 
+Texture2D <float4> SSRTexture : register(t11); 
+
+
+Texture2D g_envbrdfLUT : register(t12);
+TextureCube g_envprobsDist : register(t13); 
+TextureCube g_envprobsDistBlurred : register(t14); 
+
+#include "../common/ibl_helpers.hlsl"
+
+
+Texture2DArray <float> shadows: register(t15); 
+
+Texture3D <float4> volumeEmittance : register(t16); 
+
 
 #define normalShadowOffsetSpot 2
 #define shadowBiasSpotArea 0.0008 
@@ -94,157 +67,30 @@ SamplerState samplerBilinearVolumeClamp : register(s4);
 //#define shadowBiasDir2 0.00003
 //#define shadowBiasDir3 0.00015
 
-#include "direct_brdf.hlsl"
-#include "indirect_brdf.hlsl"
+StructuredBuffer<SpotLightBuffer> spotLightBuffer : register(t17); 
+StructuredBuffer<DiskLightBuffer> diskLightBuffer : register(t18); 
+StructuredBuffer<RectLightBuffer> rectLightBuffer : register(t19); 
 
-cbuffer SpotLights : register(b1) 
-{
-	float4 Spot_Pos_Range[LIGHT_SPOT_FRAME_MAX]; // 6 144
-	float4 Spot_Color_ConeX[LIGHT_SPOT_FRAME_MAX];
-	float4 Spot_Dir_ConeY[LIGHT_SPOT_FRAME_MAX];
-	
-	float4 Disk_Pos_Range[LIGHT_SPOT_DISK_FRAME_MAX]; // 10 240
-	float4 Disk_Color_ConeX[LIGHT_SPOT_DISK_FRAME_MAX];
-	float4 Disk_Dir_ConeY[LIGHT_SPOT_DISK_FRAME_MAX];
-	float4 Disk_AreaInfo_Empty[LIGHT_SPOT_DISK_FRAME_MAX];
-	float4 Disk_Virtpos_Empty[LIGHT_SPOT_DISK_FRAME_MAX];
-	
-	float4 Rect_Pos_Range[LIGHT_SPOT_RECT_FRAME_MAX]; // 12 288
-	float4 Rect_Color_ConeX[LIGHT_SPOT_RECT_FRAME_MAX];
-	float4 Rect_Dir_ConeY[LIGHT_SPOT_RECT_FRAME_MAX];
-	float4 Rect_DirUp_AreaX[LIGHT_SPOT_RECT_FRAME_MAX];
-	float4 Rect_DirSide_AreaY[LIGHT_SPOT_RECT_FRAME_MAX];
-	float4 Rect_Virtpos_AreaZ[LIGHT_SPOT_RECT_FRAME_MAX];
-};
+StructuredBuffer<SpotCasterBuffer> spotCasterBuffer : register(t20); 
+StructuredBuffer<DiskCasterBuffer> diskCasterBuffer : register(t21); 
+StructuredBuffer<RectCasterBuffer> rectCasterBuffer : register(t22); 
 
-cbuffer PointLights : register(b2) 
-{
-	float4 Point_Pos_Range[LIGHT_POINT_FRAME_MAX]; // 4 096
-	float4 Point_Color[LIGHT_POINT_FRAME_MAX];
-	
-	float4 Sphere_Pos_Range[LIGHT_POINT_SPHERE_FRAME_MAX]; // 6 144
-	float4 Sphere_Color_Empty[LIGHT_POINT_SPHERE_FRAME_MAX];
-	float4 Sphere_AreaInfo_Empty[LIGHT_POINT_SPHERE_FRAME_MAX];
-	
-	float4 Tube_Pos_Range[LIGHT_POINT_TUBE_FRAME_MAX]; // 8 192
-	float4 Tube_Color_Empty[LIGHT_POINT_TUBE_FRAME_MAX];
-	float4 Tube_AreaInfo[LIGHT_POINT_TUBE_FRAME_MAX];
-	float4 Tube_Dir_AreaA[LIGHT_POINT_TUBE_FRAME_MAX];
-};
+StructuredBuffer<PointLightBuffer> pointLightBuffer : register(t23); 
+StructuredBuffer<SphereLightBuffer> sphereLightBuffer : register(t24); 
+StructuredBuffer<TubeLightBuffer> tubeLightBuffer : register(t25); 
 
-cbuffer DirLights : register(b3)
-{
-	float4 Dir_Color_AreaX[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_Dir_AreaY[LIGHT_DIR_FRAME_MAX];
-	
-	float4 Dir_Pos0[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_Pos1[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_Pos2[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_Pos3[LIGHT_DIR_FRAME_MAX];
-	matrix Dir_ViewProj0[LIGHT_DIR_FRAME_MAX];
-	matrix Dir_ViewProj1[LIGHT_DIR_FRAME_MAX];
-	matrix Dir_ViewProj2[LIGHT_DIR_FRAME_MAX];
-	matrix Dir_ViewProj3[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_ShadowmapAdress0[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_ShadowmapAdress1[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_ShadowmapAdress2[LIGHT_DIR_FRAME_MAX];
-	float4 Dir_ShadowmapAdress3[LIGHT_DIR_FRAME_MAX];
-};
+StructuredBuffer<PointCasterBuffer> pointCasterBuffer : register(t26); 
+StructuredBuffer<SphereCasterBuffer> sphereCasterBuffer : register(t27); 
+StructuredBuffer<TubeCasterBuffer> tubeCasterBuffer : register(t28); 
 
-cbuffer SpotCasters : register(b4)
-{
-	float4 CastSpot_Pos_Range[CASTER_SPOT_FRAME_MAX];
-	float4 CastSpot_Color_ConeX[CASTER_SPOT_FRAME_MAX];
-	float4 CastSpot_Dir_ConeY[CASTER_SPOT_FRAME_MAX];
-	float4 CastSpot_ShadowmapAdress[CASTER_SPOT_FRAME_MAX];
-	float4 CastSpot_ShadowmapParams[CASTER_SPOT_FRAME_MAX];
-	matrix CastSpot_ViewProj[CASTER_SPOT_FRAME_MAX];
-};
+StructuredBuffer<DirLightBuffer> dirLightBuffer : register(t29); 
 
-cbuffer DiskCasters : register(b5)
-{
-	float4 CastDisk_Pos_Range[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_Color_ConeX[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_Dir_ConeY[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_AreaInfo_Empty[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_Virtpos_Empty[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_ShadowmapAdress[CASTER_SPOT_DISK_FRAME_MAX];
-	float4 CastDisk_ShadowmapParams[CASTER_SPOT_DISK_FRAME_MAX];
-	matrix CastDisk_ViewProj[CASTER_SPOT_DISK_FRAME_MAX];
-};
-
-cbuffer RectCasters : register(b6)
-{
-	float4 CastRect_Pos_Range[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_Color_ConeX[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_Dir_ConeY[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_DirUp_AreaX[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_DirSide_AreaY[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_Virtpos_AreaZ[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_ShadowmapAdress[CASTER_SPOT_RECT_FRAME_MAX];
-	float4 CastRect_ShadowmapParams[CASTER_SPOT_RECT_FRAME_MAX];
-	matrix CastRect_ViewProj[CASTER_SPOT_RECT_FRAME_MAX];
-};
-
-cbuffer PointCaster : register(b7)
-{
-	float4 CastPoint_Pos_Range[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_Color_ShParams[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapParams0[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapParams1[CASTER_POINT_FRAME_MAX];
-	matrix CastPoint_Proj[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress0[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress1[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress2[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress3[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress4[CASTER_POINT_FRAME_MAX];
-	float4 CastPoint_ShadowmapAdress5[CASTER_POINT_FRAME_MAX];
-};
-
-cbuffer SphereCaster : register(b8)
-{
-	float4 CastSphere_Pos_Range[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_Color_ShParams[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_AreaInfo_ShParams[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapParams[CASTER_POINT_SPHERE_FRAME_MAX];
-	matrix CastSphere_Proj[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress0[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress1[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress2[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress3[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress4[CASTER_POINT_SPHERE_FRAME_MAX];
-	float4 CastSphere_ShadowmapAdress5[CASTER_POINT_SPHERE_FRAME_MAX];
-};
-
-cbuffer TubeCaster : register(b9)
-{
-	float4 CastTube_Pos_Range[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_Color_ShParams[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_AreaInfo[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_Dir_AreaA[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapParams0[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapParams1[CASTER_POINT_TUBE_FRAME_MAX];
-	matrix CastTube_Proj[CASTER_POINT_TUBE_FRAME_MAX];
-	matrix CastTube_View[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress0[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress1[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress2[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress3[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress4[CASTER_POINT_TUBE_FRAME_MAX];
-	float4 CastTube_ShadowmapAdress5[CASTER_POINT_TUBE_FRAME_MAX];
-};
-
-cbuffer camMove : register(b10)
+cbuffer camMove : register(b1)
 {
 	float4x4 viewProjInv_ViewProjPrev;
 };
 
-cbuffer volumeBuffer : register(b11)
-{
-	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
-};
-
-cbuffer materialBuffer : register(b12)
+cbuffer configBuffer : register(b2)
 {
 	float spot_count;
 	float disk_count;
@@ -272,17 +118,37 @@ cbuffer materialBuffer : register(b12)
 	float _padding1;
 };
 
+cbuffer SpotLights : register(b3) 
+{
+	uint SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
+	uint DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
+	uint RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];
+	
+	uint SpotCastersIDs[CASTER_SPOT_FRAME_MAX];
+	uint DiskCastersIDs[CASTER_SPOT_DISK_FRAME_MAX];
+	uint RectCastersIDs[CASTER_SPOT_RECT_FRAME_MAX];
+
+	uint PointLightsIDs[LIGHT_POINT_FRAME_MAX];
+	uint SphereLightsIDs[LIGHT_POINT_SPHERE_FRAME_MAX];
+	uint TubeLightsIDs[LIGHT_POINT_TUBE_FRAME_MAX];
+
+	uint PointCastersIDs[CASTER_POINT_FRAME_MAX];
+	uint SphereCastersIDs[CASTER_POINT_SPHERE_FRAME_MAX];
+	uint TubeCastersIDs[CASTER_POINT_TUBE_FRAME_MAX];
+
+	uint DirLightsIDs[LIGHT_DIR_FRAME_MAX];
+};
+
+cbuffer volumeBuffer : register(b4)
+{
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+};
+
 #include "light_calc.hlsl"
 //#include "ssr.hlsl"
 
-struct PO_final
-{
-    float4 diffuse : SV_TARGET0;
-	float4 specular : SV_TARGET1;
-	float2 specularMore : SV_TARGET2;
-};
-
-PO_final DefferedLighting(PI_PosTex input)
+[numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
+void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {
 	PO_final res;
 	res.diffuse = 0;

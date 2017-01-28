@@ -5,53 +5,177 @@
 #define NORMAL_CLAMP_DOUBLE NORMAL_CLAMP * 2
 #define NORMAL_CLAMP_MUL 0.5 / NORMAL_CLAMP
 
-#define LIGHT_SHADOW_COUNT 64
-#define LIGHT_NO_SHADOW_COUNT 128
+#define LIGHT_SPOT_FRAME_MAX 128
+#define LIGHT_SPOT_DISK_FRAME_MAX 128
+#define LIGHT_SPOT_RECT_FRAME_MAX 128
+#define LIGHT_POINT_FRAME_MAX 128
+#define LIGHT_POINT_SPHERE_FRAME_MAX 128
+#define LIGHT_POINT_TUBE_FRAME_MAX 128
+#define LIGHT_DIR_FRAME_MAX 8
+#define LIGHT_DIR_NUM_CASCADES 4
 
-#define ENVPROBS_COUNT 32
+#define CASTER_SPOT_FRAME_MAX 64
+#define CASTER_SPOT_DISK_FRAME_MAX 64
+#define CASTER_SPOT_RECT_FRAME_MAX 64
+#define CASTER_POINT_FRAME_MAX 32
+#define CASTER_POINT_SPHERE_FRAME_MAX 32
+#define CASTER_POINT_TUBE_FRAME_MAX 32
 
-#define LIGHT_TYPE_POINT 0
-#define LIGHT_TYPE_POINT_1 1
-#define LIGHT_TYPE_POINT_2 2
-#define LIGHT_TYPE_POINT_3 3
-#define LIGHT_TYPE_POINT_4 4
-#define LIGHT_TYPE_POINT_5 5
-#define LIGHT_TYPE_SPOT 10
-#define LIGHT_TYPE_DIR 20
-#define LIGHT_TYPE_DIR_1 21
-#define LIGHT_TYPE_DIR_2 22
-#define LIGHT_TYPE_DIR_3 23
-#define LIGHT_TYPE_DIR_4 24
-#define LIGHT_TYPE_DIR_5 25
-#define LIGHT_TYPE_DIR_6 26
-#define LIGHT_TYPE_DIR_7 27
+#define SHADOW_NEARCLIP 0.01
 
-#define E_SHADOW_FILTER_NONE 0 
-#define E_SHADOW_FILTER_PENUMBRA 1
-#define E_SHADOW_FILTER_SOFTPCF 2
+#define SHADOWS_BUFFER_RES 4096
+#define SHADOWS_MAXRES 2048
+#define SHADOWS_MINRES 64
 
-struct d_light
+#define SHADOWS_RES_BIAS_SCALE SHADOWS_MAXRES / 2
+
+// for deffered
+struct SpotLightBuffer
 {
-    float4 Pos[LIGHT_NO_SHADOW_COUNT];
-	float4 Color[LIGHT_NO_SHADOW_COUNT];
-	float4 Params[LIGHT_NO_SHADOW_COUNT];// brightness, quadratic, constant, linear
-	float4 RangeConeType[LIGHT_NO_SHADOW_COUNT]; // 0 - point, 1 - spot, 2 - direct
-	float4 Dir[LIGHT_NO_SHADOW_COUNT]; // .a - empty
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
 };
 
-struct d_light_wshadows
+struct DiskLightBuffer
 {
-    float4 Pos[LIGHT_SHADOW_COUNT];// .a - lbr
-	float4 Color[LIGHT_SHADOW_COUNT];
-	float4 Params[LIGHT_SHADOW_COUNT];// quadratic, constant, linear, .a - bias
-	float4 RangeConeType[LIGHT_SHADOW_COUNT];// .a - type:
-	// 0, 1, 2, 3, 4, 5 - point
-	// 10 - spot 
-	// 20, 21, 22, 23, 24, 25, 26, 27 - direct
-	float4 Dir[LIGHT_SHADOW_COUNT]; // .a - FilterSamples
-	float4 Filter[LIGHT_SHADOW_COUNT]; // FilerType, SourceSize, 1/ShadowRes, NearClip
-	matrix lightViewMatrix[LIGHT_SHADOW_COUNT];
-    matrix lightProjectionMatrix[LIGHT_SHADOW_COUNT];
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 AreaInfoEmpty;
+	float4 VirtposEmpty;
+};
+
+struct RectLightBuffer
+{
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 DirUpAreaX;
+	float4 DirSideAreaY;
+	float4 VirtposAreaZ;
+};
+
+struct SpotCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 ShadowmapAdress;
+	float4 ShadowmapParams;
+	matrix matViewProj;
+};
+
+struct DiskCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 AreaInfoEmpty;
+	float4 VirtposEmpty;
+	float4 ShadowmapAdress;
+	float4 ShadowmapParams;
+	matrix matViewProj;
+};
+
+struct RectCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 DirUpAreaX;
+	float4 DirSideAreaY;
+	float4 VirtposAreaZ;
+	float4 ShadowmapAdress;
+	float4 ShadowmapParams;
+	matrix matViewProj;
+};
+
+struct PointLightBuffer
+{
+	float4 PosRange;
+	float4 Color;
+};
+
+struct SphereLightBuffer
+{
+	float4 PosRange;
+	float4 ColorEmpty;
+	float4 AreaInfoEmpty;
+};
+
+struct TubeLightBuffer
+{
+	float4 PosRange;
+	float4 ColorEmpty;
+	float4 AreaInfo;
+	float4 DirAreaA;
+};
+
+struct PointCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorShParams;
+	float4 ShadowmapParams0;
+	float4 ShadowmapParams1;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	float4 ShadowmapAdress4;
+	float4 ShadowmapAdress5;
+	matrix matProj;
+};
+
+struct SphereCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorShParams;
+	float4 AreaInfoShParams;
+	float4 ShadowmapParams;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	float4 ShadowmapAdress4;
+	float4 ShadowmapAdress5;
+	matrix matProj;
+};
+
+struct TubeCasterBuffer
+{
+	float4 PosRange;
+	float4 ColorShParams;
+	float4 AreaInfo;
+	float4 DirAreaA;
+	float4 ShadowmapParams0;
+	float4 ShadowmapParams1;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	float4 ShadowmapAdress4;
+	float4 ShadowmapAdress5;
+	matrix matProj;
+	matrix matView;
+};
+
+struct DirLightBuffer
+{
+	float4 ColorAreaX;
+	float4 DirAreaY;
+	float4 Pos0;
+	float4 Pos1;
+	float4 Pos2;
+	float4 Pos3;
+	float4 ShadowmapAdress0;
+	float4 ShadowmapAdress1;
+	float4 ShadowmapAdress2;
+	float4 ShadowmapAdress3;
+	matrix matViewProj0;
+	matrix matViewProj1;
+	matrix matViewProj2;
+	matrix matViewProj3;
 };
 
 // for voxel inject

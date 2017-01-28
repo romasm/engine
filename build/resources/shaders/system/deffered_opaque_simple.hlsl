@@ -1,6 +1,7 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
+#include "light_constants.hlsl"
 
 #define GROUP_THREAD_COUNT 2
 
@@ -8,36 +9,38 @@ RWTexture2D <float4> diffuseOutput : register(u0);
 RWTexture2D <float4> specularFirstOutput : register(u1);  
 RWTexture2D <float2> specularSecondOutput : register(u2);  
 
-StructuredBuffer<MaterialParamsStructBuffer> MAT_PARAMS : register(t0);
-
-Texture2D envbrdfLUT : register(t1);
- 
-Texture2D <float4> gb_albedo_roughY : register(t2); 
-Texture2D <float4> gb_tbn : register(t3); 
-Texture2D <float2> gb_vnXY : register(t4); 
-Texture2D <float4> gb_spec_roughX : register(t5); 
-Texture2D <float4> gb_emiss_vnZ : register(t6); 
-Texture2D <uint> gb_mat_obj : register(t7); 
-Texture2D <float4> gb_subs_thick : register(t8); 
-Texture2D <float> gb_ao : register(t9); 
-
-Texture2D <float2> gb_depth : register(t10);
-
-Texture2D <float> dynamicAO : register(t11); 
-Texture2D <float4> ssr_buf : register(t12); 
-
-TextureCube envprobsDist : register(t13); 
-TextureCube envprobsDistDiff : register(t14); 
-
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 
+// GBUFFER
 #define GBUFFER_READ
-#include "../common/ibl_helpers.hlsl"
+
+StructuredBuffer<MaterialParams> gb_MaterialParamsBuffer : register(t0);
+
+Texture2D <float4> gb_AlbedoRoughnesY : register(t1); 
+Texture2D <float4> gb_TBN : register(t2); 
+Texture2D <float2> gb_VertexNormalXY : register(t3); 
+Texture2D <float4> gb_ReflectivityRoughnessX : register(t4); 
+Texture2D <float4> gb_EmissiveVertexNormalZ : register(t5); 
+Texture2D <uint> gb_MaterialObjectID : register(t6); 
+Texture2D <float4> gb_SubsurfaceThickness : register(t7); 
+Texture2D <float> gb_AmbientOcclusion : register(t8); 
+Texture2D <float2> gb_Depth : register(t9);
+
 #include "../common/common_helpers.hlsl"
-#include "light_constants.hlsl"
+
+
+Texture2D <float> DynamicAO : register(t10); 
+Texture2D <float4> SSRTexture : register(t11); 
+
+
+Texture2D g_envbrdfLUT : register(t12);
+TextureCube g_envprobsDist : register(t13); 
+TextureCube g_envprobsDistBlurred : register(t14); 
+
+#include "../common/ibl_helpers.hlsl"
 
 cbuffer camMove : register(b1)
 {
@@ -75,50 +78,33 @@ cbuffer configBuffer : register(b2)
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 {
-	float2 coords = pixelCoordsFromThreadID(threadID);
+	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
-	MaterialParamsStructBuffer materialParams = ReadMaterialParams(int2(threadID.xy));
+	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
 	if(materialParams.unlit == 1)
 	{  
 		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
 		return;
 	}
-		
-	float3 ViewVector = normalize(g_CamPos - gbuffer.wpos);
-		
+
+	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
+	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
+	gbuffer.ao = min( SceneAO, gbuffer.ao );
+	
 	// IBL
+	float3 ViewVector = normalize(g_CamPos - gbuffer.wpos);
 	float NoV = calculateNoV( gbuffer.normal, ViewVector );
-	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, ViewVector);
-		
 	float Roughness = clamp( min(gbuffer.roughness.x, gbuffer.roughness.y), 0.0001f, 0.9999f);
-	
-	float3 envBrdf = envbrdfLUT.SampleLevel( samplerBilinearClamp, float2(NoV, Roughness), 0).xyz;
-	float3 specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
-	float3 diffuseBrdf = gbuffer.albedo * envBrdf.z;
-	
-	// SPECULAR
-	float3 specular = distantProbSpecular(samplerTrilinearWrap, envprobsDist, samplerBilinearWrap, envprobsDistDiff,
-		specularNormal, ViewVector, NoV, Roughness, sqrt(Roughness), distMip, gbuffer.vertex_normal);
 
-	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, Roughness);
-	specular *= specularBrdf * SO;
+	float3 specular, diffuse;
+	float3 specularBrdf = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
+		NoV, Roughness, ViewVector, gbuffer, distMip, specular, diffuse);
 	
-	float4 specularSecond = float4( (gbuffer.ssr.rgb * SO) * gbuffer.ssr.a, 1 - gbuffer.ssr.a );
+	// SSR
+	float4 specularSecond = float4( SSR.rgb * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
-
-	// DIFFUSE
-	float3 diffuse = distantProbDiffuse(samplerBilinearWrap, envprobsDistDiff, gbuffer.normal, ViewVector, NoV, Roughness);
-	diffuse *= diffuseBrdf * gbuffer.ao; 
 	
-	/*if(params.subscattering != 0)
-	{
-		res_diff.rgb += indirectSubScattering(subsurf.rgb, params, normal, ViewVector, ao, 0, envprobsDistDiff, 2, envprobsDist);
-	}*/   
-	// temp
-	if(gbuffer.thickness == 0.111f)
-		diffuse += gbuffer.subsurf * gbuffer.thickness;
-
 	// OUTPUT
 	diffuseOutput[threadID.xy] = float4( (gbuffer.emissive + diffuse) * indirDiff, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular * indirSpec, specularSecond.g);
