@@ -1,11 +1,4 @@
 
-struct LightCalcOutput
-{
-    float3 diffuse;
-	float3 specular;
-};
-
-///
 struct PI_Pos
 {
     float4 position			: SV_POSITION;   

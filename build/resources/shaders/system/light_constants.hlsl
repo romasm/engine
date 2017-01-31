@@ -29,6 +29,13 @@
 
 #define SHADOWS_RES_BIAS_SCALE SHADOWS_MAXRES / 2
 
+struct LightComponents
+{
+    float diffuse;
+	float specular;
+	float scattering;
+};
+
 struct LightsIDs
 {
 	uint SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];

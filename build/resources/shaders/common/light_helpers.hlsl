@@ -1,4 +1,6 @@
 
+#define NOH_EPCILON 0.00001f
+
 #define VOXEL_SHADOW_BIAS 0.00025
 
 #define VOXEL_SHADOW_AA 8
@@ -21,6 +23,7 @@ static const float2 reproj[2] =
 	float2(0.5f,0.5f)
 };
 
+// VOXEL GI
 float GetVoxelSpotShadow(sampler samp, Texture2DArray <float> shadowmap, float4 wpos, SpotVoxelBuffer lightData)
 {
 	float4 lightViewProjPos = mul(wpos, lightData.matViewProj);
@@ -109,7 +112,6 @@ float GetVoxelPointShadow(sampler samp, Texture2DArray <float> shadowmap, float4
 	return float(shmDepth > lightViewProjPos.z);
 }
 
-
 float GetVoxelDirShadow(sampler samp, Texture2DArray <float> shadowmap, float4 wpos, DirVoxelBuffer lightData)
 {
 	float4 adress = 0;
@@ -177,4 +179,41 @@ float getAngleAtt( float3 normalizedLightVector, float3 lightDir, float lightAng
 	float attenuation = saturate( cd * lightAngleScale + lightAngleOffset );
 	attenuation *= attenuation; // smoother???
 	return attenuation;
+}
+
+// LIGHTING
+bool CalculateSpotLight(in SpotLightBuffer lightData, in GBufferData gbuffer, in DataForLightCompute mData, float3 ViewVector, out LightComponents results)
+{
+	LightComponents results = LightComponents(0);
+		
+	const float3 unnormL = lightData.PosRange.xyz - gbuffer.wpos;
+	const float3 L = normalize(unnormL);
+		
+	const float DoUL = dot(lightData.DirConeY.xyz, -unnormL);
+	if(DoUL <= 0)
+		return false;
+		
+	float illuminance = getDistanceAtt( unnormL, lightData.PosRange.w );
+	if(illuminance == 0)
+		return false;
+
+	illuminance *= getAngleAtt(L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
+	if(illuminance == 0)
+		return false;
+		
+	const float3 colorIlluminance = illuminance * lightData.ColorConeX.rgb;
+		
+	const float NoL = saturate( dot(gbuffer.normal, L) );
+	if( NoL == 0.0f )
+	{
+		results.scattering = colorIlluminance;
+		return true;
+	}
+	
+	const float3 H = normalize( ViewVector + L );
+	const float VoH = saturate( dot(ViewVector, H) );
+	const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
+	
+	results.scattering = results.diffuse = results.specular = colorIlluminance * NoL;
+	return true;
 }
