@@ -29,6 +29,27 @@
 
 #define SHADOWS_RES_BIAS_SCALE SHADOWS_MAXRES / 2
 
+struct LightsIDs
+{
+	uint SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
+	uint DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
+	uint RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];
+	
+	uint SpotCastersIDs[CASTER_SPOT_FRAME_MAX];
+	uint DiskCastersIDs[CASTER_SPOT_DISK_FRAME_MAX];
+	uint RectCastersIDs[CASTER_SPOT_RECT_FRAME_MAX];
+
+	uint PointLightsIDs[LIGHT_POINT_FRAME_MAX];
+	uint SphereLightsIDs[LIGHT_POINT_SPHERE_FRAME_MAX];
+	uint TubeLightsIDs[LIGHT_POINT_TUBE_FRAME_MAX];
+
+	uint PointCastersIDs[CASTER_POINT_FRAME_MAX];
+	uint SphereCastersIDs[CASTER_POINT_SPHERE_FRAME_MAX];
+	uint TubeCastersIDs[CASTER_POINT_TUBE_FRAME_MAX];
+
+	uint DirLightsIDs[LIGHT_DIR_FRAME_MAX];
+};
+
 // for deffered
 struct SpotLightBuffer
 {

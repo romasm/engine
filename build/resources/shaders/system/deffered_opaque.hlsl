@@ -118,25 +118,9 @@ cbuffer configBuffer : register(b2)
 	float _padding1;
 };
 
-cbuffer SpotLights : register(b3) 
+cbuffer Lights : register(b3) 
 {
-	uint SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
-	uint DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
-	uint RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];
-	
-	uint SpotCastersIDs[CASTER_SPOT_FRAME_MAX];
-	uint DiskCastersIDs[CASTER_SPOT_DISK_FRAME_MAX];
-	uint RectCastersIDs[CASTER_SPOT_RECT_FRAME_MAX];
-
-	uint PointLightsIDs[LIGHT_POINT_FRAME_MAX];
-	uint SphereLightsIDs[LIGHT_POINT_SPHERE_FRAME_MAX];
-	uint TubeLightsIDs[LIGHT_POINT_TUBE_FRAME_MAX];
-
-	uint PointCastersIDs[CASTER_POINT_FRAME_MAX];
-	uint SphereCastersIDs[CASTER_POINT_SPHERE_FRAME_MAX];
-	uint TubeCastersIDs[CASTER_POINT_TUBE_FRAME_MAX];
-
-	uint DirLightsIDs[LIGHT_DIR_FRAME_MAX];
+	LightsIDs lightIDs;
 };
 
 cbuffer volumeBuffer : register(b4)
@@ -150,98 +134,43 @@ cbuffer volumeBuffer : register(b4)
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {
-	PO_final res;
-	res.diffuse = 0;
-	res.specular = 0;
-	res.specularMore = 0;
-	
-	int2 pixCoords = 0;
-	pixCoords.x = int(g_screenW * input.tex.x);
-	pixCoords.y = int(g_screenH * input.tex.y);
-	
-	const float4 albedo_roughY = gb_albedo_roughY.Sample(samplerPointClamp, input.tex);
-	const float4 TBN = gb_tbn.Sample(samplerPointClamp, input.tex);
-	
-	float3 vertex_normal;
-	vertex_normal.xy = gb_vnXY.Sample(samplerPointClamp, input.tex).xy;
-	
-	const float4 spec_roughX = gb_spec_roughX.Sample(samplerPointClamp, input.tex);
-	const float4 emiss_vnZ = gb_emiss_vnZ.Sample(samplerPointClamp, input.tex);
-	vertex_normal.z = emiss_vnZ.a;
-	
-	const uint matID_objID = gb_mat_obj.Load(int3(pixCoords, 0));
-	const float4 subsurf_thick = gb_subs_thick.Sample(samplerPointClamp, input.tex);
-	
-	float ao = min(gb_ao.Sample(samplerPointClamp, input.tex).r, dynamicAO.Sample(samplerPointClamp, input.tex).r);
-	//ao *= ao;
+	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
+	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
+	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
-	const float depth = gb_depth.Sample(samplerPointClamp, UVforSamplePow2(input.tex)).r;
-	
-	const uint matID = GetMatID(matID_objID);
-	const uint objID = GetObjID(matID_objID);
-	
-	const float3 wpos = GetWPos(input.tex, depth);
-	
-	MaterialParamsStructBuffer params = MAT_PARAMS[matID];
-	 
-	float3 normal;
-	float3 tangent;   
-	float3 binormal;
-	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);
-			
-	float3 albedo = albedo_roughY.rgb;
-	float3 spec = spec_roughX.rgb;
-	float3 emissive = emiss_vnZ.rgb;
-	
-	float2 wildRoughnessXY;
-	wildRoughnessXY.x = spec_roughX.a;
-	wildRoughnessXY.y = albedo_roughY.a;
-	//wildRoughnessXY = PowAbs(wildRoughnessXY, ROUGHNESS_REMAP);
-	
-	float3 subsurf = subsurf_thick.rgb;
-		
-	if(params.unlit == 1)
+	if(materialParams.unlit == 1)
 	{  
-		res.diffuse.rgb = emissive;
-		return res;
+		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
+		return;
 	}
-
-
-	//res.diffuse.rgb = pow(shadowsMips.SampleLevel(samplerPointClamp, float3(input.tex, 0), 7).g, 100);
-	//return res;
-	   
-	//res.diffuse.rgb = albedo;
-	//return res;
-	// ----------------- DIRECT -------------------------
 	
-	float2 roughnessXY;
-	roughnessXY.x = clamp(wildRoughnessXY.x,0.001f,0.9999f);
-	roughnessXY.y = clamp(wildRoughnessXY.y,0.001f,0.9999f);
-	float avgR = (roughnessXY.x + roughnessXY.y) * 0.5;
-	float aGGX = max(roughnessXY.x * roughnessXY.y, 0.1);
-	float sqr_aGGX = Square( aGGX );
+	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
+	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
+	gbuffer.ao = min( SceneAO, gbuffer.ao );
 	
-	LightCalcOutput Light;
-	Light.diffuse = 0;
-	Light.specular = 0;
+	// IBL
+	float3 ViewVector = g_CamPos - gbuffer.wpos;
+	const float linDepth = length(ViewVector);
+	ViewVector = ViewVector / linDepth;
 	
-	//float2 noise_coord = float2(input.tex.x * float(g_screenW)*noiseResInv, input.tex.y * float(g_screenH)*noiseResInv);	
-	 
-	float3 VtoWP = g_CamPos - wpos;
-	const float linDepth = length(VtoWP);
-	VtoWP = normalize(VtoWP);
-	  
+	// move to forward stage
 	// normal fix for gazaring angles TODO
-	float NoV = dot(normal, VtoWP);
-	float nFix = (-clamp(NoV, -1.0f, NORMAL_CLAMP) * NORMAL_CLAMP_MUL) + 0.5f;
-	//if(nFix != 0)
-	//	return res;     
-	normal = normalize(normal + VtoWP * NORMAL_CLAMP_DOUBLE * nFix);
-	NoV = saturate( dot(normal, VtoWP) );
-	 
+	//float NoV = dot(normal, VtoWP);
+	//float nFix = (-clamp(NoV, -1.0f, NORMAL_CLAMP) * NORMAL_CLAMP_MUL) + 0.5f;    
+	//normal = normalize(normal + VtoWP * NORMAL_CLAMP_DOUBLE * nFix);
 	//tangent = normalize(cross(cross(normal, tangent), normal));
 	//binormal = normalize(cross(cross(normal, binormal), binormal));
+	float NoV = calculateNoV( gbuffer.normal, ViewVector );
 	
+	// ----------------- DIRECT -------------------------
+	DataForLightCompute mData;
+	mData.R = gbuffer.roughness;
+	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
+	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
+	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
+	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
+	mData.sqr_aGGX = Square( mData.aGGX );
+		
 	float3 Refl = 2 * normal * NoV - VtoWP; 
 	
 	// SHADOW DEPTH FIX

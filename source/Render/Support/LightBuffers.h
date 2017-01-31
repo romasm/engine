@@ -22,7 +22,28 @@
 #define POINT_VOXEL_FRAME_MAX CASTER_POINT_FRAME_MAX + CASTER_POINT_SPHERE_FRAME_MAX + CASTER_POINT_TUBE_FRAME_MAX
 
 namespace EngineCore
-{
+{	
+	struct LightsIDs
+	{
+		uint32_t SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
+		uint32_t DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
+		uint32_t RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];
+	
+		uint32_t SpotCastersIDs[CASTER_SPOT_FRAME_MAX];
+		uint32_t DiskCastersIDs[CASTER_SPOT_DISK_FRAME_MAX];
+		uint32_t RectCastersIDs[CASTER_SPOT_RECT_FRAME_MAX];
+
+		uint32_t PointLightsIDs[LIGHT_POINT_FRAME_MAX];
+		uint32_t SphereLightsIDs[LIGHT_POINT_SPHERE_FRAME_MAX];
+		uint32_t TubeLightsIDs[LIGHT_POINT_TUBE_FRAME_MAX];
+
+		uint32_t PointCastersIDs[CASTER_POINT_FRAME_MAX];
+		uint32_t SphereCastersIDs[CASTER_POINT_SPHERE_FRAME_MAX];
+		uint32_t TubeCastersIDs[CASTER_POINT_TUBE_FRAME_MAX];
+
+		uint32_t DirLightsIDs[LIGHT_DIR_FRAME_MAX];
+	};
+		
 	// for deffered
 	struct SpotLightBuffer
 	{

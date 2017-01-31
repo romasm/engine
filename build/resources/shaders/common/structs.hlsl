@@ -160,3 +160,11 @@ struct GBufferData
 	float depth;
 	float3 vertex_normal;
 };
+
+struct DataForLightCompute
+{
+	float2 R;
+	float avgR;
+	float aGGX;
+	float sqr_aGGX;
+};
