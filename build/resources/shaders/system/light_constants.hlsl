@@ -31,9 +31,15 @@
 
 struct LightComponents
 {
-    float diffuse;
-	float specular;
-	float scattering;
+    float3 diffuse;
+	float3 specular;
+	float3 scattering;
+};
+
+struct ShadowHelpers
+{
+    float DoUL;
+	float3 L;
 };
 
 struct LightsIDs

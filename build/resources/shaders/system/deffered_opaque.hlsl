@@ -160,8 +160,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	//normal = normalize(normal + VtoWP * NORMAL_CLAMP_DOUBLE * nFix);
 	//tangent = normalize(cross(cross(normal, tangent), normal));
 	//binormal = normalize(cross(cross(normal, binormal), binormal));
-	float NoV = calculateNoV( gbuffer.normal, ViewVector );
-	
+
 	// ----------------- DIRECT -------------------------
 	DataForLightCompute mData;
 	mData.R = gbuffer.roughness;
@@ -170,8 +169,9 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
 	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
 	mData.sqr_aGGX = Square( mData.aGGX );
-		
-	float3 Refl = 2 * normal * NoV - VtoWP; 
+
+	mData.NoV = calculateNoV( gbuffer.normal, ViewVector );
+	mData.reflect = 2 * gbuffer.normal * mData.NoV - ViewVector; 
 	
 	// SHADOW DEPTH FIX
 #define NORMAL_OFFSET_MAX 10
@@ -186,112 +186,48 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	
 	float dirDepthFix = max(0.1 * linDepth, 1);
 	
+	LightComponents results = 0;
+
+	// TODO
+	// PrepareData
+	// CalcutateShadow
+	// CalculateLight
+
 	// spot
 	[loop]
 	for(uint i_spt=0; i_spt < uint(spot_count); i_spt++)
 	{
-		spotLightBuffer[ lightIDs.SpotLightsIDs[i_spt] ];
+		SpotLightBuffer lightData = spotLightBuffer[ lightIDs.SpotLightsIDs[i_spt] ];
 
-
-
-		const float4 pos_range = Spot_Pos_Range[i_spt];
-		const float4 color_conex = Spot_Color_ConeX[i_spt];
-		const float4 dir_coney = Spot_Dir_ConeY[i_spt];
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		const float3 L = normalize(unnormL);
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
+		LightComponents lightResult;
+		ShadowHelpers shadowHelpers;
+		[branch]
+		if( !CalculateSpotLight( lightData, gbuffer, mData, materialParams, ViewVector, lightResult, shadowHelpers ) )
 			continue;
 		
-		float illuminance = getDistanceAtt( unnormL, pos_range.w );
-		if(illuminance == 0)
-			continue;
-		illuminance *= getAngleAtt(L, -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(illuminance == 0)
-			continue;
-		
-		const float3 colorIlluminance = illuminance * color_conex.rgb;
-		
-		const float NoL = saturate(dot(normal, L));
-		if(NoL == 0.0f)
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
-			continue;
-		}
-		
-		const float3 H = normalize(VtoWP + L);
-		const float VoH = saturate(dot(VtoWP, H));
-		const float NoH = saturate( dot(normal, H) + 0.00001f );
-		
-		const float3 colorIlluminanceDir = colorIlluminance * NoL;
-		
-		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
+		results.diffuse += lightResult.diffuse;
+		results.specular += lightResult.specular;
+		results.scattering += lightResult.scattering;
 	}
 		
 	// caster spot
 	[loop]
 	for(uint ic_spt=0; ic_spt < uint(caster_spot_count); ic_spt++)
 	{
-		const float4 pos_range = CastSpot_Pos_Range[ic_spt];
-		const float4 color_conex = CastSpot_Color_ConeX[ic_spt];
-		const float4 dir_coney = CastSpot_Dir_ConeY[ic_spt];
-	
-		const float4 adress = CastSpot_ShadowmapAdress[ic_spt];
-		const float2 texelSize = CastSpot_ShadowmapParams[ic_spt].xy;
-		matrix vp_mat = CastSpot_ViewProj[ic_spt];
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
+		SpotCasterBuffer lightData = spotCasterBuffer[ lightIDs.SpotCastersIDs[ic_spt] ];
+
+		LightComponents lightResult;
+		ShadowHelpers shadowHelpers;
+		[branch]
+		if( !CalculateSpotLight( lightData, gbuffer, mData, materialParams, ViewVector, lightResult, shadowHelpers ) )
 			continue;
 		
-		float illuminance = getDistanceAtt( unnormL, pos_range.w );
-		if(illuminance == 0) 
-			continue;
+		float VNoL = dot(gbuffer.vertex_normal, shadowHelpers.L);
+		float light_blocked = SpotlightShadow(gbuffer.wpos, shadowHelpers.DoUL, gbuffer.vertex_normal, VNoL, lightData, shadowDepthFix);
 		
-		const float3 L = normalize(unnormL);
-			 
-		illuminance *= getAngleAtt(L, -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(illuminance == 0)
-			continue; 
-		
-		const float NoL = saturate(dot(normal, L));
-		float3 colorIlluminance = illuminance * color_conex.rgb;
-		
-		if(NoL == 0.0f) 
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
-			continue;
-		}
-	
-		float light_blocked = SpotlightShadow(float4(wpos,1.0f), DoUL, vertex_normal, dot(vertex_normal, L), vp_mat, adress, texelSize, shadowDepthFix);
-		//res.diffuse.rgb = light_blocked;  
-		//return res; 
-		if(light_blocked == 0)
-			continue; 
-		
-		colorIlluminance *= light_blocked;
-		
-		const float3 H = normalize(VtoWP + L);
-		const float VoH = saturate(dot(VtoWP, H));
-		const float NoH = saturate( dot(normal, H) + 0.00001f );
-		
-		const float3 colorIlluminanceDir = colorIlluminance * NoL;
-		
-		Light.specular += colorIlluminanceDir * directSpecularBRDF(spec, roughnessXY, NoH, NoV, NoL, VoH, H, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminanceDir * directDiffuseBRDF(albedo, avgR, NoV, NoL, VoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += colorIlluminance * directSubScattering(subsurf, params, L, normal, VtoWP);
+		results.diffuse += light_blocked * lightResult.diffuse;
+		results.specular += light_blocked * lightResult.specular;
+		results.scattering += light_blocked * lightResult.scattering;
 	}
 
 	// disk

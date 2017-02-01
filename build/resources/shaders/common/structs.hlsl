@@ -160,4 +160,6 @@ struct DataForLightCompute
 	float avgR;
 	float aGGX;
 	float sqr_aGGX;
+	float NoV;
+	float3 reflect;
 };
