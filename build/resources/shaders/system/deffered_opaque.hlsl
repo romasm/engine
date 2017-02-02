@@ -67,23 +67,23 @@ Texture3D <float4> volumeEmittance : register(t16);
 //#define shadowBiasDir2 0.00003
 //#define shadowBiasDir3 0.00015
 
-StructuredBuffer<SpotLightBuffer> spotLightBuffer : register(t17); 
-StructuredBuffer<DiskLightBuffer> diskLightBuffer : register(t18); 
-StructuredBuffer<RectLightBuffer> rectLightBuffer : register(t19); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t19); 
 
-StructuredBuffer<SpotCasterBuffer> spotCasterBuffer : register(t20); 
-StructuredBuffer<DiskCasterBuffer> diskCasterBuffer : register(t21); 
-StructuredBuffer<RectCasterBuffer> rectCasterBuffer : register(t22); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t20); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t21); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t22); 
 
-StructuredBuffer<PointLightBuffer> pointLightBuffer : register(t23); 
-StructuredBuffer<SphereLightBuffer> sphereLightBuffer : register(t24); 
-StructuredBuffer<TubeLightBuffer> tubeLightBuffer : register(t25); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t23); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t24); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t25); 
 
-StructuredBuffer<PointCasterBuffer> pointCasterBuffer : register(t26); 
-StructuredBuffer<SphereCasterBuffer> sphereCasterBuffer : register(t27); 
-StructuredBuffer<TubeCasterBuffer> tubeCasterBuffer : register(t28); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t26); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t27); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28); 
 
-StructuredBuffer<DirLightBuffer> dirLightBuffer : register(t29); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29); 
 
 cbuffer camMove : register(b1)
 {
@@ -120,7 +120,7 @@ cbuffer configBuffer : register(b2)
 
 cbuffer Lights : register(b3) 
 {
-	LightsIDs lightIDs;
+	LightsIDs g_lightIDs;
 };
 
 cbuffer volumeBuffer : register(b4)
@@ -169,225 +169,223 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
 	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
 	mData.sqr_aGGX = Square( mData.aGGX );
-
 	mData.NoV = calculateNoV( gbuffer.normal, ViewVector );
 	mData.reflect = 2 * gbuffer.normal * mData.NoV - ViewVector; 
 	
-	// SHADOW DEPTH FIX
+	// SHADOW DEPTH FIX // TODO: remove?
 #define NORMAL_OFFSET_MAX 10
-#define NORMAL_OFFSET_MAX_RCP 1.0/NORMAL_OFFSET_MAX
-	
 	float3 shadowDepthFix;
 	shadowDepthFix.x = clamp(0.15 * linDepth, 1, 1 + NORMAL_OFFSET_MAX);
-	shadowDepthFix.y = saturate(NORMAL_OFFSET_MAX_RCP * (shadowDepthFix.x - 1));
-	// TODO: remove?
+	shadowDepthFix.y = saturate((shadowDepthFix.x - 1) * 1.0 / NORMAL_OFFSET_MAX);
 	shadowDepthFix.x = 1;//pow(shadowDepthFix.x, 0.75);
 	shadowDepthFix.z = max(0.5 * linDepth, 2);
-	
 	float dirDepthFix = max(0.1 * linDepth, 1);
 	
-	LightComponents results = 0;
+	LightComponents directLight = 0;
 
-	// TODO
-	// PrepareData
-	// CalcutateShadow
-	// CalculateLight
-
-	// spot
-	[loop]
-	for(uint i_spt=0; i_spt < uint(spot_count); i_spt++)
+	[loop] // spot
+	for(int i_spt=0; i_spt < int(spot_count); i_spt++)
 	{
-		SpotLightBuffer lightData = spotLightBuffer[ lightIDs.SpotLightsIDs[i_spt] ];
+		SpotLightBuffer lightData = g_spotLightBuffer[ g_lightIDs.SpotLightsIDs[i_spt] ];
+		LightPrepared prepared = PrepareSpotLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		ShadowHelpers shadowHelpers;
-		[branch]
-		if( !CalculateSpotLight( lightData, gbuffer, mData, materialParams, ViewVector, lightResult, shadowHelpers ) )
+		[branch] if( !CalculateSpotLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
 			continue;
 		
-		results.diffuse += lightResult.diffuse;
-		results.specular += lightResult.specular;
-		results.scattering += lightResult.scattering;
+		directLight.Append(lightResult);
 	}
-		
-	// caster spot
-	[loop]
-	for(uint ic_spt=0; ic_spt < uint(caster_spot_count); ic_spt++)
+	
+	[loop] // caster spot
+	for(int ic_spt=0; ic_spt < int(caster_spot_count); ic_spt++)
 	{
-		SpotCasterBuffer lightData = spotCasterBuffer[ lightIDs.SpotCastersIDs[ic_spt] ];
+		SpotCasterBuffer lightData = g_spotCasterBuffer[ g_lightIDs.SpotCastersIDs[ic_spt] ];
+		SpotLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
+
+		LightPrepared prepared = PrepareSpotLight(lightDataShort, gbuffer);
+		
+		float lightAmount = SpotlightShadow(prepared, lightData, gbuffer, shadowDepthFix);
+		[branch] if( lightAmount == 0 )
+			continue;
 
 		LightComponents lightResult;
-		ShadowHelpers shadowHelpers;
-		[branch]
-		if( !CalculateSpotLight( lightData, gbuffer, mData, materialParams, ViewVector, lightResult, shadowHelpers ) )
+		[branch] if( !CalculateSpotLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
 			continue;
 		
-		float VNoL = dot(gbuffer.vertex_normal, shadowHelpers.L);
-		float light_blocked = SpotlightShadow(gbuffer.wpos, shadowHelpers.DoUL, gbuffer.vertex_normal, VNoL, lightData, shadowDepthFix);
-		
-		results.diffuse += light_blocked * lightResult.diffuse;
-		results.specular += light_blocked * lightResult.specular;
-		results.scattering += light_blocked * lightResult.scattering;
+		directLight.AppendShadowed(lightResult, lightAmount);
 	}
-
-	// disk
-	[loop]
-	for(uint i_disk=0; i_disk < uint(disk_count); i_disk++)
+	
+	[loop] // disk
+	for(int i_disk=0; i_disk < int(disk_count); i_disk++)
 	{
-		const float4 pos_range = Disk_Pos_Range[i_disk];
-		const float4 color_conex = Disk_Color_ConeX[i_disk];
-		const float4 dir_coney = Disk_Dir_ConeY[i_disk];
-		const float2 rad_sqrrad = Disk_AreaInfo_Empty[i_disk].xy;
-		const float3 virtpos = Disk_Virtpos_Empty[i_disk].xyz;
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		const float3 L = normalize(unnormL);
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
-			continue;
-			
-		const float sqrDist = dot( unnormL, unnormL );
-			
-		const float smoothFalloff = smoothDistanceAtt(sqrDist, pos_range.w);
-		if(smoothFalloff == 0)
-			continue;
-		float coneFalloff = getAngleAtt(normalize(virtpos - wpos), -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(coneFalloff == 0)
-			continue;
-		coneFalloff *= smoothFalloff;
-		
-		// const float3 newRefl = getSpecularDominantDirArea(N, Refl, avgR); 
-		const float NoL = dot(normal, L);
-				
-		// specular
-		const float e = clamp(dot(dir_coney.xyz, Refl), -1, -0.0001f);
-		const float3 planeRay = wpos - Refl * DoUL / e;
-		const float3 newL = planeRay - pos_range.xyz;
-		
-		const float SphereAngle = clamp( -e * rad_sqrrad.x / max(sqrt( sqrDist ), rad_sqrrad.x), 0, 0.5 );
-		const float specEnergy = Square( aGGX / saturate( aGGX + SphereAngle ) );
-		
-		const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, rad_sqrrad.x));
-				
-		//diffuse
-		const float3 diffL = normalize(unnormL + normal * rad_sqrrad.x * (1 - saturate(NoL)));	
-			
-		// Disk evaluation
-		const float sinSigmaSqr = rad_sqrrad.y / (rad_sqrrad.y + max(sqrDist, rad_sqrrad.y));
-		float noDirIlluminance;
-		float illuminance = illuminanceSphereOrDisk( NoL, sinSigmaSqr, noDirIlluminance );
-		
-		coneFalloff *= saturate(dot(dir_coney.xyz, -L));
-		
-		illuminance *= coneFalloff;
-		noDirIlluminance *= coneFalloff;
-			
-		if(illuminance == 0)
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
-			continue;
-		}
-		
-		const float diffNoL = saturate(dot(normal, diffL));	
-		const float3 diffH = normalize(VtoWP + diffL);
-		const float diffVoH = saturate(dot(VtoWP, diffH));
+		DiskLightBuffer lightData = g_diskLightBuffer[ g_lightIDs.DiskLightsIDs[i_disk] ];
+		LightPrepared prepared = PrepareDiskLight(lightData, gbuffer);
 
-		const float specNoL = saturate( dot(normal, specL) );
-		const float3 specH = normalize(VtoWP + specL);
-		const float specNoH = saturate( dot(normal, specH) + 0.00001f );
-		const float specVoH = saturate( dot(VtoWP, specH) );
-			
-		const float3 colorIlluminance = illuminance * color_conex.rgb;
+		LightComponents lightResult;
+		[branch] if( !CalculateDiskLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
 		
-		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
+		directLight.Append(lightResult);
 	}
 	
-	// rect
-	[loop]
-	for(uint i_r=0; i_r < uint(rect_count); i_r++)
+	[loop] // caster disk
+	for(int ic_disk=0; ic_disk < int(caster_disk_count); ic_disk++)
 	{
-		const float4 pos_range = Rect_Pos_Range[i_r];
-		const float4 color_conex = Rect_Color_ConeX[i_r];
-		const float4 dir_coney = Rect_Dir_ConeY[i_r];
-		const float4 dirup_diag = Rect_DirUp_AreaX[i_r];
-		const float4 dirside_hwid = Rect_DirSide_AreaY[i_r];
-		const float4 virtpos_hlen = Rect_Virtpos_AreaZ[i_r];
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		const float3 L = normalize(unnormL);
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
-			continue;
-			
-		const float sqrDist = dot( unnormL, unnormL );
-			
-		const float smoothFalloff = smoothDistanceAtt(sqrDist, pos_range.w);
-		if(smoothFalloff == 0)
-			continue;
-		float coneFalloff = getAngleAtt(normalize(virtpos_hlen.xyz - wpos), -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(coneFalloff == 0)
-			continue;
-		coneFalloff *= smoothFalloff;
-			
-		// const float3 newRefl = getSpecularDominantDirArea(N, Refl, avgR); 
-				
-		// specular				
-		const float RLengthL = rcp( max(sqrt( sqrDist ), dirup_diag.x) );
-		
-		const float e = clamp(dot(dir_coney.xyz, Refl), -1, -0.0001f);
-		const float3 planeRay = wpos - Refl * DoUL / e;
-		const float3 newL = planeRay - pos_range.xyz;
-		
-		const float LineXAngle = clamp( -e * virtpos_hlen.w * RLengthL, 0, 0.5 );
-		const float LineYAngle = clamp( -e * dirside_hwid.w * RLengthL, 0, 0.5 );
-		const float specEnergy = sqr_aGGX / ( saturate( aGGX + LineXAngle ) * saturate( aGGX + LineYAngle ) );
-			
-		const float3 specL = normalize(unnormL + clamp(dot(newL, dirside_hwid.xyz), -dirside_hwid.w, dirside_hwid.w) * dirside_hwid.xyz + clamp(dot(newL, dirup_diag.xyz), -virtpos_hlen.w, virtpos_hlen.w) * dirup_diag.xyz);
-			
-		//diffuse
-		const float3 diffL = normalize( unnormL + normal * dirup_diag.w * (1 - saturate(dot(normal, L))) );	
-				
-		// Rect evaluation
-		float noDirIlluminance;
-		float illuminance = illuminanceRect(wpos, pos_range.xyz, L, normal, dir_coney.xyz, dirside_hwid.xyz * dirside_hwid.w, dirup_diag.xyz * virtpos_hlen.w, noDirIlluminance);
-		illuminance = max(0, illuminance);
+		DiskCasterBuffer lightData = g_diskCasterBuffer[ g_lightIDs.DiskCasterIDs[ic_disk] ];
+		DiskLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
 
-		//coneFalloff *= saturate((dot(dir_coney.xyz, -L) - 0.02) * 1.02); // clamp angle 89
+		LightPrepared prepared = PrepareDiskLight(lightDataShort, gbuffer);
 		
-		illuminance *= coneFalloff;
-		noDirIlluminance *= coneFalloff;
-		
-		if(illuminance == 0)
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
+		float lightAmount = AreaSpotlightShadow(prepared, gbuffer, shadowDepthFix, 
+			lightData.DirConeY.xyz, lightData.ShadowmapParams, lightData.ShadowmapAdress, lightData.matViewProj);
+		[branch] if( lightAmount == 0 )
 			continue;
-		}
-			
-		const float diffNoL = saturate(dot(normal, diffL));	
-		const float3 diffH = normalize(VtoWP + diffL);
-		const float diffVoH = saturate(dot(VtoWP, diffH));
 
-		const float specNoL = saturate( dot(normal, specL) );
-		const float3 specH = normalize(VtoWP + specL);
-		const float specNoH = saturate( dot(normal, specH) + 0.00001f );
-		const float specVoH = saturate( dot(VtoWP, specH) );
-			
-		const float3 colorIlluminance = illuminance * color_conex.rgb;
+		LightComponents lightResult;
+		[branch] if( !CalculateDiskLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
 		
-		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
+		directLight.AppendShadowed(lightResult, lightAmount);
 	}
+	
+	[loop] // rect
+	for(int i_rect=0; i_rect < int(rect_count); i_rect++)
+	{
+		RectLightBuffer lightData = g_rectLightBuffer[ g_lightIDs.RectLightsIDs[i_rect] ];
+		LightPrepared prepared = PrepareRectLight(lightData, gbuffer);
+
+		LightComponents lightResult;
+		[branch] if( !CalculateRectLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.Append(lightResult);
+	}
+	
+	[loop] // caster rect
+	for(int ic_rect=0; ic_rect < int(caster_rect_count); ic_rect++)
+	{
+		RectCasterBuffer lightData = g_rectCasterBuffer[ g_lightIDs.RectCasterIDs[ic_rect] ];
+		RectLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
+
+		LightPrepared prepared = PrepareRectLight(lightDataShort, gbuffer);
+		
+		float lightAmount = AreaSpotlightShadow(prepared, gbuffer, shadowDepthFix,
+			lightData.DirConeY.xyz, lightData.ShadowmapParams, lightData.ShadowmapAdress, lightData.matViewProj);
+		[branch] if( lightAmount == 0 )
+			continue;
+
+		LightComponents lightResult;
+		[branch] if( !CalculateRectLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.AppendShadowed(lightResult, lightAmount);
+	}
+
+	[loop] // point
+	for(int i_p=0; i_p < int(point_count); i_p++)
+	{
+		PointLightBuffer lightData = g_pointLightBuffer[ g_lightIDs.PointLightsIDs[i_p] ];
+		LightPrepared prepared = PreparePointLight(lightData, gbuffer);
+
+		LightComponents lightResult;
+		[branch] if( !CalculatePointLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.Append(lightResult);
+	}
+	
+	[loop] // caster point
+	for(int ic_p=0; ic_p < int(caster_point_count); ic_p++)
+	{
+		PointCasterBuffer lightData = g_pointÑasterBuffer[ g_lightIDs.PointÑasterIDs[ic_p] ];
+		PointLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
+
+		LightPrepared prepared = PreparePointLight(lightDataShort, gbuffer);
+		
+		float lightAmount = PointlightShadow(prepared, lightData, gbuffer, shadowDepthFix);
+		[branch] if( lightAmount == 0 )
+			continue;
+
+		LightComponents lightResult;
+		[branch] if( !CalculatePointLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.AppendShadowed(lightResult, lightAmount);
+	}
+
+	[loop] // sphere
+	for(int i_sph=0; i_sph < int(sphere_count); i_sph++)
+	{
+		SphereLightBuffer lightData = g_sphereLightBuffer[ g_lightIDs.SphereLightsIDs[i_sph] ];
+		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
+
+		LightComponents lightResult;
+		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.Append(lightResult);
+	}
+	
+	[loop] // caster sphere
+	for(int ic_sph=0; ic_sph < int(caster_sphere_count); ic_sph++)
+	{
+		SphereCasterBuffer lightData = g_sphereÑasterBuffer[ g_lightIDs.SphereÑasterIDs[ic_sph] ];
+		SphereLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
+
+		LightPrepared prepared = PrepareSphereLight(lightDataShort, gbuffer);
+		
+		float lightAmount = PointlightShadow(prepared, lightData, gbuffer, shadowDepthFix);
+		[branch] if( lightAmount == 0 )
+			continue;
+
+		LightComponents lightResult;
+		[branch] if( !CalculateSphereLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.AppendShadowed(lightResult, lightAmount);
+	}
+
+	[loop] // tube
+	for(int i_tube=0; i_tube < int(tube_count); i_tube++)
+	{
+		SphereLightBuffer lightData = g_sphereLightBuffer[ g_lightIDs.SphereLightsIDs[i_tube] ];
+		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
+
+		LightComponents lightResult;
+		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.Append(lightResult);
+	}
+	
+	[loop] // caster tube
+	for(int ic_tube=0; ic_tube < int(caster_tube_count); ic_tube++)
+	{
+		TubeCasterBuffer lightData = g_tubeÑasterBuffer[ g_lightIDs.TubeÑasterIDs[ic_tube] ];
+		TubeLightBuffer lightDataShort = 0;
+		lightDataShort.Construct(lightData);
+
+		LightPrepared prepared = PrepareTubeLight(lightDataShort, gbuffer);
+		
+		float lightAmount = TubelightShadow(prepared, lightData, gbuffer, shadowDepthFix);
+		[branch] if( lightAmount == 0 )
+			continue;
+
+		LightComponents lightResult;
+		[branch] if( !CalculateTubeLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+			continue;
+		
+		directLight.AppendShadowed(lightResult, lightAmount);
+	}
+
+
+
+
 	
 	// point
 	[loop]
@@ -627,196 +625,6 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		
 		//if(params.subscattering != 0)
 			Light.diffuse += colorLight * directSubScattering(subsurf, params, L, normal, VtoWP);
-	}
-	
-	// caster disk
-	[loop]
-	for(uint ic_disk=0; ic_disk < uint(caster_disk_count); ic_disk++)
-	{
-		const float4 pos_range = CastDisk_Pos_Range[ic_disk];
-		const float4 color_conex = CastDisk_Color_ConeX[ic_disk];
-		const float4 dir_coney = CastDisk_Dir_ConeY[ic_disk];
-		const float2 rad_sqrrad = CastDisk_AreaInfo_Empty[ic_disk].xy;
-		const float3 virtpos = CastDisk_Virtpos_Empty[ic_disk].xyz;
-	
-		const float4 adress = CastDisk_ShadowmapAdress[ic_disk];
-		const float3 texelSize_near = CastDisk_ShadowmapParams[ic_disk].xyz;
-		matrix vp_mat = CastDisk_ViewProj[ic_disk];
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
-			continue;
-		
-		const float sqrDist = dot( unnormL, unnormL );	
-		const float smoothFalloff = smoothDistanceAtt(sqrDist, pos_range.w);
-		if(smoothFalloff == 0)
-			continue;
-			
-		const float3 virtUnnormL = virtpos.xyz - wpos;
-		const float3 virtL = normalize(virtUnnormL);
-			
-		float coneFalloff = getAngleAtt(virtL, -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(coneFalloff == 0)
-			continue;
-
-		float light_blocked = AreaSpotlightShadow(float4(wpos,1.0f), dot(dir_coney.xyz, -virtUnnormL), vertex_normal, dot(vertex_normal, virtL), vp_mat, adress, texelSize_near.xy, texelSize_near.z, shadowDepthFix);
-		if(light_blocked == 0)
-			continue;
-				
-		coneFalloff *= light_blocked;
-
-		coneFalloff *= smoothFalloff;
-		
-		const float3 L = normalize(unnormL);
-		const float NoL = dot(normal, L);
-		
-		// const float3 newRefl = getSpecularDominantDirArea(N, Refl, avgR); 
-				
-		// specular
-		const float e = clamp(dot(dir_coney.xyz, Refl), -1, -0.0001f);
-		const float3 planeRay = wpos - Refl * DoUL / e;
-		const float3 newL = planeRay - pos_range.xyz;
-		
-		const float SphereAngle = clamp( -e * rad_sqrrad.x / max(sqrt( sqrDist ), rad_sqrrad.x), 0, 0.5 );
-		const float specEnergy = Square( aGGX / saturate( aGGX + SphereAngle ) );
-		
-		const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, rad_sqrrad.x));
-				
-		//diffuse
-		const float3 diffL = normalize(unnormL + normal * rad_sqrrad.x * (1 - saturate(NoL)));	
-			
-		// Disk evaluation
-		const float sinSigmaSqr = rad_sqrrad.y / (rad_sqrrad.y + max(sqrDist, rad_sqrrad.y));
-		float noDirIlluminance;
-		float illuminance = illuminanceSphereOrDisk( NoL, sinSigmaSqr, noDirIlluminance );
-		
-		coneFalloff *= saturate(dot(dir_coney.xyz, -L));
-		
-		illuminance *= coneFalloff;
-		noDirIlluminance *= coneFalloff;
-			
-		if(illuminance == 0)
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
-			continue;
-		}
-		
-		const float diffNoL = saturate(dot(normal, diffL));	
-		const float3 diffH = normalize(VtoWP + diffL);
-		const float diffVoH = saturate(dot(VtoWP, diffH));
-
-		const float specNoL = saturate( dot(normal, specL) );
-		const float3 specH = normalize(VtoWP + specL);
-		const float specNoH = saturate( dot(normal, specH) + 0.00001f );
-		const float specVoH = saturate( dot(VtoWP, specH) );
-			
-		const float3 colorIlluminance = illuminance * color_conex.rgb;
-		
-		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
-	}
-	
-	// caster rect
-	[loop]
-	for(uint ic_r=0; ic_r < uint(caster_rect_count); ic_r++)
-	{
-		const float4 pos_range = CastRect_Pos_Range[ic_r];
-		const float4 color_conex = CastRect_Color_ConeX[ic_r];
-		const float4 dir_coney = CastRect_Dir_ConeY[ic_r];
-		const float4 dirup_diag = CastRect_DirUp_AreaX[ic_r];
-		const float4 dirside_hwid = CastRect_DirSide_AreaY[ic_r];
-		const float4 virtpos_hlen = CastRect_Virtpos_AreaZ[ic_r];
-	
-		const float4 adress = CastRect_ShadowmapAdress[ic_r];
-		const float3 texelSize_near = CastRect_ShadowmapParams[ic_r].xyz;
-		matrix vp_mat = CastRect_ViewProj[ic_r];
-	
-		const float3 unnormL = pos_range.xyz - wpos;
-		
-		const float DoUL = dot(dir_coney.xyz, -unnormL);
-		if(DoUL <= 0)
-			continue;
-		
-		const float sqrDist = dot( unnormL, unnormL );	
-		const float smoothFalloff = smoothDistanceAtt(sqrDist, pos_range.w);
-		if(smoothFalloff == 0)
-			continue;
-			
-		const float3 virtUnnormL = virtpos_hlen.xyz - wpos;
-		const float3 virtL = normalize(virtUnnormL);
-			
-		float coneFalloff = getAngleAtt(virtL, -dir_coney.xyz, color_conex.w, dir_coney.w);
-		if(coneFalloff == 0)
-			continue;
-			
-		float light_blocked = AreaSpotlightShadow(float4(wpos,1.0f), dot(dir_coney.xyz, -virtUnnormL), vertex_normal, dot(vertex_normal, virtL), vp_mat, adress, texelSize_near.xy, texelSize_near.z, shadowDepthFix);
-		if(light_blocked == 0)
-			continue;
-				
-		coneFalloff *= light_blocked;
-			
-		coneFalloff *= smoothFalloff;
-		
-		const float3 L = normalize(unnormL);
-		const float NoL = dot(normal, L);
-			
-		// const float3 newRefl = getSpecularDominantDirArea(N, Refl, avgR); 
-				
-		// specular				
-		const float RLengthL = rcp( max(sqrt( sqrDist ), dirup_diag.x) );
-		
-		const float e = clamp(dot(dir_coney.xyz, Refl), -1, -0.0001f);
-		const float3 planeRay = wpos - Refl * DoUL / e;
-		const float3 newL = planeRay - pos_range.xyz;
-		
-		const float LineXAngle = clamp( -e * virtpos_hlen.w * RLengthL, 0, 0.5 );
-		const float LineYAngle = clamp( -e * dirside_hwid.w * RLengthL, 0, 0.5 );
-		const float specEnergy = sqr_aGGX / ( saturate( aGGX + LineXAngle ) * saturate( aGGX + LineYAngle ) );
-			
-		const float3 specL = normalize(unnormL + clamp(dot(newL, dirside_hwid.xyz), -dirside_hwid.w, dirside_hwid.w) * dirside_hwid.xyz + clamp(dot(newL, dirup_diag.xyz), -virtpos_hlen.w, virtpos_hlen.w) * dirup_diag.xyz);
-			
-		//diffuse
-		const float3 diffL = normalize( unnormL + normal * dirup_diag.w * (1 - saturate(NoL)) );	
-				
-		// Rect evaluation
-		float noDirIlluminance;
-		float illuminance = illuminanceRect(wpos, pos_range.xyz, L, normal, dir_coney.xyz, dirside_hwid.xyz * dirside_hwid.w, dirup_diag.xyz * virtpos_hlen.w, noDirIlluminance);
-		illuminance = max(0, illuminance);
-
-		//coneFalloff *= saturate((dot(dir_coney.xyz, -L) - 0.02) * 1.02); // clamp angle 89
-		
-		illuminance *= coneFalloff;
-		noDirIlluminance *= coneFalloff;
-		
-		if(illuminance == 0)
-		{
-			//if(params.subscattering != 0)
-				Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
-			continue;
-		}
-			
-		const float diffNoL = saturate(dot(normal, diffL));	
-		const float3 diffH = normalize(VtoWP + diffL);
-		const float diffVoH = saturate(dot(VtoWP, diffH));
-
-		const float specNoL = saturate( dot(normal, specL) );
-		const float3 specH = normalize(VtoWP + specL);
-		const float specNoH = saturate( dot(normal, specH) + 0.00001f );
-		const float specVoH = saturate( dot(VtoWP, specH) );
-			
-		const float3 colorIlluminance = illuminance * color_conex.rgb;
-		
-		Light.specular += colorIlluminance * specEnergy * directSpecularBRDF(spec, roughnessXY, specNoH, NoV, specNoL, specVoH, specH, tangent, binormal, avgR);	
-		Light.diffuse += colorIlluminance * directDiffuseBRDF(albedo, avgR, NoV, diffNoL, diffVoH);
-		
-		//if(params.subscattering != 0)
-			Light.diffuse += noDirIlluminance * color_conex.rgb * directSubScattering(subsurf, params, L, normal, VtoWP);
 	}
 	
 	// caster point

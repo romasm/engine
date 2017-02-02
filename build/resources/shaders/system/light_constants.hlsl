@@ -34,12 +34,29 @@ struct LightComponents
     float3 diffuse;
 	float3 specular;
 	float3 scattering;
+
+	void Append(in LightComponents other)
+	{
+		diffuse += other.diffuse;
+		specular += other.specular;
+		scattering += other.scattering;
+	};
+
+	void AppendShadowed(in LightComponents other, in float lightAmount)
+	{
+		diffuse += other.diffuse * lightAmount;
+		specular += other.specular * lightAmount;
+		scattering += other.scattering * lightAmount;
+	};
 };
 
-struct ShadowHelpers
+struct LightPrepared
 {
-    float DoUL;
+	float3 unnormL;
 	float3 L;
+    float DoUL;
+	float3 virtUnnormL;
+	float3 virtL;
 };
 
 struct LightsIDs
@@ -64,32 +81,6 @@ struct LightsIDs
 };
 
 // for deffered
-struct SpotLightBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-};
-
-struct DiskLightBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-	float4 AreaInfoEmpty;
-	float4 VirtposEmpty;
-};
-
-struct RectLightBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-	float4 DirUpAreaX;
-	float4 DirSideAreaY;
-	float4 VirtposAreaZ;
-};
-
 struct SpotCasterBuffer
 {
 	float4 PosRange;
@@ -125,25 +116,56 @@ struct RectCasterBuffer
 	matrix matViewProj;
 };
 
-struct PointLightBuffer
+struct SpotLightBuffer
 {
 	float4 PosRange;
-	float4 Color;
+	float4 ColorConeX;
+	float4 DirConeY;
+
+	void Construct(in SpotCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		ColorConeX = longData.ColorConeX;
+		DirConeY = longData.DirConeY;
+	};
 };
 
-struct SphereLightBuffer
+struct DiskLightBuffer
 {
 	float4 PosRange;
-	float4 ColorEmpty;
+	float4 ColorConeX;
+	float4 DirConeY;
 	float4 AreaInfoEmpty;
+	float4 VirtposEmpty;
+
+	void Construct(in DiskCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		ColorConeX = longData.ColorConeX;
+		DirConeY = longData.DirConeY;
+		AreaInfoEmpty = longData.AreaInfoEmpty;
+		VirtposEmpty = longData.VirtposEmpty;
+	};
 };
 
-struct TubeLightBuffer
+struct RectLightBuffer
 {
 	float4 PosRange;
-	float4 ColorEmpty;
-	float4 AreaInfo;
-	float4 DirAreaA;
+	float4 ColorConeX;
+	float4 DirConeY;
+	float4 DirUpAreaX;
+	float4 DirSideAreaY;
+	float4 VirtposAreaZ;
+
+	void Construct(in RectCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		ColorConeX = longData.ColorConeX;
+		DirConeY = longData.DirConeY;
+		DirUpAreaX = longData.DirUpAreaX;
+		DirSideAreaY = longData.DirSideAreaY;
+		VirtposAreaZ = longData.VirtposAreaZ;
+	};
 };
 
 struct PointCasterBuffer
@@ -192,6 +214,48 @@ struct TubeCasterBuffer
 	float4 ShadowmapAdress5;
 	matrix matProj;
 	matrix matView;
+};
+
+struct PointLightBuffer
+{
+	float4 PosRange;
+	float4 Color;
+
+	void Construct(in PointCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		Color = longData.ColorShParams;
+	};
+};
+
+struct SphereLightBuffer
+{
+	float4 PosRange;
+	float4 ColorEmpty;
+	float4 AreaInfoEmpty;
+
+	void Construct(in SphereCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		ColorEmpty = longData.ColorShParams;
+		AreaInfoEmpty = longData.AreaInfoShParams;
+	};
+};
+
+struct TubeLightBuffer
+{
+	float4 PosRange;
+	float4 ColorEmpty;
+	float4 AreaInfo;
+	float4 DirAreaA;
+
+	void Construct(in TubeCasterBuffer longData)
+	{
+		PosRange = longData.PosRange;
+		ColorEmpty = longData.ColorShParams;
+		AreaInfo = longData.AreaInfo;
+		DirAreaA = longData.DirAreaA;
+	};
 };
 
 struct DirLightBuffer

@@ -243,65 +243,67 @@ static const float2 reproj[2] =
 	float2(0.5f,0.5f)
 };
 
-float SpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, matrix vp_mat, float4 adress, float2 texelSize, float3 depthFix)
+float SpotlightShadow(in LightPrepared prepared, in SpotCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
-	float4 lightViewProjPos = mul(wpos, vp_mat);
-		
+	const float NoL = dot(gbuffer.vertex_normal, prepared.L);
+	const float4 wpos = float4(gbuffer.wpos, 1.0);
+	float4 lightViewProjPos = mul(wpos, lightData.matViewProj);
 	float normalOffsetScale = clamp(1 - NoL, depthFix.y, 1);
-	
-	float shadowMapTexelSize = texelSize.x * zInLight * texelSize.y;
-		
+	float shadowMapTexelSize = lightData.ShadowmapParams.x * zInLight * lightData.ShadowmapParams.y;
 	float4 shadowOffset = float4(normal * normalShadowOffsetSpot * normalOffsetScale * shadowMapTexelSize * depthFix.x, 0);
-		
+	
 	float4 correctedWpos = wpos + shadowOffset;
-	float4 uvOffset = mul(correctedWpos, vp_mat);
+	float4 uvOffset = mul(correctedWpos, lightData.matViewProj);
 	lightViewProjPos.xy = uvOffset.xy;
 		
 	float lvp_rcp = rcp(lightViewProjPos.w);
 	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
 		
+	[branch]
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
 		return 0;
 			
 	float3 shadowmapCoords;
-	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
-	shadowmapCoords.z = adress.w;
+	shadowmapCoords.xy = lightData.ShadowmapAdress.xy + reprojCoords.xy * lightData.ShadowmapAdress.z;
+	shadowmapCoords.z = lightData.ShadowmapAdress.w;
 	
-	const float resBiasScale = max(2, (texelSize.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
+	const float resBiasScale = max(2, (lightData.ShadowmapParams.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
 	lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
 	float depthView = lightViewProjPos.z * lvp_rcp;
 	
-	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
+	return PCF_Filter(shadowmapCoords, depthView, lightData.ShadowmapAdress.z, 1.0f);
 }
 
-float AreaSpotlightShadow(float4 wpos, float zInLight, float3 normal, float NoL, matrix vp_mat, float4 adress, float2 texelSize, float near, float3 depthFix)
+float AreaSpotlightShadow(in LightPrepared prepared, in GBufferData gbuffer, float3 depthFix, 
+						  float3 Dir, float4 ShadowmapParams, float4 ShadowmapAdress, matrix matViewProj)
 {
-	float4 lightViewProjPos = mul(wpos, vp_mat);
-		
+	const float zInLight = dot(Dir, -prepared.virtUnnormL);
+	const float NoL = dot(gbuffer.vertex_normal, prepared.virtL);
+	const float4 wpos = float4(gbuffer.wpos, 1.0);
+	float4 lightViewProjPos = mul(wpos, matViewProj);
 	float normalOffsetScale = clamp(1 - NoL, depthFix.y, 1);
-	
-	float shadowMapTexelSize = texelSize.x * zInLight * texelSize.y;
-		
+	float shadowMapTexelSize = ShadowmapParams.x * zInLight * ShadowmapParams.y;
 	float4 shadowOffset = float4(normal * normalShadowOffsetSpot * normalOffsetScale * shadowMapTexelSize * depthFix.x, 0);
 		
 	float4 correctedWpos = wpos + shadowOffset;
-	float4 uvOffset = mul(correctedWpos, vp_mat);
+	float4 uvOffset = mul(correctedWpos, matViewProj);
 	lightViewProjPos.xy = uvOffset.xy;
 		
 	float lvp_rcp = rcp(lightViewProjPos.w);
 	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
-		
+	
+	[branch]
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
-		return false;
+		return 0;
 			
 	float3 shadowmapCoords;
-	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
-	shadowmapCoords.z = adress.w;
+	shadowmapCoords.xy = ShadowmapAdress.xy + reprojCoords.xy * ShadowmapAdress.z;
+	shadowmapCoords.z = ShadowmapAdress.w;
 	
-	lightViewProjPos.z -= shadowBiasSpotArea * near * depthFix.z;
+	lightViewProjPos.z -= shadowBiasSpotArea * ShadowmapParams.z * depthFix.z;
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return PCF_Filter(shadowmapCoords, depthView, adress.z, 1.0f);
+	return PCF_Filter(shadowmapCoords, depthView, ShadowmapAdress.z, 1.0f);
 }
 
 /*static const float3 pl_dirs[6] =
