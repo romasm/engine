@@ -19,8 +19,6 @@ namespace EngineCore
 
 #define SP_MATERIAL_DEPTH_OPAC_DIR PATH_SHADERS "system/depth_copy_hiz"
 
-#define SP_MATERIAL_DEFFERED_OPAC_DIR PATH_SHADERS "system/deffered_opaque"
-
 #define TEX_NOISE2D PATH_SYS_TEXTURES "noise2d" EXT_TEXTURE
 #define TEX_PBSENVLUT PATH_SYS_TEXTURES "pbs_env_lut" EXT_TEXTURE
 
@@ -57,6 +55,8 @@ namespace EngineCore
 
 
 #define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
+#define SP_MATERIAL_DEFFERED_OPAC_DIR PATH_SHADERS "system/deffered_opaque" // remove
+#define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque", "DefferedLighting"
 
 	class ScenePipeline
 	{

@@ -44,7 +44,6 @@ ShaderMgr::~ShaderMgr()
 void ShaderMgr::PreloadShaders()
 {
 	GetShader(string(SP_MATERIAL_DEPTH_OPAC_DIR), true);
-	GetShader(string(SP_MATERIAL_DEFFERED_OPAC_DIR), true);
 	GetShader(string(SP_MATERIAL_HBAO), true);
 	GetShader(string(SP_MATERIAL_HBAO_PERPECTIVE_CORRECT), true);
 	GetShader(string(SP_MATERIAL_AO), true);

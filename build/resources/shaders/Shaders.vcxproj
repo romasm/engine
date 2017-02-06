@@ -169,6 +169,8 @@
   <ItemGroup>
     <FxCompile Include="common\common_helpers.hlsl" />
     <FxCompile Include="common\ibl_helpers.hlsl" />
+    <FxCompile Include="common\light_structs.hlsl" />
+    <FxCompile Include="common\shadow_helpers.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

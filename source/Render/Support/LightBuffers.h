@@ -115,14 +115,14 @@ namespace EngineCore
 	struct SphereLightBuffer
 	{
 		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorEmpty;
-		XMFLOAT4 AreaInfoEmpty;
+		XMFLOAT4 Color;
+		XMFLOAT4 AreaInfo;
 	};
 
 	struct TubeLightBuffer
 	{
 		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorEmpty;
+		XMFLOAT4 Color;
 		XMFLOAT4 AreaInfo;
 		XMFLOAT4 DirAreaA;
 	};
@@ -140,14 +140,16 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress4;
 		XMFLOAT4 ShadowmapAdress5;
 		XMMATRIX matProj;
+		XMMATRIX matView;
 	};
 
 	struct SphereCasterBuffer
 	{
 		XMFLOAT4 PosRange;
 		XMFLOAT4 ColorShParams;
-		XMFLOAT4 AreaInfoShParams;
-		XMFLOAT4 ShadowmapParams;
+		XMFLOAT4 AreaInfo;
+		XMFLOAT4 ShadowmapParams0;
+		XMFLOAT4 ShadowmapParams1;
 		XMFLOAT4 ShadowmapAdress0;
 		XMFLOAT4 ShadowmapAdress1;
 		XMFLOAT4 ShadowmapAdress2;
@@ -155,6 +157,7 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress4;
 		XMFLOAT4 ShadowmapAdress5;
 		XMMATRIX matProj;
+		XMMATRIX matView;
 	};
 
 	struct TubeCasterBuffer

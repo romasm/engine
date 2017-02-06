@@ -97,16 +97,18 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	float NoV = calculateNoV( gbuffer.normal, ViewVector );
 	float Roughness = clamp( min(gbuffer.roughness.x, gbuffer.roughness.y), 0.0001f, 0.9999f);
 
-	float3 specular, diffuse;
-	float3 specularBrdf = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
-		NoV, Roughness, ViewVector, gbuffer, distMip, specular, diffuse);
+	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, Roughness);
+
+	float3 specularBrdf, diffuseBrdf;
+	LightComponents distantLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
+		NoV, Roughness, ViewVector, gbuffer, distMip, SO, specularBrdf, diffuseBrdf);
 	
 	// SSR
-	float4 specularSecond = float4( SSR.rgb * SSR.a, 1 - SSR.a );
+	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
 	
 	// OUTPUT
-	diffuseOutput[threadID.xy] = float4( (gbuffer.emissive + diffuse) * indirDiff, specularSecond.r);
-	specularFirstOutput[threadID.xy] = float4( specular * indirSpec, specularSecond.g);
+	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + (distantLight.diffuse + distantLight.scattering) * indirDiff, specularSecond.r);
+	specularFirstOutput[threadID.xy] = float4( distantLight.specular * indirSpec, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba; 
 }

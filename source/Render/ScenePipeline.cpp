@@ -201,16 +201,16 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 		
 	if(!isLightweight)
 	{
-		lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer) + sizeof(SpotLightDiskBuffer) + sizeof(SpotLightRectBuffer), true);
-		lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer) + sizeof(PointLightSphereBuffer) + sizeof(PointLightTubeBuffer), true);
+		lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer), true);
+		lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer), true);
 		lightDirBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DirLightBuffer), true);
 
 		casterSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterBuffer), true);
-		casterDiskBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterDiskBuffer), true);
-		casterRectBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterRectBuffer), true);
+		casterDiskBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DiskCasterBuffer), true);
+		casterRectBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(RectCasterBuffer), true);
 		casterPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterBuffer), true);
-		casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterSphereBuffer), true);
-		casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterTubeBuffer), true);
+		casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SphereCasterBuffer), true);
+		casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(TubeCasterBuffer), true);
 	}
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
@@ -874,11 +874,11 @@ uint8_t ScenePipeline::LoadLights()
 		v_data += sizeof(SpotLightBuffer);
 
 		if(disk_size > 0)
-			memcpy((void*)v_data, disk_data, sizeof(SpotLightDiskBuffer));
-		v_data += sizeof(SpotLightDiskBuffer);
+			memcpy((void*)v_data, disk_data, sizeof(DiskLightBuffer));
+		v_data += sizeof(DiskLightBuffer);
 		
 		if(rect_size > 0)
-			memcpy((void*)v_data, rect_data, sizeof(SpotLightRectBuffer));
+			memcpy((void*)v_data, rect_data, sizeof(RectLightBuffer));
 
 		Render::Unmap(lightSpotBuffer, 0);
 	}
@@ -897,11 +897,11 @@ uint8_t ScenePipeline::LoadLights()
 		v_data += sizeof(PointLightBuffer);
 		
 		if(sphere_size > 0)
-			memcpy((void*)v_data, sphere_data, sizeof(PointLightSphereBuffer));
-		v_data += sizeof(PointLightSphereBuffer);
+			memcpy((void*)v_data, sphere_data, sizeof(SphereLightBuffer));
+		v_data += sizeof(SphereLightBuffer);
 		
 		if(tube_size > 0)
-			memcpy((void*)v_data, tube_data, sizeof(PointLightTubeBuffer));
+			memcpy((void*)v_data, tube_data, sizeof(TubeLightBuffer));
 
 		Render::Unmap(lightPointBuffer, 0);
 	}
@@ -935,7 +935,7 @@ uint8_t ScenePipeline::LoadLights()
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(FAILED(Render::Map(casterDiskBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 			return offset;
-		memcpy(mappedResource.pData, caster_disk_data, sizeof(SpotCasterDiskBuffer));
+		memcpy(mappedResource.pData, caster_disk_data, sizeof(DiskCasterBuffer));
 		Render::Unmap(casterDiskBuffer, 0);
 	}
 	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterDiskBuffer); 
@@ -946,7 +946,7 @@ uint8_t ScenePipeline::LoadLights()
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(FAILED(Render::Map(casterRectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 			return offset;
-		memcpy(mappedResource.pData, caster_rect_data, sizeof(SpotCasterRectBuffer));
+		memcpy(mappedResource.pData, caster_rect_data, sizeof(RectCasterBuffer));
 		Render::Unmap(casterRectBuffer, 0);
 	}
 	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterRectBuffer); 
@@ -968,7 +968,7 @@ uint8_t ScenePipeline::LoadLights()
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(FAILED(Render::Map(casterSphereBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 			return offset;
-		memcpy(mappedResource.pData, caster_sphere_data, sizeof(PointCasterSphereBuffer));
+		memcpy(mappedResource.pData, caster_sphere_data, sizeof(SphereCasterBuffer));
 		Render::Unmap(casterSphereBuffer, 0);
 	}
 	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterSphereBuffer); 
@@ -979,7 +979,7 @@ uint8_t ScenePipeline::LoadLights()
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(FAILED(Render::Map(casterTubeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
 			return offset;
-		memcpy(mappedResource.pData, caster_tube_data, sizeof(PointCasterTubeBuffer));
+		memcpy(mappedResource.pData, caster_tube_data, sizeof(TubeCasterBuffer));
 		Render::Unmap(casterTubeBuffer, 0);
 	}
 	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterTubeBuffer); 

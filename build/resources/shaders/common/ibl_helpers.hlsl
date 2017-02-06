@@ -69,26 +69,29 @@ float3 distantProbDiffuse(sampler cubemapSampler, TextureCube cubemap, float3 N,
 	return cubemap.SampleLevel( cubemapSampler, dominantN, 0 ).rgb;
 }
 
-float3 CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSampler, sampler cubeBlurredSampler, 
-							   float NoV, float R, float3 V, GBufferData gbuffer, float cubeMaxMip, 
-							   out float3 specular, out float3 diffuse)
+LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSampler, sampler cubeBlurredSampler, 
+							   float NoV, float R, float3 V, GBufferData gbuffer, float cubeMaxMip, float SO,
+							   out float3 specularBrdf, out float3 diffuseBrdf)
 {
 	float3 envBrdf = g_envbrdfLUT.SampleLevel(lutSampler, float2(NoV, R), 0).xyz;
 	
 	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
-	float3 specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
+	specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
 	
+	LightComponents result = 0;
+
 	// SPECULAR
-	specular = distantProbSpecular(cubeSampler, g_envprobsDist, cubeBlurredSampler, g_envprobsDistBlurred,
+	result.specular = distantProbSpecular(cubeSampler, g_envprobsDist, cubeBlurredSampler, g_envprobsDistBlurred,
 		specularNormal, V, NoV, R, sqrt(R), cubeMaxMip, gbuffer.vertex_normal);
 
-	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, R);
-	specular *= specularBrdf * SO;
+	result.specular *= specularBrdf * SO;
 	
 	// DIFFUSE
-	float3 diffuseBrdf = gbuffer.albedo * envBrdf.z;
-	diffuse = distantProbDiffuse(cubeSampler, g_envprobsDistBlurred, gbuffer.normal, V, NoV, R);
-	diffuse *= diffuseBrdf * gbuffer.ao; 
+	diffuseBrdf = gbuffer.albedo * envBrdf.z;
+	result.diffuse = distantProbDiffuse(cubeSampler, g_envprobsDistBlurred, gbuffer.normal, V, NoV, R);
+	result.diffuse *= diffuseBrdf * gbuffer.ao; 
 
-	return specularBrdf;
+	result.scattering = 0;// TODO
+
+	return result;
 }

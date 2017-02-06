@@ -40,19 +40,19 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 	else
 	{
 		lightSpot_array = new SpotLightBuffer;
-		lightSpotDisk_array = new SpotLightDiskBuffer;
-		lightSpotRect_array = new SpotLightRectBuffer;
+		lightSpotDisk_array = new DiskLightBuffer;
+		lightSpotRect_array = new RectLightBuffer;
 		lightPoint_array = new PointLightBuffer;
-		lightPointSphere_array = new PointLightSphereBuffer;
-		lightPointTube_array = new PointLightTubeBuffer;
+		lightPointSphere_array = new SphereLightBuffer;
+		lightPointTube_array = new TubeLightBuffer;
 		lightDir_array = new DirLightBuffer;
 
 		casterSpot_array = new SpotCasterBuffer;
-		casterSpotDisk_array = new SpotCasterDiskBuffer;
-		casterSpotRect_array = new SpotCasterRectBuffer;
+		casterSpotDisk_array = new DiskCasterBuffer;
+		casterSpotRect_array = new RectCasterBuffer;
 		casterPoint_array = new PointCasterBuffer;	
-		casterPointSphere_array = new PointCasterSphereBuffer;	
-		casterPointTube_array = new PointCasterTubeBuffer;	
+		casterPointSphere_array = new SphereCasterBuffer;	
+		casterPointTube_array = new TubeCasterBuffer;	
 
 		shadowsRenderer = new ShadowsRenderer(this);
 		voxelRenderer = new VoxelRenderer(this);
@@ -245,9 +245,9 @@ bool SceneRenderMgr::RegSpotLight(XMFLOAT4& color, float range, XMFLOAT2& cone, 
 	if(lightSpot_count >= LIGHT_SPOT_FRAME_MAX)
 		return false;
 	
-	lightSpot_array->Pos_Range[lightSpot_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightSpot_array->Color_ConeX[lightSpot_count] = XMFLOAT4(color.x, color.y, color.z, cone.x);
-	lightSpot_array->Dir_ConeY[lightSpot_count] = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
+	lightSpot_array->PosRange[lightSpot_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightSpot_array->ColorConeX[lightSpot_count] = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	lightSpot_array->DirConeY[lightSpot_count] = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
 
 	lightSpot_count++;
 

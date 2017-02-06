@@ -226,16 +226,16 @@ namespace EngineCore
 
 		inline SpotLightBuffer* GetSpotLightDataPtr(size_t* size) 
 		{*size = lightSpot_count; return lightSpot_array;}
-		inline SpotLightDiskBuffer* GetSpotLightDiskDataPtr(size_t* size) 
+		inline DiskLightBuffer* GetSpotLightDiskDataPtr(size_t* size) 
 		{*size = lightSpotDisk_count; return lightSpotDisk_array;}
-		inline SpotLightRectBuffer* GetSpotLightRectDataPtr(size_t* size) 
+		inline RectLightBuffer* GetSpotLightRectDataPtr(size_t* size) 
 		{*size = lightSpotRect_count; return lightSpotRect_array;}
 
 		inline PointLightBuffer* GetPointLightDataPtr(size_t* size) 
 		{*size = lightPoint_count; return lightPoint_array;}
-		inline PointLightSphereBuffer* GetPointLightSphereDataPtr(size_t* size) 
+		inline SphereLightBuffer* GetPointLightSphereDataPtr(size_t* size) 
 		{*size = lightPointSphere_count; return lightPointSphere_array;}
-		inline PointLightTubeBuffer* GetPointLightTubeDataPtr(size_t* size) 
+		inline TubeLightBuffer* GetPointLightTubeDataPtr(size_t* size) 
 		{*size = lightPointTube_count; return lightPointTube_array;}
 
 		inline DirLightBuffer* GetDirLightDataPtr(size_t* size) 
@@ -243,16 +243,16 @@ namespace EngineCore
 
 		inline SpotCasterBuffer* GetSpotCasterDataPtr(size_t* size) 
 		{*size = casterSpot_count; return casterSpot_array;}
-		inline SpotCasterDiskBuffer* GetSpotCasterDiskDataPtr(size_t* size) 
+		inline DiskCasterBuffer* GetSpotCasterDiskDataPtr(size_t* size) 
 		{*size = casterSpotDisk_count; return casterSpotDisk_array;}
-		inline SpotCasterRectBuffer* GetSpotCasterRectDataPtr(size_t* size) 
+		inline RectCasterBuffer* GetSpotCasterRectDataPtr(size_t* size) 
 		{*size = casterSpotRect_count; return casterSpotRect_array;}
 		
 		inline PointCasterBuffer* GetPointCasterDataPtr(size_t* size) 
 		{*size = casterPoint_count; return casterPoint_array;}
-		inline PointCasterSphereBuffer* GetPointCasterSphereDataPtr(size_t* size) 
+		inline SphereCasterBuffer* GetPointCasterSphereDataPtr(size_t* size) 
 		{*size = casterPointSphere_count; return casterPointSphere_array;}
-		inline PointCasterTubeBuffer* GetPointCasterTubeDataPtr(size_t* size) 
+		inline TubeCasterBuffer* GetPointCasterTubeDataPtr(size_t* size) 
 		{*size = casterPointTube_count; return casterPointTube_array;}
 		
 		// temp
@@ -281,16 +281,16 @@ namespace EngineCore
 
 		SpotLightBuffer* lightSpot_array;
 		size_t lightSpot_count;
-		SpotLightDiskBuffer* lightSpotDisk_array;
+		DiskLightBuffer* lightSpotDisk_array;
 		size_t lightSpotDisk_count;
-		SpotLightRectBuffer* lightSpotRect_array;
+		RectLightBuffer* lightSpotRect_array;
 		size_t lightSpotRect_count;
 
 		PointLightBuffer* lightPoint_array;
 		size_t lightPoint_count;
-		PointLightSphereBuffer* lightPointSphere_array;
+		SphereLightBuffer* lightPointSphere_array;
 		size_t lightPointSphere_count;
-		PointLightTubeBuffer* lightPointTube_array;
+		TubeLightBuffer* lightPointTube_array;
 		size_t lightPointTube_count;
 
 		DirLightBuffer* lightDir_array;
@@ -298,16 +298,16 @@ namespace EngineCore
 
 		SpotCasterBuffer* casterSpot_array;
 		size_t casterSpot_count;
-		SpotCasterDiskBuffer* casterSpotDisk_array;
+		DiskCasterBuffer* casterSpotDisk_array;
 		size_t casterSpotDisk_count;
-		SpotCasterRectBuffer* casterSpotRect_array;
+		RectCasterBuffer* casterSpotRect_array;
 		size_t casterSpotRect_count;
 
 		PointCasterBuffer* casterPoint_array;
 		size_t casterPoint_count;
-		PointCasterSphereBuffer* casterPointSphere_array;
+		SphereCasterBuffer* casterPointSphere_array;
 		size_t casterPointSphere_count;
-		PointCasterTubeBuffer* casterPointTube_array;
+		TubeCasterBuffer* casterPointTube_array;
 		size_t casterPointTube_count;
 		
 		CameraComponent* current_cam;
