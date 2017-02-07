@@ -1,9 +1,4 @@
-
-#include "light_structs.hlsl"
-#include "direct_brdf.hlsl"
-
 #define DEBUG_CASCADE_LIGHTS 0
-#include "shadow_helpers.hlsl"
 
 #define NOH_EPCILON 0.00001f
 
@@ -142,378 +137,403 @@ float getAngleAtt( float3 normalizedLightVector, float3 lightDir, float lightAng
 // LIGHTING
 LightPrepared PrepareSpotLight(in SpotLightBuffer lightData, in GBufferData gbuffer)
 {		
-	LightPrepared result = 0;
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(unnormL);
-	result.DoUL = dot(lightData.DirConeY.xyz, -unnormL);
+	result.L = normalize(result.unnormL);
+	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
+	return result;
 }
 
 bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {	
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 
 	[branch]
-	if(preparedData.DoUL <= 0)
-		return false;
-		
-	float illuminance = getDistanceAtt( preparedData.unnormL, lightData.PosRange.w );
-	[branch]
-	if(illuminance == 0)
-		return false;
-
-	illuminance *= getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
-	[branch]
-	if(illuminance == 0)
-		return false;
-
-	const float3 colorIlluminance = illuminance * lightData.ColorConeX.rgb;
+	if(preparedData.DoUL > 0)
+	{
+		float illuminance = getDistanceAtt( preparedData.unnormL, lightData.PosRange.w );
+		[branch]
+		if(illuminance > 0)
+		{
+			illuminance *= getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
+			[branch]
+			if(illuminance > 0)
+			{
+				const float3 colorIlluminance = illuminance * lightData.ColorConeX.rgb;
 	
-	results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+				results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+				exec = true;
 
-	const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
-	[branch]
-	if( NoL == 0.0f )
-		return true;
+				const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
+				[branch]
+				if( NoL > 0.0f )
+				{
+					const float3 H = normalize( ViewVector + preparedData.L );
+					const float VoH = saturate( dot(ViewVector, H) );
+					const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
 	
-	const float3 H = normalize( ViewVector + preparedData.L );
-	const float VoH = saturate( dot(ViewVector, H) );
-	const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
-	
-	results.diffuse = results.specular = colorIlluminance * NoL;
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-	results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	return true;
+					results.diffuse = results.specular = colorIlluminance * NoL;
+					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
+					results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+				}
+			}
+		}
+	}
+	return exec;
 }
 
 LightPrepared PrepareDiskLight(in DiskLightBuffer lightData, in GBufferData gbuffer)
 {		
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.VirtposEmpty.xyz - gbuffer.wpos;
 	result.L = normalize(result.unnormL);
 	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
+	return result;
 }
 
 bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 	
 	const float3 unnormL = lightData.PosRange.xyz - gbuffer.wpos;
 	const float3 L = normalize(unnormL);
 	const float DoUL = dot(lightData.DirConeY.xyz, -unnormL);
 
 	[branch]
-	if(DoUL <= 0)
-		return false;
+	if(DoUL > 0)
+	{			
+		const float sqrDist = dot( unnormL, unnormL );
 			
-	const float sqrDist = dot( unnormL, unnormL );
-			
-	const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
-	[branch]
-	if(smoothFalloff == 0)
-		return false;
-	float coneFalloff = getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
-	[branch]
-	if(coneFalloff == 0)
-		return false;
-	coneFalloff *= smoothFalloff;
+		const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
+		[branch]
+		if(smoothFalloff > 0)
+		{
+			float coneFalloff = getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
+			[branch]
+			if(coneFalloff > 0)
+			{
+				coneFalloff *= smoothFalloff;
 	
-	const float NoL = dot(gbuffer.normal, L);
+				const float NoL = dot(gbuffer.normal, L);
 				
-	// specular
-	const float e = clamp(dot(lightData.DirConeY.xyz, mData.reflect), -1, -0.0001f);
-	const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
-	const float3 newL = planeRay - lightData.PosRange.xyz;
+				// specular
+				const float e = clamp(dot(lightData.DirConeY.xyz, mData.reflect), -1, -0.0001f);
+				const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
+				const float3 newL = planeRay - lightData.PosRange.xyz;
 		
-	const float SphereAngle = clamp( -e * lightData.AreaInfoEmpty.x / max(sqrt( sqrDist ), lightData.AreaInfoEmpty.x), 0, 0.5 );
-	const float specEnergy = Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
+				const float SphereAngle = clamp( -e * lightData.AreaInfoEmpty.x / max(sqrt( sqrDist ), lightData.AreaInfoEmpty.x), 0, 0.5 );
+				const float specEnergy = Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
 		
-	const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, lightData.AreaInfoEmpty.x));
+				const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, lightData.AreaInfoEmpty.x));
 				
-	//diffuse
-	const float3 diffL = normalize(unnormL + gbuffer.normal * lightData.AreaInfoEmpty.x * (1 - saturate(NoL)));	
+				//diffuse
+				const float3 diffL = normalize(unnormL + gbuffer.normal * lightData.AreaInfoEmpty.x * (1 - saturate(NoL)));	
 			
-	// Disk evaluation
-	const float sinSigmaSqr = lightData.AreaInfoEmpty.y / (lightData.AreaInfoEmpty.y + max(sqrDist, lightData.AreaInfoEmpty.y));
-	float noDirIlluminance;
-	float illuminance = illuminanceSphereOrDisk( NoL, sinSigmaSqr, noDirIlluminance );
+				// Disk evaluation
+				const float sinSigmaSqr = lightData.AreaInfoEmpty.y / (lightData.AreaInfoEmpty.y + max(sqrDist, lightData.AreaInfoEmpty.y));
+				float noDirIlluminance;
+				float illuminance = illuminanceSphereOrDisk( NoL, sinSigmaSqr, noDirIlluminance );
 		
-	coneFalloff *= saturate(dot(lightData.DirConeY.xyz, -L));
+				coneFalloff *= saturate(dot(lightData.DirConeY.xyz, -L));
 		
-	illuminance *= coneFalloff;
-	noDirIlluminance *= coneFalloff;
+				illuminance *= coneFalloff;
+				noDirIlluminance *= coneFalloff;
 			
-	results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				exec = true;
 
-	[branch]
-	if(illuminance == 0)
-		return true;
+				[branch]
+				if(illuminance > 0)
+				{
 		
-	const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
-	const float3 diffH = normalize(ViewVector + diffL);
-	const float diffVoH = saturate(dot(ViewVector, diffH));
+					const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
+					const float3 diffH = normalize(ViewVector + diffL);
+					const float diffVoH = saturate(dot(ViewVector, diffH));
 
-	const float specNoL = saturate( dot(gbuffer.normal, specL) );
-	const float3 specH = normalize(ViewVector + specL);
-	const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
-	const float specVoH = saturate( dot(ViewVector, specH) );
+					const float specNoL = saturate( dot(gbuffer.normal, specL) );
+					const float3 specH = normalize(ViewVector + specL);
+					const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
+					const float specVoH = saturate( dot(ViewVector, specH) );
 			
-	results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
-	results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, gbuffer.R, specNoH, gbuffer.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, gbuffer.NoV, diffNoL, diffVoH);
-	return true;
+					results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
+					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
+				}
+			}
+		}
+	}
+	return exec;
 }
 
 LightPrepared PrepareRectLight(in RectLightBuffer lightData, in GBufferData gbuffer)
 {		
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.VirtposAreaZ.xyz - gbuffer.wpos;
 	result.L = normalize(result.unnormL);
 	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
+	return result;
 }
 
 bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 	
 	const float3 unnormL = lightData.PosRange.xyz - gbuffer.wpos;
 	const float3 L = normalize(unnormL);
 	const float DoUL = dot(lightData.DirConeY.xyz, -unnormL);
 
 	[branch]
-	if(DoUL <= 0)
-		return false;
+	if(DoUL > 0)
+	{			
+		const float sqrDist = dot( unnormL, unnormL );
 			
-	const float sqrDist = dot( unnormL, unnormL );
-			
-	const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
-	[branch]
-	if(smoothFalloff == 0)
-		return false;
-	float coneFalloff = getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
-	[branch]
-	if(coneFalloff == 0)
-		return false;
-	coneFalloff *= smoothFalloff;
+		const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
+		[branch]
+		if(smoothFalloff > 0)
+		{
+			float coneFalloff = getAngleAtt(preparedData.L, -lightData.DirConeY.xyz, lightData.ColorConeX.w, lightData.DirConeY.w);
+			[branch]
+			if(coneFalloff > 0)
+			{
+				coneFalloff *= smoothFalloff;
 					
-	// specular				
-	const float RLengthL = rcp( max(sqrt( sqrDist ), lightData.DirUpAreaX.x) );
+				// specular				
+				const float RLengthL = rcp( max(sqrt( sqrDist ), lightData.DirUpAreaX.x) );
 		
-	const float e = clamp(dot(lightData.DirConeY.xyz, mData.reflect), -1, -0.0001f);
-	const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
-	const float3 newL = planeRay - lightData.PosRange.xyz;
+				const float e = clamp(dot(lightData.DirConeY.xyz, mData.reflect), -1, -0.0001f);
+				const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
+				const float3 newL = planeRay - lightData.PosRange.xyz;
 		
-	const float LineXAngle = clamp( -e * lightData.VirtposAreaZ.w * RLengthL, 0, 0.5 );
-	const float LineYAngle = clamp( -e * lightData.DirSideAreaY.w * RLengthL, 0, 0.5 );
-	const float specEnergy = mData.sqr_aGGX / ( saturate( mData.aGGX + LineXAngle ) * saturate( mData.aGGX + LineYAngle ) );
+				const float LineXAngle = clamp( -e * lightData.VirtposAreaZ.w * RLengthL, 0, 0.5 );
+				const float LineYAngle = clamp( -e * lightData.DirSideAreaY.w * RLengthL, 0, 0.5 );
+				const float specEnergy = mData.sqr_aGGX / ( saturate( mData.aGGX + LineXAngle ) * saturate( mData.aGGX + LineYAngle ) );
 			
-	const float3 specL = normalize(
-		unnormL + clamp(dot(newL, lightData.DirSideAreaY.xyz), -lightData.DirSideAreaY.w, lightData.DirSideAreaY.w) * 
-		lightData.DirSideAreaY.xyz + clamp(dot(newL, lightData.DirUpAreaX.xyz), -lightData.VirtposAreaZ.w, lightData.VirtposAreaZ.w) * lightData.DirUpAreaX.xyz);
+				const float3 specL = normalize(
+					unnormL + clamp(dot(newL, lightData.DirSideAreaY.xyz), -lightData.DirSideAreaY.w, lightData.DirSideAreaY.w) * 
+					lightData.DirSideAreaY.xyz + clamp(dot(newL, lightData.DirUpAreaX.xyz), -lightData.VirtposAreaZ.w, lightData.VirtposAreaZ.w) * lightData.DirUpAreaX.xyz);
 			
-	//diffuse
-	const float3 diffL = normalize( unnormL + gbuffer.normal * lightData.DirUpAreaX.w * (1 - saturate(dot(gbuffer.normal, L))) );	
+				//diffuse
+				const float3 diffL = normalize( unnormL + gbuffer.normal * lightData.DirUpAreaX.w * (1 - saturate(dot(gbuffer.normal, L))) );	
 				
-	// Rect evaluation
-	float noDirIlluminance;
-	float illuminance = illuminanceRect(gbuffer.wpos, lightData.PosRange.xyz, L, gbuffer.normal, lightData.DirConeY.xyz, 
-		lightData.DirSideAreaY.xyz * lightData.DirSideAreaY.w, lightData.DirUpAreaX.xyz * lightData.VirtposAreaZ.w, noDirIlluminance);
-	illuminance = max(0, illuminance);
-	noDirIlluminance = max(0, noDirIlluminance);
+				// Rect evaluation
+				float noDirIlluminance;
+				float illuminance = illuminanceRect(gbuffer.wpos, lightData.PosRange.xyz, L, gbuffer.normal, lightData.DirConeY.xyz, 
+					lightData.DirSideAreaY.xyz * lightData.DirSideAreaY.w, lightData.DirUpAreaX.xyz * lightData.VirtposAreaZ.w, noDirIlluminance);
+				illuminance = max(0, illuminance);
+				noDirIlluminance = max(0, noDirIlluminance);
 
-	illuminance *= coneFalloff;
-	noDirIlluminance *= coneFalloff;
+				illuminance *= coneFalloff;
+				noDirIlluminance *= coneFalloff;
 			
-	results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				exec = true;
 
-	[branch]
-	if(illuminance == 0)
-		return true;
-		
-	const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
-	const float3 diffH = normalize(ViewVector + diffL);
-	const float diffVoH = saturate(dot(ViewVector, diffH));
+				[branch]
+				if(illuminance > 0)
+				{	
+					const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
+					const float3 diffH = normalize(ViewVector + diffL);
+					const float diffVoH = saturate(dot(ViewVector, diffH));
 
-	const float specNoL = saturate( dot(gbuffer.normal, specL) );
-	const float3 specH = normalize(ViewVector + specL);
-	const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
-	const float specVoH = saturate( dot(ViewVector, specH) );
+					const float specNoL = saturate( dot(gbuffer.normal, specL) );
+					const float3 specH = normalize(ViewVector + specL);
+					const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
+					const float specVoH = saturate( dot(ViewVector, specH) );
 			
-	results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
-	results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, gbuffer.R, specNoH, gbuffer.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, gbuffer.NoV, diffNoL, diffVoH);
-	return true;
+					results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
+					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
+				}
+			}
+		}
+	}
+	return exec;
 }
 
 LightPrepared PreparePointLight(in PointLightBuffer lightData, in GBufferData gbuffer)
 {		
-	LightPrepared result = 0;
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(unnormL);
+	result.L = normalize(result.unnormL);
+	return result;
 }
 
 bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {	
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 	
 	const float illuminance = getDistanceAtt( preparedData.unnormL, lightData.PosRange.w );
 	[branch]
-	if(illuminance == 0)
-		return false;
+	if(illuminance > 0)
+	{
+		const float3 colorIlluminance = illuminance * lightData.Color.rgb;
+	
+		results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		exec = true;
 
-	const float3 colorIlluminance = illuminance * lightData.Color.rgb;
+		const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
+		[branch]
+		if( NoL > 0.0f )
+		{
+			const float3 H = normalize( ViewVector + preparedData.L );
+			const float VoH = saturate( dot(ViewVector, H) );
+			const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
 	
-	results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
-
-	const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
-	[branch]
-	if( NoL == 0.0f )
-		return true;
-	
-	const float3 H = normalize( ViewVector + preparedData.L );
-	const float VoH = saturate( dot(ViewVector, H) );
-	const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
-	
-	results.diffuse = results.specular = colorIlluminance * NoL;
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-	results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	return true;
+			results.diffuse = results.specular = colorIlluminance * NoL;
+			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
+			results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+		}
+	}
+	return exec;
 }
 
 LightPrepared PrepareSphereLight(in SphereLightBuffer lightData, in GBufferData gbuffer)
 {		
-	LightPrepared result = 0;
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(unnormL);
+	result.L = normalize(result.unnormL);
+	return result;
 }
 
 bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {	
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 	
 	const float sqrDist = dot( preparedData.unnormL, preparedData.unnormL );
 			
 	const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
 	[branch]
-	if(smoothFalloff == 0)
-		continue;
-
-	// specular
-	const float SphereAngle = clamp( lightData.AreaInfo.x / max(sqrt( sqrDist ), lightData.AreaInfo.x), 0, 0.5 );
-	const float specEnergy = Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
+	if(smoothFalloff > 0)
+	{
+		// specular
+		const float SphereAngle = clamp( lightData.AreaInfo.x / max(sqrt( sqrDist ), lightData.AreaInfo.x), 0, 0.5 );
+		const float specEnergy = Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
 		
-	const float3 centerToRay = dot(preparedData.unnormL, mData.reflect) * mData.reflect - preparedData.unnormL;
-	const float3 specL = normalize(preparedData.unnormL + centerToRay * saturate(lightData.AreaInfo.x / sqrt(dot(centerToRay, centerToRay))));
+		const float3 centerToRay = dot(preparedData.unnormL, mData.reflect) * mData.reflect - preparedData.unnormL;
+		const float3 specL = normalize(preparedData.unnormL + centerToRay * saturate(lightData.AreaInfo.x / sqrt(dot(centerToRay, centerToRay))));
 			
-	//diffuse
-	const float3 diffL = normalize(preparedData.unnormL + gbuffer.normal * lightData.AreaInfo.x * (1 - saturate(dot(gbuffer.normal, preparedData.L))));	
+		//diffuse
+		const float3 diffL = normalize(preparedData.unnormL + gbuffer.normal * lightData.AreaInfo.x * (1 - saturate(dot(gbuffer.normal, preparedData.L))));	
 				
-	// Sphere evaluation
-	const float cosTheta = clamp( dot(gbuffer.normal, preparedData.L), -0.999, 0.999);
-	const float sinSigmaSqr = min( lightData.AreaInfo.y / sqrDist, 0.9999f );
-	float noDirIlluminance;
-	float illuminance = illuminanceSphereOrDisk( cosTheta, sinSigmaSqr, noDirIlluminance );
+		// Sphere evaluation
+		const float cosTheta = clamp( dot(gbuffer.normal, preparedData.L), -0.999, 0.999);
+		const float sinSigmaSqr = min( lightData.AreaInfo.y / sqrDist, 0.9999f );
+		float noDirIlluminance;
+		float illuminance = illuminanceSphereOrDisk( cosTheta, sinSigmaSqr, noDirIlluminance );
 		
-	noDirIlluminance *= smoothFalloff;
-	illuminance *= smoothFalloff;
+		noDirIlluminance *= smoothFalloff;
+		illuminance *= smoothFalloff;
 
-	results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		exec = true;
 
-	[branch]
-	if(illuminance == 0)
-		return true;
+		[branch]
+		if(illuminance > 0)
+		{
+			const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
+			const float3 diffH = normalize(ViewVector + diffL);
+			const float diffVoH = saturate(dot(ViewVector, diffH));
 
-	const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
-	const float3 diffH = normalize(ViewVector + diffL);
-	const float diffVoH = saturate(dot(ViewVector, diffH));
-
-	const float specNoL = saturate( dot(gbuffer.normal, specL) );
-	const float3 specH = normalize(ViewVector + specL);
-	const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
-	const float specVoH = saturate( dot(ViewVector, specH) );
+			const float specNoL = saturate( dot(gbuffer.normal, specL) );
+			const float3 specH = normalize(ViewVector + specL);
+			const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
+			const float specVoH = saturate( dot(ViewVector, specH) );
 	
-	results.diffuse = results.specular = illuminance * lightData.Color.rgb;
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
-	results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	return true;
+			results.diffuse = results.specular = illuminance * lightData.Color.rgb;
+			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
+			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+		}
+	}
+	return exec;
 }
 
 LightPrepared PrepareTubeLight(in TubeLightBuffer lightData, in GBufferData gbuffer)
 {		
-	LightPrepared result = 0;
+	LightPrepared result = (LightPrepared)0;
 	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(unnormL);
+	result.L = normalize(result.unnormL);
+	return result;
 }
 
 bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
 {	
-	results = 0;
+	results = (LightComponents)0;
+	bool exec = false;
 	
 	const float sqrDist = dot( preparedData.unnormL, preparedData.unnormL );
 			
 	const float smoothFalloff = smoothDistanceAtt(sqrDist, lightData.PosRange.w);
 	[branch]
-	if(smoothFalloff == 0)
-		continue;
-
-	// specular
-	const float LineAngle = saturate( lightData.AreaInfo.y / max(sqrt( sqrDist ), lightData.AreaInfo.x) );
-	float specEnergy = mData.aGGX / saturate( mData.aGGX + 0.5 * LineAngle );
+	if(smoothFalloff > 0)
+	{
+		// specular
+		const float LineAngle = saturate( lightData.AreaInfo.y / max(sqrt( sqrDist ), lightData.AreaInfo.x) );
+		float specEnergy = mData.aGGX / saturate( mData.aGGX + 0.5 * LineAngle );
 				
-	// Closest point on line segment to ray
-	const float3 Ld = lightData.DirAreaA.xyz * lightData.AreaInfo.y;
-	const float3 halfLd = 0.5 * Ld;
-	const float3 L0 = preparedData.unnormL - halfLd;
+		// Closest point on line segment to ray
+		const float3 Ld = lightData.DirAreaA.xyz * lightData.AreaInfo.y;
+		const float3 halfLd = 0.5 * Ld;
+		const float3 L0 = preparedData.unnormL - halfLd;
 
-	// Shortest distance
-	const float b = dot( mData.reflect, Ld );
-	const float t = saturate( dot( L0, b * mData.reflect - Ld ) / (lightData.AreaInfo.w - b * b) );
-	float3 specL = L0 + t * Ld;
+		// Shortest distance
+		const float b = dot( mData.reflect, Ld );
+		const float t = saturate( dot( L0, b * mData.reflect - Ld ) / (lightData.AreaInfo.w - b * b) );
+		float3 specL = L0 + t * Ld;
 		
-	// sphere
-	const float SphereAngle = clamp( lightData.AreaInfo.x / max(sqrt( dot( specL, specL ) ), lightData.AreaInfo.x), 0, 0.5 );
-	specEnergy *= Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
+		// sphere
+		const float SphereAngle = clamp( lightData.AreaInfo.x / max(sqrt( dot( specL, specL ) ), lightData.AreaInfo.x), 0, 0.5 );
+		specEnergy *= Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
 		
-	const float3 centerToRay = dot(specL, mData.reflect) * mData.reflect - specL;
-	specL = normalize(specL + centerToRay * saturate(lightData.AreaInfo.x / sqrt(dot(centerToRay, centerToRay))));
+		const float3 centerToRay = dot(specL, mData.reflect) * mData.reflect - specL;
+		specL = normalize(specL + centerToRay * saturate(lightData.AreaInfo.x / sqrt(dot(centerToRay, centerToRay))));
 			
-	// diffuse
-	const float3 diffL = normalize( preparedData.unnormL + gbuffer.normal * lightData.DirAreaA.w * (1 - saturate(dot(gbuffer.normal, preparedData.L))) );
+		// diffuse
+		const float3 diffL = normalize( preparedData.unnormL + gbuffer.normal * lightData.DirAreaA.w * (1 - saturate(dot(gbuffer.normal, preparedData.L))) );
 		
-	float noDirIlluminance;
-	float illuminance = illuminanceTube( lightData.PosRange.xyz, gbuffer.wpos, gbuffer.normal, lightData.AreaInfo.x, lightData.AreaInfo.z, L, L0, Ld, lightData.AreaInfo.w, noDirIlluminance );
+		float noDirIlluminance;
+		float illuminance = illuminanceTube( lightData.PosRange.xyz, gbuffer.wpos, gbuffer.normal, lightData.AreaInfo.x, lightData.AreaInfo.z, preparedData.L, L0, Ld, lightData.AreaInfo.w, noDirIlluminance );
 
-	noDirIlluminance *= smoothFalloff;
-	illuminance *= smoothFalloff;
+		noDirIlluminance *= smoothFalloff;
+		illuminance *= smoothFalloff;
 
-	results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		exec = true;
 
-	[branch]
-	if(illuminance == 0)
-		return true;
+		[branch]
+		if(illuminance > 0)
+		{
+			const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
+			const float3 diffH = normalize(ViewVector + diffL);
+			const float diffVoH = saturate(dot(ViewVector, diffH));
 
-	const float diffNoL = saturate(dot(gbuffer.normal, diffL));	
-	const float3 diffH = normalize(ViewVector + diffL);
-	const float diffVoH = saturate(dot(ViewVector, diffH));
-
-	const float specNoL = saturate( dot(gbuffer.normal, specL) );
-	const float3 specH = normalize(ViewVector + specL);
-	const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
-	const float specVoH = saturate( dot(ViewVector, specH) );
+			const float specNoL = saturate( dot(gbuffer.normal, specL) );
+			const float3 specH = normalize(ViewVector + specL);
+			const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
+			const float specVoH = saturate( dot(ViewVector, specH) );
 	
-	results.diffuse = results.specular = illuminance * lightData.Color.rgb;
-	results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
-	results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
-	return true;
+			results.diffuse = results.specular = illuminance * lightData.Color.rgb;
+			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
+			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+		}
+	}
+	return exec;
 }
 
 bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer lightData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, float3 depthFix, out LightComponents results)
 {	
-	results = 0;
+	results = (LightComponents)0;
 	
 	const float3 L = -lightData.DirAreaY.xyz;
 		
@@ -523,43 +543,39 @@ bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLig
 			
 	const float3 H = normalize(ViewVector + L);
 	const float VoH = saturate(dot(ViewVector, H));
-	const float NoL = saturate(dot(normal, L));
+	const float NoL = saturate(dot(gbuffer.normal, L));
 		
 	const float3 specH = normalize(ViewVector + specL);
-	const float specNoH = saturate( dot(normal, specH) + NOH_EPCILON );
+	const float specNoH = saturate( dot(gbuffer.normal, specH) + NOH_EPCILON );
 	const float specVoH = saturate( dot(ViewVector, specH) );
-	const float specNoL = saturate( dot(normal, specL) );
+	const float specNoL = saturate( dot(gbuffer.normal, specL) );
 
 	float3 colorLight = lightData.ColorAreaX.rgb;
 
 	results.scattering = colorLight * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
 	
 	[branch]
-	if(specNoL == 0.0f)
-		return true;
+	if(specNoL > 0.0f)
+	{
+	#if DEBUG_CASCADE_LIGHTS == 0
+		float light_blocked = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+		[branch]
+		if(light_blocked > 0)
+		{
+			colorLight *= light_blocked;
 
-#if DEBUG_CASCADE_LIGHTS == 0
-
-	float light_blocked = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
-	[branch]
-	if(light_blocked == 0)
-		return true;
-	colorLight *= light_blocked;
-
-#else
-
-	results.diffuse = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
-	return true;
-
-#endif
-	
-	results.diffuse = colorLight * NoL * directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-	results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+			results.diffuse = colorLight * NoL * directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
+			results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+		}
+	#else
+		results.diffuse = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+	#endif
+	}
 	return true;
 }
 
 // LIGHT CALCULATION
-
+#ifdef FULL_LIGHT
 LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, float linDepth)
 {
@@ -572,7 +588,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	shadowDepthFix.z = max(0.5 * linDepth, 2);
 	float dirDepthFix = max(0.1 * linDepth, 1);
 
-	LightComponents directLight = 0;
+	LightComponents directLight = (LightComponents)0;
 
 	[loop] // spot
 	for(int i_spt=0; i_spt < int(g_spot_count); i_spt++)
@@ -591,7 +607,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	for(int ic_spt=0; ic_spt < int(g_caster_spot_count); ic_spt++)
 	{
 		SpotCasterBuffer lightData = g_spotCasterBuffer[ g_lightIDs.SpotCastersIDs[ic_spt] ];
-		SpotLightBuffer lightDataShort = 0;
+		SpotLightBuffer lightDataShort = (SpotLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
 		LightPrepared prepared = PrepareSpotLight(lightDataShort, gbuffer);
@@ -623,13 +639,13 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	[loop] // caster disk
 	for(int ic_disk=0; ic_disk < int(g_caster_disk_count); ic_disk++)
 	{
-		DiskCasterBuffer lightData = g_diskCasterBuffer[ g_lightIDs.DiskCasterIDs[ic_disk] ];
-		DiskLightBuffer lightDataShort = 0;
+		DiskCasterBuffer lightData = g_diskCasterBuffer[ g_lightIDs.DiskCastersIDs[ic_disk] ];
+		DiskLightBuffer lightDataShort = (DiskLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
 		LightPrepared prepared = PrepareDiskLight(lightDataShort, gbuffer);
 		
-		SpotCasterBuffer lightDataShadow = 0;
+		SpotCasterBuffer lightDataShadow = (SpotCasterBuffer)0;
 		lightDataShadow.ConstructDisk(lightData);
 		float lightAmount = SpotlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix);
 		[branch] if( lightAmount == 0 )
@@ -658,13 +674,13 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	[loop] // caster rect
 	for(int ic_rect=0; ic_rect < int(g_caster_rect_count); ic_rect++)
 	{
-		RectCasterBuffer lightData = g_rectCasterBuffer[ g_lightIDs.RectCasterIDs[ic_rect] ];
-		RectLightBuffer lightDataShort = 0;
+		RectCasterBuffer lightData = g_rectCasterBuffer[ g_lightIDs.RectCastersIDs[ic_rect] ];
+		RectLightBuffer lightDataShort = (RectLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
 		LightPrepared prepared = PrepareRectLight(lightDataShort, gbuffer);
 		
-		SpotCasterBuffer lightDataShadow = 0;
+		SpotCasterBuffer lightDataShadow = (SpotCasterBuffer)0;
 		lightDataShadow.ConstructRect(lightData);
 		float lightAmount = SpotlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix);
 		[branch] if( lightAmount == 0 )
@@ -676,7 +692,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
 	}
-
+	
 	[loop] // point
 	for(int i_p=0; i_p < int(g_point_count); i_p++)
 	{
@@ -693,8 +709,8 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	[loop] // caster point
 	for(int ic_p=0; ic_p < int(g_caster_point_count); ic_p++)
 	{
-		PointCasterBuffer lightData = g_pointÑasterBuffer[ g_lightIDs.PointÑasterIDs[ic_p] ];
-		PointLightBuffer lightDataShort = 0;
+		PointCasterBuffer lightData = g_pointCasterBuffer[ g_lightIDs.PointCastersIDs[ic_p] ];
+		PointLightBuffer lightDataShort = (PointLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
 		LightPrepared prepared = PreparePointLight(lightDataShort, gbuffer);
@@ -709,7 +725,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
 	}
-
+	
 	[loop] // sphere
 	for(int i_sph=0; i_sph < int(g_sphere_count); i_sph++)
 	{
@@ -726,13 +742,13 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	[loop] // caster sphere
 	for(int ic_sph=0; ic_sph < int(g_caster_sphere_count); ic_sph++)
 	{
-		SphereCasterBuffer lightData = g_sphereÑasterBuffer[ g_lightIDs.SphereÑasterIDs[ic_sph] ];
-		SphereLightBuffer lightDataShort = 0;
+		SphereCasterBuffer lightData = g_sphereCasterBuffer[ g_lightIDs.SphereCastersIDs[ic_sph] ];
+		SphereLightBuffer lightDataShort = (SphereLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
 		LightPrepared prepared = PrepareSphereLight(lightDataShort, gbuffer);
 		
-		PointCasterBuffer lightDataShadow = 0;
+		PointCasterBuffer lightDataShadow = (PointCasterBuffer)0;
 		lightDataShadow.ConstructSphere(lightData);
 		float lightAmount = PointlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix);
 		[branch] if( lightAmount == 0 )
@@ -744,15 +760,15 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
 	}
-
+	
 	[loop] // tube
 	for(int i_tube=0; i_tube < int(g_tube_count); i_tube++)
 	{
-		SphereLightBuffer lightData = g_sphereLightBuffer[ g_lightIDs.SphereLightsIDs[i_tube] ];
-		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
+		TubeLightBuffer lightData = g_tubeLightBuffer[ g_lightIDs.TubeLightsIDs[i_tube] ];
+		LightPrepared prepared = PrepareTubeLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateTubeLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -761,15 +777,15 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	[loop] // caster tube
 	for(int ic_tube=0; ic_tube < int(g_caster_tube_count); ic_tube++)
 	{
-		TubeCasterBuffer lightData = g_tubeÑasterBuffer[ g_lightIDs.TubeÑasterIDs[ic_tube] ];
-		TubeLightBuffer lightDataShort = 0;
+		TubeCasterBuffer lightData = g_tubeCasterBuffer[ g_lightIDs.TubeCastersIDs[ic_tube] ];
+		TubeLightBuffer lightDataShort = (TubeLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
-		LightPrepared prepared = PointlightShadow(lightDataShort, gbuffer);
+		LightPrepared prepared = PrepareTubeLight(lightDataShort, gbuffer);
 		
-		PointCasterBuffer lightDataShadow = 0;
+		PointCasterBuffer lightDataShadow = (PointCasterBuffer)0;
 		lightDataShadow.ConstructTube(lightData);
-		float lightAmount = PointlightShadow(samp, shadowmap, prepared, lightData, gbuffer, shadowDepthFix);
+		float lightAmount = PointlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix);
 		[branch] if( lightAmount == 0 )
 			continue;
 
@@ -779,18 +795,19 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
 	}
-
+	
 	[loop] // dir
 	for(int i_dir=0; i_dir < int(g_dir_count); i_dir++)
 	{
 		DirLightBuffer lightData = g_dirLightBuffer[ g_lightIDs.DirLightsIDs[i_dir] ];
 		
 		LightComponents lightResult;
-		[branch] if( !CalculateTubeLight( samp, shadowmap, lightData, gbuffer, mData, materialParams, ViewVector, shadowDepthFix, lightResult ) )
+		[branch] if( !CalculateDirLight( samp, shadowmap, lightData, gbuffer, mData, materialParams, ViewVector, shadowDepthFix, lightResult ) )
 			continue;
 		
-		directLight.AppendShadowed(lightResult, lightAmount);
+		directLight.Append(lightResult);
 	}
-
+	
 	return directLight;
 }
+#endif

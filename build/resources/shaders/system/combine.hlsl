@@ -9,7 +9,7 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
 
-#include "light_constants.hlsl"
+#include "../common/light_structs.hlsl"
 
 Texture2D diffuse : register(t0); 
 Texture2D specular : register(t1); 

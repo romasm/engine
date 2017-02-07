@@ -1,8 +1,13 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
+#include "../common/light_structs.hlsl"
 
-#define GROUP_THREAD_COUNT 2
+#define GROUP_THREAD_COUNT 8
+
+RWTexture2D <float4> diffuseOutput : register(u0);  
+RWTexture2D <float4> specularFirstOutput : register(u1);  
+RWTexture2D <float2> specularSecondOutput : register(u2);  
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -90,8 +95,8 @@ cbuffer configBuffer : register(b2)
 
 	float indirDiff;
 	float indirSpec;
-	float _padding0;
-	float _padding1;
+	float _padding0; 
+	float _padding1; 
 };
 
 cbuffer Lights : register(b3) 
@@ -99,6 +104,9 @@ cbuffer Lights : register(b3)
 	LightsIDs g_lightIDs;
 };
 
+#include "../common/shadow_helpers.hlsl"
+#include "../system/direct_brdf.hlsl"
+#define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
 
@@ -111,6 +119,10 @@ cbuffer volumeBuffer : register(b4)
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {
 	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
+	[branch]
+	if(coords.x > 1.0f || coords.y > 1.0f)
+		return;
+
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
@@ -148,7 +160,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	mData.reflect = 2 * gbuffer.normal * mData.NoV - ViewVector; 
 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
-	
+	   
 	// DIRECT LIGHT
 	LightComponents directLight = 
 		ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
@@ -157,15 +169,15 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, distMip, SO, specularBrdf, diffuseBrdf);
-
-	// VCTGI
+	      
+	// VCTGI   
 	LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, gbuffer, mData, 
 		specularBrdf, diffuseBrdf, SO);
 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
-
+	
 	// SSR
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf * SO ) * SSR.a, 1 - SSR.a );
 	

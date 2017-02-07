@@ -78,7 +78,7 @@ LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSample
 	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
 	specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
 	
-	LightComponents result = 0;
+	LightComponents result = (LightComponents)0;
 
 	// SPECULAR
 	result.specular = distantProbSpecular(cubeSampler, g_envprobsDist, cubeBlurredSampler, g_envprobsDistBlurred,

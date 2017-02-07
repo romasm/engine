@@ -1,9 +1,9 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
-#include "light_constants.hlsl"
+#include "../common/light_structs.hlsl"
 
-#define GROUP_THREAD_COUNT 2
+#define GROUP_THREAD_COUNT 8
 
 RWTexture2D <float4> diffuseOutput : register(u0);  
 RWTexture2D <float4> specularFirstOutput : register(u1);  
@@ -79,6 +79,10 @@ cbuffer configBuffer : register(b2)
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 {
 	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
+	[branch]
+	if(coords.x > 1.0f || coords.y > 1.0f)
+		return;
+
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 

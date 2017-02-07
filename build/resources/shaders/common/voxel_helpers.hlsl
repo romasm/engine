@@ -313,7 +313,7 @@ struct LightComponentsWeight
 LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittance, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], 
 								  in GBufferData gbuffer, in DataForLightCompute mData, in float3 specularBrdf, in float3 diffuseBrdf, in float SO)
 {
-	LightComponentsWeight result = 0;
+	LightComponentsWeight result = (LightComponentsWeight)0;
 
 	// diffuse
 	float4 diffuse = 0;
@@ -328,7 +328,7 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 		diffuse += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
 	}
 
-	result.diffuse = diffuse.rgb * diffuseBrdf * ao;
+	result.diffuse = diffuse.rgb * diffuseBrdf * gbuffer.ao;
 	result.diffuseW = diffuse.a;
 
 	// specular

@@ -1,15 +1,14 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 
-#include "light_constants.hlsl"
+#include "../common/light_structs.hlsl"
 
+#include "../system/direct_brdf.hlsl" 
 #include "../common/voxel_helpers.hlsl"
+#include "../common/shadow_helpers.hlsl"
 #include "../common/light_helpers.hlsl" 
-
-#include "direct_brdf.hlsl" 
- 
     
-#define GROUP_THREAD_COUNT 2
+#define GROUP_THREAD_COUNT 4
 
 RWTexture3D <float4> emittanceVolume : register(u0);  
 

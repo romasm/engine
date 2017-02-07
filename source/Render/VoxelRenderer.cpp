@@ -452,7 +452,10 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
 
-	voxelInjectLight->Dispatch( 32 * clipmapCount, 32 * 6, 32 );
+	// temp
+	const uint16_t group_count = volumeResolution / 4;
+
+	voxelInjectLight->Dispatch( group_count * clipmapCount, group_count * 6, group_count );
 	voxelInjectLight->UnbindUAV();
 	
 	

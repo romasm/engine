@@ -34,14 +34,14 @@ struct LightComponents
 		diffuse += other.diffuse;
 		specular += other.specular;
 		scattering += other.scattering;
-	};
+	}
 
 	void AppendShadowed(in LightComponents other, in float lightAmount)
 	{
 		diffuse += other.diffuse * lightAmount;
 		specular += other.specular * lightAmount;
 		scattering += other.scattering * lightAmount;
-	};
+	}
 };
 
 struct LightPrepared
@@ -116,7 +116,7 @@ struct SpotCasterBuffer
 		ShadowmapAdress = shapeData.ShadowmapAdress;
 		ShadowmapParams = shapeData.ShadowmapParams;
 		matViewProj = shapeData.matViewProj;
-	};
+	}
 
 	void ConstructRect(in RectCasterBuffer shapeData)
 	{
@@ -126,7 +126,7 @@ struct SpotCasterBuffer
 		ShadowmapAdress = shapeData.ShadowmapAdress;
 		ShadowmapParams = shapeData.ShadowmapParams;
 		matViewProj = shapeData.matViewProj;
-	};
+	}
 };
 
 struct SpotLightBuffer
@@ -140,7 +140,7 @@ struct SpotLightBuffer
 		PosRange = longData.PosRange;
 		ColorConeX = longData.ColorConeX;
 		DirConeY = longData.DirConeY;
-	};
+	}
 };
 
 struct DiskLightBuffer
@@ -158,7 +158,7 @@ struct DiskLightBuffer
 		DirConeY = longData.DirConeY;
 		AreaInfoEmpty = longData.AreaInfoEmpty;
 		VirtposEmpty = longData.VirtposEmpty;
-	};
+	}
 };
 
 struct RectLightBuffer
@@ -178,7 +178,7 @@ struct RectLightBuffer
 		DirUpAreaX = longData.DirUpAreaX;
 		DirSideAreaY = longData.DirSideAreaY;
 		VirtposAreaZ = longData.VirtposAreaZ;
-	};
+	}
 };
 
 struct SphereCasterBuffer
@@ -245,7 +245,7 @@ struct PointCasterBuffer
 		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
 		matProj = shapeData.matProj;
 		matView = shapeData.matView;
-	};
+	}
 
 	void ConstructTube(in TubeCasterBuffer shapeData)
 	{
@@ -261,7 +261,7 @@ struct PointCasterBuffer
 		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
 		matProj = shapeData.matProj;
 		matView = shapeData.matView;
-	};
+	}
 };
 
 struct PointLightBuffer
@@ -273,7 +273,7 @@ struct PointLightBuffer
 	{
 		PosRange = longData.PosRange;
 		Color = longData.ColorShParams;
-	};
+	}
 };
 
 struct SphereLightBuffer
@@ -286,8 +286,8 @@ struct SphereLightBuffer
 	{
 		PosRange = longData.PosRange;
 		Color = longData.ColorShParams;
-		AreaInfo = longData.AreaInfoShParams;
-	};
+		AreaInfo = longData.AreaInfo;
+	}
 };
 
 struct TubeLightBuffer
@@ -303,7 +303,7 @@ struct TubeLightBuffer
 		Color = longData.ColorShParams;
 		AreaInfo = longData.AreaInfo;
 		DirAreaA = longData.DirAreaA;
-	};
+	}
 };
 
 struct DirLightBuffer

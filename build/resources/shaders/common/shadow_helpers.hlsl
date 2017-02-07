@@ -113,7 +113,7 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 	float4 lightViewProjPos = mul(wpos, lightData.matViewProj);
 	float normalOffsetScale = clamp(1 - VNoL, depthFix.y, 1);
 	float shadowMapTexelSize = lightData.ShadowmapParams.x * prepared.DoUL * lightData.ShadowmapParams.y;
-	float4 shadowOffset = float4(normal * normalShadowOffsetSpot * normalOffsetScale * shadowMapTexelSize * depthFix.x, 0);
+	float4 shadowOffset = float4(gbuffer.vertex_normal * normalShadowOffsetSpot * normalOffsetScale * shadowMapTexelSize * depthFix.x, 0);
 	
 	float4 correctedWpos = wpos + shadowOffset;
 	float4 uvOffset = mul(correctedWpos, lightData.matViewProj);
@@ -122,22 +122,28 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 	float lvp_rcp = rcp(lightViewProjPos.w);
 	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
 		
+	float result = 0;
 	[branch]
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
-		return 0;
-			
-	float3 shadowmapCoords;
-	shadowmapCoords.xy = lightData.ShadowmapAdress.xy + reprojCoords.xy * lightData.ShadowmapAdress.z;
-	shadowmapCoords.z = lightData.ShadowmapAdress.w;
+	{
+		result = 0;
+	}
+	else
+	{
+		float3 shadowmapCoords;
+		shadowmapCoords.xy = lightData.ShadowmapAdress.xy + reprojCoords.xy * lightData.ShadowmapAdress.z;
+		shadowmapCoords.z = lightData.ShadowmapAdress.w;
 	
-	lightViewProjPos.z -= shadowBiasSpotArea * ShadowmapParams.z * depthFix.z;
-	float depthView = lightViewProjPos.z * lvp_rcp;
+		lightViewProjPos.z -= shadowBiasSpotArea * lightData.ShadowmapParams.z * depthFix.z;
+		float depthView = lightViewProjPos.z * lvp_rcp;
 
-	/*const float resBiasScale = max(2, (lightData.ShadowmapParams.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
-	lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
-	float depthView = lightViewProjPos.z * lvp_rcp;*/
+		/*const float resBiasScale = max(2, (lightData.ShadowmapParams.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
+		lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
+		float depthView = lightViewProjPos.z * lvp_rcp;*/
 	
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, lightData.ShadowmapAdress.z, 1.0f);
+		result = PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, lightData.ShadowmapAdress.z, 1.0f);
+	}
+	return result;
 }
 
 /*static const float3 pl_dirs[6] =
@@ -151,7 +157,7 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 };*/
 float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, in PointCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
-	const float3 posInLight = mul(gbuffer.wpos, lightData.matView);
+	const float3 posInLight = mul(gbuffer.wpos, (float3x3)lightData.matView);
 	const float zInLSq[3] = {posInLight.x, posInLight.z, posInLight.y};
 	float zInLSqAbs[3];
 	[unroll]for(uint q=0; q<3; q++) zInLSqAbs[q] = abs(zInLSq[q]);
@@ -194,7 +200,6 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 			const float shadowMapTexelSize = lightData.ColorShParams.w * lightData.ShadowmapParams0.b * pil.z;
 			float3 shadowOffset = gbuffer.vertex_normal * normalShadowOffsetPoint * normalOffsetScale * shadowMapTexelSize * depthFix.x;
 			corWpos = float4((gbuffer.wpos + shadowOffset) - lightData.PosRange.xyz, 1);
-			corWpos = float4(corWpos, 1);
 			adress = lightData.ShadowmapAdress2;
 		}
 		else
@@ -235,19 +240,19 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	lightViewProjPos.xy = uvOffset.xy;
 				
 	const float lvp_rcp = rcp(lightViewProjPos.w);
-	reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
+	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
 			
 	// REMOVE
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
 		return false;
 					
+	float3 shadowmapCoords;
 	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
-	adress = adress.z;
 	shadowmapCoords.z = adress.w;
 	lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
-	depthView = lightViewProjPos.z * lvp_rcp;
+	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress, 1.0f);
+	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f);
 }
 
 #if DEBUG_CASCADE_LIGHTS != 0

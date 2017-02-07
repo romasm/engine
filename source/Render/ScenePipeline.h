@@ -55,7 +55,6 @@ namespace EngineCore
 
 
 #define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
-#define SP_MATERIAL_DEFFERED_OPAC_DIR PATH_SHADERS "system/deffered_opaque" // remove
 #define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque", "DefferedLighting"
 
 	class ScenePipeline
@@ -254,7 +253,7 @@ namespace EngineCore
 		void LoadEnvProbs();
 		//static bool CompareEnvProbs(EnvProb* first, EnvProb* second);
 
-		uint8_t LoadLights();
+		uint8_t LoadLights(uint8_t startOffset);
 
 		bool SaveScreenshot(string path, float ssX, float ssY);
 
@@ -282,7 +281,6 @@ namespace EngineCore
 
 		ScreenPlane *sp_OpaqueDepthCopy;
 
-		ScreenPlane *sp_OpaqueDefferedDirect;
 		ScreenPlane *sp_AO;
 		ScreenPlane *sp_FinalOpaque;
 		ScreenPlane *sp_HDRtoLDR;
@@ -311,16 +309,22 @@ namespace EngineCore
 		ID3D11Buffer* m_SharedBuffer;
 		SharedBuffer sharedconst;
 
-		ID3D11Buffer* lightSpotBuffer;
-		ID3D11Buffer* lightPointBuffer;
-		ID3D11Buffer* lightDirBuffer;
+		StructBuf lightSpotBuffer;
+		StructBuf lightDiskBuffer;
+		StructBuf lightRectBuffer;
+		StructBuf lightPointBuffer;
+		StructBuf lightSphereBuffer;
+		StructBuf lightTubeBuffer;
+		StructBuf lightDirBuffer;
 
-		ID3D11Buffer* casterSpotBuffer;
-		ID3D11Buffer* casterDiskBuffer;
-		ID3D11Buffer* casterRectBuffer;
-		ID3D11Buffer* casterPointBuffer;
-		ID3D11Buffer* casterSphereBuffer;
-		ID3D11Buffer* casterTubeBuffer;
+		StructBuf casterSpotBuffer;
+		StructBuf casterDiskBuffer;
+		StructBuf casterRectBuffer;
+		StructBuf casterPointBuffer;
+		StructBuf casterSphereBuffer;
+		StructBuf casterTubeBuffer;
+
+		ID3D11Buffer* lightsPerTile;
 
 		StructBuf m_LightShadowStructBuffer;
 

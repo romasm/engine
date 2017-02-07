@@ -38,7 +38,6 @@ ScenePipeline::ScenePipeline()
 
 	sp_OpaqueDepthCopy = nullptr;
 
-	sp_OpaqueDefferedDirect = nullptr;
 	sp_AO = nullptr;
 	sp_FinalOpaque = nullptr;
 	sp_HDRtoLDR = nullptr;
@@ -65,20 +64,12 @@ ScenePipeline::ScenePipeline()
 	b_directDiff = true;
 	b_indirectDiff = true;
 	b_renderHud = true;
-
-	lightSpotBuffer = nullptr;
-	lightPointBuffer = nullptr;
-	lightDirBuffer = nullptr;
-	casterSpotBuffer = nullptr;
-	casterDiskBuffer = nullptr;
-	casterRectBuffer = nullptr;
-	casterPointBuffer = nullptr;
-	casterSphereBuffer = nullptr;
-	casterTubeBuffer = nullptr;
-
+	
 	m_CamMoveBuffer = nullptr;
 	m_SharedBuffer = nullptr;
 	m_AOBuffer = nullptr;
+
+	lightsPerTile = nullptr;
 
 	codemgr = nullptr;
 
@@ -111,16 +102,22 @@ void ScenePipeline::Close()
 	_DELETE(defferedOpaqueCompute);
 	_RELEASE(defferedConfigBuffer);
 
-	_RELEASE(lightSpotBuffer);
-	_RELEASE(lightPointBuffer);
-	_RELEASE(lightDirBuffer);
+	lightSpotBuffer.Release();
+	lightDiskBuffer.Release();
+	lightRectBuffer.Release();
+	lightPointBuffer.Release();
+	lightSphereBuffer.Release();
+	lightTubeBuffer.Release();
+	lightDirBuffer.Release();
 
-	_RELEASE(casterSpotBuffer);
-	_RELEASE(casterDiskBuffer);
-	_RELEASE(casterRectBuffer);
-	_RELEASE(casterPointBuffer);
-	_RELEASE(casterSphereBuffer);
-	_RELEASE(casterTubeBuffer);
+	casterSpotBuffer.Release();
+	casterDiskBuffer.Release();
+	casterRectBuffer.Release();
+	casterPointBuffer.Release();
+	casterSphereBuffer.Release();
+	casterTubeBuffer.Release();
+
+	_RELEASE(lightsPerTile);
 
 	m_LightShadowStructBuffer.Release();
 
@@ -170,7 +167,6 @@ void ScenePipeline::CloseRts()
 
 	_DELETE(sp_OpaqueDepthCopy);
 
-	_DELETE(sp_OpaqueDefferedDirect);
 	_DELETE(sp_AO);
 	_DELETE(sp_FinalOpaque);
 	_DELETE(sp_HDRtoLDR);
@@ -201,16 +197,52 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 		
 	if(!isLightweight)
 	{
-		lightSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotLightBuffer), true);
-		lightPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointLightBuffer), true);
-		lightDirBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DirLightBuffer), true);
+		lightSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_FRAME_MAX, sizeof(SpotLightBuffer), true);
+		lightDiskBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_DISK_FRAME_MAX, sizeof(DiskLightBuffer), true);
+		lightRectBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_RECT_FRAME_MAX, sizeof(RectLightBuffer), true);
+		lightPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_FRAME_MAX, sizeof(PointLightBuffer), true);
+		lightSphereBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_SPHERE_FRAME_MAX, sizeof(SphereLightBuffer), true);
+		lightTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_TUBE_FRAME_MAX, sizeof(TubeLightBuffer), true);
+		lightDirBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_DIR_FRAME_MAX, sizeof(DirLightBuffer), true);
 
-		casterSpotBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SpotCasterBuffer), true);
-		casterDiskBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(DiskCasterBuffer), true);
-		casterRectBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(RectCasterBuffer), true);
-		casterPointBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(PointCasterBuffer), true);
-		casterSphereBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SphereCasterBuffer), true);
-		casterTubeBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(TubeCasterBuffer), true);
+		casterSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_FRAME_MAX, sizeof(SpotCasterBuffer), true);
+		casterDiskBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_DISK_FRAME_MAX, sizeof(DiskCasterBuffer), true);
+		casterRectBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_RECT_FRAME_MAX, sizeof(RectCasterBuffer), true);
+		casterPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_FRAME_MAX, sizeof(PointCasterBuffer), true);
+		casterSphereBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_SPHERE_FRAME_MAX, sizeof(SphereCasterBuffer), true);
+		casterTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_TUBE_FRAME_MAX, sizeof(TubeCasterBuffer), true);
+
+		lightsPerTile = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsIDs), true);
+		// TEMP
+		LightsIDs lightsTemp;
+		for(uint8_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
+			lightsTemp.SpotLightsIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_SPOT_DISK_FRAME_MAX; i++)
+			lightsTemp.DiskLightsIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_SPOT_RECT_FRAME_MAX; i++)
+			lightsTemp.RectLightsIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_SPOT_FRAME_MAX; i++)
+			lightsTemp.SpotCastersIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_SPOT_DISK_FRAME_MAX; i++)
+			lightsTemp.DiskCastersIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_SPOT_RECT_FRAME_MAX; i++)
+			lightsTemp.RectCastersIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_POINT_FRAME_MAX; i++)
+			lightsTemp.PointLightsIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_POINT_SPHERE_FRAME_MAX; i++)
+			lightsTemp.SphereLightsIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_POINT_TUBE_FRAME_MAX; i++)
+			lightsTemp.TubeLightsIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_POINT_FRAME_MAX; i++)
+			lightsTemp.PointCastersIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_POINT_SPHERE_FRAME_MAX; i++)
+			lightsTemp.SphereCastersIDs[i] = i;
+		for(uint8_t i = 0; i < CASTER_POINT_TUBE_FRAME_MAX; i++)
+			lightsTemp.TubeCastersIDs[i] = i;
+		for(uint8_t i = 0; i < LIGHT_DIR_FRAME_MAX; i++)
+			lightsTemp.DirLightsIDs[i] = i;
+
+		Render::UpdateDynamicResource(lightsPerTile, &lightsTemp, sizeof(LightsIDs));
 	}
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
@@ -221,7 +253,11 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 	Materials[0].ss_indirect_translucency = 0;
 	Materials[0].subscattering = 0;
 	
-	defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
+	if(!isLightweight)
+		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_FULL );
+	else
+		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
+
 	defferedConfigBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(DefferedConfigData), true);
 	ZeroMemory(&defferedConfigData, sizeof(DefferedConfigData));
 
@@ -450,46 +486,6 @@ bool ScenePipeline::InitRts()
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 5);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 6);
 	sp_SSR->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 7);
-
-	if(!isLightweight)
-	{
-		sp_OpaqueDefferedDirect = new ScreenPlane(SP_MATERIAL_DEFFERED_OPAC_DIR);
-		
-		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-
-		sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
-		sp_OpaqueDefferedDirect->SetTexture(shadowBuffer, 1);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 2);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 3);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 4);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 5);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 6);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 7);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 8);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 9);
-		sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 10);
-		sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 11);
-		sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 12);
-
-		sp_OpaqueDefferedDirect->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
-	}
-	/*else
-	{
-		sp_OpaqueDefferedDirect = new ScreenPlane(SHADER_DEFFERED_OPAC_IBL);
-		
-		sp_OpaqueDefferedDirect->SetTextureByNameS(TEX_PBSENVLUT, 0);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 1);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 2);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(2), 3);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 4);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 5);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 6);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 7);
-		sp_OpaqueDefferedDirect->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 8);
-		sp_OpaqueDefferedDirect->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 9);
-		sp_OpaqueDefferedDirect->SetTexture(rt_AO->GetShaderResourceView(0), 10);
-		sp_OpaqueDefferedDirect->SetTexture(rt_SSR->GetShaderResourceView(0), 11);
-	}*/	
 
 	sp_AO = new ScreenPlane(SP_MATERIAL_AO);
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
@@ -813,10 +809,6 @@ void ScenePipeline::LoadEnvProbs()
 	if(distProb.mipsCount == 0)
 		return;
 
-	sp_OpaqueDefferedDirect->SetTexture(distProb.specCube, 13);
-	sp_OpaqueDefferedDirect->SetTexture(distProb.diffCube, 14);
-	sp_OpaqueDefferedDirect->SetFloat(float(distProb.mipsCount), 13);
-
 		
 	// todo: distProb.matrix
 
@@ -839,7 +831,7 @@ void ScenePipeline::LoadEnvProbs()
 	
 }
 
-uint8_t ScenePipeline::LoadLights()
+uint8_t ScenePipeline::LoadLights(uint8_t startOffset)
 {
 	size_t spot_size, disk_size, rect_size, point_size, sphere_size, tube_size, dir_size;
 	void* spot_data = (void*)render_mgr->GetSpotLightDataPtr(&spot_size);
@@ -858,148 +850,88 @@ uint8_t ScenePipeline::LoadLights()
 	void* caster_sphere_data = (void*)render_mgr->GetPointCasterSphereDataPtr(&caster_sphere_size);
 	void* caster_tube_data = (void*)render_mgr->GetPointCasterTubeDataPtr(&caster_tube_size);
 
-	uint8_t offset = 0;
+	uint8_t structed_offset = startOffset;
 
-	uint8_t ps_constbuf_offset = 1;
+	if(spot_size > 0)
+		Render::UpdateDynamicResource(lightSpotBuffer.buf, spot_data, sizeof(SpotLightBuffer) * spot_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightSpotBuffer.srv); 
+	structed_offset++;
 
-	if(spot_size > 0 || disk_size > 0 || rect_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(lightSpotBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
+	if(disk_size > 0)
+		Render::UpdateDynamicResource(lightDiskBuffer.buf, disk_data, sizeof(DiskLightBuffer) * disk_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightDiskBuffer.srv); 
+	structed_offset++;
 
-		uint8_t* v_data = (uint8_t*)mappedResource.pData;
-		if(spot_size > 0)
-			memcpy((void*)v_data, spot_data, sizeof(SpotLightBuffer));
-		v_data += sizeof(SpotLightBuffer);
-
-		if(disk_size > 0)
-			memcpy((void*)v_data, disk_data, sizeof(DiskLightBuffer));
-		v_data += sizeof(DiskLightBuffer);
-		
-		if(rect_size > 0)
-			memcpy((void*)v_data, rect_data, sizeof(RectLightBuffer));
-
-		Render::Unmap(lightSpotBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset, 1, &lightSpotBuffer); 
-	offset++;
-	
-	if(point_size > 0 || sphere_size > 0 || tube_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(lightPointBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-
-		uint8_t* v_data = (uint8_t*)mappedResource.pData;
-		if(point_size > 0)
-			memcpy((void*)v_data, point_data, sizeof(PointLightBuffer));
-		v_data += sizeof(PointLightBuffer);
-		
-		if(sphere_size > 0)
-			memcpy((void*)v_data, sphere_data, sizeof(SphereLightBuffer));
-		v_data += sizeof(SphereLightBuffer);
-		
-		if(tube_size > 0)
-			memcpy((void*)v_data, tube_data, sizeof(TubeLightBuffer));
-
-		Render::Unmap(lightPointBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &lightPointBuffer);
-	offset++;
-
-	if(dir_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(lightDirBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, dir_data, sizeof(DirLightBuffer));
-		Render::Unmap(lightDirBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &lightDirBuffer);
-	offset++;
+	if(rect_size > 0)
+		Render::UpdateDynamicResource(lightRectBuffer.buf, rect_data, sizeof(RectLightBuffer) * rect_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightRectBuffer.srv); 
+	structed_offset++;
 
 	if(caster_spot_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterSpotBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_spot_data, sizeof(SpotCasterBuffer));
-		Render::Unmap(casterSpotBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterSpotBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterSpotBuffer.srv); 
+	structed_offset++;
 
 	if(caster_disk_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterDiskBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_disk_data, sizeof(DiskCasterBuffer));
-		Render::Unmap(casterDiskBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterDiskBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterDiskBuffer.buf, caster_disk_data, sizeof(DiskCasterBuffer) * caster_disk_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterDiskBuffer.srv); 
+	structed_offset++;
 
 	if(caster_rect_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterRectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_rect_data, sizeof(RectCasterBuffer));
-		Render::Unmap(casterRectBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterRectBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterRectBuffer.buf, caster_rect_data, sizeof(RectCasterBuffer) * caster_rect_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterRectBuffer.srv); 
+	structed_offset++;
+	
+	if(point_size > 0)
+		Render::UpdateDynamicResource(lightPointBuffer.buf, point_data, sizeof(PointLightBuffer) * point_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightPointBuffer.srv); 
+	structed_offset++;
+	
+	if(sphere_size > 0)
+		Render::UpdateDynamicResource(lightSphereBuffer.buf, sphere_data, sizeof(SphereLightBuffer) * sphere_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightSphereBuffer.srv); 
+	structed_offset++;
+	
+	if(tube_size > 0)
+		Render::UpdateDynamicResource(lightTubeBuffer.buf, tube_data, sizeof(TubeLightBuffer) * tube_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightTubeBuffer.srv); 
+	structed_offset++;
 
 	if(caster_point_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterPointBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_point_data, sizeof(PointCasterBuffer));
-		Render::Unmap(casterPointBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterPointBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterPointBuffer.buf, caster_point_data, sizeof(PointCasterBuffer) * caster_point_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterPointBuffer.srv); 
+	structed_offset++;
 
 	if(caster_sphere_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterSphereBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_sphere_data, sizeof(SphereCasterBuffer));
-		Render::Unmap(casterSphereBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterSphereBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterSphereBuffer.buf, caster_sphere_data, sizeof(SphereCasterBuffer) * caster_sphere_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterSphereBuffer.srv); 
+	structed_offset++;
 
 	if(caster_tube_size > 0)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(FAILED(Render::Map(casterTubeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource)))
-			return offset;
-		memcpy(mappedResource.pData, caster_tube_data, sizeof(TubeCasterBuffer));
-		Render::Unmap(casterTubeBuffer, 0);
-	}
-	Render::PSSetConstantBuffers(ps_constbuf_offset + offset, 1, &casterTubeBuffer); 
-	offset++;
+		Render::UpdateDynamicResource(casterTubeBuffer.buf, caster_tube_data, sizeof(TubeCasterBuffer) * caster_tube_size);
+	Render::CSSetShaderResources(structed_offset, 1, &casterTubeBuffer.srv); 
+	structed_offset++;
 
-	sp_OpaqueDefferedDirect->SetFloat((float)spot_size, 0);
-	sp_OpaqueDefferedDirect->SetFloat((float)disk_size, 1);
-	sp_OpaqueDefferedDirect->SetFloat((float)rect_size, 2);
-	sp_OpaqueDefferedDirect->SetFloat((float)point_size, 3);
-	sp_OpaqueDefferedDirect->SetFloat((float)sphere_size, 4);
-	sp_OpaqueDefferedDirect->SetFloat((float)tube_size, 5);
-	sp_OpaqueDefferedDirect->SetFloat((float)dir_size, 6);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_spot_size, 7);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_disk_size, 8);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_rect_size, 9);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_point_size, 10);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_sphere_size, 11);
-	sp_OpaqueDefferedDirect->SetFloat((float)caster_tube_size, 12);
+	if(dir_size > 0)
+		Render::UpdateDynamicResource(lightDirBuffer.buf, dir_data, sizeof(DirLightBuffer) * dir_size);
+	Render::CSSetShaderResources(structed_offset, 1, &lightDirBuffer.srv); 
+	structed_offset++;
 
-	return offset;
+	defferedConfigData.spot_count = (float)spot_size;
+	defferedConfigData.disk_count = (float)disk_size;
+	defferedConfigData.rect_count = (float)rect_size;
+	defferedConfigData.caster_spot_count = (float)caster_spot_size;
+	defferedConfigData.caster_disk_count = (float)caster_disk_size;
+	defferedConfigData.caster_rect_count = (float)caster_rect_size;
+	defferedConfigData.point_count = (float)point_size;
+	defferedConfigData.sphere_count = (float)sphere_size;
+	defferedConfigData.tube_count = (float)tube_size;
+	defferedConfigData.caster_point_count = (float)caster_point_size;
+	defferedConfigData.caster_sphere_count = (float)caster_sphere_size;
+	defferedConfigData.caster_tube_count = (float)caster_tube_size;
+	defferedConfigData.dir_count = (float)dir_size;
+	
+	return structed_offset;
 }
 
 void ScenePipeline::HiZMips()
@@ -1059,80 +991,80 @@ void ScenePipeline::OpaqueDefferedStage()
 #endif
 
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
-	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
-		
+	
+	Render::OMUnsetRenderTargets();
+
+	rt_OpaqueDefferedDirect->ClearRenderTargets();
+
+	ID3D11ShaderResourceView* srvs[15];
+	srvs[0] = m_MaterialBuffer.srv;
+	srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
+	srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
+	srvs[3] = rt_OpaqueForward->GetShaderResourceView(2);
+	srvs[4] = rt_OpaqueForward->GetShaderResourceView(3);
+	srvs[5] = rt_OpaqueForward->GetShaderResourceView(4);
+	srvs[6] = rt_OpaqueForward->GetShaderResourceView(5);
+	srvs[7] = rt_OpaqueForward->GetShaderResourceView(6);
+	srvs[8] = rt_OpaqueForward->GetShaderResourceView(7);
+	srvs[9] = rt_HiZDepth->GetShaderResourceView(0);
+	srvs[10] = rt_AO->GetShaderResourceView(0);
+	srvs[11] = rt_SSR->GetShaderResourceView(0);
+	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
+	srvs[13] = nullptr;
+	srvs[14] = nullptr;
+				
+	auto& distProb = render_mgr->GetDistEnvProb();
+	if(distProb.mipsCount != 0)
+	{
+		srvs[13] = distProb.specCube;
+		srvs[14] = distProb.diffCube;
+	}
+
+	defferedConfigData.distMip = float(distProb.mipsCount);
+
+	defferedConfigData.dirDiff = b_directDiff ? 1.0f : 0.0f;
+	defferedConfigData.dirSpec = b_directSpec ? 1.0f : 0.0f;
+	defferedConfigData.indirDiff = b_indirectDiff ? 1.0f : 0.0f;
+	defferedConfigData.indirSpec = b_indirectSpec ? 1.0f : 0.0f;
+	
+	Render::CSSetShaderResources(0, 15, srvs);
+
 	if(!isLightweight)
 	{
-		LoadLights();
-		LoadEnvProbs();
+		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
+		auto volumeEmittance = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
 
-		Render::PSSetConstantBuffers(10, 1, &m_CamMoveBuffer); 
+		Render::CSSetShaderResources(15, 1, &shadowBuffer);
+		Render::CSSetShaderResources(16, 1, &volumeEmittance);
+
+		LoadLights(17);
+	}
+
+	Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
+	
+	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
+	Render::CSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
+	Render::CSSetConstantBuffers(2, 1, &defferedConfigBuffer); 
+
+	if(!isLightweight)
+	{
+		Render::CSSetConstantBuffers(3, 1, &lightsPerTile); 
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-		Render::PSSetConstantBuffers(11, 1, &volumeBuffer); 
-	
-		rt_OpaqueDefferedDirect->ClearRenderTargets();
-		rt_OpaqueDefferedDirect->SetRenderTarget();
-	
-		sp_OpaqueDefferedDirect->SetFloat(b_directDiff ? 1.0f : 0.0f, 14);
-		sp_OpaqueDefferedDirect->SetFloat(b_directSpec ? 1.0f : 0.0f, 15);
-		sp_OpaqueDefferedDirect->SetFloat(b_indirectDiff ? 1.0f : 0.0f, 16);
-		sp_OpaqueDefferedDirect->SetFloat(b_indirectSpec ? 1.0f : 0.0f, 17);
-
-		sp_OpaqueDefferedDirect->Draw();
+		Render::CSSetConstantBuffers(4, 1, &volumeBuffer); 
 	}
-	else
-	{
-		Render::OMUnsetRenderTargets();
-
-		rt_OpaqueDefferedDirect->ClearRenderTargets();
-
-		ID3D11ShaderResourceView* srvs[15];
-		srvs[0] = m_MaterialBuffer.srv;
-		srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
-		srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
-		srvs[3] = rt_OpaqueForward->GetShaderResourceView(2);
-		srvs[4] = rt_OpaqueForward->GetShaderResourceView(3);
-		srvs[5] = rt_OpaqueForward->GetShaderResourceView(4);
-		srvs[6] = rt_OpaqueForward->GetShaderResourceView(5);
-		srvs[7] = rt_OpaqueForward->GetShaderResourceView(6);
-		srvs[8] = rt_OpaqueForward->GetShaderResourceView(7);
-		srvs[9] = rt_HiZDepth->GetShaderResourceView(0);
-		srvs[10] = rt_AO->GetShaderResourceView(0);
-		srvs[11] = rt_SSR->GetShaderResourceView(0);
-		srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
-		srvs[13] = nullptr;
-		srvs[14] = nullptr;
-				
-		auto& distProb = render_mgr->GetDistEnvProb();
-		if(distProb.mipsCount != 0)
-		{
-			srvs[13] = distProb.specCube;
-			srvs[14] = distProb.diffCube;
-		}
-
-		defferedConfigData.distMip = float(distProb.mipsCount);
-
-		defferedConfigData.dirDiff = b_directDiff ? 1.0f : 0.0f;
-		defferedConfigData.dirSpec = b_directSpec ? 1.0f : 0.0f;
-		defferedConfigData.indirDiff = b_indirectDiff ? 1.0f : 0.0f;
-		defferedConfigData.indirSpec = b_indirectSpec ? 1.0f : 0.0f;
-
-		Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
-	
-		Render::CSSetShaderResources(0, 15, srvs);
-
-		Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
-		Render::CSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
-		Render::CSSetConstantBuffers(2, 1, &defferedConfigBuffer); 
 		
-		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
-		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );
-		defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(2) );
+	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
+	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );
+	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(2) );
 
-		defferedOpaqueCompute->Dispatch(width/2, height/2, 1);
-		defferedOpaqueCompute->UnbindUAV();
-	}
+	//temp
+	uint16_t group_count_x = (uint16_t)ceil(float(width) / 8);
+	uint16_t group_count_y = (uint16_t)ceil(float(height) / 8);
+
+	defferedOpaqueCompute->Dispatch(group_count_x, group_count_y, 1);
+	defferedOpaqueCompute->UnbindUAV();
+	
 	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
 	// final 
 	rt_OpaqueFinal->ClearRenderTargets();

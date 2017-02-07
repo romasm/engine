@@ -39,20 +39,20 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 	}
 	else
 	{
-		lightSpot_array = new SpotLightBuffer;
-		lightSpotDisk_array = new DiskLightBuffer;
-		lightSpotRect_array = new RectLightBuffer;
-		lightPoint_array = new PointLightBuffer;
-		lightPointSphere_array = new SphereLightBuffer;
-		lightPointTube_array = new TubeLightBuffer;
-		lightDir_array = new DirLightBuffer;
+		lightSpot_array = new SpotLightBuffer[LIGHT_SPOT_FRAME_MAX];
+		lightSpotDisk_array = new DiskLightBuffer[LIGHT_SPOT_DISK_FRAME_MAX];
+		lightSpotRect_array = new RectLightBuffer[LIGHT_SPOT_RECT_FRAME_MAX];
+		lightPoint_array = new PointLightBuffer[LIGHT_POINT_FRAME_MAX];
+		lightPointSphere_array = new SphereLightBuffer[LIGHT_POINT_SPHERE_FRAME_MAX];
+		lightPointTube_array = new TubeLightBuffer[LIGHT_POINT_TUBE_FRAME_MAX];
+		lightDir_array = new DirLightBuffer[LIGHT_DIR_FRAME_MAX];
 
-		casterSpot_array = new SpotCasterBuffer;
-		casterSpotDisk_array = new DiskCasterBuffer;
-		casterSpotRect_array = new RectCasterBuffer;
-		casterPoint_array = new PointCasterBuffer;	
-		casterPointSphere_array = new SphereCasterBuffer;	
-		casterPointTube_array = new TubeCasterBuffer;	
+		casterSpot_array = new SpotCasterBuffer[CASTER_SPOT_FRAME_MAX];
+		casterSpotDisk_array = new DiskCasterBuffer[CASTER_SPOT_DISK_FRAME_MAX];
+		casterSpotRect_array = new RectCasterBuffer[CASTER_SPOT_RECT_FRAME_MAX];
+		casterPoint_array = new PointCasterBuffer[CASTER_POINT_FRAME_MAX];	
+		casterPointSphere_array = new SphereCasterBuffer[CASTER_POINT_SPHERE_FRAME_MAX];	
+		casterPointTube_array = new TubeCasterBuffer[CASTER_POINT_TUBE_FRAME_MAX];	
 
 		shadowsRenderer = new ShadowsRenderer(this);
 		voxelRenderer = new VoxelRenderer(this);
@@ -65,20 +65,20 @@ SceneRenderMgr::~SceneRenderMgr()
 {
 	ClearAll();
 	
-	_DELETE(lightSpot_array);
-	_DELETE(lightSpotDisk_array);
-	_DELETE(lightSpotRect_array);
-	_DELETE(lightPoint_array);
-	_DELETE(lightPointSphere_array);
-	_DELETE(lightPointTube_array);
-	_DELETE(lightDir_array);
+	_DELETE_ARRAY(lightSpot_array);
+	_DELETE_ARRAY(lightSpotDisk_array);
+	_DELETE_ARRAY(lightSpotRect_array);
+	_DELETE_ARRAY(lightPoint_array);
+	_DELETE_ARRAY(lightPointSphere_array);
+	_DELETE_ARRAY(lightPointTube_array);
+	_DELETE_ARRAY(lightDir_array);
 
-	_DELETE(casterSpot_array);
-	_DELETE(casterSpotDisk_array);
-	_DELETE(casterSpotRect_array);
-	_DELETE(casterPoint_array);
-	_DELETE(casterPointSphere_array);
-	_DELETE(casterPointTube_array);
+	_DELETE_ARRAY(casterSpot_array);
+	_DELETE_ARRAY(casterSpotDisk_array);
+	_DELETE_ARRAY(casterSpotRect_array);
+	_DELETE_ARRAY(casterPoint_array);
+	_DELETE_ARRAY(casterPointSphere_array);
+	_DELETE_ARRAY(casterPointTube_array);
 		
 	_DELETE(shadowsRenderer);
 	_DELETE(voxelRenderer);
@@ -245,9 +245,9 @@ bool SceneRenderMgr::RegSpotLight(XMFLOAT4& color, float range, XMFLOAT2& cone, 
 	if(lightSpot_count >= LIGHT_SPOT_FRAME_MAX)
 		return false;
 	
-	lightSpot_array->PosRange[lightSpot_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightSpot_array->ColorConeX[lightSpot_count] = XMFLOAT4(color.x, color.y, color.z, cone.x);
-	lightSpot_array->DirConeY[lightSpot_count] = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
+	lightSpot_array[lightSpot_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightSpot_array[lightSpot_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	lightSpot_array[lightSpot_count].DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
 
 	lightSpot_count++;
 
@@ -275,12 +275,12 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, floa
 	voxelRenderer->RegisterSpotCaster(vData);
 
 	// to deffered
-	casterSpot_array->Pos_Range[casterSpot_count] = vData.PosRange;
-	casterSpot_array->Color_ConeX[casterSpot_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpot_array->Dir_ConeY[casterSpot_count] = vData.DirConeY;
-	casterSpot_array->ShadowmapAdress[casterSpot_count] = vData.ShadowmapAdress;
-	casterSpot_array->ShadowmapParams[casterSpot_count] = vData.ShadowmapHPixProjNearclip;
-	casterSpot_array->ViewProj[casterSpot_count] = vp;
+	casterSpot_array[casterSpot_count].PosRange = vData.PosRange;
+	casterSpot_array[casterSpot_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
+	casterSpot_array[casterSpot_count].DirConeY = vData.DirConeY;
+	casterSpot_array[casterSpot_count].ShadowmapAdress = vData.ShadowmapAdress;
+	casterSpot_array[casterSpot_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpot_array[casterSpot_count].matViewProj = vp;
 
 	casterSpot_count++;
 
@@ -292,11 +292,11 @@ bool SceneRenderMgr::RegSpotLightDisk(XMFLOAT4& color, float range, XMFLOAT3& ar
 	if(lightSpotDisk_count >= LIGHT_SPOT_DISK_FRAME_MAX)
 		return false;
 	
-	lightSpotDisk_array->Pos_Range[lightSpotDisk_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightSpotDisk_array->Color_ConeX[lightSpotDisk_count] = XMFLOAT4(color.x, color.y, color.z, cone.x);
-	lightSpotDisk_array->Dir_ConeY[lightSpotDisk_count] = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
-	lightSpotDisk_array->AreaInfo_Empty[lightSpotDisk_count] = XMFLOAT4(area.x, area.y, 0, 0);
-	lightSpotDisk_array->Virtpos_Empty[lightSpotDisk_count] = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
+	lightSpotDisk_array[lightSpotDisk_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightSpotDisk_array[lightSpotDisk_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	lightSpotDisk_array[lightSpotDisk_count].DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
+	lightSpotDisk_array[lightSpotDisk_count].AreaInfoEmpty = XMFLOAT4(area.x, area.y, 0, 0);
+	lightSpotDisk_array[lightSpotDisk_count].VirtposEmpty = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
 
 	lightSpotDisk_count++;
 
@@ -325,14 +325,14 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	voxelRenderer->RegisterSpotCaster(vData);
 
 	// to deffered
-	casterSpotDisk_array->Pos_Range[casterSpotDisk_count] = vData.PosRange;
-	casterSpotDisk_array->Color_ConeX[casterSpotDisk_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpotDisk_array->Dir_ConeY[casterSpotDisk_count] = vData.DirConeY;
-	casterSpotDisk_array->AreaInfo_Empty[casterSpotDisk_count] = XMFLOAT4(area.x, area.y, 0, 0);
-	casterSpotDisk_array->Virtpos_Empty[casterSpotDisk_count] = vData.Virtpos;
-	casterSpotDisk_array->ShadowmapAdress[casterSpotDisk_count] = vData.ShadowmapAdress;
-	casterSpotDisk_array->ShadowmapParams[casterSpotDisk_count] = vData.ShadowmapHPixProjNearclip;
-	casterSpotDisk_array->ViewProj[casterSpotDisk_count] = vp;
+	casterSpotDisk_array[casterSpotDisk_count].PosRange = vData.PosRange;
+	casterSpotDisk_array[casterSpotDisk_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
+	casterSpotDisk_array[casterSpotDisk_count].DirConeY = vData.DirConeY;
+	casterSpotDisk_array[casterSpotDisk_count].AreaInfoEmpty = XMFLOAT4(area.x, area.y, 0, 0);
+	casterSpotDisk_array[casterSpotDisk_count].VirtposEmpty = vData.Virtpos;
+	casterSpotDisk_array[casterSpotDisk_count].ShadowmapAdress = vData.ShadowmapAdress;
+	casterSpotDisk_array[casterSpotDisk_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotDisk_array[casterSpotDisk_count].matViewProj = vp;
 	
 	casterSpotDisk_count++;
 
@@ -344,12 +344,12 @@ bool SceneRenderMgr::RegSpotLightRect(XMFLOAT4& color, float range, XMFLOAT3& ar
 	if(lightSpotRect_count >= LIGHT_SPOT_RECT_FRAME_MAX)
 		return false;
 	
-	lightSpotRect_array->Pos_Range[lightSpotRect_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightSpotRect_array->Color_ConeX[lightSpotRect_count] = XMFLOAT4(color.x, color.y, color.z, cone.x);
-	lightSpotRect_array->Dir_ConeY[lightSpotRect_count] = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
-	lightSpotRect_array->DirUp_AreaX[lightSpotRect_count] = XMFLOAT4(up.x, up.y, up.z, area.x);
-	lightSpotRect_array->DirSide_AreaY[lightSpotRect_count] = XMFLOAT4(side.x, side.y, side.z, area.y);
-	lightSpotRect_array->Virtpos_AreaZ[lightSpotRect_count] = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, area.z);
+	lightSpotRect_array[lightSpotRect_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightSpotRect_array[lightSpotRect_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, cone.x);
+	lightSpotRect_array[lightSpotRect_count].DirConeY = XMFLOAT4(dir.x, dir.y, dir.z, cone.y);
+	lightSpotRect_array[lightSpotRect_count].DirUpAreaX = XMFLOAT4(up.x, up.y, up.z, area.x);
+	lightSpotRect_array[lightSpotRect_count].DirSideAreaY = XMFLOAT4(side.x, side.y, side.z, area.y);
+	lightSpotRect_array[lightSpotRect_count].VirtposAreaZ = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, area.z);
 
 	lightSpotRect_count++;
 
@@ -378,15 +378,15 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	voxelRenderer->RegisterSpotCaster(vData);
 
 	// to deffered
-	casterSpotRect_array->Pos_Range[casterSpotRect_count] = vData.PosRange;
-	casterSpotRect_array->Color_ConeX[casterSpotRect_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpotRect_array->Dir_ConeY[casterSpotRect_count] = vData.DirConeY;
-	casterSpotRect_array->DirUp_AreaX[casterSpotRect_count] = XMFLOAT4(up.x, up.y, up.z, area.x);
-	casterSpotRect_array->DirSide_AreaY[casterSpotRect_count] = XMFLOAT4(side.x, side.y, side.z, area.y);
-	casterSpotRect_array->Virtpos_AreaZ[casterSpotRect_count] = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, area.z);
-	casterSpotRect_array->ShadowmapAdress[casterSpotRect_count] = vData.ShadowmapAdress;
-	casterSpotRect_array->ShadowmapParams[casterSpotRect_count] = vData.ShadowmapHPixProjNearclip;
-	casterSpotRect_array->ViewProj[casterSpotRect_count] = vp;
+	casterSpotRect_array[casterSpotRect_count].PosRange = vData.PosRange;
+	casterSpotRect_array[casterSpotRect_count].ColorConeX = XMFLOAT4(color.x, color.y, color.z, vData.ColorConeX.w);
+	casterSpotRect_array[casterSpotRect_count].DirConeY = vData.DirConeY;
+	casterSpotRect_array[casterSpotRect_count].DirUpAreaX = XMFLOAT4(up.x, up.y, up.z, area.x);
+	casterSpotRect_array[casterSpotRect_count].DirSideAreaY = XMFLOAT4(side.x, side.y, side.z, area.y);
+	casterSpotRect_array[casterSpotRect_count].VirtposAreaZ = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, area.z);
+	casterSpotRect_array[casterSpotRect_count].ShadowmapAdress = vData.ShadowmapAdress;
+	casterSpotRect_array[casterSpotRect_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotRect_array[casterSpotRect_count].matViewProj = vp;
 
 	casterSpotRect_count++;
 
@@ -398,8 +398,8 @@ bool SceneRenderMgr::RegPointLight(XMFLOAT4& color, float range, XMFLOAT3& pos)
 	if(lightPoint_count >= LIGHT_POINT_FRAME_MAX)
 		return false;
 
-	lightPoint_array->Pos_Range[lightPoint_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightPoint_array->Color[lightPoint_count] = XMFLOAT4(color.x, color.y, color.z, 0);
+	lightPoint_array[lightPoint_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightPoint_array[lightPoint_count].Color = XMFLOAT4(color.x, color.y, color.z, 0);
 
 	lightPoint_count++;
 
@@ -440,17 +440,18 @@ bool SceneRenderMgr::RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, flo
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
-	casterPoint_array->Pos_Range[casterPoint_count] = vData.PosRange;
-	casterPoint_array->Color_ShParams[casterPoint_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
-	casterPoint_array->ShadowmapParams0[casterPoint_count] = vData.ShadowmapHPix0;
-	casterPoint_array->ShadowmapParams1[casterPoint_count] = vData.ShadowmapHPix1;
-	casterPoint_array->Proj[casterPoint_count] = proj;
-	casterPoint_array->ShadowmapAdress0[casterPoint_count] = vData.ShadowmapAdress0;
-	casterPoint_array->ShadowmapAdress1[casterPoint_count] = vData.ShadowmapAdress1;
-	casterPoint_array->ShadowmapAdress2[casterPoint_count] = vData.ShadowmapAdress2;
-	casterPoint_array->ShadowmapAdress3[casterPoint_count] = vData.ShadowmapAdress3;
-	casterPoint_array->ShadowmapAdress4[casterPoint_count] = vData.ShadowmapAdress4;
-	casterPoint_array->ShadowmapAdress5[casterPoint_count] = vData.ShadowmapAdress5;
+	casterPoint_array[casterPoint_count].PosRange = vData.PosRange;
+	casterPoint_array[casterPoint_count].ColorShParams = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
+	casterPoint_array[casterPoint_count].ShadowmapParams0 = vData.ShadowmapHPix0;
+	casterPoint_array[casterPoint_count].ShadowmapParams1 = vData.ShadowmapHPix1;
+	casterPoint_array[casterPoint_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
+	casterPoint_array[casterPoint_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
+	casterPoint_array[casterPoint_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
+	casterPoint_array[casterPoint_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
+	casterPoint_array[casterPoint_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
+	casterPoint_array[casterPoint_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPoint_array[casterPoint_count].matProj = vData.matProj;
+	casterPoint_array[casterPoint_count].matView = vData.matView;
 	
 	casterPoint_count++;
 
@@ -462,9 +463,9 @@ bool SceneRenderMgr::RegPointLightSphere(XMFLOAT4& color, float range, XMFLOAT3&
 	if(lightPointSphere_count >= LIGHT_POINT_SPHERE_FRAME_MAX)
 		return false;
 
-	lightPointSphere_array->Pos_Range[lightPointSphere_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightPointSphere_array->Color_Empty[lightPointSphere_count] = XMFLOAT4(color.x, color.y, color.z, 0);
-	lightPointSphere_array->AreaInfo_Empty[lightPointSphere_count] = XMFLOAT4(area.x, area.x * area.x, 0, 0);
+	lightPointSphere_array[lightPointSphere_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightPointSphere_array[lightPointSphere_count].Color = XMFLOAT4(color.x, color.y, color.z, 0);
+	lightPointSphere_array[lightPointSphere_count].AreaInfo = XMFLOAT4(area.x, area.x * area.x, 0, 0);
 
 	lightPointSphere_count++;
 
@@ -505,17 +506,19 @@ bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColo
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
-	casterPointSphere_array->Pos_Range[casterPointSphere_count] = vData.PosRange;
-	casterPointSphere_array->Color_ShParams[casterPointSphere_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
-	casterPointSphere_array->AreaInfo_ShParams[casterPointSphere_count] = XMFLOAT4(area.x, area.x * area.x, vData.ShadowmapHPix1.x, vData.ShadowmapHPix1.y);
-	casterPointSphere_array->ShadowmapParams[casterPointSphere_count] = vData.ShadowmapHPix0;
-	casterPointSphere_array->Proj[casterPointSphere_count] = proj;
-	casterPointSphere_array->ShadowmapAdress0[casterPointSphere_count] = vData.ShadowmapAdress0;
-	casterPointSphere_array->ShadowmapAdress1[casterPointSphere_count] = vData.ShadowmapAdress1;
-	casterPointSphere_array->ShadowmapAdress2[casterPointSphere_count] = vData.ShadowmapAdress2;
-	casterPointSphere_array->ShadowmapAdress3[casterPointSphere_count] = vData.ShadowmapAdress3;
-	casterPointSphere_array->ShadowmapAdress4[casterPointSphere_count] = vData.ShadowmapAdress4;
-	casterPointSphere_array->ShadowmapAdress5[casterPointSphere_count] = vData.ShadowmapAdress5;
+	casterPointSphere_array[casterPointSphere_count].PosRange = vData.PosRange;
+	casterPointSphere_array[casterPointSphere_count].ColorShParams = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
+	casterPointSphere_array[casterPointSphere_count].AreaInfo = XMFLOAT4(area.x, area.x * area.x, 0, 0);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapParams0 = vData.ShadowmapHPix0;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapParams1 = vData.ShadowmapHPix1;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointSphere_array[casterPointSphere_count].matProj = vData.matProj;
+	casterPointSphere_array[casterPointSphere_count].matView = vData.matView;
 	
 	casterPointSphere_count++;
 
@@ -527,10 +530,10 @@ bool SceneRenderMgr::RegPointLightTube(XMFLOAT4& color, float range, XMFLOAT3& a
 	if(lightPointTube_count >= LIGHT_POINT_TUBE_FRAME_MAX)
 		return false;
 
-	lightPointTube_array->Pos_Range[lightPointTube_count] = XMFLOAT4(pos.x, pos.y, pos.z, range);
-	lightPointTube_array->Color_Empty[lightPointTube_count] = XMFLOAT4(color.x, color.y, color.z, 0);
-	lightPointTube_array->AreaInfo[lightPointTube_count] = XMFLOAT4(area.x, area.y, area.z, area.y * area.y);
-	lightPointTube_array->Dir_AreaA[lightPointTube_count] = XMFLOAT4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
+	lightPointTube_array[lightPointTube_count].PosRange = XMFLOAT4(pos.x, pos.y, pos.z, range);
+	lightPointTube_array[lightPointTube_count].Color = XMFLOAT4(color.x, color.y, color.z, 0);
+	lightPointTube_array[lightPointTube_count].AreaInfo = XMFLOAT4(area.x, area.y, area.z, area.y * area.y);
+	lightPointTube_array[lightPointTube_count].DirAreaA = XMFLOAT4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
 
 	lightPointTube_count++;
 
@@ -571,20 +574,20 @@ bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor,
 	voxelRenderer->RegisterPointCaster(vData);
 
 	// to deffered
-	casterPointTube_array->Pos_Range[casterPointTube_count] = vData.PosRange;
-	casterPointTube_array->Color_ShParams[casterPointTube_count] = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
-	casterPointTube_array->AreaInfo[casterPointTube_count] = XMFLOAT4(area.x, area.y, area.z, area.y * area.y);
-	casterPointTube_array->Dir_AreaA[casterPointTube_count] = XMFLOAT4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
-	casterPointTube_array->ShadowmapParams0[casterPointTube_count] = vData.ShadowmapHPix0;
-	casterPointTube_array->ShadowmapParams1[casterPointTube_count] = vData.ShadowmapHPix1;
-	casterPointTube_array->Proj[casterPointTube_count] = proj;
-	casterPointTube_array->View[casterPointTube_count] = view;
-	casterPointTube_array->ShadowmapAdress0[casterPointTube_count] = vData.ShadowmapAdress0;
-	casterPointTube_array->ShadowmapAdress1[casterPointTube_count] = vData.ShadowmapAdress1;
-	casterPointTube_array->ShadowmapAdress2[casterPointTube_count] = vData.ShadowmapAdress2;
-	casterPointTube_array->ShadowmapAdress3[casterPointTube_count] = vData.ShadowmapAdress3;
-	casterPointTube_array->ShadowmapAdress4[casterPointTube_count] = vData.ShadowmapAdress4;
-	casterPointTube_array->ShadowmapAdress5[casterPointTube_count] = vData.ShadowmapAdress5;
+	casterPointTube_array[casterPointTube_count].PosRange = vData.PosRange;
+	casterPointTube_array[casterPointTube_count].ColorShParams = XMFLOAT4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
+	casterPointTube_array[casterPointTube_count].AreaInfo = XMFLOAT4(area.x, area.y, area.z, area.y * area.y);
+	casterPointTube_array[casterPointTube_count].DirAreaA = XMFLOAT4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
+	casterPointTube_array[casterPointTube_count].ShadowmapParams0 = vData.ShadowmapHPix0;
+	casterPointTube_array[casterPointTube_count].ShadowmapParams1 = vData.ShadowmapHPix1;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointTube_array[casterPointTube_count].matProj = vData.matProj;
+	casterPointTube_array[casterPointTube_count].matView = vData.matView;
 	
 	casterPointTube_count++;
 
@@ -625,22 +628,22 @@ bool SceneRenderMgr::RegDirLight(XMFLOAT4& color, XMFLOAT2& area, XMFLOAT3& dir,
 	voxelRenderer->RegisterDirCaster(vData);
 
 	// to deffered
-	lightDir_array->Color_AreaX[lightDir_count] = vData.Color;
-	lightDir_array->Dir_AreaY[lightDir_count] = vData.Dir;
+	lightDir_array[lightDir_count].ColorAreaX = vData.Color;
+	lightDir_array[lightDir_count].DirAreaY = vData.Dir;
 
 	// locked for 4 cascades
-	lightDir_array->Pos0[lightDir_count] = vData.PosHPix0;
-	lightDir_array->Pos1[lightDir_count] = vData.PosHPix1;
-	lightDir_array->Pos2[lightDir_count] = vData.PosHPix2;
-	lightDir_array->Pos3[lightDir_count] = vData.PosHPix3;
-	lightDir_array->ViewProj0[lightDir_count] = view_proj[0];
-	lightDir_array->ViewProj1[lightDir_count] = view_proj[1];
-	lightDir_array->ViewProj2[lightDir_count] = view_proj[2];
-	lightDir_array->ViewProj3[lightDir_count] = view_proj[3];
-	lightDir_array->ShadowmapAdress0[lightDir_count] = vData.ShadowmapAdress0;
-	lightDir_array->ShadowmapAdress1[lightDir_count] = vData.ShadowmapAdress1;
-	lightDir_array->ShadowmapAdress2[lightDir_count] = vData.ShadowmapAdress2;
-	lightDir_array->ShadowmapAdress3[lightDir_count] = vData.ShadowmapAdress3;
+	lightDir_array[lightDir_count].Pos0 = vData.PosHPix0;
+	lightDir_array[lightDir_count].Pos1 = vData.PosHPix1;
+	lightDir_array[lightDir_count].Pos2 = vData.PosHPix2;
+	lightDir_array[lightDir_count].Pos3 = vData.PosHPix3;
+	lightDir_array[lightDir_count].matViewProj0 = view_proj[0];
+	lightDir_array[lightDir_count].matViewProj1 = view_proj[1];
+	lightDir_array[lightDir_count].matViewProj2 = view_proj[2];
+	lightDir_array[lightDir_count].matViewProj3 = view_proj[3];
+	lightDir_array[lightDir_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
+	lightDir_array[lightDir_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
+	lightDir_array[lightDir_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
+	lightDir_array[lightDir_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
 
 	lightDir_count++;
 

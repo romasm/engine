@@ -1,5 +1,5 @@
 #include "../common/math.include"
-#include "light_constants.include"
+#include "../common/light_structs.hlsl"
 
 #include "../common/structs.include"
 

@@ -264,7 +264,7 @@ float4 traceReflectionsParall( float3 p, float3 refl, float2 screenSize, float p
 	return float4(ray, alpha);
 }
 
-#include "light_constants.hlsl"
+#include "../common/light_structs.hlsl"
 
 float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, float3 vertex_normal )
 {
