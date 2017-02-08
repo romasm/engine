@@ -1,5 +1,19 @@
 #define NONMETAL_REFLECTIVITY 0.04 // to global scope
 
+#ifdef FORWARD_LIGHTING
+Texture2D albedoTexture : register(t20);
+Texture2D normalTexture : register(t21);
+Texture2D roughnessTexture : register(t22);
+Texture2D reflectivityTexture : register(t23);
+Texture2D aoTexture : register(t24);
+Texture2D alphaTexture : register(t25);
+Texture2D emissiveTexture : register(t26);
+Texture2D subsurfTexture : register(t27);
+Texture2D thicknessTexture : register(t28);
+Texture2D absorptionTexture : register(t29);
+Texture2D insideRoughnessTexture : register(t30);
+
+#else
 Texture2D albedoTexture : register(t0);
 Texture2D normalTexture : register(t1);
 Texture2D roughnessTexture : register(t2);
@@ -9,6 +23,7 @@ Texture2D alphaTexture : register(t5); // todo OPAQUE_SHADER
 Texture2D emissiveTexture : register(t6);
 Texture2D subsurfTexture : register(t7);
 Texture2D thicknessTexture : register(t8);
+#endif
 
 cbuffer materialBuffer : register(b1)
 {
@@ -32,7 +47,7 @@ cbuffer materialBuffer : register(b1)
 	float isMetalPipeline;
 	float metalnessValue;
 
-	float hasAlphatestTexture;
+	float hasAlphaTexture;
 	float alphatestThreshold;
 	float hasEmissiveTexture;
 	float emissiveIntensity;
@@ -43,19 +58,63 @@ cbuffer materialBuffer : register(b1)
 	float hasThicknessTexture;
 
 	float thicknessValue;
+
+#ifdef FORWARD_LIGHTING
+	float hasAbsorptionTexture;
+	float absorptionValue;
+	float hasInsideRoughnessTexture;
+
+	float insideRoughnessValue;
+#endif
+
 	float _padding0;
 	float _padding1;
 	float _padding2;
 };
+
+#ifndef FORWARD_LIGHTING
 
 cbuffer materialId : register(b2)
 {
 	uint4 iddata;
 };
 
+#endif
+
+#ifdef FORWARD_LIGHTING
+
+float OpacityCalculate(SamplerState samplerTex, float2 uv)
+{
+	if( hasAlphaTexture == 0 )
+		return 1.0f;
+	return alphaTexture.Sample(samplerTex, uv).r;
+}
+
+float InsideRoughnessCalculate(SamplerState samplerTex, float2 uv)
+{
+	float insideRoughness = insideRoughnessValue;
+
+	if( hasInsideRoughnessTexture > 0 )
+		insideRoughness *= insideRoughnessTexture.Sample(samplerTex, uv).r;
+	
+	return insideRoughness;
+}
+
+float AbsorptionCalculate(SamplerState samplerTex, float2 uv)
+{
+	float absorption = absorptionValue;
+
+	if( hasAbsorptionTexture > 0 )
+		absorption *= absorptionTexture.Sample(samplerTex, uv).r;
+	
+	return absorption;
+}
+
+#endif
+
 bool AlphatestCalculate(SamplerState samplerTex, float2 uv)
 {
-	if( hasAlphatestTexture == 0 )
+	if( hasAlphaTexture == 0 )
 		return true;
 
 	if( alphaTexture.Sample(samplerTex, uv).r < alphatestThreshold )

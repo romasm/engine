@@ -591,7 +591,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	LightComponents directLight = (LightComponents)0;
 
 	[loop] // spot
-	for(int i_spt=0; i_spt < int(g_spot_count); i_spt++)
+	for(int i_spt=0; i_spt < g_lightIDs.spot_count; i_spt++)
 	{
 		SpotLightBuffer lightData = g_spotLightBuffer[ g_lightIDs.SpotLightsIDs[i_spt] ];
 		LightPrepared prepared = PrepareSpotLight(lightData, gbuffer);
@@ -604,7 +604,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster spot
-	for(int ic_spt=0; ic_spt < int(g_caster_spot_count); ic_spt++)
+	for(int ic_spt=0; ic_spt < g_lightIDs.caster_spot_count; ic_spt++)
 	{
 		SpotCasterBuffer lightData = g_spotCasterBuffer[ g_lightIDs.SpotCastersIDs[ic_spt] ];
 		SpotLightBuffer lightDataShort = (SpotLightBuffer)0;
@@ -624,7 +624,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // disk
-	for(int i_disk=0; i_disk < int(g_disk_count); i_disk++)
+	for(int i_disk=0; i_disk < g_lightIDs.disk_count; i_disk++)
 	{
 		DiskLightBuffer lightData = g_diskLightBuffer[ g_lightIDs.DiskLightsIDs[i_disk] ];
 		LightPrepared prepared = PrepareDiskLight(lightData, gbuffer);
@@ -637,7 +637,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster disk
-	for(int ic_disk=0; ic_disk < int(g_caster_disk_count); ic_disk++)
+	for(int ic_disk=0; ic_disk < g_lightIDs.caster_disk_count; ic_disk++)
 	{
 		DiskCasterBuffer lightData = g_diskCasterBuffer[ g_lightIDs.DiskCastersIDs[ic_disk] ];
 		DiskLightBuffer lightDataShort = (DiskLightBuffer)0;
@@ -659,7 +659,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // rect
-	for(int i_rect=0; i_rect < int(g_rect_count); i_rect++)
+	for(int i_rect=0; i_rect < g_lightIDs.rect_count; i_rect++)
 	{
 		RectLightBuffer lightData = g_rectLightBuffer[ g_lightIDs.RectLightsIDs[i_rect] ];
 		LightPrepared prepared = PrepareRectLight(lightData, gbuffer);
@@ -672,7 +672,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster rect
-	for(int ic_rect=0; ic_rect < int(g_caster_rect_count); ic_rect++)
+	for(int ic_rect=0; ic_rect < g_lightIDs.caster_rect_count; ic_rect++)
 	{
 		RectCasterBuffer lightData = g_rectCasterBuffer[ g_lightIDs.RectCastersIDs[ic_rect] ];
 		RectLightBuffer lightDataShort = (RectLightBuffer)0;
@@ -694,7 +694,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // point
-	for(int i_p=0; i_p < int(g_point_count); i_p++)
+	for(int i_p=0; i_p < g_lightIDs.point_count; i_p++)
 	{
 		PointLightBuffer lightData = g_pointLightBuffer[ g_lightIDs.PointLightsIDs[i_p] ];
 		LightPrepared prepared = PreparePointLight(lightData, gbuffer);
@@ -707,7 +707,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster point
-	for(int ic_p=0; ic_p < int(g_caster_point_count); ic_p++)
+	for(int ic_p=0; ic_p < g_lightIDs.caster_point_count; ic_p++)
 	{
 		PointCasterBuffer lightData = g_pointCasterBuffer[ g_lightIDs.PointCastersIDs[ic_p] ];
 		PointLightBuffer lightDataShort = (PointLightBuffer)0;
@@ -727,7 +727,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // sphere
-	for(int i_sph=0; i_sph < int(g_sphere_count); i_sph++)
+	for(int i_sph=0; i_sph < g_lightIDs.sphere_count; i_sph++)
 	{
 		SphereLightBuffer lightData = g_sphereLightBuffer[ g_lightIDs.SphereLightsIDs[i_sph] ];
 		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
@@ -740,7 +740,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster sphere
-	for(int ic_sph=0; ic_sph < int(g_caster_sphere_count); ic_sph++)
+	for(int ic_sph=0; ic_sph < g_lightIDs.caster_sphere_count; ic_sph++)
 	{
 		SphereCasterBuffer lightData = g_sphereCasterBuffer[ g_lightIDs.SphereCastersIDs[ic_sph] ];
 		SphereLightBuffer lightDataShort = (SphereLightBuffer)0;
@@ -762,7 +762,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // tube
-	for(int i_tube=0; i_tube < int(g_tube_count); i_tube++)
+	for(int i_tube=0; i_tube < g_lightIDs.tube_count; i_tube++)
 	{
 		TubeLightBuffer lightData = g_tubeLightBuffer[ g_lightIDs.TubeLightsIDs[i_tube] ];
 		LightPrepared prepared = PrepareTubeLight(lightData, gbuffer);
@@ -775,7 +775,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // caster tube
-	for(int ic_tube=0; ic_tube < int(g_caster_tube_count); ic_tube++)
+	for(int ic_tube=0; ic_tube < g_lightIDs.caster_tube_count; ic_tube++)
 	{
 		TubeCasterBuffer lightData = g_tubeCasterBuffer[ g_lightIDs.TubeCastersIDs[ic_tube] ];
 		TubeLightBuffer lightDataShort = (TubeLightBuffer)0;
@@ -797,7 +797,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	}
 	
 	[loop] // dir
-	for(int i_dir=0; i_dir < int(g_dir_count); i_dir++)
+	for(int i_dir=0; i_dir < g_lightIDs.dir_count; i_dir++)
 	{
 		DirLightBuffer lightData = g_dirLightBuffer[ g_lightIDs.DirLightsIDs[i_dir] ];
 		
@@ -811,3 +811,9 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	return directLight;
 }
 #endif
+
+float4 CalcutaleMediumTransmittanceLight(SamplerState depthSamp, Texture2D <float2> sceneDepth, 
+										 SamplerState samp, Texture2D <float4> sceneColor, MediumData mediumData)
+{
+	
+}

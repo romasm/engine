@@ -521,13 +521,13 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 			{
 				if(HInput.matTextures_Count == 0)
 				{
-					if(bufName.find("sys_") != string::npos)
+					if(bufName.find("sys_") != string::npos || bufName.find("g_") != string::npos)
 						break;
 					else
 						HInput.matTextures_StartRegister = (uint8_t)desc.BindPoint;
 				}
 				
-				if(bufName.find("sys_") != string::npos)
+				if(bufName.find("sys_") != string::npos || bufName.find("g_") != string::npos)
 					WRN("System texture %s must be in the beginning, interpreted like user texture!", desc.Name);
 				
 				HInput.matTextureMap.insert(make_pair(desc.Name, HInput.matTextures_Count));

@@ -25,6 +25,26 @@ namespace EngineCore
 {	
 	struct LightsIDs
 	{
+		int32_t spot_count;
+		int32_t disk_count;
+		int32_t rect_count;
+		int32_t point_count;
+
+		int32_t sphere_count;
+		int32_t tube_count;
+		int32_t dir_count;
+		int32_t caster_spot_count;
+
+		int32_t caster_disk_count;
+		int32_t caster_rect_count;
+		int32_t caster_point_count;
+		int32_t caster_sphere_count;
+
+		int32_t caster_tube_count;
+		int32_t _padding0;
+		int32_t _padding1;
+		int32_t _padding2;
+		
 		uint32_t SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
 		uint32_t DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
 		uint32_t RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];

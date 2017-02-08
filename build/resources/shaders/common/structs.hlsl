@@ -154,6 +154,15 @@ struct GBufferData
 	float3 vertex_normal;
 };
 
+struct MediumData
+{
+	float insideRoughness;
+	float opacity;
+	float absorption;
+	float3 insideColor;
+	float thickness;
+};
+
 struct DataForLightCompute
 {
 	float2 R;
@@ -163,4 +172,12 @@ struct DataForLightCompute
 	float sqr_aGGX;
 	float NoV;
 	float3 reflect;
+};
+
+struct ConfigParams
+{
+	float dirDiff;
+	float dirSpec;
+	float indirDiff;
+	float indirSpec;
 };

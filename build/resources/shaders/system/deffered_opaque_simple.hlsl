@@ -42,38 +42,11 @@ TextureCube g_envprobsDistBlurred : register(t14);
 
 #include "../common/ibl_helpers.hlsl"
 
-cbuffer camMove : register(b1)
+cbuffer configBuffer : register(b1)
 {
-	float4x4 viewProjInv_ViewProjPrev;
+	ConfigParams configs;
 };
 
-cbuffer configBuffer : register(b2)
-{
-	float spot_count;
-	float disk_count;
-	float rect_count;
-	float point_count;
-
-	float sphere_count;
-	float tube_count;
-	float dir_count;
-	float caster_spot_count;
-
-	float caster_disk_count;
-	float caster_rect_count;
-	float caster_point_count;
-	float caster_sphere_count;
-
-	float caster_tube_count;
-	float distMip;
-	float dirDiff;
-	float dirSpec;
-
-	float indirDiff;
-	float indirSpec;
-	float _padding0;
-	float _padding1;
-};
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
@@ -105,14 +78,14 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents distantLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
-		NoV, Roughness, ViewVector, gbuffer, distMip, SO, specularBrdf, diffuseBrdf);
+		NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	
 	// SSR
 	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
 	
 	// OUTPUT
-	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + (distantLight.diffuse + distantLight.scattering) * indirDiff, specularSecond.r);
-	specularFirstOutput[threadID.xy] = float4( distantLight.specular * indirSpec, specularSecond.g);
+	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + (distantLight.diffuse + distantLight.scattering) * configs.indirDiff, specularSecond.r);
+	specularFirstOutput[threadID.xy] = float4( distantLight.specular * configs.indirSpec, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba; 
 }

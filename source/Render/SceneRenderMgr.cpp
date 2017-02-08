@@ -753,8 +753,6 @@ void SceneRenderMgr::DrawTransparent(ScenePipeline* scene)
 
 		cur->material->SetMatrixBuffer(cur->constant_buffer);
 
-		//cur->material->SendVectorToShader(XMFLOAT4(float(scene->Light_NoShadows_Count), float(scene->Light_Shadows_Count), 0, 0), 0, ID_PS);
-
 		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
 		Render::SetTopology(cur->topo);
 

@@ -53,6 +53,26 @@ struct LightPrepared
 
 struct LightsIDs
 {
+	int spot_count;
+	int disk_count;
+	int rect_count;
+	int point_count;
+
+	int sphere_count;
+	int tube_count;
+	int dir_count;
+	int caster_spot_count;
+
+	int caster_disk_count;
+	int caster_rect_count;
+	int caster_point_count;
+	int caster_sphere_count;
+
+	int caster_tube_count;
+	int _padding0;
+	int _padding1;
+	int _padding2;
+	
 	uint SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
 	uint DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
 	uint RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];

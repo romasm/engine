@@ -66,40 +66,12 @@ StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28);
 
 StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29); 
 
-cbuffer camMove : register(b1)
+cbuffer configBuffer : register(b1)
 {
-	float4x4 viewProjInv_ViewProjPrev;
+	ConfigParams configs;
 };
 
-cbuffer configBuffer : register(b2)
-{
-	float g_spot_count;
-	float g_disk_count;
-	float g_rect_count;
-	float g_point_count;
-
-	float g_sphere_count;
-	float g_tube_count;
-	float g_dir_count;
-	float g_caster_spot_count;
-
-	float g_caster_disk_count;
-	float g_caster_rect_count;
-	float g_caster_point_count;
-	float g_caster_sphere_count;
-
-	float g_caster_tube_count;
-	float distMip;
-	float dirDiff;
-	float dirSpec;
-
-	float indirDiff;
-	float indirSpec;
-	float _padding0; 
-	float _padding1; 
-};
-
-cbuffer Lights : register(b3) 
+cbuffer Lights : register(b2) 
 {
 	LightsIDs g_lightIDs;
 };
@@ -110,10 +82,11 @@ cbuffer Lights : register(b3)
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
 
-cbuffer volumeBuffer : register(b4)
+cbuffer volumeBuffer : register(b3)
 {
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
+
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
@@ -148,16 +121,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	tangent = normalize(cross(cross(normal, tangent), normal));
 	binormal = normalize(cross(cross(normal, binormal), binormal));*/
 
-	DataForLightCompute mData;
-	mData.R = gbuffer.roughness;
-	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
-	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
-	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
-	mData.minR = min(mData.R.x, mData.R.y);
-	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
-	mData.sqr_aGGX = Square( mData.aGGX );
-	mData.NoV = calculateNoV( gbuffer.normal, ViewVector );
-	mData.reflect = 2 * gbuffer.normal * mData.NoV - ViewVector; 
+	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);
 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
 	   
@@ -168,23 +132,23 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	// IBL
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
-		mData.NoV, mData.minR, ViewVector, gbuffer, distMip, SO, specularBrdf, diffuseBrdf);
+		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
 	// VCTGI   
-	LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, gbuffer, mData, 
+	/*LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, gbuffer, mData, 
 		specularBrdf, diffuseBrdf, SO);
 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
-	
+	*/
 	// SSR
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf * SO ) * SSR.a, 1 - SSR.a );
 	
 	// OUTPUT
-	float3 diffuse = (indirectLight.diffuse + indirectLight.scattering) * indirDiff + 
-		(directLight.diffuse + directLight.scattering) * dirDiff;
-	float3 specular = indirectLight.specular * indirSpec + directLight.specular * dirSpec;
+	float3 diffuse = (indirectLight.diffuse + indirectLight.scattering) * configs.indirDiff + 
+		(directLight.diffuse + directLight.scattering) * configs.dirDiff;
+	float3 specular = indirectLight.specular * configs.indirSpec + directLight.specular * configs.dirSpec;
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);

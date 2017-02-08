@@ -102,30 +102,10 @@ namespace EngineCore
 
 		struct DefferedConfigData
 		{
-			float spot_count;
-			float disk_count;
-			float rect_count;
-			float point_count;
-
-			float sphere_count;
-			float tube_count;
-			float dir_count;
-			float caster_spot_count;
-
-			float caster_disk_count;
-			float caster_rect_count;
-			float caster_point_count;
-			float caster_sphere_count;
-
-			float caster_tube_count;
-			float distMip;
 			float dirDiff;
 			float dirSpec;
-
 			float indirDiff;
 			float indirSpec;
-			float _padding0;
-			float _padding1;
 		};
 		
 	public:
@@ -249,10 +229,7 @@ namespace EngineCore
 
 		bool StartFrame(LocalTimer* timer);
 		void EndFrame();
-
-		void LoadEnvProbs();
-		//static bool CompareEnvProbs(EnvProb* first, EnvProb* second);
-
+		
 		uint8_t LoadLights(uint8_t startOffset);
 
 		bool SaveScreenshot(string path, float ssX, float ssY);
@@ -262,7 +239,6 @@ namespace EngineCore
 		RenderTarget *rt_OpaqueDefferedDirect;
 		RenderTarget *rt_OpaqueFinal;
 		RenderTarget *rt_HiZDepth;
-		RenderTarget *rt_TransparentRecursive;
 		RenderTarget *rt_TransparentForward;
 		RenderTarget *rt_FinalLDR;
 		RenderTarget *rt_Antialiased;
@@ -325,6 +301,7 @@ namespace EngineCore
 		StructBuf casterTubeBuffer;
 
 		ID3D11Buffer* lightsPerTile;
+		LightsIDs lightsIDs;
 
 		StructBuf m_LightShadowStructBuffer;
 

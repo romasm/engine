@@ -2,6 +2,8 @@
 #define ANISOTROPY_REFL_REMAP 0.5
 #define ANISOTROPY_MAX 0.5
 
+#define MAX_MIP_LEVEL 8
+
 float computeSpecularOcclusion( float NoV, float AO, float R ) // ????
 {
 	return saturate( PowAbs( NoV + AO , R ) - 1 + AO );
@@ -43,14 +45,14 @@ float3 calculateAnisotropicNormal(float2 R, float3 N, float3 B, float3 T, float3
 }
 
 float3 distantProbSpecular(sampler cubemapSampler, TextureCube cubemap, sampler cubemapBlurredSampler, TextureCube cubemapBlurred, 
-						   float3 N, float3 V, float NoV, float R, float mipR, float maxMip, float3 VN)
+						   float3 N, float3 V, float NoV, float R, float mipR, float3 VN)
 {
 	float3 dominantR = getSpecularDominantDir(N, reflect(-V, N), R, NoV );
 
 	float surfaceFade = saturate(1.1 + dot(VN, normalize(dominantR)));
 
-	float mipNum = mipR * maxMip;
-	float lastMipLerp = clamp(1 - (maxMip - mipNum), 0, 1);		
+	float mipNum = mipR * MAX_MIP_LEVEL;
+	float lastMipLerp = clamp(1 - (MAX_MIP_LEVEL - mipNum), 0, 1);		
 
 	float3 cubemapSample = cubemap.SampleLevel( cubemapSampler, dominantR, mipNum ).rgb;
 	[branch]
@@ -70,7 +72,7 @@ float3 distantProbDiffuse(sampler cubemapSampler, TextureCube cubemap, float3 N,
 }
 
 LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSampler, sampler cubeBlurredSampler, 
-							   float NoV, float R, float3 V, GBufferData gbuffer, float cubeMaxMip, float SO,
+							   float NoV, float R, float3 V, GBufferData gbuffer, float SO,
 							   out float3 specularBrdf, out float3 diffuseBrdf)
 {
 	float3 envBrdf = g_envbrdfLUT.SampleLevel(lutSampler, float2(NoV, R), 0).xyz;
@@ -82,7 +84,7 @@ LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSample
 
 	// SPECULAR
 	result.specular = distantProbSpecular(cubeSampler, g_envprobsDist, cubeBlurredSampler, g_envprobsDistBlurred,
-		specularNormal, V, NoV, R, sqrt(R), cubeMaxMip, gbuffer.vertex_normal);
+		specularNormal, V, NoV, R, sqrt(R), gbuffer.vertex_normal);
 
 	result.specular *= specularBrdf * SO;
 	

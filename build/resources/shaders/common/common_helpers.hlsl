@@ -52,3 +52,19 @@ MaterialParams ReadMaterialParams(uint2 pixelID)
 	return materialParams;
 }
 #endif
+
+DataForLightCompute PrepareDataForLight(GBufferData gbuffer, float3 V)
+{
+	DataForLightCompute mData;
+	mData.R = gbuffer.roughness;
+	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
+	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
+	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
+	mData.minR = min(mData.R.x, mData.R.y);
+	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
+	mData.sqr_aGGX = Square( mData.aGGX );
+	mData.NoV = calculateNoV( gbuffer.normal, V );
+	mData.reflect = 2 * gbuffer.normal * mData.NoV - V; 
+
+	return mData;
+}

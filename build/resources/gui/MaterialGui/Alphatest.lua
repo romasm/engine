@@ -36,9 +36,9 @@ return GuiGroup({
         str = "Alphatest",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphatestTexture", "Alphatest") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphatestTexture", "Alphatest") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "alphaTexture", "hasAlphatestTexture") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Alphatest") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Alphatest") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "alphaTexture", "hasAlphaTexture") end,
         }
     }),
 

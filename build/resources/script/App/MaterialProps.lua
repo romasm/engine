@@ -188,7 +188,7 @@ function MaterialProps:MarkProps()
     if sssColor.x + sssColor.y + sssColor.z == 0.0 then self.hasProps.sss = false
     else self.hasProps.sss = true end
     
-    self.hasProps.alphatest = self.material:GetFloat("hasAlphatestTexture", SHADERS.PS) > 0
+    self.hasProps.alphatest = self.material:GetFloat("hasAlphaTexture", SHADERS.PS) > 0
 end
 
 function MaterialProps:InitProp(propName)
@@ -247,7 +247,7 @@ function MaterialProps:ZeroProp(propName)
     elseif propName == "alphatest" then
         self.material:SetShader("../resources/shaders/objects/opaque_main")
         self.material:SetFloat(0.5, "alphatestThreshold", SHADERS.PS)
-        self.material:SetFloat(0, "hasAlphatestTexture", SHADERS.PS)
+        self.material:SetFloat(0, "hasAlphaTexture", SHADERS.PS)
         self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
     end
 end
