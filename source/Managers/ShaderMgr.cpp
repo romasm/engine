@@ -9,6 +9,8 @@
 #include "ECS\EnvProbSystem.h"
 #include "Generate_PBS_Env_LUT.h"
 
+#include "Render\Material.h"
+
 using namespace EngineCore;
 
 ShaderMgr* ShaderMgr::instance = nullptr;
@@ -62,6 +64,10 @@ void ShaderMgr::PreloadShaders()
 
 	GetShader(string(LG_SHADER), false);
 	GetShader(string(LG_SHADER_SPHERE), false);
+	
+	GetShader(string(COMMON_MATERIAL_SHADER_01), false);
+	GetShader(string(COMMON_MATERIAL_SHADER_02), false);
+	GetShader(string(COMMON_MATERIAL_SHADER_03), false);
 
 	GetShader(string(ENVPROBS_MAT), true);
 	GetShader(string(ENVPROBS_MIPS_MAT), true);

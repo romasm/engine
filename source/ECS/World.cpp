@@ -583,13 +583,14 @@ void World::Frame()
 		{
 			PERF_GPU_TIMESTAMP(_SCENE_FORWARD);
 			it->OpaqueForwardStage();
-			it->HudStage();
+			it->UIStage();
 
 			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
 			it->OpaqueDefferedStage();
 			
 			PERF_GPU_TIMESTAMP(_SCENE_APLHA);
 			it->TransparentForwardStage();
+			it->UIOverlayStage();
 			
 			PERF_GPU_TIMESTAMP(_SCENE_LDR);
 			it->HDRtoLDRStage();
@@ -707,11 +708,12 @@ void SmallWorld::Frame()
 		if(it->StartFrame(&m_world_timer))
 		{
 			it->OpaqueForwardStage();
-			it->HudStage();
+			it->UIStage();
 
 			it->OpaqueDefferedStage();
 			
 			it->TransparentForwardStage();
+			it->UIOverlayStage();
 			
 			it->HDRtoLDRStage();
 

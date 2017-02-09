@@ -180,4 +180,9 @@ struct ConfigParams
 	float dirSpec;
 	float indirDiff;
 	float indirSpec;
+
+	float isLightweight;
+	float _padding0;
+	float _padding1;
+	float _padding2;
 };

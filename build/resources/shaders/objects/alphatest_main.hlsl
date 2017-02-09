@@ -29,7 +29,7 @@ TECHNIQUE_VOXEL
 	DepthEnable = false;
 	DepthWrite = false;
 	CullMode = NONE;
-	
+	 
 	AntialiasedLineEnable = false;
 	MultisampleEnable = true; 
 	   

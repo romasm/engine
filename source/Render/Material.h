@@ -6,6 +6,10 @@
 #include "Buffer.h"
 #include "TexMgr.h"
 
+#define COMMON_MATERIAL_SHADER_01 PATH_SHADERS"objects/opaque_main"
+#define COMMON_MATERIAL_SHADER_02 PATH_SHADERS"objects/alphatest_main"
+#define COMMON_MATERIAL_SHADER_03 PATH_SHADERS"objects/transparent_medium"
+
 #define MAT_STR_LEN 256
 #define TEX_STR_LEN 512
 

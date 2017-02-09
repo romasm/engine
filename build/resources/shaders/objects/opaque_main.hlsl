@@ -23,7 +23,7 @@ TECHNIQUE_SHADOW
 }
  
 TECHNIQUE_VOXEL
-{
+{ 
 	Queue = SC_OPAQUE; 
 
 	DepthEnable = false;

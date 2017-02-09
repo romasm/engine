@@ -106,6 +106,11 @@ namespace EngineCore
 			float dirSpec;
 			float indirDiff;
 			float indirSpec;
+			
+			float isLightweight;
+			float _padding0;
+			float _padding1;
+			float _padding2;
 		};
 		
 	public:
@@ -119,7 +124,8 @@ namespace EngineCore
 
 		inline bool IsLighweight() {return isLightweight;}
 		
-		void HudStage();
+		void UIStage();
+		void UIOverlayStage();
 
 		void OpaqueForwardStage();
 		void TransparentForwardStage();
@@ -230,7 +236,7 @@ namespace EngineCore
 		bool StartFrame(LocalTimer* timer);
 		void EndFrame();
 		
-		uint8_t LoadLights(uint8_t startOffset);
+		uint8_t LoadLights(uint8_t startOffset, bool isCS);
 
 		bool SaveScreenshot(string path, float ssX, float ssY);
 

@@ -345,5 +345,8 @@
     <FxCompile Include="objects\transparency.hlsl">
       <Filter>objects</Filter>
     </FxCompile>
+    <FxCompile Include="common\transparency_helpers.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -283,7 +283,7 @@ ID3D11ShaderResourceView* TexMgr::LoadTexture(string& name)
 		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &tex);
 	}	
 
-	LOG_GOOD("Texture loaded %s", name.c_str());
+	LOG("Texture loaded %s", name.c_str());
 
 	return tex;
 }
