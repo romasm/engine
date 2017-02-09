@@ -85,18 +85,8 @@ namespace EngineCore
 
 			CurrentHudWindow = nullptr;
 
-			materialMgr = nullptr;
-			texMgr = nullptr;
-
-			shaderMgr = new ShaderMgr;
-
-			shaderCodeMgr = new ShaderCodeMgr;
 			renderStateMgr = nullptr;
 			samplerStateMgr = nullptr;
-
-			m_stmeshmgr = nullptr;
-			m_fontmgr = new FontMgr;
-			m_worldmgr = new WorldMgr;
 			
 			resourceProc = new ResourceProcessor;
 
@@ -152,21 +142,10 @@ namespace EngineCore
 			return false;
 		}
 	#endif 
-
-		shaderCodeMgr->PreloadPureCodes();
-		shaderMgr->PreloadShaders();
-
-		texMgr = new TexMgr;
-		texMgr->PreloadTextures();
-
-		materialMgr = new MaterialMgr;
-
-		m_stmeshmgr = new StMeshMgr;
-		m_stmeshmgr->PreloadStMeshes();
-
-		BufferObj = new Buffer();
 		
-		m_fontmgr->PreloadFonts();
+		BufferObj = new Buffer();
+
+		resourceProc->Preload();
 
 		return true;
 	}
@@ -214,15 +193,6 @@ namespace EngineCore
 		if( m_pImmediateContext ) 
 			m_pImmediateContext->ClearState();
 	
-		_DELETE(m_fontmgr);
-		_DELETE(m_stmeshmgr);
-		
-		_DELETE(materialMgr);
-		_DELETE(shaderMgr);
-		_DELETE(texMgr);
-
-		_DELETE(shaderCodeMgr);
-
 		_DELETE(renderStateMgr);
 		_DELETE(samplerStateMgr);
 

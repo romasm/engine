@@ -157,7 +157,7 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 };*/
 float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, in PointCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
-	const float3 posInLight = mul(gbuffer.wpos, (float3x3)lightData.matView);
+	const float3 posInLight = mul(float4(gbuffer.wpos, 1.0f), lightData.matView).xyz;
 	const float zInLSq[3] = {posInLight.x, posInLight.z, posInLight.y};
 	float zInLSqAbs[3];
 	[unroll]for(uint q=0; q<3; q++) zInLSqAbs[q] = abs(zInLSq[q]);

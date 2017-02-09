@@ -58,16 +58,8 @@ namespace EngineCore
 			_aligned_free(p);
 		}
 		
-		ShaderCodeMgr* shaderCodeMgr;
 		RenderStateMgr* renderStateMgr;
 		SamplerStateMgr* samplerStateMgr;
-
-		ShaderMgr* shaderMgr;
-		MaterialMgr* materialMgr;
-		TexMgr* texMgr;
-		StMeshMgr* m_stmeshmgr;
-		FontMgr* m_fontmgr;
-		WorldMgr* m_worldmgr;
 
 		ResourceProcessor* resourceProc;
 		

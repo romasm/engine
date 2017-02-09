@@ -19,10 +19,20 @@ namespace EngineCore
 		ResourceProcessor();
 		~ResourceProcessor();
 
+		void Preload();
+
 		void StartUpdate();
 
 		inline static ResourceProcessor* Get(){return instance;}
 	private:
 		static ResourceProcessor *instance;
+		
+		class ShaderCodeMgr* shaderCodeMgr;
+		class ShaderMgr* shaderMgr;
+		class MaterialMgr* materialMgr;
+		class TexMgr* texMgr;
+		class StMeshMgr* stmeshMgr;
+		class FontMgr* fontMgr;
+		class WorldMgr* worldMgr;
 	};
 }
