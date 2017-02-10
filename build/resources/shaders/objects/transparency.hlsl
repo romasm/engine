@@ -10,6 +10,7 @@ SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 SamplerState samplerBilinearVolumeClamp : register(s4);
 SamplerState samplerAnisotropicWrap : register(s5);
+SamplerState samplerTrilinearMirror : register(s6);
 
 cbuffer matrixBuffer : register(b2)
 {
@@ -107,7 +108,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	gbuffer.depth = input.position.z / input.position.w;
 	
 	// LIGHT CALCULATION -----------------------------
-	
+	 
 	float3 ViewVector = g_CamPos - gbuffer.wpos;
 	const float linDepth = length(ViewVector);
 	ViewVector = ViewVector / linDepth;
@@ -119,17 +120,17 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	// TRANSMITTANCE
 	float2 screenUV = input.position.xy * g_PixSize;
 	float4 transmittance = CalcutaleMediumTransmittanceLight(samplerPointClamp, sys_depth, 
-		samplerTrilinearWrap, sys_sceneColor, screenUV, mediumData);
-	
+		samplerTrilinearMirror, sys_sceneColor, screenUV, mediumData, mData, gbuffer, ViewVector);
+	 
 	LightComponents directLight = (LightComponents)0;
 	[branch]
-	if(configs.isLightweight == 0)
+	if(configs.isLightweight == 0)  
 	{
 		// DIRECT LIGHT
-		const MaterialParams materialParams = (MaterialParams)0;
+		const MaterialParams materialParams = (MaterialParams)0; 
 		directLight = 
 			ProcessLights(samplerPointClamp, sys_shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	}
+	} 
 
 	// IBL
 	float3 specularBrdf, diffuseBrdf;

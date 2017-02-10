@@ -98,6 +98,13 @@ samplerTrilinearWrap
     AddressV = WRAP;
 };
 
+samplerTrilinearMirror
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = MIRROR;
+    AddressV = MIRROR;
+};
+
 // configurable
 samplerAnisotropicClamp
 {

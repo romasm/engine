@@ -429,7 +429,7 @@ bool ScenePipeline::InitRts()
 	rt_OpaqueFinal = new RenderTarget;
 	if(!rt_OpaqueFinal->Init(width, height))return false;
 	rt_OpaqueFinal->SetMipmappingMaterial(SP_MATERIAL_OPAQUE_BLUR);
-	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false;
+	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0))return false;
 	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT, 0))return false;
 
 	// TRANSPARENT	
