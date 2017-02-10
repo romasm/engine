@@ -351,6 +351,11 @@ function MaterialProps:OpenMenu(ent, coords)
 end
 
 function MaterialProps:MenuClick(id) -- TODO: to history
+    -- TEMP
+    if id == "opacity" then
+        self.material:SetShader("../resources/shaders/objects/transparent_medium")
+    end
+
     if self.hasProps[id] == nil then return end
 
     self.hasProps[id] = not self.hasProps[id]

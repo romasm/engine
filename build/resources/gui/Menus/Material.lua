@@ -7,7 +7,7 @@ return GuiMenu({
     id = "material_menu",
     
     width = 180,
-    height = 202, 
+    height = 227, 
     
     -- children
     GuiButton({
@@ -122,6 +122,20 @@ return GuiMenu({
 
         text = {
             str = "+ Alphatest",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "opacity",
+
+        top = 201,
+
+        text = {
+            str = "+ Opacity",
         },
     }),
 })

@@ -117,7 +117,9 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
 
 	// TRANSMITTANCE
-	float4 transmittance = CalcutaleMediumTransmittanceLight(samplerPointClamp, sys_depth, samplerTrilinearWrap, sys_sceneColor, mediumData);
+	float2 screenUV = input.position.xy * g_PixSize;
+	float4 transmittance = CalcutaleMediumTransmittanceLight(samplerPointClamp, sys_depth, 
+		samplerTrilinearWrap, sys_sceneColor, screenUV, mediumData);
 	
 	LightComponents directLight = (LightComponents)0;
 	[branch]
@@ -134,7 +136,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	
-	[branch]
+	[branch] 
 	if(configs.isLightweight == 0)
 	{
 		// VCTGI   

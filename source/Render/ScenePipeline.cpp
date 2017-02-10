@@ -708,10 +708,11 @@ void ScenePipeline::OpaqueForwardStage()
 
 void ScenePipeline::TransparentForwardStage()
 {
-	rt_TransparentForward->ClearRenderTargets();
+	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	ID3D11ShaderResourceView* srvs[7];
+	const uint32_t srvs_size = 7;
+	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[1] = nullptr;
 	srvs[2] = nullptr;
@@ -733,10 +734,10 @@ void ScenePipeline::TransparentForwardStage()
 		srvs[4] = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
 	}
 		
-	Render::PSSetShaderResources(0, 5, srvs);
+	Render::PSSetShaderResources(0, srvs_size, srvs);
 
 	if(!isLightweight)
-		LoadLights(5, false);
+		LoadLights(srvs_size, false);
 	
 	Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
 
