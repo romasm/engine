@@ -68,8 +68,10 @@ ScenePipeline::ScenePipeline()
 	m_SharedBuffer = nullptr;
 	m_AOBuffer = nullptr;
 
-	lightsPerTile = nullptr;
-	ZeroMemory(&lightsIDs, sizeof(lightsIDs));
+	ZeroMemory(&lightsIDs, sizeof(LightsIDs));
+
+	lightsPerTileCount = nullptr;
+	ZeroMemory(&lightsCount, sizeof(lightsCount));
 
 	codemgr = nullptr;
 
@@ -117,7 +119,9 @@ void ScenePipeline::Close()
 	casterSphereBuffer.Release();
 	casterTubeBuffer.Release();
 
-	_RELEASE(lightsPerTile);
+	lightsPerTile.Release();
+
+	_RELEASE(lightsPerTileCount);
 
 	m_LightShadowStructBuffer.Release();
 
@@ -211,35 +215,9 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 		casterSphereBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_SPHERE_FRAME_MAX, sizeof(SphereCasterBuffer), true);
 		casterTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_TUBE_FRAME_MAX, sizeof(TubeCasterBuffer), true);
 
-		lightsPerTile = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsIDs), true);
-		
-		// TEMP
-		for(uint8_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
-			lightsIDs.SpotLightsIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_SPOT_DISK_FRAME_MAX; i++)
-			lightsIDs.DiskLightsIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_SPOT_RECT_FRAME_MAX; i++)
-			lightsIDs.RectLightsIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_SPOT_FRAME_MAX; i++)
-			lightsIDs.SpotCastersIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_SPOT_DISK_FRAME_MAX; i++)
-			lightsIDs.DiskCastersIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_SPOT_RECT_FRAME_MAX; i++)
-			lightsIDs.RectCastersIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_POINT_FRAME_MAX; i++)
-			lightsIDs.PointLightsIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_POINT_SPHERE_FRAME_MAX; i++)
-			lightsIDs.SphereLightsIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_POINT_TUBE_FRAME_MAX; i++)
-			lightsIDs.TubeLightsIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_POINT_FRAME_MAX; i++)
-			lightsIDs.PointCastersIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_POINT_SPHERE_FRAME_MAX; i++)
-			lightsIDs.SphereCastersIDs[i] = i;
-		for(uint8_t i = 0; i < CASTER_POINT_TUBE_FRAME_MAX; i++)
-			lightsIDs.TubeCastersIDs[i] = i;
-		for(uint8_t i = 0; i < LIGHT_DIR_FRAME_MAX; i++)
-			lightsIDs.DirLightsIDs[i] = i;
+		lightsPerTile = Buffer::CreateStructedBuffer(Render::Device(), TOTAL_LIGHT_COUNT, sizeof(int32_t), true);
+
+		lightsPerTileCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
 	}
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
@@ -743,7 +721,9 @@ void ScenePipeline::TransparentForwardStage()
 
 	if(!isLightweight)
 	{
-		Render::PSSetConstantBuffers(4, 1, &lightsPerTile); 
+		Render::PSSetShaderResources(20, 1, &lightsPerTile.srv); 
+
+		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount); 
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::PSSetConstantBuffers(5, 1, &volumeBuffer); 
@@ -845,21 +825,51 @@ uint8_t ScenePipeline::LoadLights(uint8_t startOffset, bool isCS)
 	else
 		Render::PSSetShaderResources(startOffset, 13, srvs);
 
-	lightsIDs.spot_count = (int32_t)spot_size;
-	lightsIDs.disk_count = (int32_t)disk_size;
-	lightsIDs.rect_count = (int32_t)rect_size;
-	lightsIDs.caster_spot_count = (int32_t)caster_spot_size;
-	lightsIDs.caster_disk_count = (int32_t)caster_disk_size;
-	lightsIDs.caster_rect_count = (int32_t)caster_rect_size;
-	lightsIDs.point_count = (int32_t)point_size;
-	lightsIDs.sphere_count = (int32_t)sphere_size;
-	lightsIDs.tube_count = (int32_t)tube_size;
-	lightsIDs.caster_point_count = (int32_t)caster_point_size;
-	lightsIDs.caster_sphere_count = (int32_t)caster_sphere_size;
-	lightsIDs.caster_tube_count = (int32_t)caster_tube_size;
-	lightsIDs.dir_count = (int32_t)dir_size;
-	
-	Render::UpdateDynamicResource(lightsPerTile, &lightsIDs, sizeof(LightsIDs));
+	lightsCount.spot_count = (int32_t)spot_size;
+	lightsCount.disk_count = (int32_t)disk_size;
+	lightsCount.rect_count = (int32_t)rect_size;
+	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
+	lightsCount.caster_disk_count = (int32_t)caster_disk_size;
+	lightsCount.caster_rect_count = (int32_t)caster_rect_size;
+	lightsCount.point_count = (int32_t)point_size;
+	lightsCount.sphere_count = (int32_t)sphere_size;
+	lightsCount.tube_count = (int32_t)tube_size;
+	lightsCount.caster_point_count = (int32_t)caster_point_size;
+	lightsCount.caster_sphere_count = (int32_t)caster_sphere_size;
+	lightsCount.caster_tube_count = (int32_t)caster_tube_size;
+	lightsCount.dir_count = (int32_t)dir_size;
+		
+		// TEMP
+		for(uint16_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
+			lightsIDs[SPOT_L_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_SPOT_DISK_FRAME_MAX; i++)
+			lightsIDs[DISK_L_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_SPOT_RECT_FRAME_MAX; i++)
+			lightsIDs[RECT_L_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_SPOT_FRAME_MAX; i++)
+			lightsIDs[SPOT_C_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_SPOT_DISK_FRAME_MAX; i++)
+			lightsIDs[DISK_C_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_SPOT_RECT_FRAME_MAX; i++)
+			lightsIDs[RECT_C_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_POINT_FRAME_MAX; i++)
+			lightsIDs[POINT_L_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_POINT_SPHERE_FRAME_MAX; i++)
+			lightsIDs[SPHERE_L_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_POINT_TUBE_FRAME_MAX; i++)
+			lightsIDs[TUBE_L_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_POINT_FRAME_MAX; i++)
+			lightsIDs[POINT_C_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_POINT_SPHERE_FRAME_MAX; i++)
+			lightsIDs[SPHERE_C_ID(i)] = i;
+		for(uint16_t i = 0; i < CASTER_POINT_TUBE_FRAME_MAX; i++)
+			lightsIDs[TUBE_C_ID(i)] = i;
+		for(uint16_t i = 0; i < LIGHT_DIR_FRAME_MAX; i++)
+			lightsIDs[DIR_ID(i)] = i;
+
+	Render::UpdateDynamicResource(lightsPerTile.buf, &lightsIDs, sizeof(LightsIDs));
+
+	Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
 
 	return structed_offset;
 }
@@ -961,6 +971,8 @@ void ScenePipeline::OpaqueDefferedStage()
 		Render::CSSetShaderResources(16, 1, &volumeEmittance);
 
 		LoadLights(17, true);
+
+		Render::CSSetShaderResources(30, 1, &lightsPerTile.srv); 
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
@@ -968,7 +980,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	if(!isLightweight)
 	{
-		Render::CSSetConstantBuffers(2, 1, &lightsPerTile); 
+		Render::CSSetConstantBuffers(2, 1, &lightsPerTileCount); 
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::CSSetConstantBuffers(3, 1, &volumeBuffer); 

@@ -50,17 +50,19 @@ StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t18);
 
 StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t19); 
 
+StructuredBuffer<int> g_lightIDs : register(t20); 
+
 #define FORWARD_LIGHTING
 #include "pixel_input.hlsl"
 
 cbuffer configBuffer : register(b3)
-{
+{ 
 	ConfigParams configs;
 };
 
-cbuffer Lights : register(b4) 
+cbuffer lightsCount : register(b4) 
 {
-	LightsIDs g_lightIDs;
+	LightsCount g_lightCount; 
 };
 
 #include "../common/shadow_helpers.hlsl"

@@ -47,7 +47,7 @@ TextureCube g_envprobsDistBlurred : register(t14);
 Texture2DArray <float> shadows: register(t15); 
 
 Texture3D <float4> volumeEmittance : register(t16); 
-
+   
 StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
 StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
 StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t19); 
@@ -66,24 +66,26 @@ StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28);
 
 StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29); 
 
+StructuredBuffer<int> g_lightIDs : register(t30); 
+
 cbuffer configBuffer : register(b1)
 {
-	ConfigParams configs;
+	ConfigParams configs;   
 };
-
-cbuffer Lights : register(b2) 
-{
-	LightsIDs g_lightIDs;
-};
-
+  
+cbuffer lightsCount : register(b2)  
+{ 
+	LightsCount g_lightCount;
+};  
+ 
 #include "../common/shadow_helpers.hlsl"
-#include "../system/direct_brdf.hlsl"
+#include "../system/direct_brdf.hlsl"  
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
 
 cbuffer volumeBuffer : register(b3)
-{
+{ 
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
@@ -104,7 +106,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
 		return;
 	}
-	
+	      
 	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
 	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
 	gbuffer.ao = min( SceneAO, gbuffer.ao );

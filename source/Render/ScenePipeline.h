@@ -306,8 +306,11 @@ namespace EngineCore
 		StructBuf casterSphereBuffer;
 		StructBuf casterTubeBuffer;
 
-		ID3D11Buffer* lightsPerTile;
+		StructBuf lightsPerTile;
 		LightsIDs lightsIDs;
+
+		ID3D11Buffer* lightsPerTileCount;
+		LightsCount lightsCount;
 
 		StructBuf m_LightShadowStructBuffer;
 

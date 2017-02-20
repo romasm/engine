@@ -1,17 +1,17 @@
 #define NONMETAL_REFLECTIVITY 0.04 // to global scope
 
 #ifdef FORWARD_LIGHTING
-Texture2D albedoTexture : register(t20);
-Texture2D normalTexture : register(t21);
-Texture2D roughnessTexture : register(t22);
-Texture2D reflectivityTexture : register(t23);
-Texture2D aoTexture : register(t24);
-Texture2D alphaTexture : register(t25);
-Texture2D emissiveTexture : register(t26);
-Texture2D subsurfTexture : register(t27);
-Texture2D thicknessTexture : register(t28);
-Texture2D absorptionTexture : register(t29);
-Texture2D insideRoughnessTexture : register(t30);
+Texture2D albedoTexture : register(t21);
+Texture2D normalTexture : register(t22);
+Texture2D roughnessTexture : register(t23);
+Texture2D reflectivityTexture : register(t24);
+Texture2D aoTexture : register(t25);
+Texture2D alphaTexture : register(t26);
+Texture2D emissiveTexture : register(t27);
+Texture2D subsurfTexture : register(t28);
+Texture2D thicknessTexture : register(t29);
+Texture2D absorptionTexture : register(t30);
+Texture2D insideRoughnessTexture : register(t31);
 
 #else
 Texture2D albedoTexture : register(t0);
