@@ -31,7 +31,7 @@ float4 SMAAFinal(PI_PosTex input) : SV_TARGET
     // Is there any blending weight with a value greater than 0.0?
     [branch]
     if (dot(a, float4(1.0, 1.0, 1.0, 1.0)) < 1e-5)
-        return float4(colorTex.SampleLevel(samplerBilinearClamp, texcoord, 0).rgb, 1);
+        return colorTex.SampleLevel(samplerBilinearClamp, texcoord, 0);
     else 
 	{
         float4 color = float4(0.0, 0.0, 0.0, 0.0);
@@ -64,6 +64,6 @@ float4 SMAAFinal(PI_PosTex input) : SV_TARGET
         //texcoord += offset * g_PixSize;
         //float3 res = colorTex.SampleLevel(samplerBilinearClamp, texcoord, 0).rgb;
 		
-		return float4(res.rgb, 1);
+		return res;
     }
 }

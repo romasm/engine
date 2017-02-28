@@ -53,18 +53,18 @@ StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t19);
 StructuredBuffer<int> g_lightIDs : register(t20); 
 
 #define FORWARD_LIGHTING
-#include "pixel_input.hlsl"
-
+#include "pixel_input.hlsl" 
+ 
 cbuffer configBuffer : register(b3)
 { 
 	ConfigParams configs;
 };
 
 cbuffer lightsCount : register(b4) 
-{
+{  
 	LightsCount g_lightCount; 
 };
-
+ 
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"
 #define FULL_LIGHT
@@ -99,25 +99,25 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	mediumData.insideRoughness = InsideRoughnessCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.absorption = AbsorptionCalculate(samplerAnisotropicWrap, input.tex);
 	
-	if(!front)
+	if(!front) 
 		gbuffer.normal = -gbuffer.normal;
 	gbuffer.tangent = normalize(cross(gbuffer.normal, cross(input.tangent, gbuffer.normal)));
 	gbuffer.binormal = normalize(cross(gbuffer.tangent, gbuffer.normal));
 	
 	gbuffer.vertex_normal = normalize(cross(ddx(input.worldPos.xyz), ddy(input.worldPos.xyz)));
-	
+	 
 	gbuffer.wpos = input.worldPos.xyz;
-	gbuffer.depth = input.position.z / input.position.w;
-	
+	gbuffer.depth = input.position.z / input.position.w; 
+	 
 	// LIGHT CALCULATION -----------------------------
 	 
 	float3 ViewVector = g_CamPos - gbuffer.wpos;
 	const float linDepth = length(ViewVector);
-	ViewVector = ViewVector / linDepth;
+	ViewVector = ViewVector / linDepth; 
 
-	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);
+	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
 
-	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR); 
 
 	// TRANSMITTANCE
 	float2 screenUV = input.position.xy * g_PixSize;
@@ -141,7 +141,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	
 	[branch] 
 	if(configs.isLightweight == 0)
-	{
+	{ 
 		// VCTGI   
 		LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, sys_volumeEmittance, volumeData, gbuffer, mData, 
 			specularBrdf, diffuseBrdf, SO);

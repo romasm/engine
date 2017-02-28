@@ -12,7 +12,7 @@ TECHNIQUE_DEFAULT
  
 TECHNIQUE_SHADOW
 {
-	Queue = SC_TRANSPARENT; 
+	Queue = SC_OPAQUE; 
 
 	DepthEnable = true;
 	DepthWrite = true;

@@ -100,12 +100,6 @@ float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, floa
 	return saturate( (saturate(shadow) - 0.5f) * sharpen + 0.5f );
 }
 
-static const float2 reproj[2] =
-{
-	float2(0.5f,-0.5f),
-	float2(0.5f,0.5f)
-};
-
 float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, in SpotCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
 	const float VNoL = dot(gbuffer.vertex_normal, prepared.L);
@@ -120,7 +114,7 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 	lightViewProjPos.xy = uvOffset.xy;
 		
 	float lvp_rcp = rcp(lightViewProjPos.w);
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy * lvp_rcp + ClipToScreenConsts[1];
 		
 	float result = 0;
 	[branch]
@@ -240,7 +234,7 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	lightViewProjPos.xy = uvOffset.xy;
 				
 	const float lvp_rcp = rcp(lightViewProjPos.w);
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy * lvp_rcp + ClipToScreenConsts[1];
 			
 	// REMOVE
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
@@ -332,7 +326,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 	lightViewProjPos.xy = uvOffset.xy;
 		
 	float lvp_rcp = rcp(lightViewProjPos.w);
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy * lvp_rcp + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy * lvp_rcp + ClipToScreenConsts[1];
 			
 	float3 shadowmapCoords;
 	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;
@@ -371,7 +365,7 @@ float GetVoxelSpotShadow(sampler samp, Texture2DArray <float> shadowmap, float4 
 	float4 lightViewProjPos = mul(wpos, lightData.matViewProj);
 	lightViewProjPos.xyz /= lightViewProjPos.w;
 
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy + ClipToScreenConsts[1];
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
 		return 0;
 
@@ -442,7 +436,7 @@ float GetVoxelPointShadow(sampler samp, Texture2DArray <float> shadowmap, float4
 	float4 lightViewProjPos = mul(pil, lightData.matProj);
 	lightViewProjPos.xyz /= lightViewProjPos.w;
 
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy + ClipToScreenConsts[1];
 	if(reprojCoords.x < 0 || reprojCoords.x > 1 || reprojCoords.y < 0 || reprojCoords.y > 1 || lightViewProjPos.z < 0)
 		return 0;
 
@@ -487,7 +481,7 @@ float GetVoxelDirShadow(sampler samp, Texture2DArray <float> shadowmap, float4 w
 
 	lightViewProjPos.xyz /= lightViewProjPos.w;
 		
-	float2 reprojCoords = reproj[0] * lightViewProjPos.xy + reproj[1];
+	float2 reprojCoords = ClipToScreenConsts[0] * lightViewProjPos.xy + ClipToScreenConsts[1];
 			
 	float3 shadowmapCoords;
 	shadowmapCoords.xy = adress.xy + reprojCoords.xy * adress.z;

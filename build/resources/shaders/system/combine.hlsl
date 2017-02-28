@@ -37,7 +37,7 @@ PO_opaque Combine(PI_PosTex input)
 	
 	// ss blur: TODO
 	res.forNextFrame.rgb = diffSample.rgb + specSample.rgb;
-	res.forNextFrame.a = d;
+	res.forNextFrame.a = d; 
 
 	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + float3(diffSample.a, specSample.a, specSecondSample.r);
 	res.opaque.a = d < 1.0f ? 1.0f : 0.0f;

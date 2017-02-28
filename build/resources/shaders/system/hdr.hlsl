@@ -100,11 +100,13 @@ float3 Abberation(Texture2D opaque, Texture2D transperency, float2 coord)
 }
 */
 
-float3 Combine(Texture2D opaque, Texture2D transperency, float2 coord)
+float4 Combine(Texture2D opaque, Texture2D transperency, float2 coord)
 {
-	float3 color = opaque.Sample(samplerPointClamp, coord).rgb;
+	float4 color = opaque.Sample(samplerPointClamp, coord);
 	float4 trsp = transperency.Sample(samplerPointClamp, coord);
-	return lerp(color, trsp.rgb, trsp.a);
+	color.rgb = lerp(color.rgb, trsp.rgb, trsp.a);
+	color.a = saturate(color.a + trsp.a);
+	return color;
 }
 
 struct PO_LDR
@@ -176,7 +178,8 @@ PO_LDR HDRLDR(PI_PosTex input)
 {
 	PO_LDR res;
 	
-	float3 lin = Combine(opaqueTex, transparentTex, input.tex);
+	float4 combinedScene = Combine(opaqueTex, transparentTex, input.tex);
+	float3 lin = combinedScene.rgb;
 	
 	const float2 lum_coords = float2(0.5f, 0.5f);
 	float averageFrameLum = lumTex.Sample(samplerPointClamp, lum_coords).r;
@@ -300,7 +303,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);
-	res.srgb.a = 1;
+	res.srgb.a = combinedScene.a;
 	
 	res.lin.rgb = saturate(tonemapped);
 	res.lin.a = 1;

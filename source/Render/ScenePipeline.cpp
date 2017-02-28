@@ -1099,7 +1099,6 @@ bool ScenePipeline::SaveScreenshot(string path, float ssX, float ssY)
 		return false;
 
 	sp->SetTexture(rt_Antialiased->GetShaderResourceView(1), 0);
-	sp->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 1);
 
 	rt->ClearRenderTargets();
 	rt->SetRenderTarget();
