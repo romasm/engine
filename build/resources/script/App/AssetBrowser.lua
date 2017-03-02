@@ -399,6 +399,12 @@ function AssetBrowser:InitPreviewWorld()
     self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere.stm")
     self.screenshotSphere:Enable(false)
 
+    self.screenshotAlphaPlane = EntityTypes.StaticModel(self.previewWorld)
+    self.screenshotAlphaPlane:SetMesh("../resources/meshes/alpha_bg.stm")
+    self.screenshotAlphaPlane:SetMaterial("../resources/meshes/alpha_bg.mtb", 0)
+    self.screenshotAlphaPlane:SetPosition(0.0, 0.0, 5.2)--4.6)
+    self.screenshotAlphaPlane:Enable(false)
+
     -- for preview   
     self.previewNode = EntityTypes.Node(self.previewWorld)
     self.previewNode:SetPosition(100.0, 0.0, 0.0)
@@ -428,6 +434,8 @@ function AssetBrowser:GeneratePreview(filename)
     self.screenshotCamera:Activate(self.screenshotScene)
     self.screenshotSphere:Enable(true)
     self.screenshotSphere:SetMaterial(filename, 0)
+    -- TODO: if alpha
+    self.screenshotAlphaPlane:Enable(true)
 
     Resource.ForceTextureReloadBackground() -- TODO: use job callback system
     self:PostGeneratePreview(filename:gsub("%.mtb", "%.tga"))
@@ -436,7 +444,8 @@ end
 function AssetBrowser:PostGeneratePreview(filename)
     self.previewWorld:Snapshot(self.screenshotScene)
     self.screenshotScene:SaveScreenshot(filename, 2.0, 2.0)
-
+    
+    self.screenshotAlphaPlane:Enable(false)
     self.screenshotSphere:SetMaterial(self.nullMat, 0)
     self.screenshotSphere:Enable(false)
     self.screenshotCamera:Deactivate(self.screenshotScene)
