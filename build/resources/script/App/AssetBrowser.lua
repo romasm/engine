@@ -434,8 +434,12 @@ function AssetBrowser:GeneratePreview(filename)
     self.screenshotCamera:Activate(self.screenshotScene)
     self.screenshotSphere:Enable(true)
     self.screenshotSphere:SetMaterial(filename, 0)
-    -- TODO: if alpha
-    self.screenshotAlphaPlane:Enable(true)
+
+    local material = self.screenshotSphere:GetMaterialRef(0)
+
+    if material:IsTransparent() then
+        self.screenshotAlphaPlane:Enable(true)
+    end
 
     Resource.ForceTextureReloadBackground() -- TODO: use job callback system
     self:PostGeneratePreview(filename:gsub("%.mtb", "%.tga"))

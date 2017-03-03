@@ -28,6 +28,6 @@ float4 CalcutaleMediumTransmittanceLight(SamplerState depthSamp, Texture2D <floa
 
 	float3 absorbtion = exp(-medium_absorb * (1 - mediumData.insideColor) * travelDist);
 
-	float3 temp = mediumData.opacity * mediumData.insideRoughness * mediumData.absorption;
-	return float4(temp + scene * absorbtion, 0.9);
+	float3 temp = mediumData.insideRoughness * mediumData.absorption;
+	return float4(temp + scene * absorbtion, 1 - mediumData.opacity);
 }

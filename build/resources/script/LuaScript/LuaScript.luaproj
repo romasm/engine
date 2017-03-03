@@ -80,6 +80,9 @@
     <Compile Include="..\..\gui\MaterialGui\NormalCallback.lua">
       <Link>Gui\MaterialGui\NormalCallback.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Opacity.lua">
+      <Link>Gui\MaterialGui\Opacity.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Reflectivity.lua">
       <Link>Gui\MaterialGui\Reflectivity.lua</Link>
     </Compile>

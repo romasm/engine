@@ -12,6 +12,7 @@ loader.require("MaterialGui.AO", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Emissive", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.SSS", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Alphatest", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.Opacity", MaterialProps.reloadMatWin)
 
 loader.require("Menus.Material")
 
@@ -55,6 +56,7 @@ function MaterialProps:Init()
         emissive = false,
         sss = false,
         alphatest = false,
+        opacity = false,
     }
 
     self.scrollTo = nil
@@ -148,6 +150,10 @@ function MaterialProps:RecreateProps()
         self.components.alphatest = Gui.MaterialAlphatest() 
         self.body:AddGroup(self.components.alphatest)
     end
+    if self.hasProps.opacity then 
+        self.components.opacity = Gui.MaterialOpacity() 
+        self.body:AddGroup(self.components.opacity)
+    end
 
     self:UpdateData(true)
 
@@ -188,7 +194,9 @@ function MaterialProps:MarkProps()
     if sssColor.x + sssColor.y + sssColor.z == 0.0 then self.hasProps.sss = false
     else self.hasProps.sss = true end
     
-    self.hasProps.alphatest = self.material:GetFloat("hasAlphaTexture", SHADERS.PS) > 0
+    self.hasProps.alphatest = self.material:GetShaderName() == "../resources/shaders/objects/alphatest_main"
+    
+    self.hasProps.opacity = self.material:GetShaderName() == "../resources/shaders/objects/transparent_medium"
 end
 
 function MaterialProps:InitProp(propName)
@@ -203,6 +211,8 @@ function MaterialProps:InitProp(propName)
         self.material:SetFloat(0.5, "thicknessValue", SHADERS.PS)
     elseif propName == "alphatest" then
         self.material:SetShader("../resources/shaders/objects/alphatest_main")
+    elseif propName == "opacity" then
+        self.material:SetShader("../resources/shaders/objects/transparent_medium")
     end
 end
 
@@ -246,7 +256,12 @@ function MaterialProps:ZeroProp(propName)
         self.material:SetTextureName("", "thicknessTexture", SHADERS.PS)
     elseif propName == "alphatest" then
         self.material:SetShader("../resources/shaders/objects/opaque_main")
-        self.material:SetFloat(0.5, "alphatestThreshold", SHADERS.PS)
+        self.material:SetFloat(0.5, "alphaValue", SHADERS.PS)
+        self.material:SetFloat(0, "hasAlphaTexture", SHADERS.PS)
+        self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
+    elseif propName == "opacity" then
+        self.material:SetShader("../resources/shaders/objects/transparent_medium")
+        self.material:SetFloat(0.1, "alphaValue", SHADERS.PS)
         self.material:SetFloat(0, "hasAlphaTexture", SHADERS.PS)
         self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
     end
@@ -351,11 +366,6 @@ function MaterialProps:OpenMenu(ent, coords)
 end
 
 function MaterialProps:MenuClick(id) -- TODO: to history
-    -- TEMP
-    if id == "opacity" then
-        self.material:SetShader("../resources/shaders/objects/transparent_medium")
-    end
-
     if self.hasProps[id] == nil then return end
 
     self.hasProps[id] = not self.hasProps[id]

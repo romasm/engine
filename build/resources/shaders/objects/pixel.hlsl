@@ -7,7 +7,7 @@
 SamplerState samplerAnisotropicWrap : register(s0);
 
 cbuffer matrixBuffer : register(b3)
-{
+{ 
 	matrix worldMatrix;
 	matrix normalMatrix;  
 };     

@@ -61,7 +61,7 @@ return GuiGroup({
         left = 120,
         top = 185,
         width = 155,
-        alt = "Pick subsurface color (multiplier)",
+        alt = "Pick subsurface color / multiplier",
 
         background = {
             color_nonactive = 'bg_03',
@@ -114,7 +114,7 @@ return GuiGroup({
             max = 1,
             decimal = 3,
         },
-        alt = "Thickness value",
+        alt = "Thickness value / multiplier",
         id = 'thickness_slider',
 
         events = {

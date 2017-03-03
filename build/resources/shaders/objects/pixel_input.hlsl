@@ -48,7 +48,7 @@ cbuffer materialBuffer : register(b1)
 	float metalnessValue;
 
 	float hasAlphaTexture;
-	float alphatestThreshold;
+	float alphaValue;
 	float hasEmissiveTexture;
 	float emissiveIntensity;
 
@@ -85,9 +85,13 @@ cbuffer materialId : register(b2)
 
 float OpacityCalculate(SamplerState samplerTex, float2 uv)
 {
+	float opacity = alphaValue;
+
 	if( hasAlphaTexture == 0 )
-		return 1.0f;
-	return alphaTexture.Sample(samplerTex, uv).r;
+		return opacity;
+
+	opacity *= alphaTexture.Sample(samplerTex, uv).r;
+	return opacity;
 }
 
 float InsideRoughnessCalculate(SamplerState samplerTex, float2 uv)
@@ -117,7 +121,7 @@ bool AlphatestCalculate(SamplerState samplerTex, float2 uv)
 	if( hasAlphaTexture == 0 )
 		return true;
 
-	if( alphaTexture.Sample(samplerTex, uv).r < alphatestThreshold )
+	if( alphaTexture.Sample(samplerTex, uv).r < alphaValue )
 		return false;
 
 	return true;

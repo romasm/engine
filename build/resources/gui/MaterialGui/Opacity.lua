@@ -1,9 +1,9 @@
-function Gui.MaterialAlphatest()
+function Gui.MaterialOpacity()
 return GuiGroup({
     styles = {
         GuiStyles.common_group,
     },
-    id = 'alphatest',
+    id = 'opacity',
     
     header = {
         styles = {
@@ -16,7 +16,7 @@ return GuiGroup({
         height = 23,
 
         text = {
-            str = "Alphatest",
+            str = "Opacity",
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },
@@ -31,23 +31,23 @@ return GuiGroup({
         width = 265,
         top = 35,
         left = 10,
-        id = 'alphatest_texture',
+        id = 'opacity_texture',
         allow_autoreload = true,
-        str = "Alphatest",
+        str = "Opacity",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Alphatest") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Alphatest") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Opacity") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Opacity") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "alphaTexture", "hasAlphaTexture") end,
         }
     }),
 
     GuiString({
         styles = {GuiStyles.string_props_01,},
-        str = "Threshold",
+        str = "Opacity",
         left = 10,
         top = 157,
-        id = 'alpha_ref_str',
+        id = 'opacity_str',
     }), 
     
     GuiDataSlider({
@@ -60,11 +60,11 @@ return GuiGroup({
             max = 1,
             decimal = 3,
         },
-        alt = "Alphatest threshold (cut off value)",
-        id = 'alpha_ref',
+        alt = "Opacity value / multiplier",
+        id = 'opacity_ref',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "alphaValue", "Alphatest threshold") end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "alphaValue", "Opacity") end,
             [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "alphaValue") end,
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "alphaValue") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "alphaValue") end,

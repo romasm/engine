@@ -392,6 +392,18 @@ bool Material::ñonvertMat(string& nameBin)
 }
 #endif
 
+bool Material::IsTransparent()
+{
+	if(shaderID == SHADER_NULL)
+		return false;
+
+	auto shaderPtr = (Shader*) ShaderMgr::Get()->GetShaderPtr(shaderID);
+	bool tansparent = shaderPtr->GetQueue() == RENDER_QUEUES::SC_ALPHA ||
+				shaderPtr->GetQueue() == RENDER_QUEUES::SC_ALPHATEST ||
+				shaderPtr->GetQueue() == RENDER_QUEUES::SC_TRANSPARENT;
+	return tansparent;
+}
+
 bool Material::initBuffers()
 {
 	for(uint8_t i = 0; i < 5; i++)

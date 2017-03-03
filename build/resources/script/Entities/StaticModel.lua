@@ -21,8 +21,12 @@ function EntityTypes.StaticModel:SetMaterial(material, id)
     return self.staticMeshSys:SetMaterial(self.ent, id, material)
 end
 
-function EntityTypes.StaticModel:GetMaterial(id)
+function EntityTypes.StaticModel:GetMaterialName(id)
     return self.staticMeshSys:GetMaterial(self.ent, id)
+end
+
+function EntityTypes.StaticModel:GetMaterialRef(id)
+    return self.staticMeshSys:GetMaterialObject(self.ent, id)
 end
 
 function EntityTypes.StaticModel:GetMaterialsCount()
@@ -33,6 +37,6 @@ function EntityTypes.StaticModel:SetMesh(mesh)
     return self.staticMeshSys:SetMesh(self.ent, mesh)
 end
 
-function EntityTypes.StaticModel:GetMesh()
+function EntityTypes.StaticModel:GetMeshName()
     return self.staticMeshSys:GetMesh(self.ent)
 end

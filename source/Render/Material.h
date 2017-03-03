@@ -118,6 +118,8 @@ namespace EngineCore
 
 		bool Save();
 
+		bool IsTransparent();
+
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
@@ -148,6 +150,8 @@ namespace EngineCore
 					.addFunction("GetShaderName", &Material::GetShaderName)
 					.addFunction("SetShader", &Material::SetShader)
 					.addFunction("Save", &Material::Save)
+
+					.addFunction("IsTransparent", &Material::IsTransparent)
 				.endClass();
 		}
 

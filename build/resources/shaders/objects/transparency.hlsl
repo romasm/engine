@@ -83,7 +83,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 {	 
 	GBufferData gbuffer = (GBufferData)0;
 	MediumData mediumData = (MediumData)0;
-
+	
 	gbuffer.albedo = AlbedoCalculate(samplerAnisotropicWrap, input.tex);
 	gbuffer.normal = NormalCalculate(samplerAnisotropicWrap, input.tex, input.normal, input.tangent, input.binormal, normalMatrix);
 	gbuffer.roughness = RoughnessCalculate(samplerAnisotropicWrap, input.tex);
@@ -94,7 +94,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	float4 subsurface = SSSCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.insideColor = subsurface.rgb;
 	mediumData.thickness = subsurface.a;
-
+	
 	mediumData.opacity = OpacityCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.insideRoughness = InsideRoughnessCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.absorption = AbsorptionCalculate(samplerAnisotropicWrap, input.tex);

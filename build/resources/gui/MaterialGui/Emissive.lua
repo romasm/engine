@@ -83,7 +83,7 @@ return GuiGroup({
         left = 120,
         top = 185,
         width = 155,
-        alt = "Pick emissive color (multiplier)",
+        alt = "Pick emissive color / multiplier",
         id = 'emissive_color',
 
         background = {

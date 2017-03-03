@@ -54,7 +54,7 @@ return GuiGroup({
         left = 120,
         top = 150,
         width = 155,
-        alt = "Pick albedo color (multiplier)",
+        alt = "Pick albedo color / multiplier",
 
         background = {
             color_nonactive = 'bg_03',
