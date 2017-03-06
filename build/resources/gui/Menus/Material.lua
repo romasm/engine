@@ -7,7 +7,7 @@ return GuiMenu({
     id = "material_menu",
     
     width = 180,
-    height = 227, 
+    height = 277, 
     
     -- children
     GuiButton({
@@ -102,12 +102,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "sss",
+        id = "scattering",
 
         top = 151,
 
         text = {
-            str = "+ Light Transmittance",
+            str = "+ Scattering",
         },
     }),
 
@@ -116,12 +116,12 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "alphatest",
+        id = "transmittance",
 
         top = 176,
 
         text = {
-            str = "+ Alphatest",
+            str = "+ Transmittance",
         },
     }),
 
@@ -136,6 +136,34 @@ return GuiMenu({
 
         text = {
             str = "+ Opacity",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "thickness",
+
+        top = 226,
+
+        text = {
+            str = "+ Thickness",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "alphatest",
+
+        top = 251,
+
+        text = {
+            str = "+ Alphatest",
         },
     }),
 })

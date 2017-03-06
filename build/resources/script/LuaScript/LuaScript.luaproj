@@ -95,8 +95,17 @@
     <Compile Include="..\..\gui\MaterialGui\RoughnessCallback.lua">
       <Link>Gui\MaterialGui\RoughnessCallback.lua</Link>
     </Compile>
-    <Compile Include="..\..\gui\MaterialGui\SSS.lua">
-      <Link>Gui\MaterialGui\SSS.lua</Link>
+    <Compile Include="..\..\gui\MaterialGui\Scattering.lua">
+      <Link>Gui\MaterialGui\Scattering.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Thickness.lua">
+      <Link>Gui\MaterialGui\Thickness.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\Transmittance.lua">
+      <Link>Gui\MaterialGui\Transmittance.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\MaterialGui\TransmittanceCallback.lua">
+      <Link>Gui\MaterialGui\TransmittanceCallback.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\Menus\Asset.lua">
       <Link>Gui\Menus\Asset.lua</Link>
