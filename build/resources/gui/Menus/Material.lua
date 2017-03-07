@@ -7,7 +7,7 @@ return GuiMenu({
     id = "material_menu",
     
     width = 180,
-    height = 277, 
+    height = 302, 
     
     -- children
     GuiButton({
@@ -144,9 +144,23 @@ return GuiMenu({
             GuiStyles.menu_button_default,
         },
 
-        id = "thickness",
+        id = "medium_roughness",
 
         top = 226,
+
+        text = {
+            str = "+ Medium Roughness",
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.menu_button_default,
+        },
+
+        id = "thickness",
+
+        top = 251,
 
         text = {
             str = "+ Thickness",
@@ -160,7 +174,7 @@ return GuiMenu({
 
         id = "alphatest",
 
-        top = 251,
+        top = 276,
 
         text = {
             str = "+ Alphatest",

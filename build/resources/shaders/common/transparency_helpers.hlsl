@@ -22,12 +22,14 @@ float4 CalcutaleMediumTransmittanceLight(SamplerState depthSamp, Texture2D <floa
 	
 	float3 refractedPoint = refractionDir * travelDist + gbuffer.wpos;
 	float2 refractedScreenUV = WorldToScreen(float4(refractedPoint, 1.0));
-		
-	float mipLevel = (g_hizMipCount - 2) * pow(mData.avgR, 0.7); // depend of travelDist
+	
+	float refractionRoughness = max(mData.avgR, mediumData.insideRoughness);
+	refractionRoughness = pow(refractionRoughness, 0.7);
+
+	float mipLevel = (g_hizMipCount - 2) * refractionRoughness; // depend of travelDist?
 	float3 scene = sceneColor.SampleLevel(samp, refractedScreenUV, mipLevel).rgb;
 
 	float3 absorbtion = exp(-mediumData.absorption * (1 - mediumData.insideColor) * travelDist);
-
-	float3 temp = mediumData.insideRoughness * mediumData.absorption;
-	return float4(temp + scene * absorbtion, 1 - mediumData.opacity);
+	
+	return float4(scene * absorbtion, 1 - mediumData.opacity);
 }

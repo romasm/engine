@@ -74,6 +74,9 @@
     <Compile Include="..\..\gui\MaterialGui\Emissive.lua">
       <Link>Gui\MaterialGui\Emissive.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\MediumRoughness.lua">
+      <Link>Gui\MaterialGui\MediumRoughness.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Normal.lua">
       <Link>Gui\MaterialGui\Normal.lua</Link>
     </Compile>

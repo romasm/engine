@@ -15,6 +15,7 @@ loader.require("MaterialGui.Alphatest", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Opacity", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Transmittance", MaterialProps.reloadMatWin)
 loader.require("MaterialGui.Thickness", MaterialProps.reloadMatWin)
+loader.require("MaterialGui.MediumRoughness", MaterialProps.reloadMatWin)
 
 loader.require("Menus.Material")
 
@@ -61,6 +62,7 @@ function MaterialProps:Init()
         alphatest = false,
         opacity = false,
         thickness = false,
+        medium_roughness = false,
     }
 
     self.scrollTo = nil
@@ -166,6 +168,10 @@ function MaterialProps:RecreateProps()
         self.components.thickness = Gui.MaterialThickness() 
         self.body:AddGroup(self.components.thickness)
     end
+    if self.hasProps.medium_roughness then 
+        self.components.medium_roughness = Gui.MaterialMediumRoughness() 
+        self.body:AddGroup(self.components.medium_roughness)
+    end
 
     self:UpdateData(true)
 
@@ -215,11 +221,14 @@ function MaterialProps:MarkProps()
         else self.hasProps.scattering = true end
         self.hasProps.scattering = self.hasProps.scattering or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
         self.hasProps.transmittance = false
+        self.hasProps.medium_roughness = false
     else
         local ext = self.material:GetFloat("absorptionValue", SHADERS.PS)
         self.hasProps.transmittance = ext ~= 0.0
         self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
         self.hasProps.scattering = false
+        self.hasProps.medium_roughness = self.material:GetFloat("hasInsideRoughnessTexture", SHADERS.PS) > 0
+        self.hasProps.medium_roughness = self.hasProps.medium_roughness or self.material:GetFloat("insideRoughnessValue", SHADERS.PS) > 0
     end
 
     self.hasProps.thickness = self.material:GetFloat("hasThicknessTexture", SHADERS.PS) > 0 
@@ -240,6 +249,8 @@ function MaterialProps:InitProp(propName)
         self.material:SetFloat(15.0, "absorptionValue", SHADERS.PS)
     elseif propName == "thickness" then
         self.material:SetFloat(0.5, "thicknessValue", SHADERS.PS)        
+    elseif propName == "medium_roughness" then
+        self.material:SetFloat(0, "insideRoughnessValue", SHADERS.PS) 
     elseif propName == "alphatest" then
         self.material:SetShader("../resources/shaders/objects/alphatest_main")
     elseif propName == "opacity" then
@@ -292,6 +303,10 @@ function MaterialProps:ZeroProp(propName)
         self.material:SetFloat(0, "thicknessValue", SHADERS.PS) 
         self.material:SetFloat(0, "hasThicknessTexture", SHADERS.PS)
         self.material:SetTextureName("", "thicknessTexture", SHADERS.PS)
+    elseif propName == "medium_roughness" then
+        self.material:SetFloat(0, "insideRoughnessValue", SHADERS.PS)
+        self.material:SetFloat(0, "hasInsideRoughnessTexture", SHADERS.PS)
+        self.material:SetTextureName("", "insideRoughnessTexture", SHADERS.PS)
     elseif propName == "alphatest" then
         self.material:SetShader("../resources/shaders/objects/opaque_main")
         self.material:SetFloat(0.5, "alphaValue", SHADERS.PS)

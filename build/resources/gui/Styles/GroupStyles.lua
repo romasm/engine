@@ -4,7 +4,7 @@ GuiStyles.group_button = {
     },
     
     background = {
-        color = 'bg_06',
+        color = 'bg_01_v1',
         color_hover = 'act_01',
         color_press = 'act_01',
         color_nonactive = 'bg_03',
@@ -56,7 +56,7 @@ GuiStyles.common_group = {
     },
 
     background = {
-        color = 'bg_01',
+        color = 'bg_01_v1',
         color_closed = 'bg_05',
         color_nonactive = 'bg_03',
     },
