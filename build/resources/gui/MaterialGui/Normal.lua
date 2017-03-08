@@ -15,7 +15,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Geometry",
@@ -27,18 +27,11 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 213,
-    
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Normal map",
-        left = 107,
-        top = 30,
-    }),
-
+    height = 140,
+   
     Gui.Texture({
         width = 265,
-        top = 55,
+        top = 30,
         left = 10,
         id = 'normal_map',
         allow_autoreload = true,
@@ -51,36 +44,11 @@ return GuiGroup({
         }
     }),
 
-    GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 120,
-        top = 85,
-        width = 75,
-        height = 18,
-        id = 'normal_y',
-        text = { str = "Invert Y" },
-        alt = "Invert Y in normal map",
-
-        events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, true) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, false) end,
-            [GUI_EVENTS.UPDATE] = NormalCallback.UpdInvertY,
-        }
-    }),
-
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Normals space",
-        left = 10,
-        top = 177,
-        id = 'normal_space_str',
-    }),
-
     GuiCombo({
         styles = {GuiStyles.props_combo,},   
         allow_none = false,
         left = 120,
-        top = 175,
+        top = 82,
         width = 155,
         height = 21,
         list = {
@@ -96,17 +64,21 @@ return GuiGroup({
         },
     }),
 
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
+    GuiCheck({
+        styles = {GuiStyles.props_check,},
+        left = 120,
+        top = 112,
+        width = 75,
+        height = 18,
+        id = 'normal_y',
+        text = { str = "Invert Y" },
+        alt = "Invert Y in normal map",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return NormalCallback.SetInvertY(self, false) end,
+            [GUI_EVENTS.UPDATE] = NormalCallback.UpdInvertY,
+        }
     }),
 })
 end

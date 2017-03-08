@@ -45,8 +45,5 @@ function RoughnessCallback.UpdRoughnessAniso(self, ev)
     v_slider.enable = checked
     v_str.enable = checked
 
-    group:GetInherited():UpdateH(checked and 277 or 247)
-    group:GetParent():GetInherited().window.entity:UpdateSize()
-
     return true
 end

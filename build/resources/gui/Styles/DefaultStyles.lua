@@ -197,6 +197,7 @@ GuiStyles.string_props_01 = {
     },
     static = true,
     color = 'text_01',
+    color_nonactive = 'text_02',
 }
 
 GuiStyles.string_props_02 = {
@@ -207,7 +208,20 @@ GuiStyles.string_props_02 = {
     },
     static = true,
     color = 'text_06',
+    color_nonactive = 'text_02',
 }
+
+GuiStyles.string_props_03 = {
+    styles = {
+        GuiStyles.ghost,
+        GuiStyles.string_autosize,
+        GuiStyles.string_16,
+    },
+    static = true,
+    color = 'text_01',
+    color_nonactive = 'text_02',
+}
+
 
 -- SLIDER
 GuiStyles.common_slider = {
@@ -256,7 +270,7 @@ GuiStyles.common_textfield = {
         center = { x = false, y = true },
         str = "",
         length = 64,
-        font = "../resources/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_16px",
     },
 
     data = {
@@ -361,7 +375,7 @@ GuiStyles.common_combo = {
     text = {
         offset = { x = 5, y = 0 },
         center = { x = false, y = true },
-        font = "../resources/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_16px",
         length = 64
     },
 }
@@ -434,7 +448,7 @@ GuiStyles.common_check = {
     text = {
         offset = { x = 5, y = 0 },
         center = true,
-        font = "../resources/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_16px",
     },
 }
 
@@ -506,7 +520,7 @@ GuiStyles.common_dataslider = {
         offset = {x = 0, y = 0},
         center = {x = true, y = true},
         length = 10,
-        font = "../resources/fonts/opensans_normal_18px",
+        font = "../resources/fonts/opensans_normal_16px",
         color = 'act_02',
         color_live = 'bg_06',
         color_nonactive = 'text_02',

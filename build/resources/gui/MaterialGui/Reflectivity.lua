@@ -15,7 +15,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Reflectivity",
@@ -27,20 +27,20 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 222,
+    height = 170,
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Parametrization",
         left = 10,
-        top = 37,
+        top = 32,
     }),
 
     GuiCombo({
         styles = {GuiStyles.props_combo,},   
         allow_none = false,
         left = 120,
-        top = 35,
+        top = 30,
         width = 155,
         height = 21,
         list = {
@@ -57,7 +57,7 @@ return GuiGroup({
 
     Gui.Texture({
         width = 265,
-        top = 65,
+        top = 60,
         left = 10,
         allow_autoreload = true,
         str = "Reflectivity",
@@ -70,12 +70,12 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Metalness",
+        styles = {GuiStyles.string_props_03,},
+        str = "Value",
         static = false,
         length = 16,
-        left = 10,
-        top = 187,
+        left = 120,
+        top = 123,
         id = 'reflectivity_header',
     }),
 
@@ -83,7 +83,7 @@ return GuiGroup({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 185,
+        top = 140,
         data = {
             min = 0,
             max = 1,
@@ -103,7 +103,7 @@ return GuiGroup({
     GuiButton({
         styles = {GuiStyles.color_button,},
         left = 120,
-        top = 185,
+        top = 140,
         width = 155,
         alt = "Pick specular color (multiplier)",
         id = 'specular_picker',
@@ -118,19 +118,6 @@ return GuiGroup({
             [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialProps.ColorPicked(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "reflectivityColor") end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

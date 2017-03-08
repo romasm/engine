@@ -73,8 +73,8 @@ GUI_PREVIEW_SIZE = {
     Y = 88,
     PADDING = 4,
 
-    LIVE_X = 288,
-    LIVE_Y = 126,
+    LIVE_X = 294,
+    LIVE_Y = 128,
 }
 
 GUI_SCENELIST_SIZE = {

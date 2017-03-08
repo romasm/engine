@@ -27,43 +27,36 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 292,
-    
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Medium color",
-        left = 100,
-        top = 35,
-    }),
+    height = 190,
 
     Gui.Texture({
         width = 265,
-        top = 65,
+        top = 30,
         left = 10,
         id = 'subsurf_texture',
         allow_autoreload = true,
-        str = "Medium",
+        str = "Transmittance",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Medium") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Medium") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Transmittance") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Transmittance") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "subsurfTexture", "hasSubsurfTexture") end,
         }
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Medium color",
-        left = 10,
-        top = 187,
+        styles = {GuiStyles.string_props_03,},
+        str = "Color / Multiplier",
+        left = 120,
+        top = 93,
     }),
     
     GuiButton({
         styles = {GuiStyles.color_button,},
         left = 120,
-        top = 185,
+        top = 110,
         width = 155,
-        alt = "Pick medium color / multiplier",
+        alt = "Pick transmittance color / multiplier",
 
         background = {
             color_nonactive = 'bg_03',
@@ -78,17 +71,17 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Extinction coefficient, e-6",
-        left = 70,
-        top = 225,
+        styles = {GuiStyles.string_props_03,},
+        str = "Extinction coefficient ( 10 ^ -6 ) ",
+        left = 10,
+        top = 140,
     }),
 
     GuiDataSlider({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 255,
+        top = 160,
         left = 10,
         width = 265,
         data = {
@@ -96,7 +89,7 @@ return GuiGroup({
             max = 100,
             decimal = 5,
         },
-        alt = "Extinction coefficient, e-6",
+        alt = "Extinction coefficient ( 10 ^ -6 )",
         id = 'extinction_slider',
 
         events = {
@@ -105,19 +98,6 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndExtinction(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdExtinction(self) end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

@@ -5,7 +5,7 @@ return GuiWindow({
         GuiStyles.window_colors,
     },
     
-    cleintarea_padding = { t = 130, },
+    cleintarea_padding = { l = 0, t = 130, r = 0, b = 0 },
 
     align = GUI_ALIGN.BOTH,
     valign = GUI_VALIGN.BOTH,
@@ -59,8 +59,8 @@ return GuiWindow({
 
         id = "asset_viewport",
 
-        top = 27,
-        left = 2,   
+        top = 25,
+        left = 0,   
         width = GUI_PREVIEW_SIZE.LIVE_X,   
         height = GUI_PREVIEW_SIZE.LIVE_Y,  
 

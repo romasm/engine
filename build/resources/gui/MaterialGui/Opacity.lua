@@ -13,7 +13,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Opacity",
@@ -25,11 +25,11 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 192,
+    height = 140,
     
     Gui.Texture({
         width = 265,
-        top = 35,
+        top = 30,
         left = 10,
         id = 'opacity_texture',
         allow_autoreload = true,
@@ -43,10 +43,10 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Opacity",
-        left = 10,
-        top = 157,
+        styles = {GuiStyles.string_props_03,},
+        str = "Value / Multiplier",
+        left = 120,
+        top = 93,
         id = 'opacity_str',
     }), 
     
@@ -54,7 +54,7 @@ return GuiGroup({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 155,
+        top = 110,
         data = {
             min = 0,
             max = 1,
@@ -69,19 +69,6 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "alphaValue") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "alphaValue") end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

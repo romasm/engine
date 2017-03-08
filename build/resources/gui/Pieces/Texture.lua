@@ -19,7 +19,7 @@ local res = GuiDumb({
             width = 1
         },
         background = {
-            color = 'bg_01',
+            color = 'bg_05',
             color_nonactive = 'bg_03'
         },
 
@@ -27,7 +27,7 @@ local res = GuiDumb({
             styles = {
                 GuiStyles.ghost,
                 GuiStyles.string_autosize,
-                GuiStyles.string_18,
+                GuiStyles.string_16,
             },
             str = "No texture",
             static = true,
@@ -40,7 +40,7 @@ local res = GuiDumb({
             styles = {
                 GuiStyles.ghost,
                 GuiStyles.string_autosize,
-                GuiStyles.string_18,
+                GuiStyles.string_16,
             },
             enable = props.str ~= nil,
             str = props.str == nil and "" or props.str,

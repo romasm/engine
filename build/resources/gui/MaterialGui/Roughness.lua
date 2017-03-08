@@ -15,7 +15,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Microfacets",
@@ -27,20 +27,20 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 277,
+    height = 195,
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Parametrization",
         left = 10,
-        top = 37,
+        top = 32,
     }),
 
     GuiCombo({
         styles = {GuiStyles.props_combo,},   
         allow_none = false,
         left = 120,
-        top = 35,
+        top = 30,
         width = 155,
         height = 21,
         list = {
@@ -55,9 +55,25 @@ return GuiGroup({
         },
     }),
 
+    GuiCheck({
+        styles = {GuiStyles.props_check,},
+        left = 120,
+        top = 55,
+        width = 180,
+        height = 18,
+        text = { str = "Anisotropic" },
+        alt = "Two channels, Separate for U and V",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, false) end,
+            [GUI_EVENTS.UPDATE] = RoughnessCallback.UpdRoughnessAniso,
+        }
+    }),
+
     Gui.Texture({
         width = 265,
-        top = 65,
+        top = 85,
         left = 10,
         id = 'roughness_texture',
         allow_autoreload = true,
@@ -70,29 +86,13 @@ return GuiGroup({
         }
     }),
 
-    GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 180,
-        width = 180,
-        height = 18,
-        text = { str = "Two channels, anisotropic" },
-        alt = "Separate for U and V",
-
-        events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, true) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return RoughnessCallback.SetRoughnessAniso(self, false) end,
-            [GUI_EVENTS.UPDATE] = RoughnessCallback.UpdRoughnessAniso,
-        }
-    }),
-
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Microfacets U",
         static = false,
         length = 16,
-        left = 10,
-        top = 212,
+        left = 120,
+        top = 108,
         id = 'roughness_u_str',
     }),
 
@@ -100,7 +100,7 @@ return GuiGroup({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 210,
+        top = 125,
         data = {
             min = 0,
             max = 1,
@@ -118,12 +118,12 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Microfacets V",
         static = false,
         length = 16,
-        left = 10,
-        top = 242,
+        left = 120,
+        top = 148,
         id = 'roughness_v_str',
     }),
 
@@ -131,7 +131,7 @@ return GuiGroup({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 240,
+        top = 165,
         data = {
             min = 0,
             max = 1,
@@ -146,19 +146,6 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "roughnessY") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "roughnessY") end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

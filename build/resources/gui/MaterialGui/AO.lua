@@ -15,7 +15,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Ambient Occlusion",
@@ -27,11 +27,11 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 187,
+    height = 140,
     
     Gui.Texture({
         width = 265,
-        top = 35,
+        top = 30,
         left = 10,
         id = 'ao_texture',
         allow_autoreload = true,
@@ -45,12 +45,12 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Power",
         static = false,
         length = 16,
-        left = 10,
-        top = 152,
+        left = 120,
+        top = 93,
         id = 'power_str',
     }),
 
@@ -58,7 +58,7 @@ return GuiGroup({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 150,
+        top = 110,
         data = {
             min = 0,
             max = 3,
@@ -73,19 +73,6 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "aoPower") end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "aoPower") end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

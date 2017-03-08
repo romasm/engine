@@ -7,16 +7,16 @@ function NormalCallback.UpdNormalTex(self, ev)
 
     local group = self.entity:GetParent()
     local space_sl = group:GetChildById('normal_space')
-    local space_str = group:GetChildById('normal_space_str')
+    --local space_str = group:GetChildById('normal_space_str')
     local invert_y = group:GetChildById('normal_y')
 
     if hasTex == 0 then
         space_sl:Deactivate()
-        space_str:Deactivate()
+        --space_str:Deactivate()
         invert_y:Deactivate()
     else
         space_sl:Activate()
-        space_str:Activate()
+        --space_str:Activate()
         invert_y:Activate()
     end
     return true

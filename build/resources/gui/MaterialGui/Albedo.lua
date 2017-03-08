@@ -13,7 +13,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Albedo",
@@ -25,11 +25,11 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 187,
+    height = 140,
     
     Gui.Texture({
         width = 265,
-        top = 35,
+        top = 30,
         left = 10,
         id = 'albedo_texture',
         allow_autoreload = true,
@@ -43,16 +43,16 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Albedo color",
-        left = 10,
-        top = 152,
+        styles = {GuiStyles.string_props_03,},
+        str = "Color / Multiplier",
+        left = 120,
+        top = 93,
     }),
     
     GuiButton({
         styles = {GuiStyles.color_button,},
         left = 120,
-        top = 150,
+        top = 110,
         width = 155,
         alt = "Pick albedo color / multiplier",
 
@@ -68,7 +68,7 @@ return GuiGroup({
         },
     }),
 
-    GuiRect({
+    --[[GuiRect({
         styles = {
             GuiStyles.ghost,
             GuiStyles.no_border,
@@ -79,6 +79,6 @@ return GuiGroup({
         height = 2,
         bottom = 0,
         background = {color = 'text_06'},
-    }),
+    }),--]]
 })
 end

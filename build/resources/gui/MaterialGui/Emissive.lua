@@ -13,7 +13,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Emissive",
@@ -25,11 +25,11 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 222,
+    height = 140,
     
     Gui.Texture({
         width = 265,
-        top = 35,
+        top = 30,
         left = 10,
         id = 'emissive_texture',
         allow_autoreload = true,
@@ -43,45 +43,16 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
-        str = "Intensity",
-        left = 10,
-        top = 157,
-    }),
-
-    GuiDataSlider({
-        styles = {
-            GuiStyles.mat_dataslider,
-        },
-        top = 155,
-        data = {
-            min = 0,
-            max = 50,
-            decimal = 2,
-            overflow_max = true,
-        },
-        alt = "Emissive light intensity",
-        id = 'emissive_intensity',
-
-        events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "emissiveIntensity", "Emissive intensity") end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "emissiveIntensity") end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "emissiveIntensity") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "emissiveIntensity") end,
-        },
-    }),
-
-    GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Emissive color",
-        left = 10,
-        top = 187,
+        left = 120,
+        top = 53,
     }),
     
     GuiButton({
         styles = {GuiStyles.color_button,},
         left = 120,
-        top = 185,
+        top = 70,
         width = 155,
         alt = "Pick emissive color / multiplier",
         id = 'emissive_color',
@@ -98,17 +69,33 @@ return GuiGroup({
         },
     }),
 
-    GuiRect({
+    GuiString({
+        styles = {GuiStyles.string_props_03,},
+        str = "Intensity",
+        left = 120,
+        top = 93,
+    }),
+
+    GuiDataSlider({
         styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
+            GuiStyles.mat_dataslider,
+        },
+        top = 110,
+        data = {
+            min = 0,
+            max = 50,
+            decimal = 2,
+            overflow_max = true,
+        },
+        alt = "Emissive light intensity",
+        id = 'emissive_intensity',
+
+        events = {
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "emissiveIntensity", "Emissive intensity") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "emissiveIntensity") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "emissiveIntensity") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "emissiveIntensity") end,
+        },
     }),
 })
 end
