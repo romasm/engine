@@ -38,7 +38,7 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 	res.spec_roughX = float4(reflectivity, roughtness.x);
 	res.emiss_vnormZ = float4(emissive, vnorm.z);
 	res.id = iddata.x;
-	res.subs_thick = float4(subsurface.rgb * saturate(1 - subsurface.a), 0); // a - unused
+	res.subs_thick = subsurface;
 	res.ao = ao;
 	
 	return res;

@@ -62,16 +62,15 @@ float2 horzPCF(float4 horzSamples[3], float uvFracX)
 	return res;
 }
 
-float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float depth, float mapScale, float sharpen)
+float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float depth, 
+				 float mapScale, float sharpen, in GBufferData gbuffer)
 {
 	float2 uvInTexels = UV.xy * float2(SHADOWS_BUFFER_RES, SHADOWS_BUFFER_RES) - 0.5f;
 	float2 uvFrac = frac(uvInTexels);
 	float2 texelPos = floor(uvInTexels);
 
 	float3 shadowCoords = float3( (texelPos + 0.5f) * PCF_PIXEL, UV.z );
-
-	//float avgDepthShadow = 0;
-
+	
 	float2 vertSamples[3];
 
 	[unroll]
@@ -83,8 +82,12 @@ float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, floa
 		for(int j = -1; j <= 1; j++)
 		{
 			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
-			//avgDepthShadow += shadowSample;
-			horzSamples[j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
+
+			[branch]
+			if( gbuffer.thickness > 0) // TODO: respect projection
+				horzSamples[j + 1] = saturate( exp(-max(depth - shadowSample, 0) * 100000 * gbuffer.thickness ) );
+			else
+				horzSamples[j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
 		}
 		vertSamples[i + 1] = horzPCF(horzSamples, uvFrac.x);
 	}
@@ -94,13 +97,11 @@ float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, floa
 	shadow += vertSamples[2].x + vertSamples[2].y * uvFrac.y;
 	shadow *= 0.04f;
 	
-	//avgDepthShadow *= 0.1111111f;
-	//sharpen = lerp(4 * sharpen, sharpen, saturate((depth - avgDepthShadow) * 5000.0f));
-
 	return saturate( (saturate(shadow) - 0.5f) * sharpen + 0.5f );
 }
 
-float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, in SpotCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
+float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, 
+					  in SpotCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
 	const float VNoL = dot(gbuffer.vertex_normal, prepared.L);
 	const float4 wpos = float4(gbuffer.wpos, 1.0);
@@ -135,7 +136,7 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 		lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
 		float depthView = lightViewProjPos.z * lvp_rcp;*/
 	
-		result = PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, lightData.ShadowmapAdress.z, 1.0f);
+		result = PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, lightData.ShadowmapAdress.z, 1.0f, gbuffer);
 	}
 	return result;
 }
@@ -149,7 +150,8 @@ float SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPr
 	float3(0,1,0),
 	float3(0,-1,0)
 };*/
-float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, in PointCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
+float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, 
+					   in PointCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix)
 {
 	const float3 posInLight = mul(float4(gbuffer.wpos, 1.0f), lightData.matView).xyz;
 	const float zInLSq[3] = {posInLight.x, posInLight.z, posInLight.y};
@@ -246,7 +248,7 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f);
+	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
 }
 
 #if DEBUG_CASCADE_LIGHTS != 0
@@ -336,9 +338,9 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
 #if DEBUG_CASCADE_LIGHTS != 0
-	return res * PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f);
+	return res * PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
 #else
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f);
+	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
 #endif
 }
 

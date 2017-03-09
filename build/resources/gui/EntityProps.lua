@@ -8,6 +8,8 @@ return GuiWindow({
     align = GUI_ALIGN.BOTH,
     valign = GUI_VALIGN.BOTH,
 
+    cleintarea_padding = { l = 0, t = 0, r = 0, b = 0 },
+
     left = 4,
     bottom = 4,
     top = 4,

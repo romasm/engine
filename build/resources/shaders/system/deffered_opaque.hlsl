@@ -15,7 +15,7 @@ SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 SamplerState samplerBilinearVolumeClamp : register(s4);
 
-// GBUFFER
+// GBUFFER 
 #define GBUFFER_READ
 
 StructuredBuffer<MaterialParams> gb_MaterialParamsBuffer : register(t0);

@@ -222,6 +222,16 @@ GuiStyles.string_props_03 = {
     color_nonactive = 'text_02',
 }
 
+GuiStyles.string_props_04 = {
+    styles = {
+        GuiStyles.ghost,
+        GuiStyles.string_autosize,
+        GuiStyles.string_16,
+    },
+    static = true,
+    color = 'text_06',
+    color_nonactive = 'text_02',
+}
 
 -- SLIDER
 GuiStyles.common_slider = {

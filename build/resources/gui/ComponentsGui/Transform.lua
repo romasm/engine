@@ -27,7 +27,7 @@ return GuiGroup({
         },
         align = GUI_ALIGN.BOTH,
         top = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Common",
@@ -39,13 +39,13 @@ return GuiGroup({
     width = 100,
     width_percent = true,
     
-    height = 195,
+    height = 165,
 
      GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Name",
         left = 10,
-        top = 35,
+        top = 33,
     }),
 
     GuiTextfield({
@@ -54,9 +54,9 @@ return GuiGroup({
             GuiStyles.text_textfield,
         },
 
-        top = 33,
-        left = 110,
-        width = 150,
+        top = 30,
+        left = 120,
+        width = 155,
         height = 20,
 
         events = {
@@ -66,10 +66,10 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Parent name",
         left = 10,
-        top = 65,
+        top = 58,
     }),
 
     GuiTextfield({
@@ -78,9 +78,9 @@ return GuiGroup({
             GuiStyles.text_textfield,
         },
 
-        top = 63,
-        left = 110,
-        width = 150,
+        top = 55,
+        left = 120,
+        width = 155,
         height = 20,
 
         events = {
@@ -91,17 +91,18 @@ return GuiGroup({
 
     -- position
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Position",
         left = 10,
-        top = 105,
+        top = 88,
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "X",
         left = 70,
-        top = 105,
+        top = 88,
+        color = Vector4(1.0, 0.3, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -111,7 +112,7 @@ return GuiGroup({
         },
         id = 'pos_x',
         left = 80,
-        top = 103,
+        top = 85,
         width = 55,
 
         events = {
@@ -121,10 +122,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "Y",
         left = 140,
-        top = 105,
+        top = 88,
+        color = Vector4(0.3, 1.0, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -134,7 +136,7 @@ return GuiGroup({
         },   
         id = 'pos_y',
         left = 150,
-        top = 103,
+        top = 85,
         width = 55,
 
         events = {
@@ -144,10 +146,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "Z",
         left = 210,
-        top = 105,
+        top = 88,
+        color = Vector4(0.3, 0.3, 1.0, 1.0),
     }),
 
     GuiTextfield({
@@ -157,7 +160,7 @@ return GuiGroup({
         },  
         id = 'pos_z',
         left = 220,
-        top = 103,
+        top = 85,
         width = 55,
 
         events = {
@@ -168,17 +171,18 @@ return GuiGroup({
 
     -- rotation
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Rotation",
         left = 10,
-        top = 135,
+        top = 113,
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "P",
         left = 70,
-        top = 135,
+        top = 113,
+        color = Vector4(1.0, 0.3, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -187,7 +191,7 @@ return GuiGroup({
         },  
         id = 'rot_x',
         left = 80,
-        top = 133,
+        top = 110,
         width = 55,
 
         events = {
@@ -197,10 +201,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "Y",
         left = 140,
-        top = 135,
+        top = 113,
+        color = Vector4(0.3, 1.0, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -209,7 +214,7 @@ return GuiGroup({
         },   
         id = 'rot_y',
         left = 150,
-        top = 133,
+        top = 110,
         width = 55,
 
         events = {
@@ -219,10 +224,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "R",
         left = 210,
-        top = 135,
+        top = 113,
+        color = Vector4(0.3, 0.3, 1.0, 1.0),
     }),
 
     GuiTextfield({
@@ -231,7 +237,7 @@ return GuiGroup({
         },  
         id = 'rot_z',
         left = 220,
-        top = 133,
+        top = 110,
         width = 55,
 
         events = {
@@ -242,17 +248,18 @@ return GuiGroup({
 
     -- scale
      GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Scale",
         left = 10,
-        top = 165,
+        top = 138,
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "X",
         left = 70,
-        top = 165,
+        top = 138,
+        color = Vector4(1.0, 0.3, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -262,7 +269,7 @@ return GuiGroup({
         },  
         id = 'scale_x',
         left = 80,
-        top = 163,
+        top = 135,
         width = 55,
         data = {
             decimal = 4,
@@ -275,10 +282,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "Y",
         left = 140,
-        top = 165,
+        top = 138,
+        color = Vector4(0.3, 1.0, 0.3, 1.0),
     }),
 
     GuiTextfield({
@@ -288,7 +296,7 @@ return GuiGroup({
         },   
         id = 'scale_y',
         left = 150,
-        top = 163,
+        top = 135,
         width = 55,
         data = {
             decimal = 4,
@@ -301,10 +309,11 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_02,},
+        styles = {GuiStyles.string_props_04,},
         str = "Z",
         left = 210,
-        top = 165,
+        top = 138,
+        color = Vector4(0.3, 0.3, 1.0, 1.0),
     }),
 
     GuiTextfield({
@@ -314,7 +323,7 @@ return GuiGroup({
         },  
         id = 'scale_z',
         left = 220,
-        top = 163,
+        top = 135,
         width = 55,
         data = {
             decimal = 4,
@@ -324,19 +333,6 @@ return GuiGroup({
             [GUI_EVENTS.TF_DEACTIVATE] = function(self, ev) return TransformCallback.SetScale(self, ev, 3) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return TransformCallback.UpdScale(self, ev, 3) end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end
