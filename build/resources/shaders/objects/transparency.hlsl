@@ -10,7 +10,7 @@ SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
 SamplerState samplerBilinearVolumeClamp : register(s4);
 SamplerState samplerAnisotropicWrap : register(s5);
-SamplerState samplerTrilinearMirror : register(s6);
+SamplerState samplerTrilinearMirror : register(s6);//samplerTrilinearMirror
 
 cbuffer matrixBuffer : register(b2)
 {
@@ -115,7 +115,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	float3 ViewVector = g_CamPos - gbuffer.wpos;
 	const float linDepth = length(ViewVector);
 	ViewVector = ViewVector / linDepth; 
-
+	
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR); 
@@ -124,7 +124,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	float2 screenUV = input.position.xy * g_PixSize;
 	float4 transmittance = CalcutaleMediumTransmittanceLight(samplerPointClamp, sys_depth, 
 		samplerTrilinearMirror, sys_sceneColor, screenUV, mediumData, mData, gbuffer, ViewVector);
-	 
+	
 	LightComponents directLight = (LightComponents)0;
 	[branch]
 	if(configs.isLightweight == 0)  

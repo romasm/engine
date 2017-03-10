@@ -2,19 +2,29 @@
 float4 RefractScene(SamplerState samp, Texture2D <float4> sceneColor, float2 uv, MediumData mediumData, DataForLightCompute mData, GBufferData gbuffer, float3 V, float ior)
 {
 	float refractCos = sqrt( 1 - ior * ior * ( 1 - mData.NoV * mData.NoV ) );
-	float3 refractionDir = ior * V + ( ior * mData.NoV - refractCos ) * gbuffer.normal;
+	float3 refractionDir = ior * (-V) + ( ior * mData.NoV - refractCos ) * gbuffer.normal;
 	
 	float travelDist = mediumData.thickness / refractCos;
 	
 	float3 refractedPoint = refractionDir * travelDist + gbuffer.wpos;
 	float2 refractedScreenUV = WorldToScreen(float4(refractedPoint, 1.0));
-
+		
 	// TEMP
 	float refractionRoughness = max(mData.avgR, mediumData.insideRoughness);
 	refractionRoughness = pow(refractionRoughness, 0.7);
 	float mipLevel = (g_hizMipCount - 2) * refractionRoughness; // depend of travelDist?
 
+	float2 refractionFail = float2(1.0, 1.0) - saturate(10.0 * (abs(refractedScreenUV - 0.5) - 0.5));
+	float refractionFade = refractionFail.x * refractionFail.y;
+	refractionFade *= refractionFade;
+	
+	float3 colorDirect = 0;
+	[branch]
+	if(refractionFade < 1.0)
+		colorDirect = sceneColor.SampleLevel(samp, uv, mipLevel).rgb;
+	
 	float3 color = sceneColor.SampleLevel(samp, refractedScreenUV, mipLevel).rgb;
+	//color = lerp(colorDirect, color, refractionFade);
 	return float4(color, travelDist);
 }
 
@@ -22,11 +32,6 @@ float4 CalcutaleMediumTransmittanceLight(SamplerState depthSamp, Texture2D <floa
 										 SamplerState samp, Texture2D <float4> sceneColor, float2 uv, 
 										 MediumData mediumData, DataForLightCompute mData, GBufferData gbuffer, float3 V)
 {
-	// deform
-	//const float ior_air = 1.000277f;
-	//const float medium_ior = 1.5373f;	
-	//const float n = ior_air / medium_ior;
-
 	float4 color_g = RefractScene(samp, sceneColor, uv, mediumData, mData, gbuffer, V, mediumData.invIOR.g);
 	
 	float4 color_r = color_g;
