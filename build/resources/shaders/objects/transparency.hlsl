@@ -98,7 +98,8 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	mediumData.opacity = OpacityCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.insideRoughness = InsideRoughnessCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.absorption = AbsorptionCalculate(samplerAnisotropicWrap, input.tex);
-	
+	mediumData.invIOR = IORCalculate();
+
 	if(!front) 
 		gbuffer.normal = -gbuffer.normal;
 	gbuffer.tangent = normalize(cross(gbuffer.normal, cross(input.tangent, gbuffer.normal)));

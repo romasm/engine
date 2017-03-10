@@ -27,7 +27,7 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 190,
+    height = 230,
 
     Gui.Texture({
         width = 265,
@@ -63,7 +63,7 @@ return GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "subsurfaceColor", "Medium", false) end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "subsurfaceColor", "Transmittance", false) end,
             [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialProps.ColorPicking(self, "subsurfaceColor") end,
             [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialProps.ColorPicked(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "subsurfaceColor") end,
@@ -72,24 +72,25 @@ return GuiGroup({
 
     GuiString({
         styles = {GuiStyles.string_props_03,},
-        str = "Extinction coefficient ( 10 ^ -6 ) ",
+        str = "Extinction, e-6",
         left = 10,
-        top = 140,
+        top = 143,
     }),
 
     GuiDataSlider({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 160,
-        left = 10,
-        width = 265,
+        top = 140,
+        left = 120,
+        width = 155,
         data = {
             min = 0,
-            max = 100,
+            max = 10,
             decimal = 5,
+            overflow_max = true,
         },
-        alt = "Extinction coefficient ( 10 ^ -6 )",
+        alt = "Extinction coefficient ( k * 10 ^ -6 )",
         id = 'extinction_slider',
 
         events = {
@@ -97,6 +98,68 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragExtinction(self) end,
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndExtinction(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdExtinction(self) end,
+        },
+    }),
+
+    GuiString({
+        styles = {GuiStyles.string_props_03,},
+        str = "IOR",
+        left = 10,
+        top = 173,
+    }),
+
+    GuiDataSlider({
+        styles = {
+            GuiStyles.mat_dataslider,
+        },
+        top = 170,
+        left = 120,
+        width = 155,
+        data = {
+            min = 1,
+            max = 3,
+            decimal = 5,
+            overflow_max = true,
+        },
+        alt = "Index of refraction",
+        id = 'ior_slider',
+
+        events = {
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return TransmittanceCallback.StartIOR(self) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragIOR(self) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndIOR(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdIOR(self) end,
+        },
+    }),
+
+    GuiString({
+        styles = {GuiStyles.string_props_03,},
+        str = "Abbe number",
+        left = 10,
+        top = 203,
+    }),
+
+    GuiDataSlider({
+        styles = {
+            GuiStyles.mat_dataslider,
+        },
+        top = 200,
+        left = 120,
+        width = 155,
+        data = {
+            min = 1,
+            max = 70,
+            decimal = 2,
+            overflow_min = true,
+        },
+        alt = "Dispersion Abbe number",
+        id = 'abbe_slider',
+
+        events = {
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return TransmittanceCallback.StartAbbe(self) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragAbbe(self) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndAbbe(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdAbbe(self) end,
         },
     }),
 })

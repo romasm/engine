@@ -161,6 +161,7 @@ struct MediumData
 	float absorption;
 	float3 insideColor;
 	float thickness;
+	float3 invIOR;
 };
 
 struct DataForLightCompute

@@ -65,11 +65,14 @@ cbuffer materialBuffer : register(b1)
 	float hasInsideRoughnessTexture;
 
 	float insideRoughnessValue;
-#endif
-
+	float invIorRed;
+	float invIorGreen;
+	float invIorBlue;
+#else
 	float _padding0;
 	float _padding1;
 	float _padding2;
+#endif
 };
 
 #ifndef FORWARD_LIGHTING
@@ -112,6 +115,11 @@ float AbsorptionCalculate(SamplerState samplerTex, float2 uv)
 		absorption *= absorptionTexture.Sample(samplerTex, uv).r;
 	
 	return absorption;
+}
+
+float3 IORCalculate()
+{
+	return float3(invIorRed, invIorGreen, invIorBlue);
 }
 
 #endif

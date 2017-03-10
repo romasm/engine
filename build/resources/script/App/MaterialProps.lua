@@ -226,6 +226,10 @@ function MaterialProps:MarkProps()
         local ext = self.material:GetFloat("absorptionValue", SHADERS.PS)
         self.hasProps.transmittance = ext ~= 0.0
         self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorRed", SHADERS.PS) ~= 1.0
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorGreen", SHADERS.PS) ~= 1.0
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorBlue", SHADERS.PS) ~= 1.0
+
         self.hasProps.scattering = false
         self.hasProps.medium_roughness = self.material:GetFloat("hasInsideRoughnessTexture", SHADERS.PS) > 0
         self.hasProps.medium_roughness = self.hasProps.medium_roughness or self.material:GetFloat("insideRoughnessValue", SHADERS.PS) > 0
@@ -295,6 +299,9 @@ function MaterialProps:ZeroProp(propName)
         self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)
         self.material:SetTextureName("", "subsurfTexture", SHADERS.PS)
         self.material:SetFloat(0, "absorptionValue", SHADERS.PS)
+        self.material:SetFloat(1.0, "invIorRed", SHADERS.PS)
+        self.material:SetFloat(1.0, "invIorGreen", SHADERS.PS)
+        self.material:SetFloat(1.0, "invIorBlue", SHADERS.PS)
     elseif propName == "scattering" then
         self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
         self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)
