@@ -1,17 +1,17 @@
 #define NONMETAL_REFLECTIVITY 0.04 // to global scope
 
 #ifdef FORWARD_LIGHTING
-Texture2D albedoTexture : register(t21);
-Texture2D normalTexture : register(t22);
-Texture2D roughnessTexture : register(t23);
-Texture2D reflectivityTexture : register(t24);
-Texture2D aoTexture : register(t25);
-Texture2D alphaTexture : register(t26);
-Texture2D emissiveTexture : register(t27);
-Texture2D subsurfTexture : register(t28);
-Texture2D thicknessTexture : register(t29);
+Texture2D albedoTexture : register(t22);
+Texture2D normalTexture : register(t23);
+Texture2D roughnessTexture : register(t24);
+Texture2D reflectivityTexture : register(t25);
+Texture2D aoTexture : register(t26);
+Texture2D alphaTexture : register(t27);
+Texture2D emissiveTexture : register(t28);
+Texture2D subsurfTexture : register(t29);
 Texture2D absorptionTexture : register(t30);
 Texture2D insideRoughnessTexture : register(t31);
+Texture2D thicknessTexture : register(t32);
 
 #else
 Texture2D albedoTexture : register(t0);
@@ -31,6 +31,10 @@ cbuffer materialBuffer : register(b1)
 	float4 reflectivityColor;
 	float4 emissiveColor;
 	float4 subsurfaceColor;
+
+#ifdef FORWARD_LIGHTING
+	float4 absorptionColor;
+#endif
 
 	float hasAlbedoTexture;
 	float hasNormalTexture;
@@ -61,7 +65,7 @@ cbuffer materialBuffer : register(b1)
 
 #ifdef FORWARD_LIGHTING
 	float hasAbsorptionTexture;
-	float absorptionValue;
+	float attenuationValue;
 	float hasInsideRoughnessTexture;
 
 	float insideRoughnessValue;
@@ -69,6 +73,7 @@ cbuffer materialBuffer : register(b1)
 	float invIorGreen;
 	float invIorBlue;
 #else
+
 	float _padding0;
 	float _padding1;
 	float _padding2;
@@ -107,13 +112,18 @@ float InsideRoughnessCalculate(SamplerState samplerTex, float2 uv)
 	return insideRoughness;
 }
 
-float AbsorptionCalculate(SamplerState samplerTex, float2 uv)
+float AttenuationCalculate()
 {
-	float absorption = absorptionValue;
+	return attenuationValue;
+}
 
+float3 AbsorptionCalculate(SamplerState samplerTex, float2 uv)
+{
+	float3 absorption = absorptionColor.rgb;
 	if( hasAbsorptionTexture > 0 )
-		absorption *= absorptionTexture.Sample(samplerTex, uv).r;
-	
+		absorption *= absorptionTexture.Sample(samplerTex, uv).rgb;
+	absorption = GammaToLin(absorption);
+
 	return absorption;
 }
 
@@ -123,6 +133,24 @@ float3 IORCalculate()
 }
 
 #endif
+
+float3 SubsurfaceCalculate(SamplerState samplerTex, float2 uv)
+{
+	float3 subsurf = subsurfaceColor.rgb;
+
+	if( hasSubsurfTexture > 0 )
+		subsurf *= subsurfTexture.Sample(samplerTex, uv).rgb;
+	return GammaToLin(subsurf);
+}
+
+float ThicknessCalculate(SamplerState samplerTex, float2 uv)
+{
+	float thickness = thicknessValue;
+
+	if( hasThicknessTexture > 0 )
+		thickness *= thicknessTexture.Sample(samplerTex, uv).r;
+	return thickness;
+}
 
 bool AlphatestCalculate(SamplerState samplerTex, float2 uv)
 {
@@ -227,18 +255,4 @@ float AOCalculate(SamplerState samplerTex, float2 uv)
 	if( hasAOTexture == 0 )
 		return 1;
 	return PowAbs( GammaToLin(aoTexture.Sample(samplerTex, uv).r), aoPower );
-}
-
-float4 SSSCalculate(SamplerState samplerTex, float2 uv)
-{
-	float4 subsurf = float4(subsurfaceColor.rgb, thicknessValue);
-
-	if( hasSubsurfTexture > 0 )
-		subsurf.rgb *= subsurfTexture.Sample(samplerTex, uv).rgb;
-	subsurf.rgb = GammaToLin(subsurf.rgb);
-
-	if( hasSubsurfTexture > 0 )
-		subsurf.a *= thicknessTexture.Sample(samplerTex, uv).r;
-	
-	return subsurf;
 }

@@ -6,8 +6,24 @@ TECHNIQUE_DEFAULT
 	DepthWrite = true;
 	DepthFunc = LESS;
 
+	CullMode = NONE;
+
 	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueVS";
 	PixelShader = "../resources/shaders/objects/transparency MediumPS";
+}
+
+TECHNIQUE_PREPASS
+{
+	Queue = SC_TRANSPARENT;
+
+	DepthEnable = true;
+	DepthWrite = true;
+	DepthFunc = LESS;
+
+	CullMode = FRONT;
+
+	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueDepthVS";
+	PixelShader = NULL;
 }
  
 TECHNIQUE_SHADOW

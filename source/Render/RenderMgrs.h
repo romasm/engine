@@ -206,6 +206,7 @@ namespace EngineCore
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
+		void PrepassTransparent(ScenePipeline* scene);
 		void DrawTransparent(ScenePipeline* scene);
 		void DrawHud();
 		void DrawOvHud();

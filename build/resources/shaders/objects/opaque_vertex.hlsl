@@ -26,6 +26,15 @@ PI_Mesh OpaqueVS(VI_Mesh input)
     return output;
 }
 
+float4 OpaqueDepthVS(VI_Mesh input) : SV_POSITION
+{
+    float4 output;
+    output = mul(float4(input.position, 1), worldMatrix);
+    output = mul(output, g_viewProj);
+
+    return output;
+}
+
 // shadow
 cbuffer viewportBuffer : register(b0)
 {

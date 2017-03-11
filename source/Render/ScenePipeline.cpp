@@ -11,6 +11,10 @@ ScenePipeline::ScenePipeline()
 	sceneDepthDSV = nullptr;
 	sceneDepthSRV = nullptr;
 
+	transparencyDepth = nullptr;
+	transparencyDepthDSV = nullptr;
+	transparencyDepthSRV = nullptr;
+
 	rt_OpaqueForward = nullptr;
 	rt_AO = nullptr;
 	rt_OpaqueDefferedDirect = nullptr;
@@ -147,6 +151,10 @@ void ScenePipeline::CloseRts()
 	_RELEASE(sceneDepth);
 	_RELEASE(sceneDepthDSV);
 	_RELEASE(sceneDepthSRV);
+
+	_RELEASE(transparencyDepth);
+	_RELEASE(transparencyDepthDSV);
+	_RELEASE(transparencyDepthSRV);
 
 	_CLOSE(rt_OpaqueForward);
 	_CLOSE(rt_TransparentForward);
@@ -303,7 +311,7 @@ bool ScenePipeline::InitDepth()
 	bufferDesc.MipLevels = 1;
 	bufferDesc.ArraySize = 1;
 	bufferDesc.Format = DXGI_FORMAT_R32_TYPELESS; //DXGI_FORMAT_D32_FLOAT
-	bufferDesc.SampleDesc.Count = 1; // TODO MSAA
+	bufferDesc.SampleDesc.Count = 1;
 	bufferDesc.SampleDesc.Quality = 0;
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	bufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
@@ -314,7 +322,7 @@ bool ScenePipeline::InitDepth()
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D; // TODO MSAA
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MipLevels = -1;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;	
 	if( FAILED(Render::CreateShaderResourceView(sceneDepth, &shaderResourceViewDesc, &sceneDepthSRV)) )
@@ -323,11 +331,21 @@ bool ScenePipeline::InitDepth()
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
 	depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D; // TODO MSAA
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	if( FAILED(Render::CreateDepthStencilView(sceneDepth, &depthStencilViewDesc, &sceneDepthDSV)) )
 		return false;
-	
+
+	// Transparency Depth
+	if( FAILED(Render::CreateTexture2D(&bufferDesc, NULL, &transparencyDepth)) )
+		return false;
+
+	if( FAILED(Render::CreateShaderResourceView(transparencyDepth, &shaderResourceViewDesc, &transparencyDepthSRV)) )
+		return false;
+
+	if( FAILED(Render::CreateDepthStencilView(transparencyDepth, &depthStencilViewDesc, &transparencyDepthDSV)) )
+		return false;
+
 	return true;
 }
 
@@ -568,6 +586,10 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	sharedconst.viewProjection = sharedconst.projection * sharedconst.view;
 	sharedconst.invViewProjection = XMMatrixInverse(nullptr, sharedconst.viewProjection);
 
+	sharedconst.g_far = current_camera->far_clip;
+	sharedconst.g_farMinusNear = current_camera->far_clip - current_camera->near_clip;
+	sharedconst.g_nearMulFar = current_camera->far_clip * current_camera->near_clip;
+
 	// frustum vectors
 	XMMATRIX invView = XMMatrixInverse(nullptr, current_camera->viewMatrix);
 	XMMATRIX invProj = XMMatrixInverse(nullptr, current_camera->projMatrix);
@@ -686,10 +708,20 @@ void ScenePipeline::OpaqueForwardStage()
 
 void ScenePipeline::TransparentForwardStage()
 {
+	// PREPASS
+	Render::ClearDepthStencilView(transparencyDepthDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	Render::OMSetRenderTargets(0, nullptr, transparencyDepthDSV);
+	Render::RSSetViewports(1, &rt_TransparentForward->m_viewport);
+
+	render_mgr->PrepassTransparent(this);
+
+	Render::OMSetRenderTargets(0, nullptr, nullptr);
+
+	// RENDER 
 	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 7;
+	const uint32_t srvs_size = 8;
 	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[1] = nullptr;
@@ -698,6 +730,7 @@ void ScenePipeline::TransparentForwardStage()
 	srvs[4] = nullptr;
 	srvs[5] = rt_OpaqueFinal->GetShaderResourceView(0);
 	srvs[6] = rt_HiZDepth->GetShaderResourceView(0);
+	srvs[7] = transparencyDepthSRV;
 				
 	auto& distProb = render_mgr->GetDistEnvProb();
 	if(distProb.mipsCount != 0)

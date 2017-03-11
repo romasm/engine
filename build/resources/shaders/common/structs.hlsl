@@ -158,10 +158,12 @@ struct MediumData
 {
 	float insideRoughness;
 	float opacity;
-	float absorption;
-	float3 insideColor;
+	float attenuation;
+	float3 absorption;
 	float thickness;
 	float3 invIOR;
+	float frontDepth;
+	float backDepth;
 };
 
 struct DataForLightCompute

@@ -91,11 +91,11 @@ namespace EngineCore
 			// |      |
 			// 2 ---- 3
 			XMFLOAT3 g_CamFrust0;
-			float padding1;
+			float g_nearMulFar;
 			XMFLOAT3 g_CamFrust1;
-			float padding2;
+			float g_far;
 			XMFLOAT3 g_CamFrust2;
-			float padding3;
+			float g_farMinusNear;
 			XMFLOAT3 g_CamFrust3;
 			float padding4;
 		};
@@ -355,6 +355,10 @@ namespace EngineCore
 		ID3D11Texture2D* sceneDepth;
 		ID3D11ShaderResourceView* sceneDepthSRV;
 		ID3D11DepthStencilView* sceneDepthDSV;
+
+		ID3D11Texture2D* transparencyDepth;
+		ID3D11ShaderResourceView* transparencyDepthSRV;
+		ID3D11DepthStencilView* transparencyDepthDSV;
 
 		Compute* defferedOpaqueCompute;
 		DefferedConfigData defferedConfigData;

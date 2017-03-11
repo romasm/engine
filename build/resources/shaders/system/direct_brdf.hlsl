@@ -76,6 +76,22 @@ float3 F_Schlick( float3 SpecularColor, float VoH )
 	//return SpecularColor + (1 - SpecularColor) * pow (1. f - VoH, 5.f);
 }
 
+float F_SchlickOriginal( float R0, float LoN )
+{
+	float invLoN = 1 - LoN;
+	float Fc = invLoN * invLoN;
+	Fc *= Fc * invLoN;
+
+	return R0 + (1 - R0) * Fc;
+}
+
+float IORtoR0( float IOR )
+{
+	float R0 = (IOR - 1) / (IOR + 1);
+	R0 *= R0;
+	return R0;
+}
+
 float3 directSpecularBRDF(float3 S, float2 R, float NoH, float NoV, float NoL, float VoH, float3 H, float3 X, float3 Y, float avgR)
 {
 	float dGGX = 0;
@@ -93,8 +109,13 @@ float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)
 
 float3 directSubScattering(float3 color, MaterialParams params, float3 L, float3 N, float3 V)
 {
-	float3 vLight = L + N * params.ss_distortion;
+	/*float3 vLight = L + N * params.ss_distortion;
 	float VoL = pow(saturate(dot(V, -vLight)), params.ss_direct_pow) * params.ss_direct_translucency;
 	float3 SSS = VoL + params.ss_indirect_translucency;
+	return SSS * color;*/
+
+	float3 vLight = L + N * 0.1;
+	float VoL = pow(saturate(dot(V, -vLight)), 1.0) * 0.1;
+	float3 SSS = VoL + 0.1;
 	return SSS * color;
 }

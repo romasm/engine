@@ -66,6 +66,12 @@ namespace EngineCore
 
 		void Set(TECHNIQUES tech = TECHNIQUE_DEFAULT);
 
+		inline bool HasTechnique(TECHNIQUES tech)
+		{
+			auto sh = (Shader*) ShaderMgr::GetShaderPtr(shaderID);
+			return sh->HasTechnique(tech);
+		}
+
 		inline RENDER_QUEUES GetTechQueue(TECHNIQUES tech = TECHNIQUE_DEFAULT, bool* hasTech = nullptr)
 		{
 			auto sh = (Shader*) ShaderMgr::GetShaderPtr(shaderID);

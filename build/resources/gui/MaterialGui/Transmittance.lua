@@ -38,9 +38,9 @@ return GuiGroup({
         str = "Transmittance",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Transmittance") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "subsurfTexture", "hasSubsurfTexture", "Transmittance") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "subsurfTexture", "hasSubsurfTexture") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "absorptionTexture", "hasAbsorptionTexture", "Transmittance") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "absorptionTexture", "hasAbsorptionTexture", "Transmittance") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "absorptionTexture", "hasAbsorptionTexture") end,
         }
     }),
 
@@ -63,16 +63,16 @@ return GuiGroup({
         },
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "subsurfaceColor", "Transmittance", false) end,
-            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialProps.ColorPicking(self, "subsurfaceColor") end,
+            [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) return MaterialProps.StartColorPicking(self, "absorptionColor", "Transmittance", false) end,
+            [GUI_EVENTS.COLOR_PICKING]  = function(self, ev) return MaterialProps.ColorPicking(self, "absorptionColor") end,
             [GUI_EVENTS.COLOR_PICKED]  = function(self, ev) return MaterialProps.ColorPicked(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "subsurfaceColor") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdColor(self, "absorptionColor") end,
         },
     }),
 
     GuiString({
         styles = {GuiStyles.string_props_03,},
-        str = "Extinction, e-6",
+        str = "Attenuation dist",
         left = 10,
         top = 143,
     }),
@@ -86,18 +86,18 @@ return GuiGroup({
         width = 155,
         data = {
             min = 0,
-            max = 10,
-            decimal = 5,
+            max = 2,
+            decimal = 3,
             overflow_max = true,
         },
-        alt = "Extinction coefficient ( k * 10 ^ -6 )",
+        alt = "Half-energy distance, m",
         id = 'extinction_slider',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return TransmittanceCallback.StartExtinction(self) end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragExtinction(self) end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndExtinction(self) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdExtinction(self) end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return TransmittanceCallback.StartAttenuation(self) end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragAttenuation(self) end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndAttenuation(self) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdAttenuation(self) end,
         },
     }),
 

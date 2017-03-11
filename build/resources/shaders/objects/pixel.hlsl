@@ -23,7 +23,9 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 	float3 reflectivity = ReflectivityCalculate(samplerAnisotropicWrap, input.tex, albedo);
 	float3 emissive = EmissiveCalculate(samplerAnisotropicWrap, input.tex);
 	float ao = AOCalculate(samplerAnisotropicWrap, input.tex);
-	float4 subsurface = SSSCalculate(samplerAnisotropicWrap, input.tex);
+	float4 subsurface;
+	subsurface.rgb = SubsurfaceCalculate(samplerAnisotropicWrap, input.tex);
+	subsurface.a = ThicknessCalculate(samplerAnisotropicWrap, input.tex);
 	  
 	// normal final 
 	if(!front)normal = -normal;

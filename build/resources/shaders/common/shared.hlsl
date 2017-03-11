@@ -30,14 +30,22 @@ shared cbuffer SharedBuffer : register(b0)
 	// |      |
 	// 2 ---- 3
 	float3 g_CamFrust0;
-	float padding1;
+	float g_nearMulFar;
+
 	float3 g_CamFrust1;
-	float padding2;
+	float g_far;
+
 	float3 g_CamFrust2;
-	float padding3;
+	float g_farMinusNear;
+
 	float3 g_CamFrust3;
 	float padding4;
 };
+
+float DepthToLinear(float d)
+{
+	return g_nearMulFar / (g_far - d * g_farMinusNear);
+}
 
 float4 WorldToClip(float4 worldCoords)
 {

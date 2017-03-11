@@ -740,10 +740,31 @@ void SceneRenderMgr::DrawAlphatest(ScenePipeline* scene)
 	}
 }
 
-void SceneRenderMgr::DrawTransparent(ScenePipeline* scene)
+void SceneRenderMgr::PrepassTransparent(ScenePipeline* scene)
 {
 	sort(transparent_array.begin(), transparent_array.end(), BaseRenderMgr::InvCompareMeshes );
 
+	const unsigned int offset = 0;
+
+	for(auto cur: transparent_array)
+	{
+		if(!cur->material->HasTechnique(TECHNIQUES::TECHNIQUE_PREPASS))
+			continue;
+
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
+		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur->material->SetMatrixBuffer(cur->constant_buffer);
+
+		cur->material->Set(TECHNIQUES::TECHNIQUE_PREPASS);
+		Render::SetTopology(cur->topo);
+
+		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+	}
+}
+
+void SceneRenderMgr::DrawTransparent(ScenePipeline* scene)
+{
 	const unsigned int offset = 0;
 
 	for(auto cur: transparent_array)

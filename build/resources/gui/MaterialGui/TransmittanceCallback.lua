@@ -1,52 +1,50 @@
 if not TransmittanceCallback then TransmittanceCallback = {} end
 
-function TransmittanceCallback.ExtinctionToAbsorption(extinc)
-    return 4 * math.pi * extinc / 0.5876
+local DistanceAttenuation = function(value)
+    -- LightMul = exp( -AttenuationCoeff * Dist)
+    -- LightMul = 0.5; AttenuationCoeff = 0.69314718 / Dist
+    return 0.69314718 / value
 end
 
-function TransmittanceCallback.AbsorptionToExtinction(absorp)
-    return absorp * 0.5876 / (4 * math.pi)
-end
-
-function TransmittanceCallback.StartExtinction(self)
+function TransmittanceCallback.StartAttenuation(self)
     self.history = {
         s_oldval = 0,
         s_newval = 0,
         undo = function(self) 
-                MaterialProps.material:SetFloat(self.s_oldval, "absorptionValue", SHADERS.PS)
+                MaterialProps.material:SetFloat(self.s_oldval, "attenuationValue", SHADERS.PS)
                 MaterialProps:UpdateData(false)
             end,
         redo = function(self) 
-                MaterialProps.material:SetFloat(self.s_newval, "absorptionValue", SHADERS.PS)
+                MaterialProps.material:SetFloat(self.s_newval, "attenuationValue", SHADERS.PS)
                 MaterialProps:UpdateData(false)
             end,
         msg = "Transmittance value"
     }
 
-    self.history.s_oldval = MaterialProps.material:GetFloat("absorptionValue", SHADERS.PS)
+    self.history.s_oldval = MaterialProps.material:GetFloat("attenuationValue", SHADERS.PS)
 
-    local ext = TransmittanceCallback.ExtinctionToAbsorption( self:GetValue() )
-    MaterialProps.material:SetFloat(ext, "absorptionValue", SHADERS.PS)
+    local ext = DistanceAttenuation(self:GetValue())
+    MaterialProps.material:SetFloat(ext, "attenuationValue", SHADERS.PS)
     return true
 end
 
-function TransmittanceCallback.DragExtinction(self)
-    local ext = TransmittanceCallback.ExtinctionToAbsorption( self:GetValue() )
-    MaterialProps.material:SetFloat(ext, "absorptionValue", SHADERS.PS)
+function TransmittanceCallback.DragAttenuation(self)
+    local ext = DistanceAttenuation(self:GetValue())
+    MaterialProps.material:SetFloat(ext, "attenuationValue", SHADERS.PS)
     return true
 end
 
-function TransmittanceCallback.EndExtinction(self)
-    self.history.s_newval = TransmittanceCallback.ExtinctionToAbsorption( self:GetValue() )
+function TransmittanceCallback.EndAttenuation(self)
+    self.history.s_newval = DistanceAttenuation(self:GetValue())
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
-    MaterialProps.material:SetFloat(self.history.s_newval, "absorptionValue", SHADERS.PS)
+    MaterialProps.material:SetFloat(self.history.s_newval, "attenuationValue", SHADERS.PS)
     History:Push(self.history)
     return true
 end
 
-function TransmittanceCallback.UpdExtinction(self)
-    local ext = TransmittanceCallback.AbsorptionToExtinction( MaterialProps.material:GetFloat("absorptionValue", SHADERS.PS) )
-    self:SetValue( ext )
+function TransmittanceCallback.UpdAttenuation(self)
+    local ext = MaterialProps.material:GetFloat("attenuationValue", SHADERS.PS)
+    self:SetValue( DistanceAttenuation(ext) )
     return true
 end
 
