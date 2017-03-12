@@ -54,6 +54,7 @@ StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t21);
 
 StructuredBuffer<int> g_lightIDs : register(t22);  // TODO!!!!!
 
+#include "../system/direct_brdf.hlsl"
 #define FORWARD_LIGHTING
 #include "pixel_input.hlsl" 
  
@@ -68,7 +69,6 @@ cbuffer lightsCount : register(b4)
 };
  
 #include "../common/shadow_helpers.hlsl"
-#include "../system/direct_brdf.hlsl"
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
@@ -101,6 +101,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	mediumData.insideRoughness = InsideRoughnessCalculate(samplerAnisotropicWrap, input.tex);
 	mediumData.attenuation = AttenuationCalculate();
 	mediumData.invIOR = IORCalculate();
+	mediumData.tirAmount = TIRCalculate();
 	
 	[branch]
 	if(!front) 

@@ -240,3 +240,35 @@ function TransmittanceCallback.UpdAbbe(self)
     self:SetValue( abbe )
     return true
 end
+
+function TransmittanceCallback.SetIORAsSpec(self, checked)
+    local history = {
+        s_oldval = false,
+        s_newval = false,
+        undo = function(self) 
+                MaterialProps.material:SetFloat(self.s_oldval and 1.0 or 0.0, "iorAsSpecular", SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetFloat(self.s_newval and 1.0 or 0.0, "iorAsSpecular", SHADERS.PS)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = "IOR reflection"
+    }
+
+    history.s_oldval = (MaterialProps.material:GetFloat("iorAsSpecular", SHADERS.PS) > 0.0)
+    history.s_newval = checked
+
+    if history.s_oldval == history.s_newval then return true end
+
+    MaterialProps.material:SetFloat(checked and 1.0 or 0.0, "iorAsSpecular", SHADERS.PS)
+
+    History:Push(history)
+    return true
+end
+
+function TransmittanceCallback.UpdIORAsSpec(self, ev)
+    local checked = (MaterialProps.material:GetFloat("iorAsSpecular", SHADERS.PS) > 0.0)
+    self:SetCheck( checked )
+    return true
+end

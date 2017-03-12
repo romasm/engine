@@ -122,6 +122,11 @@ float AttenuationCalculate()
 	return attenuationValue;
 }
 
+float TIRCalculate()
+{
+	return tirAmount;
+}
+
 float3 AbsorptionCalculate(SamplerState samplerTex, float2 uv)
 {
 	float3 absorption = absorptionColor.rgb;
@@ -224,6 +229,17 @@ float2 RoughnessCalculate(SamplerState samplerTex, float2 uv)
 float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 albedo)
 {
 	float3 reflectivity;
+	
+#ifdef FORWARD_LIGHTING
+	if(iorAsSpecular > 0)
+	{
+		reflectivity.r = IORtoR0( 1.0 / invIorRed );
+		reflectivity.g = IORtoR0( 1.0 / invIorGreen );
+		reflectivity.b = IORtoR0( 1.0 / invIorBlue );
+	}
+	else
+	{
+#endif
 
 	if( isMetalPipeline > 0 )
 	{
@@ -242,6 +258,10 @@ float3 ReflectivityCalculate(SamplerState samplerTex, float2 uv, inout float3 al
 
 		reflectivity = GammaToLin(reflectivity);	
 	}
+
+#ifdef FORWARD_LIGHTING
+	}
+#endif
 
 	return reflectivity;
 }

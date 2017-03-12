@@ -162,6 +162,7 @@ struct MediumData
 	float3 absorption;
 	float thickness;
 	float3 invIOR;
+	float tirAmount;
 	float frontDepth;
 	float backDepth;
 	float3 backNormal;

@@ -88,8 +88,6 @@ float3 CalcutaleMediumTransmittedLight(SamplerState depthSamp, Texture2D <float2
 	[branch]
 	if(mediumData.invIOR.r != mediumData.invIOR.b)
 	{
-		float3 tempRay;
-		float3 tempPoint;
 		color_r = RefractScene(depthSamp, sceneDepth, samp, sceneColor, uv, mediumData, mData, gbuffer, 
 			V, mediumData.invIOR.r, mipLevel);
 		color_b = RefractScene(depthSamp, sceneDepth, samp, sceneColor, uv, mediumData, mData, gbuffer, 
@@ -116,13 +114,13 @@ float3 CalcutaleMediumTransmittedLight(SamplerState depthSamp, Texture2D <float2
 	float3 color_fin = float3(color_r.r, color_g.g, color_b.b) * energyFactor;
 	float3 travelDist = thicknessFinal / float3(color_r.a, color_g.a, color_b.a);
 
-	// back energy
+	// back energy fake
 	float fakeBackFactor = BackEnergyFactor(iorMedium, R0, -refractionRay.xyz, mediumData.backNormal, uv);
 	fakeBackFactor = -sin( ( saturate(-fakeBackFactor * (mediumData.invIOR.g * mediumData.invIOR.g)) - 0.5) * PI ) * 0.5 + 0.5;
 
 	refractionRoughness *= 4.0;
 	fakeBackFactor = lerp(fakeBackFactor, 1, saturate(refractionRoughness));
-	fakeBackFactor = lerp(1, fakeBackFactor, hitBack);
+	fakeBackFactor = lerp(1, fakeBackFactor, hitBack * mediumData.tirAmount);
 	
 	color_fin = lerp(mediumData.absorption * color_fin, color_fin, saturate(fakeBackFactor));
 

@@ -302,6 +302,8 @@ function MaterialProps:ZeroProp(propName)
         self.material:SetFloat(1.0, "invIorRed", SHADERS.PS)
         self.material:SetFloat(1.0, "invIorGreen", SHADERS.PS)
         self.material:SetFloat(1.0, "invIorBlue", SHADERS.PS)
+        self.material:SetFloat(0.0, "iorAsSpecular", SHADERS.PS)
+        self.material:SetFloat(0.0, "tirAmount", SHADERS.PS)
     elseif propName == "scattering" then
         self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
         self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)

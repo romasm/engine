@@ -27,7 +27,7 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 230,
+    height = 285,
 
     Gui.Texture({
         width = 265,
@@ -132,18 +132,35 @@ return GuiGroup({
         },
     }),
 
+    GuiCheck({
+        styles = {GuiStyles.props_check,},
+        left = 120,
+        top = 195,
+        width = 140,
+        height = 18,
+        id = 'iorasspec_check',
+        text = { str = "Use for reflection" },
+        alt = "IOR overwrites reflectivity",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return TransmittanceCallback.SetIORAsSpec(self, true) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return TransmittanceCallback.SetIORAsSpec(self, false) end,
+            [GUI_EVENTS.UPDATE] = TransmittanceCallback.UpdIORAsSpec,
+        }
+    }),
+
     GuiString({
         styles = {GuiStyles.string_props_03,},
         str = "Abbe number",
         left = 10,
-        top = 203,
+        top = 228,
     }),
 
     GuiDataSlider({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 200,
+        top = 225,
         left = 120,
         width = 155,
         data = {
@@ -160,6 +177,36 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return TransmittanceCallback.DragAbbe(self) end,
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return TransmittanceCallback.EndAbbe(self) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return TransmittanceCallback.UpdAbbe(self) end,
+        },
+    }),
+
+    GuiString({
+        styles = {GuiStyles.string_props_03,},
+        str = "Critical angle fade",
+        left = 10,
+        top = 258,
+    }),
+
+    GuiDataSlider({
+        styles = {
+            GuiStyles.mat_dataslider,
+        },
+        top = 255,
+        left = 120,
+        width = 155,
+        data = {
+            min = 0,
+            max = 1,
+            decimal = 2,
+        },
+        alt = "Amount of refraction faded on critical angle",
+        id = 'tir_slider',
+
+        events = {
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "tirAmount", "Critical angle fade") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "tirAmount") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "tirAmount") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "tirAmount") end,
         },
     }),
 })
