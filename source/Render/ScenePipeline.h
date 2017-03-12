@@ -246,6 +246,7 @@ namespace EngineCore
 		RenderTarget *rt_OpaqueFinal;
 		RenderTarget *rt_HiZDepth;
 		RenderTarget *rt_TransparentForward;
+		RenderTarget *rt_TransparentPrepass;
 		RenderTarget *rt_FinalLDR;
 		RenderTarget *rt_Antialiased;
 		//RenderTarget *rt_LDRandHud;
@@ -359,7 +360,7 @@ namespace EngineCore
 		ID3D11Texture2D* transparencyDepth;
 		ID3D11ShaderResourceView* transparencyDepthSRV;
 		ID3D11DepthStencilView* transparencyDepthDSV;
-
+		
 		Compute* defferedOpaqueCompute;
 		DefferedConfigData defferedConfigData;
 		ID3D11Buffer* defferedConfigBuffer;

@@ -22,8 +22,8 @@ TECHNIQUE_PREPASS
 
 	CullMode = FRONT;
 
-	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueDepthVS";
-	PixelShader = NULL;
+	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueDepthNormalVS";
+	PixelShader = "../resources/shaders/objects/transparency MediumPrepassPS";;
 }
  
 TECHNIQUE_SHADOW

@@ -31,27 +31,28 @@ Texture3D <float4> sys_volumeEmittance : register(t4);
 
 Texture2D <float4> sys_sceneColor : register(t5); 
 Texture2D <float2> sys_depth : register(t6);
-Texture2D <float> sys_thickness : register(t7);
+Texture2D <float> sys_backDepth : register(t7);
+Texture2D <float4> sys_backNormal : register(t8);
 
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t8); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t9); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t10); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t9); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t10); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t11); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t11); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t12); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t13); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t12); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t13); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t14); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t14); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t15); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t16); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t15); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t16); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t17); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t17); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t18); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t19); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t18); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t19); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t20); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t20); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t21); 
 
-StructuredBuffer<int> g_lightIDs : register(t21); 
+StructuredBuffer<int> g_lightIDs : register(t22);  // TODO!!!!!
 
 #define FORWARD_LIGHTING
 #include "pixel_input.hlsl" 
@@ -61,7 +62,7 @@ cbuffer configBuffer : register(b3)
 	ConfigParams configs;
 };
 
-cbuffer lightsCount : register(b4) 
+cbuffer lightsCount : register(b4)
 {  
 	LightsCount g_lightCount; 
 };
@@ -115,9 +116,12 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	// THICKNESS CALCULATION
 	float2 screenUV = input.position.xy * g_PixSize;
 
-	mediumData.backDepth = DepthToLinear( sys_thickness.SampleLevel(samplerPointClamp, screenUV, 0).r );
+	mediumData.backNormal = sys_backNormal.SampleLevel(samplerPointClamp, screenUV, 0).xyz;
+
+	mediumData.backDepth = DepthToLinear( sys_backDepth.SampleLevel(samplerPointClamp, screenUV, 0).r );
 	mediumData.frontDepth = DepthToLinear( gbuffer.depth );
 	mediumData.thickness = max(0, mediumData.backDepth - mediumData.frontDepth);
+	
 	gbuffer.thickness = 0.25;//mediumData.thickness;
 
 	// LIGHT CALCULATION -----------------------------
@@ -128,17 +132,12 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR); 
-
-	// TRANSMITTANCE
-	float3 transmittance = CalcutaleMediumTransmittedLight(samplerPointClamp, sys_depth, 
-		samplerTrilinearMirror, sys_sceneColor, screenUV, mediumData, mData, gbuffer, ViewVector);
-	float transparency = 1 - mediumData.opacity;
-		
+	
+	// DIRECT LIGHT
 	LightComponents directLight = (LightComponents)0;
 	[branch]
 	if(configs.isLightweight == 0)  
 	{
-		// DIRECT LIGHT
 		const MaterialParams materialParams = (MaterialParams)0; 
 		directLight = 
 			ProcessLights(samplerPointClamp, sys_shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
@@ -161,15 +160,27 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 		indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
 	}
 
+	// TRANSMITTANCE
+	float3 transmittance = CalcutaleMediumTransmittedLight(samplerPointClamp, sys_depth, 
+		samplerTrilinearMirror, sys_sceneColor, screenUV, mediumData, mData, gbuffer, ViewVector);
+	float transparency = 1 - mediumData.opacity;
+
 	// OUTPUT
 	float3 diffuse = indirectLight.diffuse + directLight.diffuse;
 	float3 specular = indirectLight.specular * configs.indirSpec + directLight.specular * configs.dirSpec;
 	float3 scattering = indirectLight.scattering * configs.indirDiff + directLight.scattering * configs.dirDiff;
 	
 	// TODO: corret scattering
-	scattering = scattering + transmittance;
-	diffuse = lerp(diffuse, scattering, transparency);
+	//scattering = scattering + transmittance;
+	diffuse = lerp(diffuse + scattering, transmittance, transparency);
 
 	float3 final = gbuffer.emissive + diffuse + specular;
 	return float4(final, 1.0f);
+}
+
+float4 MediumPrepassPS(PI_Mesh input) : SV_TARGET
+{
+	//TODO: alphatest
+
+	return float4(-input.normal.xyz, 0);
 }

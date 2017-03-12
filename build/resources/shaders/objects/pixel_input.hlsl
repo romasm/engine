@@ -1,17 +1,17 @@
 #define NONMETAL_REFLECTIVITY 0.04 // to global scope
 
 #ifdef FORWARD_LIGHTING
-Texture2D albedoTexture : register(t22);
-Texture2D normalTexture : register(t23);
-Texture2D roughnessTexture : register(t24);
-Texture2D reflectivityTexture : register(t25);
-Texture2D aoTexture : register(t26);
-Texture2D alphaTexture : register(t27);
-Texture2D emissiveTexture : register(t28);
-Texture2D subsurfTexture : register(t29);
-Texture2D absorptionTexture : register(t30);
-Texture2D insideRoughnessTexture : register(t31);
-Texture2D thicknessTexture : register(t32);
+Texture2D albedoTexture : register(t23);
+Texture2D normalTexture : register(t24);
+Texture2D roughnessTexture : register(t25);
+Texture2D reflectivityTexture : register(t26);
+Texture2D aoTexture : register(t27);
+Texture2D alphaTexture : register(t28);
+Texture2D emissiveTexture : register(t29);
+Texture2D subsurfTexture : register(t30);
+Texture2D absorptionTexture : register(t31);
+Texture2D insideRoughnessTexture : register(t32);
+Texture2D thicknessTexture : register(t33);
 
 #else
 Texture2D albedoTexture : register(t0);
@@ -72,6 +72,11 @@ cbuffer materialBuffer : register(b1)
 	float invIorRed;
 	float invIorGreen;
 	float invIorBlue;
+
+	float iorAsSpecular;
+	float tirAmount;
+	float _padding1;
+	float _padding2;
 #else
 
 	float _padding0;

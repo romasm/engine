@@ -1,4 +1,23 @@
 
+float BackEnergyFactor(float iorMedium, float R0, float3 V, float3 backNormal, float2 uv)
+{
+	float NoV = saturate(dot(backNormal, V));
+	float refractCosSqr = 1 - iorMedium * iorMedium * ( 1 - NoV * NoV );
+	
+	/*[branch]
+	if(refractCosSqr > 0.0)
+	{
+		float3 refractedRay = iorMedium * (-V) + ( iorMedium * NoV - sqrt( refractCosSqr ) ) * backNormal;
+		energy.x = saturate(1 - F_SchlickOriginal( R0, abs(dot(refractedRay, backNormal)) ));
+	}
+	else
+	{
+		energy.y = refractCosSqr;
+	}*/
+	
+	return refractCosSqr;
+}
+
 float4 EstimateRefraction(SamplerState depthSamp, Texture2D <float2> sceneDepth,
 					float2 uv, MediumData mediumData, DataForLightCompute mData, GBufferData gbuffer, 
 					float3 V, out float2 samplePoint)
@@ -51,7 +70,8 @@ float3 CalcutaleMediumTransmittedLight(SamplerState depthSamp, Texture2D <float2
 	float4 refractionRay = EstimateRefraction(depthSamp, sceneDepth, uv, mediumData, mData, gbuffer, V, samplePoint);
 		
 	// energy conservation on refraction
-	float R0 = IORtoR0( 1.0 / mediumData.invIOR.g );
+	float iorMedium = 1.0 / mediumData.invIOR.g;
+	float R0 = IORtoR0( iorMedium );
 	float energyFactor = saturate(1 - F_SchlickOriginal( R0, abs(dot(refractionRay.xyz, gbuffer.normal)) ));
 
 	// roughness cone
@@ -76,17 +96,40 @@ float3 CalcutaleMediumTransmittedLight(SamplerState depthSamp, Texture2D <float2
 			V, mediumData.invIOR.b, mipLevel);
 	}
 	
-	// thickness
+	// thickness // TODO: separate blured depth for this
 	float refractedDepth = sceneDepth.SampleLevel(samp, UVforSamplePow2(samplePoint), mipLevel).g;
-	float backDepth = min(mediumData.backDepth, DepthToLinear(refractedDepth) );
+	refractedDepth = DepthToLinear(refractedDepth);
+	float hitBack = refractedDepth - mediumData.backDepth < 0 ? 0 : 1;
+	float backDepth;
+	[branch]
+	if(refractedDepth < mediumData.frontDepth)
+	{
+		backDepth = mediumData.backDepth;
+		hitBack = 1;
+	}
+	else
+		backDepth = min(mediumData.backDepth, refractedDepth );
+
 	float thicknessFinal = max(0, backDepth - mediumData.frontDepth);
+	hitBack *= thicknessFinal != 0.0;
 
 	float3 color_fin = float3(color_r.r, color_g.g, color_b.b) * energyFactor;
 	float3 travelDist = thicknessFinal / float3(color_r.a, color_g.a, color_b.a);
 
-	// Lambert-Beer law
-	float3 attenuation = exp(-mediumData.attenuation * (1 - mediumData.absorption) * travelDist);
-	float3 outColor = color_fin * attenuation;
+	// back energy
+	float fakeBackFactor = BackEnergyFactor(iorMedium, R0, -refractionRay.xyz, mediumData.backNormal, uv);
+	fakeBackFactor = -sin( ( saturate(-fakeBackFactor * (mediumData.invIOR.g * mediumData.invIOR.g)) - 0.5) * PI ) * 0.5 + 0.5;
 
-	return outColor * energyFactor; // TODO: correct energy conservation based on back normals from ddBackDepth
+	refractionRoughness *= 4.0;
+	fakeBackFactor = lerp(fakeBackFactor, 1, saturate(refractionRoughness));
+	fakeBackFactor = lerp(1, fakeBackFactor, hitBack);
+	
+	color_fin = lerp(mediumData.absorption * color_fin, color_fin, saturate(fakeBackFactor));
+
+	// Lambert-Beer law
+	float3 attenFactor = -mediumData.attenuation * (1 - mediumData.absorption);
+	float3 attenuation = exp(attenFactor * travelDist);
+	float3 outColor = color_fin * attenuation * fakeBackFactor;
+	
+	return outColor;
 }

@@ -164,6 +164,7 @@ struct MediumData
 	float3 invIOR;
 	float frontDepth;
 	float backDepth;
+	float3 backNormal;
 };
 
 struct DataForLightCompute

@@ -14,13 +14,14 @@ ScenePipeline::ScenePipeline()
 	transparencyDepth = nullptr;
 	transparencyDepthDSV = nullptr;
 	transparencyDepthSRV = nullptr;
-
+	
 	rt_OpaqueForward = nullptr;
 	rt_AO = nullptr;
 	rt_OpaqueDefferedDirect = nullptr;
 	rt_OpaqueFinal = nullptr;
 	rt_HiZDepth = nullptr;
 	rt_TransparentForward = nullptr;
+	rt_TransparentPrepass = nullptr;
 	rt_FinalLDR = nullptr;
 	rt_3DHud = nullptr;
 	//rt_LDRandHud = nullptr;
@@ -155,9 +156,10 @@ void ScenePipeline::CloseRts()
 	_RELEASE(transparencyDepth);
 	_RELEASE(transparencyDepthDSV);
 	_RELEASE(transparencyDepthSRV);
-
+	
 	_CLOSE(rt_OpaqueForward);
 	_CLOSE(rt_TransparentForward);
+	_CLOSE(rt_TransparentPrepass);
 	_CLOSE(rt_AO);
 	_CLOSE(rt_OpaqueDefferedDirect);
 	_CLOSE(rt_OpaqueFinal);
@@ -336,13 +338,10 @@ bool ScenePipeline::InitDepth()
 	if( FAILED(Render::CreateDepthStencilView(sceneDepth, &depthStencilViewDesc, &sceneDepthDSV)) )
 		return false;
 
-	// Transparency Depth
 	if( FAILED(Render::CreateTexture2D(&bufferDesc, NULL, &transparencyDepth)) )
 		return false;
-
 	if( FAILED(Render::CreateShaderResourceView(transparencyDepth, &shaderResourceViewDesc, &transparencyDepthSRV)) )
 		return false;
-
 	if( FAILED(Render::CreateDepthStencilView(transparencyDepth, &depthStencilViewDesc, &transparencyDepthDSV)) )
 		return false;
 
@@ -432,6 +431,10 @@ bool ScenePipeline::InitRts()
 	rt_TransparentForward = new RenderTarget;
 	if(!rt_TransparentForward->Init(width, height, sceneDepthDSV))return false;
 	if(!rt_TransparentForward->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false;
+
+	rt_TransparentPrepass = new RenderTarget;
+	if(!rt_TransparentPrepass->Init(width, height, transparencyDepthDSV))return false;
+	if(!rt_TransparentPrepass->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT))return false;
 
 	// FINAL
 	rt_Bloom = new RenderTarget;
@@ -709,9 +712,8 @@ void ScenePipeline::OpaqueForwardStage()
 void ScenePipeline::TransparentForwardStage()
 {
 	// PREPASS
-	Render::ClearDepthStencilView(transparencyDepthDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	Render::OMSetRenderTargets(0, nullptr, transparencyDepthDSV);
-	Render::RSSetViewports(1, &rt_TransparentForward->m_viewport);
+	rt_TransparentPrepass->ClearRenderTargets(true);
+	rt_TransparentPrepass->SetRenderTarget();
 
 	render_mgr->PrepassTransparent(this);
 
@@ -721,7 +723,7 @@ void ScenePipeline::TransparentForwardStage()
 	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 8;
+	const uint32_t srvs_size = 9;
 	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[1] = nullptr;
@@ -731,6 +733,7 @@ void ScenePipeline::TransparentForwardStage()
 	srvs[5] = rt_OpaqueFinal->GetShaderResourceView(0);
 	srvs[6] = rt_HiZDepth->GetShaderResourceView(0);
 	srvs[7] = transparencyDepthSRV;
+	srvs[8] = rt_TransparentPrepass->GetShaderResourceView(0);
 				
 	auto& distProb = render_mgr->GetDistEnvProb();
 	if(distProb.mipsCount != 0)
