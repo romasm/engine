@@ -165,6 +165,7 @@ struct MediumData
 	float tirAmount;
 	float frontDepth;
 	float backDepth;
+	float backDepthPersp;
 	float3 backNormal;
 };
 

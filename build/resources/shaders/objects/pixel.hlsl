@@ -26,7 +26,7 @@ PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 	float4 subsurface;
 	subsurface.rgb = SubsurfaceCalculate(samplerAnisotropicWrap, input.tex);
 	subsurface.a = ThicknessCalculate(samplerAnisotropicWrap, input.tex);
-	  
+	
 	// normal final 
 	if(!front)normal = -normal;
 	float3 nTangent = normalize(cross(normal, cross(input.tangent, normal)));

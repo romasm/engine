@@ -134,6 +134,12 @@ function TransmittanceCallback.DragIOR(self)
     MaterialProps.material:SetFloat(ior_r, "invIorRed", SHADERS.PS)
     MaterialProps.material:SetFloat(ior_g, "invIorGreen", SHADERS.PS)
     MaterialProps.material:SetFloat(ior_b, "invIorBlue", SHADERS.PS)
+
+    if ior_g == 1.0 then
+        local abbe_slider = self.entity:GetParent():GetChildById("abbe_slider"):GetInherited()
+        abbe_slider:SetValue(70.0)
+    end
+
     return true
 end
 
@@ -156,7 +162,6 @@ function TransmittanceCallback.EndIOR(self)
         local abbe_slider = self.entity:GetParent():GetChildById("abbe_slider"):GetInherited()
         abbe_slider:SetValue(70.0)
     end
-
 
     History:Push(self.history)
     return true

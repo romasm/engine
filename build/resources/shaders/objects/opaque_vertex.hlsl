@@ -11,7 +11,7 @@ cbuffer matrixBuffer : register(b1)
 
 PI_Mesh OpaqueVS(VI_Mesh input)
 {
-    PI_Mesh output;
+    PI_Mesh output = (PI_Mesh)0;
 
 	output.worldPos = mul(float4(input.position, 1), worldMatrix);
     output.position = mul(output.worldPos, g_viewProj);

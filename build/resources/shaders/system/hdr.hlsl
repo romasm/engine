@@ -105,6 +105,8 @@ float4 Combine(Texture2D opaque, Texture2D transperency, float2 coord)
 	float4 color = opaque.Sample(samplerPointClamp, coord);
 	float4 trsp = transperency.Sample(samplerPointClamp, coord);
 	color.rgb = lerp(color.rgb, trsp.rgb, trsp.a);
+	
+	color.a = color.a < 1.0 ? 1 : 0;
 	color.a = saturate(color.a + trsp.a);
 	return color;
 }

@@ -384,7 +384,7 @@ bool ScenePipeline::InitRts()
 	rt_OpaqueForward = new RenderTarget;
 	if(!rt_OpaqueForward->Init(width, height, sceneDepthDSV))return false;
 	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R8G8B8A8_UNORM))return false; // albedo roughnessY
-	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT))return false; // rgb - normal, a - tangent
+	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT))return false; // rgb - normal, a - tangent
 	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R16G16_FLOAT))return false; // vertex normal xy 
 	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R8G8B8A8_UNORM))return false; // spec roughnessX
 	if(!rt_OpaqueForward->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT))return false; // emissive(32 bit sky?), a - vertex normal z
@@ -723,7 +723,7 @@ void ScenePipeline::TransparentForwardStage()
 	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 9;
+	const uint32_t srvs_size = 8;
 	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[1] = nullptr;
@@ -731,9 +731,8 @@ void ScenePipeline::TransparentForwardStage()
 	srvs[3] = nullptr;
 	srvs[4] = nullptr;
 	srvs[5] = rt_OpaqueFinal->GetShaderResourceView(0);
-	srvs[6] = rt_HiZDepth->GetShaderResourceView(0);
-	srvs[7] = transparencyDepthSRV;
-	srvs[8] = rt_TransparentPrepass->GetShaderResourceView(0);
+	srvs[6] = transparencyDepthSRV;
+	srvs[7] = rt_TransparentPrepass->GetShaderResourceView(0);
 				
 	auto& distProb = render_mgr->GetDistEnvProb();
 	if(distProb.mipsCount != 0)

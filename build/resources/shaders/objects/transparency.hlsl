@@ -30,29 +30,28 @@ Texture2DArray <float> sys_shadows: register(t3);
 Texture3D <float4> sys_volumeEmittance : register(t4); 
 
 Texture2D <float4> sys_sceneColor : register(t5); 
-Texture2D <float2> sys_depth : register(t6);
-Texture2D <float> sys_backDepth : register(t7);
-Texture2D <float4> sys_backNormal : register(t8);
+Texture2D <float> sys_backDepth : register(t6);
+Texture2D <float4> sys_backNormal : register(t7);
 
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t9); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t10); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t11); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t8); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t9); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t10); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t12); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t13); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t14); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t11); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t12); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t13); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t15); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t16); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t17); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t14); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t15); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t16); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t18); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t19); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t20); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t17); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t18); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t19); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t21); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t20); 
 
-StructuredBuffer<int> g_lightIDs : register(t22);  // TODO!!!!!
+StructuredBuffer<int> g_lightIDs : register(t21);  // TODO!!!!!
 
 #include "../system/direct_brdf.hlsl"
 #define FORWARD_LIGHTING
@@ -119,7 +118,8 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 
 	mediumData.backNormal = sys_backNormal.SampleLevel(samplerPointClamp, screenUV, 0).xyz;
 
-	mediumData.backDepth = DepthToLinear( sys_backDepth.SampleLevel(samplerPointClamp, screenUV, 0).r );
+	mediumData.backDepthPersp = sys_backDepth.SampleLevel(samplerPointClamp, screenUV, 0).r;
+	mediumData.backDepth = DepthToLinear( mediumData.backDepthPersp );
 	mediumData.frontDepth = DepthToLinear( gbuffer.depth );
 	mediumData.thickness = max(0, mediumData.backDepth - mediumData.frontDepth);
 	
@@ -162,8 +162,8 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	}
 
 	// TRANSMITTANCE
-	float3 transmittance = CalcutaleMediumTransmittedLight(samplerPointClamp, sys_depth, 
-		samplerTrilinearMirror, sys_sceneColor, screenUV, mediumData, mData, gbuffer, ViewVector);
+	float3 transmittance = CalcutaleMediumTransmittedLight(samplerTrilinearMirror, sys_sceneColor, screenUV, 
+		mediumData, mData, gbuffer, ViewVector);
 	float transparency = 1 - mediumData.opacity;
 
 	// OUTPUT
