@@ -57,7 +57,7 @@ float G_SmithGGX( float NoL, float NoV, float Roughness)
 	// Caution : the " NdotL *" and " NdotV *" are explicitely inversed , this is not a mistake .
 	float Lambda_GGXV = NoL * sqrt (( -NoV * a2 + NoV ) * NoV + a2 );
 	float Lambda_GGXL = NoV * sqrt (( -NoL * a2 + NoL ) * NoL + a2 );
-
+	
 	return 0.5f / ( Lambda_GGXV + Lambda_GGXL );
 }
 

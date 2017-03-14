@@ -165,7 +165,7 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	float4 corWpos;
 	float4 adress;
 	[branch]
-	if(zInLSqAbs[0]>=zInLSqAbs[1] && zInLSqAbs[0]>=zInLSqAbs[2])
+	if(zInLSqAbs[0]>=zInLSqAbs[1] && zInLSqAbs[0]>=zInLSqAbs[2]) // TODO: shadow bias wrong
 	{
 		[branch]
 		if(zInLSq[0]>0)

@@ -375,7 +375,7 @@ bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared prepare
 	if(illuminance > 0)
 	{
 		const float3 colorIlluminance = illuminance * lightData.Color.rgb;
-	
+		
 		results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
 		exec = true;
 
