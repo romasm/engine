@@ -1,4 +1,6 @@
 
+#define ROUGHNESS_DISTANCE_INV 1.0f / 1.0f
+
 float BackRefraction(float iorMedium, float R0, float3 V, float3 backNormal, float2 uv)
 {
 	float NoV = abs(dot(backNormal, V));
@@ -67,10 +69,11 @@ float3 CalcutaleMediumTransmittedLight(SamplerState samp, Texture2D <float4> sce
 	// back refraction
 	float backRefraction = BackRefraction(iorMedium, R0, refractionRay.xyz, mediumData.backNormal, uv);
 
-	// roughness cone TODO!
+	// roughness cone
 	float refractionRoughness = max(mData.avgR, mediumData.insideRoughness);
-	float mipLevel = saturate(refractionRay.w) * refractionRoughness;
-	mipLevel *= (g_hizMipCount - 2);
+	float refractionRoughnessDistance = saturate(refractionRay.w * ROUGHNESS_DISTANCE_INV) * refractionRoughness;
+	refractionRoughness = lerp(refractionRoughnessDistance, refractionRoughness, refractionRoughness);
+	float mipLevel = refractionRoughness * (g_hizMipCount - 2);
 
 	// thickness
 	float refractedDepth = sceneColor.SampleLevel(samp, samplePoint, mipLevel).a;
@@ -116,7 +119,6 @@ float3 CalcutaleMediumTransmittedLight(SamplerState samp, Texture2D <float4> sce
 	fakeBackFactor = lerp(1, fakeBackFactor, hitBack * mediumData.tirAmount);
 	
 	color_fin = lerp(mediumData.absorption * color_fin, color_fin, saturate(fakeBackFactor));
-
 	fakeBackFactor *= energyFactor;
 
 	// Lambert-Beer law

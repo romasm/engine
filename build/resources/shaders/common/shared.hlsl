@@ -52,18 +52,6 @@ float4 WorldToClip(float4 worldCoords)
 	return mul(worldCoords, g_viewProj);
 }
 
-static const float2 ClipToScreenConsts[2] =
-{
-	float2(0.5f,-0.5f),
-	float2(0.5f,0.5f)
-};
-
-float2 ClipToScreen(float4 clipCoords)
-{
-	float2 screenCoords = ClipToScreenConsts[0] * clipCoords.xy / clipCoords.w + ClipToScreenConsts[1];
-	return screenCoords;
-}
-
 float2 WorldToScreen(float4 worldCoords)
 {
 	return ClipToScreen( WorldToClip(worldCoords) );

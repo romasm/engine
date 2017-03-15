@@ -756,7 +756,7 @@ void ScenePipeline::TransparentForwardStage()
 
 	if(!isLightweight)
 	{
-		Render::PSSetShaderResources(20, 1, &lightsPerTile.srv); 
+		Render::PSSetShaderResources(srvs_size + 13, 1, &lightsPerTile.srv); 
 
 		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount); 
 

@@ -115,14 +115,6 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	const float linDepth = length(ViewVector);
 	ViewVector = ViewVector / linDepth;
 	
-	/*// move to forward stage
-	// normal fix for gazaring angles TODO
-	float NoV = dot(normal, VtoWP);
-	float nFix = (-clamp(NoV, -1.0f, NORMAL_CLAMP) * NORMAL_CLAMP_MUL) + 0.5f;    
-	normal = normalize(normal + VtoWP * NORMAL_CLAMP_DOUBLE * nFix);
-	tangent = normalize(cross(cross(normal, tangent), normal));
-	binormal = normalize(cross(cross(normal, binormal), binormal));*/
-
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);
 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);

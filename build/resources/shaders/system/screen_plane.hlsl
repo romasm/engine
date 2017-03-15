@@ -1,3 +1,4 @@
+#include "../common/math.hlsl"
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
 

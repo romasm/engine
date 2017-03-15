@@ -87,6 +87,18 @@ float luminance(float3 i)
    return dot(i, float3(0.3, 0.59, 0.11));
 }
 
+static const float2 ClipToScreenConsts[2] =
+{
+	float2(0.5f,-0.5f),
+	float2(0.5f,0.5f)
+};
+
+float2 ClipToScreen(float4 clipCoords)
+{
+	float2 screenCoords = ClipToScreenConsts[0] * clipCoords.xy / clipCoords.w + ClipToScreenConsts[1];
+	return screenCoords;
+}
+
 float2 CubeVectorTo2DCoords(float3 vect)
 {
 	vect = normalize(vect);
