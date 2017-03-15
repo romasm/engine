@@ -14,6 +14,7 @@ cbuffer matrixBuffer : register(b3)
             
 PO_Gbuffer OpaquePS(PI_Mesh input, bool front: SV_IsFrontFace)
 {
+	[branch]
 	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
 		discard;
 	 

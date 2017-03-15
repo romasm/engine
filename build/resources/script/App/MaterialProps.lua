@@ -215,24 +215,27 @@ function MaterialProps:MarkProps()
     
     self.hasProps.opacity = self.material:GetShaderName() == "../resources/shaders/objects/transparent_medium"
 
+    local sssColor = self.material:GetVector("subsurfaceColor", SHADERS.PS)
+    if sssColor.x + sssColor.y + sssColor.z == 0.0 then self.hasProps.scattering = false
+    else self.hasProps.scattering = true end
+    self.hasProps.scattering = self.hasProps.scattering or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
+    
     if not self.hasProps.opacity then
-        local sssColor = self.material:GetVector("subsurfaceColor", SHADERS.PS)
-        if sssColor.x + sssColor.y + sssColor.z == 0.0 then self.hasProps.scattering = false
-        else self.hasProps.scattering = true end
-        self.hasProps.scattering = self.hasProps.scattering or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
         self.hasProps.transmittance = false
         self.hasProps.medium_roughness = false
     else
         local ext = self.material:GetFloat("attenuationValue", SHADERS.PS)
         self.hasProps.transmittance = ext ~= 0.0
-        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("hasSubsurfTexture", SHADERS.PS) > 0
-        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorRed", SHADERS.PS) ~= 1.0
-        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorGreen", SHADERS.PS) ~= 1.0
-        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorBlue", SHADERS.PS) ~= 1.0
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("hasAbsorptionTexture", SHADERS.PS) > 0
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorRed", SHADERS.PS) ~= 1.5
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorGreen", SHADERS.PS) ~= 1.5
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("invIorBlue", SHADERS.PS) ~= 1.5
+        self.hasProps.transmittance = self.hasProps.transmittance or self.material:GetFloat("tirAmount", SHADERS.PS) > 0.0
 
-        self.hasProps.scattering = false
         self.hasProps.medium_roughness = self.material:GetFloat("hasInsideRoughnessTexture", SHADERS.PS) > 0
         self.hasProps.medium_roughness = self.hasProps.medium_roughness or self.material:GetFloat("insideRoughnessValue", SHADERS.PS) > 0
+        
+        self.hasProps.alphatest = self.material:GetFloat("hasAlphaTexture", SHADERS.PS) > 0
     end
 
     self.hasProps.thickness = self.material:GetFloat("hasThicknessTexture", SHADERS.PS) > 0 
@@ -243,23 +246,34 @@ function MaterialProps:InitProp(propName)
     self:ZeroProp(propName)
     if propName == "albedo" then
         self.material:SetVector(Vector4(1,1,1,0), "albedoColor", SHADERS.PS)
+
     elseif propName == "emissive" then
         self.material:SetVector(Vector4(1,1,1,0), "emissiveColor", SHADERS.PS)
         self.material:SetFloat(1.0, "emissiveIntensity", SHADERS.PS)
+
     elseif propName == "scattering" then
         self.material:SetVector(Vector4(1,1,1,0), "subsurfaceColor", SHADERS.PS)
+
     elseif propName == "transmittance" then
         self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
         self.material:SetFloat(15.0, "attenuationValue", SHADERS.PS)
+
     elseif propName == "thickness" then
-        self.material:SetFloat(0.5, "thicknessValue", SHADERS.PS)        
+        self.material:SetFloat(0.5, "thicknessValue", SHADERS.PS)     
+           
     elseif propName == "medium_roughness" then
         self.material:SetFloat(0, "insideRoughnessValue", SHADERS.PS) 
+
     elseif propName == "alphatest" then
-        self.material:SetShader("../resources/shaders/objects/alphatest_main")
+        if self.material:GetShaderName() ~= "../resources/shaders/objects/transparent_medium" then
+            self.material:SetShader("../resources/shaders/objects/alphatest_main")
+        end
+
     elseif propName == "opacity" then
         self.material:SetShader("../resources/shaders/objects/transparent_medium")
-        self.material:SetFloat(0.1, "alphaValue", SHADERS.PS)
+        self.material:SetFloat(0.1, "opacityValue", SHADERS.PS)
+        self:ZeroProp("transmittance")
+        self:ZeroProp("medium_roughness")
     end
 end
 
@@ -268,64 +282,74 @@ function MaterialProps:ZeroProp(propName)
         self.material:SetVector(Vector4(0,0,0,0), "albedoColor", SHADERS.PS)
         self.material:SetFloat(0, "hasAlbedoTexture", SHADERS.PS)
         self.material:SetTextureName("", "albedoTexture", SHADERS.PS)
+
     elseif propName == "roughness" then
         self.material:SetFloat(0, "hasRoughnessTexture", SHADERS.PS)
         self.material:SetFloat(0, "roughnessAnisotropic", SHADERS.PS)
         self.material:SetFloat(0, "roughnessX", SHADERS.PS)
         self.material:SetFloat(0, "roughnessY", SHADERS.PS)
         self.material:SetTextureName("", "roughnessTexture", SHADERS.PS)
+
     elseif propName == "reflectivity" then
         self.material:SetFloat(1, "isMetalPipeline", SHADERS.PS)
         self.material:SetFloat(0, "metalnessValue", SHADERS.PS)
         self.material:SetFloat(0, "hasReflectivityTexture", SHADERS.PS)
         self.material:SetVector(Vector4(0.23,0.23,0.23,0), "reflectivityColor", SHADERS.PS)
         self.material:SetTextureName("", "reflectivityTexture", SHADERS.PS)
+
     elseif propName == "normal" then
         self.material:SetFloat(0, "hasNormalTexture", SHADERS.PS)
         self.material:SetFloat(0, "normalMapInvertY", SHADERS.PS)
         self.material:SetFloat(0, "objectSpaceNormalMap", SHADERS.PS)
         self.material:SetTextureName("", "normalTexture", SHADERS.PS)
+
     elseif propName == "ao" then
         self.material:SetFloat(0, "hasAOTexture", SHADERS.PS)
         self.material:SetFloat(1.0, "aoPower", SHADERS.PS)
         self.material:SetTextureName("", "aoTexture", SHADERS.PS)
+
     elseif propName == "emissive" then
         self.material:SetVector(Vector4(0,0,0,0), "emissiveColor", SHADERS.PS)
         self.material:SetFloat(0, "hasEmissiveTexture", SHADERS.PS)
         self.material:SetFloat(0, "emissiveIntensity", SHADERS.PS)
         self.material:SetTextureName("", "emissiveTexture", SHADERS.PS)
+
     elseif propName == "transmittance" then
-        self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
-        self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)
-        self.material:SetTextureName("", "subsurfTexture", SHADERS.PS)
+        self.material:SetVector(Vector4(0,0,0,0), "absorptionColor", SHADERS.PS)
+        self.material:SetFloat(0, "hasAbsorptionTexture", SHADERS.PS)
+        self.material:SetTextureName("", "absorptionTexture", SHADERS.PS)
         self.material:SetFloat(0, "attenuationValue", SHADERS.PS)
-        self.material:SetFloat(1.0, "invIorRed", SHADERS.PS)
-        self.material:SetFloat(1.0, "invIorGreen", SHADERS.PS)
-        self.material:SetFloat(1.0, "invIorBlue", SHADERS.PS)
+        self.material:SetFloat(1.5, "invIorRed", SHADERS.PS)
+        self.material:SetFloat(1.5, "invIorGreen", SHADERS.PS)
+        self.material:SetFloat(1.5, "invIorBlue", SHADERS.PS)
         self.material:SetFloat(0.0, "iorAsSpecular", SHADERS.PS)
         self.material:SetFloat(0.0, "tirAmount", SHADERS.PS)
+
     elseif propName == "scattering" then
         self.material:SetVector(Vector4(0,0,0,0), "subsurfaceColor", SHADERS.PS)
         self.material:SetFloat(0, "hasSubsurfTexture", SHADERS.PS)
         self.material:SetTextureName("", "subsurfTexture", SHADERS.PS)
+
     elseif propName == "thickness" then
         self.material:SetFloat(0, "thicknessValue", SHADERS.PS) 
         self.material:SetFloat(0, "hasThicknessTexture", SHADERS.PS)
         self.material:SetTextureName("", "thicknessTexture", SHADERS.PS)
+
     elseif propName == "medium_roughness" then
         self.material:SetFloat(0, "insideRoughnessValue", SHADERS.PS)
         self.material:SetFloat(0, "hasInsideRoughnessTexture", SHADERS.PS)
         self.material:SetTextureName("", "insideRoughnessTexture", SHADERS.PS)
+
     elseif propName == "alphatest" then
-        self.material:SetShader("../resources/shaders/objects/opaque_main")
+        if self.material:GetShaderName() ~= "../resources/shaders/objects/transparent_medium" then
+            self.material:SetShader("../resources/shaders/objects/opaque_main")
+        end
         self.material:SetFloat(0.5, "alphaValue", SHADERS.PS)
         self.material:SetFloat(0, "hasAlphaTexture", SHADERS.PS)
         self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
+
     elseif propName == "opacity" then
-        self.material:SetShader("../resources/shaders/objects/transparent_medium")
-        self.material:SetFloat(0.5, "alphaValue", SHADERS.PS)
-        self.material:SetFloat(0, "hasAlphaTexture", SHADERS.PS)
-        self.material:SetTextureName("", "alphaTexture", SHADERS.PS)
+        self.material:SetShader("../resources/shaders/objects/opaque_main")
     end
 end
 

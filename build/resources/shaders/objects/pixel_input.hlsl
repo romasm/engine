@@ -11,7 +11,8 @@ Texture2D emissiveTexture : register(t28);
 Texture2D subsurfTexture : register(t29);
 Texture2D absorptionTexture : register(t30);
 Texture2D insideRoughnessTexture : register(t31);
-Texture2D thicknessTexture : register(t32);
+Texture2D opacityTexture : register(t32);
+Texture2D thicknessTexture : register(t33);
 
 #else
 Texture2D albedoTexture : register(t0);
@@ -75,8 +76,8 @@ cbuffer materialBuffer : register(b1)
 
 	float iorAsSpecular;
 	float tirAmount;
-	float _padding1;
-	float _padding2;
+	float hasOpacityTexture;
+	float opacityValue;
 #else
 
 	float _padding0;
@@ -98,12 +99,12 @@ cbuffer materialId : register(b2)
 
 float OpacityCalculate(SamplerState samplerTex, float2 uv)
 {
-	float opacity = alphaValue;
+	float opacity = opacityValue;
 
-	if( hasAlphaTexture == 0 )
+	if( hasOpacityTexture == 0 )
 		return opacity;
 
-	opacity *= alphaTexture.Sample(samplerTex, uv).r;
+	opacity *= opacityTexture.Sample(samplerTex, uv).r;
 	return opacity;
 }
 

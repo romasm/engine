@@ -4,12 +4,12 @@
 #include "../common/light_structs.hlsl"
 #include "../common/common_helpers.hlsl"
 
-SamplerState samplerPointClamp : register(s0);
-SamplerState samplerBilinearClamp : register(s1);
-SamplerState samplerBilinearWrap : register(s2);
-SamplerState samplerTrilinearWrap : register(s3);
-SamplerState samplerBilinearVolumeClamp : register(s4);
-SamplerState samplerAnisotropicWrap : register(s5);
+SamplerState samplerAnisotropicWrap : register(s0);
+SamplerState samplerPointClamp : register(s1);
+SamplerState samplerBilinearClamp : register(s2);
+SamplerState samplerBilinearWrap : register(s3);
+SamplerState samplerTrilinearWrap : register(s4);
+SamplerState samplerBilinearVolumeClamp : register(s5);
 SamplerState samplerTrilinearMirror : register(s6);//samplerTrilinearMirror
 
 cbuffer matrixBuffer : register(b2)
@@ -82,6 +82,10 @@ cbuffer volumeBuffer : register(b5)
             
 float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 {	 
+	[branch]
+	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
+		discard;
+
 	GBufferData gbuffer = (GBufferData)0;
 	MediumData mediumData = (MediumData)0;
 	
@@ -115,12 +119,23 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	
 	// THICKNESS CALCULATION
 	float2 screenUV = input.position.xy * g_PixSize;
-
-	mediumData.backNormal = sys_backNormal.SampleLevel(samplerPointClamp, screenUV, 0).xyz;
-
-	mediumData.backDepthPersp = sys_backDepth.SampleLevel(samplerPointClamp, screenUV, 0).r;
-	mediumData.backDepth = DepthToLinear( mediumData.backDepthPersp );
+		
 	mediumData.frontDepth = DepthToLinear( gbuffer.depth );
+	mediumData.backDepthPersp = sys_backDepth.SampleLevel(samplerPointClamp, screenUV, 0).r;
+	
+	[branch]
+	if(mediumData.backDepthPersp >= 1.0f)
+	{
+		mediumData.backNormal = gbuffer.normal;
+		mediumData.backDepth = mediumData.frontDepth;
+		mediumData.backDepthPersp = gbuffer.depth;
+	}
+	else
+	{
+		mediumData.backNormal = sys_backNormal.SampleLevel(samplerPointClamp, screenUV, 0).xyz;
+		mediumData.backDepth = DepthToLinear( mediumData.backDepthPersp );
+	}
+
 	mediumData.thickness = max(0, mediumData.backDepth - mediumData.frontDepth);
 	
 	gbuffer.thickness = 0.25;//mediumData.thickness;
@@ -181,7 +196,16 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 
 float4 MediumPrepassPS(PI_Mesh input) : SV_TARGET
 {
-	//TODO: alphatest
+	[branch]
+	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
+		discard;
 
 	return float4(-input.normal.xyz, 0);
+}
+
+void MediumShadowPS(PI_Mesh input)
+{
+	[branch]
+	if(!AlphatestCalculate(samplerAnisotropicWrap, input.tex))
+		discard;
 }

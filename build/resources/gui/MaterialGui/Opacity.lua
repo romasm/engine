@@ -36,9 +36,9 @@ return GuiGroup({
         str = "Opacity",
 
         events = {
-            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Opacity") end,
-            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "alphaTexture", "hasAlphaTexture", "Opacity") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "alphaTexture", "hasAlphaTexture") end,
+            [GUI_EVENTS.TEXTURE_SET] = function(self, ev) return MaterialProps.SetTexture(self, "opacityTexture", "hasOpacityTexture", "Opacity") end,
+            [GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) return MaterialProps.SetTexture(self, "opacityTexture", "hasOpacityTexture", "Opacity") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdTexture(self, "opacityTexture", "hasOpacityTexture") end,
         }
     }),
 
@@ -64,10 +64,10 @@ return GuiGroup({
         id = 'opacity_ref',
 
         events = {
-            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "alphaValue", "Opacity") end,
-            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "alphaValue") end,
-            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "alphaValue") end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "alphaValue") end,
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartValue(self, "opacityValue", "Opacity") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragValue(self, "opacityValue") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndValue(self, "opacityValue") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdValue(self, "opacityValue") end,
         },
     }),
 })

@@ -309,7 +309,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 		break;
 	}
 
-	LOG("Compiling shader %s", file.c_str());
+	LOG("Compiling shader %s %s", file.c_str(), entryPoint.c_str());
 	
 	// remove techs
 	struct interval {uint32_t start; uint32_t end; uint32_t str_count;};
@@ -415,7 +415,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 	if(date)
 		*date = mdate;
 
-	LOG_GOOD("Shader %s compiled successfully", file.c_str());
+	LOG_GOOD("Shader %s %s compiled successfully", file.c_str(), entryPoint.c_str());
 
 	return code_compiled;
 }

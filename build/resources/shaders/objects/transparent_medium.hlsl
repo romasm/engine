@@ -28,14 +28,14 @@ TECHNIQUE_PREPASS
  
 TECHNIQUE_SHADOW
 {
-	Queue = SC_OPAQUE; 
+	Queue = SC_ALPHATEST; 
 
 	DepthEnable = true;
 	DepthWrite = true;
 	DepthFunc = LESS;
 	   
-	VertexShader = "../resources/shaders/objects/opaque_vertex OpaqueShadowVS";
-	PixelShader = NULL;
+	VertexShader = "../resources/shaders/objects/opaque_vertex AlphatestShadowVS";
+	PixelShader = "../resources/shaders/objects/transparency MediumShadowPS";
 }
  
 TECHNIQUE_VOXEL

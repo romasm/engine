@@ -33,6 +33,8 @@ PI_Mesh OpaqueDepthNormalVS(VI_Mesh input)
     output.position = mul(float4(input.position, 1), worldMatrix);
     output.position = mul(output.position, g_viewProj);
 	
+	output.tex = input.tex;
+
 	const float3x3 nM = (float3x3)normalMatrix;
     output.normal = normalize(mul(input.normal, nM));
 
