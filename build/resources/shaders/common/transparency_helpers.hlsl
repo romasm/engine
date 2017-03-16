@@ -18,7 +18,8 @@ float4 EstimateRefraction(SamplerState samp, Texture2D <float4> sceneColor,
 	float refractCos = sqrt( 1 - mediumData.invIOR.g * mediumData.invIOR.g * ( 1 - mData.NoV * mData.NoV ) );
 	float3 refractedRay = mediumData.invIOR.g * (-V) + ( mediumData.invIOR.g * mData.NoV - refractCos ) * gbuffer.normal;
 	
-	float travelDist = mediumData.thickness / refractCos;
+	float RoV = dot(refractedRay, -V);
+	float travelDist = mediumData.thickness / RoV;
 	
 	float3 refractedPoint = refractedRay * travelDist + gbuffer.wpos;
 	samplePoint = WorldToScreen(float4(refractedPoint, 1.0));
@@ -38,7 +39,8 @@ float4 RefractScene(SamplerState samp, Texture2D <float4> sceneColor,
 	float refractCos = sqrt( 1 - ior * ior * ( 1 - mData.NoV * mData.NoV ) );
 	float3 refractionDir = ior * (-V) + ( ior * mData.NoV - refractCos ) * gbuffer.normal;
 	
-	float travelDist = mediumData.thickness / refractCos;
+	float RoV = dot(refractionDir, -V);
+	float travelDist = mediumData.thickness / RoV;
 	
 	float3 refractedPoint = gbuffer.wpos + refractionDir * travelDist;
 	float2 refractedScreenUV = WorldToScreen(float4(refractedPoint, 1.0));
@@ -51,7 +53,7 @@ float4 RefractScene(SamplerState samp, Texture2D <float4> sceneColor,
 		refractedScreenUV = uv;
 	
 	color = sceneColor.SampleLevel(samp, refractedScreenUV, mipLevel).rgb;
-	return float4(color, refractCos);
+	return float4(color, RoV);
 }
 
 
@@ -64,7 +66,7 @@ float3 CalcutaleMediumTransmittedLight(SamplerState samp, Texture2D <float4> sce
 	// energy conservation on refraction
 	float iorMedium = 1.0 / mediumData.invIOR.g;
 	float R0 = IORtoR0( iorMedium );
-	float energyFactor = saturate(1 - F_SchlickOriginal( R0, abs(dot(refractionRay.xyz, gbuffer.normal)) ));
+	float energyFactor = saturate(1 - F_Schlick_Refract( R0, abs(dot(refractionRay.xyz, gbuffer.normal)) ));
 
 	// back refraction
 	float backRefraction = BackRefraction(iorMedium, R0, refractionRay.xyz, mediumData.backNormal, uv);

@@ -71,18 +71,16 @@ float3 F_Schlick( float3 SpecularColor, float VoH )
 
 	// Anything less than 2% is physically impossible and is instead considered to be shadowing 
 	return saturate( 50.0 * SpecularColor.g ) * Fc + (1 - Fc) * SpecularColor;
-	
-	//Frostbyte
-	//return SpecularColor + (1 - SpecularColor) * pow (1. f - VoH, 5.f);
 }
 
-float F_SchlickOriginal( float R0, float LoN )
+float F_Schlick_Refract( float R0, float LoN )
 {
 	float invLoN = 1 - LoN;
 	float Fc = invLoN * invLoN;
 	Fc *= Fc * invLoN;
 
-	return R0 + (1 - R0) * Fc;
+	//return R0 + (1 - R0) * Fc;
+	return saturate( 50.0 * R0 ) * Fc + (1 - Fc) * R0;
 }
 
 float IORtoR0( float IOR )

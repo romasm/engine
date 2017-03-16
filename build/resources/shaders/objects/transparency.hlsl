@@ -106,7 +106,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	mediumData.invIOR = IORCalculate();
 	mediumData.tirAmount = TIRCalculate();
 	
-	[branch]
+	[branch] 
 	if(!front) 
 		gbuffer.normal = -gbuffer.normal;
 	gbuffer.tangent = normalize(cross(gbuffer.normal, cross(input.tangent, gbuffer.normal)));

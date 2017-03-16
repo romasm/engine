@@ -70,7 +70,7 @@ end
 
 local IorToDispersionIor = function (old_inv_ior_r, old_inv_ior_g, old_inv_ior_b, new_inv_ior)
     local abbe = CalcAbbe(old_inv_ior_r, old_inv_ior_g, old_inv_ior_b)
-    if abbe <= 0.0 or abbe >= 70.0 then return new_inv_ior, new_inv_ior, new_inv_ior end
+    if abbe >= 70.0 then return new_inv_ior, new_inv_ior, new_inv_ior end
 
     local ior = InvIOR(new_inv_ior)
 

@@ -164,10 +164,9 @@ return GuiGroup({
         left = 120,
         width = 155,
         data = {
-            min = 1,
+            min = 0.01,
             max = 70,
             decimal = 2,
-            overflow_min = true,
         },
         alt = "Dispersion Abbe number",
         id = 'abbe_slider',
