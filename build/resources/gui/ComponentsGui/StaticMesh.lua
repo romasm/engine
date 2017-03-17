@@ -46,7 +46,7 @@ return GuiGroup({
         },
         align = GUI_ALIGN.BOTH,
         top = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Model",
@@ -58,14 +58,14 @@ return GuiGroup({
     width = 100,
     width_percent = true,
     
-    height = 105,
+    height = 90,
 
     -- mesh
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Filepath",
         left = 10,
-        top = 35,
+        top = 33,
     }), 
 
     GuiFilefield({
@@ -73,7 +73,7 @@ return GuiGroup({
         align = GUI_ALIGN.BOTH,
         left = 70,
         right = 10,
-        top = 33,
+        top = 30,
         browse_header = "Choose model file",
         filetypes = {
             {"Supported", "*.3ds;*.dae;*.dxf;*.fbx;*.obj;*.ply;*.mnogo_chego"},
@@ -90,7 +90,7 @@ return GuiGroup({
     GuiCheck({
         styles = {GuiStyles.props_check,},
         left = 10,
-        top = 71,
+        top = 60,
         width = 120,
         height = 18,
         text = { str = "Cast shadows" },
@@ -107,20 +107,7 @@ return GuiGroup({
         styles = {GuiStyles.string_props_01,},
         str = "Materials",
         left = 115,
-        top = 113,
-    }), 
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
+        top = 90,
     }),
 })
 end

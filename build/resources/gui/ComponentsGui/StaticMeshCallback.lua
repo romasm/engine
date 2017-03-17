@@ -145,7 +145,7 @@ function StaticMeshCallback.ListMaterials(group)
                     group.material_slots[j].entity:Destroy()
                     table.remove(group.material_slots, j)
                 end
-                group:UpdateH(105)
+                group:UpdateH(90)
                 group.entity:GetParent():GetInherited().window.entity:UpdateSize()
                 return
             end
@@ -163,7 +163,7 @@ function StaticMeshCallback.ListMaterials(group)
     local height = 0
     for i = 0, mat_count - 1 do
         local arr_i = i + 1
-        group.material_slots[arr_i] = Gui.MaterialSlot(i, height + 135)
+        group.material_slots[arr_i] = Gui.MaterialSlot(i, height + 115)
         group.entity:AttachChild(group.material_slots[arr_i].entity)
         height = height + group.material_slots[arr_i].entity.height + 5
 
@@ -172,7 +172,7 @@ function StaticMeshCallback.ListMaterials(group)
 
         --mat_field.entity:Deactivate() -- TEMP
     end
-    group:UpdateH(140 + height)
+    group:UpdateH(115 + height)
     group.entity:GetParent():GetInherited().window.entity:UpdateSize()
 end
 
