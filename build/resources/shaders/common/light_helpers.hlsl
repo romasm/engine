@@ -163,7 +163,7 @@ bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedD
 			{
 				const float3 colorIlluminance = illuminance * lightData.ColorConeX.rgb;
 	
-				results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+				results.scattering = colorIlluminance * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
 				exec = true;
 
 				const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
@@ -243,7 +243,7 @@ bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedD
 				illuminance *= coneFalloff;
 				noDirIlluminance *= coneFalloff;
 			
-				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
 				exec = true;
 
 				[branch]
@@ -331,7 +331,7 @@ bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedD
 				illuminance *= coneFalloff;
 				noDirIlluminance *= coneFalloff;
 			
-				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
 				exec = true;
 
 				[branch]
@@ -376,7 +376,7 @@ bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared prepare
 	{
 		const float3 colorIlluminance = illuminance * lightData.Color.rgb;
 		
-		results.scattering = colorIlluminance * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		results.scattering = colorIlluminance * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
 		exec = true;
 
 		const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
@@ -434,7 +434,7 @@ bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared prepa
 		noDirIlluminance *= smoothFalloff;
 		illuminance *= smoothFalloff;
 
-		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
 		exec = true;
 
 		[branch]
@@ -507,7 +507,7 @@ bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedD
 		noDirIlluminance *= smoothFalloff;
 		illuminance *= smoothFalloff;
 
-		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer.subsurf, materialParams, preparedData.L, gbuffer.normal, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
 		exec = true;
 
 		[branch]
@@ -552,7 +552,7 @@ bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLig
 
 	float3 colorLight = lightData.ColorAreaX.rgb;
 
-	results.scattering = colorLight * directSubScattering(gbuffer.subsurf, materialParams, L, gbuffer.normal, ViewVector);
+	results.scattering = colorLight * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
 	
 	[branch]
 	if(specNoL > 0.0f)

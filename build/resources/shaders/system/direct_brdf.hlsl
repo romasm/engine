@@ -105,15 +105,32 @@ float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)
 	return Diffuse_Burley( A, R, NoV, NoL, VoH );
 }
 
-float3 directSubScattering(float3 color, MaterialParams params, float3 L, float3 N, float3 V)
+float3 directSubScattering(in GBufferData gbuffer, in DataForLightCompute mData, MaterialParams params, float3 L, float3 V)
 {
 	/*float3 vLight = L + N * params.ss_distortion;
 	float VoL = pow(saturate(dot(V, -vLight)), params.ss_direct_pow) * params.ss_direct_translucency;
 	float3 SSS = VoL + params.ss_indirect_translucency;
 	return SSS * color;*/
 
-	float3 vLight = L + N * 0.1;
+	const float attenuationCoef = 1.0;
+	const float asymmetry = 0.8;
+	const float ior = 1.0 / 1.5;
+	
+	float refractCos = sqrt( 1 - ior * ior * ( 1 - mData.NoV * mData.NoV ) );
+	float3 refractionDir = ior * (-V) + ( ior * mData.NoV - refractCos ) * gbuffer.normal;
+
+	// Schlick phase function
+	float cosLV = dot(refractionDir, L);
+	float phase = (1 - asymmetry * asymmetry) / (4 * PI * (1 - asymmetry * cosLV ));
+	
+	// Lambert-Beer law
+	float3 attenFactor = -gbuffer.thickness;
+	float3 scattering = exp(attenFactor); // travelDist in shadow
+
+	return scattering * phase * gbuffer.subsurf;
+
+	/*float3 vLight = L + N * 0.1;
 	float VoL = pow(saturate(dot(V, -vLight)), 1.0) * 0.1;
 	float3 SSS = VoL + 0.1;
-	return SSS * color;
+	return SSS * color;*/
 }
