@@ -1,0 +1,371 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     13273,        363]
+NotebookOptionsPosition[     12250,        323]
+NotebookOutlinePosition[     12594,        338]
+CellTagsIndexPosition[     12551,        335]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"(*", " ", "alpha", " ", "*)"}]], "Input",
+ CellChangeTimes->{{3.698937238283782*^9, 3.69893725228703*^9}, 
+   3.6989391191678524`*^9}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Alpha", "[", "roughness_", "]"}], ":=", 
+  RowBox[{"roughness", "^", "2"}]}]], "Input",
+ CellChangeTimes->{{3.698935909677677*^9, 3.698935983374708*^9}, {
+   3.698936106726819*^9, 3.698936109390906*^9}, 3.698936189686488*^9, {
+   3.698936774751217*^9, 3.6989368214389396`*^9}, {3.698936910943017*^9, 
+   3.698936933430833*^9}, {3.6989391221758537`*^9, 3.698939124888068*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["GGX", "Section",
+ CellChangeTimes->{3.6989391909919004`*^9}],
+
+Cell[BoxData[
+ RowBox[{"(*", " ", 
+  RowBox[{"Current", " ", "GGX"}], " ", "*)"}]], "Input",
+ CellChangeTimes->{{3.6989372576031713`*^9, 3.6989372715753365`*^9}, {
+  3.6989384777918196`*^9, 3.6989384791755004`*^9}, {3.698940035120246*^9, 
+  3.6989400363685665`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"GGXD", "[", 
+   RowBox[{"roughness_", ",", " ", "NH_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"Alpha", "[", "roughness", "]"}], " ", "/", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Cos", "[", "NH", "]"}], "*", 
+            RowBox[{
+             RowBox[{"Alpha", "[", "roughness", "]"}], "^", "2"}]}], " ", "-",
+            " ", 
+           RowBox[{"Cos", "[", "NH", "]"}]}], ")"}], "*", 
+         RowBox[{"Cos", "[", "NH", "]"}]}], "+", "1"}], ")"}]}], ")"}], "^", 
+    "2"}], " ", "/", " ", "Pi"}]}]], "Input",
+ CellChangeTimes->{{3.698935962240492*^9, 3.6989360771982746`*^9}, {
+   3.6989361130315895`*^9, 3.698936117878482*^9}, 3.6989361502957106`*^9, 
+   3.698936184255041*^9, {3.6989369240950003`*^9, 3.698936987127718*^9}, {
+   3.6989375025276594`*^9, 3.698937555207786*^9}, {3.698938083976288*^9, 
+   3.698938085927478*^9}, {3.6989391282329655`*^9, 3.698939129461232*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{"Paper", " ", "GGX"}], " ", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"GGXDpaper", "[", 
+    RowBox[{"roughness_", ",", " ", "NH_"}], "]"}], ":=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"Alpha", "[", "roughness", "]"}], " ", "/", " ", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Cos", "[", "NH", "]"}], "^", "2"}], "*", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Alpha", "[", "roughness", "]"}], "^", "2"}], " ", "+", 
+           " ", 
+           RowBox[{
+            RowBox[{"Tan", "[", "NH", "]"}], "^", "2"}]}], ")"}]}], ")"}]}], 
+      ")"}], "^", "2"}], " ", "/", " ", "Pi"}]}]}]], "Input",
+ CellChangeTimes->{{3.6989372770519037`*^9, 3.698937315079054*^9}, {
+  3.698937835055168*^9, 3.698937973703968*^9}, {3.698939130344582*^9, 
+  3.698939131184817*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"GGXD", "[", 
+        RowBox[{"roughness", ",", " ", "NH"}], "]"}], ",", 
+       RowBox[{"GGXDpaper", "[", 
+        RowBox[{"roughness", ",", " ", "NH"}], "]"}]}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"NH", ",", "0.0", ",", " ", 
+       RowBox[{"Pi", "/", "2"}]}], "}"}], ",", " ", 
+     RowBox[{"PlotRange", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", "2"}], "}"}]}], ",", " ", 
+     RowBox[{"PlotLabels", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"\"\<GGX Current\>\"", ",", "\"\<GGX Paper\>\""}], "}"}]}]}], 
+    "]"}], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{"roughness", ",", "0.01", ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.698936277786832*^9, 3.6989364032947245`*^9}, {
+  3.698937003976535*^9, 3.698937013079749*^9}, {3.698937070360112*^9, 
+  3.698937072895858*^9}, {3.6989371073996363`*^9, 3.698937120655897*^9}, {
+  3.698937561144578*^9, 3.69893756654394*^9}, {3.6989375972235465`*^9, 
+  3.6989376000079527`*^9}, {3.6989377561843753`*^9, 3.6989377862563653`*^9}, {
+  3.6989380124440145`*^9, 3.6989380422803783`*^9}, {3.69893848540106*^9, 
+  3.6989384916246147`*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`roughness$$ = 0.748, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`roughness$$], 0.01, 1}}, Typeset`size$$ = {
+    360., {88., 94.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`roughness$298585$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`roughness$$ = 0.01}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`roughness$$, $CellContext`roughness$298585$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Plot[{
+         $CellContext`GGXD[$CellContext`roughness$$, $CellContext`NH], 
+         $CellContext`GGXDpaper[$CellContext`roughness$$, $CellContext`NH]}, \
+{$CellContext`NH, 0., Pi/2}, PlotRange -> {0, 2}, 
+        PlotLabels -> {"GGX Current", "GGX Paper"}], 
+      "Specifications" :> {{$CellContext`roughness$$, 0.01, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{411., {147., 154.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.6989363477639675`*^9, 3.6989364105563745`*^9, 3.698937014533616*^9, 
+   3.6989370741983223`*^9, {3.6989371087823143`*^9, 3.698937121918255*^9}, {
+   3.698937583974304*^9, 3.6989376010547376`*^9}, {3.6989377581626377`*^9, 
+   3.698937787091587*^9}, {3.69893802441987*^9, 3.69893804299528*^9}, 
+   3.6989384925972013`*^9, 3.698939152047311*^9}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Beckmann", "Section",
+ CellChangeTimes->{{3.6989386489039707`*^9, 3.6989386596796336`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"BECKMANN", "[", 
+   RowBox[{"roughness_", ",", " ", "NH_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{"Exp", "[", 
+    RowBox[{
+     RowBox[{"-", 
+      RowBox[{
+       RowBox[{"Tan", "[", "NH", "]"}], "^", "2"}]}], "/", 
+     RowBox[{
+      RowBox[{"Alpha", "[", "roughness", "]"}], "^", "2"}]}], "]"}], "/", 
+   RowBox[{"(", 
+    RowBox[{"Pi", " ", "*", " ", 
+     RowBox[{
+      RowBox[{"Alpha", "[", "roughness", "]"}], "^", "2"}], "*", 
+     RowBox[{
+      RowBox[{"Cos", "[", "NH", "]"}], "^", "4"}]}], ")"}]}]}]], "Input",
+ CellChangeTimes->{{3.6989386765856028`*^9, 3.698938690063453*^9}, {
+  3.698938843288024*^9, 3.698938968712648*^9}, {3.6989391374805636`*^9, 
+  3.698939138280692*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Phong", "Section",
+ CellChangeTimes->{{3.6989390375838423`*^9, 3.698939039023672*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AlphaPhong", "[", "roughness_", "]"}], ":=", 
+  RowBox[{
+   RowBox[{"2", "*", 
+    RowBox[{
+     RowBox[{"Alpha", "[", "roughness", "]"}], "^", 
+     RowBox[{"(", 
+      RowBox[{"-", "2"}], ")"}]}]}], "-", "2"}]}]], "Input",
+ CellChangeTimes->{{3.6989393145365243`*^9, 3.6989393599924355`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"PHONG", "[", 
+   RowBox[{"roughness_", ",", " ", "NH_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"AlphaPhong", "[", "roughness", "]"}], " ", "+", " ", "2"}], 
+      ")"}], "/", 
+     RowBox[{"(", 
+      RowBox[{"2", "*", "Pi"}], ")"}]}], ")"}], "*", 
+   RowBox[{
+    RowBox[{"Cos", "[", "NH", "]"}], "^", 
+    RowBox[{"AlphaPhong", "[", "roughness", "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.6989390433932953`*^9, 3.6989390507047434`*^9}, {
+  3.6989392134325924`*^9, 3.6989392566084385`*^9}, {3.6989393107444377`*^9, 
+  3.6989393119045234`*^9}, {3.6989393636331196`*^9, 3.6989393647530985`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Comparation", "Section",
+ CellChangeTimes->{{3.698939165615401*^9, 3.6989391691437864`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"GGXD", "[", 
+        RowBox[{"roughness", ",", " ", "NH"}], "]"}], ",", 
+       RowBox[{"BECKMANN", "[", 
+        RowBox[{"roughness", ",", " ", "NH"}], "]"}], ",", 
+       RowBox[{"PHONG", "[", 
+        RowBox[{"roughness", ",", " ", "NH"}], "]"}]}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"NH", ",", "0.0", ",", " ", 
+       RowBox[{"Pi", "/", "2"}]}], "}"}], ",", " ", 
+     RowBox[{"PlotRange", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", "2"}], "}"}]}], ",", " ", 
+     RowBox[{"PlotLegends", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"\"\<GGX\>\"", ",", "\"\<Beckmann\>\"", ",", "\"\<Phong\>\""}],
+        "}"}]}]}], "]"}], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{"roughness", ",", "0.01", ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.698938984999972*^9, 3.698938999760233*^9}, {
+  3.6989392697293396`*^9, 3.6989392797770658`*^9}, {3.698939414128435*^9, 
+  3.69893941829953*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`roughness$$ = 0.685, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`roughness$$], 0.01, 1}}, Typeset`size$$ = {
+    864., {241., 247.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`roughness$367539$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`roughness$$ = 0.01}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`roughness$$, $CellContext`roughness$367539$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Plot[{
+         $CellContext`GGXD[$CellContext`roughness$$, $CellContext`NH], 
+         $CellContext`BECKMANN[$CellContext`roughness$$, $CellContext`NH], 
+         $CellContext`PHONG[$CellContext`roughness$$, $CellContext`NH]}, \
+{$CellContext`NH, 0., Pi/2}, PlotRange -> {0, 2}, 
+        PlotLegends -> {"GGX", "Beckmann", "Phong"}], 
+      "Specifications" :> {{$CellContext`roughness$$, 0.01, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{915., {300., 307.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{3.6989390010246897`*^9, 3.698939280580202*^9, 
+  3.698939419345311*^9}]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1588, 1341},
+WindowMargins->{{276, Automatic}, {Automatic, 0}},
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (July 28, 2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 158, 3, 30, "Input"],
+Cell[719, 25, 410, 7, 30, "Input"],
+Cell[CellGroupData[{
+Cell[1154, 36, 66, 1, 63, "Section"],
+Cell[1223, 39, 266, 5, 30, "Input"],
+Cell[1492, 46, 1059, 26, 47, "Input"],
+Cell[2554, 74, 939, 26, 66, "Input"],
+Cell[CellGroupData[{
+Cell[3518, 104, 1267, 29, 47, "Input"],
+Cell[4788, 135, 2181, 41, 318, "Output"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7018, 182, 97, 1, 63, "Section"],
+Cell[7118, 185, 727, 20, 47, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7882, 210, 92, 1, 63, "Section"],
+Cell[7977, 213, 329, 9, 30, "Input"],
+Cell[8309, 224, 698, 18, 47, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9044, 247, 98, 1, 63, "Section"],
+Cell[CellGroupData[{
+Cell[9167, 252, 1072, 27, 47, "Input"],
+Cell[10242, 281, 1980, 38, 624, "Output"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
