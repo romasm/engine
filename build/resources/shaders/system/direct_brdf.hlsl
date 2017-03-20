@@ -61,6 +61,20 @@ float G_SmithGGX( float NoL, float NoV, float Roughness)
 	return 0.5f / ( Lambda_GGXV + Lambda_GGXL );
 }
 
+// Original G GGX
+float G_GGX(float R, float NoX)
+{
+	float a = R * R;
+	float NoXsqr = NoX * NoX;
+	float G = 2.0 / (1 + sqrt(1 + a * a * (1 - NoXsqr) / NoXsqr));
+	return G;
+}
+
+float GG_GGX(float R, float NoV, float NoL)
+{
+	return G_GGX(R, NoV) * G_GGX(R, NoL);
+}
+
 // [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
 // [Lagarde 2012, "Spherical Gaussian approximation for Blinn-Phong, Phong and Fresnel"]
 float3 F_Schlick( float3 SpecularColor, float VoH )
