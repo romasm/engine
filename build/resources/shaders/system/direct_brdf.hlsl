@@ -70,7 +70,7 @@ float G_GGX(float R, float NoX)
 	return G;
 }
 
-float GG_GGX(float R, float NoV, float NoL)
+float GG_GGX(float NoL, float NoV, float R)
 {
 	return G_GGX(R, NoV) * G_GGX(R, NoL);
 }

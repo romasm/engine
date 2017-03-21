@@ -14,12 +14,8 @@ float3 GetRefrectedRay(float invIor, float NoV, float3 V, float3 N, float R)
 
 float BTDF(float R, float R0, float ior, float NoH, float NoL, float NoV, float VoH, float LoH) // TODO!!!!
 {
-	//float denominator = VoH + ior * LoH;
-	//denominator *= denominator;
-	//return 4 * VoH * VoH * LoH * ior * GG_GGX(R, NoV, NoL) * (1 - F_Schlick_Refract(R0, VoH)) / (denominator * NoH);
-	//return 4 * VoH * LoH * ior * G_SmithGGX(NoL, NoV, R) * (1 - F_Schlick_Refract(R0, VoH)) / denominator;
-	//return 4 * VoH * (1 - F_Schlick_Refract(R0, VoH)) * G_SmithGGX(NoL, NoV, R) / NoH;
 	return 1 - F_Schlick_Refract(R0, VoH);
+	//return abs(VoH * (1 - F_Schlick_Refract(R0, VoH)) * GG_GGX(NoL, NoV, R) / (NoV * NoL * NoH));
 }
 
 float BackRefraction(float iorMedium, float R0, float3 V, float3 backNormal, float2 uv)
@@ -90,9 +86,9 @@ float3 CalcutaleMediumTransmittedLight(SamplerState samp, Texture2D <float4> sce
 
 	const float3 H = -normalize(V + iorMedium * refractionRay.xyz);
 	const float VoH = saturate( dot(V, H) );
-	const float LoH = abs( dot(refractionRay.xyz, H) );
+	const float LoH = dot(refractionRay.xyz, H);
 	const float NoH = saturate( dot(gbuffer.normal, H) + NOH_EPCILON );
-	const float NoL = abs( dot(gbuffer.normal, refractionRay.xyz) );
+	const float NoL = dot(gbuffer.normal, refractionRay.xyz);
 	float Ft = BTDF(roughness, R0, iorMedium, NoH, NoL, mData.NoV, VoH, LoH);
 	
 	// back refraction
@@ -149,7 +145,7 @@ float3 CalcutaleMediumTransmittedLight(SamplerState samp, Texture2D <float4> sce
 	color_fin = lerp(mediumData.absorption * color_fin, color_fin, saturate(fakeBackFactor));
 	
 	// simulate double side
-	Ft = lerp(1, Ft, hitBack);
+	Ft = lerp(1, Ft * mediumData.invIOR.g, hitBack);
 
 	// Lambert-Beer law
 	float3 attenFactor = -mediumData.attenuation * (1 - mediumData.absorption);
