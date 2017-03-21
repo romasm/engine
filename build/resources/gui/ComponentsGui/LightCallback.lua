@@ -8,9 +8,9 @@ function LightCallback.AutoDist(power)
 end
 
 function LightCallback.SetCastShadows(self, ev, cast)
-    local alpha_shadows = self.entity:GetParent():GetChildById('alpha_shadows')
-    if cast then alpha_shadows:Activate()
-    else alpha_shadows:Deactivate() end
+    --local alpha_shadows = self.entity:GetParent():GetChildById('alpha_shadows')
+    --if cast then alpha_shadows:Activate()
+    --else alpha_shadows:Deactivate() end
 
     local history = {
         s_oldval = {},
@@ -42,19 +42,19 @@ function LightCallback.SetCastShadows(self, ev, cast)
 end
 
 function LightCallback.UpdCastShadows(self, ev)
-    local alpha_shadows = self.entity:GetParent():GetChildById('alpha_shadows')
+    --local alpha_shadows = self.entity:GetParent():GetChildById('alpha_shadows')
     local val = false
     for i, ent in ipairs(Viewport.selection_set) do
         local cast = Viewport.lua_world.world.light:GetCastShadows(ent)
         if i > 1 and val ~= cast then
             self:SetCheck(nil)
-            alpha_shadows:Activate()
+            --alpha_shadows:Activate()
             return true
         else val = cast end
     end
     self:SetCheck(val)
-    if val then alpha_shadows:Activate()
-    else alpha_shadows:Deactivate() end
+    --if val then alpha_shadows:Activate()
+    --else alpha_shadows:Deactivate() end
     return true 
 end
 
@@ -958,7 +958,7 @@ function LightCallback.updateAreaInput(group, selected)
             group:GetChildById('area_y').enable = false
             group:GetChildById('area_y_slider').enable = false
 
-            group:GetInherited():UpdateH(272)
+            group:GetInherited():UpdateH(205)
             group:GetParent():GetInherited().window.entity:UpdateSize()
 
         elseif selected == LIGHT_TYPE.SPHERE then
@@ -970,7 +970,7 @@ function LightCallback.updateAreaInput(group, selected)
             group:GetChildById('area_y').enable = false
             group:GetChildById('area_y_slider').enable = false
 
-            group:GetInherited():UpdateH(312)
+            group:GetInherited():UpdateH(235)
             group:GetParent():GetInherited().window.entity:UpdateSize()
 
         elseif selected == LIGHT_TYPE.TUBE then
@@ -985,7 +985,7 @@ function LightCallback.updateAreaInput(group, selected)
             str.enable = true
             group:GetChildById('area_y_slider').enable = true
 
-            group:GetInherited():UpdateH(342)
+            group:GetInherited():UpdateH(260)
             group:GetParent():GetInherited().window.entity:UpdateSize()
         end
 
@@ -998,18 +998,18 @@ function LightCallback.updateAreaInput(group, selected)
 
         local cone = group:GetChildById('cone_in')
         cone.enable = true
-        cone.top = 312
+        cone.top = 208
         cone = group:GetChildById('cone_in_slider')
         cone.enable = true
-        cone.top = 310
+        cone.top = 205
         cone = group:GetChildById('cone_out')
         cone.enable = true
-        cone.top = 282
+        cone.top = 233
         cone = group:GetChildById('cone_out_slider')
         cone.enable = true
-        cone.top = 280
+        cone.top = 230
 
-        group:GetInherited():UpdateH(342)
+        group:GetInherited():UpdateH(260)
         group:GetParent():GetInherited().window.entity:UpdateSize()
 
     elseif selected == LIGHT_TYPE.DISK then
@@ -1023,18 +1023,18 @@ function LightCallback.updateAreaInput(group, selected)
 
         local cone = group:GetChildById('cone_in')
         cone.enable = true
-        cone.top = 352
+        cone.top = 238
         cone = group:GetChildById('cone_in_slider')
         cone.enable = true
-        cone.top = 350
+        cone.top = 235
         cone = group:GetChildById('cone_out')
         cone.enable = true
-        cone.top = 322
+        cone.top = 263
         cone = group:GetChildById('cone_out_slider')
         cone.enable = true
-        cone.top = 320
+        cone.top = 260
 
-        group:GetInherited():UpdateH(382)
+        group:GetInherited():UpdateH(290)
         group:GetParent():GetInherited().window.entity:UpdateSize()
 
     elseif selected == LIGHT_TYPE.RECT then
@@ -1051,18 +1051,18 @@ function LightCallback.updateAreaInput(group, selected)
 
         local cone = group:GetChildById('cone_in')
         cone.enable = true
-        cone.top = 382
+        cone.top = 263
         cone = group:GetChildById('cone_in_slider')
         cone.enable = true
-        cone.top = 380
+        cone.top = 260
         cone = group:GetChildById('cone_out')
         cone.enable = true
-        cone.top = 352
+        cone.top = 288
         cone = group:GetChildById('cone_out_slider')
         cone.enable = true
-        cone.top = 350
+        cone.top = 285
 
-        group:GetInherited():UpdateH(412)
+        group:GetInherited():UpdateH(315)
         group:GetParent():GetInherited().window.entity:UpdateSize()
     end
 end

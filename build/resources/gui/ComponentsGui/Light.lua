@@ -5,8 +5,8 @@ GuiStyles.area_dataslider = {
         GuiStyles.common_dataslider,
     },
 
-    left = 110,
-    width = 150,
+    left = 120,
+    width = 155,
     height = 20,
 
     data = {
@@ -22,8 +22,8 @@ GuiStyles.cone_dataslider = {
         GuiStyles.common_dataslider,
     },
 
-    left = 110,
-    width = 150,
+    left = 120,
+    width = 155,
     height = 20,
 
     data = {
@@ -49,7 +49,7 @@ return GuiGroup({
         top = 0,
         left = 0,
         right = 0,
-        height = 23,
+        height = 21,
 
         text = {
             str = "Light",
@@ -61,20 +61,20 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 450,
+    height = 315,
 
     -- shadows
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Shadows",
         left = 10,
-        top = 35,
+        top = 32,
     }),
 
     GuiCheck({
         styles = {GuiStyles.props_check,},
-        left = 110,
-        top = 35,
+        left = 120,
+        top = 31,
         width = 60,
         height = 18,
         text = { str = "Cast" },
@@ -87,7 +87,7 @@ return GuiGroup({
         }
     }),
 
-    GuiCheck({
+    --[[GuiCheck({
         styles = {GuiStyles.props_check,},
         left = 110,
         top = 63,
@@ -102,21 +102,21 @@ return GuiGroup({
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return LightCallback.SetTransparentShadows(self, ev, false) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return LightCallback.UpdTransparentShadows(self, ev) end,
         }
-    }),
+    }),--]]
 
     -- color
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Color",
         left = 10,
-        top = 103,
+        top = 63,
     }),
     
     GuiButton({
         styles = {GuiStyles.color_button,},
-        left = 110,
-        top = 101,
-        width = 150,
+        left = 120,
+        top = 60,
+        width = 155,
         alt = "Pick light color",
 
         background = {
@@ -133,17 +133,17 @@ return GuiGroup({
 
     -- brightness
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Lum flux, lm",
         left = 10,
-        top = 133,
+        top = 93,
     }),
 
     GuiDataSlider({
         styles = {
             GuiStyles.area_dataslider,
         },
-        top = 131,
+        top = 90,
         data = {
             min = 0.01,
             max = 5000,
@@ -161,10 +161,10 @@ return GuiGroup({
 
     -- range
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Max distance",
         left = 10,
-        top = 173,
+        top = 123,
     }),
     
     GuiTextfield({
@@ -176,8 +176,8 @@ return GuiGroup({
             min = 0,
             max = 1000,
         },
-        left = 110,
-        top = 171,
+        left = 120,
+        top = 120,
         id = 'tf_range',
 
         events = {
@@ -188,8 +188,8 @@ return GuiGroup({
     
     GuiCheck({
         styles = {GuiStyles.props_check,},
-        left = 190,
-        top = 172,
+        left = 200,
+        top = 121,
         width = 120,
         height = 18,
         text = { str = "Auto" },
@@ -205,18 +205,18 @@ return GuiGroup({
 
     -- shape
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Source shape",
         left = 10,
-        top = 212,
+        top = 153,
     }),
 
     GuiCombo({
         styles = {GuiStyles.props_combo,},   
         allow_none = true,
-        left = 110,
-        top = 211,
-        width = 150,
+        left = 120,
+        top = 150,
+        width = 155,
         height = 21,
         list = {
             "Point",
@@ -236,8 +236,8 @@ return GuiGroup({
     
     GuiCheck({
         styles = {GuiStyles.props_check,},
-        left = 110,
-        top = 242,
+        left = 120,
+        top = 176,
         width = 125,
         height = 18,
         text = { str = "Draw source" },
@@ -247,12 +247,12 @@ return GuiGroup({
 
     -- area
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Sphere radius",
         length = 32,
         static = false,
         left = 10,
-        top = 282,
+        top = 208,
         id = 'area_x',
     }),
 
@@ -260,7 +260,7 @@ return GuiGroup({
         styles = {
             GuiStyles.area_dataslider,
         },
-        top = 280,
+        top = 205,
         id = 'area_x_slider',
 
         events = {
@@ -272,12 +272,12 @@ return GuiGroup({
     }),
     
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Tube length",
         length = 32,
         static = false,
         left = 10,
-        top = 312,
+        top = 233,
         id = 'area_y',
     }),
 
@@ -285,7 +285,7 @@ return GuiGroup({
         styles = {
             GuiStyles.area_dataslider,
         },
-        top = 310,
+        top = 230,
         id = 'area_y_slider',
 
         events = {
@@ -298,10 +298,10 @@ return GuiGroup({
 
     -- cone
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Outer angle",
         left = 10,
-        top = 352,
+        top = 263,
         id = 'cone_out',
     }),
 
@@ -309,7 +309,7 @@ return GuiGroup({
         styles = {
             GuiStyles.cone_dataslider,
         },
-        top = 350,
+        top = 260,
         id = 'cone_out_slider',
         alt = "Cone outer angle in degrees",
 
@@ -322,10 +322,10 @@ return GuiGroup({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Inner angle",
         left = 10,
-        top = 382,
+        top = 288,
         id = 'cone_in',
     }),
 
@@ -333,7 +333,7 @@ return GuiGroup({
         styles = {
             GuiStyles.cone_dataslider,
         },
-        top = 380,
+        top = 285,
         id = 'cone_in_slider',
         alt = "Cone inner angle in degrees",
         data = {
@@ -346,19 +346,6 @@ return GuiGroup({
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return LightCallback.EndConeIn(self, ev) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return LightCallback.UpdConeIn(self, ev) end,
         },
-    }),
-
-    GuiRect({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.no_border,
-        },  
-        valign = GUI_VALIGN.BOTTOM,
-        width = 100,
-        width_percent = true,
-        height = 2,
-        bottom = 0,
-        background = {color = 'text_06'},
     }),
 })
 end

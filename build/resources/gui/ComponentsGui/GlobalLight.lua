@@ -40,9 +40,9 @@ return GuiGroup({
     
     GuiButton({
         styles = {GuiStyles.color_button,},
-        left = 110,
+        left = 120,
         top = 30,
-        width = 150,
+        width = 155,
         alt = "Pick light color",
 
         background = {
@@ -69,8 +69,8 @@ return GuiGroup({
         styles = {
             GuiStyles.common_dataslider,
         },
-        left = 110,
-        width = 150,
+        left = 120,
+        width = 155,
         height = 20,
         top = 60,
         data = {
@@ -104,8 +104,8 @@ return GuiGroup({
         styles = {
             GuiStyles.common_dataslider,
         },
-        left = 110,
-        width = 150,
+        left = 120,
+        width = 155,
         height = 20,
         top = 90,
         data = {
