@@ -1,17 +1,3 @@
-TECHNIQUE_DEFAULT
-{
-	Queue = GUI_2D;
-
-	VertexShader = "../resources/shaders/system/screen_plane Main";
-	PixelShader = "PS";
-
-	BlendEnable = true;
-	BlendOp = ADD;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
-}
-
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 
@@ -33,4 +19,17 @@ float4 PS(PI_PosTex input) : SV_TARGET
 		discard;
 		
 	return color;
+}
+
+TECHNIQUE_DEFAULT
+{
+	Queue = GUI_2D;
+
+	VertexShader = "../resources/shaders/system/screen_plane Main";
+	PixelShader = "PS";
+
+	BlendEnable = true;
+	BlendOp = ADD;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
 }

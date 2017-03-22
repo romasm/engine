@@ -4,7 +4,6 @@ TECHNIQUE_DEFAULT
 	PixelShader = "DiffGen";
 }
 
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 

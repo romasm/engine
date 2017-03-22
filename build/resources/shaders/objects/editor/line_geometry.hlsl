@@ -12,7 +12,6 @@ TECHNIQUE_DEFAULT
 	VertexShader = "VSline";
 	PixelShader = "PS";
 }
-//~ code
 
 #include "../../common/math.hlsl"
 #include "../../common/structs.hlsl"

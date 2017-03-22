@@ -6,7 +6,6 @@ TECHNIQUE_DEFAULT
 	PixelShader = "Texture";
 }
 
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 

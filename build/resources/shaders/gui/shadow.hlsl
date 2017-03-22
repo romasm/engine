@@ -11,7 +11,6 @@ TECHNIQUE_DEFAULT
 	DestBlend = INV_SRC_ALPHA;
 }
 
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 

@@ -15,7 +15,6 @@ TECHNIQUE_DEFAULT
 	VertexShader = "hdrSkyVS";
 	PixelShader = "hdrSkyPS";
 }
-//~ code
 
 #include "../common/math.hlsl"
 #include "../common/shared.hlsl"

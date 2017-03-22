@@ -13,7 +13,6 @@ TECHNIQUE_SHADOW
 	VertexShader = "VS";
 	PixelShader = NULL;
 }
-//~ code
 
 #include "../common/math.hlsl"
 #include "../common/shared.hlsl"

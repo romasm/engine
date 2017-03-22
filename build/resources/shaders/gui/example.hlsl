@@ -127,8 +127,6 @@ TECHNIQUE_DEFAULT
 	GeometryShader = NULL; // default
 }
 
-//~ CODE
-
 SamplerState samplerPointClamp : register(s0);
 
 /*

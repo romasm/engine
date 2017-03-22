@@ -4,7 +4,6 @@ TECHNIQUE_DEFAULT
 	PixelShader = "DFGGen";
 }
 
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 

@@ -4,7 +4,6 @@ TECHNIQUE_DEFAULT
 	PixelShader = "CalcAvgLum";
 }
 
-//~ code
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"

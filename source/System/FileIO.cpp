@@ -104,7 +104,7 @@ void FileIO::buildBlockMap(char* data, uint32_t dataSize, uint32_t& current, fil
 					looking_for_block = true;
 					current += 2;
 
-					if( current < dataSize && data[current] == '~')
+					if( current < dataSize && data[current] == '~') // active code block comment '//~'
 					{
 						current += 1;
 						while( current < dataSize - 2 )

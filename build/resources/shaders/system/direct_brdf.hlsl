@@ -1,5 +1,7 @@
 // OPTIMIZE ALL
 
+// https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
+
 float3 getSpecularDominantDirArea( float3 N, float3 R, float roughness )
 {
 	float lerpFactor = 1.0 - roughness;
