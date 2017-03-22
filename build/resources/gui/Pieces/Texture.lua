@@ -14,7 +14,7 @@ local res = GuiDumb({
         width = 100,
         height = 100,
         border = {
-            color = 'text_06',
+            color = 'border_02',
             color_nonactive = 'text_02',
             width = 1
         },

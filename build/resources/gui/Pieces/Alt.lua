@@ -15,7 +15,7 @@ return GuiRect({
         styles = {
             GuiStyles.ghost,
             GuiStyles.string_autosize,
-            GuiStyles.string_18,
+            GuiStyles.string_16,
         },
         id = 'altstring',
         static = false,

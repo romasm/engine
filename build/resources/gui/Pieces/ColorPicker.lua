@@ -9,7 +9,7 @@ GuiStyles.color_textfield = {
 }
 
 GuiStyles.color_string = {
-    styles = {GuiStyles.string_props_01,},
+    styles = {GuiStyles.string_props_03,},
     left = 270,
 }
 
@@ -451,7 +451,7 @@ return GuiWindow({
 
     -- color temperature
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "Color temperature, K",
         left = 5,
         top = 225,
@@ -546,13 +546,13 @@ return GuiWindow({
     }),
 
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "1000 K",
         left = 5,
         top = 291,
     }),
     GuiString({
-        styles = {GuiStyles.string_props_01,},
+        styles = {GuiStyles.string_props_03,},
         str = "15000 K",
         right = 5,
         top = 291,

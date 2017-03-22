@@ -65,7 +65,7 @@ GuiStyles.color_button = {
     height = 20,
 
     border = {
-        color = 'text_06',
+        color = 'border_02',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
@@ -351,7 +351,7 @@ GuiStyles.props_textfield = {
     },
 
     border = {
-        color = 'text_06',
+        color = 'border_02',
         color_live = 'bg_05',
         color_nonactive = 'text_02',
         width = 1
@@ -417,7 +417,7 @@ GuiStyles.props_combo = {
     },
 
     border = {
-        color = 'text_06',
+        color = 'border_02',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
@@ -480,7 +480,7 @@ GuiStyles.props_check = {
     },
 
     border = {
-        color = 'text_06',
+        color = 'border_02',
         color_hover = 'act_02',
         color_nonactive = 'text_02',
         width = 1
@@ -519,7 +519,7 @@ GuiStyles.common_dataslider = {
     },
 
     border = {
-        color = 'text_06',
+        color = 'border_02',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
