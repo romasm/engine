@@ -25,6 +25,7 @@ namespace EngineCore
 	{
 		DescWindow()
 		{
+			noWinBorder = false;
 			caption = L"[caption here]";
 			width = 500;
 			height = 500;
@@ -37,6 +38,7 @@ namespace EngineCore
 			border_focus_color = &black_color;
 		}
 
+		bool noWinBorder;
 		int posx;
 		int posy;
 		std::wstring caption;	
@@ -193,18 +195,6 @@ namespace EngineCore
 		LRESULT WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
 
 		DescWindow m_desc;	// описание окна
-
-	/*	void ResizeEnding()
-		{
-			//InvalidateRect(m_hwnd, NULL, TRUE);
-			//UpdateWindow(m_hwnd);
-			//RedrawWindow(m_hwnd, NULL, NULL, RDW_UPDATENOW | RDW_FRAME | RDW_INVALIDATE);
-			//ShowWindow(m_hwnd, SW_HIDE);
-			//ShowWindow(m_hwnd, SW_SHOW);
-			//SetActiveWindow(m_hwnd);
-			SetWindowPos(m_hwnd, HWND_TOP, m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, SWP_HIDEWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-			SetWindowPos(m_hwnd, HWND_TOP, m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-		}*/
 
 		bool m_finResize;
 		bool m_begResize;

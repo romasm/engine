@@ -81,26 +81,27 @@ namespace EngineCore
 			}
 		}
 
-		m_hwnd = CreateWindowEx(0, wndClass, m_desc.caption.c_str(), 
+		if( !(m_hwnd = CreateWindowEx(0, wndClass, m_desc.caption.c_str(), 
 			WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_EX_ACCEPTFILES,
-			 m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, 0, 0, 0, 0);
-
-		if( !m_hwnd )
+			 m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, 0, 0, 0, 0)) )
 		{
-			ERR("Не удалось создать окно");
+			ERR("CreateWindowEx failed");
 			return false;
 		}
 
-		// Windows 7?
-		/*MARGINS borderless = {1,1,1,1};
-		HRESULT hr = S_OK;
-		hr = DwmExtendFrameIntoClientArea(m_hwnd, &borderless);
-		if( FAILED(hr) )
-			WRN("Не удалось вызвать DwmExtendFrameIntoClientArea");*/
+		if(m_desc.noWinBorder)
+		{
+			// Windows 7?
+			/*MARGINS borderless = {1,1,1,1};
+			HRESULT hr = S_OK;
+			hr = DwmExtendFrameIntoClientArea(m_hwnd, &borderless);
+			if( FAILED(hr) )
+				WRN("Не удалось вызвать DwmExtendFrameIntoClientArea");*/
 
-		OleInitialize(nullptr);	
-		m_dropTarget = new DropTarget(this);
-		RegisterDragDrop(m_hwnd, m_dropTarget);
+			OleInitialize(nullptr);	
+			m_dropTarget = new DropTarget(this);
+			RegisterDragDrop(m_hwnd, m_dropTarget);
+		}
 
 		systemId = id;
 
@@ -124,7 +125,7 @@ namespace EngineCore
 
 		if( RegisterRawInputDevices(Rid, 3, sizeof(Rid[0])) == FALSE ) 
 		{
-			ERR("Registration of RawInput devices failed!");
+			ERR("Registration of RawInput devices failed");
 			return false;
 		}
 
@@ -156,7 +157,7 @@ namespace EngineCore
 		HRESULT hr = Render::Get()->m_pDxgiFactory->CreateSwapChainForHwnd( Render::Get()->m_pd3dDevice, m_hwnd, &schd, &schdf, nullptr, &m_pSwapChain );
 		if( FAILED(hr) )
 		{
-			ERR("Не удалось создать Swap Chain");
+			ERR("CreateSwapChainForHwnd failed");
 			return false;
 		}
 		Render::Get()->m_pDxgiFactory->MakeWindowAssociation(m_hwnd, DXGI_MWA_NO_ALT_ENTER);
@@ -165,7 +166,7 @@ namespace EngineCore
 		m_RTmain = new RenderTarget();
 		if(!m_RTmain->Init(m_desc.width, m_desc.height))
 		{
-			ERR("Не удалось создать основной RenderTarget");
+			ERR("Creation of main RenderTarget failed");
 			return false;
 		}
 		m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
@@ -254,6 +255,9 @@ namespace EngineCore
 			m_isexit = true;
 			return 0;
 		case WM_NCCALCSIZE:
+			//if(!m_desc.noWinBorder)
+			//	break;
+
 			if((BOOL)wParam)
 				return 0;
 		case WM_ACTIVATE:
@@ -582,7 +586,7 @@ namespace EngineCore
 		HRESULT hr = m_pSwapChain->ResizeBuffers(0, m_desc.width, m_desc.height, DXGI_FORMAT_UNKNOWN, 0);
 		if(hr != S_OK)
 		{
-			ERR("Не удалось выполнить ресайз Swap Chain");
+			ERR("Resizing of Swap Chain failed");
 			return false;
 		}
 
@@ -590,7 +594,7 @@ namespace EngineCore
 		m_RTmain = new RenderTarget();
 		if(!m_RTmain->Init(m_desc.width, m_desc.height))
 		{
-			ERR("Не удалось создать основной RenderTarget");
+			ERR("Creation of main RenderTarget failed");
 			return false;
 		}
 		m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
@@ -601,7 +605,7 @@ namespace EngineCore
 			return false;
 		if(!m_RTmain->AddBackBufferRT(pBackBuffer))
 		{
-			ERR("Не удалось создать основной RenderTarget");
+			ERR("AddBackBufferRT failed");
 			return false;
 		}		
 		_RELEASE(pBackBuffer);
