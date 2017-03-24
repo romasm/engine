@@ -44,7 +44,7 @@ namespace EngineCore
 
 		is_tracking_mouse = false;
 		is_press_captured = false;
-
+		
 		ZeroMemory(&presetParams, sizeof(presetParams));
 	}
 
@@ -237,6 +237,46 @@ namespace EngineCore
 		systemId = -1;
 
 		LOG("Window Close");
+	}
+
+	bool Window::SetIcons(string icon_big, string icon_small)
+	{
+		HICON hIconBig = NULL;
+		HICON hIconSmall = NULL;
+
+		if(!icon_big.empty())
+		{
+			hIconBig = (HICON)LoadImage(NULL, StringToWstring(icon_big).c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+			if(hIconBig)
+				SendMessage(m_hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+			else
+			{
+				ERR("Unable to set big icon %s to window", icon_big.c_str());
+				return false;
+			}
+		}
+		else
+		{
+			SendMessage(m_hwnd, WM_SETICON, ICON_BIG, NULL);
+		}
+
+		if(!icon_small.empty())
+		{
+			hIconSmall = (HICON)LoadImage(NULL, StringToWstring(icon_small).c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+			if(hIconSmall)
+				SendMessage(m_hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+			else
+			{
+				ERR("Unable to set small icon %s to window", icon_small.c_str());
+				return false;
+			}
+		}
+		else
+		{
+			SendMessage(m_hwnd, WM_SETICON, ICON_SMALL, NULL);
+		}
+
+		return true;
 	}
 
 	LRESULT Window::WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam)

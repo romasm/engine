@@ -211,12 +211,7 @@ namespace EngineCore
 		bool IsHover() const {return b_hover;}
 
 		LRESULT WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
-
-		DescWindow m_desc;
-
-		bool m_finResize;
-		bool m_begResize;
-
+		
 		void SetColorBg(XMFLOAT4* color) {m_desc.bg_color = color;}
 		void SetColorBorder(XMFLOAT4* color) {m_desc.border_color = color;}
 		void SetColorBorderFocus(XMFLOAT4* color) {m_desc.border_focus_color = color;}
@@ -245,6 +240,8 @@ namespace EngineCore
 		{
 			return m_desc.noWinBorder;
 		}
+
+		bool SetIcons(string icon_big, string icon_small);
 
 		static void RegLuaClass()
 		{
@@ -294,12 +291,20 @@ namespace EngineCore
 
 					.addFunction("SetAlpha", &Window::SetAlpha)
 
+					.addFunction("SetIcons", &Window::SetIcons)
+
 					.addFunction("Show", &Window::Show)
 				.endClass()
 				
 				.beginClass<luaHWND>("HWND")
 				.endClass();
 		}	
+
+
+		DescWindow m_desc;
+
+		bool m_finResize;
+		bool m_begResize;
 
 		ALIGNED_ALLOCATION
 
@@ -314,7 +319,7 @@ namespace EngineCore
 			//m_isresize = true;
 			resize();
 		}
-		
+
 		bool resize();
 		
 		int16_t systemId;

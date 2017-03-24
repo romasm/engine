@@ -39,6 +39,7 @@ function MainWindow:Init()
 	self.mainwin:SetPosSize(200, 100, 1920, 1080)
     self.mainwin:SetCaptionRect(200, 95, 0, 26)
     self.mainwin:SetBorderSize(4)
+    self.mainwin:SetIcons("../resources/textures/icons/main_icon.ico", "../resources/textures/icons/main_icon.ico")
 
     local main_win_bg = CoreGui.GetColor('main_win_bg')
 	self.mainwin:SetColorBgPtr(main_win_bg)
