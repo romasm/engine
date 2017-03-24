@@ -59,8 +59,8 @@ namespace EngineCore
 		{
 			b_main = true;
 
-			WNDCLASSEXW wnd;
-			wnd.cbSize = sizeof(WNDCLASSEXW);
+			WNDCLASSEX wnd;
+			wnd.cbSize = sizeof(WNDCLASSEX);
 			wnd.style = CS_HREDRAW | CS_VREDRAW;
 			wnd.lpfnWndProc = StaticWndProc;
 			wnd.cbClsExtra = 0;
@@ -81,27 +81,24 @@ namespace EngineCore
 			}
 		}
 
-		if( !(m_hwnd = CreateWindowEx(0, wndClass, m_desc.caption.c_str(), 
-			WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_EX_ACCEPTFILES,
+		if( !(m_hwnd = CreateWindowEx(0, wndClass, StringToWstring(m_desc.caption).c_str(), 
+			WS_OVERLAPPED | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_EX_ACCEPTFILES,
 			 m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, 0, 0, 0, 0)) )
 		{
 			ERR("CreateWindowEx failed");
 			return false;
 		}
 
-		if(m_desc.noWinBorder)
-		{
-			// Windows 7?
-			/*MARGINS borderless = {1,1,1,1};
-			HRESULT hr = S_OK;
-			hr = DwmExtendFrameIntoClientArea(m_hwnd, &borderless);
-			if( FAILED(hr) )
-				WRN("Не удалось вызвать DwmExtendFrameIntoClientArea");*/
+		// Windows 7?
+		/*MARGINS borderless = {1,1,1,1};
+		HRESULT hr = S_OK;
+		hr = DwmExtendFrameIntoClientArea(m_hwnd, &borderless);
+		if( FAILED(hr) )
+			WRN("Не удалось вызвать DwmExtendFrameIntoClientArea");*/
 
-			OleInitialize(nullptr);	
-			m_dropTarget = new DropTarget(this);
-			RegisterDragDrop(m_hwnd, m_dropTarget);
-		}
+		OleInitialize(nullptr);	
+		m_dropTarget = new DropTarget(this);
+		RegisterDragDrop(m_hwnd, m_dropTarget);
 
 		systemId = id;
 
@@ -255,11 +252,11 @@ namespace EngineCore
 			m_isexit = true;
 			return 0;
 		case WM_NCCALCSIZE:
-			//if(!m_desc.noWinBorder)
-			//	break;
-
+			if(!m_desc.noWinBorder)
+				break;
 			if((BOOL)wParam)
 				return 0;
+			break;
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) != WA_INACTIVE)
 				m_active = true;
@@ -290,16 +287,20 @@ namespace EngineCore
 		case WM_SIZE:
 			if (!m_desc.resizing)
 				return 0;
-			m_desc.width = LOWORD(lParam);
-			m_desc.height = HIWORD(lParam);
-			m_isresize = true;
+
 			if( wParam == SIZE_MINIMIZED )
 			{
 				m_active = false;
 				m_minimized = true;
 				m_maximized = false;
+				m_begResize = false;
+				return 0;
 			}
-			else if( wParam == SIZE_MAXIMIZED )
+
+			m_desc.width = LOWORD(lParam);
+			m_desc.height = HIWORD(lParam);
+			m_isresize = true;
+			if( wParam == SIZE_MAXIMIZED )
 			{
 				m_active = true;
 				m_minimized = false;
@@ -348,10 +349,6 @@ namespace EngineCore
 			mouseMoved = true;
 			is_tracking_mouse = false;
 			return 0;
-		/*case WM_NCMOUSEMOVE:
-			//b_hover = false;
-			//mouseMove();
-			break;*/
 
 		case WM_MOUSEWHEEL: 
 			Hud::Get()->MouseWheel(MouseEventWheel((short)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA, mouseX, mouseY), this);
@@ -403,6 +400,9 @@ namespace EngineCore
 
 		case WM_NCHITTEST:
             {
+				if(!m_desc.noWinBorder)
+					break;
+
 				RECT winrect;
                 GetWindowRect(hwnd, &winrect);
                 int x = LOWORD(lParam);
@@ -454,12 +454,15 @@ namespace EngineCore
 				}
                 //top border
 				int caption_right = m_desc.width - m_desc.captionRect.right;
+				int caption_bottom = m_desc.captionRect.bottom;
+				if(m_maximized)
+					caption_bottom += SYSTEM_BORDER_SIZE;
 
                 if (y >= winrect.top && y < winrect.top + m_desc.borderWidth)
 				{
 					if(m_maximized)
 					{
-						if (y >= winrect.top + m_desc.captionRect.top && y < winrect.top + m_desc.captionRect.bottom && x >= winrect.left + m_desc.captionRect.left && x < winrect.left + caption_right )
+						if (y >= winrect.top + m_desc.captionRect.top && y < winrect.top + caption_bottom && x >= winrect.left + m_desc.captionRect.left && x < winrect.left + caption_right )
 							return HTCAPTION;
 						else
 							return HTMAXBUTTON;
@@ -468,34 +471,46 @@ namespace EngineCore
 				}
 
 				// caption
-				if (y >= winrect.top + m_desc.captionRect.top && y < winrect.top + m_desc.captionRect.bottom && x >= winrect.left + m_desc.captionRect.left && x < winrect.left + caption_right )
+				if (y >= winrect.top + m_desc.captionRect.top && y < winrect.top + caption_bottom && x >= winrect.left + m_desc.captionRect.left && x < winrect.left + caption_right )
 					 return HTCAPTION;
 
 				return HTCLIENT;
 			}
 
 		case WM_NCLBUTTONDOWN: case WM_NCLBUTTONDBLCLK:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_LBUTTONDOWN, wParam, lParam);
 			break;
 		case WM_NCRBUTTONDOWN: case WM_NCRBUTTONDBLCLK:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_RBUTTONDOWN, wParam, lParam);
 			break;
 		case WM_NCMBUTTONDOWN: case WM_NCMBUTTONDBLCLK:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_MBUTTONDOWN, wParam, lParam);
 			break;
 
 		case WM_NCLBUTTONUP:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_LBUTTONUP, wParam, lParam);
 			break;
 		case WM_NCRBUTTONUP:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_RBUTTONUP, wParam, lParam);
 			break;
 		case WM_NCMBUTTONUP:
+			if(!m_desc.noWinBorder)
+				break;
 			if(wParam == HTMAXBUTTON || wParam == HTMINBUTTON || wParam == HTCLOSE || wParam == HTSYSMENU )
 				return WndProc( hwnd, WM_MBUTTONUP, wParam, lParam);
 			break;
@@ -610,6 +625,7 @@ namespace EngineCore
 		}		
 		_RELEASE(pBackBuffer);
 
+		LOG("Window resized to %i x %i", m_desc.width, m_desc.height);
 		UpdateWindowState();
 
 		return SUCCEEDED(hr);

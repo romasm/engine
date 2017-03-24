@@ -73,28 +73,6 @@ return GuiRect({
 
     focus_mode = GUI_FOCUS_MODE.NONE,
 
-    GuiString({
-        styles = {
-            GuiStyles.ghost,
-            GuiStyles.string_simple,
-            GuiStyles.string_18,
-        },
-
-        id = 'tb_caption',
-
-        str = "caption here",
-        font = "../resources/fonts/opensans_normal_18px",
-        static = false,
-        length = 64,
-
-        width_percent = true,
-        height_percent = true,
-        width = 100,
-        height = 100,
-
-        color = 'text_01',
-    }),
-
     GuiButton({
         styles = {
             GuiStyles.topmenu_button,
@@ -134,73 +112,6 @@ return GuiRect({
             [GUI_EVENTS.MENU_CLICK] = function(self, ev) return MainWindow:SetsMenuClick(self, ev) end,
 
             [GUI_EVENTS.MENU_SUB_OPEN] = function(self, ev) return MainWindow:SetsMenuSub(ev) end,
-        },
-    }),
-
-    ---- system buttons
-
-    GuiButton({
-        styles = {
-            GuiStyles.sys_button,
-        },
-        background = { color_hover = 'act_04', },
-        right = 1,
-        icon = {material = GuiMaterials.swin_close},
-        id = 'sys_close',
-        alt = "Close",
-        events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                MainWindow:Exit()
-                return true 
-            end,
-        },
-    }),
-
-    GuiButton({
-        styles = {
-            GuiStyles.sys_button,
-        },
-        right = 26,
-        icon = {material = GuiMaterials.swin_max},
-        id = 'sys_max',
-        alt = "Maximize",
-        events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                CoreGui.SysWindows.GetMain():Maximize()
-                return true 
-            end,
-        },
-    }),
-
-    GuiButton({
-        styles = {
-            GuiStyles.sys_button,
-        },
-        right = 26,
-        icon = {material = GuiMaterials.swin_rst},
-        id = 'sys_rst',
-        alt = "Restore",
-        events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                CoreGui.SysWindows.GetMain():RestoreSize()
-                return true 
-            end,
-        },
-    }),
-
-    GuiButton({
-        styles = {
-            GuiStyles.sys_button,
-        },
-        right = 51,
-        icon = {material = GuiMaterials.swin_min},
-        id = 'sys_min',
-        alt = "Minimize",
-        events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                CoreGui.SysWindows.GetMain():Minimize()
-                return true 
-            end,
         },
     }),
 })

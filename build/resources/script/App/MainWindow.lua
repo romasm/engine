@@ -17,17 +17,7 @@ function MainWindow.reloadTopBar()
     root:AttachChild(MainWindow.window.entity)
     MainWindow.window.entity:UpdatePosSize()
     
-    local caption_ent = MainWindow.window.entity:GetChildById('tb_caption')
-    if caption_ent:is_null() then error("Require tb_caption string!") end
-    
-    MainWindow.caption_str = caption_ent:GetInherited()
-    MainWindow.caption_str:SetString(APP_NAME)
 	MainWindow.mainwin.caption_text = APP_NAME
-
-    MainWindow.sys_max = MainWindow.window.entity:GetChildById('sys_max')
-    if MainWindow.sys_max:is_null() then error("Require sys_max button!") end
-    MainWindow.sys_rst = MainWindow.window.entity:GetChildById('sys_rst')
-    if MainWindow.sys_rst:is_null() then error("Require sys_rst button!") end
 end
 
 function MainWindow:Init()
@@ -45,13 +35,10 @@ function MainWindow:Init()
 	self.mainwin = CoreGui.SysWindows.Create()
     
         -- todo
+    self.mainwin:HideWinBorder(false)
 	self.mainwin:SetPosSize(200, 100, 1920, 1080)
-
-    if self.mainwin:IsMaximized() then
-        self.mainwin:SetCaptionBorderSize(200, 95, 0, 26 + SYSTEM_BORDER_SIZE, 4)
-    else
-        self.mainwin:SetCaptionBorderSize(200, 95, 0, 26, 4)
-    end
+    self.mainwin:SetCaptionRect(200, 95, 0, 26)
+    self.mainwin:SetBorderSize(4)
 
     local main_win_bg = CoreGui.GetColor('main_win_bg')
 	self.mainwin:SetColorBgPtr(main_win_bg)
@@ -80,14 +67,6 @@ function MainWindow:Init()
 end
 
 function MainWindow:Tick(dt)
-    if self.mainwin:IsMaximized() then
-        self.sys_max.enable = false
-        self.sys_rst.enable = true
-    else
-        self.sys_max.enable = true
-        self.sys_rst.enable = false
-    end
-
     self.menu_just_closed = false
 
     Properties:Tick(dt)
@@ -102,7 +81,7 @@ end
 
 function MainWindow:SetCaption(world_path)
     if world_path == nil then 
-        self.caption_str:SetString(APP_NAME) 
+        MainWindow.mainwin.caption_text = APP_NAME
         return
     end
 
@@ -122,7 +101,6 @@ function MainWindow:SetCaption(world_path)
     end
 
     local caption = world_name..CAPTION_DELIM..APP_NAME
-    self.caption_str:SetString(caption) 
     MainWindow.mainwin.caption_text = caption
 end
 

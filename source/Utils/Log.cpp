@@ -24,7 +24,7 @@ namespace EngineCore
 		if(has_console)
 		{
 			AllocConsole();
-			SetConsoleTitle( L"Log console" );
+			SetConsoleTitle( L"Log" );
 			EnableMenuItem(GetSystemMenu(GetConsoleWindow(), FALSE), SC_CLOSE , MF_GRAYED);
 			DrawMenuBar(GetConsoleWindow());
 

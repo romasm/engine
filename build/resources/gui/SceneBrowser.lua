@@ -73,7 +73,7 @@ return GuiWindow({
 
     left = 4,
     bottom = 4,
-    right = 4,
+    right = 0,
     top = 4,
 
     id = "scene_browser_window",

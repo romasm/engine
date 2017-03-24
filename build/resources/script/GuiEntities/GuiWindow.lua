@@ -90,11 +90,10 @@ function GuiWindow:init(props)
     if self.independent == true then
         self.sys_win = CoreGui.SysWindows.Create()
         
-        if self.sys_win:IsMaximized() then
-            self.sys_win:SetCaptionBorderSize(0, self.header_size, 0, self.header_size + SYSTEM_BORDER_SIZE, 4)
-        else
-            self.sys_win:SetCaptionBorderSize(0, self.header_size, 0, self.header_size, 4)
-        end
+        -- todo
+        self.sys_win:HideWinBorder(false)
+        self.sys_win:SetCaptionRect(0, self.header_size, 0, self.header_size)
+        self.sys_win:SetBorderSize(4)
 
         self.sys_win.caption_text = self.header.str ~= nil and self.header.str or "[empty header]"
         

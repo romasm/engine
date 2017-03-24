@@ -13,7 +13,7 @@ return GuiWindow({
     left = 4,
     bottom = 4,
     top = 4,
-    right = 4,
+    right = 0,
     
     id = "properties_window",
     

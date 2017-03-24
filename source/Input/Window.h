@@ -13,6 +13,8 @@ namespace EngineCore
 {
 //------------------------------------------------------------------
 	
+#define SYSTEM_BORDER_SIZE 7
+
 	class RenderTarget;
 	
 	struct luaHWND
@@ -26,13 +28,17 @@ namespace EngineCore
 		DescWindow()
 		{
 			noWinBorder = false;
-			caption = L"[caption here]";
+			caption = "[caption here]";
 			width = 500;
 			height = 500;
 			posx = 0;
 			posy = 0;
 			resizing = true;
-			borderWidth = 5;
+			borderWidth = 0;
+			captionRect.bottom = 0;
+			captionRect.top = 0;
+			captionRect.left = 0;
+			captionRect.right = 0;
 			bg_color = &black_color;
 			border_color = &black_color;
 			border_focus_color = &black_color;
@@ -41,7 +47,7 @@ namespace EngineCore
 		bool noWinBorder;
 		int posx;
 		int posy;
-		std::wstring caption;	
+		string caption;	
 		int width;				
 		int height;				
 		bool resizing;
@@ -123,17 +129,13 @@ namespace EngineCore
 		
 		XMMATRIX* Window::GetOrtho() {return &m_ortho;}
 
-		// Вернуть заголовок окна
-		string GetCaption() const {return WstringToString(m_desc.caption);}
+		string GetCaption() const {return m_desc.caption;}
 		void SetCaption(string str) 
 		{
-			m_desc.caption = StringToWstring(str);
-			SetWindowText(m_hwnd, m_desc.caption.c_str());
+			m_desc.caption = str;
+			SetWindowText(m_hwnd, StringToWstring(m_desc.caption).c_str());
 		}
-
-		//string _GetCaption() const {return WstringToString(GetCaption());}
-		//void _SetCaption(string str) {SetCaption(StringToWstring(str));}
-
+		
 		bool IsExit() const {return m_isexit;}
 		bool IsActive() const {return m_active;}
 		bool IsResize() const {return m_isresize;}
@@ -170,17 +172,34 @@ namespace EngineCore
 			UpdateWindowSizePos();
 		}
 
-		void SetCaptionBorderSize(int32_t left, int32_t right, int32_t top, int32_t bottom, int32_t border)
+		void SetBorderSize(int32_t border)
 		{
+			if(m_desc.noWinBorder)
+				m_desc.borderWidth = border;
+		}
+		int32_t GetBorderSize(int32_t border) const
+		{
+			return m_desc.borderWidth;
+		}
+
+		void SetCaptionRect(int32_t left, int32_t right, int32_t top, int32_t bottom)
+		{
+			if(!m_desc.noWinBorder)
+				return;
 			m_desc.captionRect.left = left;
 			m_desc.captionRect.top = top;
 			m_desc.captionRect.right = right;
 			m_desc.captionRect.bottom = bottom;
-			m_desc.borderWidth = border;
 		}
-
-		void SetCaptionH(int32_t bottom) {m_desc.captionRect.bottom = bottom;}
-		int32_t GetCaptionH() {return m_desc.captionRect.bottom;}
+		RECT GetCaptionRect() const
+		{
+			RECT res;
+			res.left = m_desc.captionRect.left;
+			res.top = m_desc.captionRect.top;
+			res.right = m_desc.captionRect.right;
+			res.bottom = m_desc.captionRect.bottom;
+			return res;
+		}
 
 		void Show(bool visible = true)
 		{
@@ -191,10 +210,9 @@ namespace EngineCore
 
 		bool IsHover() const {return b_hover;}
 
-		// обработка событий
 		LRESULT WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
 
-		DescWindow m_desc;	// описание окна
+		DescWindow m_desc;
 
 		bool m_finResize;
 		bool m_begResize;
@@ -216,6 +234,16 @@ namespace EngineCore
 			}
 			else
 				SetWindowLong(m_hwnd, GWL_EXSTYLE, GetWindowLong(m_hwnd, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+		}
+
+		// Call before resize
+		void HideWinBorder(bool hide)
+		{
+			m_desc.noWinBorder = hide;
+		}
+		bool IsWinBorderHided() const
+		{
+			return m_desc.noWinBorder;
 		}
 
 		static void RegLuaClass()
@@ -249,9 +277,14 @@ namespace EngineCore
 					.addFunction("GetPosSize", &Window::GetPosSize)
 					.addFunction("SetPos", &Window::SetPos)
 					.addFunction("SetPosSize", &Window::SetPosSize)
-					.addFunction("SetCaptionBorderSize", &Window::SetCaptionBorderSize)
-					.addFunction("GetCaptionH", &Window::GetCaptionH)
-					.addFunction("SetCaptionH", &Window::SetCaptionH)
+
+					.addFunction("SetCaptionRect", &Window::SetCaptionRect)
+					.addFunction("GetCaptionRect", &Window::GetCaptionRect)
+					.addFunction("SetBorderSize", &Window::SetBorderSize)
+					.addFunction("GetBorderSize", &Window::GetBorderSize)
+
+					.addFunction("HideWinBorder", &Window::HideWinBorder)
+					.addFunction("IsWinBorderHided", &Window::IsWinBorderHided)
 
 					.addProperty("caption_text", &Window::GetCaption, &Window::SetCaption)
 

@@ -89,7 +89,7 @@ return GuiWindow({
 
     independent = true,
 
-    closeable = true,
+    closeable = false,
     close = {
         styles = {
             GuiStyles.close_button_alpha,
@@ -100,11 +100,12 @@ return GuiWindow({
 
     left = 400,
     top = 400,
-    width = 1505,
+    width = 1540,
     height = 910,
 
     id = "profiler_window",
-    
+
+    header_size = 0,
     header = {
         styles = {
             GuiStyles.window_header,
@@ -122,7 +123,7 @@ return GuiWindow({
     
     GuiClientarea({
         GuiBody({
-            width = 1491,
+            width = 1490,
             height = 881,
 
             GuiCheck({

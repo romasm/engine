@@ -37,8 +37,6 @@ function GuiRoot:init(ent)
     self.alt_anim_go = false
 
     self.just_resize = false
-    
-    self.captionH = self.sys_window:GetCaptionH()
 end
 
 function GuiRoot:callback(eventData)
@@ -55,13 +53,13 @@ function GuiRoot:onMoveResize(is_move, is_resize)
         return true 
     end
     
+    if not self.sys_window:IsWinBorderHided() then return true end 
+
     if self.sys_window:IsMaximized() then
         self.entity.left = SYSTEM_BORDER_SIZE
         self.entity.top = SYSTEM_BORDER_SIZE
         self.entity.bottom = SYSTEM_BORDER_SIZE
         self.entity.right = SYSTEM_BORDER_SIZE
-
-        self.sys_window:SetCaptionH(self.captionH + SYSTEM_BORDER_SIZE)
         
         self.just_resize = true
         self.entity:UpdatePosSize()
@@ -70,8 +68,6 @@ function GuiRoot:onMoveResize(is_move, is_resize)
         self.entity.top = 0
         self.entity.bottom = 0
         self.entity.right = 0
-
-        self.sys_window:SetCaptionH(self.captionH)
         
         self.just_resize = true
         self.entity:UpdatePosSize()
