@@ -101,13 +101,11 @@ struct triple_vect
 struct MaterialParams
 {
 	uint unlit;
-	uint subscattering;
-	float ss_distortion;
-	float ss_direct_translucency;
-	float ss_direct_pow;
-	float ss_indirect_translucency;
+	float ior;
+	float asymmetry;
+	float attenuation;
 
-	float padding[2];
+	float padding[4];
 };
 
 struct StmInstanceMatrix

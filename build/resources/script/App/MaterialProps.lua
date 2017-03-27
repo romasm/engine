@@ -639,3 +639,43 @@ function MaterialProps.UpdValue(self, shaderSlot)
     self:SetValue( MaterialProps.material:GetFloat(shaderSlot, SHADERS.PS) )
     return true
 end
+
+-- SLIDER DEFFERED PARAM
+function MaterialProps.StartDeffered(self, shaderSlot, str)
+    self.history = {
+        s_oldval = 0,
+        s_newval = 0,
+        slot = shaderSlot,
+        undo = function(self) 
+                MaterialProps.material:SetDefferedParam(self.s_oldval, self.slot)
+                MaterialProps:UpdateData(false)
+            end,
+        redo = function(self) 
+                MaterialProps.material:SetDefferedParam(self.s_newval, self.slot)
+                MaterialProps:UpdateData(false)
+            end,
+        msg = str.. " value"
+    }
+
+    self.history.s_oldval = MaterialProps.material:GetDefferedParam(shaderSlot)
+    MaterialProps.material:SetDefferedParam(self:GetValue(), shaderSlot)
+    return true
+end
+
+function MaterialProps.DragDeffered(self, shaderSlot)
+    MaterialProps.material:SetDefferedParam(self:GetValue(), shaderSlot)
+    return true
+end
+
+function MaterialProps.EndDeffered(self, shaderSlot)
+    self.history.s_newval = self:GetValue()
+    if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
+    MaterialProps.material:SetDefferedParam(self.history.s_newval, shaderSlot)
+    History:Push(self.history)
+    return true
+end
+
+function MaterialProps.UpdDeffered(self, shaderSlot)
+    self:SetValue( MaterialProps.material:GetDefferedParam(shaderSlot) )
+    return true
+end

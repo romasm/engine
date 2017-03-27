@@ -3,11 +3,9 @@ shader = "../resources/shaders/objects/opaque_main"
 deffered
 {
 	unlit = 0
-	subscattering = 0
-	ss_distortion = 0.1
-	ss_direct_translucency = 0.1
-	ss_direct_pow = 1.0
-	ss_indirect_translucency = 0.1
+	ior = 0.0
+	asymmetry = 0.0
+	attenuation = 0.0
 }
 
 

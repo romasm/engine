@@ -121,32 +121,26 @@ float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)
 	return Diffuse_Burley( A, R, NoV, NoL, VoH );
 }
 
-float3 directSubScattering(in GBufferData gbuffer, in DataForLightCompute mData, MaterialParams params, float3 L, float3 V)
+float3 directScattering(in GBufferData gbuffer, in DataForLightCompute mData, MaterialParams params, float3 L, float3 V, float lightAmountExp)
 {
-	/*float3 vLight = L + N * params.ss_distortion;
-	float VoL = pow(saturate(dot(V, -vLight)), params.ss_direct_pow) * params.ss_direct_translucency;
-	float3 SSS = VoL + params.ss_indirect_translucency;
-	return SSS * color;*/
+	float3 scattering = 0;
 
-	const float attenuationCoef = 1.0;
-	const float asymmetry = 0.8;
-	const float ior = 1.0 / 1.5;
+	[branch]
+	if(params.ior > 0.0)
+	{
+		// refraction
+		float refractCos = sqrt( 1 - params.ior * params.ior * ( 1 - mData.NoV * mData.NoV ) );
+		float3 refractionDir = params.ior * (-V) + ( params.ior * mData.NoV - refractCos ) * gbuffer.normal;
+
+		// Schlick phase function
+		float cosLV = dot(refractionDir, L);
+		float denominator = 1 - params.asymmetry * cosLV;
+		float phase = (1 - params.asymmetry * params.asymmetry) / (4 * PI * denominator * denominator);
 	
-	float refractCos = sqrt( 1 - ior * ior * ( 1 - mData.NoV * mData.NoV ) );
-	float3 refractionDir = ior * (-V) + ( ior * mData.NoV - refractCos ) * gbuffer.normal;
+		// Lambert-Beer law, exp(-t) in shadow calculation
+		scattering = PowAbs(lightAmountExp, params.attenuation * (1 - gbuffer.subsurf)); // inverce color in lua
+		scattering = saturate(scattering * phase);
+	}
 
-	// Schlick phase function
-	float cosLV = dot(refractionDir, L);
-	float phase = (1 - asymmetry * asymmetry) / (4 * PI * (1 - asymmetry * cosLV ));
-	
-	// Lambert-Beer law
-	float3 attenFactor = -gbuffer.thickness;
-	float3 scattering = exp(attenFactor); // travelDist in shadow
-
-	return scattering * phase * gbuffer.subsurf;
-
-	/*float3 vLight = L + N * 0.1;
-	float VoL = pow(saturate(dot(V, -vLight)), 1.0) * 0.1;
-	float3 SSS = VoL + 0.1;
-	return SSS * color;*/
+	return scattering;
 }

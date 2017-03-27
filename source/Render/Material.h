@@ -16,11 +16,9 @@
 #define MATERIALS_COUNT 1024
 
 #define DEFFERED_UNLIT_0 "unlit"
-#define DEFFERED_SS_1 "subscattering"
-#define DEFFERED_SS_DISTORTION_2 "ss_distortion"
-#define DEFFERED_SS_DTRANSLUSENCY_3 "ss_direct_translucency"
-#define DEFFERED_SS_DPOWER_4 "ss_direct_pow"
-#define DEFFERED_SS_ITRANSLUCENCY_5 "ss_indirect_translucency"
+#define DEFFERED_IOR "ior"
+#define DEFFERED_ASYMMETRY "asymmetry"
+#define DEFFERED_ATTENUATION "attenuation"
 
 namespace EngineCore
 {
@@ -28,22 +26,18 @@ namespace EngineCore
 	{
 		unsigned int unlit;
 
-		unsigned int subscattering;
-		float ss_distortion;
-		float ss_direct_translucency;
-		float ss_direct_pow;
-		float ss_indirect_translucency;
+		float ior;
+		float asymmetry;
+		float attenuation;
 
-		float padding[2];
+		float padding[4];
 
 		MaterialParamsStructBuffer()
 		{
 			unlit = 0;
-			subscattering = 0;
-			ss_distortion = 0;
-			ss_direct_translucency = 0;
-			ss_direct_pow = 0;
-			ss_indirect_translucency = 0;
+			ior = 0;
+			asymmetry = 0;
+			attenuation = 0;
 		}
 	};
 

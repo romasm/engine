@@ -145,7 +145,7 @@ LightPrepared PrepareSpotLight(in SpotLightBuffer lightData, in GBufferData gbuf
 }
 
 bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {	
 	results = (LightComponents)0;
 	bool exec = false;
@@ -163,7 +163,7 @@ bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedD
 			{
 				const float3 colorIlluminance = illuminance * lightData.ColorConeX.rgb;
 	
-				results.scattering = colorIlluminance * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
+				results.scattering = colorIlluminance * directScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector, lightAmount);
 				exec = true;
 
 				const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
@@ -194,7 +194,7 @@ LightPrepared PrepareDiskLight(in DiskLightBuffer lightData, in GBufferData gbuf
 }
 
 bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {
 	results = (LightComponents)0;
 	bool exec = false;
@@ -243,7 +243,7 @@ bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedD
 				illuminance *= coneFalloff;
 				noDirIlluminance *= coneFalloff;
 			
-				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directScattering(gbuffer, mData, materialParams, L, ViewVector, lightAmount);
 				exec = true;
 
 				[branch]
@@ -279,7 +279,7 @@ LightPrepared PrepareRectLight(in RectLightBuffer lightData, in GBufferData gbuf
 }
 
 bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {
 	results = (LightComponents)0;
 	bool exec = false;
@@ -331,7 +331,7 @@ bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedD
 				illuminance *= coneFalloff;
 				noDirIlluminance *= coneFalloff;
 			
-				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
+				results.scattering = noDirIlluminance * lightData.ColorConeX.rgb * directScattering(gbuffer, mData, materialParams, L, ViewVector, lightAmount);
 				exec = true;
 
 				[branch]
@@ -365,7 +365,7 @@ LightPrepared PreparePointLight(in PointLightBuffer lightData, in GBufferData gb
 }
 
 bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {	
 	results = (LightComponents)0;
 	bool exec = false;
@@ -376,7 +376,7 @@ bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared prepare
 	{
 		const float3 colorIlluminance = illuminance * lightData.Color.rgb;
 		
-		results.scattering = colorIlluminance * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
+		results.scattering = colorIlluminance * directScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector, lightAmount);
 		exec = true;
 
 		const float NoL = saturate( dot(gbuffer.normal, preparedData.L) );
@@ -404,7 +404,7 @@ LightPrepared PrepareSphereLight(in SphereLightBuffer lightData, in GBufferData 
 }
 
 bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {	
 	results = (LightComponents)0;
 	bool exec = false;
@@ -434,7 +434,7 @@ bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared prepa
 		noDirIlluminance *= smoothFalloff;
 		illuminance *= smoothFalloff;
 
-		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector, lightAmount);
 		exec = true;
 
 		[branch]
@@ -466,7 +466,7 @@ LightPrepared PrepareTubeLight(in TubeLightBuffer lightData, in GBufferData gbuf
 }
 
 bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
-						in MaterialParams materialParams, float3 ViewVector, out LightComponents results)
+						in MaterialParams materialParams, float3 ViewVector, float lightAmount, out LightComponents results)
 {	
 	results = (LightComponents)0;
 	bool exec = false;
@@ -507,7 +507,7 @@ bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedD
 		noDirIlluminance *= smoothFalloff;
 		illuminance *= smoothFalloff;
 
-		results.scattering = noDirIlluminance * lightData.Color.rgb * directSubScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector);
+		results.scattering = noDirIlluminance * lightData.Color.rgb * directScattering(gbuffer, mData, materialParams, preparedData.L, ViewVector, lightAmount);
 		exec = true;
 
 		[branch]
@@ -552,17 +552,18 @@ bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLig
 
 	float3 colorLight = lightData.ColorAreaX.rgb;
 
-	results.scattering = colorLight * directSubScattering(gbuffer, mData, materialParams, L, ViewVector);
+	float lightAmount = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+
+	results.scattering = colorLight * directScattering(gbuffer, mData, materialParams, L, ViewVector, lightAmount);
 	
 	[branch]
 	if(specNoL > 0.0f)
 	{
 	#if DEBUG_CASCADE_LIGHTS == 0
-		float light_blocked = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
 		[branch]
-		if(light_blocked > 0)
+		if(lightAmount > 0)
 		{
-			colorLight *= light_blocked;
+			colorLight *= lightAmount;
 
 			results.diffuse = colorLight * NoL * directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
 			results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
@@ -588,6 +589,8 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	shadowDepthFix.z = max(0.5 * linDepth, 2);
 	float dirDepthFix = max(0.1 * linDepth, 1);
 
+	const float lightAmountFake = exp(-gbuffer.thickness);
+
 	LightComponents directLight = (LightComponents)0;
 	
 	[loop] // spot
@@ -597,7 +600,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareSpotLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSpotLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateSpotLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -617,7 +620,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSpotLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateSpotLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
@@ -630,7 +633,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareDiskLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateDiskLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateDiskLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -652,7 +655,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateDiskLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateDiskLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
@@ -665,7 +668,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareRectLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateRectLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateRectLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -687,7 +690,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateRectLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateRectLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
@@ -700,7 +703,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PreparePointLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculatePointLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculatePointLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -721,7 +724,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculatePointLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculatePointLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
@@ -734,7 +737,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -756,7 +759,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSphereLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateSphereLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);
@@ -769,7 +772,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareTubeLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateTubeLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateTubeLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, lightResult ) )
 			continue;
 		
 		directLight.Append(lightResult);
@@ -791,7 +794,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateTubeLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightResult ) )
+		[branch] if( !CalculateTubeLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount, lightResult ) )
 			continue;
 		
 		directLight.AppendShadowed(lightResult, lightAmount);

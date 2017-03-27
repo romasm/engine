@@ -25,7 +25,7 @@ TextureCube g_envprobsDistBlurred : register(t2);
 #include "../common/ibl_helpers.hlsl"
 
 
-Texture2DArray <float> sys_shadows: register(t3); 
+Texture2DArray <float> sys_shadows: register(t3);  
 
 Texture3D <float4> sys_volumeEmittance : register(t4); 
 

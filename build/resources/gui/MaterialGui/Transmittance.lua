@@ -91,7 +91,7 @@ return GuiGroup({
             overflow_max = true,
         },
         alt = "Half-energy distance, m",
-        id = 'extinction_slider',
+        id = 'attenuation_slider',
 
         events = {
             [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return TransmittanceCallback.StartAttenuation(self) end,

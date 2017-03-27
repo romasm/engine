@@ -232,11 +232,9 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;
-	Materials[0].ss_direct_pow = 0;
-	Materials[0].ss_direct_translucency = 0;
-	Materials[0].ss_distortion = 0;
-	Materials[0].ss_indirect_translucency = 0;
-	Materials[0].subscattering = 0;
+	Materials[0].ior = 0.0f;
+	Materials[0].asymmetry = 0.0f;
+	Materials[0].attenuation = 0.0f;
 	
 	if(!isLightweight)
 		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_FULL );

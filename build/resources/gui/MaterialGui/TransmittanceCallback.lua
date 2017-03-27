@@ -1,9 +1,9 @@
 if not TransmittanceCallback then TransmittanceCallback = {} end
 
-local DistanceAttenuation = function(value)
+function TransmittanceCallback.DistanceAttenuation(value)
     -- LightMul = exp( -AttenuationCoeff * Dist)
     -- LightMul = 0.5; AttenuationCoeff = 0.69314718 / Dist
-    return 0.69314718 / value
+    return 0.69314718 / math.max(value, 0.00001)
 end
 
 function TransmittanceCallback.StartAttenuation(self)
@@ -18,24 +18,24 @@ function TransmittanceCallback.StartAttenuation(self)
                 MaterialProps.material:SetFloat(self.s_newval, "attenuationValue", SHADERS.PS)
                 MaterialProps:UpdateData(false)
             end,
-        msg = "Transmittance value"
+        msg = "Attenuation transmittance value"
     }
 
     self.history.s_oldval = MaterialProps.material:GetFloat("attenuationValue", SHADERS.PS)
 
-    local ext = DistanceAttenuation(self:GetValue())
+    local ext = TransmittanceCallback.DistanceAttenuation(self:GetValue())
     MaterialProps.material:SetFloat(ext, "attenuationValue", SHADERS.PS)
     return true
 end
 
 function TransmittanceCallback.DragAttenuation(self)
-    local ext = DistanceAttenuation(self:GetValue())
+    local ext = TransmittanceCallback.DistanceAttenuation(self:GetValue())
     MaterialProps.material:SetFloat(ext, "attenuationValue", SHADERS.PS)
     return true
 end
 
 function TransmittanceCallback.EndAttenuation(self)
-    self.history.s_newval = DistanceAttenuation(self:GetValue())
+    self.history.s_newval = TransmittanceCallback.DistanceAttenuation(self:GetValue())
     if CMath.IsNearlyEq(self.history.s_oldval, self.history.s_newval, 0.001) then return true end
     MaterialProps.material:SetFloat(self.history.s_newval, "attenuationValue", SHADERS.PS)
     History:Push(self.history)
@@ -44,7 +44,7 @@ end
 
 function TransmittanceCallback.UpdAttenuation(self)
     local ext = MaterialProps.material:GetFloat("attenuationValue", SHADERS.PS)
-    self:SetValue( DistanceAttenuation(ext) )
+    self:SetValue( TransmittanceCallback.DistanceAttenuation(ext) )
     return true
 end
 

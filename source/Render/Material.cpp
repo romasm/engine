@@ -340,11 +340,9 @@ bool Material::ñonvertMat(string& nameBin)
 		defferedParams = new MaterialParamsStructBuffer;
 		
 		defferedParams->unlit = (uint32_t)file.ReadFloat(DEFFERED_UNLIT_0, nodeDeffered);
-		defferedParams->subscattering = (uint32_t)file.ReadFloat(DEFFERED_SS_1, nodeDeffered);
-		defferedParams->ss_distortion = file.ReadFloat(DEFFERED_SS_DISTORTION_2, nodeDeffered);
-		defferedParams->ss_direct_translucency = file.ReadFloat(DEFFERED_SS_DTRANSLUSENCY_3, nodeDeffered);
-		defferedParams->ss_direct_pow = file.ReadFloat(DEFFERED_SS_DPOWER_4, nodeDeffered);
-		defferedParams->ss_indirect_translucency = file.ReadFloat(DEFFERED_SS_ITRANSLUCENCY_5, nodeDeffered);
+		defferedParams->ior = file.ReadFloat(DEFFERED_IOR, nodeDeffered);
+		defferedParams->asymmetry = file.ReadFloat(DEFFERED_ASYMMETRY, nodeDeffered);
+		defferedParams->attenuation = file.ReadFloat(DEFFERED_ATTENUATION, nodeDeffered);
 	}
 	
 	const char node_names[5][3] = { "ps", "vs", "ds", "hs", "gs" };
@@ -812,19 +810,13 @@ void Material::SetDefferedParam(float data, uint8_t i)
 		defferedParams->unlit = unsigned int(data);
 		break;
 	case 1:
-		defferedParams->subscattering = unsigned int(data);
+		defferedParams->ior = data;
 		break;
 	case 2:
-		defferedParams->ss_distortion = data;
+		defferedParams->asymmetry = data;
 		break;
 	case 3:
-		defferedParams->ss_direct_translucency = data;
-		break;
-	case 4:
-		defferedParams->ss_direct_pow = data;
-		break;
-	case 5:
-		defferedParams->ss_indirect_translucency = data;
+		defferedParams->attenuation = data;
 		break;
 	}
 }
@@ -834,16 +826,12 @@ void Material::SetDefferedParamWithSlotName(float data, string slot)
 	if(!defferedParams) return;
 	if(slot == DEFFERED_UNLIT_0)
 		defferedParams->unlit = unsigned int(data);
-	else if(slot == DEFFERED_SS_1)
-		defferedParams->subscattering = unsigned int(data);
-	else if(slot == DEFFERED_SS_DISTORTION_2)
-		defferedParams->ss_distortion = data;
-	else if(slot == DEFFERED_SS_DTRANSLUSENCY_3)
-		defferedParams->ss_direct_translucency = data;
-	else if(slot == DEFFERED_SS_DPOWER_4)
-		defferedParams->ss_direct_pow = data;
-	else if(slot == DEFFERED_SS_ITRANSLUCENCY_5)
-		defferedParams->ss_indirect_translucency = data;
+	else if(slot == DEFFERED_IOR)
+		defferedParams->ior = data;
+	else if(slot == DEFFERED_ASYMMETRY)
+		defferedParams->asymmetry = data;
+	else if(slot == DEFFERED_ATTENUATION)
+		defferedParams->attenuation = data;
 }
 
 float Material::GetDefferedParam(uint8_t i)
@@ -852,11 +840,9 @@ float Material::GetDefferedParam(uint8_t i)
 	switch (i)
 	{
 	case 0:	return float(defferedParams->unlit);
-	case 1:	return float(defferedParams->subscattering);
-	case 2:	return defferedParams->ss_distortion;
-	case 3:	return defferedParams->ss_direct_translucency;
-	case 4:	return defferedParams->ss_direct_pow;
-	case 5:	return defferedParams->ss_indirect_translucency;
+	case 1:	return defferedParams->ior;
+	case 2:	return defferedParams->asymmetry;
+	case 3:	return defferedParams->attenuation;
 	}
 	return 0;
 }
@@ -866,16 +852,12 @@ float Material::GetDefferedParamWithSlotName(string slot)
 	if(!defferedParams) return 0;
 	if(slot == DEFFERED_UNLIT_0)
 		return float(defferedParams->unlit);
-	else if(slot == DEFFERED_SS_1)
-		return float(defferedParams->subscattering);
-	else if(slot == DEFFERED_SS_DISTORTION_2)
-		return defferedParams->ss_distortion;
-	else if(slot == DEFFERED_SS_DTRANSLUSENCY_3)
-		return defferedParams->ss_direct_translucency;
-	else if(slot == DEFFERED_SS_DPOWER_4)
-		return defferedParams->ss_direct_pow;
-	else if(slot == DEFFERED_SS_ITRANSLUCENCY_5)
-		return defferedParams->ss_indirect_translucency;
+	else if(slot == DEFFERED_IOR)
+		return defferedParams->ior;
+	else if(slot == DEFFERED_ASYMMETRY)
+		return defferedParams->asymmetry;
+	else if(slot == DEFFERED_ATTENUATION)
+		return defferedParams->attenuation;
 	return 0;
 }
 

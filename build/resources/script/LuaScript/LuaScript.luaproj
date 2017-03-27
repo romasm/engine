@@ -101,6 +101,9 @@
     <Compile Include="..\..\gui\MaterialGui\Scattering.lua">
       <Link>Gui\MaterialGui\Scattering.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\MaterialGui\ScatteringCallback.lua">
+      <Link>Gui\MaterialGui\ScatteringCallback.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Thickness.lua">
       <Link>Gui\MaterialGui\Thickness.lua</Link>
     </Compile>
