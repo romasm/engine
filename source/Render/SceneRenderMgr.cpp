@@ -254,7 +254,7 @@ bool SceneRenderMgr::RegSpotLight(XMFLOAT4& color, float range, XMFLOAT2& cone, 
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, float nearclip, CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT4& farNear, CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpot_count >= CASTER_SPOT_FRAME_MAX)
 		return false;
@@ -303,7 +303,7 @@ bool SceneRenderMgr::RegSpotLightDisk(XMFLOAT4& color, float range, XMFLOAT3& ar
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos, float nearclip,
+bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos, XMFLOAT4& farNear, 
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpotDisk_count >= CASTER_SPOT_DISK_FRAME_MAX)
@@ -356,7 +356,7 @@ bool SceneRenderMgr::RegSpotLightRect(XMFLOAT4& color, float range, XMFLOAT3& ar
 	return true;
 }
 
-bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos, float nearclip, 
+bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos, XMFLOAT4& farNear, 
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id)
 {
 	if(casterSpotRect_count >= CASTER_SPOT_RECT_FRAME_MAX) // proj tex coords wrong calc
@@ -406,7 +406,7 @@ bool SceneRenderMgr::RegPointLight(XMFLOAT4& color, float range, XMFLOAT3& pos)
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& pos, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& pos, XMFLOAT4& farNear, CXMMATRIX proj, uint64_t id)
 {
 	if(casterPoint_count >= CASTER_POINT_FRAME_MAX)
 		return false;
@@ -472,7 +472,7 @@ bool SceneRenderMgr::RegPointLightSphere(XMFLOAT4& color, float range, XMFLOAT3&
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, CXMMATRIX proj, uint64_t id)
+bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT4& farNear, CXMMATRIX proj, uint64_t id)
 {
 	if(casterPointSphere_count >= CASTER_POINT_SPHERE_FRAME_MAX)
 		return false;
@@ -540,7 +540,7 @@ bool SceneRenderMgr::RegPointLightTube(XMFLOAT4& color, float range, XMFLOAT3& a
 	return true;
 }
 
-bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir, CXMMATRIX proj, CXMMATRIX view, uint64_t id)
+bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id)
 {
 	if(casterPointTube_count >= CASTER_POINT_TUBE_FRAME_MAX)
 		return false;

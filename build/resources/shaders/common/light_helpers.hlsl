@@ -552,26 +552,29 @@ bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLig
 
 	float3 colorLight = lightData.ColorAreaX.rgb;
 
-	float lightAmount = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+#if DEBUG_CASCADE_LIGHTS == 0
 
-	results.scattering = colorLight * directScattering(gbuffer, mData, materialParams, L, ViewVector, lightAmount);
+	float2 lightAmount = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+
+	results.scattering = colorLight * directScattering(gbuffer, mData, materialParams, L, ViewVector, lightAmount.y);
 	
 	[branch]
 	if(specNoL > 0.0f)
 	{
-	#if DEBUG_CASCADE_LIGHTS == 0
 		[branch]
-		if(lightAmount > 0)
+		if(lightAmount.x > 0)
 		{
-			colorLight *= lightAmount;
+			colorLight *= lightAmount.x;
 
 			results.diffuse = colorLight * NoL * directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
 			results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
 		}
-	#else
-		results.diffuse = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
-	#endif
 	}
+
+#else
+	results.diffuse = DirlightShadow(samp, shadowmap, lightData, L, gbuffer, depthFix);
+#endif
+	
 	return true;
 }
 

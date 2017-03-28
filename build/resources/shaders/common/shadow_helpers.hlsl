@@ -84,7 +84,7 @@ float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, floa
 			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
 
 			[branch]
-			if( gbuffer.thickness > 0) // TODO: respect projection // TODO: specular shadow???
+			if( gbuffer.thickness > 0) // TODO: respect projection // TODO: specular shadow??? // TODO: bias?
 				horzSamples[j + 1] = saturate( exp(-max(depth - shadowSample, 0) * 100000 * gbuffer.thickness ) );
 			else
 				horzSamples[j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
@@ -251,10 +251,51 @@ float PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
 }
 
+// temp
+float2 PCF_Filter_Dir(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float depth, 
+				 float mapScale, float farClip, in GBufferData gbuffer)
+{
+	float2 uvInTexels = UV.xy * float2(SHADOWS_BUFFER_RES, SHADOWS_BUFFER_RES) - 0.5f;
+	float2 uvFrac = frac(uvInTexels);
+	float2 texelPos = floor(uvInTexels);
+
+	float3 shadowCoords = float3( (texelPos + 0.5f) * PCF_PIXEL, UV.z );
+	
+	float2 vertSamples[2][3];
+
+	[unroll]
+	for(int i = -1; i <= 1; i++)
+	{
+		float4 horzSamples[2][3];
+
+		[unroll]
+		for(int j = -1; j <= 1; j++)
+		{
+			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
+			float4 diff = depth - shadowSample;
+			
+			horzSamples[0][j + 1] = clamp( -diff * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
+			horzSamples[1][j + 1] = saturate( exp(-max(diff, 0) * farClip ) );
+		}
+		vertSamples[0][i + 1] = horzPCF(horzSamples[0], uvFrac.x);
+		vertSamples[1][i + 1] = horzPCF(horzSamples[1], uvFrac.x);
+	}
+
+	float shadow = vertSamples[0][0].x * (1 - uvFrac.y) + vertSamples[0][0].y;
+	shadow += vertSamples[0][1].x + vertSamples[0][1].y;
+	shadow += vertSamples[0][2].x + vertSamples[0][2].y * uvFrac.y;
+
+	float shadowExp = vertSamples[1][0].x * (1 - uvFrac.y) + vertSamples[1][0].y;
+	shadowExp += vertSamples[1][1].x + vertSamples[1][1].y;
+	shadowExp += vertSamples[1][2].x + vertSamples[1][2].y * uvFrac.y;
+	
+	return saturate(float2(shadow, shadowExp) * 0.04f);
+}
+
 #if DEBUG_CASCADE_LIGHTS != 0
 float3
 #else
-float
+float2
 #endif
 DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer lightData, in float3 L, in GBufferData gbuffer, float3 depthFix)
 {
@@ -268,6 +309,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 	matrix viewproj;
 	float4 adress;
 	float normalShadowOffsetDir;
+	float farClip;
 	
 	float4 lightViewProjPos = mul(wpos, lightData.matViewProj0);
 	[branch]
@@ -276,6 +318,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 		viewproj = lightData.matViewProj0;
 		adress = lightData.ShadowmapAdress0;
 		normalShadowOffsetDir = normalShadowOffsetDir0;
+		farClip = DIRLIGHT_Z_CASCADE_0;
 #if DEBUG_CASCADE_LIGHTS != 0
 		res = float3(1.0, 0.0, 0.0);
 #endif
@@ -289,6 +332,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 			viewproj = lightData.matViewProj1;
 			adress = lightData.ShadowmapAdress1;
 			normalShadowOffsetDir = normalShadowOffsetDir1;
+			farClip = DIRLIGHT_Z_CASCADE_1;
 #if DEBUG_CASCADE_LIGHTS != 0
 			res = float3(0.0, 1.0, 0.0);
 #endif
@@ -302,6 +346,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 				viewproj = lightData.matViewProj2;
 				adress = lightData.ShadowmapAdress2;
 				normalShadowOffsetDir = normalShadowOffsetDir2;
+				farClip = DIRLIGHT_Z_CASCADE_2;
 #if DEBUG_CASCADE_LIGHTS != 0
 				res = float3(0.0, 1.0, 1.0);
 #endif
@@ -312,6 +357,7 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 				viewproj = lightData.matViewProj3;
 				adress = lightData.ShadowmapAdress3;
 				normalShadowOffsetDir = normalShadowOffsetDir3;
+				farClip = DIRLIGHT_Z_CASCADE_3;
 #if DEBUG_CASCADE_LIGHTS != 0
 				res = float3(0.0, 0.0, 1.0);
 #endif
@@ -338,9 +384,9 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
 #if DEBUG_CASCADE_LIGHTS != 0
-	return res * PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
+	return res * PCF_Filter_Dir(samp, shadowmap, shadowmapCoords, depthView, adress.z, farClip, gbuffer);
 #else
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, 1.0f, gbuffer);
+	return PCF_Filter_Dir(samp, shadowmap, shadowmapCoords, depthView, adress.z, farClip, gbuffer);
 #endif
 }
 

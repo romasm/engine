@@ -103,7 +103,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.cone_data, i.pos, i.dir, SHADOW_NEARCLIP, 
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.cone_data, i.pos, i.dir, i.farNearData, 
 							shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
@@ -126,7 +126,7 @@ void LightSystem::RegToScene()
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
 						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterDisk(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.virt_pos, 
-							SHADOW_NEARCLIP + i.virt_clip, shadowComp->view_proj, shadowComp->proj, i.get_id());
+							i.farNearData, shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -148,7 +148,7 @@ void LightSystem::RegToScene()
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
 						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterRect(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos, 
-							SHADOW_NEARCLIP + i.virt_clip, shadowComp->view_proj, shadowComp->proj, i.get_id());
+							i.farNearData, shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -169,7 +169,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.pos, shadowComp->proj, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.pos, i.farNearData, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -190,7 +190,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterSphere(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, shadowComp->proj, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCasterSphere(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.farNearData, shadowComp->proj, i.get_id());
 					)
 				}
 				else
@@ -211,7 +211,7 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterTube(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.dir, shadowComp->proj, shadowComp->view, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCasterTube(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.dir, i.farNearData, shadowComp->proj, shadowComp->view, i.get_id());
 					)
 				}
 				else
@@ -691,6 +691,11 @@ void LightSystem::UpdateLightProps(Entity e)
 		earlyVisibilitySys->SetType(comp.get_entity(), BoundingType::BT_SPHERE);
 		earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(XMFLOAT3(0,0,0), comp.range));
 	}
+
+	comp.farNearData.x = SHADOW_NEARCLIP + comp.virt_clip;
+	comp.farNearData.y = comp.range + comp.virt_clip;
+	comp.farNearData.z = comp.farNearData.x * comp.farNearData.y;
+	comp.farNearData.w = comp.farNearData.y - comp.farNearData.x;
 }
 
 XMMATRIX LightSystem::GetProj(Entity e)

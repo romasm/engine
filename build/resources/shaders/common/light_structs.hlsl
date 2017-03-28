@@ -65,6 +65,12 @@
 
 #define SHADOWS_RES_BIAS_SCALE SHADOWS_MAXRES / 2
 
+// from GlobalLightSystem.h
+#define DIRLIGHT_Z_CASCADE_0 2500.0f
+#define DIRLIGHT_Z_CASCADE_1 4000.0f
+#define DIRLIGHT_Z_CASCADE_2 7500.0f
+#define DIRLIGHT_Z_CASCADE_3 10000.0f
+
 struct LightComponents
 {
     float3 diffuse;
@@ -92,28 +98,6 @@ struct LightPrepared
 	float3 L;
     float DoUL;
 };
-
-/*struct LightsIDs
-{
-	
-	int SpotLightsIDs[LIGHT_SPOT_FRAME_MAX];
-	int DiskLightsIDs[LIGHT_SPOT_DISK_FRAME_MAX];
-	int RectLightsIDs[LIGHT_SPOT_RECT_FRAME_MAX];
-	
-	int SpotCastersIDs[CASTER_SPOT_FRAME_MAX];
-	int DiskCastersIDs[CASTER_SPOT_DISK_FRAME_MAX];
-	int RectCastersIDs[CASTER_SPOT_RECT_FRAME_MAX];
-
-	int PointLightsIDs[LIGHT_POINT_FRAME_MAX];
-	int SphereLightsIDs[LIGHT_POINT_SPHERE_FRAME_MAX];
-	int TubeLightsIDs[LIGHT_POINT_TUBE_FRAME_MAX];
-
-	int PointCastersIDs[CASTER_POINT_FRAME_MAX];
-	int SphereCastersIDs[CASTER_POINT_SPHERE_FRAME_MAX];
-	int TubeCastersIDs[CASTER_POINT_TUBE_FRAME_MAX];
-
-	int DirLightsIDs[LIGHT_DIR_FRAME_MAX];
-};*/
 
 typedef int LightsIDs[TOTAL_LIGHT_COUNT];
 

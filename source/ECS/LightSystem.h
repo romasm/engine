@@ -51,6 +51,8 @@ namespace EngineCore
 		float rangeInvSqr;
 		XMFLOAT2 cone_data;
 
+		XMFLOAT4 farNearData;
+
 		// spot disk: x - radius
 		// spot rect: x, y, z - length, width/2, length/2
 		// point sphere: x - radius
