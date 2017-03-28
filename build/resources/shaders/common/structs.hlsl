@@ -104,8 +104,9 @@ struct MaterialParams
 	float ior;
 	float asymmetry;
 	float attenuation;
+	float ssTint;
 
-	float padding[4];
+	float padding[3];
 };
 
 struct StmInstanceMatrix
@@ -140,6 +141,7 @@ struct GBufferData
 	float2 roughness;
 	float3 emissive;
 	float3 subsurf;
+	float3 subsurfTint;
 	float thickness;
 	float ao;
 

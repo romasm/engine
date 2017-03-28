@@ -27,7 +27,7 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 230,
+    height = 260,
 
     Gui.Texture({
         width = 265,
@@ -85,9 +85,9 @@ return GuiGroup({
         left = 120,
         width = 155,
         data = {
-            min = 0,
-            max = 2,
-            decimal = 3,
+            min = 0.0,
+            max = 0.25,
+            decimal = 4,
             overflow_max = true,
         },
         alt = "Half-energy distance, m",
@@ -103,7 +103,7 @@ return GuiGroup({
 
     GuiString({
         styles = {GuiStyles.string_props_03,},
-        str = "Asymmetry",
+        str = "Tinting",
         left = 10,
         top = 173,
     }),
@@ -116,8 +116,38 @@ return GuiGroup({
         left = 120,
         width = 155,
         data = {
-            min = -0.85,
-            max = 0.85,
+            min = 0.0,
+            max = 1.0,
+            decimal = 3,
+        },
+        alt = "Subsurface tinting",
+        id = 'tint_slider',
+
+        events = {
+            [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev) return MaterialProps.StartDeffered(self, "ssTint", "Tinting") end,
+            [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev) return MaterialProps.DragDeffered(self, "ssTint") end,
+            [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) return MaterialProps.EndDeffered(self, "ssTint") end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return MaterialProps.UpdDeffered(self, "ssTint") end,
+        },
+    }),
+
+    GuiString({
+        styles = {GuiStyles.string_props_03,},
+        str = "Asymmetry",
+        left = 10,
+        top = 203,
+    }),
+
+    GuiDataSlider({
+        styles = {
+            GuiStyles.mat_dataslider,
+        },
+        top = 200,
+        left = 120,
+        width = 155,
+        data = {
+            min = -0.5,
+            max = 0.5,
             decimal = 3,
         },
         alt = "Asymmetry (Phase), Forward / Backward scattering",
@@ -135,14 +165,14 @@ return GuiGroup({
         styles = {GuiStyles.string_props_03,},
         str = "IOR",
         left = 10,
-        top = 203,
+        top = 233,
     }),
 
     GuiDataSlider({
         styles = {
             GuiStyles.mat_dataslider,
         },
-        top = 200,
+        top = 230,
         left = 120,
         width = 155,
         data = {

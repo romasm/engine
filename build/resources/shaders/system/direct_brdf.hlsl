@@ -132,14 +132,20 @@ float3 directScattering(in GBufferData gbuffer, in DataForLightCompute mData, Ma
 		float refractCos = sqrt( 1 - params.ior * params.ior * ( 1 - mData.NoV * mData.NoV ) );
 		float3 refractionDir = params.ior * (-V) + ( params.ior * mData.NoV - refractCos ) * gbuffer.normal;
 
+		// TODO: BTDF? or just cos?
+		float backScatterCos = lerp(1.0, dot(-V, refractionDir), lightAmountExp * lightAmountExp);
+
 		// Schlick phase function
 		float cosLV = dot(refractionDir, L);
 		float denominator = 1 - params.asymmetry * cosLV;
 		float phase = (1 - params.asymmetry * params.asymmetry) / (4 * PI * denominator * denominator);
 	
 		// Lambert-Beer law, exp(-t) in shadow calculation
-		scattering = PowAbs(lightAmountExp, params.attenuation * (1 - gbuffer.subsurf)); // inverce color in lua
-		scattering = saturate(scattering * phase);
+		float opticalDepthExp = min(0.99005, lightAmountExp); // 1 mm - min travel dist
+		scattering = PowAbs(opticalDepthExp, params.attenuation * (1 - gbuffer.subsurf)); // inverce color in lua
+		
+		// TODO: subsurf as tint, correct?
+		scattering = saturate(scattering * phase * backScatterCos * gbuffer.subsurfTint);
 	}
 
 	return scattering;

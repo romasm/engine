@@ -84,7 +84,7 @@ float PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, floa
 			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
 
 			[branch]
-			if( gbuffer.thickness > 0) // TODO: respect projection
+			if( gbuffer.thickness > 0) // TODO: respect projection // TODO: specular shadow???
 				horzSamples[j + 1] = saturate( exp(-max(depth - shadowSample, 0) * 100000 * gbuffer.thickness ) );
 			else
 				horzSamples[j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );

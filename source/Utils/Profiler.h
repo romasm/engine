@@ -91,12 +91,10 @@ namespace EngineCore
 		void Stop() 
 		{
 			started = false;
-			LOG("Profiler stopped!");
 		}
 		void Start()
 		{
 			started = true;
-			LOG("Profiler started!");
 		}
 		inline bool IsRunning() {return started;}
 

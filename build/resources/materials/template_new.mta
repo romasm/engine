@@ -6,6 +6,7 @@ deffered
 	ior = 0.0
 	asymmetry = 0.0
 	attenuation = 0.0
+	ssTint = 0.0
 }
 
 

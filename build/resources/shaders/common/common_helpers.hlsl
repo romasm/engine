@@ -39,6 +39,7 @@ GBufferData ReadGBuffer(sampler gbufferSampler, float2 coords)
 	res.reflectivity = spec_roughX_Sample.rgb;
 	res.emissive = emiss_vnZ_Sample.rgb;
 	res.subsurf = subsurf_thick_Sample.rgb;
+	res.subsurfTint = 1.0;
 	res.thickness = subsurf_thick_Sample.a;
 	res.roughness = float2(spec_roughX_Sample.a, albedo_roughY_Sample.a);
 

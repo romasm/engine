@@ -106,6 +106,8 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
 		return;
 	}
+
+	gbuffer.subsurfTint = lerp(1.0, gbuffer.subsurf, materialParams.ssTint);
 	      
 	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
 	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
@@ -140,8 +142,13 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf * SO ) * SSR.a, 1 - SSR.a );
 	
 	// OUTPUT
-	float3 diffuse = (indirectLight.diffuse + indirectLight.scattering) * configs.indirDiff + 
-		(directLight.diffuse + directLight.scattering) * configs.dirDiff;
+	// temp, move somewhere
+	float scatteringBlendFactor = saturate(luminance(gbuffer.albedo) + float(materialParams.ior == 0.0));
+
+	indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
+	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
+
+	float3 diffuse = indirectLight.diffuse * configs.indirDiff + directLight.diffuse * configs.dirDiff;
 	float3 specular = indirectLight.specular * configs.indirSpec + directLight.specular * configs.dirSpec;
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);

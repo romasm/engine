@@ -343,6 +343,7 @@ bool Material::ñonvertMat(string& nameBin)
 		defferedParams->ior = file.ReadFloat(DEFFERED_IOR, nodeDeffered);
 		defferedParams->asymmetry = file.ReadFloat(DEFFERED_ASYMMETRY, nodeDeffered);
 		defferedParams->attenuation = file.ReadFloat(DEFFERED_ATTENUATION, nodeDeffered);
+		defferedParams->ssTint = file.ReadFloat(DEFFERED_SSTINT, nodeDeffered);
 	}
 	
 	const char node_names[5][3] = { "ps", "vs", "ds", "hs", "gs" };
@@ -818,6 +819,9 @@ void Material::SetDefferedParam(float data, uint8_t i)
 	case 3:
 		defferedParams->attenuation = data;
 		break;
+	case 4:
+		defferedParams->ssTint = data;
+		break;
 	}
 }
 
@@ -832,6 +836,8 @@ void Material::SetDefferedParamWithSlotName(float data, string slot)
 		defferedParams->asymmetry = data;
 	else if(slot == DEFFERED_ATTENUATION)
 		defferedParams->attenuation = data;
+	else if(slot == DEFFERED_SSTINT)
+		defferedParams->ssTint = data;
 }
 
 float Material::GetDefferedParam(uint8_t i)
@@ -843,6 +849,7 @@ float Material::GetDefferedParam(uint8_t i)
 	case 1:	return defferedParams->ior;
 	case 2:	return defferedParams->asymmetry;
 	case 3:	return defferedParams->attenuation;
+	case 4:	return defferedParams->ssTint;
 	}
 	return 0;
 }
@@ -858,6 +865,8 @@ float Material::GetDefferedParamWithSlotName(string slot)
 		return defferedParams->asymmetry;
 	else if(slot == DEFFERED_ATTENUATION)
 		return defferedParams->attenuation;
+	else if(slot == DEFFERED_SSTINT)
+		return defferedParams->ssTint;
 	return 0;
 }
 

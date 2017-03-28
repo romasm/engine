@@ -8,7 +8,7 @@ function Profiler.reload()
         Profiler.profiler_win:Close()
 
         Profiler.profiler:Start()
-
+        
         Profiler.profiler_win = Gui.ProfilerWindow()
 
         Profiler:FillWindow()
@@ -177,7 +177,7 @@ function Profiler:Init()
     end
 
     self.profiler:Start()
-
+    
     self.realtime = true
 
     self.stats = false

@@ -19,6 +19,7 @@
 #define DEFFERED_IOR "ior"
 #define DEFFERED_ASYMMETRY "asymmetry"
 #define DEFFERED_ATTENUATION "attenuation"
+#define DEFFERED_SSTINT "ssTint"
 
 namespace EngineCore
 {
@@ -29,8 +30,9 @@ namespace EngineCore
 		float ior;
 		float asymmetry;
 		float attenuation;
+		float ssTint;
 
-		float padding[4];
+		float padding[3];
 
 		MaterialParamsStructBuffer()
 		{
@@ -38,6 +40,7 @@ namespace EngineCore
 			ior = 0;
 			asymmetry = 0;
 			attenuation = 0;
+			ssTint = 0;
 		}
 	};
 
