@@ -16,7 +16,7 @@ return GuiGroup({
         height = 21,
 
         text = {
-            str = "Thickness",
+            str = "Baked thickness",
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },

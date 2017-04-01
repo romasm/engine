@@ -148,6 +148,7 @@ namespace EngineCore
 		XMFLOAT4 DirConeY;
 		XMFLOAT4 ShadowmapAdress;
 		XMFLOAT4 ShadowmapParams;
+		XMFLOAT4 farNear;
 		XMMATRIX matViewProj;
 	};
 
@@ -160,6 +161,7 @@ namespace EngineCore
 		XMFLOAT4 VirtposEmpty;
 		XMFLOAT4 ShadowmapAdress;
 		XMFLOAT4 ShadowmapParams;
+		XMFLOAT4 farNear;
 		XMMATRIX matViewProj;
 	};
 
@@ -173,6 +175,7 @@ namespace EngineCore
 		XMFLOAT4 VirtposAreaZ;
 		XMFLOAT4 ShadowmapAdress;
 		XMFLOAT4 ShadowmapParams;
+		XMFLOAT4 farNear;
 		XMMATRIX matViewProj;
 	};
 
@@ -209,6 +212,7 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress3;
 		XMFLOAT4 ShadowmapAdress4;
 		XMFLOAT4 ShadowmapAdress5;
+		XMFLOAT4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
@@ -226,6 +230,7 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress3;
 		XMFLOAT4 ShadowmapAdress4;
 		XMFLOAT4 ShadowmapAdress5;
+		XMFLOAT4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
@@ -244,6 +249,7 @@ namespace EngineCore
 		XMFLOAT4 ShadowmapAdress3;
 		XMFLOAT4 ShadowmapAdress4;
 		XMFLOAT4 ShadowmapAdress5;
+		XMFLOAT4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};

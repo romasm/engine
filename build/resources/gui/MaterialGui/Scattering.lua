@@ -18,7 +18,7 @@ return GuiGroup({
         height = 21,
 
         text = {
-            str = "Subsurface scattering",
+            str = "Scattering",
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },
@@ -103,7 +103,7 @@ return GuiGroup({
 
     GuiString({
         styles = {GuiStyles.string_props_03,},
-        str = "Tinting",
+        str = "Subsurface tint",
         left = 10,
         top = 173,
     }),

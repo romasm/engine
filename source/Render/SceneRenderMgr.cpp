@@ -269,7 +269,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, floa
 	vData.Virtpos = vData.PosRange;
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), nearclip, 0);
+	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -280,6 +280,7 @@ bool SceneRenderMgr::RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, floa
 	casterSpot_array[casterSpot_count].DirConeY = vData.DirConeY;
 	casterSpot_array[casterSpot_count].ShadowmapAdress = vData.ShadowmapAdress;
 	casterSpot_array[casterSpot_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpot_array[casterSpot_count].farNear = farNear;
 	casterSpot_array[casterSpot_count].matViewProj = vp;
 
 	casterSpot_count++;
@@ -319,7 +320,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	vData.Virtpos = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), nearclip, 0);
+	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -332,6 +333,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	casterSpotDisk_array[casterSpotDisk_count].VirtposEmpty = vData.Virtpos;
 	casterSpotDisk_array[casterSpotDisk_count].ShadowmapAdress = vData.ShadowmapAdress;
 	casterSpotDisk_array[casterSpotDisk_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotDisk_array[casterSpotDisk_count].farNear = farNear;
 	casterSpotDisk_array[casterSpotDisk_count].matViewProj = vp;
 	
 	casterSpotDisk_count++;
@@ -372,7 +374,7 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	vData.Virtpos = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  XMFLOAT4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), nearclip, 0);
+	vData.ShadowmapHPixProjNearclip = XMFLOAT4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 	
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -386,6 +388,7 @@ bool SceneRenderMgr::RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, 
 	casterSpotRect_array[casterSpotRect_count].VirtposAreaZ = XMFLOAT4(virtpos.x, virtpos.y, virtpos.z, area.z);
 	casterSpotRect_array[casterSpotRect_count].ShadowmapAdress = vData.ShadowmapAdress;
 	casterSpotRect_array[casterSpotRect_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotRect_array[casterSpotRect_count].farNear = farNear;
 	casterSpotRect_array[casterSpotRect_count].matViewProj = vp;
 
 	casterSpotRect_count++;
@@ -450,6 +453,7 @@ bool SceneRenderMgr::RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, flo
 	casterPoint_array[casterPoint_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
 	casterPoint_array[casterPoint_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
 	casterPoint_array[casterPoint_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPoint_array[casterPoint_count].farNear = farNear;
 	casterPoint_array[casterPoint_count].matProj = vData.matProj;
 	casterPoint_array[casterPoint_count].matView = vData.matView;
 	
@@ -517,6 +521,7 @@ bool SceneRenderMgr::RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColo
 	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
 	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
 	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointSphere_array[casterPointSphere_count].farNear = farNear;
 	casterPointSphere_array[casterPointSphere_count].matProj = vData.matProj;
 	casterPointSphere_array[casterPointSphere_count].matView = vData.matView;
 	
@@ -586,6 +591,7 @@ bool SceneRenderMgr::RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor,
 	casterPointTube_array[casterPointTube_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
 	casterPointTube_array[casterPointTube_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
 	casterPointTube_array[casterPointTube_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointTube_array[casterPointTube_count].farNear = farNear;
 	casterPointTube_array[casterPointTube_count].matProj = vData.matProj;
 	casterPointTube_array[casterPointTube_count].matView = vData.matView;
 	

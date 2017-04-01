@@ -88,7 +88,7 @@ struct LightComponents
 	{
 		diffuse += other.diffuse * lightAmount;
 		specular += other.specular * lightAmount;
-		scattering += other.scattering * lightAmount;
+		scattering += other.scattering;
 	}
 };
 
@@ -135,6 +135,7 @@ struct DiskCasterBuffer
 	float4 VirtposEmpty;
 	float4 ShadowmapAdress;
 	float4 ShadowmapParams;
+	float4 farNear;
 	matrix matViewProj;
 };
 
@@ -148,6 +149,7 @@ struct RectCasterBuffer
 	float4 VirtposAreaZ;
 	float4 ShadowmapAdress;
 	float4 ShadowmapParams;
+	float4 farNear;
 	matrix matViewProj;
 };
 
@@ -158,6 +160,7 @@ struct SpotCasterBuffer
 	float4 DirConeY;
 	float4 ShadowmapAdress;
 	float4 ShadowmapParams;
+	float4 farNear;
 	matrix matViewProj;
 
 	void ConstructDisk(in DiskCasterBuffer shapeData)
@@ -167,6 +170,7 @@ struct SpotCasterBuffer
 		DirConeY = shapeData.DirConeY;
 		ShadowmapAdress = shapeData.ShadowmapAdress;
 		ShadowmapParams = shapeData.ShadowmapParams;
+		farNear = shapeData.farNear;
 		matViewProj = shapeData.matViewProj;
 	}
 
@@ -177,6 +181,7 @@ struct SpotCasterBuffer
 		DirConeY = shapeData.DirConeY;
 		ShadowmapAdress = shapeData.ShadowmapAdress;
 		ShadowmapParams = shapeData.ShadowmapParams;
+		farNear = shapeData.farNear;
 		matViewProj = shapeData.matViewProj;
 	}
 };
@@ -246,6 +251,7 @@ struct SphereCasterBuffer
 	float4 ShadowmapAdress3;
 	float4 ShadowmapAdress4;
 	float4 ShadowmapAdress5;
+	float4 farNear;
 	matrix matProj;
 	matrix matView;
 };
@@ -264,6 +270,7 @@ struct TubeCasterBuffer
 	float4 ShadowmapAdress3;
 	float4 ShadowmapAdress4;
 	float4 ShadowmapAdress5;
+	float4 farNear;
 	matrix matProj;
 	matrix matView;
 };
@@ -280,6 +287,7 @@ struct PointCasterBuffer
 	float4 ShadowmapAdress3;
 	float4 ShadowmapAdress4;
 	float4 ShadowmapAdress5;
+	float4 farNear;
 	matrix matProj;
 	matrix matView;
 
@@ -295,6 +303,7 @@ struct PointCasterBuffer
 		ShadowmapAdress3 = shapeData.ShadowmapAdress3;
 		ShadowmapAdress4 = shapeData.ShadowmapAdress4;
 		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
+		farNear = shapeData.farNear;
 		matProj = shapeData.matProj;
 		matView = shapeData.matView;
 	}
@@ -311,6 +320,7 @@ struct PointCasterBuffer
 		ShadowmapAdress3 = shapeData.ShadowmapAdress3;
 		ShadowmapAdress4 = shapeData.ShadowmapAdress4;
 		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
+		farNear = shapeData.farNear;
 		matProj = shapeData.matProj;
 		matView = shapeData.matView;
 	}

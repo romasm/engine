@@ -123,30 +123,26 @@ float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)
 
 float3 directScattering(in GBufferData gbuffer, in DataForLightCompute mData, MaterialParams params, float3 L, float3 V, float lightAmountExp)
 {
-	float3 scattering = 0;
+	// refraction
+	float refractCos = sqrt( 1 - params.ior * params.ior * ( 1 - mData.NoV * mData.NoV ) );
+	float3 refractionDir = params.ior * (-V) + ( params.ior * mData.NoV - refractCos ) * gbuffer.normal;
 
-	[branch]
-	if(params.ior > 0.0)
-	{
-		// refraction
-		float refractCos = sqrt( 1 - params.ior * params.ior * ( 1 - mData.NoV * mData.NoV ) );
-		float3 refractionDir = params.ior * (-V) + ( params.ior * mData.NoV - refractCos ) * gbuffer.normal;
+	// TODO: BTDF? or just cos?
+	float backScatterCos = lerp(1.0, dot(-V, refractionDir), lightAmountExp * lightAmountExp);
 
-		// TODO: BTDF? or just cos?
-		float backScatterCos = lerp(1.0, dot(-V, refractionDir), lightAmountExp * lightAmountExp);
-
-		// Schlick phase function
-		float cosLV = dot(refractionDir, L);
-		float denominator = 1 - params.asymmetry * cosLV;
-		float phase = (1 - params.asymmetry * params.asymmetry) / (4 * PI * denominator * denominator);
+	// Schlick phase function
+	float cosLV = dot(refractionDir, L);
+	float denominator = 1 - params.asymmetry * cosLV;
+	float phase = (1 - params.asymmetry * params.asymmetry) / (4 * PI * denominator * denominator);
 	
-		// Lambert-Beer law, exp(-t) in shadow calculation
-		float opticalDepthExp = min(0.99005, lightAmountExp); // 1 mm - min travel dist
-		scattering = PowAbs(opticalDepthExp, params.attenuation * (1 - gbuffer.subsurf)); // inverce color in lua
+	// Lambert-Beer law, exp(-t) in shadow calculation
+	float opticalDepthExp = min(0.99005, lightAmountExp); // 1 mm - min travel dist
+	float3 scattering = PowAbs(opticalDepthExp, params.attenuation * (1 - gbuffer.subsurf)); // inverce color in lua
 		
-		// TODO: subsurf as tint, correct?
-		scattering = saturate(scattering * phase * backScatterCos * gbuffer.subsurfTint);
-	}
+	// TODO: subsurf as tint, correct?
+	//float NoL = abs(dot(gbuffer.normal, L));
+	//float3 subsurfaceTint = lerp(gbuffer.subsurf, gbuffer.subsurfTint, NoL);
 
+	scattering = saturate(scattering * phase * backScatterCos * gbuffer.subsurfTint);
 	return scattering;
 }
