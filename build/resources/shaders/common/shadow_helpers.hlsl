@@ -18,115 +18,8 @@
 //#define shadowBiasDir2 0.00003
 //#define shadowBiasDir3 0.00015
 
-float GatherFilter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float2 reprojUV, float halfPix, float depth)  
-{  
-	float4 shadMapDepth = shadowmap.GatherRed(samp, UV);
-	float4 compare = float4(shadMapDepth.x < depth,
-							shadMapDepth.y < depth,
-							shadMapDepth.z < depth,
-							shadMapDepth.w < depth);
-
-	if(!any(compare))
-		return 1;
-	
-	float2 fracUV = abs( frac(reprojUV / (halfPix * 0.5) + float2(0.002, 0.002)) );
-	fracUV.x = fracUV.x > 0.5 ? 1.5 - fracUV.x : 0.5 - fracUV.x;
-	fracUV.y = fracUV.y > 0.5 ? 1.5 - fracUV.y : 0.5 - fracUV.y;
-
-	float l1 = lerp(compare.y, compare.x, fracUV.x);
-	float l2 = lerp(compare.z, compare.w, fracUV.x);
-	return 1 - lerp(l1, l2, fracUV.y); 
-}
-
-float2 horzPCF(float4 horzSamples[3], float uvFracX)
-{
-	float uvFravXInv = 1.0 - uvFracX;
-	
-	float2 res;
-
-	res.x = horzSamples[0].w * uvFravXInv;
-	res.y = horzSamples[0].x * uvFravXInv;
-	res.x += horzSamples[0].z;
-	res.y += horzSamples[0].y;
-
-	res.x += horzSamples[1].w;
-	res.y += horzSamples[1].x;
-	res.x += horzSamples[1].z;
-	res.y += horzSamples[1].y;
-
-	res.x += horzSamples[2].w;
-	res.y += horzSamples[2].x;
-	res.x += horzSamples[2].z * uvFracX;
-	res.y += horzSamples[2].y * uvFracX;
-
-	return res;
-}
-
-float ShadowToLinear(float d, float4 farNear)
-{
-	return farNear.z / (farNear.y - d * farNear.w);
-}
-
-float4 ShadowToLinear(float4 d, float4 farNear)
-{
-	return farNear.z / (farNear.y - d * farNear.w);
-}
-
-float2 PCF_Filter(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float depth, 
-				 float mapScale, in GBufferData gbuffer, float4 farNear, bool scatter)
-{
-	float2 uvInTexels = UV.xy * float2(SHADOWS_BUFFER_RES, SHADOWS_BUFFER_RES) - 0.5f;
-	float2 uvFrac = frac(uvInTexels);
-	float2 texelPos = floor(uvInTexels);
-
-	float3 shadowCoords = float3( (texelPos + 0.5f) * PCF_PIXEL, UV.z );
-	
-	float2 vertSamples[2][3];
-
-	[unroll]
-	for(int i = -1; i <= 1; i++)
-	{
-		float4 horzSamples[2][3];
-
-		[unroll]
-		for(int j = -1; j <= 1; j++)
-		{
-			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
-				
-			horzSamples[0][j + 1] = clamp( (shadowSample - depth) * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
-
-			[branch]
-			if(scatter)
-			{
-				float linDepth = ShadowToLinear(depth, farNear) - 0.01; // 1 sm bias, TODO?
-				float4 linShadow = ShadowToLinear(shadowSample, farNear);
-				horzSamples[1][j + 1] = saturate( exp(-max(linDepth - linShadow, 0)) );
-			}
-		}
-		vertSamples[0][i + 1] = horzPCF(horzSamples[0], uvFrac.x);
-
-		[branch]
-		if(scatter)
-		{
-			vertSamples[1][i + 1] = horzPCF(horzSamples[1], uvFrac.x);
-		}
-	}
-
-	float shadow = vertSamples[0][0].x * (1 - uvFrac.y) + vertSamples[0][0].y;
-	shadow += vertSamples[0][1].x + vertSamples[0][1].y;
-	shadow += vertSamples[0][2].x + vertSamples[0][2].y * uvFrac.y;
-
-	float shadowExp = 0;
-	[branch]
-	if(scatter)
-	{
-		shadowExp = vertSamples[1][0].x * (1 - uvFrac.y) + vertSamples[1][0].y;
-		shadowExp += vertSamples[1][1].x + vertSamples[1][1].y;
-		shadowExp += vertSamples[1][2].x + vertSamples[1][2].y * uvFrac.y;
-	}
-
-	return saturate(float2(shadow, shadowExp) * 0.04f);
-}
+#undef ORTHO_SHADOW
+#include "../common/PCF.hlsl"
 
 float2 SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightPrepared prepared, 
 					  in SpotCasterBuffer lightData, in GBufferData gbuffer, float3 depthFix, bool scatter)
@@ -164,7 +57,7 @@ float2 SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 		lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
 		float depthView = lightViewProjPos.z * lvp_rcp;*/
 	
-		result = PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, lightData.ShadowmapAdress.z, gbuffer, lightData.farNear, scatter);
+		result = PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, gbuffer, lightData.farNear, scatter);
 	}
 	return result;
 }
@@ -276,51 +169,13 @@ float2 PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in Light
 	lightViewProjPos.z -= shadowBiasPoint * depthFix.z;
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
-	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, adress.z, gbuffer, lightData.farNear, scatter);
+	return PCF_Filter(samp, shadowmap, shadowmapCoords, depthView, gbuffer, lightData.farNear, scatter);
 }
 
-// temp
-float2 PCF_Filter_Dir(sampler samp, Texture2DArray <float> shadowmap, float3 UV, float depth, 
-				 float mapScale, float farClip, in GBufferData gbuffer, bool scatter)
-{
-	float2 uvInTexels = UV.xy * float2(SHADOWS_BUFFER_RES, SHADOWS_BUFFER_RES) - 0.5f;
-	float2 uvFrac = frac(uvInTexels);
-	float2 texelPos = floor(uvInTexels);
+#define ORTHO_SHADOW
+#include "../common/PCF.hlsl"
 
-	float3 shadowCoords = float3( (texelPos + 0.5f) * PCF_PIXEL, UV.z );
-	
-	float2 vertSamples[2][3];
-
-	[unroll]
-	for(int i = -1; i <= 1; i++)
-	{
-		float4 horzSamples[2][3];
-
-		[unroll]
-		for(int j = -1; j <= 1; j++)
-		{
-			float4 shadowSample = shadowmap.Gather( samp, shadowCoords, int2(j, i) * 2 );
-			float4 diff = depth - shadowSample;
-			
-			horzSamples[0][j + 1] = clamp( -diff * PCF_DEPTH_TEST_SENCE + 1.0f, 0.0f, 2.0f/*acne fading*/ );
-			horzSamples[1][j + 1] = saturate( exp(-max(diff, 0) * farClip ) );
-		}
-		vertSamples[0][i + 1] = horzPCF(horzSamples[0], uvFrac.x);
-		vertSamples[1][i + 1] = horzPCF(horzSamples[1], uvFrac.x);
-	}
-
-	float shadow = vertSamples[0][0].x * (1 - uvFrac.y) + vertSamples[0][0].y;
-	shadow += vertSamples[0][1].x + vertSamples[0][1].y;
-	shadow += vertSamples[0][2].x + vertSamples[0][2].y * uvFrac.y;
-
-	float shadowExp = vertSamples[1][0].x * (1 - uvFrac.y) + vertSamples[1][0].y;
-	shadowExp += vertSamples[1][1].x + vertSamples[1][1].y;
-	shadowExp += vertSamples[1][2].x + vertSamples[1][2].y * uvFrac.y;
-	
-	return saturate(float2(shadow, shadowExp) * 0.04f);
-}
-
-#if DEBUG_CASCADE_LIGHTS != 0
+#if DEBUG_CASCADE_LIGHTS != 0 // TODO: hard triangles
 float3
 #else
 float2
@@ -412,9 +267,9 @@ DirlightShadow(sampler samp, Texture2DArray <float> shadowmap, in DirLightBuffer
 	float depthView = lightViewProjPos.z * lvp_rcp;
 
 #if DEBUG_CASCADE_LIGHTS != 0
-	return res * PCF_Filter_Dir(samp, shadowmap, shadowmapCoords, depthView, adress.z, farClip, gbuffer, scatter);
+	return res * PCF_Filter_Ortho(samp, shadowmap, shadowmapCoords, depthView, gbuffer, farClip, scatter);
 #else
-	return PCF_Filter_Dir(samp, shadowmap, shadowmapCoords, depthView, adress.z, farClip, gbuffer, scatter);
+	return PCF_Filter_Ortho(samp, shadowmap, shadowmapCoords, depthView, gbuffer, farClip, scatter);
 #endif
 }
 
