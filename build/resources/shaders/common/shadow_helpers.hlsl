@@ -1,6 +1,8 @@
 #define PCF_DEPTH_TEST_SENCE 1000000.0f
 #define PCF_PIXEL 1.0f / SHADOWS_BUFFER_RES
 
+// TODO!!! configurate
+
 #define normalShadowOffsetSpot 2
 #define shadowBiasSpotArea 0.0008 
 #define shadowBiasSpot shadowBiasSpotArea * SHADOW_NEARCLIP
@@ -8,15 +10,11 @@
 #define normalShadowOffsetPoint 2
 #define shadowBiasPoint shadowBiasSpotArea * SHADOW_NEARCLIP
 
-// todo: configurate
-#define normalShadowOffsetDir0 0.5 * 0.05
-#define normalShadowOffsetDir1 3 * 0.05
-#define normalShadowOffsetDir2 10 * 0.05
-#define normalShadowOffsetDir3 65 * 0.05
-#define shadowBiasDir0 0.000005
-//#define shadowBiasDir1 0.00001
-//#define shadowBiasDir2 0.00003
-//#define shadowBiasDir3 0.00015
+#define normalShadowOffsetDir0 0.1 * 0.05
+#define normalShadowOffsetDir1 1 * 0.05
+#define normalShadowOffsetDir2 3 * 0.05
+#define normalShadowOffsetDir3 2 * 0.05
+#define shadowBiasDir0 0.000003
 
 #undef ORTHO_SHADOW
 #include "../common/PCF.hlsl"
