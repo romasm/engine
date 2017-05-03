@@ -51,7 +51,7 @@ namespace EngineCore
 
 	struct VolumeDownsample
 	{
-		XMFLOAT3 volumeOffset;
+		XMFLOAT3 writeOffset;
 		uint32_t _padding0;
 
 		uint32_t currentLevel;
@@ -59,7 +59,7 @@ namespace EngineCore
 		uint32_t currentResMore;
 		uint32_t _padding1;
 
-		uint32_t isShifted[3];
+		XMFLOAT3 isShifted;
 		uint32_t _padding2;
 	};
 
@@ -223,6 +223,8 @@ namespace EngineCore
 		float volumeSize;
 		uint16_t clipmapCount;
 		uint16_t AAquality;
+
+		uint16_t injectGroupsCount[3];
 
 		SceneRenderMgr* render_mgr;
 	};

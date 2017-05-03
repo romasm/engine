@@ -43,6 +43,10 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 	voxelDownsample = nullptr;
 	voxelDownsampleMove = nullptr;
 
+	injectGroupsCount[0] = 0;
+	injectGroupsCount[1] = 0;
+	injectGroupsCount[2] = 0;
+
 	volumeResolution = 0;
 	clipmapCount = 0;
 	volumeSize = 0;
@@ -117,10 +121,15 @@ void VoxelRenderer::ClearPerFrame()
 
 void VoxelRenderer::calcVolumesConfigs()
 {
+	// temp configs
 	volumeResolution = VCT_VOLUME_RES;
 	clipmapCount = VCT_CLIPMAP_COUNT;
 	volumeSize = VCT_VOLUME_SIZE;
 	AAquality = VCT_SUBSAMPLES;
+
+	injectGroupsCount[2] = volumeResolution / 4;
+	injectGroupsCount[0] = injectGroupsCount[2] * VCT_CLIPMAP_COUNT;
+	injectGroupsCount[1] = injectGroupsCount[2] * 6;
 
 	volumesConfig.destroy();
 	volumesConfig.create(clipmapCount);
@@ -452,14 +461,10 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
 
-	// temp
-	const uint16_t group_count = volumeResolution / 4;
-
-	voxelInjectLight->Dispatch( group_count * clipmapCount, group_count * 6, group_count );
+	voxelInjectLight->Dispatch(injectGroupsCount[0], injectGroupsCount[1], injectGroupsCount[2]);
 	voxelInjectLight->UnbindUAV();
-	
-	
-	/*PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
+		
+	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
 	uint32_t currentRes = volumeResolution / 2;
@@ -467,7 +472,8 @@ void VoxelRenderer::ProcessEmittance()
 	
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
-	
+
+	uint32_t clipRes = currentRes * 6;
 	for(uint32_t level = 1; level < clipmapCount; level++)
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
@@ -481,26 +487,26 @@ void VoxelRenderer::ProcessEmittance()
 		XMVECTOR volumeOffsetFloor = XMVectorFloor(volumeOffset);
 		XMVECTOR isShifted = volumeOffset - volumeOffsetFloor;
 
-		volumeDownsample.isShifted[0] = XMVectorGetX(isShifted) > 0.1f ? 1 : 0;
-		volumeDownsample.isShifted[1] = XMVectorGetY(isShifted) > 0.1f ? 1 : 0;
-		volumeDownsample.isShifted[2] = XMVectorGetZ(isShifted) > 0.1f ? 1 : 0;
+		volumeDownsample.isShifted.x = XMVectorGetX(isShifted) > 0.1f ? 1.0f : 0.0f;
+		volumeDownsample.isShifted.y = XMVectorGetY(isShifted) > 0.1f ? 1.0f : 0.0f;
+		volumeDownsample.isShifted.z = XMVectorGetZ(isShifted) > 0.1f ? 1.0f : 0.0f;
+
+		XMStoreFloat3(&volumeDownsample.writeOffset, volumeOffsetFloor);
+		volumeDownsample.writeOffset.x += volumeDownsample.isShifted.x;
+		volumeDownsample.writeOffset.y += volumeDownsample.isShifted.y;
+		volumeDownsample.writeOffset.z += volumeDownsample.isShifted.z;
 		
-		XMStoreFloat3(&volumeDownsample.volumeOffset, volumeOffsetFloor);
 		volumeDownsample.currentLevel = level;
 		volumeDownsample.currentRes = currentRes;
 		volumeDownsample.currentResMore = currentRes + 1;
 
 		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
-
-		uint32_t processRes[3];
-		for(uint8_t k = 0; k < 3; k++)
-			processRes[k] = currentRes + (volumeDownsample.isShifted[k] ? 1 : 0);
-
+		
 		// downsample
 		voxelDownsample->BindUAV(voxelDownsampleTempUAV);
 		Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
 				
-		voxelDownsample->Dispatch( processRes[0], processRes[1] * 6, processRes[2] );
+		voxelDownsample->Dispatch( currentRes, clipRes, currentRes );
 
 		voxelDownsample->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
@@ -509,22 +515,23 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsampleMove->BindUAV(voxelEmittanceUAV);
 		Render::CSSetShaderResources(0, 1, &voxelDownsampleTempSRV);
 
-		voxelDownsampleMove->Dispatch( processRes[0], processRes[1] * 6, processRes[2] );
+		voxelDownsampleMove->Dispatch( currentRes, clipRes, currentRes );
 
 		voxelDownsampleMove->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
-	}*/
+	}
 }
 
 void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
 {
 	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
-		/*if( level < clipmapCount - 1 )
+		// discard if in lower level
+		if( level < clipmapCount - 1 )
 		{
 			if( level > 0)
 			{
-				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) != DISJOINT )
+				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
 					continue;
 			}
 			else
@@ -537,14 +544,12 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 		{
 			if(	volumesConfig[level - 1].volumeBox.Contains(bbox) != DISJOINT )
 				continue;
-		}*/
+		}
+
 		float meshSize = max(max(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 2;
 		if( meshSize < volumesConfig[level].voxelSize )
 			continue;
-
-		if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT )
-			continue;
-
+		
 		if(meshesToRender[level].full())
 			return;
 

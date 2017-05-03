@@ -10,7 +10,7 @@ cbuffer volumeBuffer : register(b0)
 
 cbuffer downsampleBuffer : register(b1)
 {
-	float3 volumeOffset;
+	float3 writeOffset;
 	uint _padding0;
 
 	uint currentLevel;
@@ -18,7 +18,7 @@ cbuffer downsampleBuffer : register(b1)
 	uint currentResMore;
 	uint _padding1;
 
-	uint isShifted[3];
+	float3 isShifted;
 	uint _padding2;
 };
 
@@ -72,6 +72,8 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 	voxelID.y += volumeData[0].volumeRes * face;
 	voxelID.x += volumeData[0].volumeRes * (currentLevel - 1);
 
+	voxelID += (uint3)isShifted;
+
 	float3 emittanceWeight[4] = {
 		float3(0,0,0),
 		float3(0,0,0),
@@ -111,10 +113,15 @@ void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
 {
 	uint3 emitID = treadID;
 
+	[branch]
+	if(any( isShifted * ((currentRes - 1) == treadID % currentRes) ))
+		return;
+
 	uint face = emitID.y / currentRes;
 	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
-
-	emitID.x += volumeData[0].volumeRes * currentLevel;
-
+	emitID.x += volumeData[0].volumeRes * currentLevel; 
+	
+	// write shift
+	emitID += (uint3)writeOffset;
 	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
 }
