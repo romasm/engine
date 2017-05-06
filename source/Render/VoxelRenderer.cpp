@@ -473,7 +473,10 @@ void VoxelRenderer::ProcessEmittance()
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
 
-	uint32_t clipRes = currentRes * 6;
+	uint32_t threadCount[3];
+	threadCount[0] = currentRes / 8;
+	threadCount[1] = threadCount[0] * 6;
+	threadCount[2] = currentRes / 4;
 	for(uint32_t level = 1; level < clipmapCount; level++)
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
@@ -484,13 +487,13 @@ void VoxelRenderer::ProcessEmittance()
 										prevCornerOffset.y - currCornerOffset.y,
 										prevCornerOffset.z - currCornerOffset.z, 0.0f);
 		volumeOffset = volumeOffset * volumeData[level].scaleHelper;
-		XMVECTOR volumeOffsetFloor = XMVectorFloor(volumeOffset);
+		XMVECTOR volumeOffsetFloor = XMVectorTruncate(volumeOffset);
 		XMVECTOR isShifted = volumeOffset - volumeOffsetFloor;
 
 		volumeDownsample.isShifted.x = XMVectorGetX(isShifted) > 0.1f ? 1.0f : 0.0f;
 		volumeDownsample.isShifted.y = XMVectorGetY(isShifted) > 0.1f ? 1.0f : 0.0f;
 		volumeDownsample.isShifted.z = XMVectorGetZ(isShifted) > 0.1f ? 1.0f : 0.0f;
-
+		
 		XMStoreFloat3(&volumeDownsample.writeOffset, volumeOffsetFloor);
 		volumeDownsample.writeOffset.x += volumeDownsample.isShifted.x;
 		volumeDownsample.writeOffset.y += volumeDownsample.isShifted.y;
@@ -506,7 +509,7 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsample->BindUAV(voxelDownsampleTempUAV);
 		Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
 				
-		voxelDownsample->Dispatch( currentRes, clipRes, currentRes );
+		voxelDownsample->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
 
 		voxelDownsample->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
@@ -515,7 +518,7 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsampleMove->BindUAV(voxelEmittanceUAV);
 		Render::CSSetShaderResources(0, 1, &voxelDownsampleTempSRV);
 
-		voxelDownsampleMove->Dispatch( currentRes, clipRes, currentRes );
+		voxelDownsampleMove->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
 
 		voxelDownsampleMove->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);

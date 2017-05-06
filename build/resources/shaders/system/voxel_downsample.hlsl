@@ -60,7 +60,7 @@ static const uint perFaceOpacity[6][8] =
 Texture3D <float4> emittanceVolume : register(t0);  
 RWTexture3D <float4> downsampleVolumeRW : register(u0);  
 
-[numthreads( 1, 1, 1 )]
+[numthreads( 8, 8, 4 )]
 void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 {
 	uint face = treadID.y / currentRes;
@@ -99,7 +99,12 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 		finalOpacity += opacity[j];
 		finalEmittance += emittanceWeight[j] * opacity[j];
 	}
-	finalEmittance /= (finalOpacity > 0 ? finalOpacity : 1.0f);
+
+	[branch]
+	if(finalOpacity == 0.0)
+		return;
+
+	finalEmittance /= finalOpacity;
 	finalOpacity *= 0.25f;
 	
 	downsampleVolumeRW[treadID] = float4(finalEmittance, finalOpacity);
@@ -108,7 +113,7 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 RWTexture3D <float4> emittanceVolumeRW : register(u0);  
 Texture3D <float4> downsampleVolume : register(t0);  
 
-[numthreads( 1, 1, 1 )]
+[numthreads( 8, 8, 4 )]
 void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
 {
 	uint3 emitID = treadID;
