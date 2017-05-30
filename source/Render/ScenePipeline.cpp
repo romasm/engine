@@ -626,11 +626,11 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	// remove
 	float projParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
 	sp_AO->SetFloat(projParam, 5);
-#if AO_TYPE == 0
+/*#if AO_TYPE == 0
 	float maxDistSqr = (CONFIG(ao_half_sample_radius) * sharedconst.screenW * projParam * 0.5f - sharedconst.projection.r[3].m128_f32[3]) / sharedconst.projection.r[3].m128_f32[2];
 	maxDistSqr *= maxDistSqr;
 	sp_AO->SetFloat(maxDistSqr, 4);
-#endif
+#endif*/
 
 	XMMATRIX camMove = XMMatrixTranspose(current_camera->prevViewProj) * sharedconst.invViewProjection;
 	Render::UpdateDynamicResource(m_CamMoveBuffer, (void*)&camMove, sizeof(XMMATRIX));

@@ -12,7 +12,7 @@
 namespace EngineCore
 {
 
-#define AO_TYPE 1
+#define AO_TYPE 0
 #define AO_FILTER
 
 #define RENDERING_TRANSPARENT_CHANNEL_COUNT 3
