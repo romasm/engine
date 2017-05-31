@@ -103,7 +103,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 	const float apertureDouble = 2.0f * aperture;
 
-	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelSize;
+	// TODO: ???
+	float3 coneStart = origin;// + surfaceNormal * volumeData[0].voxelSize;
 
 	uint startLevel;
 	[unroll]
@@ -318,10 +319,24 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 	// diffuse
 	float4 diffuse = 0;
 	const float apertureDiffuse = 0.57735f;
+
+	float3 coneTangent, coneBinormal;
+	[branch]
+	if(abs(gbuffer.normal.y) <= 0.7)
+	{
+		coneTangent = normalize(cross(gbuffer.normal, float3(0,1,0)));
+		coneBinormal = normalize(cross(gbuffer.normal, coneTangent));
+	}
+	else
+	{
+		coneBinormal = normalize(cross(gbuffer.normal, float3(1,0,0)));
+		coneTangent = normalize(cross(gbuffer.normal, coneBinormal));
+	}
+
 	for(int diffuseCones = 0; diffuseCones < 4; diffuseCones++)
 	{
 		float3 coneDirection = gbuffer.normal;
-		coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * gbuffer.tangent + diffuseConeDirectionsCheap[diffuseCones].z * gbuffer.binormal;
+		coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * coneTangent + diffuseConeDirectionsCheap[diffuseCones].z * coneBinormal;
 		coneDirection = normalize(coneDirection);
         
 		float4 VCTdiffuse = VoxelConeTrace(gbuffer.wpos, coneDirection, apertureDiffuse, gbuffer.normal, vData, Emittance, samp);

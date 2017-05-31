@@ -29,7 +29,7 @@ const static float2 sampleDirections[12] =
 	float2(-0.060, -0.900)
 };
 
-#define ditherResRcp 1.0/256.0
+#define ditherResRcp 1.0/234.0
 Texture2D ditherTexture : register(t0); 
 
 Texture2D gb_tbn : register(t1); 
@@ -77,15 +77,12 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 	DecodeTBNfromFloat4(tangent, binormal, normal, TBN);
 		
 	// Get the random factors and construct the row vectors for the 2D matrix from cos(a) and -sin(a) to rotate the sample directions
+	// TODO: interleaved rendering with 4x4 dither, then temporal filter
 	float2 randomFactors = ditherTexture.SampleLevel(samplerPointWrap, input.tex * ditherResRcp * uint2(g_screenW, g_screenH), 0).gb;
 	float2 rotationX = normalize(randomFactors - 0.5);
 	float2 rotationY = rotationX.yx * float2(-1.0f, 1.0f);
 	
-	// do not take more steps than there are pixels		
-	float mipMul = maxStepsPerRayRcp * g_hizMipCount * mipScaler;
-
 	float totalOcclusion = 0.0;
-	
 	[unroll]
 	for (uint i = 0; i < numRays; ++i)
 	{
@@ -106,7 +103,8 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 		for(uint step = 0; step < maxStepsPerRay; ++step)
 		{
 			uv += stepUV;
-			float3 sampleWpos = GetWPos(uv, gb_depth.SampleLevel( samplerPointClamp, UVforSamplePow2(uv), step * mipMul ).r);
+			//float3 sampleWpos = GetWPos(uv, gb_depth.SampleLevel( samplerPointClamp, UVforSamplePow2(uv), step ).r);
+			float3 sampleWpos = GetWPos(uv, gb_depth.SampleLevel( samplerPointClamp, UVforSamplePow2(uv), 0 ).r);
 			
 			// get occlusion factor based on candidate horizon elevation
 			float3 horizonVector = sampleWpos - wpos;
@@ -127,6 +125,6 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 	}
 
 	float finalAO = 1.0 - saturate(strengthPerRay * totalOcclusion);
-	finalAO *= finalAO * finalAO;
+	finalAO *= finalAO;
 	return finalAO;
 }
