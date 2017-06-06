@@ -185,15 +185,20 @@ void LuaVM::HandleError()
 
 bool LuaVM::LoadScript(string& filename)
 {  
-	LOG("Loading script %s", filename.data());
-	int error = luaL_dofile(L, filename.data());
+	string sourceFile = filename + EXT_SCRIPT;
+	string comlipedFile = filename + EXT_SCRIPT_COMPILED;
+	if( FileIO::IsExist(comlipedFile) )
+		sourceFile = comlipedFile;
+
+	LOG("Loading script %s", sourceFile.data());
+	int error = luaL_dofile(L, sourceFile.data());
     if(error)
 	{
         HandleError();
     }
 	else
 	{
-		LOG("Script %s is loaded", filename.data());
+		LOG("Script %s is loaded", sourceFile.data());
         return true;
     }
 	

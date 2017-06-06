@@ -10,6 +10,7 @@
 #define EXT_RESOURCE ".rsc"
 #define EXT_CONFIG ".cfg"
 #define EXT_SCRIPT ".lua"
+#define EXT_SCRIPT_COMPILED ".luac"
 #define EXT_FONT ".fnt"
 
 #define EXT_SHADER_SOURCE ".hlsl"
@@ -51,6 +52,6 @@
 
 #define PATH_GUI_COLORS PATH_RSC "colors" EXT_RESOURCE
 
-#define PATH_MAIN_SCRIPT PATH_SCRIPTS "main" EXT_SCRIPT
+#define PATH_MAIN_SCRIPT PATH_SCRIPTS "main"
 
 #define PATH_RUNTIME_STATS PATH_ROOT "stats/"

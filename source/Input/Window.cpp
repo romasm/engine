@@ -592,7 +592,7 @@ namespace EngineCore
 
 				case RIM_TYPEHID:
 					rawData.type = USER_DEVICES::GAMEPAD;
-					LOG("Gamepad input TODO!");
+					//LOG("Gamepad input TODO!");
 					break;
 				} 
 				delete[] lpb; 

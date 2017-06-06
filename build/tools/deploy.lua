@@ -30,7 +30,7 @@ function Main:Start()
     allOK = allOK and self:CopyToDeploy("bin\\core.exe")
     allOK = allOK and self:CopyToDeploy("bin\\core_dev.exe")
     allOK = allOK and self:CopyToDeploy("bin\\assimp-vc110-mt.dll")
-    allOK = allOK and self:CopyToDeploy("bin\\d3dcompiler_47.dll")
+    allOK = allOK and self:CopyToDeploy("bin\\d3dcompiler_46.dll")
     allOK = allOK and self:CopyToDeploy("bin\\lua51.dll")
     
     allOK = allOK and self:CopyToDeploy("config")
@@ -39,7 +39,16 @@ function Main:Start()
     allOK = allOK and FileIO.Copy("..\\launch_release.bat", self.deployPath .. "launch.bat")
 
     allOK = allOK and FileIO.CreateDir(self.deployPath .. "stats")
-    allOK = allOK and FileIO.CreateDir(self.deployPath .. "resources")
+
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".dds")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".fnt")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".luac")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".mtb")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".stm")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".rsc")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".ico")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".tq")
+    allOK = allOK and FileIO.CopyByExt("..\\resources", self.deployPath .. "resources", ".bc")
 
     if not allOK then
         error("Errors during deployment occurred!")

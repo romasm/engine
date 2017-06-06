@@ -484,7 +484,7 @@ bool FileIO::Rename(string oldPath, string newPath)
 	return true;
 }
 
-bool FileIO::copyDirContent(string& fromPath, string& toPath)
+bool FileIO::copyDirContent(string& fromPath, string& toPath, string& ext)
 {
 	if(!IsExist(toPath))
 		if(!CreateDir(toPath))
@@ -506,6 +506,12 @@ bool FileIO::copyDirContent(string& fromPath, string& toPath)
 
 		if(IsFile(oldName))
 		{
+			if( !ext.empty() )
+			{
+				if( name.find(ext) == string::npos )
+					continue;
+			}
+
 			if( !CopyFileA( (LPCSTR)oldName.data(), (LPCSTR)newName.data(), TRUE ) )
 			{
 				WRN("Can\'t copy file %s to %s, error code: %u", oldName.data(), newName.data(), (uint32_t)GetLastError());
@@ -515,7 +521,7 @@ bool FileIO::copyDirContent(string& fromPath, string& toPath)
 		}
 		else
 		{
-			if(!copyDirContent(oldName, newName))
+			if(!copyDirContent(oldName, newName, ext))
 			{
 				closedir(dir);
 				return false;
@@ -526,7 +532,7 @@ bool FileIO::copyDirContent(string& fromPath, string& toPath)
 	return true;
 }
 
-bool FileIO::Copy(string fromPath, string toPath)
+bool FileIO::CopyByExt(string fromPath, string toPath, string ext)
 {
 	if(!IsExist(fromPath))
 	{
@@ -534,23 +540,26 @@ bool FileIO::Copy(string fromPath, string toPath)
 		return false;
 	}
 
-	if(IsExist(toPath))
-	{
-		WRN("Path %s allready exist", toPath.data());
-		return false;
-	}
-
 	if(IsFile(fromPath))
 	{
+		if(IsExist(toPath))
+		{
+			WRN("File %s allready exist", toPath.data());
+			return false;
+		}
+
 		auto slash = toPath.rfind('\\');
 		if(slash == string::npos)
 			slash = 0;
 		auto Rslash = toPath.rfind('/');
 		if(Rslash != string::npos)
 			slash = max(slash, Rslash);
+
+		string fileName;
 		if(slash != string::npos)
 		{
 			string targetDir = toPath.substr(0, slash);
+			fileName = toPath.substr(slash);
 			if(!IsExist(targetDir))
 			{
 				if( !CreateDir(targetDir) )
@@ -559,6 +568,16 @@ bool FileIO::Copy(string fromPath, string toPath)
 					return false;
 				}
 			}			
+		}
+		else
+		{
+			fileName = toPath;
+		}
+
+		if( !ext.empty() )
+		{
+			if( fileName.find(ext) == string::npos )
+				return true;
 		}
 
 		if( !CopyFileA( (LPCSTR)fromPath.data(), (LPCSTR)toPath.data(), TRUE ) )
@@ -569,12 +588,16 @@ bool FileIO::Copy(string fromPath, string toPath)
 	}
 	else
 	{
-		if(!CreateDir(toPath))
+		if(!IsExist(toPath))
 		{
-			WRN("Can\'t copy directory %s to %s", fromPath.data(), toPath.data());
-			return false;
+			if(!CreateDir(toPath))
+			{
+				WRN("Can\'t copy directory %s to %s", fromPath.data(), toPath.data());
+				return false;
+			}
 		}
-		if(!copyDirContent(fromPath, toPath))
+		
+		if(!copyDirContent(fromPath, toPath, ext))
 		{
 			WRN("Can\'t copy directory %s to %s", fromPath.data(), toPath.data());
 			return false;

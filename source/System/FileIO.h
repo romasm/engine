@@ -181,7 +181,7 @@ private:
 	void writeMap(ofstream* file, file_map* node, uint16_t depth);		
 
 	static bool deleteDirContent(string& path);
-	static bool copyDirContent(string& fromPath, string& toPath);
+	static bool copyDirContent(string& fromPath, string& toPath, string& ext);
 
 	file_map* fileMap;
 	string fileName;
@@ -196,7 +196,9 @@ public:
 	static DirList* GetDirList(string dirname);
 
 	static bool Rename(string oldPath, string newPath);
-	static bool Copy(string fromPath, string toPath);
+	static bool Copy(string fromPath, string toPath)
+	{ return CopyByExt(fromPath, toPath, ""); }
+	static bool CopyByExt(string fromDir, string toDir, string ext);
 	static bool Delete(string path);
 
 	static uint32_t GetDateModifRaw(string& filename);
@@ -223,6 +225,7 @@ public:
 
 				.addFunction("Rename", &FileIO::Rename)
 				.addFunction("Copy", &FileIO::Copy)
+				.addFunction("CopyByExt", &FileIO::CopyByExt)
 				.addFunction("Delete", &FileIO::Delete)
 
 				.addFunction("GetFileDateModifRaw", &FileIO::GetDateModifRaw_lua)
@@ -230,7 +233,7 @@ public:
 				.addFunction("GetFileDateCreate", &FileIO::GetDateCreate)
 				.addFunction("GetFileSize", &FileIO::GetSize)
 
-				.beginClass<DirList>("DirList")
+				.beginClass<DirList>("DirList") // TODO: not safe, rework
 					.addFunction("getnext", &DirList::next)
 					.addFunction("reset", &DirList::reset)
 					.addFunction("size", &DirList::size)
