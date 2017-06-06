@@ -38,6 +38,7 @@ workspace "Engine"
 		filter "platforms:x64"
 			targetdir "build/bin"
 			debugdir "build/bin"
+			debugargs { "-c" }
 					
 		filter "configurations:Debug"
 			defines { "_EDITOR", "WIN64", "_DEV", "_DEBUG;" }

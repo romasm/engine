@@ -399,7 +399,9 @@ bool FileIO::CreateDir(string path)
 		auto slash = path.rfind('\\');
 		if(slash == string::npos)
 			slash = 0;
-		slash = max(slash, path.rfind('/'));
+		auto Rslash = path.rfind('/');
+		if(Rslash != string::npos)
+			slash = max(slash, Rslash);
 		if(slash == string::npos)
 		{
 			WRN("Can't create directory %s", path.data());
@@ -458,7 +460,9 @@ bool FileIO::Rename(string oldPath, string newPath)
 	auto slash = newPath.rfind('\\');
 	if(slash == string::npos)
 		slash = 0;
-	slash = max(slash, newPath.rfind('/'));
+	auto Rslash = newPath.rfind('/');
+	if(Rslash != string::npos)
+		slash = max(slash, Rslash);
 	if(slash != string::npos)
 	{
 		string upDir = newPath.substr(0, slash);
@@ -497,20 +501,21 @@ bool FileIO::copyDirContent(string& fromPath, string& toPath)
 		if( name[0] == '.' && ( name.size() == 1 ||	(name[1] == '.' && name.size() == 2) ) )
 			continue;
 
-		name = fromPath + '/' + name;
-		string newName = toPath + '/' + name;
+		string newName = toPath + '\\' + name;
+		string oldName = fromPath + '\\' + name;
 
-		if(IsFile(name))
+		if(IsFile(oldName))
 		{
-			if( FAILED(CopyFileA( (LPCSTR)name.data(), (LPCSTR)newName.data(), TRUE )) )
+			if( !CopyFileA( (LPCSTR)oldName.data(), (LPCSTR)newName.data(), TRUE ) )
 			{
+				WRN("Can\'t copy file %s to %s, error code: %u", oldName.data(), newName.data(), (uint32_t)GetLastError());
 				closedir(dir);
 				return false;
 			}
 		}
 		else
 		{
-			if(!copyDirContent(name, newName))
+			if(!copyDirContent(oldName, newName))
 			{
 				closedir(dir);
 				return false;
@@ -537,9 +542,28 @@ bool FileIO::Copy(string fromPath, string toPath)
 
 	if(IsFile(fromPath))
 	{
-		if( FAILED(CopyFileA( (LPCSTR)fromPath.data(), (LPCSTR)toPath.data(), TRUE )) )
+		auto slash = toPath.rfind('\\');
+		if(slash == string::npos)
+			slash = 0;
+		auto Rslash = toPath.rfind('/');
+		if(Rslash != string::npos)
+			slash = max(slash, Rslash);
+		if(slash != string::npos)
 		{
-			WRN("Can\'t copy file %s to %s", fromPath.data(), toPath.data());
+			string targetDir = toPath.substr(0, slash);
+			if(!IsExist(targetDir))
+			{
+				if( !CreateDir(targetDir) )
+				{
+					WRN("Can't create directory %s", targetDir.data());
+					return false;
+				}
+			}			
+		}
+
+		if( !CopyFileA( (LPCSTR)fromPath.data(), (LPCSTR)toPath.data(), TRUE ) )
+		{
+			WRN("Can\'t copy file %s to %s, error code: %u", fromPath.data(), toPath.data(), (uint32_t)GetLastError());
 			return false;
 		}
 	}

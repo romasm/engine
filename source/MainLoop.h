@@ -16,7 +16,7 @@
 class MainLoop
 {
 public:
-	MainLoop()
+	MainLoop(string& luaScript)
 	{
 		init = false;
 
@@ -54,7 +54,7 @@ public:
 		}
 
 		// Lua
-		if(!LuaVM::Get()->LoadScript(string(PATH_MAIN_SCRIPT)))
+		if(!LuaVM::Get()->LoadScript(luaScript))
 		{
 			ERR("Unable to initialize Lua Main");
 			return;
@@ -135,7 +135,11 @@ public:
 			PERF_CPU_BEGIN(_LUA_TICK);
 			// Lua
 			if(tick_func)
-				(*tick_func)((*main_table), m_timer.dt_ms);
+			{
+				auto isExit = (*tick_func)((*main_table), m_timer.dt_ms);
+				if( !isExit.cast<bool>() )
+					return false;	
+			}
 			PERF_CPU_END(_LUA_TICK);
 			
 			PERF_CPU_BEGIN(_WIN_MSG);

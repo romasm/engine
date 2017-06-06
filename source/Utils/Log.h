@@ -24,10 +24,16 @@ namespace EngineCore
 #define LOG_GOOD(message, ...) Log::Get()->PrintGood(message, __VA_ARGS__)
 #define WRN(message, ...) Log::Get()->War(message" [%ls|%ls|%i]", __VA_ARGS__, __FILEW__, __FUNCTIONW__, __LINE__)
 #define ERR(message, ...) Log::Get()->Err(message" [%ls|%ls|%i]", __VA_ARGS__, __FILEW__, __FUNCTIONW__, __LINE__)
-#define DBG(message, ...) Log::Get()->Debug(message" [%ls|%ls|%i]", __VA_ARGS__, __FILEW__, __FUNCTIONW__, __LINE__)
-#define DBG_SHORT(message, ...) Log::Get()->Debug(message, __VA_ARGS__)
 #define LUA(message, ...) Log::Get()->Lua(message, __VA_ARGS__)
 #define LUA_ERROR(message, ...) Log::Get()->LuaError(message, __VA_ARGS__)
+
+#ifdef _DEV
+#define DBG(message, ...) Log::Get()->Debug(message" [%ls|%ls|%i]", __VA_ARGS__, __FILEW__, __FUNCTIONW__, __LINE__)
+#define DBG_SHORT(message, ...) Log::Get()->Debug(message, __VA_ARGS__)
+#else
+#define DBG(message, ...)
+#define DBG_SHORT(message, ...)
+#endif
 
 	class Log
 	{

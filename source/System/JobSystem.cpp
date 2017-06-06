@@ -17,8 +17,7 @@ JobSystem::JobSystem(uint32_t tcount)
 		HW_count = std::thread::hardware_concurrency();
 		if(!HW_count) 
 			ERR("No concurrency!");
-		else 
-			LOG("Hardware threads count: %u ", HW_count);
+		DBG_SHORT("Hardware threads count: %u ", HW_count);
 	}
 	else
 		LOG("Force threads count: %u ", HW_count);
@@ -236,7 +235,7 @@ void JobSystem::dropSync(uint16_t& id)
 
 void JobSystem::treadFunc()
 {
-	LOG("Start tread %u ", GetThreadID());
+	DBG_SHORT("Start tread %u ", GetThreadID());
 
 	while(running)
 	{
@@ -273,7 +272,7 @@ void JobSystem::treadFunc()
 		}
 	}
 
-	LOG("End tread %u ", GetThreadID());
+	DBG_SHORT("End tread %u ", GetThreadID());
 }
 
 

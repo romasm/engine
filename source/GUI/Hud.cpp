@@ -125,10 +125,31 @@ static void _ShowCursor(bool b)
 	//ShowCursor(b);
 }
 
+static void ClearLogWindow()
+{
+	system("cls");
+}
+
+static void AllowClosing(bool allow)
+{
+	EnableMenuItem(GetSystemMenu(GetConsoleWindow(), FALSE), SC_CLOSE, allow ? MF_ENABLED : MF_GRAYED );
+}
+
+static void SetTitle(string title)
+{
+	SetConsoleTitle( StringToWstring(title).data() );
+}
+
 void Hud::RegLuaClass()
 {	
 	getGlobalNamespace(LSTATE)
 		.beginNamespace("CoreGui")
+			.beginNamespace("ConsoleWin")
+				.addFunction("Clear", &ClearLogWindow)
+				.addFunction("AllowClosing", &AllowClosing)
+				.addFunction("SetTitle", &SetTitle)
+			.endNamespace()
+
 			.addFunction("GetCursorPos", &GetCursorPosLua)
 			.addFunction("GetSystemCursorPos", &GetSystemCursorPosLua)
 
@@ -359,9 +380,12 @@ void Hud::Draw(HWND win)
 		
 	GET_HENTITY(it->second.rootEnt)->RegToDraw();
 		
-	it->second.border->GetShaderInst()->SetVector(
-		win_ptr->IsActive() ? *(win_ptr->GetColorBorderFocus()) : *(win_ptr->GetColorBorder()), 3);
-	it->second.border->Draw();
+	if( it->second.win->IsWinBorderHided() )
+	{
+		it->second.border->GetShaderInst()->SetVector(
+			win_ptr->IsActive() ? *(win_ptr->GetColorBorderFocus()) : *(win_ptr->GetColorBorder()), 3);
+		it->second.border->Draw();
+	}
 }
 
 void Hud::Close()

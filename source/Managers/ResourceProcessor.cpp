@@ -22,11 +22,10 @@ ResourceProcessor::ResourceProcessor()
 		materialMgr = nullptr;
 		texMgr = nullptr;
 		stmeshMgr = nullptr;
-		
-		shaderMgr = new ShaderMgr;
-		shaderCodeMgr = new ShaderCodeMgr;
-		fontMgr = new FontMgr;
-		worldMgr = new WorldMgr;
+		shaderMgr = nullptr;
+		shaderCodeMgr = nullptr;
+		fontMgr = nullptr;
+		worldMgr = nullptr;
 	}
 	else
 		ERR("Only one instance of ResourceProcessor is allowed!");
@@ -64,17 +63,24 @@ void ResourceProcessor::StartUpdate()
 		STMESHES_UPDATE_PERIOD, JobPriority::BACKGROUND);
 }
 
-void ResourceProcessor::Preload()
+void ResourceProcessor::Init()
+{
+	shaderMgr = new ShaderMgr;
+	shaderCodeMgr = new ShaderCodeMgr;
+	fontMgr = new FontMgr;
+	worldMgr = new WorldMgr;
+	texMgr = new TexMgr;
+	materialMgr = new MaterialMgr;
+	stmeshMgr = new StMeshMgr;
+}
+
+void ResourceProcessor::Preload() // TODO: move preloading managment to Lua
 {
 	shaderCodeMgr->PreloadPureCodes();
 	shaderMgr->PreloadShaders();
 
-	texMgr = new TexMgr;
 	texMgr->PreloadTextures();
 
-	materialMgr = new MaterialMgr;
-	
-	stmeshMgr = new StMeshMgr;
 	stmeshMgr->PreloadStMeshes();
 		
 	fontMgr->PreloadFonts();

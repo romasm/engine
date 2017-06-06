@@ -20,6 +20,7 @@ namespace EngineCore
 	struct luaHWND
 	{
 		luaHWND(HWND h){hwnd = h;}
+		luaHWND(){hwnd = NULL;}
 		HWND hwnd;
 	};
 
@@ -297,6 +298,7 @@ namespace EngineCore
 				.endClass()
 				
 				.beginClass<luaHWND>("HWND")
+					.addConstructor<void (*)()>() 
 				.endClass();
 		}	
 

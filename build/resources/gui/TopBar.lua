@@ -67,7 +67,7 @@ return GuiRect({
     width_percent = true,
     height = 25,
 
-    top = 1,
+    top = 0,
 
     id = "topbar",
 

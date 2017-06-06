@@ -19,6 +19,7 @@ namespace EngineCore
 		ResourceProcessor();
 		~ResourceProcessor();
 
+		void Init();
 		void Preload();
 
 		void StartUpdate();

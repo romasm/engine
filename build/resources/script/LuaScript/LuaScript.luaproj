@@ -20,6 +20,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\..\tools\deploy.lua">
+      <Link>tools\deploy.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\AssetBrowser.lua">
       <Link>Gui\AssetBrowser.lua</Link>
     </Compile>
@@ -314,6 +317,7 @@
     <Folder Include="Gui\Styles\" />
     <Folder Include="Entities\" />
     <Folder Include="CFG\" />
+    <Folder Include="tools\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\config\engine_settings.cfg">

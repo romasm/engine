@@ -54,10 +54,16 @@ namespace EngineCore
 		MaterialMgr::Get()->DeleteMaterial(name);
 	}
 
+	void PreloadSystemResources()
+	{
+		RENDER->resourceProc->Preload();
+	}
+
 	void Render::RegLuaClass()
 	{
 		getGlobalNamespace(LSTATE)
 			.beginNamespace("Resource")
+				.addFunction("PreloadSystemResources", &PreloadSystemResources)
 				.addFunction("GetTexture", &GetTextureLua)
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
@@ -145,7 +151,7 @@ namespace EngineCore
 		
 		BufferObj = new Buffer();
 
-		resourceProc->Preload();
+		resourceProc->Init();
 
 		return true;
 	}

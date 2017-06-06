@@ -13,7 +13,7 @@ local sidearea = GuiEntity({
     width = 300,
     valign = GUI_VALIGN.BOTH,
     top = 0,
-    bottom = 1,
+    bottom = 0,
 
     events = {
         [GUI_EVENTS.UNFOCUS] = function(self, ev)

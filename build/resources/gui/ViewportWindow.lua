@@ -42,7 +42,7 @@ return GuiEntity({
     valign = GUI_VALIGN.BOTH,
 
     top = 4,
-    bottom = 5,
+    bottom = 4,
 
     id = "viewport_window",
     

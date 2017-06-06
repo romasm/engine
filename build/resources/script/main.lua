@@ -77,6 +77,8 @@ loader.require("App.Profiler")
 function Main:Start()	
     print("Main:Start")  
 
+    Resource.PreloadSystemResources()
+
     MainWindow:Init()
     History:Init()
     Hotkeys:Init()
@@ -86,7 +88,7 @@ function Main:Start()
 end
 
 function Main:onTick(dt) 
-    -- remove in consumer (eat time!!!)
+    -- remove in consumer
 	self.reload_time = self.reload_time + dt
 
     if self.reload_time > 2000 then
@@ -98,4 +100,6 @@ function Main:onTick(dt)
     --------
 
     MainWindow:Tick(dt)
+
+    return true
 end
