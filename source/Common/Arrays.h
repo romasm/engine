@@ -79,8 +79,16 @@ namespace EngineCore
 			m_size = 0;	
 		}
 
-		inline void	erase_and_pop_back( size_t i ) {m_data[i] = m_data[--m_size];}
-		inline void	erase_and_pop_back( iterator it ) {(*it) = m_data[--m_size];}
+		inline void	erase_and_pop_back( size_t i )
+		{
+			m_size--;
+			std::swap(m_data[i], m_data[m_size]);
+		}
+		inline void	erase_and_pop_back( iterator it )
+		{
+			m_size--;
+			std::swap((*it), m_data[m_size]);
+		}
 		inline void	erase_and_pop_back( const T& val ) 
 		{
 			iterator it = find( val );
@@ -242,16 +250,12 @@ namespace EngineCore
 		inline void	erase_and_pop_back( size_t i )
 		{
 			m_size--;
-			auto temp = m_data[i];
-			m_data[i] = m_data[m_size];
-			m_data[m_size] = temp;
+			std::swap(m_data[i], m_data[m_size]);
 		}
 		inline void	erase_and_pop_back( iterator it )
 		{
 			m_size--;
-			auto temp = *it;
-			(*it) = m_data[m_size];
-			m_data[m_size] = temp;
+			std::swap((*it), m_data[m_size]);
 		}
 		inline void	erase_and_pop_back( const T& val ) 
 		{
@@ -386,8 +390,16 @@ namespace EngineCore
 			m_size = 0;	
 		}
 
-		inline void	erase_and_pop_back( size_t i ) {m_data[i] = m_data[--m_size];}
-		inline void	erase_and_pop_back( iterator it ) {(*it) = m_data[--m_size];}
+		inline void	erase_and_pop_back( size_t i )
+		{
+			m_size--;
+			std::swap(m_data[i], m_data[m_size]);
+		}
+		inline void	erase_and_pop_back( iterator it )
+		{
+			m_size--;
+			std::swap((*it), m_data[m_size]);
+		}
 		inline void	erase_and_pop_back( const T& val ) 
 		{
 			iterator it = find( val );
@@ -583,7 +595,10 @@ namespace EngineCore
 		}
 		
 		inline void	erase_and_pop_back( size_t i )
-		{m_data[getIdx(i)] = m_data[getIdx(--m_size)];}
+		{
+			m_size--;
+			std::swap(m_data[getIdx(i)], m_data[getIdx(m_size)]);
+		}
 		inline void	erase_and_pop_back( const T& val ) 
 		{
 			size_t it = find( val );
@@ -757,7 +772,10 @@ namespace EngineCore
 		}
 		
 		inline void	erase_and_pop_back( size_t i )
-		{m_data[getIdx(i)] = m_data[getIdx(--m_size)];}
+		{
+			m_size--;
+			std::swap(m_data[getIdx(i)], m_data[getIdx(m_size)]);
+		}
 		inline void	erase_and_pop_back( const T& val ) 
 		{
 			size_t it = find( val );

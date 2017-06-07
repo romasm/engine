@@ -438,7 +438,7 @@ function Viewport:DeleteSelection() -- to history
     self.history.undo = function(self)
         local ents = {}
         for i = #self.old_ents, 1, -1 do
-            ents[#self.old_ents - i + 1] = Viewport.lua_world.world:RestoreEntity()
+            --ents[#self.old_ents - i + 1] = Viewport.lua_world.world:RestoreEntity()
             -- deserialize from historypool
         end
         Viewport:SetSelection(ents)

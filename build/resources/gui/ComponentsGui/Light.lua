@@ -146,7 +146,7 @@ return GuiGroup({
         top = 90,
         data = {
             min = 0.01,
-            max = 5000,
+            max = 1000,
             overflow_max = true,
         },
         alt = "Light luminous flux in Lumens",

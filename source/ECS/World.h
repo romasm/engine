@@ -23,7 +23,7 @@
 #include "TransformControls.h"
 #include "SceneGraph.h"
 
-#define DEFAULT_ENV L"preview"
+#define DEFAULT_ENV L"default"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
 
 #define TRANSFORM_BYTE 't'
@@ -153,8 +153,6 @@ namespace EngineCore
 		inline bool IsEntityEditorVisible(Entity e) {return m_entityMgr->IsEditorVisible(e);}
 	#endif
 
-		inline Entity RestoreEntity() {return m_entityMgr->RestoreEntity();}
-
 		inline bool IsEntityAlive(Entity e) {return m_entityMgr->IsAlive(e);}
 		void DestroyEntity(Entity e);
 		Entity CopyEntity(Entity e);
@@ -214,7 +212,6 @@ namespace EngineCore
 					.addFunction("GetEntityName", &BaseWorld::GetEntityName)
 					.addFunction("IsEntityAlive", &BaseWorld::IsEntityAlive)
 					.addFunction("DestroyEntity", &BaseWorld::DestroyEntity)
-					.addFunction("RestoreEntity", &BaseWorld::RestoreEntity)
 					.addFunction("CopyEntity", &BaseWorld::CopyEntity)
 					.addFunction("RenameEntity", &BaseWorld::RenameEntity)
 					.addFunction("GetEntityByName", &BaseWorld::GetEntityByName)

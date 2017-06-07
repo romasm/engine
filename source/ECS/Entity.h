@@ -62,30 +62,6 @@ namespace EngineCore
 			return res;
 		}
 
-		Entity RestoreEntity() // remove???
-		{
-			Entity res;
-			if(free_id.size() <= minFreeIdx)
-			{
-				res.setnull();
-				return res;
-			}
-
-			UINT idx = free_id.back();
-			free_id.pop_back();
-
-			generation[idx] = generation[idx] > 0 ? generation[idx] - 1 : 0;
-			res.set(idx, generation[idx]);
-			
-			entity_alive[idx] = true;
-			enable[idx] = true;
-		#ifdef _EDITOR
-			editor_visible[idx] = true;
-		#endif
-
-			return res;
-		}
-
 		inline bool IsAlive(Entity e)
 		{
 			return generation[e.index()] == e.generation();
