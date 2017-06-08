@@ -47,7 +47,7 @@ function SceneMgr:CreateWorld()
 end
 
 function SceneMgr:InitWorld(WLD)      
-    Resource.ForceTextureReloadBackground()
+    Resource.ForceResourceReload()
 
     Viewport:SetWorld(WLD)
 

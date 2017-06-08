@@ -62,7 +62,7 @@ function MainWindow:Init()
     SceneBrowser:Init()
     Viewport:Init()
 
-    Resource.ForceTextureReload()
+    Resource.ForceTextureReload() -- TODO: use callback system
 
 	self.mainwin:Show(true)
 end

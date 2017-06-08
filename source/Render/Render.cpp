@@ -29,14 +29,14 @@ namespace EngineCore
 		TEXTURE_NAME_DROP(path);
 	}
 
-	void ForceTextureReload()
+	void ForceTextureReload() // TODO: remove with callback system
 	{
 		TexMgr::Get()->UpdateTextures();
 	}
 
-	void ForceTextureReloadBackground()
+	void ForceResourceReload()
 	{
-		JOBSYSTEM->periodicalJobFillTimer(TEXTURE_JOB_NAME);
+		ResourceProcessor::Get()->ForceUpdate();
 	}
 
 	void ConvertMeshToSTM(string file)
@@ -56,7 +56,7 @@ namespace EngineCore
 
 	void PreloadSystemResources()
 	{
-		RENDER->resourceProc->Preload();
+		ResourceProcessor::Get()->Preload();
 	}
 
 	void Render::RegLuaClass()
@@ -68,8 +68,9 @@ namespace EngineCore
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
 				.addFunction("DropMaterial", &DropMaterialLua)
+				.addFunction("ForceResourceReload", &ForceResourceReload)
+
 				.addFunction("ForceTextureReload", &ForceTextureReload)
-				.addFunction("ForceTextureReloadBackground", &ForceTextureReloadBackground)
 
 				.addFunction("ConvertMeshToSTM", &ConvertMeshToSTM)
 			.endNamespace();
@@ -88,15 +89,12 @@ namespace EngineCore
 			m_pDxgiAdapter = nullptr;
 			m_pDxgiFactory = nullptr;
 			m_pImmediateContext = nullptr;
-
-			CurrentHudWindow = nullptr;
-
 			renderStateMgr = nullptr;
 			samplerStateMgr = nullptr;
-			
-			resourceProc = new ResourceProcessor;
+			bufferMgr = nullptr;
 
-			BufferObj = nullptr;
+			// remove
+			CurrentHudWindow = nullptr;
 
 			rts_null = new ID3D11RenderTargetView*[8];
 			for(uint8_t i = 0; i < 8; i++)
@@ -149,9 +147,7 @@ namespace EngineCore
 		}
 	#endif 
 		
-		BufferObj = new Buffer();
-
-		resourceProc->Init();
+		bufferMgr = new Buffer;
 
 		return true;
 	}
@@ -202,9 +198,7 @@ namespace EngineCore
 		_DELETE(renderStateMgr);
 		_DELETE(samplerStateMgr);
 
-		_DELETE(resourceProc);
-
-		_DELETE(BufferObj);
+		_DELETE(bufferMgr);
 
 		_RELEASE(m_pImmediateContext);
 		_RELEASE(m_pd3dDevice);

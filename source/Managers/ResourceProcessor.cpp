@@ -18,14 +18,20 @@ ResourceProcessor::ResourceProcessor()
 	if(!instance)
 	{
 		instance = this;
-		
-		materialMgr = nullptr;
-		texMgr = nullptr;
-		stmeshMgr = nullptr;
-		shaderMgr = nullptr;
-		shaderCodeMgr = nullptr;
-		fontMgr = nullptr;
-		worldMgr = nullptr;
+
+		loaderRunning = true;
+		loader = new thread(&ResourceProcessor::Update, &(*this));
+
+		updateDelay = 0;
+		updateTime = UPDATE_PERIOD_DEFAULT;
+
+		shaderMgr = new ShaderMgr;
+		shaderCodeMgr = new ShaderCodeMgr;
+		fontMgr = new FontMgr;
+		worldMgr = new WorldMgr;
+		texMgr = new TexMgr;
+		materialMgr = new MaterialMgr;
+		stmeshMgr = new StMeshMgr;
 	}
 	else
 		ERR("Only one instance of ResourceProcessor is allowed!");
@@ -33,13 +39,13 @@ ResourceProcessor::ResourceProcessor()
 
 ResourceProcessor::~ResourceProcessor()
 {
-#ifdef _DEV
-	JOBSYSTEM->deletePeriodicalJob(SHADER_JOB_NAME);
-	JOBSYSTEM->deletePeriodicalJob(SHADERCODE_JOB_NAME);
-#endif
-	JOBSYSTEM->deletePeriodicalJob(TEXTURE_JOB_NAME);
-	JOBSYSTEM->deletePeriodicalJob(STMESH_JOB_NAME);
-	
+	loaderRunning = false;
+	v_updateRequest.notify_all();
+
+	if(loader->joinable())
+		loader->join();
+	delete loader;
+
 	_DELETE(worldMgr);
 	_DELETE(fontMgr);
 	_DELETE(stmeshMgr);		
@@ -47,34 +53,54 @@ ResourceProcessor::~ResourceProcessor()
 	_DELETE(shaderMgr);
 	_DELETE(texMgr);
 	_DELETE(shaderCodeMgr);
+	
+	instance = nullptr;
 }
 
-void ResourceProcessor::StartUpdate()
+void ResourceProcessor::Tick(float dt)
 {
+	updateDelay += dt;
+
+	if(updateDelay >= updateTime)
+	{
+		updateDelay = 0;
+		v_updateRequest.notify_one();
+	}
+}
+
+void ResourceProcessor::ForceUpdate()
+{
+	updateDelay = 0;
+	v_updateRequest.notify_one();
+}
+
+void ResourceProcessor::Update()
+{
+	DBG_SHORT("Start loader tread %u ", JobSystem::GetThreadID());
+
+	while(loaderRunning)
+	{
+		// wait loading request
+		{
+			unique_lock<mutex> l(m_update);
+			v_updateRequest.wait(l);
+			l.unlock();
+		}
+
+		// MGRs update
 #ifdef _DEV
-	JOBSYSTEM->addPeriodicalJob(SHADER_JOB_NAME, JOB_F_MEMBER(ShaderMgr, ShaderMgr::Get(), UpdateShaders), 
-		SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
-	JOBSYSTEM->addPeriodicalJob(SHADERCODE_JOB_NAME, JOB_F_MEMBER(ShaderCodeMgr, ShaderCodeMgr::Get(), UpdateShadersCode), 
-		SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
+		shaderMgr->UpdateShaders();
+		shaderCodeMgr->UpdateShadersCode();
 #endif
-	JOBSYSTEM->addPeriodicalJob(TEXTURE_JOB_NAME, JOB_F_MEMBER(TexMgr, TexMgr::Get(), UpdateTextures), 
-		TEXTURES_UPDATE_PERIOD, JobPriority::BACKGROUND);
-	JOBSYSTEM->addPeriodicalJob(STMESH_JOB_NAME, JOB_F_MEMBER(StMeshMgr, StMeshMgr::Get(), UpdateStMeshes), 
-		STMESHES_UPDATE_PERIOD, JobPriority::BACKGROUND);
+		texMgr->UpdateTextures();
+		stmeshMgr->UpdateStMeshes();
+	}
+
+	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
-void ResourceProcessor::Init()
-{
-	shaderMgr = new ShaderMgr;
-	shaderCodeMgr = new ShaderCodeMgr;
-	fontMgr = new FontMgr;
-	worldMgr = new WorldMgr;
-	texMgr = new TexMgr;
-	materialMgr = new MaterialMgr;
-	stmeshMgr = new StMeshMgr;
-}
-
-void ResourceProcessor::Preload() // TODO: move preloading managment to Lua
+// TODO: move preloading managment to Lua
+void ResourceProcessor::Preload()
 {
 	shaderCodeMgr->PreloadPureCodes();
 	shaderMgr->PreloadShaders();

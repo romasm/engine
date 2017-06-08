@@ -43,7 +43,9 @@ public:
 			return;
 		}
 
-		m_wins = new WindowsMgr();
+		m_resourceProc = new ResourceProcessor;
+
+		m_wins = new WindowsMgr;
 
 		m_hud = new Hud;
 
@@ -92,6 +94,7 @@ public:
 		_DELETE(tick_func);
 		_DELETE(main_table);
 		_DELETE(m_wins);
+		_DELETE(m_resourceProc);
 
 		_CLOSE(m_hud);
 		_CLOSE(m_render);
@@ -106,8 +109,6 @@ public:
 
 	void Run()
 	{
-		ResourceProcessor::Get()->StartUpdate();
-
 		double rendertime = 0;
 		while(Frame(rendertime, false, false))
 		{
@@ -131,6 +132,7 @@ public:
 
 			// job update
 			jobSystem->Tick(m_timer.dt_ms);
+			m_resourceProc->Tick(m_timer.dt_ms);
 			
 			PERF_CPU_BEGIN(_LUA_TICK);
 			// Lua
@@ -207,6 +209,7 @@ private:
 	JobSystem* jobSystem;
 	
 	WindowsMgr* m_wins;
+	ResourceProcessor* m_resourceProc;
 	Render* m_render;
 	Hud* m_hud;
 

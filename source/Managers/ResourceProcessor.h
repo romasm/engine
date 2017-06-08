@@ -2,14 +2,7 @@
 #include "stdafx.h"
 #include "Common.h"
 
-#define SHADERS_UPDATE_PERIOD 2000.0f
-#define TEXTURES_UPDATE_PERIOD 3000.0f
-#define STMESHES_UPDATE_PERIOD 5000.0f
-
-#define SHADER_JOB_NAME "ShaderUpdate"
-#define SHADERCODE_JOB_NAME "ShaderCodeUpdate"
-#define TEXTURE_JOB_NAME "TexturesUpdate"
-#define STMESH_JOB_NAME "StMeshesUpdate"
+#define UPDATE_PERIOD_DEFAULT 5000.0f
 
 namespace EngineCore
 {
@@ -19,10 +12,12 @@ namespace EngineCore
 		ResourceProcessor();
 		~ResourceProcessor();
 
-		void Init();
-		void Preload();
+		void Tick(float dt);
 
-		void StartUpdate();
+		void Update();
+
+		void ForceUpdate();
+		void Preload();
 
 		inline static ResourceProcessor* Get(){return instance;}
 	private:
@@ -35,5 +30,13 @@ namespace EngineCore
 		class StMeshMgr* stmeshMgr;
 		class FontMgr* fontMgr;
 		class WorldMgr* worldMgr;
+
+		thread* loader;
+		mutex m_update;
+		condition_variable v_updateRequest;
+		bool loaderRunning;
+
+		float updateDelay;
+		float updateTime;
 	};
 }

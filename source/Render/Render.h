@@ -74,7 +74,7 @@ namespace EngineCore
 
 		Window* CurrentHudWindow;
 
-		Buffer* BufferObj;
+		Buffer* bufferMgr;
 
 		static void RegLuaClass();
 
