@@ -238,7 +238,7 @@ namespace EngineCore
 		
 		uint8_t LoadLights(uint8_t startOffset, bool isCS);
 
-		bool SaveScreenshot(string path, float ssX, float ssY);
+		bool SaveScreenshot(string path, uint32_t targetX, uint32_t targetY);
 
 		RenderTarget *rt_OpaqueForward;
 		RenderTarget *rt_AO;

@@ -1118,18 +1118,35 @@ void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
 	sp->ClearTex();
 }
 
-bool ScenePipeline::SaveScreenshot(string path, float ssX, float ssY)
+bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targetY)
 {
-	uint32_t w = uint32_t(width / ssX);
-	uint32_t h = uint32_t(height / ssY);
-
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(SP_SHADER_SCREENSHOT));
 	unique_ptr<RenderTarget> rt(new RenderTarget);
-	if(!rt->Init(w, h))
+	if(!rt->Init(targetX, targetY))
 		return false;
 
-	if(!rt->AddRT(DXGI_FORMAT_R8G8B8A8_UNORM))
+	if(!rt->AddRT(DXGI_FORMAT_B8G8R8A8_UNORM))
 		return false;
+
+	struct ParamsBuffer
+	{
+		XMFLOAT4 samplesPerPixel;
+		XMFLOAT4 pixelSize;
+	} params;
+
+	auto paramsBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(ParamsBuffer), true);
+	
+	params.samplesPerPixel.x = (float)(width / targetX);
+	params.samplesPerPixel.y = (float)(height / targetY);
+	params.samplesPerPixel.z = 1.0f / ( params.samplesPerPixel.x * params.samplesPerPixel.y );
+	params.samplesPerPixel.w = 0;
+	params.pixelSize.x = 1.0f / width;
+	params.pixelSize.y = 1.0f / height;
+	params.pixelSize.z = 0;
+	params.pixelSize.w = 0;
+
+	Render::UpdateDynamicResource(paramsBuffer, &params, sizeof(ParamsBuffer));
+	Render::PSSetConstantBuffers(0, 1, &paramsBuffer); 
 
 	sp->SetTexture(rt_Antialiased->GetShaderResourceView(1), 0);
 
@@ -1139,5 +1156,7 @@ bool ScenePipeline::SaveScreenshot(string path, float ssX, float ssY)
 	sp->Draw();
 	sp->ClearTex();
 		
+	_RELEASE(paramsBuffer);
+
 	return TexMgr::SaveTexture(path, rt->GetShaderResourceView(0));
 }

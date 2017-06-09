@@ -148,6 +148,7 @@
     <ClInclude Include="Common\Arrays.h" />
     <ClInclude Include="Common\Common.h" />
     <ClInclude Include="Common\DataTypes.h" />
+    <ClInclude Include="Common\Multithreading.h" />
     <ClInclude Include="Common\Pathes.h" />
     <ClInclude Include="Common\StringToData.h" />
     <ClInclude Include="Common\macros.h" />

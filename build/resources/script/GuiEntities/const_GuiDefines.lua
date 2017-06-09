@@ -72,6 +72,7 @@ GUI_PREVIEW_SIZE = {
     X = 88,
     Y = 88,
     PADDING = 4,
+    PREVIEW_SS = 4,
 
     LIVE_X = 298,
     LIVE_Y = 128,

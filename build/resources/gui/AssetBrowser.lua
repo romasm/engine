@@ -268,7 +268,7 @@ end
 
 function Gui.AssetBrowserMaterial(filename, matname, topOffset, leftOffset, num)
 
-if not FileIO.IsExist(filename..".tga") then 
+if not FileIO.IsExist(filename..".dds") then 
     AssetBrowser:GeneratePreview(filename..".mtb")
 end
 
@@ -276,7 +276,7 @@ local btn = GuiButton({
     styles = { GuiStyles.material_button, },
     icon = {material = {
         shader = "../resources/shaders/gui/rect_color_icon_alpha",
-        textures = {colorTex = filename..".tga"}
+        textures = {colorTex = filename..".dds"}
     }},
     --alt = matname,
     top = topOffset,

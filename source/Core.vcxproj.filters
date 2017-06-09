@@ -257,6 +257,9 @@
     <ClInclude Include="ECS\SceneGraph.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Multithreading.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">

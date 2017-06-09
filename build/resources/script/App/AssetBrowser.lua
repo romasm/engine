@@ -247,7 +247,7 @@ function AssetBrowser:Rename(textfield)
         selection = newPath
     end
 
-    FileIO.Rename( oldPath..".tga", newPath..".tga" )
+    FileIO.Rename( oldPath..".dds", newPath..".dds" )
     FileIO.Rename( oldPath..".mtb", newPath..".mtb" )
 
     self:RenameInList(oldPath, newPath)
@@ -331,7 +331,7 @@ end
 
 function AssetBrowser:Delete(deleteAssetID)
     FileIO.Delete( deleteAssetID ..".mtb" )
-    FileIO.Delete( deleteAssetID ..".tga" )
+    FileIO.Delete( deleteAssetID ..".dds" )
 
     self.copyBtn:Deactivate()
     self.deleteBtn:Deactivate()
@@ -371,9 +371,6 @@ function AssetBrowser:Find(str)
 end
 
 function AssetBrowser:InitPreviewWorld()
-    width = GUI_PREVIEW_SIZE.X * 2
-    height = GUI_PREVIEW_SIZE.Y * 2
-
     local worldmgr = GetWorldMgr()
     
     self.previewWorld = worldmgr:CreateSmallWorld()
@@ -390,7 +387,9 @@ function AssetBrowser:InitPreviewWorld()
     self.screenshotCamera:SetFov(0.25)
     self.screenshotCamera:SetFar(100.0)
     
-    self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width * 2, height * 2, true)
+    local width = GUI_PREVIEW_SIZE.X * GUI_PREVIEW_SIZE.PREVIEW_SS
+    local height = GUI_PREVIEW_SIZE.Y * GUI_PREVIEW_SIZE.PREVIEW_SS
+    self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width, height, true)
     self.screenshotScene:SetExposure(false, 0.2)
 
     self.screenshotCamera:Deactivate(self.screenshotScene)
@@ -442,12 +441,12 @@ function AssetBrowser:GeneratePreview(filename)
     end
 
     Resource.ForceResourceReload() -- TODO: use job callback system
-    self:PostGeneratePreview(filename:gsub("%.mtb", "%.tga"))
+    self:PostGeneratePreview(filename:gsub("%.mtb", "%.dds"))
 end
 
 function AssetBrowser:PostGeneratePreview(filename)
     self.previewWorld:Snapshot(self.screenshotScene)
-    self.screenshotScene:SaveScreenshot(filename, 2.0, 2.0)
+    self.screenshotScene:SaveScreenshot(filename, GUI_PREVIEW_SIZE.X, GUI_PREVIEW_SIZE.Y)
     
     self.screenshotAlphaPlane:Enable(false)
     self.screenshotSphere:SetMaterial(self.nullMat, 0)

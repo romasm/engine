@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "Common.h"
 
-#define UPDATE_PERIOD_DEFAULT 5000.0f
+#define UPDATE_PERIOD_DEFAULT 3000.0f
 
 namespace EngineCore
 {
