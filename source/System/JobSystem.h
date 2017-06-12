@@ -44,13 +44,13 @@ private:
 		jobMain func;
 		void* obj;
 
-		uint16_t id;
+		//uint16_t id;
 		uint16_t sync;
 		Job()
 		{
 			func = nullptr;
 			obj = nullptr;
-			id = 0;
+			//id = 0;
 			sync = MAX_SYNCS;
 		}
 	};
@@ -95,8 +95,6 @@ public:
 	void dropSync(uint16_t& id);
 
 	void treadFunc();
-
-	bool hasJobs() {return !(jobsBackground.empty() && jobsFrame.empty() && jobsImmediate.empty());}
 
 	inline static JobSystem* Get() {return instance;}
 

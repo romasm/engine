@@ -57,6 +57,7 @@ namespace EngineCore
 				else
 					pos = posLast.load(std::memory_order_relaxed);
 			}
+			
 			queueElement->data = data;
 			queueElement->sequence.store(pos + 1, std::memory_order_release);
 			return true;

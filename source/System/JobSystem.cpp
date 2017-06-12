@@ -140,7 +140,7 @@ void JobSystem::addJob(jobMain func, void* obj, uint16_t sync, JobPriority prior
 		j.func = func;
 		j.sync = sync;
 		j.obj = obj;
-		j.id = (uint16_t)priority * JOBS_MAX_QUEUE + (uint16_t)jobs->back_idx();
+		//j.id = (uint16_t)priority * JOBS_MAX_QUEUE + (uint16_t)jobs->back_idx();
 		
 		//if(sync < MAX_SYNCS) LOG("Job %u added with sync %u", j.id, j.sync);
 		//else LOG("Job %u added", j.id);
