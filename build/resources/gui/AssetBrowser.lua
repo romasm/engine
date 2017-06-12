@@ -275,7 +275,7 @@ end
 local btn = GuiButton({
     styles = { GuiStyles.material_button, },
     icon = {material = {
-        shader = "../resources/shaders/gui/rect_color_icon_alpha",
+        shader = "../resources/shaders/gui/rendered_preview",
         textures = {colorTex = filename..".dds"}
     }},
     --alt = matname,

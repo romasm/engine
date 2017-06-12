@@ -7,7 +7,7 @@ TECHNIQUE_DEFAULT
 
 	BlendEnable = true;
 	BlendOp = ADD;
-	SrcBlend = ONE;
+	SrcBlend = SRC_ALPHA;
 	DestBlend = INV_SRC_ALPHA;
 }
 

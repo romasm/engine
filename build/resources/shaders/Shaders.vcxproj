@@ -172,6 +172,7 @@
     <FxCompile Include="common\light_structs.hlsl" />
     <FxCompile Include="common\shadow_helpers.hlsl" />
     <FxCompile Include="common\transparency_helpers.hlsl" />
+    <FxCompile Include="gui\rendered_preview.hlsl" />
     <FxCompile Include="objects\transparency.hlsl" />
     <FxCompile Include="objects\transparent_medium.hlsl" />
   </ItemGroup>
