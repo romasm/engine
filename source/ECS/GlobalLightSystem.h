@@ -92,7 +92,18 @@ namespace EngineCore
 		// dir disk: x - sin ang, y - cos ang
 		XMFLOAT2 area_data; 
 
-		DArray<CascadeShadow> cascadePerCamera;					
+		DArray<CascadeShadow> cascadePerCamera;				
+
+	public:
+		GlobalLightComponent()
+		{
+			dirty = true;
+			parent.setnull();
+			area = 0;
+			active = true;
+			color = XMFLOAT3(1.0f,1.0f,1.0f);
+			brightness = 1.0f;
+		}
 	};
 
 	class BaseWorld;
