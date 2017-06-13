@@ -186,33 +186,39 @@ void ShaderMgr::DeleteShader(uint16_t id)
 #ifdef _DEV
 void ShaderMgr::UpdateShaders()
 {
-	for(auto& it: shader_map)
+	auto it = shader_map.begin();
+	while(it != shader_map.end())
 	{
-		auto& handle = shader_array[it.second];
+		auto& handle = shader_array[it->second];
 
-		string srcFilename = it.first + EXT_SHADER_SOURCE;
+		string srcFilename = it->first + EXT_SHADER_SOURCE;
 
 		uint32_t last_date = FileIO::GetDateModifRaw(srcFilename);
 		if(last_date == handle.shader->GetSrcDate())
+		{
+			it++;
 			continue;
+		}
 				
 		BaseShader* newShader;
 		if(handle.shader->IsSimple())
-			newShader = (BaseShader*) new SimpleShader((string&)it.first);
+			newShader = (BaseShader*) new SimpleShader((string&)it->first);
 		else
-			newShader = (BaseShader*) new Shader((string&)it.first);
+			newShader = (BaseShader*) new Shader((string&)it->first);
 
 		handle.shader->SetSrcDate(last_date);
 
 		if(newShader->IsError())
 		{
 			_DELETE(newShader);
+			it++;
 			continue;
 		}
 
-		BaseShader* remove = handle.shader;
+		BaseShader* oldShader = handle.shader;
 		handle.shader = newShader;
-		_DELETE(remove);
+		_DELETE(oldShader);
+		it++;
 	}
 }
 #endif

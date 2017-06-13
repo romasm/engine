@@ -26,7 +26,7 @@ StMeshMgr::StMeshMgr()
 		mesh_reloaded.resize(STMESH_MAX_COUNT);
 		mesh_reloaded.assign(0);
 		
-		null_mesh = loadSTMFile(string(PATH_STMESH_NULL));
+		null_mesh = LoadFromFile(string(PATH_STMESH_NULL));
 	}
 	else
 		ERR("Only one instance of StMeshMgr is allowed!");
@@ -89,13 +89,12 @@ uint32_t StMeshMgr::AddStMeshToList(string& name, bool reload)
 	if(!FileIO::IsExist(name))
 		return STMESH_NULL;
 
-	if(name.find(EXT_STATIC) != string::npos)
-		handle.mesh = loadSTMFile( name );
-	else
-		handle.mesh = loadNoNativeFile( name );
-	if(handle.mesh->matCount == 0)
-		return STMESH_NULL;
-	//handle.mesh = null_mesh;
+	handle.mesh = LoadFromFile( name ); // TODO: loading in background
+	if(!handle.mesh || handle.mesh->matCount == 0)
+	{
+		_CLOSE(handle.mesh);
+		handle.mesh = null_mesh;
+	}
 	
 	handle.name = name;
 	handle.refcount = 1;
@@ -103,11 +102,7 @@ uint32_t StMeshMgr::AddStMeshToList(string& name, bool reload)
 	if(reload)
 		handle.filedate = FileIO::GetDateModifRaw(name);
 	else
-		handle.filedate = NOT_RELOAD;
-	/*if(reload)
-		handle.filedate = NEED_RELOADING;
-	else
-		handle.filedate = NEED_LOADING_ONCE;*/
+		handle.filedate = ReloadingType::RELOAD_NOT;
 
 	mesh_map.insert(make_pair(name, idx));
 	mesh_free.pop_front();
@@ -193,120 +188,164 @@ void StMeshMgr::DeleteStMeshByName(string& name)
 void StMeshMgr::UpdateStMeshes()
 {
 	bool something_reloaded = false;
-	for(auto& it: mesh_map)
+	auto it = mesh_map.begin();
+	while(it != mesh_map.end())
 	{
-		auto& handle = mesh_array[it.second];
+		auto& handle = mesh_array[it->second];
 
-		if(handle.filedate == NOT_RELOAD)
+		if(handle.filedate == ReloadingType::RELOAD_NOT)
+		{
+			it++;
 			continue;
+		}
 
-		if(handle.filedate == NEED_LOADING_ONCE)
-			handle.filedate = NOT_RELOAD;
+		if( handle.filedate == ReloadingType::RELOAD_ONCE )
+			handle.filedate = ReloadingType::RELOAD_NOT;
 		else
 		{
 			uint32_t last_date = FileIO::GetDateModifRaw(handle.name);
-			if(last_date == handle.filedate || handle.filedate == NOT_RELOAD)
+			if(last_date == handle.filedate || handle.filedate == ReloadingType::RELOAD_NOT)
+			{
+				it++;
 				continue;
+			}
 			handle.filedate = last_date;
 		}
 
-		StMeshData* newMesh;
-		if(handle.name.find(EXT_STATIC) != string::npos)
-			newMesh = loadSTMFile( handle.name );
-		else
-			newMesh = loadNoNativeFile( handle.name );
-		if(!newMesh)
-			continue;
-
-		auto oldMesh = handle.mesh;
-		handle.mesh = newMesh;
-		if(oldMesh != null_mesh)
-			_CLOSE(oldMesh);
-
+		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::MESH);
+		
 		something_reloaded = true;
-		mesh_reloaded[it.second] = handle.refcount;
+		mesh_reloaded[it->second] = handle.refcount;
+		it++;
 	}
 
-	if(something_reloaded)
+	if(something_reloaded) // TODO: valid bbox update
 		WorldMgr::Get()->PostStMeshesReload();
 }
 
-StMeshData* StMeshMgr::loadSTMFile(string& name)
+void StMeshMgr::SaveSTMFile(string& file) 
 {
-	ifstream fin;
+	StMeshHandle nullHandle;
+	nullHandle.name = file;
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(nullHandle.name, &size);
+	if(!data)
+		return;
+
+	loadNoNativeFileFromMemory(nullHandle.name, data, size, true);
+	_DELETE_ARRAY(data);
+}
+
+StMeshData* StMeshMgr::LoadFromFile(string& filename)
+{
+	StMeshHandle nullHandle;
+	nullHandle.name = filename;
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(nullHandle.name, &size);
+	if(!data)
+		return nullptr;
+
+	LoadFromMemory(nullHandle, data, size);
+	_DELETE_ARRAY(data);
+	return nullHandle.mesh;
+}
+
+void StMeshMgr::LoadFromMemory(StMeshHandle& handle, uint8_t* data, uint32_t size)
+{
+	StMeshData* newMesh;
+	if(handle.name.find(EXT_STATIC) != string::npos)
+		newMesh = loadSTMFileFromMemory( handle.name, data, size );
+	else
+		newMesh = loadNoNativeFileFromMemory( handle.name, data, size );
+
+	auto oldMesh = handle.mesh;
+	handle.mesh = newMesh;
+	if(oldMesh != null_mesh)
+		_CLOSE(oldMesh);
+}
+
+StMeshData* StMeshMgr::loadSTMFileFromMemory(string& name, uint8_t* data, uint32_t size)
+{
 	LitVertex **vertices;
 	int **indices;
+		
+	uint8_t* t_data = data;
+	
+	StMeshData* mesh = new StMeshData;
 
-	StMeshData* stmesh = new StMeshData();
+	mesh->matCount = (uint16_t)(*(int32_t*)t_data);
+	t_data += sizeof(int32_t);
 
-	fin.open(name, std::ios::binary);
-	if(!fin.is_open())
+	vertices = new LitVertex*[mesh->matCount];
+	indices = new int*[mesh->matCount];
+
+	mesh->indexCount = new uint32_t[mesh->matCount];
+	mesh->vertexCount = new uint32_t[mesh->matCount];
+	mesh->vertexBuffer = new ID3D11Buffer*[mesh->matCount];
+	mesh->indexBuffer = new ID3D11Buffer*[mesh->matCount];
+
+	for(uint16_t i=0; i<mesh->matCount; i++)
 	{
-		ERR("Cant load static mesh STM file %s", name.c_str());
-		_CLOSE(stmesh);
-		return nullptr;
-	}
+		mesh->vertexCount[i] = *(uint32_t*)t_data; 
+		t_data += sizeof(uint32_t); //vertex count
 
-	fin.read( (char*)&(stmesh->matCount), sizeof(int32_t) );
-	vertices = new LitVertex*[stmesh->matCount];
-	indices = new int*[stmesh->matCount];
-
-	stmesh->indexCount = new uint32_t[stmesh->matCount];
-	stmesh->vertexCount = new uint32_t[stmesh->matCount];
-	stmesh->vertexBuffer = new ID3D11Buffer*[stmesh->matCount];
-	stmesh->indexBuffer = new ID3D11Buffer*[stmesh->matCount];
-
-	for(uint16_t i=0; i<stmesh->matCount; i++)
-	{
-		fin.read( (char*)&(stmesh->vertexCount[i]), sizeof(uint32_t) ); //vertex count
-		vertices[i] = new LitVertex[stmesh->vertexCount[i]];
-		for(uint32_t j=0; j<stmesh->vertexCount[i]; j++)
+		vertices[i] = new LitVertex[mesh->vertexCount[i]];
+		for(uint32_t j=0; j<mesh->vertexCount[i]; j++)
 		{
-			fin.read( (char*)&(vertices[i][j]), sizeof(LitVertex) );
+			vertices[i][j] = *(LitVertex*)t_data;
+			t_data += sizeof(LitVertex);
 		}
 
-		fin.read( (char*)&(stmesh->indexCount[i]), sizeof(uint32_t) ); //index count
-		indices[i] = new int[stmesh->indexCount[i]];
-		for(uint32_t j=0; j<stmesh->indexCount[i]; j++)
+		mesh->indexCount[i] = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t); //index count
+
+		indices[i] = new int[mesh->indexCount[i]];
+		for(uint32_t j=0; j<mesh->indexCount[i]; j++)
 		{
-			fin.read( (char*)&(indices[i][j]), sizeof(uint32_t) );
+			indices[i][j] = *(uint32_t*)t_data;
+			t_data += sizeof(uint32_t);
 		}
 	}
 
 	XMFLOAT3 center;
 	//							temp: REMOVE
 	float radius;
-	fin.read( (char*)&(center), sizeof(XMFLOAT3) ); 
-	fin.read( (char*)&(radius), sizeof(float) ); 
-	//stmesh->sphere = BoundingSphere(center, radius);
+	center = *(XMFLOAT3*)t_data;
+	t_data += sizeof(XMFLOAT3); 
+
+	radius = *(float*)t_data;
+	t_data += sizeof(float);
+	//mesh->sphere = BoundingSphere(center, radius);
 	
 	XMFLOAT3 extents;
-	fin.read( (char*)&(center), sizeof(XMFLOAT3) ); 
-	fin.read( (char*)&(extents), sizeof(XMFLOAT3) );
-	stmesh->box = BoundingBox(center, extents);
+	center = *(XMFLOAT3*)t_data;
+	t_data += sizeof(XMFLOAT3); 
 
-	fin.close();
+	extents = *(XMFLOAT3*)t_data;
+	t_data += sizeof(XMFLOAT3); 
 
-	for(int i=0; i<stmesh->matCount; i++)
+	mesh->box = BoundingBox(center, extents);
+	
+	for(int i=0; i<mesh->matCount; i++)
 	{
-		stmesh->vertexBuffer[i] = Buffer::CreateVertexBuffer(Render::Device(), sizeof(LitVertex)*stmesh->vertexCount[i], false, vertices[i]);
-		if (!stmesh->vertexBuffer[i])
+		mesh->vertexBuffer[i] = Buffer::CreateVertexBuffer(Render::Device(), sizeof(LitVertex)*mesh->vertexCount[i], false, vertices[i]);
+		if (!mesh->vertexBuffer[i])
 		{
 			ERR("Cant init static mesh vertex buffer for %s", name.c_str());
-			_CLOSE(stmesh);
+			_CLOSE(mesh);
 			return nullptr;
 		}
 
-		stmesh->indexBuffer[i] = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t)*stmesh->indexCount[i], false, indices[i]);
-		if (!stmesh->indexBuffer[i])
+		mesh->indexBuffer[i] = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t)*mesh->indexCount[i], false, indices[i]);
+		if (!mesh->indexBuffer[i])
 		{
 			ERR("Cant init static mesh index buffer for %s", name.c_str());
-			_CLOSE(stmesh);
+			_CLOSE(mesh);
 			return nullptr;
 		}
 	}
 	
-	for(int i = stmesh->matCount - 1; i >= 0; i--)
+	for(int i = mesh->matCount - 1; i >= 0; i--)
 	{
 		_DELETE_ARRAY(vertices[i]);
 		_DELETE_ARRAY(indices[i]);
@@ -315,13 +354,12 @@ StMeshData* StMeshMgr::loadSTMFile(string& name)
 	_DELETE_ARRAY(indices);
 
 	LOG("Static mesh(.stm) loaded %s", name.c_str());
-
-	return stmesh;
+	return mesh;
 }
 
-StMeshData* StMeshMgr::loadNoNativeFile(string& filename, bool onlyConvert)
+StMeshData* StMeshMgr::loadNoNativeFileFromMemory(string& name, uint8_t* data, uint32_t size, bool onlyConvert)
 {
-	string extension = filename.substr(filename.rfind('.'));
+	string extension = name.substr(name.rfind('.'));
 
 	if( !m_importer.IsExtensionSupported(extension) )
 	{
@@ -329,30 +367,27 @@ StMeshData* StMeshMgr::loadNoNativeFile(string& filename, bool onlyConvert)
 		return nullptr;
 	}
 
-	const aiScene* scene = m_importer.ReadFile( filename, 
+	const aiScene* scene = m_importer.ReadFileFromMemory( data, size, 
         aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded | aiProcess_PreTransformVertices);
 
 	if(!scene)
 	{
-		ERR("Import failed for static model %s", filename.c_str());
+		ERR("Import failed for static model %s", name.c_str());
 		return nullptr;
 	}
 
-	StMeshData* stmesh = loadAIScene(filename, scene, onlyConvert, onlyConvert);
+	StMeshData* mesh = loadAIScene(name, scene, onlyConvert, onlyConvert);
 	m_importer.FreeScene();
 
 	if(onlyConvert)
 	{
-		LOG("Static mesh %s converted to STM", filename.c_str());
-		_CLOSE(stmesh);
+		LOG("Static mesh %s converted to STM", name.c_str());
+		_CLOSE(mesh);
 		return nullptr;
 	}
-	else
-	{
-		LOG("Static mesh %s loaded", filename.c_str());
-		return stmesh;
-	}
-	return nullptr;
+	
+	LOG("Static mesh %s loaded", name.c_str());
+	return mesh;
 }
 
 StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool convert, bool noInit)

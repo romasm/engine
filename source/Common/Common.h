@@ -11,5 +11,6 @@
 #include "GlobalColor.h"
 #include "LuaVM.h"
 #include "Arrays.h"
+#include "Multithreading.h"
 
 #include "JobSystem.h"

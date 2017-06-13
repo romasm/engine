@@ -115,8 +115,6 @@ function AssetBrowser:FillBody()
         self:AddButton(i)
     end
 
-    Resource.ForceResourceReload()
-
     self.body.height = self.topOffset + GUI_PREVIEW_SIZE.Y + self.padding
 end
 
@@ -440,7 +438,7 @@ function AssetBrowser:GeneratePreview(filename)
         self.screenshotAlphaPlane:Enable(true)
     end
 
-    Resource.ForceResourceReload() -- TODO: use job callback system
+    --Resource.ForceResourceReload() -- TODO: use job callback system?
     self:PostGeneratePreview(filename:gsub("%.mtb", "%.dds"))
 end
 

@@ -222,31 +222,40 @@ uint16_t ShaderCodeMgr::AddShaderToList(string& name, uint8_t type)
 void ShaderCodeMgr::UpdateShadersCode()
 {
 	for(uint8_t type = 0; type < 6; type++)
-		for(auto& it: shader_map[type])
+	{
+		auto it = shader_map[type].begin();
+		while(it != shader_map[type].end())
 		{
-			auto& shader_code = shader_array[it.second];
+			auto& handle = shader_array[it->second];
 
-			auto del = it.first.rfind('_');
+			auto del = it->first.rfind('_');
 			if(del == string::npos)
 			{
-				ERR("Wrong shader path %s !", it.first.c_str());
+				ERR("Wrong shader path %s !", it->first.c_str());
+				it++;
 				continue;
 			}
-			string srcFilename = it.first.substr(0, del) + EXT_SHADER_SOURCE;
+			string srcFilename = it->first.substr(0, del) + EXT_SHADER_SOURCE;
 
 			uint32_t last_date = FileIO::GetDateModifRaw(srcFilename);
-			if(last_date == shader_code.filedate)
+			if(last_date == handle.filedate)
+			{
+				it++;
 				continue;
+			}
 			
-			shader_code.filedate = last_date;
+			handle.filedate = last_date;
 
-			string entryPoint = it.first.substr(del+1);
-			string bcFilename = it.first + EXT_SHADER_BYTECODE;
+			string entryPoint = it->first.substr(del+1);
+			string bcFilename = it->first + EXT_SHADER_BYTECODE;
 
 			uint32_t date = 0;
 			auto blob = CompileShader(srcFilename, bcFilename, entryPoint, type, &date);
 			if(!blob)
+			{
+				it++;
 				continue;
+			}
 
 			void* code_ptr = nullptr;
 			HRESULT hr;
@@ -262,12 +271,16 @@ void ShaderCodeMgr::UpdateShadersCode()
 			_RELEASE(blob);
 			if( FAILED(hr) )
 			{
-				ERR("Cant create shader %s", it.first.c_str());
+				ERR("Cant create shader %s", it->first.c_str());
+				it++;
 				continue;
 			}
 
-			shader_code.code = code_ptr;
+			ID3D11DeviceChild* oldCode = (ID3D11DeviceChild*)handle.code;
+			handle.code = code_ptr;
+			it++;
 		}
+	}
 }
 
 ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& entryPoint, uint8_t type, uint32_t* date)

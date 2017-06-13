@@ -143,6 +143,9 @@
     <Compile Include="..\..\gui\Pieces\ColorPickerScript.lua">
       <Link>Gui\Pieces\ColorPickerScript.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\Pieces\DialogScreen.lua">
+      <Link>Gui\Pieces\DialogScreen.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\Pieces\Texture.lua">
       <Link>Gui\Pieces\Texture.lua</Link>
     </Compile>

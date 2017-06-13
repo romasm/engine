@@ -24,8 +24,8 @@ TexMgr::TexMgr()
 		for(uint32_t i=0; i<TEX_MAX_COUNT; i++)
 			tex_free[i] = i;
 		tex_map.reserve(TEX_INIT_COUNT);
-		
-		null_texture = LoadTexture(string(PATH_TEXTURE_NULL));
+
+		null_texture = LoadFromFile(string(PATH_TEXTURE_NULL));
 	}
 	else
 		ERR("Only one instance of TexMgr is allowed!");
@@ -107,24 +107,31 @@ uint32_t TexMgr::AddTextureToList(string& name, bool reload)
 
 	uint32_t idx = tex_free.front();
 	auto& handle = tex_array[idx];
+
+	handle.name = name;
+	handle.tex = null_texture;
+	handle.refcount = 1;
 	
 	if(!FileIO::IsExist(name))
 	{
 		WRN("Texture file %s doesn\'t exist, creation expected in future.", name.data());
+		if(reload)
+			handle.filedate = ReloadingType::RELOAD_YES;
+		else
+			handle.filedate = ReloadingType::RELOAD_ONCE;
 	}
-	handle.tex = null_texture;
-	
-	handle.name = name;
-	handle.refcount = 1;
-
-	if(reload)
-		handle.filedate = NEED_RELOADING;
 	else
-		handle.filedate = NEED_LOADING_ONCE;
-
+	{
+		if(reload)
+			handle.filedate = FileIO::GetDateModifRaw(name);
+		else
+			handle.filedate = ReloadingType::RELOAD_NOT;
+		ResourceProcessor::Get()->QueueLoad(idx, ResourceType::TEXTURE);
+	}
+	
 	tex_map.insert(make_pair(name, idx));
 	tex_free.pop_front();
-
+	
 	return idx;
 }
 
@@ -203,89 +210,108 @@ void TexMgr::DeleteTextureByName(string& name)
 		handle.refcount--;
 }
 
-void TexMgr::UpdateTextures() // TODO!!!! CRASH!!! when map size chaged while iterating throw it
+void TexMgr::Postload(uint32_t id) // TODO: callback, mip gen
 {
-	for(auto& it: tex_map)
+	auto& handle = tex_array[id];
+
+
+}
+
+void TexMgr::UpdateTextures()
+{
+	auto it = tex_map.begin();
+	while(it != tex_map.end())
 	{
-		auto& tex = tex_array[it.second];
+		auto& handle = tex_array[it->second];
 
-		if(tex.filedate == NOT_RELOAD)
-			continue;
-
-		if(tex.filedate == NEED_LOADING_ONCE)
+		if( handle.filedate == ReloadingType::RELOAD_NOT )
 		{
-			if(FileIO::IsExist(tex.name))
-				tex.filedate = NOT_RELOAD;
-			else
-				continue;
+			it++;
+			continue;
 		}
+
+		if( handle.filedate == ReloadingType::RELOAD_ONCE )
+			handle.filedate = ReloadingType::RELOAD_NOT;
 		else
 		{
-			uint32_t last_date = FileIO::GetDateModifRaw(tex.name);
-			if(last_date == tex.filedate || last_date == 0 || tex.filedate == NOT_RELOAD)
+			uint32_t last_date = FileIO::GetDateModifRaw(handle.name);
+			if( last_date == handle.filedate || last_date == 0 || handle.filedate == ReloadingType::RELOAD_NOT )
+			{	
+				it++;
 				continue;
-			tex.filedate = last_date;
+			}
+			handle.filedate = last_date;
 		}
-
-		auto newTex = LoadTexture(tex.name);
-		if(!newTex)
-			continue;
-
-		auto oldTex = tex.tex;
-		tex.tex = newTex;
-		if(oldTex != null_texture)
-			_RELEASE(oldTex);
+		
+		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::TEXTURE);
+		it++;
 	}
 }
 
-ID3D11ShaderResourceView* TexMgr::LoadTexture(string& name)
+ID3D11ShaderResourceView* TexMgr::LoadFromFile(string& filename)
 {
-	wstring tempName = StringToWstring(name);
-	ID3D11ShaderResourceView* tex = nullptr;
+	TexHandle nullHandle;
+	nullHandle.name = filename;
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(nullHandle.name, &size);
+	if(!data)
+		return nullptr;
+	
+	LoadFromMemory(nullHandle, data, size);
+	_DELETE_ARRAY(data);
+	return nullHandle.tex;
+}
 
-	if(name.find(".dds") != string::npos || name.find(".DDS") != string::npos)
+void TexMgr::LoadFromMemory(TexHandle& handle, uint8_t* data, uint32_t size)
+{
+	ID3D11ShaderResourceView* newTex = nullptr;
+
+	if(handle.name.find(".dds") != string::npos || handle.name.find(".DDS") != string::npos)
 	{
-		HRESULT hr = CreateDDSTextureFromFileEx( DEVICE, tempName.c_str(), 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &tex, nullptr);
+		HRESULT hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
 		if(FAILED(hr))
 		{
-			ERR("Cant load DDS texture %s !", name.c_str());
-			return nullptr;
+			ERR("Cant load DDS texture %s !", handle.name.c_str());
+			return;
 		}
 	}
-	else if(name.find(".tga") != string::npos || name.find(".TGA") != string::npos)
+	else if(handle.name.find(".tga") != string::npos || handle.name.find(".TGA") != string::npos)
 	{
 		TexMetadata metaData;
 		ScratchImage image;
-		HRESULT hr = LoadFromTGAFile(tempName.c_str(), &metaData, image);
+		HRESULT hr = LoadFromTGAMemory(data, size, &metaData, image);
 		if(FAILED(hr))
 		{
-			ERR("Cant load TGA texture %s !", name.c_str());
-			return nullptr;
+			ERR("Cant load TGA texture %s !", handle.name.c_str());
+			return;
 		}
-		
+
 		ScratchImage imageMips;
 		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &tex);
+		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
 	}
 	else
 	{
 		TexMetadata metaData;
 		ScratchImage image;
-		HRESULT hr = LoadFromWICFile(tempName.c_str(), WIC_FLAGS_IGNORE_SRGB, &metaData, image);
+		HRESULT hr = LoadFromWICMemory(data, size, WIC_FLAGS_IGNORE_SRGB, &metaData, image);
 		if(FAILED(hr))
 		{
-			ERR("Cant load WIC texture %s !", name.c_str());
-			return nullptr;
+			ERR("Cant load WIC texture %s !", handle.name.c_str());
+			return;
 		}
-		
+
 		ScratchImage imageMips;
 		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &tex);
+		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
 	}	
 
-	LOG("Texture loaded %s", name.c_str());
+	auto oldTex = handle.tex;
+	handle.tex = newTex;
+	if(oldTex != null_texture)
+		_RELEASE(oldTex);
 
-	return tex;
+	LOG("Texture loaded %s", handle.name.c_str());
 }
 
 bool TexMgr::SaveTexture(string& name, ID3D11ShaderResourceView* srv)

@@ -110,7 +110,7 @@ namespace EngineCore
 		bool GetShadow(Entity e);
 
 		uint32_t GetMeshID(Entity e);
-		string GetMeshLua(Entity e) {return StMeshMgr::GetStMeshName(GetMeshID(e));}
+		string GetMeshLua(Entity e) {return StMeshMgr::GetName(GetMeshID(e));}
 
 		bool SetMaterial(Entity e, int i, string matname);
 		bool SetMeshMats(Entity e, string& mesh, RArray<string>& mats);

@@ -17,7 +17,7 @@ namespace EngineCore
 		{
 			dataArray = nullptr;
 
-			if( size < 2 || size & (size - 1) != 0 )
+			if( size < 2 || (size & (size - 1)) != 0 )
 			{
 				ERR("RQueueLockfree size must be power of 2 and 2 at least!");
 				return;
@@ -45,7 +45,7 @@ namespace EngineCore
 			while(true)
 			{
 				queueElement = &dataArray[pos & dataMask];
-				size_t sequence = queueElement->sequence.load(std::memory_order_acquire);
+				size_t seq = queueElement->sequence.load(std::memory_order_acquire);
 				intptr_t diff = (intptr_t)seq - (intptr_t)pos;
 				if( diff == 0 )
 				{

@@ -40,6 +40,7 @@ loader.require("GuiEntities.GuiFilefield", CoreGui.UpdateLuaFuncs)
 -- gui pieces
 loader.require("Pieces.ColorPickerScript")
 loader.require("Pieces.Texture") -- todo
+loader.require("Pieces.DialogScreen")
 
 
 -- world entities

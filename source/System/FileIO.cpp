@@ -16,10 +16,7 @@ void FileIO::init(string& file, bool overwrite)
 
 		fileData = FileIO::ReadFileData(fileName, &fileSize);
 		if(!fileData)
-		{
-			ERR("Cant read file %s", fileName.c_str());
 			return;
-		}
 
 		buildMap(fileData, fileSize);
 		_DELETE(fileData);
@@ -355,7 +352,10 @@ uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size)
 
 	stream.open(filename, ifstream::in | ifstream::binary);
 	if(!stream.good())
+	{
+		ERR("Cant read file %s", filename.c_str());
 		return nullptr;
+	}
 	
 	stream.seekg(0, ios::end);
 	size = uint32_t(stream.tellg());

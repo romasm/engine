@@ -21,9 +21,12 @@
 static float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 // --------------------------------
 
-#define NOT_RELOAD 0
-#define NEED_LOADING_ONCE 2
-#define NEED_RELOADING 1
+enum ReloadingType
+{
+	RELOAD_NOT = 0,
+	RELOAD_YES,
+	RELOAD_ONCE
+};
 
 struct MLRECT
 {

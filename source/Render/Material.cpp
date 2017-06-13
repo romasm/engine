@@ -592,7 +592,7 @@ string Material::GetTextureName(uint8_t id, uint8_t shader)
 	TextureHandle& tex = textures[shader][id];
 	if(tex.is_ptr)
 		return string();
-	return TexMgr::GetTextureName((uint32_t)tex.texture);;
+	return TexMgr::GetName((uint32_t)tex.texture);;
 }
 
 void Material::ClearTextures()
@@ -1184,7 +1184,7 @@ string SimpleShaderInst::GetTextureName(uint8_t id)
 	TextureHandle& tex = textures[id];
 	if(tex.is_ptr)
 		return string();
-	return TexMgr::GetTextureName((uint32_t)tex.texture);;
+	return TexMgr::GetName((uint32_t)tex.texture);;
 }
 
 void SimpleShaderInst::ClearTextures()

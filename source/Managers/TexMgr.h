@@ -23,7 +23,7 @@ namespace EngineCore
 		
 		inline static TexMgr* Get(){return instance;}
 		
-		static string& GetTextureName(uint32_t id)
+		static string& GetName(uint32_t id)
 		{
 			if(id == TEX_NULL) return null_name;
 			return instance->tex_array[id].name;
@@ -41,6 +41,11 @@ namespace EngineCore
 			return instance->tex_array[id].tex;
 		}
 
+		inline void LoadFromMemory(uint32_t id, uint8_t* data, uint32_t size)
+		{ LoadFromMemory(tex_array[id], data, size); }
+		ID3D11ShaderResourceView* LoadFromFile(string& filename);
+
+		void Postload(uint32_t id);
 		void UpdateTextures();
 
 	private:
@@ -71,8 +76,7 @@ namespace EngineCore
 		uint32_t AddTextureToList(string& name, bool reload);
 		uint32_t FindTextureInList(string& name);
 
-		ID3D11ShaderResourceView* LoadTexture(string& name);
-
+		void LoadFromMemory(TexHandle& handle, uint8_t* data, uint32_t size);
 	public:
 		static bool SaveTexture(string& name, ID3D11ShaderResourceView* srv);
 	};

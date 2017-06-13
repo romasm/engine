@@ -62,7 +62,7 @@ function MainWindow:Init()
     SceneBrowser:Init()
     Viewport:Init()
 
-    Resource.ForceTextureReload() -- TODO: use callback system
+    --Resource.ForceTextureReload() -- TODO: wait resource loading
 
 	self.mainwin:Show(true)
 end
@@ -249,8 +249,22 @@ function MainWindow:SetsMenuClick(btn, ev)
     if ev.id == "tb_render" then
         print("Opening render settings")
 
+        Gui.DialogOkCancel(
+            self.mainWinRoot.entity,
+            "Overwrite existing file?", 0,
+            function() print("ok") end,
+            function() print("cancel") end
+        )
+
     elseif ev.id == "tb_interface" then
         print("Opening interface settings")
+        
+        Gui.DialogYesNoCancel(
+            self.mainWinRoot.entity,
+            "Are you completely retarded?", 0,
+            function() print("yes") end,
+            function() print("no") end
+        )
 
     elseif ev.id == "tb_dev_shbuf" then
         print("Opening shadows debug view")

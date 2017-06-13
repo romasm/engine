@@ -109,6 +109,8 @@ public:
 
 	void Run()
 	{
+		ResourceProcessor::Get()->AddUpdateJobs();
+
 		double rendertime = 0;
 		while(Frame(rendertime, false, false))
 		{

@@ -29,16 +29,6 @@ namespace EngineCore
 		TEXTURE_NAME_DROP(path);
 	}
 
-	void ForceTextureReload() // TODO: remove with callback system
-	{
-		TexMgr::Get()->UpdateTextures();
-	}
-
-	void ForceResourceReload()
-	{
-		ResourceProcessor::Get()->ForceUpdate();
-	}
-
 	void ConvertMeshToSTM(string file)
 	{
 		StMeshMgr::Get()->SaveSTMFile(file);
@@ -68,9 +58,6 @@ namespace EngineCore
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
 				.addFunction("DropMaterial", &DropMaterialLua)
-				.addFunction("ForceResourceReload", &ForceResourceReload)
-
-				.addFunction("ForceTextureReload", &ForceTextureReload)
 
 				.addFunction("ConvertMeshToSTM", &ConvertMeshToSTM)
 			.endNamespace();

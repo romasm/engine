@@ -70,7 +70,7 @@ namespace EngineCore
 			return instance->mesh_array[id].mesh;
 		}
 
-		static string& GetStMeshName(uint32_t id)
+		static string& GetName(uint32_t id)
 		{
 			if(id == STMESH_NULL) return null_name;
 			return instance->mesh_array[id].name;
@@ -88,7 +88,11 @@ namespace EngineCore
 			return res;
 		}
 
-		inline void SaveSTMFile(string& file) {loadNoNativeFile(file, true);}
+		inline void LoadFromMemory(uint32_t id, uint8_t* data, uint32_t size)
+		{ LoadFromMemory(mesh_array[id], data, size); }
+		StMeshData* LoadFromFile(string& filename);
+
+		void SaveSTMFile(string& file);
 
 	private:
 		static StMeshMgr *instance;
@@ -117,13 +121,15 @@ namespace EngineCore
 
 		SArray<uint32_t, STMESH_MAX_COUNT> mesh_reloaded;
 
+		Assimp::Importer m_importer;
+		
 		uint32_t AddStMeshToList(string& name, bool reload);
 		uint32_t FindStMeshInList(string& name);
-
-		StMeshData* loadSTMFile(string& name);
 		
-		Assimp::Importer m_importer;
-		StMeshData* loadNoNativeFile(string& filename, bool onlyConvert = false);
+		void LoadFromMemory(StMeshHandle& tex, uint8_t* data, uint32_t size);
+
+		StMeshData* loadSTMFileFromMemory(string& name, uint8_t* data, uint32_t size);
+		StMeshData* loadNoNativeFileFromMemory(string& name, uint8_t* data, uint32_t size, bool onlyConvert = false);
 		StMeshData* loadAIScene(string& filename, const aiScene* scene, bool convert, bool noLoad);
 
 		void convertToSTM(string& filename, StMeshData* mesh, uint32_t** indices, LitVertex** vertices);

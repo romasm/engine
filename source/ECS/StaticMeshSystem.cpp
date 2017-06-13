@@ -154,7 +154,7 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest) // TODO!!! copied 
 
 	auto newComp = AddComponent(dest);
 
-	newComp->stmesh = StMeshMgr::Get()->GetStMesh(StMeshMgr::GetStMeshName(comp->stmesh), true);
+	newComp->stmesh = StMeshMgr::Get()->GetStMesh(StMeshMgr::GetName(comp->stmesh), true);
 
 	auto meshPtr = StMeshMgr::GetStMeshPtr(newComp->stmesh);
 
@@ -204,7 +204,7 @@ uint32_t StaticMeshSystem::Serialize(Entity e, uint8_t* data)
 	t_data += sizeof(bool);
 	size += sizeof(bool);
 
-	string mesh_name = StMeshMgr::GetStMeshName(comp.stmesh);
+	string mesh_name = StMeshMgr::GetName(comp.stmesh);
 	uint32_t mesh_name_size = (uint32_t)mesh_name.size();
 
 	*(uint32_t*)t_data = mesh_name_size;
