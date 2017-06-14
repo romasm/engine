@@ -51,11 +51,66 @@ namespace EngineCore
 
 #define SP_SHADER_SCREENSHOT PATH_SHADERS "system/scene_to_color_alpha"
 
-
-
-
 #define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
 #define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque", "DefferedLighting"
+	
+	struct RenderConfig
+	{
+		uint32_t bufferViewMode;
+		bool bloomEnable;
+		bool cameraAdoptEnable;
+		float cameraConstExposure;
+
+		float analyticLightDiffuse;
+		float analyticLightSpecular;
+		float ambientLightDiffuse;
+		float ambientLightSpecular;
+
+		bool editorGuiEnable;
+
+		RenderConfig()
+		{
+			bufferViewMode = 0;
+			bloomEnable = true;
+			cameraAdoptEnable = true;
+			cameraConstExposure = 1.0f;
+			analyticLightDiffuse = 1.0f;
+			analyticLightSpecular = 1.0f;
+			ambientLightDiffuse = 1.0f;
+			ambientLightSpecular = 1.0f;
+			editorGuiEnable = true;
+		}
+
+#define RC_ADD_LUA_PROPERTY_FUNC(type, name) inline type get_##name() const {return name;} \
+	inline void set_##name(type value){name = value;}
+#define RC_ADD_LUA_PROPERTY_DEF(type, name) .addProperty(#name, &RenderConfig::get_##name, &RenderConfig::set_##name)
+
+		RC_ADD_LUA_PROPERTY_FUNC(uint32_t, bufferViewMode)
+		RC_ADD_LUA_PROPERTY_FUNC(bool, bloomEnable)
+		RC_ADD_LUA_PROPERTY_FUNC(bool, cameraAdoptEnable)
+		RC_ADD_LUA_PROPERTY_FUNC(float, cameraConstExposure)
+		RC_ADD_LUA_PROPERTY_FUNC(float, analyticLightDiffuse)
+		RC_ADD_LUA_PROPERTY_FUNC(float, analyticLightSpecular)
+		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightDiffuse)
+		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightSpecular)
+		RC_ADD_LUA_PROPERTY_FUNC(bool, editorGuiEnable)
+
+		static void RegLuaClass()
+		{
+			getGlobalNamespace(LSTATE)
+				.beginClass<RenderConfig>("RenderConfig")
+				RC_ADD_LUA_PROPERTY_DEF(uint32_t, bufferViewMode)
+				RC_ADD_LUA_PROPERTY_DEF(bool, bloomEnable)
+				RC_ADD_LUA_PROPERTY_DEF(bool, cameraAdoptEnable)
+				RC_ADD_LUA_PROPERTY_DEF(float, cameraConstExposure)
+				RC_ADD_LUA_PROPERTY_DEF(float, analyticLightDiffuse)
+				RC_ADD_LUA_PROPERTY_DEF(float, analyticLightSpecular)
+				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightDiffuse)
+				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightSpecular)
+				RC_ADD_LUA_PROPERTY_DEF(bool, editorGuiEnable)
+				.endClass();
+		}
+	};
 
 	class ScenePipeline
 	{
@@ -185,25 +240,6 @@ namespace EngineCore
 			return res;
 		}
 
-		void SetMode(int mode)
-		{
-			render_mode = (uint8_t)mode;
-			sp_HDRtoLDR->SetFloat((float)render_mode, 12);
-		}
-		int GetMode() const {return (int)render_mode;}
-
-		void SetExposure(bool adapt, float exp)
-		{
-			cameraAdapt = adapt;
-			cameraExposure = exp;
-
-			if(!cameraAdapt)
-			{
-				rt_AvgLum->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
-				rt_AvgLumCurrent->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
-			}
-		}
-
 		void Close();
 
 		bool Init(int t_width, int t_height, bool lightweight);
@@ -218,27 +254,37 @@ namespace EngineCore
 
 		inline SceneRenderMgr* GetRenderMgr() const {return render_mgr;}
 
-		void SetComponents(bool dirSpec, bool indirSpec, bool dirDiff, bool indirDiff) // TODO
-		{
-			b_directSpec = dirSpec;
-			b_indirectSpec = indirSpec;
-			b_directDiff = dirDiff;
-			b_indirectDiff = indirDiff;
-		}
-
-		void SetHud(bool draw)
-		{
-			b_renderHud = draw;
-			if(!b_renderHud)
-				rt_3DHud->ClearRenderTargets(false);
-		}
-
 		bool StartFrame(LocalTimer* timer);
 		void EndFrame();
 		
 		uint8_t LoadLights(uint8_t startOffset, bool isCS);
 
 		bool SaveScreenshot(string path, uint32_t targetX, uint32_t targetY);
+
+		RenderConfig* GetConfig() {return &renderConfig;}
+		void ApplyConfig();
+
+		static void RegLuaClass()
+		{
+			RenderConfig::RegLuaClass();
+
+			getGlobalNamespace(LSTATE)
+				.beginClass<ScenePipeline>("ScenePipeline")
+				.addFunction("Resize", &ScenePipeline::Resize)
+				.addFunction("GetCamera", &ScenePipeline::GetSceneCamera)
+				.addFunction("GetSRV", &ScenePipeline::GetSRV)
+				.addFunction("GetShadowSRV", &ScenePipeline::GetShadowSRV)
+				.addFunction("GetAlbedoSRV", &ScenePipeline::GetAlbedoSRV)
+				.addFunction("GetAOSRV", &ScenePipeline::GetAOSRV)
+				.addFunction("GetEmissiveSRV", &ScenePipeline::GetEmissiveSRV)
+				.addFunction("GetNormalSRV", &ScenePipeline::GetNormalSRV)
+				.addFunction("GetSpecularSRV", &ScenePipeline::GetSpecularSRV)
+				.addFunction("GetSubsurfaceSRV", &ScenePipeline::GetSubsurfaceSRV)
+				.addFunction("GetConfig", &ScenePipeline::GetConfig)
+				.addFunction("ApplyConfig", &ScenePipeline::ApplyConfig)
+				.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
+				.endClass();
+		}
 
 		RenderTarget *rt_OpaqueForward;
 		RenderTarget *rt_AO;
@@ -320,29 +366,6 @@ namespace EngineCore
 
 		ALIGNED_ALLOCATION
 
-		static void RegLuaClass()
-		{
-			getGlobalNamespace(LSTATE)
-				.beginClass<ScenePipeline>("ScenePipeline")
-					.addFunction("Resize", &ScenePipeline::Resize)
-					.addFunction("GetCamera", &ScenePipeline::GetSceneCamera)
-					.addFunction("SetComponents", &ScenePipeline::SetComponents)
-					.addFunction("SetHud", &ScenePipeline::SetHud)
-					.addFunction("GetSRV", &ScenePipeline::GetSRV)
-					.addFunction("GetShadowSRV", &ScenePipeline::GetShadowSRV)
-					.addFunction("GetAlbedoSRV", &ScenePipeline::GetAlbedoSRV)
-					.addFunction("GetAOSRV", &ScenePipeline::GetAOSRV)
-					.addFunction("GetEmissiveSRV", &ScenePipeline::GetEmissiveSRV)
-					.addFunction("GetNormalSRV", &ScenePipeline::GetNormalSRV)
-					.addFunction("GetSpecularSRV", &ScenePipeline::GetSpecularSRV)
-					.addFunction("GetSubsurfaceSRV", &ScenePipeline::GetSubsurfaceSRV)
-					.addProperty("mode", &ScenePipeline::GetMode, &ScenePipeline::SetMode)
-
-					.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
-					.addFunction("SetExposure", &ScenePipeline::SetExposure)
-				.endClass();
-		}
-
 	protected:
 		bool InitRts();
 		bool InitAvgRt();
@@ -371,15 +394,9 @@ namespace EngineCore
 		int32_t height;
 		int32_t width_pow2;
 		int32_t height_pow2;
-
-		bool b_directSpec, b_indirectSpec, b_directDiff, b_indirectDiff, b_renderHud;
-
-		uint8_t render_mode;
-
+		
 		bool isLightweight;
-
-		bool cameraAdapt;
-		float cameraExposure;
+		RenderConfig renderConfig;
 
 		ShaderCodeMgr* codemgr;
 	};

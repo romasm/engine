@@ -36,6 +36,7 @@ function Viewport.reload()
     Viewport.overlay_gui = Viewport.window.entity:GetChildById('vp_overlay_gui')
     Viewport.fps_string = Viewport.overlay_gui:GetChildById('vp_fps'):GetInherited()
     Viewport.ms_string = Viewport.overlay_gui:GetChildById('vp_ms'):GetInherited()
+    Viewport.rendercfg_btn = Viewport.overlay_gui:GetChildById('vp_rendercfg'):GetInherited()
 
     local vp_rect = Viewport.window.entity:GetRectAbsolute()
     Viewport.viewport.entity.width = vp_rect.w + vp_rect.w % 2
@@ -52,6 +53,7 @@ function Viewport:Init()
     print("Viewport:Init") 
     
     loader.require("Menus.Viewport")
+    loader.require("RenderConfig")
     loader.require("ViewportWindow", Viewport.reload)
     self.reload()
 
@@ -165,26 +167,73 @@ function Viewport:ClearWorld()
     AssetBrowser:SetSelected(nil, false, false)
 end
 
+function Viewport:OpenRenderConfig()
+    if self.renderConfig ~= nil then return true end
+
+    self.renderConfig = Gui.RenderConfig()
+    self.viewport.entity:AttachChild(self.renderConfig.entity)
+    self.renderConfig.entity:UpdatePosSize()
+    self.viewport.entity:SetHierarchyFocus(self.renderConfig.entity)
+    
+    local ev = HEvent()
+    ev.event = GUI_EVENTS.UPDATE
+    self.renderConfig.entity:SendEvent(ev)
+    return true
+end
+
+function Viewport:CloseRenderConfig()
+    if self.renderConfig == nil then return true end
+
+    self.viewport.entity:DetachChild(self.renderConfig.entity)
+    self.renderConfig.entity:Destroy()
+    self.renderConfig = nil
+
+    local cursor = CoreGui.GetCursorPos()
+    if not self.rendercfg_btn.entity:IsCollide(cursor.x, cursor.y) then 
+        self.rendercfg_btn:SetPressed(false)
+    end
+    return true
+end
+
 function Viewport:SetMode(combo, ev)
     if not self.lua_world then return end
 
     local mode = combo:GetSelected() - 1
 
+    local renderConfig = self.lua_world.scenepl:GetConfig()
+
     if mode < 27 then
-        self.lua_world.scenepl:SetComponents(true, true, true, true)
-        self.lua_world.scenepl.mode = mode
+        renderConfig.bufferViewMode = mode
+        renderConfig.analyticLightDiffuse = 1
+        renderConfig.analyticLightSpecular = 1
+        renderConfig.ambientLightDiffuse = 1
+        renderConfig.ambientLightSpecular = 1
     else
-        self.lua_world.scenepl.mode = 0
+        renderConfig.bufferViewMode = 0
         if mode == 27 then
-            self.lua_world.scenepl:SetComponents(false, false, true, true)
+            renderConfig.analyticLightDiffuse = 1
+            renderConfig.analyticLightSpecular = 0
+            renderConfig.ambientLightDiffuse = 1
+            renderConfig.ambientLightSpecular = 0
         elseif mode == 28 then
-            self.lua_world.scenepl:SetComponents(false, false, false, true)
+            renderConfig.analyticLightDiffuse = 0
+            renderConfig.analyticLightSpecular = 0
+            renderConfig.ambientLightDiffuse = 1
+            renderConfig.ambientLightSpecular = 0
         elseif mode == 29 then
-            self.lua_world.scenepl:SetComponents(true, true, false, false)
+            renderConfig.analyticLightDiffuse = 0
+            renderConfig.analyticLightSpecular = 1
+            renderConfig.ambientLightDiffuse = 0
+            renderConfig.ambientLightSpecular = 1
         elseif mode == 30 then
-            self.lua_world.scenepl:SetComponents(false, true, false, false)
+            renderConfig.analyticLightDiffuse = 0
+            renderConfig.analyticLightSpecular = 0
+            renderConfig.ambientLightDiffuse = 0
+            renderConfig.ambientLightSpecular = 1
         end
     end
+
+    self.lua_world.scenepl:ApplyConfig()
 end
 
 function Viewport:ToggleFullscreen()
@@ -248,9 +297,6 @@ function Viewport:onResize(force)
             self.lua_world.scenepl:Resize(vp_w, vp_h)
             local srv = self.lua_world.scenepl:GetSRV()
             self.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
-
-            local rendermode_btn = self.overlay_gui:GetChildById('vp_rendermode')
-            self.lua_world.scenepl.mode = rendermode_btn:GetInherited():GetSelected() - 1
 
             print("Viewport resize to "..vp_w.." x "..vp_h)
         end

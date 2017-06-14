@@ -617,3 +617,19 @@ GuiStyles.common_filefield = {
         alt = "Clean",
     },
 }
+
+-- color styles
+GuiStyles.vp_header_colors = {
+    background = {
+        color = 'bg_05_a4',
+        color_hover = 'bg_05_a7',
+        color_press = 'bg_05_a6',
+    },
+
+    text = {
+        color = 'act_02',
+        color_hover = 'act_03',
+        color_press = 'act_02',
+        font = "../resources/fonts/opensans_normal_18px",
+    },
+}

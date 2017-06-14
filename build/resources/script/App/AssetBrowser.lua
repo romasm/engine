@@ -388,7 +388,12 @@ function AssetBrowser:InitPreviewWorld()
     local width = GUI_PREVIEW_SIZE.X * GUI_PREVIEW_SIZE.PREVIEW_SS
     local height = GUI_PREVIEW_SIZE.Y * GUI_PREVIEW_SIZE.PREVIEW_SS
     self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width, height, true)
-    self.screenshotScene:SetExposure(false, 0.2)
+
+    local renderConfig = self.screenshotScene:GetConfig()
+    renderConfig.cameraAdoptEnable = false
+    renderConfig.cameraConstExposure = 0.2
+    renderConfig.bloomEnable = false
+    self.screenshotScene:ApplyConfig()
 
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
@@ -412,7 +417,11 @@ function AssetBrowser:InitPreviewWorld()
     self.previewCamera:SetFov(0.5)
     
     self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, GUI_PREVIEW_SIZE.LIVE_X, GUI_PREVIEW_SIZE.LIVE_Y, true)
-    self.previewScene:SetExposure(false, 0.2)
+        
+    local renderConfig = self.previewScene:GetConfig()
+    renderConfig.cameraAdoptEnable = false
+    renderConfig.cameraConstExposure = 0.2
+    self.previewScene:ApplyConfig()
     
     self.previewSphere = EntityTypes.StaticModel(self.previewWorld)
     self.previewSphere:SetMesh("../resources/meshes/mat_sphere.stm")

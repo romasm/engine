@@ -188,9 +188,7 @@ bool EnvProbSystem::Bake(Entity e)
 	camSys->SetFov(env_cam, XM_PIDIV2);
 
 	auto env_scene = world->CreateScene(env_cam, comp.resolution, comp.resolution, true);
-
-	env_scene->SetComponents(false, true, true, true); // TODO
-
+	
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
 	
 	int mipNum = 1;

@@ -1,18 +1,3 @@
-GuiStyles.vp_header_colors = {
-    background = {
-        color = 'bg_05_a4',
-        color_hover = 'bg_05_a7',
-        color_press = 'bg_05_a6',
-    },
-
-    text = {
-        color = 'act_02',
-        color_hover = 'act_03',
-        color_press = 'act_02',
-        font = "../resources/fonts/opensans_normal_18px",
-    },
-}
-
 GuiStyles.vp_perf = {
     styles = {
         GuiStyles.ghost,
@@ -107,6 +92,32 @@ return GuiEntity({
         
         id = "vp_overlay_gui",
 
+        GuiButton({
+            styles = {
+                GuiStyles.solid_button,
+                GuiStyles.vp_header_colors,
+            },
+
+            id = "vp_rendercfg",
+            holded = true,
+        
+            text = {
+                str = "Render",
+            },
+            alt = "Rendering configuration",
+            
+            width = 140,
+            height = 100,
+            height_percent = true,
+
+            align = GUI_ALIGN.RIGHT,
+
+            events = {
+                [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Viewport:OpenRenderConfig() end,
+                [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Viewport:CloseRenderConfig() end,
+            },
+        }),
+
         GuiCombo({
             styles = {
                 GuiStyles.vp_header_colors,
@@ -129,6 +140,7 @@ return GuiEntity({
 
             width = 140,
             height = 100,
+            right = 150,
             height_percent = true,
 
             align = GUI_ALIGN.RIGHT,

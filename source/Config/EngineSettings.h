@@ -10,7 +10,7 @@ namespace EngineCore
 	class EngineSettings
 	{
 	public:
-
+		
 		static struct ESet
 		{
 			bool fullscreen;

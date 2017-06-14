@@ -152,6 +152,9 @@
     <Compile Include="..\..\gui\ProfilerWindow.lua">
       <Link>Gui\ProfilerWindow.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\RenderConfig.lua">
+      <Link>Gui\RenderConfig.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\SceneBrowser.lua">
       <Link>Gui\SceneBrowser.lua</Link>
     </Compile>

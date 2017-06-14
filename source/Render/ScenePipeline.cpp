@@ -62,13 +62,7 @@ ScenePipeline::ScenePipeline()
 	Materials_Count = 0;
 
 	render_mgr = nullptr;
-
-	b_directSpec = true;
-	b_indirectSpec = true;
-	b_directDiff = true;
-	b_indirectDiff = true;
-	b_renderHud = true;
-	
+		
 	m_CamMoveBuffer = nullptr;
 	m_SharedBuffer = nullptr;
 	m_AOBuffer = nullptr;
@@ -79,12 +73,7 @@ ScenePipeline::ScenePipeline()
 	ZeroMemory(&lightsCount, sizeof(lightsCount));
 
 	codemgr = nullptr;
-
-	render_mode = 0;
-
-	cameraAdapt = true;
-	cameraExposure = 0.0f;
-
+	
 	current_camera = nullptr;
 
 	defferedOpaqueCompute = nullptr;
@@ -299,6 +288,8 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	else
 		sharedconst.mipCount = 0.0f;
 
+	ApplyConfig();
+
 	return true;
 }
 
@@ -357,10 +348,10 @@ bool ScenePipeline::InitAvgRt()
 	if(!rt_AvgLumCurrent->AddRT(DXGI_FORMAT_R32_UINT, 1, true))return false;
 	rt_AvgLumCurrent->ClearRenderTargets(0.5,0.5,0.5,0.5);
 
-	if(!cameraAdapt)
+	if(!renderConfig.cameraAdoptEnable)
 	{
-		rt_AvgLum->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
-		rt_AvgLumCurrent->ClearRenderTargets(cameraExposure,cameraExposure,cameraExposure,cameraExposure);
+		rt_AvgLum->ClearRenderTargets(renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure);
+		rt_AvgLumCurrent->ClearRenderTargets(renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure);
 	}
 
 	sp_AvgLum = new ScreenPlane(SP_MATERIAL_AVGLUM);
@@ -568,6 +559,23 @@ bool ScenePipeline::InitRts()
 	return true;
 }
 
+void ScenePipeline::ApplyConfig()
+{
+	if(!renderConfig.editorGuiEnable)
+		rt_3DHud->ClearRenderTargets(false);
+
+	if(!renderConfig.cameraAdoptEnable)
+	{
+		rt_AvgLum->ClearRenderTargets(renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure);
+		rt_AvgLumCurrent->ClearRenderTargets(renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure,renderConfig.cameraConstExposure);
+	}
+
+	sp_HDRtoLDR->SetFloat((float)renderConfig.bufferViewMode, 12);
+
+	if(!renderConfig.bloomEnable)
+		rt_Bloom->ClearRenderTargets();
+}
+
 bool ScenePipeline::StartFrame(LocalTimer* timer)
 {
 	if(!camera.sys)
@@ -636,10 +644,11 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	Render::UpdateDynamicResource(m_CamMoveBuffer, (void*)&camMove, sizeof(XMMATRIX));
 	
 	// TEMP
-	defferedConfigData.dirDiff = b_directDiff ? 1.0f : 0.0f;
-	defferedConfigData.dirSpec = b_directSpec ? 1.0f : 0.0f;
-	defferedConfigData.indirDiff = b_indirectDiff ? 1.0f : 0.0f;
-	defferedConfigData.indirSpec = b_indirectSpec ? 1.0f : 0.0f;
+	defferedConfigData.dirDiff = renderConfig.analyticLightDiffuse;
+	defferedConfigData.dirSpec = renderConfig.analyticLightSpecular;
+	defferedConfigData.indirDiff = renderConfig.ambientLightDiffuse;
+	defferedConfigData.indirSpec = renderConfig.ambientLightSpecular;
+
 	defferedConfigData.isLightweight = isLightweight ? 1.0f : 0.0f;
 	Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
 
@@ -654,7 +663,7 @@ void ScenePipeline::EndFrame()
 
 void ScenePipeline::UIStage()
 {
-	if(!b_renderHud) return;
+	if(!renderConfig.editorGuiEnable) return;
 
 	rt_3DHud->ClearRenderTargets(false);
 	rt_3DHud->SetRenderTarget();
@@ -664,7 +673,7 @@ void ScenePipeline::UIStage()
 
 void ScenePipeline::UIOverlayStage()
 {
-	if(!b_renderHud) return;
+	if(!renderConfig.editorGuiEnable) return;
 	
 	rt_3DHud->SetRenderTarget();
 	Render::ClearDepthStencilView(rt_3DHud->m_DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -1041,7 +1050,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	
 	PERF_GPU_TIMESTAMP(_HDR_BLOOM);
 
-	if(cameraAdapt)
+	if(renderConfig.cameraAdoptEnable)
 	{
 		// avglum
 		rt_AvgLum->ClearRenderTargets();
@@ -1059,14 +1068,17 @@ void ScenePipeline::OpaqueDefferedStage()
 		Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
 	}
 
-	// bloom prepare
-	rt_Bloom->ClearRenderTargets(); // !!!!!!!!!!!! TODO: only opaque now!
-	rt_Bloom->SetRenderTarget();
-	sp_Bloom->Draw();
-	
-	rt_Bloom->GenerateMipmaps(this);
+	if(renderConfig.bloomEnable)
+	{
+		// bloom prepare
+		rt_Bloom->ClearRenderTargets(); // !!!!!!!!!!!! TODO: only opaque now!
+		rt_Bloom->SetRenderTarget();
+		sp_Bloom->Draw();
 
-	g_Bloom->blur(rt_Bloom);
+		rt_Bloom->GenerateMipmaps(this);
+
+		g_Bloom->blur(rt_Bloom);
+	}
 }
 
 void ScenePipeline::HDRtoLDRStage()

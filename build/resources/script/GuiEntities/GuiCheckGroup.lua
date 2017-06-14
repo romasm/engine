@@ -15,6 +15,10 @@ function GuiCheckGroup:SetCheck(id)
     self.checks[id]:SetCheck(true)
 end
 
+function GuiCheckGroup:GetCheck()
+    return self.current_check
+end
+
 function GuiCheckGroup:init(props)
     --replace self._base.init(self, props)
     self.entity = HEntity()
@@ -77,8 +81,6 @@ function GuiCheckGroup:callback(eventData)
             UncheckAllBut(self, self.current_check)
 
             res.event = GUI_EVENTS.CBGROUP_CHECK
-            res.coords.x = self.current_check
-            res.coords.y = 0
             res.entity = self.entity
         end
         
