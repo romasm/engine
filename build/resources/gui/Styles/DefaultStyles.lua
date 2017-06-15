@@ -13,6 +13,11 @@ GuiStyles.dead = {
     collide_through = false
 }
 
+GuiStyles.live_ghost = {
+    ignore_events = false,
+    collide_through = true
+}
+
 GuiStyles.no_border = {
     border = {
         width = 0,

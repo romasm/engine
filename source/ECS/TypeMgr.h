@@ -11,9 +11,6 @@
 #define ENT_TYPE_CAMERA			0x003
 #define ENT_TYPE_GLOBAL_LIGHT	0x004
 
-#define ENT_LIGHT_MESH PATH_EDITOR_MESHES "pointlight" EXT_STATIC
-#define ENT_LIGHT_MESH_MAT PATH_EDITOR_MATERIAL "pointlight" EXT_MATERIAL
-
 namespace EngineCore
 {
 	struct _luaref

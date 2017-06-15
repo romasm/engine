@@ -12,17 +12,14 @@ return GuiRect({
         GuiStyles.live,
     },
     width = 400,
-    height = 400,
-    align = GUI_ALIGN.RIGHT,
-    top = 33,
-    right = 4,
+    height = 521,
     background = {
         color = 'bg_05_a6',
     },
     id = 'render_config',
 
      events = {
-        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) 
+        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev)
             return true
         end,
         [GUI_EVENTS.UNFOCUS] = function(self, ev) 
@@ -64,13 +61,9 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.CBGROUP_CHECK] = function(self, ev) 
-                local voxel_cb = self.entity:GetParent():GetChildById('voxel_cb')
-                voxel_cb:GetInherited():SetCheck(false)
-
                 local checkID = self:GetCheck()
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.bufferViewMode = checkID - 1
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
@@ -152,66 +145,66 @@ return GuiRect({
         left = 10,
     }),
 
-    GuiCheck({
-        styles = {GuiStyles.rendercfg_check,},
+    GuiCheckGroup({
+        styles = {
+            GuiStyles.live,
+        },
         top = 320,
         left = 20,
-        text = { str = "Draw voxels" },
-        id = 'voxel_cb',
+        width = 190,
+        height = 161,
+        id = 'voxels_cbg',
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
-                local buffers_cbg = self.entity:GetParent():GetChildById('buffers_cbg')
-                buffers_cbg:GetInherited():SetCheck(1)
-
+            [GUI_EVENTS.CBGROUP_CHECK] = function(self, ev) 
+                local checkID = self:GetCheck()
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                renderConfig.bufferViewMode = 15
-                Viewport.lua_world.scenepl:ApplyConfig()
-                return true
-            end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
-                local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                renderConfig.bufferViewMode = 0
-                Viewport.lua_world.scenepl:ApplyConfig()
+                renderConfig.voxelViewMode = checkID - 1
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                self:SetCheck( renderConfig.bufferViewMode >= 15 )
+                self:SetCheck( renderConfig.voxelViewMode + 1 )
                 return true
             end,
         },
-    }),
-
-    GuiCheck({
-        styles = {GuiStyles.rendercfg_check,},
-        top = 343,
-        left = 20,
-        text = { str = "Emittance" },
-        alt = "If checked emittance voxels are rendering, otherwise opacity voxels",
-        id = 'emitt_cb',
-
-        events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
-                local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                if renderConfig.bufferViewMode < 15 then return true end
-                renderConfig.bufferViewMode = renderConfig.bufferViewMode + 6
-                Viewport.lua_world.scenepl:ApplyConfig()
-                return true
-            end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
-                local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                if renderConfig.bufferViewMode < 15 then return true end
-                renderConfig.bufferViewMode = renderConfig.bufferViewMode - 6
-                Viewport.lua_world.scenepl:ApplyConfig()
-                return true
-            end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) 
-                local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                self:SetCheck( renderConfig.bufferViewMode >= 21 )
-                return true
-            end,
-        },
+          
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 0,
+            text = { str = "None" },
+            alt = "Do not draw voxels",
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 28,
+            text = { str = "Color" },
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 51,
+            text = { str = "Emissive" },
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 74,
+            text = { str = "Intensity" },
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 97,
+            text = { str = "Normal" },
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 120,
+            text = { str = "Opacity" },
+        }),
+        GuiCheck({
+            styles = {GuiStyles.rendercfg_check,},
+            top = 143,
+            text = { str = "Emittance" },
+        }),
     }),
 
     GuiString({
@@ -223,7 +216,7 @@ return GuiRect({
         color = 'act_02',
         str = "First cascade:",
         static = true,
-        top = 366,
+        top = 493,
         left = 20,
     }),
 
@@ -234,7 +227,7 @@ return GuiRect({
         left = 110,
         width = 80,
         height = 20,
-        top = 366,
+        top = 491,
         data = {
             min = 0,
             max = 5,
@@ -245,27 +238,13 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
-                local cascade = self:GetValue()    
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                if renderConfig.bufferViewMode < 15 then return true 
-                elseif renderConfig.bufferViewMode < 21 then
-                    renderConfig.bufferViewMode = 15 + cascade
-                else
-                    renderConfig.bufferViewMode = 21 + cascade
-                end
-                Viewport.lua_world.scenepl:ApplyConfig()
+                renderConfig.voxelCascade = self:GetValue()  
                 return true
             end,
             [GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
-                local cascade = self:GetValue()    
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                if renderConfig.bufferViewMode < 15 then return true 
-                elseif renderConfig.bufferViewMode < 21 then
-                    renderConfig.bufferViewMode = 15 + cascade
-                else
-                    renderConfig.bufferViewMode = 21 + cascade
-                end
-                Viewport.lua_world.scenepl:ApplyConfig()
+                renderConfig.voxelCascade = self:GetValue()  
                 return true
             end,
             [GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev) 
@@ -273,10 +252,7 @@ return GuiRect({
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
-                if renderConfig.bufferViewMode < 15 then self:SetValue(0)
-                elseif renderConfig.bufferViewMode < 21 then self:SetValue(renderConfig.bufferViewMode - 15)
-                else self:SetValue(renderConfig.bufferViewMode - 21)
-                end
+                self:SetValue(renderConfig.voxelCascade)
             end,
         },
     }),
@@ -306,13 +282,11 @@ return GuiRect({
             [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.analyticLightDiffuse = 1
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.analyticLightDiffuse = 0
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
@@ -334,13 +308,11 @@ return GuiRect({
             [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.analyticLightSpecular = 1
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.analyticLightSpecular = 0
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
@@ -362,13 +334,11 @@ return GuiRect({
             [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.ambientLightDiffuse = 1
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.ambientLightDiffuse = 0
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 
@@ -390,13 +360,11 @@ return GuiRect({
             [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.ambientLightSpecular = 1
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
                 local renderConfig = Viewport.lua_world.scenepl:GetConfig()
                 renderConfig.ambientLightSpecular = 0
-                Viewport.lua_world.scenepl:ApplyConfig()
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 

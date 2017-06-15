@@ -561,6 +561,9 @@ bool ScenePipeline::InitRts()
 
 void ScenePipeline::ApplyConfig()
 {
+	if(!renderConfig._dirty)
+		return;
+
 	if(!renderConfig.editorGuiEnable)
 		rt_3DHud->ClearRenderTargets(false);
 
@@ -571,15 +574,21 @@ void ScenePipeline::ApplyConfig()
 	}
 
 	sp_HDRtoLDR->SetFloat((float)renderConfig.bufferViewMode, 12);
+	sp_HDRtoLDR->SetFloat((float)renderConfig.voxelViewMode, 13);
+	sp_HDRtoLDR->SetFloat((float)renderConfig.voxelCascade, 14);
 
 	if(!renderConfig.bloomEnable)
 		rt_Bloom->ClearRenderTargets();
+
+	renderConfig._dirty = false;
 }
 
 bool ScenePipeline::StartFrame(LocalTimer* timer)
 {
 	if(!camera.sys)
 		return false;
+
+	ApplyConfig();
 
 	sharedconst.time = timer->GetTime();
 	sharedconst.dt = timer->dt();

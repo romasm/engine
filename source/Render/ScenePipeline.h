@@ -57,20 +57,24 @@ namespace EngineCore
 	struct RenderConfig
 	{
 		uint32_t bufferViewMode;
+		uint32_t voxelViewMode;
+		uint32_t voxelCascade;
 		bool bloomEnable;
 		bool cameraAdoptEnable;
 		float cameraConstExposure;
-
 		float analyticLightDiffuse;
 		float analyticLightSpecular;
 		float ambientLightDiffuse;
 		float ambientLightSpecular;
-
 		bool editorGuiEnable;
+
+		bool _dirty;
 
 		RenderConfig()
 		{
 			bufferViewMode = 0;
+			voxelViewMode = 0;
+			voxelCascade = 0;
 			bloomEnable = true;
 			cameraAdoptEnable = true;
 			cameraConstExposure = 1.0f;
@@ -79,13 +83,17 @@ namespace EngineCore
 			ambientLightDiffuse = 1.0f;
 			ambientLightSpecular = 1.0f;
 			editorGuiEnable = true;
+
+			_dirty = true;
 		}
 
 #define RC_ADD_LUA_PROPERTY_FUNC(type, name) inline type get_##name() const {return name;} \
-	inline void set_##name(type value){name = value;}
+	inline void set_##name(type value){name = value; _dirty = true;}
 #define RC_ADD_LUA_PROPERTY_DEF(type, name) .addProperty(#name, &RenderConfig::get_##name, &RenderConfig::set_##name)
 
 		RC_ADD_LUA_PROPERTY_FUNC(uint32_t, bufferViewMode)
+		RC_ADD_LUA_PROPERTY_FUNC(uint32_t, voxelViewMode)
+		RC_ADD_LUA_PROPERTY_FUNC(uint32_t, voxelCascade)
 		RC_ADD_LUA_PROPERTY_FUNC(bool, bloomEnable)
 		RC_ADD_LUA_PROPERTY_FUNC(bool, cameraAdoptEnable)
 		RC_ADD_LUA_PROPERTY_FUNC(float, cameraConstExposure)
@@ -100,6 +108,8 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.beginClass<RenderConfig>("RenderConfig")
 				RC_ADD_LUA_PROPERTY_DEF(uint32_t, bufferViewMode)
+				RC_ADD_LUA_PROPERTY_DEF(uint32_t, voxelViewMode)
+				RC_ADD_LUA_PROPERTY_DEF(uint32_t, voxelCascade)
 				RC_ADD_LUA_PROPERTY_DEF(bool, bloomEnable)
 				RC_ADD_LUA_PROPERTY_DEF(bool, cameraAdoptEnable)
 				RC_ADD_LUA_PROPERTY_DEF(float, cameraConstExposure)
@@ -281,7 +291,6 @@ namespace EngineCore
 				.addFunction("GetSpecularSRV", &ScenePipeline::GetSpecularSRV)
 				.addFunction("GetSubsurfaceSRV", &ScenePipeline::GetSubsurfaceSRV)
 				.addFunction("GetConfig", &ScenePipeline::GetConfig)
-				.addFunction("ApplyConfig", &ScenePipeline::ApplyConfig)
 				.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
 				.endClass();
 		}

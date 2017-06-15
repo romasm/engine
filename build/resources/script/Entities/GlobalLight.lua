@@ -18,12 +18,12 @@ function EntityTypes.GlobalLight:init(world, ent)
     -- editor
     self.world.visibility:AddComponent(self.ent)
 
-    if not self.world.staticMesh:AddComponentMesh(self.ent, "../content/statics/editor/pointlight.stm") then
+    if not self.world.staticMesh:AddComponentMesh(self.ent, "../resources/meshes/editor/pointlight.stm") then
         error("Cant init EntityTypes.GlobalLight")
         self:Kill()
     else
         self.world.staticMesh:SetEditor(self.ent, true)
-        self.world.staticMesh:SetMaterial(self.ent, 0, "../content/materials/editor/pointlight.mtb")
+        self.world.staticMesh:SetMaterial(self.ent, 0, "../resources/meshes/editor/pointlight.mtb")
     end
 end
 

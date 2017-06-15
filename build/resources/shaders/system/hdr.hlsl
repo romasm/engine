@@ -55,8 +55,8 @@ cbuffer materialBuffer : register(b1)
 	float bloomMul;
 
 	float debugMode;
-	float _padding0;
-	float _padding1;
+	float voxelVis;
+	float voxelCascade;
 	float _padding2;
 };
 
@@ -252,46 +252,47 @@ PO_LDR HDRLDR(PI_PosTex input)
 		float4 ssr = ssrTex.Sample(samplerPointClamp, input.tex);
 		tonemapped = ssr.rgb * ssr.a;
 	}
-	else 
+	
+	if(voxelVis > 0)
 	{
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
-
-		if(debugMode == 11)
+		
+		if(voxelVis == 1)
 		{
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
 		}  
-		else if(debugMode == 12)
+		else if(voxelVis == 2)
 		{ 
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
 		} 
-		else if(debugMode == 13) 
+		else if(voxelVis == 3) 
 		{       
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
 		}  
-		else if(debugMode == 14) 
+		else if(voxelVis == 4) 
 		{
 			float4 voxelNormal = GetVoxelNormal(input.tex);
 			if(sceneDepth >= voxelNormal.a && voxelNormal.a != 0) 
 				tonemapped = lerp(tonemapped, (voxelNormal.rgb + 1.0f) * 0.5f, VOXEL_ALPHA);
 		} 
-		else if(debugMode >= 15 && debugMode <= 20)
+		else if(voxelVis == 5)
 		{
-			float2 voxelOpacity = GetVoxelOpacity(input.tex, debugMode - 15);
+			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);
 			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
 				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
 		}
-		else if(debugMode >= 21 && debugMode <= 26)
+		else if(voxelVis == 6)
 		{
-			float4 voxelEmittance = GetVoxelEmittance(input.tex, debugMode - 21);
+			float4 voxelEmittance = GetVoxelEmittance(input.tex, voxelCascade);
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
 				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
 		} 

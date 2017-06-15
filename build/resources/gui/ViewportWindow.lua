@@ -31,6 +31,20 @@ return GuiEntity({
 
     id = "viewport_window",
     
+    events = {            
+        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) return Viewport:onMouseDown(ev) end,
+        [GUI_EVENTS.MOUSE_UP] = function(self, ev) return Viewport:onMouseUp(ev) end,
+        [GUI_EVENTS.KEY_DOWN] = function(self, ev) return Viewport:onKeyDown(ev) end,
+        [GUI_EVENTS.KEY_UP] = function(self, ev) return Viewport:onKeyUp(ev) end,
+        [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
+        [GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
+        [GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
+        [GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
+
+        [GUI_EVENTS.MENU_CLOSE] = function(self, ev) Viewport:MenuClose(self) end,
+        [GUI_EVENTS.MENU_CLICK] = function(self, ev) Viewport:MenuClick(self, ev) end, 
+    },
+
     GuiString({
         styles = {
             GuiStyles.ghost,
@@ -62,25 +76,14 @@ return GuiEntity({
 
         events = {
             [GUI_EVENTS.SYS_RESIZE] = function(self, ev) return Viewport:onResize() end,
-            
-            [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) return Viewport:onMouseDown(ev) end,
-            [GUI_EVENTS.MOUSE_UP] = function(self, ev) return Viewport:onMouseUp(ev) end,
-            [GUI_EVENTS.KEY_DOWN] = function(self, ev) return Viewport:onKeyDown(ev) end,
-            [GUI_EVENTS.KEY_UP] = function(self, ev) return Viewport:onKeyUp(ev) end,
-            [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
-            [GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
-            [GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
-            [GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
-
-            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) Viewport:MenuClose(self) end,
-            [GUI_EVENTS.MENU_CLICK] = function(self, ev) Viewport:MenuClick(self, ev) end, 
         },
     }),
 
     GuiDumb({
         styles = {
-            GuiStyles.live,
+            GuiStyles.live_ghost,
         },
+
         top = 4,
         height = 25,
         
@@ -102,92 +105,29 @@ return GuiEntity({
             holded = true,
         
             text = {
-                str = "Render",
+                str = "Debug",
             },
             alt = "Rendering configuration",
             
-            width = 140,
+            width = 100,
             height = 100,
             height_percent = true,
 
             align = GUI_ALIGN.RIGHT,
 
             events = {
-                [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Viewport:OpenRenderConfig() end,
+                [GUI_EVENTS.MOUSE_UP] = function(self, ev) 
+                    if Viewport.renderConfig ~= nil then return true
+                    else return false end 
+                end,
+                [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Viewport:OpenRenderConfig(self) end,
                 [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Viewport:CloseRenderConfig() end,
-            },
-        }),
-
-        GuiCombo({
-            styles = {
-                GuiStyles.vp_header_colors,
-                GuiStyles.common_button,
-                GuiStyles.no_border,
-            },
-
-            id = "vp_rendermode",
-        
-            text = {
-                offset = { x = 15, y = 0 },
-                center = { x = false, y = true },
-                length = 32,
-            },
-        
-            list_h_offset = 4,
-
-            str_height = 25,
-            allow_none = false,
-
-            width = 140,
-            height = 100,
-            right = 150,
-            height_percent = true,
-
-            align = GUI_ALIGN.RIGHT,
-
-            list = {
-                "Lit",
-                "Albedo",
-                "Specular",
-                "Roughness",
-                "Normal",
-                "Emissive",
-                "Subsurface color",
-                "Thickness",
-                "Ambient occlusion",
-                "Depth",
-                "SSR",
-                "Voxels Color",
-                "Voxels Emissive",
-                "Voxels Intensity",
-                "Voxels Normal",
-                "Voxels Opacity 0",
-                "Voxels Opacity 1",
-                "Voxels Opacity 2",
-                "Voxels Opacity 3",
-                "Voxels Opacity 4",
-                "Voxels Opacity 5",
-                "Voxels Emittance 0",
-                "Voxels Emittance 1",
-                "Voxels Emittance 2",
-                "Voxels Emittance 3",
-                "Voxels Emittance 4",
-                "Voxels Emittance 5",
-                "Diffuse",
-                "Indirect Diffuse",
-                "Specular",
-                "Indirect Specular",
-            },
-            alt = "Frame components",
-
-            events = {
-                [GUI_EVENTS.COMBO_SELECT] = function(self, ev) return Viewport:SetMode(self, ev) end,
             },
         }),
 
         GuiRect({
             styles = {
-                GuiStyles.dead,
+                GuiStyles.live,
                 GuiStyles.vp_header_colors,
             },
 
@@ -197,6 +137,12 @@ return GuiEntity({
 
             height = 100,
             height_percent = true,
+
+            events = {
+                [GUI_EVENTS.MOUSE_DOWN] = function(self, ev)
+                    return true
+                end,
+            },
 
             GuiString({
                 styles = {

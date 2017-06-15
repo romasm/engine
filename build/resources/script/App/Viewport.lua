@@ -143,8 +143,6 @@ function Viewport:SetWorld(WLD)
     self:SetTransform(TRANSFORM_MODE.NONE)
 
     self.overlay_gui.enable = true
-    local rendermode_btn = self.overlay_gui:GetChildById('vp_rendermode')
-    rendermode_btn:GetInherited():SetSelected(1)
 
     History:Clear()
     self.history_push = false
@@ -167,13 +165,19 @@ function Viewport:ClearWorld()
     AssetBrowser:SetSelected(nil, false, false)
 end
 
-function Viewport:OpenRenderConfig()
+function Viewport:OpenRenderConfig(btn)
     if self.renderConfig ~= nil then return true end
 
     self.renderConfig = Gui.RenderConfig()
-    self.viewport.entity:AttachChild(self.renderConfig.entity)
+    
+    local root = self.window.entity:GetRoot()
+    root:AttachChild(self.renderConfig.entity)
+
+    local rect = btn.entity:GetRectAbsolute()
+    self.renderConfig.entity.top = rect.t + rect.h + 4
+    self.renderConfig.entity.left = rect.l + rect.w - self.renderConfig.entity.width
     self.renderConfig.entity:UpdatePosSize()
-    self.viewport.entity:SetHierarchyFocus(self.renderConfig.entity)
+    root:SetHierarchyFocus(self.renderConfig.entity)
     
     local ev = HEvent()
     ev.event = GUI_EVENTS.UPDATE
@@ -183,8 +187,9 @@ end
 
 function Viewport:CloseRenderConfig()
     if self.renderConfig == nil then return true end
-
-    self.viewport.entity:DetachChild(self.renderConfig.entity)
+    
+    local root = self.window.entity:GetRoot()
+    root:DetachChild(self.renderConfig.entity)
     self.renderConfig.entity:Destroy()
     self.renderConfig = nil
 
@@ -232,8 +237,6 @@ function Viewport:SetMode(combo, ev)
             renderConfig.ambientLightSpecular = 1
         end
     end
-
-    self.lua_world.scenepl:ApplyConfig()
 end
 
 function Viewport:ToggleFullscreen()
@@ -377,7 +380,7 @@ function Viewport:onMouseDown(eventData)
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_LBUTTON and self.drawhud then
-        self.viewport.entity:SetHierarchyFocusOnMe(true)
+        self.window.entity:SetHierarchyFocusOnMe(true)
 		
 		if self.tc_hover then
 			self.tc_action = true
@@ -415,8 +418,7 @@ function Viewport:onMouseUp(eventData)
         if self.rmouse_down then
             if self.drawhud then
                 self.vp_menu = Gui.ViewportMenu()
-                self.viewport:AttachOverlay(self.vp_menu)
-                local corners = self.viewport.entity:GetCorners()
+                self.window:AttachOverlay(self.vp_menu)
                 self.vp_menu:Open(eventData.coords.x, eventData.coords.y)
             end
 
@@ -425,13 +427,13 @@ function Viewport:onMouseUp(eventData)
             self:SetFreelook(false)
             EditorCamera:onStopMove()
 
-            self.viewport.entity:SetHierarchyFocusOnMe(false)
+            self.window.entity:SetHierarchyFocusOnMe(false)
         end
         return true
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
-        self.viewport.entity:SetHierarchyFocusOnMe(false)
+        self.window.entity:SetHierarchyFocusOnMe(false)
 		self.tc_action = false
         self.selection_mode = SELECTION_MODE.NONE
         self.tc_copied = false
@@ -533,10 +535,10 @@ function Viewport:onMouseMove(eventData)
 
     if self.rmouse_down then
         self.rmouse_down = false
-        self.viewport.entity:SetHierarchyFocusOnMe(true)
+        self.window.entity:SetHierarchyFocusOnMe(true)
         self:SetFreelook(true)
 
-        local corners = self.viewport.entity:GetCorners()
+        local corners = self.window.entity:GetCorners()
         mouse_pos.x = (corners.l + corners.r) / 2
         mouse_pos.y = (corners.t + corners.b) / 2
     end
@@ -639,7 +641,7 @@ function Viewport:onMouseMove(eventData)
 		end
 		
         if self.hidemouse then
-            local rect = self.viewport.entity:GetCorners()
+            local rect = self.window.entity:GetCorners()
             local center_x = (rect.l + rect.r) / 2
             local center_y = (rect.t + rect.b) / 2  
 
@@ -980,10 +982,10 @@ function Viewport:SetMouseVis(show)
 end
 
 function Viewport:CenterMouse()
-    local corners = self.viewport.entity:GetCorners()
+    local corners = self.window.entity:GetCorners()
     local center_x = (corners.l + corners.r) / 2
     local center_y = (corners.t + corners.b) / 2
-    CoreGui.SetCursorPos(self.viewport.entity, center_x, center_y)
+    CoreGui.SetCursorPos(self.window.entity, center_x, center_y)
 end
 
 function Viewport:GetMouseInVP(coords)

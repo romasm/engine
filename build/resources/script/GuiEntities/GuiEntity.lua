@@ -150,10 +150,8 @@ function GuiDumb:callback(eventData)
     end
     
     if eventData.event == GUI_EVENTS.MOUSE_DOWN then 
-        if eventData.entity:is_eq(self.entity) then
-            self.entity:SetHierarchyFocusOnMe(false)
-            self.entity:SetFocus(HEntity())
-        end
+        self.entity:SetHierarchyFocusOnMe(false)
+        if eventData.entity:is_eq(self.entity) then self.entity:SetFocus(HEntity()) end
         res.entity = self.entity
 
     elseif eventData.event == GUI_EVENTS.UNFOCUS then

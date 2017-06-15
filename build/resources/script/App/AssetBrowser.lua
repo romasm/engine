@@ -393,7 +393,6 @@ function AssetBrowser:InitPreviewWorld()
     renderConfig.cameraAdoptEnable = false
     renderConfig.cameraConstExposure = 0.2
     renderConfig.bloomEnable = false
-    self.screenshotScene:ApplyConfig()
 
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
@@ -421,7 +420,6 @@ function AssetBrowser:InitPreviewWorld()
     local renderConfig = self.previewScene:GetConfig()
     renderConfig.cameraAdoptEnable = false
     renderConfig.cameraConstExposure = 0.2
-    self.previewScene:ApplyConfig()
     
     self.previewSphere = EntityTypes.StaticModel(self.previewWorld)
     self.previewSphere:SetMesh("../resources/meshes/mat_sphere.stm")
