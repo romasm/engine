@@ -21,15 +21,19 @@ end
 -- one world at a time for now
 
 function SceneMgr:LoadWorld(path)
-    if #self.worlds > 0 then SceneMgr:CloseWorld(1) end
-
     local newworld = {}
     newworld.world = self.worldmgr:OpenWorld(path)
+    if newworld.world == nil then
+        Gui.DialogOk( MainWindow.mainWinRoot.entity, "Scene file version is outdated!" )
+        return 0
+    end
+    
     newworld.path = path
-
+    
     if not newworld.world then return 0 end
     newworld.unsave = false 
-
+    
+    if #self.worlds > 0 then SceneMgr:CloseWorld(1) end
     return self:InitWorld(newworld)
 end
 

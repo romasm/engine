@@ -19,6 +19,74 @@ GuiStyles.dialog_button = {
     valign = GUI_VALIGN.MIDDLE,
 }
 
+function Gui.DialogOk(root, dialogStr, overwriteSize, okFunc)
+local dialog = GuiRect({
+    styles = {GuiStyles.live,},
+    width_percent = true,
+    height_percent = true,
+    width = 100,
+    height = 100,
+    focus_mode = GUI_FOCUS_MODE.ONTOP,
+    background = {color = Vector4(0.0,0.0,0.0,0.5),},
+    id = 'dialog_bg',
+
+    GuiRect({
+        styles = {GuiStyles.ghost,},
+        width = math.max(400, overwriteSize ~= nil and overwriteSize or 0),
+        height = 180,
+        background = {color = Vector4(0.0,0.0,0.0,0.7),},
+        align = GUI_ALIGN.CENTER,
+        valign = GUI_VALIGN.MIDDLE,
+
+
+    }),
+
+    GuiString({
+        styles = {
+            GuiStyles.ghost,
+            GuiStyles.string_autosize,
+            GuiStyles.string_25,
+        },
+
+        str = dialogStr,
+
+        static = true,
+        align = GUI_ALIGN.CENTER,
+        valign = GUI_VALIGN.MIDDLE,
+        top = -35,
+
+        color = 'text_01',
+    }),
+    
+    GuiButton({
+        styles = {GuiStyles.dialog_button,},
+
+        left = 0,
+        top = 35,
+        id = 'ok_btn',
+        text = {
+            str = "OK",
+        },
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
+                self.entity:SetHierarchyFocusOnMe(false)
+                local dialogEnt = self.entity:GetParent()
+                local root = dialogEnt:GetParent()
+                root:DetachChild(dialogEnt)
+                dialogEnt:Destroy()
+
+                if okFunc ~= nil then okFunc() end
+                return true
+            end,
+        },
+    }),
+})
+
+    root:AttachChild(dialog.entity)
+    dialog.entity:UpdatePosSize()
+    dialog.entity:SetHierarchyFocusOnMe(true)
+end
+
 function Gui.DialogOkCancel(root, dialogStr, overwriteSize, okFunc, cancelFunc)
 local dialog = GuiRect({
     styles = {GuiStyles.live,},
@@ -32,7 +100,7 @@ local dialog = GuiRect({
 
     GuiRect({
         styles = {GuiStyles.ghost,},
-        width = math.max(400, overwriteSize),
+        width = math.max(400, overwriteSize ~= nil and overwriteSize or 0),
         height = 180,
         background = {color = Vector4(0.0,0.0,0.0,0.7),},
         align = GUI_ALIGN.CENTER,
@@ -123,7 +191,7 @@ local dialog = GuiRect({
 
     GuiRect({
         styles = {GuiStyles.ghost,},
-        width = math.max(440, overwriteSize),
+        width = math.max(440, overwriteSize ~= nil and overwriteSize or 0),
         height = 180,
         background = {color = Vector4(0.0,0.0,0.0,0.7),},
         align = GUI_ALIGN.CENTER,

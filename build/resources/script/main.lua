@@ -44,6 +44,7 @@ loader.require("Pieces.DialogScreen")
 
 
 -- world entities
+loader.require("Entities.const_EntityDefines")
 loader.require("Entities.BaseEntity", Core.UpdateLuaFuncs)
 
 loader.require("Entities.LocalLight", Core.UpdateLuaFuncs)

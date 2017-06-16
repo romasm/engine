@@ -239,6 +239,9 @@
     <Compile Include="..\Entities\Camera.lua">
       <Link>Entities\Camera.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\const_EntityDefines.lua">
+      <Link>Entities\const_EntityDefines.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\GlobalLight.lua">
       <Link>Entities\GlobalLight.lua</Link>
     </Compile>

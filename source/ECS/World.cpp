@@ -53,7 +53,7 @@ bool BaseWorld::Init(string filename)
 
 	if( !loadWorld(filename, header) )
 	{
-		ERR("Can\'t load world %ls", filename.data());
+		ERR("Can\'t load world %s", filename.data());
 		return false;
 	}
 
@@ -74,6 +74,7 @@ bool BaseWorld::Init()
 	world_name = "new_scene.mls";
 
 	WorldHeader header;
+	header.version = WORLD_FILE_VERSION;
 	wcscpy_s(header.env_name, DEFAULT_ENV);
 	header.free_cam_pos = XMVectorZero();
 	header.free_cam_rot = XMVectorZero();
@@ -122,6 +123,18 @@ void BaseWorld::Close()
 void BaseWorld::DestroyEntity(Entity e)
 {
 	// immidiate
+
+#ifdef _EDITOR
+	Entity child = m_transformSystem->GetChildFirst(e);
+	string editorType(EDITOR_TYPE);
+	while(!child.isnull()) 
+	{
+		if(m_typeMgr->IsThisType(child, editorType))
+			DestroyEntity(child);
+		child = m_transformSystem->GetChildNext(child);
+	}	
+#endif
+
 	m_transformSystem->DeleteComponent(e);
 	m_visibilitySystem->DeleteComponent(e);
 	
@@ -180,6 +193,10 @@ Entity BaseWorld::CopyEntity(Entity e)
 
 	m_typeMgr->SetType(newEnt, m_typeMgr->GetType(e));
 
+#ifdef _EDITOR
+	ConstructEditorGui(newEnt);
+#endif
+
 	return newEnt;
 }
 
@@ -206,6 +223,12 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 	// header
 	memcpy_s( &header, sizeof(WorldHeader), t_data, sizeof(WorldHeader) );
 	t_data += sizeof(WorldHeader);
+
+	if(header.version != WORLD_FILE_VERSION)
+	{
+		ERR("World %s has wrong version!", filename.c_str());
+		return false;
+	}
 
 	m_transformSystem->PreLoad();
 
@@ -266,6 +289,10 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 			t_data += compSize;
 		}
 
+	#ifdef _EDITOR
+		ConstructEditorGui(ent);
+	#endif
+
 		entCount--;
 	}
 
@@ -315,10 +342,11 @@ bool BaseWorld::saveWorld(string& filename)
 
 	// header
 	WorldHeader header;
+	header.version = WORLD_FILE_VERSION;
 	wcscpy_s(header.env_name, envName.data());
 	header.env_rot = m_transformSystem->GetVectRotationW(skyEP);
 
-	Entity editorCamera = GetEntityByName("_unsave_EditorCamera");
+	Entity editorCamera = GetEntityByName(EDITOR_TYPE "Camera");
 	if(!editorCamera.isnull())
 	{
 		XMMATRIX cam_mat = m_transformSystem->GetTransformW(editorCamera);
@@ -347,10 +375,13 @@ bool BaseWorld::saveWorld(string& filename)
 			continue;
 
 		string name = m_nameMgr->GetName(iterator);
-		if( name.find("_unsave_") != string::npos )
+		if( name.find(EDITOR_TYPE) != string::npos )
 			continue;
 
 		string type = m_typeMgr->GetType(iterator);
+		if( type == EDITOR_TYPE )
+			continue;
+
 		uint32_t type_size = (uint32_t)type.size();
 		file.write( (char*)&type_size, sizeof(uint32_t) );
 		if(type_size > 0)
@@ -363,20 +394,15 @@ bool BaseWorld::saveWorld(string& filename)
 
 		uint8_t enableState = m_entityMgr->IsEnable(iterator) ? 1 : 0;
 		file.write( (char*)&enableState, sizeof(uint8_t) );
-
-		////////////////
-		bool editor_mesh = m_staticMeshSystem->IsEditorOnly(iterator);		// TODO !!!!!!!!!!!!
-		editor_mesh = false;
-		////////////////
-
+		
 		string components = "";
 		if(m_transformSystem->HasComponent(iterator))
 			components += TRANSFORM_BYTE;
 		if(m_earlyVisibilitySystem->HasComponent(iterator))
 			components += EARLYVIS_BYTE;
-		if(!editor_mesh && m_visibilitySystem->HasComponent(iterator))
+		if(m_visibilitySystem->HasComponent(iterator))
 			components += VIS_BYTE;
-		if(!editor_mesh && m_staticMeshSystem->HasComponent(iterator))
+		if(m_staticMeshSystem->HasComponent(iterator))
 			components += STATIC_BYTE;
 		if(m_lightSystem->HasComponent(iterator))
 			components += LIGHT_BYTE;

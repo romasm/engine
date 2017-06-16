@@ -89,7 +89,10 @@ SmallWorld* WorldMgr::CreateSmallWorld()
 {
 	SmallWorld* world = new SmallWorld();
 	if(!world->Init())
+	{
+		_DELETE(world);
 		return nullptr;
+	}
 
 	regWorld(world);
 	return world;
@@ -99,7 +102,10 @@ World* WorldMgr::OpenWorld(string filename)
 {
 	World* world = new World();
 	if(!world->Init(filename))
+	{
+		_DELETE(world);
 		return nullptr;
+	}
 
 	regWorld(world);
 	return world;

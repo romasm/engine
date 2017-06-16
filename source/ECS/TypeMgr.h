@@ -4,12 +4,7 @@
 #include "ECS_defines.h"
 #include "Entity.h"
 
-#define ENT_TYPE_NONE			0x000
-
-#define ENT_TYPE_MODEL			0x001
-#define ENT_TYPE_LIGHT			0x002
-#define ENT_TYPE_CAMERA			0x003
-#define ENT_TYPE_GLOBAL_LIGHT	0x004
+#define EDITOR_TYPE "_editor_"
 
 namespace EngineCore
 {
@@ -38,6 +33,7 @@ namespace EngineCore
 		void ClearType(Entity ent);
 
 		inline string GetType(Entity ent) const {return typeOfEntity[ent.index()];}
+		inline bool IsThisType(Entity ent, string& type) const {return typeOfEntity[ent.index()] == type;}
 		Entity GetFirstByType(string& type);
 		Entity GetNextByType();
 

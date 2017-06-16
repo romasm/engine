@@ -28,7 +28,7 @@ end
 function SceneBrowser:Init()
     print("SceneBrowser:Init") 
     
-    self.entTypes = {"Node", "Camera", "LocalLight", "GlobalLight", "TestEnt", "StaticModel"}
+    self.entTypes = {"Node", "Camera", "LocalLight", "GlobalLight", "TestEnt", "StaticModel"}--, EDITOR_VARS.TYPE}
 
     self.filtredList = {}
     self.findstr = ""
@@ -53,7 +53,9 @@ function SceneBrowser:Refill()
     for i, entType in ipairs(self.entTypes) do
         local currentEnt = self.world:GetFirstEntityByType( entType )
         while not currentEnt:IsNull() do
-            self.entList[#self.entList + 1] = currentEnt
+            if self.world:GetEntityName(currentEnt):find(EDITOR_VARS.TYPE) == nil then
+                self.entList[#self.entList + 1] = currentEnt
+            end
             currentEnt = self.world:GetNextEntityByType()
         end
     end

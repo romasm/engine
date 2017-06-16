@@ -40,6 +40,8 @@
 
 #define SCENEGRAPH_SIZE ENTITY_COUNT * 4
 
+#define WORLD_FILE_VERSION 1
+
 namespace EngineCore
 {
 	class TypeMgr;
@@ -161,6 +163,7 @@ namespace EngineCore
 
 		inline bool SetEntityType(Entity e, string type) {return m_typeMgr->SetType(e, type);}
 		inline string GetEntityType(Entity e) {return m_typeMgr->GetType(e);}
+		inline bool IsEntityType(Entity e, string t) {return m_typeMgr->IsThisType(e, t);}
 		inline Entity GetFirstEntityByType(string type) {return m_typeMgr->GetFirstByType(type);}
 		inline Entity GetNextEntityByType() {return m_typeMgr->GetNextByType();}
 
@@ -176,6 +179,19 @@ namespace EngineCore
 			return res;
 		}
 
+	#ifdef _EDITOR
+		inline void ConstructEditorGui(Entity e)
+		{
+			LuaRef luaEnt = WrapEntityForLua(e);
+			if(!luaEnt.isNil())
+			{
+				LuaRef editorConstructor = luaEnt["editor_init"];
+				if(editorConstructor.isFunction())
+					editorConstructor(luaEnt);
+			}
+		}
+	#endif
+
 	#ifdef _DEV
 		void UpdateLuaFuncs()
 		{
@@ -187,6 +203,8 @@ namespace EngineCore
 		
 		struct WorldHeader
 		{
+			uint32_t version;
+
 			wchar_t env_name[256];
 			XMVECTOR env_rot;
 			
@@ -218,6 +236,7 @@ namespace EngineCore
 
 					.addFunction("SetEntityType", &BaseWorld::SetEntityType)
 					.addFunction("GetEntityType", &BaseWorld::GetEntityType)
+					.addFunction("IsEntityType", &BaseWorld::IsEntityType)
 					.addFunction("GetFirstEntityByType", &BaseWorld::GetFirstEntityByType)
 					.addFunction("GetNextEntityByType", &BaseWorld::GetNextEntityByType)
 

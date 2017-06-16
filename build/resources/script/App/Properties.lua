@@ -99,7 +99,7 @@ function Properties:Update()
 
         has_light = has_light and Viewport.lua_world.world.light:HasComponent(ent)
         has_globallight = has_globallight and Viewport.lua_world.world.globalLight:HasComponent(ent)
-        has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent) and not Viewport.lua_world.world.staticMesh:IsEditor(ent)
+        has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent)
         
         if has_script then
             local lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)

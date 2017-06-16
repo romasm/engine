@@ -31,7 +31,7 @@ LuaRef TypeMgr::LuaConstructor(string& type, Entity ent)
 	
 	if(classTable.isNil())
 	{
-		ERR("Cant get lua constuctor for type %s", type.c_str());
+		//ERR("Cant get lua constuctor for type %s", type.c_str());
 		return classTable;
 	}
 
@@ -57,7 +57,7 @@ bool TypeMgr::RegType(string& type, LuaRef* constructor)
 	if(!classConstructor.isTable())
 	{
 		classConstructor = LuaRef(LSTATE);
-		WRN("No lua constuctor for type %s", type.c_str());
+		LOG("No lua constuctor for type %s", type.c_str());
 	}
 
 	if(constructor)

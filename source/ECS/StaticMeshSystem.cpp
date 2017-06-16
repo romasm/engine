@@ -168,8 +168,6 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest) // TODO!!! copied 
 		newComp->materials.push_back(MATERIAL(comp->materials[i]->GetName()));
 
 	newComp->cast_shadow = comp->cast_shadow;
-
-	newComp->editor_only = comp->editor_only;
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
@@ -199,11 +197,7 @@ uint32_t StaticMeshSystem::Serialize(Entity e, uint8_t* data)
 	uint32_t* size_slot = (uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 	size += sizeof(uint32_t);
-
-	*(bool*)t_data = comp.editor_only;
-	t_data += sizeof(bool);
-	size += sizeof(bool);
-
+	
 	string mesh_name = StMeshMgr::GetName(comp.stmesh);
 	uint32_t mesh_name_size = (uint32_t)mesh_name.size();
 
@@ -245,10 +239,7 @@ uint32_t StaticMeshSystem::Deserialize(Entity e, uint8_t* data)
 
 	size = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
-
-	bool editor = *(bool*)t_data;
-	t_data += sizeof(bool);
-
+	
 	uint32_t mesh_name_size = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 	string mesh_name((char*)t_data, mesh_name_size);
@@ -271,21 +262,7 @@ uint32_t StaticMeshSystem::Deserialize(Entity e, uint8_t* data)
 	}
 
 	AddComponent(e, mesh_name, mat_names);
-	SetEditorOnly(e, editor);				// TODO
 	return size + sizeof(uint32_t);
-}
-
-bool StaticMeshSystem::IsEditorOnly(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.editor_only;
-}
-
-bool StaticMeshSystem::SetEditorOnly(Entity e, bool editor_only)
-{
-	GET_COMPONENT(false)
-	comp.editor_only = editor_only;
-	return true;
 }
 
 bool StaticMeshSystem::GetShadow(Entity e)

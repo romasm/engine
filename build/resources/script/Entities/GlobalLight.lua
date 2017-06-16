@@ -14,17 +14,26 @@ function EntityTypes.GlobalLight:init(world, ent)
     self.globalLightSys:SetColor(self.ent, Vector3(1,1,1))
     self.globalLightSys:SetBrightness(self.ent, 0.2)
     self.globalLightSys:SetArea(self.ent, 0.0094)
+    
+    self:editor_init()
+end
 
-    -- editor
-    self.world.visibility:AddComponent(self.ent)
+function EntityTypes.GlobalLight:editor_init()
+    local editorEnt = self.world:CreateEntity()
+    if not editorEnt:IsNull() then 
+        self.world:SetEntityType(editorEnt, EDITOR_VARS.TYPE)
+        self.transformSys:AddComponent(editorEnt)
+        self.world.visibility:AddComponent(editorEnt)
 
-    if not self.world.staticMesh:AddComponentMesh(self.ent, "../resources/meshes/editor/pointlight.stm") then
-        error("Cant init EntityTypes.GlobalLight")
-        self:Kill()
-    else
-        self.world.staticMesh:SetEditor(self.ent, true)
-        self.world.staticMesh:SetMaterial(self.ent, 0, "../resources/meshes/editor/pointlight.mtb")
+        if self.world.staticMesh:AddComponentMesh(editorEnt, "../resources/meshes/editor/pointlight.stm") then
+            self.world.staticMesh:SetMaterial(editorEnt, 0, "../resources/meshes/editor/pointlight.mtb")
+            self.transformSys:Attach(editorEnt, self.ent)
+            return
+        end
+
+        self.world:DestroyEntity(editorEnt)
     end
+    error("Cant init EntityTypes.GlobalLight editor entity")
 end
 
 function EntityTypes.GlobalLight:SetColor(r, g, b)

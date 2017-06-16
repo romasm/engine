@@ -18,7 +18,6 @@ function EntityTypes.TestEnt:init(world, ent)
     -- temp
     self.world.visibility:AddComponent(self.ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
-    self.world.staticMesh:SetEditor(self.ent, true)
 end
 
 function EntityTypes.TestEnt:initVars()

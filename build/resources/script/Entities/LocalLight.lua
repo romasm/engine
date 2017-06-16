@@ -18,16 +18,25 @@ function EntityTypes.LocalLight:init(world, ent)
     self.lightSys:SetRange(self.ent, 10)
     self.lightSys:UpdateLightProps(self.ent)
 
-    -- editor
-    self.world.visibility:AddComponent(self.ent)
+    self:editor_init()
+end
 
-    if not self.world.staticMesh:AddComponentMesh(self.ent, "../resources/meshes/editor/pointlight.stm") then
-        error("Cant init EntityTypes.LocalLight")
-        self:Kill()
-    else
-        self.world.staticMesh:SetEditor(self.ent, true)
-        self.world.staticMesh:SetMaterial(self.ent, 0, "../resources/meshes/editor/pointlight.mtb")
+function EntityTypes.LocalLight:editor_init()
+    local editorEnt = self.world:CreateEntity()
+    if not editorEnt:IsNull() then 
+        self.world:SetEntityType(editorEnt, EDITOR_VARS.TYPE)
+        self.transformSys:AddComponent(editorEnt)
+        self.world.visibility:AddComponent(editorEnt)
+
+        if self.world.staticMesh:AddComponentMesh(editorEnt, "../resources/meshes/editor/pointlight.stm") then
+            self.world.staticMesh:SetMaterial(editorEnt, 0, "../resources/meshes/editor/pointlight.mtb")
+            self.transformSys:Attach(editorEnt, self.ent)
+            return
+        end
+
+        self.world:DestroyEntity(editorEnt)
     end
+    error("Cant init EntityTypes.LocalLight editor entity")
 end
 
 function EntityTypes.LocalLight:SetColor(r, g, b)

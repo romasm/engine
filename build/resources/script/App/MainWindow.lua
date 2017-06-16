@@ -164,9 +164,7 @@ function MainWindow:FileMenuClick(btn, ev)
         print("Opening scene")
         local res = dlgOpenFile(self.mainwin:GetHWND(), "Open scene", self.filterOpen)
         if res == "" then return true end
-        if SceneMgr:LoadWorld(res) == 0 then
-            error("Unable to open scene "..res)
-        end
+        SceneMgr:LoadWorld(res)
 
     elseif ev.id == "tb_save" then
         print("Saving scene")

@@ -21,7 +21,6 @@ function EntityTypes.TestPlayer:init(world, ent)
     -- temp
     self.world.visibility:AddComponent(self.ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
-    self.world.staticMesh:SetEditor(self.ent, true)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)

@@ -6,11 +6,11 @@ function EditorCamera:Init( world )
     self.world = world
 
     self.cameraNode = EntityTypes.Node(self.world)
-    self.world:RenameEntity(self.cameraNode.ent, "_unsave_CameraNode")
+    self.world:RenameEntity(self.cameraNode.ent, EDITOR_VARS.TYPE.."CameraNode")
     self.cameraNode:SetPosition(0.0, 0.0, 0.0)
     
     self.camera = EntityTypes.Camera(self.world)
-    self.world:RenameEntity(self.camera.ent, "_unsave_EditorCamera")
+    self.world:RenameEntity(self.camera.ent, EDITOR_VARS.TYPE.."Camera")
     self.camera:Attach(self.cameraNode)
     self.camera:SetFov(1.0)
     self.camera:SetFar(10000.0)

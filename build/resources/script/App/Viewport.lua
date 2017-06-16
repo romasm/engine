@@ -200,45 +200,6 @@ function Viewport:CloseRenderConfig()
     return true
 end
 
-function Viewport:SetMode(combo, ev)
-    if not self.lua_world then return end
-
-    local mode = combo:GetSelected() - 1
-
-    local renderConfig = self.lua_world.scenepl:GetConfig()
-
-    if mode < 27 then
-        renderConfig.bufferViewMode = mode
-        renderConfig.analyticLightDiffuse = 1
-        renderConfig.analyticLightSpecular = 1
-        renderConfig.ambientLightDiffuse = 1
-        renderConfig.ambientLightSpecular = 1
-    else
-        renderConfig.bufferViewMode = 0
-        if mode == 27 then
-            renderConfig.analyticLightDiffuse = 1
-            renderConfig.analyticLightSpecular = 0
-            renderConfig.ambientLightDiffuse = 1
-            renderConfig.ambientLightSpecular = 0
-        elseif mode == 28 then
-            renderConfig.analyticLightDiffuse = 0
-            renderConfig.analyticLightSpecular = 0
-            renderConfig.ambientLightDiffuse = 1
-            renderConfig.ambientLightSpecular = 0
-        elseif mode == 29 then
-            renderConfig.analyticLightDiffuse = 0
-            renderConfig.analyticLightSpecular = 1
-            renderConfig.ambientLightDiffuse = 0
-            renderConfig.ambientLightSpecular = 1
-        elseif mode == 30 then
-            renderConfig.analyticLightDiffuse = 0
-            renderConfig.analyticLightSpecular = 0
-            renderConfig.ambientLightDiffuse = 0
-            renderConfig.ambientLightSpecular = 1
-        end
-    end
-end
-
 function Viewport:ToggleFullscreen()
     if not self.lua_world then return end
 
@@ -256,7 +217,7 @@ function Viewport:ToggleGamemode()
         EditorCamera.camera:Activate(self.lua_world.scenepl)
 
         self.drawhud = true
-        self.lua_world.scenepl:SetHud(true)
+        self.lua_world.scenepl:GetConfig().editorGuiEnable = true
         self.overlay_gui.enable = true
         
         self:SetMouseVis(true)
@@ -267,7 +228,7 @@ function Viewport:ToggleGamemode()
         player:Activate()
 
         self.drawhud = false
-        self.lua_world.scenepl:SetHud(false)
+        self.lua_world.scenepl:GetConfig().editorGuiEnable = false
         self.overlay_gui.enable = false
 
         self:SetFreelook(false)
@@ -779,7 +740,7 @@ function Viewport:SwitchHud()
     if not self.lua_world or self.gamemode then return end
 
     self.drawhud = not self.drawhud
-    self.lua_world.scenepl:SetHud(self.drawhud)
+        self.lua_world.scenepl:GetConfig().editorGuiEnable = self.drawhud
     self.overlay_gui.enable = self.drawhud
 end
 
@@ -858,6 +819,11 @@ function Viewport:Select(coords)
                     return
                 end
             end
+        end
+
+        while self.lua_world.world:IsEntityType(s_ent, EDITOR_VARS.TYPE) do
+            s_ent = self.lua_world.world.transform:GetParent(s_ent)
+            if s_ent:IsNull() then return end
         end
 
         table.insert(self.selection_set, s_ent)

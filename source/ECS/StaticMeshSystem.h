@@ -14,7 +14,6 @@ namespace EngineCore
 		ENTITY_IN_COMPONENT
 
 		bool dirty;
-		bool editor_only;
 
 		bool cast_shadow;
 
@@ -32,7 +31,6 @@ namespace EngineCore
 			e.setnull();
 			parent = e;
 			dirty = true;
-			editor_only = false;
 			cast_shadow = true;
 			stmesh = STMESH_NULL;
 			constantBuffer = nullptr;
@@ -100,9 +98,6 @@ namespace EngineCore
 
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
-		
-		bool IsEditorOnly(Entity e);
-		bool SetEditorOnly(Entity e, bool only_editor);
 
 		bool SetMesh(Entity e, string mesh);
 		
@@ -156,9 +151,6 @@ namespace EngineCore
 					.addFunction("GetMaterialsCount", &StaticMeshSystem::GetMaterialsCount)
 
 					.addFunction("GetCenter", &StaticMeshSystem::GetCenterLua)
-
-					.addFunction("IsEditor", &StaticMeshSystem::IsEditorOnly)
-					.addFunction("SetEditor", &StaticMeshSystem::SetEditorOnly)
 				.endClass();
 		}
 
