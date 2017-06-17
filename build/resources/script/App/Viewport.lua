@@ -321,11 +321,17 @@ function Viewport:PlaceEntity(entity, mouse_coords)
     local cam_origin = self.lua_world.world.camera:GetPos(EditorCamera.cameraEntity)
     local coords = self.lua_world.world.visibility:CollideRayCoords(cam_origin, cam_dir, self.lua_world.world.camera:GetFrustumId(EditorCamera.cameraEntity))
     
-    local size = self.lua_world.world.visibility:GetBoxSizeL(entity)
-    local center = self.lua_world.world.visibility:GetBoxCenterL(entity)
-    local y_offset = math.max(0, size.y - center.y)
+    if coords.w >= SELECTION.MAXDIST then      
+        coords.x = cam_origin.x + cam_dir.x * SELECTION.DEFAULT_CAM_OFFSET;
+        coords.y = cam_origin.y + cam_dir.y * SELECTION.DEFAULT_CAM_OFFSET;
+        coords.z = cam_origin.z + cam_dir.z * SELECTION.DEFAULT_CAM_OFFSET;
+    else
+        local size = self.lua_world.world.visibility:GetBoxSizeL(entity)
+        local center = self.lua_world.world.visibility:GetBoxCenterL(entity)
+        coords.y = coords.y + math.max(0, size.y - center.y)
+    end
 
-    self.lua_world.world.transform:SetPosition(entity, coords.x, coords.y + y_offset, coords.z)
+    self.lua_world.world.transform:SetPosition(entity, coords.x, coords.y, coords.z)
     self.lua_world.world.transform:ForceUpdate(entity)
 end
 

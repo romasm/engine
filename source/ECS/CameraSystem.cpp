@@ -247,7 +247,7 @@ int32_t CameraSystem::GetVolumeId(Entity e)
 XMVECTOR CameraSystem::GetVectorFromScreen(Entity e, XMVECTOR screen_point, float screen_w, float screen_h)
 {
 	GET_COMPONENT(XMVectorZero())
-		return XMVector3Unproject(screen_point, 0.0f, 0.0f, screen_w, screen_h, 0.0f, 1.0f, comp.projMatrix, comp.viewMatrix, XMMatrixTranslationFromVector(comp.camPos)); 
+		return XMVector3Normalize(XMVector3Unproject(screen_point, 0.0f, 0.0f, screen_w, screen_h, 0.0f, 1.0f, comp.projMatrix, comp.viewMatrix, XMMatrixTranslationFromVector(comp.camPos))); 
 }
 
 XMVECTOR CameraSystem::GetLookDirV(Entity e)

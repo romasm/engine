@@ -7,7 +7,7 @@ function EditorCamera:Init( world )
 
     self.cameraNode = EntityTypes.Node(self.world)
     self.world:RenameEntity(self.cameraNode.ent, EDITOR_VARS.TYPE.."CameraNode")
-    self.cameraNode:SetPosition(0.0, 0.0, 0.0)
+    self.cameraNode:SetPosition(0.0, 1.0, 0.0)
     
     self.camera = EntityTypes.Camera(self.world)
     self.world:RenameEntity(self.camera.ent, EDITOR_VARS.TYPE.."Camera")
@@ -18,6 +18,9 @@ function EditorCamera:Init( world )
 
     self.cameraEntity = self.camera.ent
     
+    -- editor plane
+    self:EditorPlane()
+
     -- from config
     self.movespeed = 0.005
     self.rotspeed = 0.01
@@ -35,11 +38,29 @@ function EditorCamera:Init( world )
     }
 end
 
+function EditorCamera:EditorPlane()
+    self.planeEnt = self.world:CreateEntity()
+    if not self.planeEnt:IsNull() then 
+        self.world:SetEntityType(self.planeEnt, EDITOR_VARS.TYPE)
+        self.world.transform:AddComponent(self.planeEnt)
+
+        if self.world.staticMesh:AddComponentMesh(self.planeEnt, "../resources/meshes/editor/unit_plane.stm") then
+            self.world.staticMesh:SetMaterial(self.planeEnt, 0, "../resources/meshes/editor/unit_plane.mtb")
+            self.world.transform:SetScale(self.planeEnt, 100.0, 100.0, 100.0)
+            return
+        end
+
+        self.world:DestroyEntity(self.planeEnt)
+    end
+    error("Cant init editor plane")
+end
+
 function EditorCamera:Close()
     self.world = nil
     self.cameraEntity = nil
     self.camera = nil
     self.cameraNode = nil
+    self.planeEnt = nil
 end
 
 function EditorCamera:onStartMove(key)

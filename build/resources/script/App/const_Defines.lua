@@ -69,3 +69,8 @@ COMPONENTS = {
     STATIC = 4,
     SCRIPT = 5,
 }
+
+SELECTION = {
+    MAXDIST = 10000,
+    DEFAULT_CAM_OFFSET = 5.0,
+}

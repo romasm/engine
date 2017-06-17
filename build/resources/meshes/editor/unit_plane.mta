@@ -1,0 +1,5 @@
+shader = "../resources/shaders/objects/editor/unit_plane"
+
+ps
+{
+}

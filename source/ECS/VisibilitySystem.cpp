@@ -46,15 +46,15 @@ Entity VisibilitySystem::CollideRay(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id)
 	return ent;
 }
 
-XMFLOAT3 VisibilitySystem::CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id)
+XMFLOAT4 VisibilitySystem::CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id)
 {
-	XMFLOAT3 colide_coord;
+	XMFLOAT4 colide_coord;
 	Entity ent;
 	collide_ray(origin, ray, frust_id, &colide_coord, &ent);
 	return colide_coord;
 }
 
-void VisibilitySystem::collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT3* colide_coord, Entity* ent)
+void VisibilitySystem::collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT4* colide_coord, Entity* ent)
 {
 	XMVECTOR vorigin = XMLoadFloat3(&origin);
 	XMVECTOR vray = XMLoadFloat3(&ray);
@@ -78,7 +78,10 @@ void VisibilitySystem::collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, 
 	}
 
 	if(colide_coord)
-		XMStoreFloat3(colide_coord, vorigin + XMVector3Normalize(vray) * min_dist);
+	{
+		XMStoreFloat4(colide_coord, vorigin + XMVector3Normalize(vray) * min_dist);
+		colide_coord->w = min_dist;
+	}
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\

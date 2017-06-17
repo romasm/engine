@@ -78,7 +78,7 @@ namespace EngineCore
 		BoundingOrientedBox GetBBoxW(Entity e);
 
 		Entity CollideRay(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id);
-		XMFLOAT3 CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id);
+		XMFLOAT4 CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id);
 
 		XMFLOAT3 GetBoxSizeW(Entity e)
 		{
@@ -121,7 +121,7 @@ namespace EngineCore
 		}
 
 	private:
-		void collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT3* colide_coord, Entity* ent);
+		void collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT4* colide_coord, Entity* ent);
 
 		ComponentRArray<VisibilityComponent> components;
 

@@ -351,5 +351,8 @@
     <FxCompile Include="gui\rendered_preview.hlsl">
       <Filter>gui</Filter>
     </FxCompile>
+    <FxCompile Include="objects\editor\unit_plane.hlsl">
+      <Filter>objects\editor</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
