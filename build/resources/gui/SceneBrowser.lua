@@ -48,7 +48,7 @@ GuiStyles.entityname_textfield = {
 
     text = {
         color = 'text_01',
-        color_live = 'bg_06',
+        color_live = 'bg_01',
         color_nonactive = 'text_01',
         offset = { x = 3, y = 0 },
         center = { x = false, y = true },
@@ -378,7 +378,7 @@ local btn = GuiButton({
         left = 48,
         align = GUI_ALIGN.BOTH,
 
-        color = 'text_07',
+        color = 'text_06',
         color_nonactive = 'text_02',
     }),
 
@@ -390,7 +390,7 @@ local btn = GuiButton({
         height = 20,
         width = 20,
         icon = {
-            color = 'text_04_a5',
+            color = 'text_06',
             color_hover = 'act_02',
             color_press = 'act_04',
             color_nonactive = 'text_02',

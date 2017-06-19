@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Log.h"
+#include "LuaVM.h"
 
 namespace EngineCore
 {
@@ -18,18 +19,33 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 		GlobalColor();
 		~GlobalColor();
 
-		inline static GlobalColor* Get(){return m_instance;}
+		inline static GlobalColor* Get(){return instance;}
 
 		void AddColor(string& id, XMFLOAT4 color);
 		XMFLOAT4* GetColorPtr(string& id);
+		
+		static XMFLOAT4 GetColor(string id) {return *(instance->GetColorPtr(id));}
+		static void SetColor(string id, XMFLOAT4 color);
 
-		bool LoadColorsFromFile(string& filename);
-		void ClearColors();
+		static bool Load(string filename);
+		static bool Save(string filename);
+
+		static void RegLuaFunctions()
+		{
+			getGlobalNamespace(LSTATE)
+				.beginNamespace("Config")
+				.addFunction("GetColor", &GlobalColor::GetColor)
+				.addFunction("SetColor", &GlobalColor::SetColor)
+				.addFunction("SaveColors", &GlobalColor::Save)
+				.addFunction("LoadColors", &GlobalColor::Load)
+				.endNamespace();
+		}
 
 	private:
-		static GlobalColor *m_instance;
+		static GlobalColor *instance;
+		bool init;
 		
-		map<string, XMFLOAT4> colors;
+		map<string, XMFLOAT4> colorsMap;
 	};
 
 //------------------------------------------------------------------

@@ -22,7 +22,7 @@ public:
 	void Close();
 
 	void UpdateEntities(Window* win);
-
+	
 	void DeactivateWindow(Window* win)
 	{
 		KeyState.alt = false;
@@ -61,6 +61,7 @@ public:
 	}
 
 	void UpdateRootRect(HEntityWraper root);
+	void UpdateRootRects();
 
 	bool CreateRoot(Window* wnd);
 	bool DestroyRoot(Window* wnd);

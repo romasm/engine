@@ -24,6 +24,8 @@ namespace EngineCore
 		void Draw();
 		void Close();
 
+		inline void ForceUpdate() {shaderInst->ForceUpdate();}
+
 		ALIGNED_ALLOCATION
 
 	private:

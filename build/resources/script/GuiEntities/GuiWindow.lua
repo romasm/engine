@@ -94,6 +94,7 @@ function GuiWindow:init(props)
         self.sys_win:HideWinBorder(false)
         self.sys_win:SetCaptionRect(0, self.header_size, 0, self.header_size)
         self.sys_win:SetBorderSize(4)
+        self.sys_win:SetIcons("../resources/textures/icons/main_icon.ico", "../resources/textures/icons/main_icon.ico")
 
         self.sys_win.caption_text = self.header.str ~= nil and self.header.str or "[empty header]"
         
@@ -110,7 +111,7 @@ function GuiWindow:init(props)
 	    self.sys_win:SetColorBorderPtr(CoreGui.GetColor('main_win_brd'))
 	    self.sys_win:SetColorBorderFocusPtr(CoreGui.GetColor('main_win_brd_focus'))
 	    self.sys_win:SetAlpha(sys_bg_color.w)
-        
+                
         self.sys_win_root = GuiRoot(CoreGui.GetRootByWindow(self.sys_win))
 
         self.sys_win_root.entity:AttachChild(self.entity)

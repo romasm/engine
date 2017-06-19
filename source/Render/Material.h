@@ -201,6 +201,8 @@ namespace EngineCore
 
 		void Set();
 
+		inline void ForceUpdate() {b_dirty = true;}
+
 		void SetMatrixBuffer(ID3D11Buffer* matrixBuf);
 
 		void SetTexture(ID3D11ShaderResourceView *texture, uint8_t id);

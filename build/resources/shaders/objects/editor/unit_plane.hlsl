@@ -3,7 +3,7 @@ TECHNIQUE_DEFAULT
 	Queue = GUI_3D;
 
 	DepthEnable = true;
-	DepthWrite = true;
+	DepthWrite = false;
 	DepthFunc = LESS_EQUAL;
 
 	BlendEnable = true;
@@ -27,11 +27,11 @@ TECHNIQUE_DEFAULT
 // config
 static const float lineAlpha[3] = {0.5, 0.7, 0.5};
 static const float lineContrast[3] = {0.0, 0.5, 0.0};
-static const float lineBrightness[3] = {0.4, 0.8, 0.5};
+static const float lineBrightness[3] = {0.8, 0.8, 0.5};
 static const float lineHardness = 1000.0;
 
 static const float lineThickness = 0.003;
-static const float lineThicknessDist = 0.05;
+static const float lineThicknessDist = 0.04;
 static const float lineNearClip = 0.15;
 static const float lineNearFade = 0.2;
 static const float lineFarClip[3] = {3.0, 15, 150};
@@ -67,7 +67,7 @@ float4 PlanePS(PI_ToolMesh input) : SV_TARGET
 	float4 cascade1 = GridCascade(input.worldPos.xz, distToCam, 1);
 
 	cascade0 *= 1 - (cascade1.a > 0.1 ? 1 : 0);
-	cascade0 += cascade1;
+	cascade0 = lerp(cascade0, cascade1, float(cascade1.a > 0.1));
 	cascade0.a *= NoV;
 	return saturate(cascade0);
 }

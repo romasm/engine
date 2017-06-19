@@ -12,17 +12,17 @@ return GuiMenu({
     ----
     GuiButton({
         styles = {GuiStyles.menu_button_default,},
-        id = "tb_render",
+        id = "tb_colors",
         top = 1,
-        text = { str = "Rendering", },
+        text = { str = "Color scheme", },
     }),
 
     ----
     GuiButton({
         styles = {GuiStyles.menu_button_default,},
-        id = "tb_interface",
+        id = "tb_config",
         top = 26,
-        text = { str = "Interface", },
+        text = { str = "Configuration", },
     }),
     
     GuiRect({

@@ -355,9 +355,9 @@ bool ScenePipeline::InitAvgRt()
 	}
 
 	sp_AvgLum = new ScreenPlane(SP_MATERIAL_AVGLUM);
-	sp_AvgLum->SetFloat(CONFIG(hdr_adopt_speed), 1);
-	sp_AvgLum->SetFloat(CONFIG(hdr_limit_min), 2);
-	sp_AvgLum->SetFloat(CONFIG(hdr_limit_max), 3);
+	sp_AvgLum->SetFloat(CONFIG(float, hdr_adopt_speed), 1);
+	sp_AvgLum->SetFloat(CONFIG(float, hdr_limit_min), 2);
+	sp_AvgLum->SetFloat(CONFIG(float, hdr_limit_max), 3);
 
 	return true;
 }
@@ -468,11 +468,11 @@ bool ScenePipeline::InitRts()
 	sp_AO->SetTextureByNameS(TEX_HBAO_DITHER, 0);
 	sp_AO->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 1);
 	sp_AO->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 2);
-	sp_AO->SetFloat(CONFIG(ao_half_sample_radius), 0);
-	sp_AO->SetFloat(CONFIG(ao_inv_distance_falloff), 1);
-	sp_AO->SetFloat(CONFIG(ao_hieght_bias), 2);
-	sp_AO->SetFloat(CONFIG(ao_hiz_mip_scaler), 3);
-	sp_AO->SetFloat(CONFIG(ao_max_dist_sqr), 4);
+	sp_AO->SetFloat(CONFIG(float, ao_half_sample_radius), 0);
+	sp_AO->SetFloat(CONFIG(float, ao_inv_distance_falloff), 1);
+	sp_AO->SetFloat(CONFIG(float, ao_hieght_bias), 2);
+	sp_AO->SetFloat(CONFIG(float, ao_hiz_mip_scaler), 3);
+	sp_AO->SetFloat(CONFIG(float, ao_max_dist_sqr), 4);
 	
 	sp_FinalOpaque = new ScreenPlane(SP_MATERIAL_COMBINE);
 	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(0), 0);
@@ -487,8 +487,8 @@ bool ScenePipeline::InitRts()
 	sp_Bloom = new ScreenPlane(SP_MATERIAL_BLOOM_FIND);
 	sp_Bloom->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
 	sp_Bloom->SetTexture(rt_AvgLum->GetShaderResourceView(0), 1);
-	sp_Bloom->SetFloat(CONFIG(hdr_bloom_threshold), 0);
-	sp_Bloom->SetFloat(CONFIG(hdr_bloom_max), 1);
+	sp_Bloom->SetFloat(CONFIG(float, hdr_bloom_threshold), 0);
+	sp_Bloom->SetFloat(CONFIG(float, hdr_bloom_max), 1);
 
 	sp_HDRtoLDR = new ScreenPlane(SP_MATERIAL_HDR);
 	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
@@ -516,30 +516,30 @@ bool ScenePipeline::InitRts()
 		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 18);
 	}
 
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_shoulder_strength), 0);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_strength), 1);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_linear_angle), 2);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_toe_strength), 3);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_toe_numerator), 4);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_toe_denominator), 5);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_white_point), 6);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_exposure_adjustment), 7);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_apply_to_lum) ? 1.0f : 0.0f, 8);
-	sp_HDRtoLDR->SetFloat(CONFIG(tonemap_middle_gray), 9);
-	sp_HDRtoLDR->SetFloat(CONFIG(hdr_bloom_amount), 10);
-	sp_HDRtoLDR->SetFloat(CONFIG(hdr_bloom_mul), 11);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_strength), 1);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_angle), 2);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_toe_strength), 3);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_toe_numerator), 4);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_toe_denominator), 5);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_white_point), 6);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_exposure_adjustment), 7);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_apply_to_lum) ? 1.0f : 0.0f, 8);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_middle_gray), 9);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, hdr_bloom_amount), 10);
+	sp_HDRtoLDR->SetFloat(CONFIG(float, hdr_bloom_mul), 11);
 
 	sp_Antialiased[0] = new ScreenPlane(SP_MATERIAL_AA_EDGE);
 	sp_Antialiased[0]->SetTexture(rt_Antialiased->GetShaderResourceView(0), 0);
-	sp_Antialiased[0]->SetFloat(CONFIG(smaa_threshold), 0);
+	sp_Antialiased[0]->SetFloat(CONFIG(float, smaa_threshold), 0);
 
 	sp_Antialiased[1] = new ScreenPlane(SP_MATERIAL_AA_BLEND);
 	sp_Antialiased[1]->SetTextureByNameS(TEX_SMAA_AREA, 0);
 	sp_Antialiased[1]->SetTextureByNameS(TEX_SMAA_SEARCH, 1);
 	sp_Antialiased[1]->SetTexture(rt_Antialiased->GetShaderResourceView(1), 2);
-	sp_Antialiased[1]->SetFloat(CONFIG(smaa_search_steps), 0);
-	sp_Antialiased[1]->SetFloat(CONFIG(smaa_search_steps_diag), 1);
-	sp_Antialiased[1]->SetFloat(CONFIG(smaa_corner_rounding), 2);
+	sp_Antialiased[1]->SetFloat(CONFIG(float, smaa_search_steps), 0);
+	sp_Antialiased[1]->SetFloat(CONFIG(float, smaa_search_steps_diag), 1);
+	sp_Antialiased[1]->SetFloat(CONFIG(float, smaa_corner_rounding), 2);
 	sp_Antialiased[1]->SetFloat(0, 3);// sub indecies used for temporal aa 
 	sp_Antialiased[1]->SetFloat(0, 4);
 	sp_Antialiased[1]->SetFloat(0, 5);

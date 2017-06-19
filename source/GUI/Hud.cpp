@@ -14,6 +14,12 @@ static void UpdateLuaFuncs()
 	Hud::Get()->EntStorge->UpdateLuaFuncs();
 }
 
+static void UpdateShaderData()
+{
+	Hud::Get()->EntStorge->UpdateShaderData();
+	Hud::Get()->UpdateRootRects();
+}
+
 inline static bool GetShift(){return Hud::Get()->KeyState.shift;}
 inline static bool GetCtrl(){return Hud::Get()->KeyState.ctrl;}
 inline static bool GetAlt(){return Hud::Get()->KeyState.alt;}
@@ -162,6 +168,7 @@ void Hud::RegLuaClass()
 			.addFunction("GetMainRoot", &GetMainRootLua)
 			.addFunction("GetRootByWindow", &GetRootByWindowLua)
 			.addFunction("UpdateLuaFuncs", &UpdateLuaFuncs)
+			.addFunction("UpdateShaderData", &UpdateShaderData)
 			.addFunction("SetRootClass", &SetRootClassLua)
 			.addFunction("UpdateRootRect", &UpdateRootRectLua)
 
@@ -267,6 +274,7 @@ bool Hud::CreateRoot(Window* wnd)
 	borderShader->SetVector(XMFLOAT4(0,0,0,0), 2);
 
 	rootEnts.insert(make_pair(hwnd, r));
+
 	return true;
 }
 
@@ -304,6 +312,12 @@ void Hud::UpdateEntities(Window* win)
 		auto ent = GET_HENTITY(it->second.rootEnt);
 		ent->UpdatePosSize(win);
 	}
+}
+
+void Hud::UpdateRootRects()
+{
+	for(auto& it : rootEnts)
+		UpdateRootRect(HEntityWraper(it.second.rootEnt));
 }
 
 void Hud::UpdateRootRect(HEntityWraper root)

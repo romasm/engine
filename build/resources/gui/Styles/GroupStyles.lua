@@ -24,7 +24,7 @@ GuiStyles.group_button = {
         center = { x = false, y = true },
         str = "Group",
         font = "../resources/fonts/opensans_normal_18px",
-        color = 'text_00',
+        color = 'act_03',
         color_hover = 'act_03',
         color_press = 'act_03',
         color_nonactive = 'text_02'

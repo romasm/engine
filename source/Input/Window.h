@@ -342,7 +342,6 @@ namespace EngineCore
 		DXGI_PRESENT_PARAMETERS presetParams;
 
 		double rendertime;
-		float fpslock;
 		Timer* m_timer;
 
 		bool b_hover;

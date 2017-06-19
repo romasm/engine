@@ -51,6 +51,8 @@ namespace EngineCore
 
 	void Render::RegLuaClass()
 	{
+		GlobalColor::RegLuaFunctions();
+
 		getGlobalNamespace(LSTATE)
 			.beginNamespace("Resource")
 				.addFunction("PreloadSystemResources", &PreloadSystemResources)

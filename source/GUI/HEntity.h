@@ -115,6 +115,9 @@ public:
 	void Update(float dt);
 	void RegToDraw();
 
+	// TEMP: move to gui render system
+	void ForceUpdateShaderData();
+
 	void Close();
 
 	inline HEvent LocalCallback(HEvent e);
@@ -270,11 +273,13 @@ protected:
 	void UpdateChildrenPosSize();
 	void UpdateChildrenPos();
 	void UpdateClip();
-
+	
 	void ActivateLoop();
 	void DeactivateLoop();
-
+	
 public:
+
+	void UpdateProps();
 
 	inline void Activate()
 	{
@@ -459,6 +464,13 @@ class HEntityStorage
 			auto d = entities.data();
 			for(auto& i: *d)
 				i.SetLuaFuncs();
+		}
+
+		inline void UpdateShaderData()
+		{
+			auto d = entities.data();
+			for(auto& i: *d)
+				i.ForceUpdateShaderData();
 		}
 
 	private:

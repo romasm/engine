@@ -27,7 +27,6 @@ namespace EngineCore
 		systemId = -1;
 
 		rendertime = 0;
-		fpslock = 1000.0f / EngineSettings::EngSets.fpslock;
 		m_timer = Timer::Get();
 
 		m_finResize = false;
@@ -76,7 +75,7 @@ namespace EngineCore
 
 			if( !RegisterClassEx( &wnd ) )
 			{
-				ERR("Не удалось зарегистрировать окно");
+				ERR("Registration of WNDCLASS failed");
 				return false;
 			}
 		}
@@ -149,7 +148,7 @@ namespace EngineCore
 		schdf.RefreshRate.Numerator = 60;
 		schdf.Scaling = DXGI_MODE_SCALING_CENTERED;
 		schdf.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
-		schdf.Windowed = !EngineSettings::EngSets.fullscreen;
+		schdf.Windowed = !CONFIG(bool, fullscreen);
 
 		HRESULT hr = Render::Get()->m_pDxgiFactory->CreateSwapChainForHwnd( Render::Get()->m_pd3dDevice, m_hwnd, &schd, &schdf, nullptr, &m_pSwapChain );
 		if( FAILED(hr) )
@@ -665,7 +664,6 @@ namespace EngineCore
 		}		
 		_RELEASE(pBackBuffer);
 
-		LOG("Window resized to %i x %i", m_desc.width, m_desc.height);
 		UpdateWindowState();
 
 		return SUCCEEDED(hr);

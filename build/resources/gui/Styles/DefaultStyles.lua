@@ -70,7 +70,7 @@ GuiStyles.color_button = {
     height = 20,
 
     border = {
-        color = 'border_02',
+        color = 'act_05',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
@@ -356,7 +356,7 @@ GuiStyles.props_textfield = {
     },
 
     border = {
-        color = 'border_02',
+        color = 'act_05',
         color_live = 'bg_05',
         color_nonactive = 'text_02',
         width = 1
@@ -364,7 +364,7 @@ GuiStyles.props_textfield = {
 
     text = {
         color = 'text_01',
-        color_live = 'bg_06',
+        color_live = 'bg_01',
         color_nonactive = 'text_02'
     },
 }
@@ -422,7 +422,7 @@ GuiStyles.props_combo = {
     },
 
     border = {
-        color = 'border_02',
+        color = 'act_05',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
@@ -485,7 +485,7 @@ GuiStyles.props_check = {
     },
 
     border = {
-        color = 'border_02',
+        color = 'act_05',
         color_hover = 'act_02',
         color_nonactive = 'text_02',
         width = 1
@@ -512,19 +512,19 @@ GuiStyles.common_dataslider = {
         color = 'act_01',
         color_hover = 'act_01',
         color_press = 'act_00',
-        color_nonactive = 'bg_06',
+        color_nonactive = 'bg_01',
     },
 
     background = {
         color = 'bg_05',
-        color_hover = 'bg_11',
+        color_hover = 'bg_01_v1',
         color_press = 'bg_05',
         color_nonactive = 'bg_03',
         color_text = 'act_03'
     },
 
     border = {
-        color = 'border_02',
+        color = 'act_05',
         color_hover = 'act_02',
         color_press = 'act_02',
         color_nonactive = 'text_02',
@@ -537,7 +537,7 @@ GuiStyles.common_dataslider = {
         length = 10,
         font = "../resources/fonts/opensans_normal_16px",
         color = 'act_02',
-        color_live = 'bg_06',
+        color_live = 'bg_01',
         color_nonactive = 'text_02',
         color_selection = 'act_00',
         color_cursor = 'bg_05'

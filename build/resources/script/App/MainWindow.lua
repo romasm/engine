@@ -55,6 +55,9 @@ function MainWindow:Init()
     loader.require("TopBar", MainWindow.reloadTopBar)
     self.reloadTopBar()
     
+    loader.require("ColorsWindow", MainWindow.reloadColors)
+    self.colorsWindow = nil
+
     Tools:Init()
     Properties:Init()
     MaterialProps:Init()
@@ -244,46 +247,45 @@ end
 function MainWindow:SetsMenuClick(btn, ev)
     self:SetsMenuClose(btn)
     
-    if ev.id == "tb_render" then
-        print("Opening render settings")
+    if ev.id == "tb_config" then
+        print("Opening configuration")
 
-        Gui.DialogOkCancel(
-            self.mainWinRoot.entity,
-            "Overwrite existing file?", 0,
-            function() print("ok") end,
-            function() print("cancel") end
-        )
-
-    elseif ev.id == "tb_interface" then
-        print("Opening interface settings")
+    elseif ev.id == "tb_colors" then
+        if MainWindow.colorsWindow == nil then
+            print("Opening color settings")
+            MainWindow.reloadColors()
+        end
         
-        Gui.DialogYesNoCancel(
-            self.mainWinRoot.entity,
-            "Are you completely retarded?", 0,
-            function() print("yes") end,
-            function() print("no") end
-        )
-
-    elseif ev.id == "tb_dev_shbuf" then
-        print("Opening shadows debug view")
-
     elseif ev.id == "tb_dev_skyrebake" then
-        Viewport.lua_world.world:RebakeSky()
         print("Rebaking sky prob")
+        Viewport.lua_world.world:RebakeSky()
 
     elseif ev.id == "tb_dev_convert" then
+        print("Converting meshes")
         for i, ent in ipairs(Viewport.selection_set) do
             local mesh = Viewport.lua_world.world.staticMesh:GetMesh(ent)
             if mesh:len() ~= 0 then Resource.ConvertMeshToSTM(mesh) end
         end 
-        print("Converting meshes")
         
     elseif ev.id == "tb_dev_profiler" then
         if not Profiler:IsInit() then
-            Profiler:Init()
             print("Profiler window opening")
+            Profiler:Init()
         end
 
     end
     return true
+end
+
+function MainWindow.reloadColors()
+    if MainWindow.colorsWindow ~= nil then
+        MainWindow.colorsWindow:Close()
+        MainWindow.colorsWindow = nil
+    end
+
+    local x = MainWindow.mainwin:GetLeft() + MainWindow.mainwin:GetWidth() / 2
+    local y = MainWindow.mainwin:GetTop() + MainWindow.mainwin:GetHeight() / 2
+
+    MainWindow.colorsWindow = Gui.ColorsWindow(x, y)
+    MainWindow.colorsWindow.entity:UpdatePosSize() 
 end

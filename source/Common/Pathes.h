@@ -49,8 +49,7 @@
 #define PATH_DEFAULT_LOCAL PATH_RSC "localization/en" EXT_RESOURCE
 
 #define PATH_ENGINE_CONFIG PATH_CONFIG "engine_settings" EXT_CONFIG
-
-#define PATH_GUI_COLORS PATH_RSC "colors" EXT_RESOURCE
+#define PATH_COLORS_CONFIG PATH_CONFIG "colors_default" EXT_CONFIG
 
 #define PATH_MAIN_SCRIPT PATH_SCRIPTS "main"
 

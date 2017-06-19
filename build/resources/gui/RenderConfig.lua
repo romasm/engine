@@ -131,7 +131,7 @@ return GuiRect({
         }),
     }),
 
-    -- VOXELS -- TODO: change shader logic
+    -- VOXELS
     GuiString({
         styles = {
             GuiStyles.ghost,

@@ -4,8 +4,8 @@
 #include "EngineSettings.h"
 #include "Pathes.h"
 
-MainLoop *MainLoop::m_instance = nullptr;
-EngineSettings::ESet EngineSettings::EngSets;
+MainLoop* MainLoop::m_instance = nullptr;
+EngineSettings* EngineSettings::instance = nullptr;
 
 struct CommandLineParams
 {

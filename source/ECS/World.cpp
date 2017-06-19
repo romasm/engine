@@ -75,7 +75,7 @@ bool BaseWorld::Init()
 
 	WorldHeader header;
 	header.version = WORLD_FILE_VERSION;
-	wcscpy_s(header.env_name, DEFAULT_ENV);
+	strcpy_s(header.env_name, DEFAULT_ENV);
 	header.free_cam_pos = XMVectorZero();
 	header.free_cam_rot = XMVectorZero();
 	header.env_rot = XMVectorZero();
@@ -301,7 +301,7 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 	return true;
 }
 
-void BaseWorld::initMainEntities(WorldHeader header)
+void BaseWorld::initMainEntities(WorldHeader& header)
 {
 	envName = header.env_name;
 
@@ -310,20 +310,20 @@ void BaseWorld::initMainEntities(WorldHeader header)
 	m_transformSystem->SetPosition(skyEP, 0, 0, 0);
 	m_transformSystem->SetRotation(skyEP, header.env_rot);
 
-	const float far_clip = EngineSettings::EngSets.cam_far_clip;
+	const float far_clip = CONFIG(float, cam_far_clip);
 	const float sky_scale = far_clip * 0.95f;
 	m_transformSystem->SetScale(skyEP, sky_scale, sky_scale, sky_scale);
 
 	m_staticMeshSystem->AddComponent(skyEP);
 	m_staticMeshSystem->SetMesh(skyEP, ENV_MESH);
 	string sky_mat = PATH_ENVS;
-	sky_mat += WstringToString(wstring(header.env_name));
+	sky_mat += header.env_name;
 	sky_mat += EXT_MATERIAL;
 	m_staticMeshSystem->SetMaterial(skyEP, 0, sky_mat);
 
 	EnvProbComponent ep_comp;
 	ep_comp.eptex_name = PATH_ENVS;
-	ep_comp.eptex_name += WstringToString(wstring(header.env_name));
+	ep_comp.eptex_name += header.env_name;
 	ep_comp.specCube = TEX_NULL;
 	ep_comp.diffCube = TEX_NULL;
 	ep_comp.is_distant = true;
@@ -343,7 +343,7 @@ bool BaseWorld::saveWorld(string& filename)
 	// header
 	WorldHeader header;
 	header.version = WORLD_FILE_VERSION;
-	wcscpy_s(header.env_name, envName.data());
+	strcpy_s(header.env_name, envName.data());
 	header.env_rot = m_transformSystem->GetVectRotationW(skyEP);
 
 	Entity editorCamera = GetEntityByName(EDITOR_TYPE "Camera");

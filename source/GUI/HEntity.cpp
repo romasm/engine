@@ -1228,3 +1228,18 @@ void HEntity::DeactivateLoop()
 		for(auto it: *named_children)
 			GET_HENTITY(it.second->e)->DeactivateLoop();
 }
+
+void HEntity::ForceUpdateShaderData()
+{
+	if(!enable || !visible)
+		return;
+
+	if(!isInRect(globalPos, clipRect))
+		return;
+
+	auto lua_func = lua_class["UpdateProps"];
+	if(!lua_func.isFunction())
+		return;
+
+	lua_func(lua_class);
+}

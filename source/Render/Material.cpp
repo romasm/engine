@@ -334,7 +334,7 @@ bool Material::ñonvertMat(string& nameBin)
 		offsetFloat[i] = Hcode.input.matInfo_VectorCount;
 	}
 
-	auto nodeDeffered = file.Node(L"deffered", root);
+	auto nodeDeffered = file.Node("deffered", root);
 	if( sceneReg != REGISTER_NULL && nodeDeffered)
 	{
 		defferedParams = new MaterialParamsStructBuffer;

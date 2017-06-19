@@ -289,7 +289,7 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 
 	for(auto &it: *root)
 	{
-		string samplerName = WstringToString(it.first);
+		string samplerName = it.first;
 
 		if(!it.second.node)
 		{
@@ -299,28 +299,28 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 
 		D3D11_SAMPLER_DESC desc;
 
-		desc.AddressU = StringToData::GetAddressType(techSource.ReadString(L"AddressU", it.second.node));
-		desc.AddressV = StringToData::GetAddressType(techSource.ReadString(L"AddressV", it.second.node));
-		desc.AddressW = StringToData::GetAddressType(techSource.ReadString(L"AddressW", it.second.node));
+		desc.AddressU = StringToData::GetAddressType(techSource.ReadString("AddressU", it.second.node));
+		desc.AddressV = StringToData::GetAddressType(techSource.ReadString("AddressV", it.second.node));
+		desc.AddressW = StringToData::GetAddressType(techSource.ReadString("AddressW", it.second.node));
 
-		desc.ComparisonFunc = StringToData::GetCompareFunc(techSource.ReadString(L"ComparisonFunc", it.second.node));
-		desc.Filter = StringToData::GetFilter(techSource.ReadString(L"Filter", it.second.node));
+		desc.ComparisonFunc = StringToData::GetCompareFunc(techSource.ReadString("ComparisonFunc", it.second.node));
+		desc.Filter = StringToData::GetFilter(techSource.ReadString("Filter", it.second.node));
 
-		XMFLOAT4 borderColor = techSource.ReadFloat4(L"BorderColor", it.second.node);
+		XMFLOAT4 borderColor = techSource.ReadFloat4("BorderColor", it.second.node);
 		desc.BorderColor[0] = borderColor.x;
 		desc.BorderColor[1] = borderColor.y;
 		desc.BorderColor[2] = borderColor.z;
 		desc.BorderColor[3] = borderColor.w;
 
-		desc.MipLODBias = techSource.ReadFloat(L"MipLODBias", it.second.node);
+		desc.MipLODBias = techSource.ReadFloat("MipLODBias", it.second.node);
 		
-		if(it.second.node->find(L"MaxLOD") == it.second.node->end())
+		if(it.second.node->find("MaxLOD") == it.second.node->end())
 			desc.MaxLOD = D3D11_FLOAT32_MAX;
 		else
-			desc.MaxLOD = techSource.ReadFloat(L"MaxLOD", it.second.node);
+			desc.MaxLOD = techSource.ReadFloat("MaxLOD", it.second.node);
 
-		desc.MinLOD = techSource.ReadFloat(L"MinLOD", it.second.node);
-		desc.MaxAnisotropy = UINT(techSource.ReadInt(L"MaxAnisotropy", it.second.node));
+		desc.MinLOD = techSource.ReadFloat("MinLOD", it.second.node);
+		desc.MaxAnisotropy = UINT(techSource.ReadInt("MaxAnisotropy", it.second.node));
 
 		ID3D11SamplerState* sampler = nullptr;
 		if( FAILED( DEVICE->CreateSamplerState(&desc, &sampler) ) )

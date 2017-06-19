@@ -230,25 +230,25 @@ KeyMap* ControllerSystem::GetKeyMap(string& keyMapName)
 
 	KeyMap* res = new KeyMap;
 
-	auto keyboard = file.Node(L"Keyboard", root);
+	auto keyboard = file.Node("Keyboard", root);
 	if(keyboard)
 	{
 		for(auto& i: *keyboard)
 		{
-			auto keyCode = keyboardMap.find(WstringToString(i.first));
+			auto keyCode = keyboardMap.find(i.first);
 			if(keyCode != keyboardMap.end())
-				res->keyboardEvents[keyCode->second] = WstringToString(i.second.value);
+				res->keyboardEvents[keyCode->second] = i.second.value;
 		}
 	}
 
-	auto mouse = file.Node(L"Mouse", root);
+	auto mouse = file.Node("Mouse", root);
 	if(mouse)
 	{
 		for(auto& i: *mouse)
 		{
-			auto keyCode = mouseMap.find(WstringToString(i.first));
+			auto keyCode = mouseMap.find(i.first);
 			if(keyCode != mouseMap.end())
-				res->mouseEvents[keyCode->second] = WstringToString(i.second.value);
+				res->mouseEvents[keyCode->second] = i.second.value;
 		}
 	}
 

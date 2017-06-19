@@ -15,8 +15,8 @@ private:
 
 	struct FileNode
 	{
-		wstring value;
-		unordered_map<wstring, FileNode>* node;
+		string value;
+		unordered_map<string, FileNode>* node;
 		FileNode()
 		{
 			node = nullptr;
@@ -65,7 +65,7 @@ private:
 	};
 
 public:
-	typedef unordered_map<wstring, FileNode> file_map;
+	typedef unordered_map<string, FileNode> file_map;
 
 public:
 	FileIO(string& filename, bool overwrite = false)
@@ -79,97 +79,88 @@ public:
 	bool SaveAs(string& file);
 	inline bool SaveAsS(char* file)
 	{return SaveAs(string(file));}
-
-#define FUNCTION_READ_C(return_type, name) inline return_type name(string str, file_map* node){return name(StringToWstring(str), node);}
-#define FUNCTION_WRITE_C(name, pass_type) inline void name(string str, pass_type value, file_map* node){name(StringToWstring(str), value, node);}
-
+	
 		file_map* Root(){return fileMap;}
-		file_map* Node(wstring name, file_map* node)
+		file_map* Node(string name, file_map* node)
 			{if(!node)return nullptr; auto n = node->find(name);
 			if(n == node->end())return nullptr; return n->second.node;}
-		FUNCTION_READ_C(file_map*, Node)
-		file_map* CreateNode(wstring name, file_map* node)
+		
+		file_map* CreateNode(string name, file_map* node)
 			{if(!node)return nullptr; auto n = node->find(name);
 			if(n != node->end())return n->second.node; FileNode newnode;
 			(*node)[name] = newnode; (*node)[name].node = new file_map; 
 			return (*node)[name].node;}
-		FUNCTION_READ_C(file_map*, CreateNode)
-		void DeleteNode(wstring name, file_map* node)
+		
+		void DeleteNode(string name, file_map* node)
 			{if(!node)return; auto n = node->find(name);
 			if(n == node->end())return; node->erase(n);}
-		FUNCTION_READ_C(void, DeleteNode)
+		
+		string ReadString(string name, file_map* node)
+			{if(!node)return ""; auto n = node->find(name); 
+			if(n == node->end())return ""; return n->second.value;}
 
-		wstring ReadString(wstring name, file_map* node)
-			{if(!node)return L""; auto n = node->find(name); 
-			if(n == node->end())return L""; return n->second.value;}
-		inline string ReadString(string name, file_map* node)
-		{return WstringToString(ReadString(StringToWstring(name), node));}
-
-		int ReadInt(wstring name, file_map* node)
+		int ReadInt(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
-			if(n == node->end())return 0; return WCharToInt((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(int, ReadInt)
-		float ReadFloat(wstring name, file_map* node)
+			if(n == node->end())return 0; return CharToInt((char*)n->second.value.data());}
+		
+		float ReadFloat(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
-			if(n == node->end())return 0; return WCharToFloat((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(float, ReadFloat)
-		bool ReadBool(wstring name, file_map* node)
+			if(n == node->end())return 0; return CharToFloat((char*)n->second.value.data());}
+		
+		bool ReadBool(string name, file_map* node)
 			{if(!node)return false; auto n = node->find(name); 
-			if(n == node->end())return false; return WCharToBool((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(bool, ReadBool)
-		XMFLOAT3 ReadFloat3(wstring name, file_map* node)
+			if(n == node->end())return false; return CharToBool((char*)n->second.value.data());}
+		
+		XMFLOAT3 ReadFloat3(string name, file_map* node)
 			{if(!node)return XMFLOAT3(0,0,0); auto n = node->find(name); 
-			if(n == node->end())return XMFLOAT3(0,0,0); return WCharToXMFloat3((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(XMFLOAT3, ReadFloat3)
-		XMFLOAT4 ReadFloat4(wstring name, file_map* node)
+			if(n == node->end())return XMFLOAT3(0,0,0); return CharToXMFloat3((char*)n->second.value.data());}
+		
+		XMFLOAT4 ReadFloat4(string name, file_map* node)
 			{if(!node)return XMFLOAT4(0,0,0,0); auto n = node->find(name); 
-			if(n == node->end())return XMFLOAT4(0,0,0,0); return WCharToXMFloat4((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(XMFLOAT4, ReadFloat4)
-		uint8_t ReadByte(wstring name, file_map* node)
+			if(n == node->end())return XMFLOAT4(0,0,0,0); return CharToXMFloat4((char*)n->second.value.data());}
+		
+		uint8_t ReadByte(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
-			if(n == node->end())return 0; return WCharToByte((wchar_t*)n->second.value.data());}
-		FUNCTION_READ_C(uint8_t, ReadByte)
-
-		bool IsNodeExist(wstring name, file_map* node)
+			if(n == node->end())return 0; return CharToByte((char*)n->second.value.data());}
+		
+		bool IsNodeExist(string name, file_map* node)
 			{if(!node)return false; auto n = node->find(name); 
 			if(n == node->end())return false; return true;}
-		FUNCTION_READ_C(bool, IsNodeExist)
-
-		void WriteString(wstring name, wstring value, file_map* node)
+		
+		void WriteString(string name, string value, file_map* node)
 			{if(!node)return; auto n = node->find(name); 
 			if(n != node->end())n->second.value = value; else{FileNode newvalue;
 			(*node)[name] = newvalue; (*node)[name].value = value;}}
-		inline void WriteString(string name, string value, file_map* node){WriteString(StringToWstring(name), StringToWstring(value), node);}
-		void WriteInt(wstring name, int value, file_map* node)
+		void WriteInt(string name, int value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = IntToWString(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = IntToWString(value);}}
-		FUNCTION_WRITE_C(WriteInt, int)
-		void WriteFloat(wstring name, float value, file_map* node)
+			if(n != node->end())n->second.value = IntToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = IntToString(value);}}
+		
+		void WriteFloat(string name, float value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = FloatToWString(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = FloatToWString(value);}}
-		FUNCTION_WRITE_C(WriteFloat, float)
-		void WriteBool(wstring name, bool value, file_map* node)
+			if(n != node->end())n->second.value = FloatToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = FloatToString(value);}}
+		
+		void WriteBool(string name, bool value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = BoolToWSring(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = BoolToWSring(value);}}
-		FUNCTION_WRITE_C(WriteBool, bool)
-		void WriteFloat3(wstring name, XMFLOAT3 value, file_map* node)
+			if(n != node->end())n->second.value = BoolToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = BoolToString(value);}}
+		
+		void WriteFloat3(string name, XMFLOAT3 value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = XMFloat3ToWSring(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = XMFloat3ToWSring(value);}}
-		FUNCTION_WRITE_C(WriteFloat3, XMFLOAT3)
-		void WriteFloat4(wstring name, XMFLOAT4 value, file_map* node)
+			if(n != node->end())n->second.value = XMFloat3ToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = XMFloat3ToString(value);}}
+		
+		void WriteFloat4(string name, XMFLOAT4 value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = XMFloat4ToWSring(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = XMFloat4ToWSring(value);}}
-		FUNCTION_WRITE_C(WriteFloat4, XMFLOAT4)
-		void WriteByte(wstring name, uint8_t value, file_map* node)
+			if(n != node->end())n->second.value = XMFloat4ToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = XMFloat4ToString(value);}}
+		
+		void WriteByte(string name, uint8_t value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = ByteToWString(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = ByteToWString(value);}}
-		FUNCTION_WRITE_C(WriteByte, uint8_t)
+			if(n != node->end())n->second.value = ByteToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = ByteToString(value);}}
+		
 
 private:
 	void init(string& filename, bool overwrite);

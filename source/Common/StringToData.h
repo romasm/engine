@@ -4,11 +4,11 @@
 #include "DataTypes.h"
 #include "MaterialData.h"
 
-#define PROC_STRING(prefix, string) if(str == L#string) return prefix##string;
+#define PROC_STRING(prefix, string) if(str == #string) return prefix##string;
 
 namespace StringToData
 {
-	inline UINT8 GetRTWriteMask( const wstring& str )
+	inline UINT8 GetRTWriteMask( const string& str )
 	{
 		if(str.empty())
 			return D3D11_COLOR_WRITE_ENABLE_ALL;
@@ -22,7 +22,7 @@ namespace StringToData
 		return D3D11_COLOR_WRITE_ENABLE_ALL;
 	};
 
-	inline D3D11_TEXTURE_ADDRESS_MODE GetAddressType( const wstring& str )
+	inline D3D11_TEXTURE_ADDRESS_MODE GetAddressType( const string& str )
 	{
 		if(str.empty())
 			return D3D11_TEXTURE_ADDRESS_WRAP;
@@ -36,7 +36,7 @@ namespace StringToData
 		return D3D11_TEXTURE_ADDRESS_WRAP;
 	};
 
-	inline D3D11_COMPARISON_FUNC GetCompareFunc( const wstring& str )
+	inline D3D11_COMPARISON_FUNC GetCompareFunc( const string& str )
 	{
 		if(str.empty())
 			return D3D11_COMPARISON_ALWAYS;
@@ -53,7 +53,7 @@ namespace StringToData
 		return D3D11_COMPARISON_ALWAYS;
 	};
 
-	inline D3D11_FILTER GetFilter( const wstring& str )
+	inline D3D11_FILTER GetFilter( const string& str )
 	{
 		if(str.empty())
 			return D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -80,7 +80,7 @@ namespace StringToData
 		return D3D11_FILTER_MIN_MAG_MIP_POINT;
 	};
 
-	inline D3D11_STENCIL_OP GetStencilOp( const wstring& str )
+	inline D3D11_STENCIL_OP GetStencilOp( const string& str )
 	{
 		if(str.empty())
 			return D3D11_STENCIL_OP_KEEP;
@@ -97,7 +97,7 @@ namespace StringToData
 		return D3D11_STENCIL_OP_KEEP;
 	};
 
-	inline D3D11_BLEND_OP GetBlendOp( const wstring& str )
+	inline D3D11_BLEND_OP GetBlendOp( const string& str )
 	{
 		if(str.empty())
 			return D3D11_BLEND_OP_ADD;
@@ -111,7 +111,7 @@ namespace StringToData
 		return D3D11_BLEND_OP_ADD;
 	};
 
-	inline D3D11_BLEND GetBlend( const wstring& str )
+	inline D3D11_BLEND GetBlend( const string& str )
 	{
 		if(str.empty())
 			return D3D11_BLEND_ZERO;
@@ -137,7 +137,7 @@ namespace StringToData
 		return D3D11_BLEND_ZERO;
 	};
 
-	inline D3D11_FILL_MODE GetFill( const wstring& str )
+	inline D3D11_FILL_MODE GetFill( const string& str )
 	{
 		if(str.empty())
 			return D3D11_FILL_SOLID;
@@ -148,7 +148,7 @@ namespace StringToData
 		return D3D11_FILL_SOLID;
 	};
 
-	inline D3D11_CULL_MODE GetCull( const wstring& str )
+	inline D3D11_CULL_MODE GetCull( const string& str )
 	{
 		if(str.empty())
 			return D3D11_CULL_BACK;
@@ -160,7 +160,7 @@ namespace StringToData
 		return D3D11_CULL_BACK;
 	};
 
-	inline EngineCore::RENDER_QUEUES GetQueueID( const wstring& str )
+	inline EngineCore::RENDER_QUEUES GetQueueID( const string& str )
 	{
 		if(str.empty())
 			return EngineCore::RENDER_QUEUES::SC_OPAQUE;
@@ -177,7 +177,7 @@ namespace StringToData
 		return EngineCore::RENDER_QUEUES::SC_OPAQUE;
 	};
 
-	inline EngineCore::TECHNIQUES GetTechID( const wstring& str )
+	inline EngineCore::TECHNIQUES GetTechID( const string& str )
 	{
 		if(str.empty())
 			return EngineCore::TECHNIQUES::TECHNIQUE_DEFAULT;

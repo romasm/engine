@@ -22,7 +22,7 @@ return GuiRect({
         length = 256,
         padding = {x = 6, y = 2},
 
-        color = 'bg_04',
+        color = 'act_02',
     }),
 })
 end

@@ -23,7 +23,7 @@
 #include "TransformControls.h"
 #include "SceneGraph.h"
 
-#define DEFAULT_ENV L"default"
+#define DEFAULT_ENV "default"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
 
 #define TRANSFORM_BYTE 't'
@@ -40,7 +40,7 @@
 
 #define SCENEGRAPH_SIZE ENTITY_COUNT * 4
 
-#define WORLD_FILE_VERSION 1
+#define WORLD_FILE_VERSION 2
 
 namespace EngineCore
 {
@@ -205,7 +205,7 @@ namespace EngineCore
 		{
 			uint32_t version;
 
-			wchar_t env_name[256];
+			char env_name[256];
 			XMVECTOR env_rot;
 			
 			XMVECTOR free_cam_pos;
@@ -267,7 +267,7 @@ namespace EngineCore
 
 	protected:
 		bool loadWorld(string& filename, WorldHeader& header);
-		void initMainEntities(WorldHeader header);
+		void initMainEntities(WorldHeader& header);
 		
 		bool saveWorld(string& filename);
 
@@ -281,7 +281,7 @@ namespace EngineCore
 
 		Entity skyEP;
 
-		wstring envName;
+		string envName;
 
 		DArray<ScenePipeline*> m_scenes;
 

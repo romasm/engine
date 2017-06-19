@@ -29,6 +29,9 @@
     <Compile Include="..\..\gui\AssetProps.lua">
       <Link>Gui\AssetProps.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\ColorsWindow.lua">
+      <Link>Gui\ColorsWindow.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\GlobalLight.lua">
       <Link>Gui\ComponentsGui\GlobalLight.lua</Link>
     </Compile>
@@ -329,14 +332,14 @@
     <Folder Include="tools\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\..\config\colors_default.cfg">
+      <Link>CFG\colors_default.cfg</Link>
+    </Content>
     <Content Include="..\..\..\config\engine_settings.cfg">
       <Link>CFG\engine_settings.cfg</Link>
     </Content>
     <Content Include="..\..\..\config\keymaps\FirstPerson.cfg">
       <Link>CFG\FirstPerson.cfg</Link>
-    </Content>
-    <Content Include="..\..\colors.rsc">
-      <Link>CFG\colors.rsc</Link>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

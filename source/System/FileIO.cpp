@@ -21,6 +21,10 @@ void FileIO::init(string& file, bool overwrite)
 		buildMap(fileData, fileSize);
 		_DELETE(fileData);
 	}
+	else
+	{
+		fileMap = new file_map;
+	}
 }
 
 FileIO::~FileIO()
@@ -182,7 +186,7 @@ void FileIO::buildBlockMap(char* data, uint32_t dataSize, uint32_t& current, fil
 
 			prev_node = nullptr;
 
-			wstring attr = StringToWstring(string(data+start, current-start));
+			string attr(data+start, current-start);
 			auto& nodeEmpty = FileNode();
 			mmap->insert(make_pair(attr, nodeEmpty));
 			node = &mmap->at(attr);
@@ -226,7 +230,7 @@ void FileIO::readValue(char* data, uint32_t dataSize, uint32_t& current, FileNod
 		while( current < dataSize && data[current] != '\n' && data[current] != '\r' && data[current] != '\t' && data[current] != ';' && data[current] != '/' && data[current] != '}' && data[current] != '{' )
 			current++;
 
-	node->value = StringToWstring(string(data+start, current-start));
+	node->value = string(data+start, current-start);
 	if( current < dataSize && data[current] != '/' && data[current] != '}' && data[current] != '{' )
 		current++;
 }
@@ -260,11 +264,11 @@ void FileIO::writeMap(ofstream* file, file_map* node, uint16_t depth)
 			for(uint16_t i = 0; i < depth; i++)
 				tab_str += '\t';
 
-			string str = tab_str + WstringToString(it.first);
+			string str = tab_str + it.first;
 			if(it.second.value.length() > 0)
 			{
 				str += " \'";
-				str += WstringToString(it.second.value);
+				str += it.second.value;
 				str += "\'";
 			}
 			str += '\n';
@@ -283,9 +287,9 @@ void FileIO::writeMap(ofstream* file, file_map* node, uint16_t depth)
 			string str = "";
 			for(uint16_t i = 0; i < depth; i++)
 				str += '\t';
-			str += WstringToString(it.first);
+			str += it.first;
 			str += " = \'";
-			str += WstringToString(it.second.value);
+			str += it.second.value;
 			str += "\'\n";
 			file->write((char*)str.data(), str.length() * sizeof(char));
 		}

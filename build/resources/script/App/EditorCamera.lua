@@ -5,9 +5,15 @@ function EditorCamera:Init( world )
     
     self.world = world
 
-    self.cameraNode = EntityTypes.Node(self.world)
-    self.world:RenameEntity(self.cameraNode.ent, EDITOR_VARS.TYPE.."CameraNode")
-    self.cameraNode:SetPosition(0.0, 1.0, 0.0)
+    local nodeName = EDITOR_VARS.INVIS.."CameraNode"
+    local nodeEnt = self.world:GetEntityByName(nodeName)
+    if nodeEnt:IsNull() then 
+        self.cameraNode = EntityTypes.Node(self.world)
+        self.world:RenameEntity(self.cameraNode.ent, nodeName)
+        self.cameraNode:SetPosition(0.0, 1.0, 0.0)
+    else
+        self.cameraNode = EntityTypes.wrap(self.world, nodeEnt)
+    end
     
     self.camera = EntityTypes.Camera(self.world)
     self.world:RenameEntity(self.camera.ent, EDITOR_VARS.TYPE.."Camera")

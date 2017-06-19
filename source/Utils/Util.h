@@ -49,13 +49,6 @@ inline char* WCharToChar(wchar_t *wcstring)
 	return mbstring; 
 }
 
-inline std::wstring IntToWString(int i)
-{
-	wchar_t str[SRT_SIZE];
-	swprintf(str, SRT_SIZE, L"%d", i);
-	return wstring(str);  
-}
-
 inline std::string IntToString(int i)
 {
 	char str[SRT_SIZE];
@@ -63,17 +56,11 @@ inline std::string IntToString(int i)
 	return string(str);  
 }
 
-inline void IntToWChar(wchar_t* str, int i)
+inline std::string FloatToString(float f)
 {
-	if(!str)return;
-	swprintf_s(str, SRT_SIZE, L"%i", i); 
-}
-
-inline std::wstring FloatToWString(float f)
-{
-	wchar_t str[SRT_SIZE];
-	swprintf(str, SRT_SIZE, L"%f", f);
-	return wstring(str); 
+	char str[SRT_SIZE];
+	sprintf_s(str, SRT_SIZE, "%f", f);
+	return string(str); 
 }
 
 inline float CharToFloat(char *str)
@@ -119,53 +106,10 @@ inline float CharToFloat(char *str)
 	return res*minus;
 }
 
-inline float WCharToFloat(wchar_t *str)
-{
-	float res = 0.0f;
-	int minus = 1;
-	bool dot = false;
-	int afterdot = 0;
-
-	int i=0;
-	while((*(str+i)>'9' || *(str+i)<'0') && *(str+i)!='.' && *(str+i)!=',' && i<SRT_SIZE)
-	{
-		if(*(str+i)=='-')
-			minus = -1;
-		i++;
-	}
-
-	while((*(str+i)<='9' && *(str+i)>='0') || *(str+i)=='.' || *(str+i)==',' && i<SRT_SIZE)
-	{
-		if((*(str+i)=='.' || *(str+i)==',') && !dot)
-		{
-			dot = true;
-			i++;
-			continue;
-		}
-		else
-			if(*(str+i)=='.' || *(str+i)==',')return res*minus;
-
-		if(!dot)
-		{
-			res = res*10.0f;
-			res += float(int(*(str+i)-'0'));
-		}
-		else
-		{
-			afterdot++;
-			res += float(int(*(str+i)-'0'))/pow(10.0f,afterdot);
-		}
-
-		i++;
-	}
-
-	return res*minus;
-}
-
-inline void FloatToWChar(wchar_t* str, float f)
+inline void FloatToChar(char* str, float f)
 {
 	if(!str)return;
-	swprintf_s(str, SRT_SIZE, L"%f", f); 
+	sprintf_s(str, SRT_SIZE, "%f", f); 
 }
 
 inline XMFLOAT3 CharToXMFloat3(char *str)
@@ -208,57 +152,17 @@ inline XMFLOAT3 CharToXMFloat3(char *str)
 	return res;
 }
 
-inline XMFLOAT3 WCharToXMFloat3(wchar_t *str)
-{
-	XMFLOAT3 res = XMFLOAT3(0.0f,0.0f,0.0f);
-	
-	wchar_t temp[128];
-	wcscpy_s(temp, 128, str);
-
-	int i=0;
-	while(temp[i]!=' ' && temp[i]!='\n' && temp[i]!='\t' && temp[i]!='\0' && temp[i]!='"' && temp[i]!='\'' && i<SRT_SIZE )
-	{
-		i++;
-	}
-	temp[i] = 0;
-	res.x = WCharToFloat(temp);
-	if(*(str+i)==0)return res;
-	i++;
-
-	wcscpy_s(temp, 128, (str+i));
-	int j=0;
-	while(temp[j]!=' ' && temp[j]!='\n' && temp[j]!='\t' && temp[j]!='\0' && temp[j]!='"' && temp[j]!='\'' && j<SRT_SIZE )
-	{
-		j++;
-	}
-	temp[j] = 0;
-	res.y = WCharToFloat(temp);
-	if(*(str+i+j)==0)return res;
-	j++;
-
-	wcscpy_s(temp, 128, (str+i+j));
-	int k=0;
-	while(temp[k]!=' ' && temp[k]!='\n' && temp[k]!='\t' && temp[k]!='\0' && temp[k]!='"' && temp[k]!='\'' && k<SRT_SIZE )
-	{
-		k++;
-	}
-	temp[k] = 0;
-	res.z = WCharToFloat(temp);
-
-	return res;
-}
-
-inline void XMFloat3ToWChar(wchar_t* str, XMFLOAT3 f)
+inline void XMFloat3ToChar(char* str, XMFLOAT3 f)
 {
 	if(!str)return;
-	swprintf_s(str, SRT_SIZE, L"%f %f %f", f.x, f.y, f.z); 
+	sprintf_s(str, SRT_SIZE, "%f %f %f", f.x, f.y, f.z); 
 }
 
-inline wstring XMFloat3ToWSring(XMFLOAT3 f)
+inline string XMFloat3ToString(XMFLOAT3 f)
 {
-	wchar_t str[SRT_SIZE];
-	swprintf_s(str, SRT_SIZE, L"%f %f %f", f.x, f.y, f.z); 
-	return wstring(str);  
+	char str[SRT_SIZE];
+	sprintf_s(str, SRT_SIZE, "%f %f %f", f.x, f.y, f.z); 
+	return string(str);  
 }
 
 inline XMFLOAT4 CharToXMFloat4(char *str)
@@ -306,84 +210,20 @@ inline XMFLOAT4 CharToXMFloat4(char *str)
 	return res;
 }
 
-inline XMFLOAT4 WCharToXMFloat4(wchar_t *str)
-{
-	XMFLOAT4 res = XMFLOAT4(0.0f,0.0f,0.0f,0.0f);
-	
-	wchar_t temp[128];
-	wcscpy_s(temp, 128, str);
-
-	int i=0;
-	while(temp[i]!=' ' && temp[i]!='\n' && temp[i]!='\t' && temp[i]!='\0' && temp[i]!='"' && temp[i]!='\'' && i<SRT_SIZE )
-		i++;
-	temp[i] = 0;
-	res.x = WCharToFloat(temp);
-	if(*(str+i)==0)return res;
-	i++;
-
-	wcscpy_s(temp, 128, (str+i));
-	int j=0;
-	while(temp[j]!=' ' && temp[j]!='\n' && temp[j]!='\t' && temp[j]!='\0' && temp[j]!='"' && temp[j]!='\'' && j<SRT_SIZE )
-		j++;
-	temp[j] = 0;
-	res.y = WCharToFloat(temp);
-	if(*(str+i+j)==0)return res;
-	j++;
-
-	wcscpy_s(temp, 128, (str+i+j));
-	int h=0;
-	while(temp[h]!=' ' && temp[h]!='\n' && temp[h]!='\t' && temp[h]!='\0' && temp[h]!='"' && temp[h]!='\'' && h<SRT_SIZE )
-		h++;
-	temp[h] = 0;
-	res.z = WCharToFloat(temp);
-	if(*(str+i+j+h)==0)return res;
-	h++;
-
-	wcscpy_s(temp, 128, (str+i+j+h));
-	int k=0;
-	while(temp[k]!=' ' && temp[k]!='\n' && temp[k]!='\t' && temp[k]!='\0' && temp[k]!='"' && temp[k]!='\'' && k<SRT_SIZE )
-	{
-		k++;
-	}
-	temp[k] = 0;
-	res.w = WCharToFloat(temp);
-
-	return res;
-}
-
-inline void XMFloat4ToWChar(wchar_t* str, XMFLOAT4 f)
+inline void XMFloat4ToChar(char* str, XMFLOAT4 f)
 {
 	if(!str)return;
-	swprintf_s(str, SRT_SIZE, L"%f %f %f %f", f.x, f.y, f.z, f.w); 
+	sprintf_s(str, SRT_SIZE, "%f %f %f %f", f.x, f.y, f.z, f.w); 
 }
 
-inline wstring XMFloat4ToWSring(XMFLOAT4 f)
+inline string XMFloat4ToString(XMFLOAT4 f)
 {
-	wchar_t str[SRT_SIZE];
-	swprintf_s(str, SRT_SIZE, L"%f %f %f %f", f.x, f.y, f.z, f.w); 
-	return wstring(str);  
+	char str[SRT_SIZE];
+	sprintf_s(str, SRT_SIZE, "%f %f %f %f", f.x, f.y, f.z, f.w); 
+	return string(str);  
 }
 
 inline unsigned char CharToByte(char *str)
-{
-	unsigned char res = 0;
-	int i=0;
-	int j=0;
-	while(str[i]!='\n' && str[i]!='\0' && str[i]!='"' && str[i]!='\'' && j<8 && i<SRT_SIZE)
-	{
-		if(str[i] == '1')
-		{
-			res = res | unsigned char(pow(2, j));
-			j++;
-		}else if(str[i] == '0')
-			j++;
-		i++;
-	}
-
-	return res;
-}
-
-inline unsigned char WCharToByte(wchar_t *str)
 {
 	unsigned char res = 0;
 	int i=0;
@@ -406,7 +246,7 @@ inline unsigned char WCharToByte(wchar_t *str)
 	return res;
 }
 
-inline void ByteToWChar(wchar_t* str, unsigned char f)
+inline void ByteToChar(char* str, unsigned char f)
 {
 	if(!str)return;
 	int output[8];
@@ -419,14 +259,14 @@ inline void ByteToWChar(wchar_t* str, unsigned char f)
 			output[i] = 0;
 	}
 
-	swprintf_s(str, SRT_SIZE, L"0b%i%i%i%i%i%i%i%i", output[7], output[6], output[5], output[4], output[3], output[2], output[1], output[0]); 
+	sprintf_s(str, SRT_SIZE, "0b%i%i%i%i%i%i%i%i", output[7], output[6], output[5], output[4], output[3], output[2], output[1], output[0]); 
 }
 
-inline wstring ByteToWString(uint8_t b)
+inline string ByteToString(uint8_t b)
 {
-	wchar_t str[SRT_SIZE];
-	ByteToWChar(str, b);
-	return wstring(str);  
+	char str[SRT_SIZE];
+	ByteToChar(str, b);
+	return string(str);  
 }
 
 inline int CharToInt(char *str)
@@ -445,29 +285,14 @@ inline bool CharToBool(char *str)
 	else return false;
 }
 
-inline bool WCharToBool(wchar_t *str)
+inline string BoolToString(bool b)
 {
-	if( wcscmp(str, L"true") == 0 || wcscmp(str, L"TRUE") == 0 )return true;
-	else return false;
-}
-
-inline void BoolToWChar(wchar_t* str, bool b)
-{
-	if(!str)return;
+	char str[SRT_SIZE];
 	if(b)
-		swprintf_s(str, SRT_SIZE, L"true");
+		sprintf_s(str, SRT_SIZE, "true");
 	else
-		swprintf_s(str, SRT_SIZE, L"false");
-}
-
-inline wstring BoolToWSring(bool b)
-{
-	wchar_t str[SRT_SIZE];
-	if(b)
-		swprintf_s(str, SRT_SIZE, L"true");
-	else
-		swprintf_s(str, SRT_SIZE, L"false");
-	return wstring(str);  
+		sprintf_s(str, SRT_SIZE, "false");
+	return string(str);  
 }
 
 inline char* CharToChar(char *str)
@@ -575,17 +400,3 @@ static bool isIn(vector<E>& v, E d)
 			return true;
 	return false;
 };
-
-// Временная загрузка текстур
-
-inline HRESULT LoadDDSTexture(ID3D11Device *pd3dDevice, const wchar_t *filename, ID3D11ShaderResourceView **texture)
-{
-	HRESULT hr = CreateDDSTextureFromFile( pd3dDevice, filename, NULL, texture, 0, nullptr );
-	if( FAILED(hr) )
-	{
-		ERR("Не удалось загрузить текстуру %ls", filename);
-		return hr;
-	}
-
-	return hr;
-}

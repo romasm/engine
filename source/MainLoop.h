@@ -27,7 +27,9 @@ public:
 		profiler->RegThread(this_thread::get_id().hash());
 		jobSystem->RegThreadsForProfiler();
 	#endif
+
 		Profiler::RegLuaFunctions();
+		EngineSettings::RegLuaFunctions();
 
 		if(m_instance)
 		{
@@ -76,7 +78,7 @@ public:
 		LuaRef start_func = (*main_table)["Start"];
 		if(!start_func.isFunction())
 		{
-			ERR("Require Main:Start() in %ls", PATH_MAIN_SCRIPT);
+			ERR("Require Main:Start() in %s", PATH_MAIN_SCRIPT);
 			return;
 		}
 		start_func((*main_table));
@@ -84,7 +86,7 @@ public:
 
 		m_timer.Frame();
 
-		fpslock = 1000.0f / EngineSettings::EngSets.fpslock;
+		fpslock = 1000.0f / CONFIG(int, fpslock);
 
 		init = true;
 	}

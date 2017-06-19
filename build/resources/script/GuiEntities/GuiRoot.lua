@@ -37,6 +37,8 @@ function GuiRoot:init(ent)
     self.alt_anim_go = false
 
     self.just_resize = false
+
+    CoreGui.UpdateRootRect(self.entity)
 end
 
 function GuiRoot:callback(eventData)

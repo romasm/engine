@@ -15,6 +15,8 @@ namespace EngineCore
 		void Draw();
 		void Close();
 
+		inline void ForceUpdate() {shaderInst->ForceUpdate();}
+
 		bool SetText(wstring &text);
 
 		inline void SetColor(XMFLOAT4& color)

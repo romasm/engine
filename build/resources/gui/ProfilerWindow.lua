@@ -27,7 +27,7 @@ GuiStyles.perf_id = {
     holded = true,
 
     text = {
-        color = 'bg_00',
+        color = 'bg_05',
         color_hover = 'act_03',
         color_press = 'act_03',
         offset = { x = 2, y = 1 },
@@ -244,7 +244,7 @@ return GuiWindow({
                 left = 250,
                 top = 25,
                 background = {
-                    color = 'bg_02',
+                    color = 'bg_05',
                 },                
             }),
 
@@ -286,7 +286,7 @@ return GuiWindow({
                 left = 250,
                 top = 545,
                 background = {
-                    color = 'bg_02',
+                    color = 'bg_05',
                 },               
             }),
 
@@ -339,7 +339,7 @@ return GuiWindow({
                     width = 1,
                 },
                 background = {
-                    color = 'bg_02',
+                    color = 'bg_05',
                 },
             }),
                  

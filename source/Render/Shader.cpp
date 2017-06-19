@@ -31,7 +31,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 
 	for(auto &it: *root)
 	{
-		if(it.first.find(TECHIQUE_STR_L) == string::npos)
+		if(it.first.find(TECHIQUE_STR) == string::npos)
 			continue;
 
 		if(it.first.length() < TECHIQUE_STR_SIZE + 1)
@@ -42,16 +42,16 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		
 		if(!it.second.node)
 		{
-			ERR("Technique %ls must have params in %s", it.first.c_str(), file.c_str());
+			ERR("Technique %s must have params in %s", it.first.c_str(), file.c_str());
 			continue;
 		}
 
 		tech_desc technique;
 
 		technique.tech_id = StringToData::GetTechID(it.first);
-		technique.queue = StringToData::GetQueueID(techSource.ReadString(L"Queue", it.second.node));
+		technique.queue = StringToData::GetQueueID(techSource.ReadString("Queue", it.second.node));
 
-		technique.pixelShader = WstringToString(techSource.ReadString(L"PixelShader", it.second.node));
+		technique.pixelShader = techSource.ReadString("PixelShader", it.second.node);
 		if(technique.pixelShader == "NULL")
 			technique.pixelShader = "";
 
@@ -64,7 +64,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 				technique.pixelShader[del] = '_';
 		}
 
-		technique.vertexShader = WstringToString(techSource.ReadString(L"VertexShader", it.second.node));
+		technique.vertexShader = techSource.ReadString("VertexShader", it.second.node);
 		if(technique.vertexShader.size() > 0)
 		{
 			auto del = technique.vertexShader.rfind(' ');
@@ -74,7 +74,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 				technique.vertexShader[del] = '_';
 		}
 
-		technique.hullShader = WstringToString(techSource.ReadString(L"HullShader", it.second.node));
+		technique.hullShader = techSource.ReadString("HullShader", it.second.node);
 		if(technique.hullShader == "NULL")
 			technique.hullShader = "";
 
@@ -87,7 +87,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 				technique.hullShader[del] = '_';
 		}
 
-		technique.domainShader = WstringToString(techSource.ReadString(L"DomainShader", it.second.node));
+		technique.domainShader = techSource.ReadString("DomainShader", it.second.node);
 		if(technique.domainShader == "NULL")
 			technique.domainShader = "";
 
@@ -100,7 +100,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 				technique.domainShader[del] = '_';
 		}
 
-		technique.geometryShader = WstringToString(techSource.ReadString(L"GeometryShader", it.second.node));
+		technique.geometryShader = techSource.ReadString("GeometryShader", it.second.node);
 		if(technique.geometryShader == "NULL")
 			technique.geometryShader = "";
 
@@ -115,67 +115,67 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 
 		// D3D11_DEPTH_STENCIL_DESC
 		ZeroMemory(&technique.depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-		technique.depthStencilDesc.DepthEnable = techSource.ReadBool(L"DepthEnable", it.second.node);
-		technique.depthStencilDesc.DepthWriteMask = techSource.ReadBool(L"DepthWrite", it.second.node) ? 
+		technique.depthStencilDesc.DepthEnable = techSource.ReadBool("DepthEnable", it.second.node);
+		technique.depthStencilDesc.DepthWriteMask = techSource.ReadBool("DepthWrite", it.second.node) ? 
 			D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
 
-		technique.depthStencilDesc.DepthFunc = StringToData::GetCompareFunc(techSource.ReadString(L"DepthFunc", it.second.node));
+		technique.depthStencilDesc.DepthFunc = StringToData::GetCompareFunc(techSource.ReadString("DepthFunc", it.second.node));
 		
-		technique.depthStencilDesc.StencilEnable = techSource.ReadBool(L"StencilEnable", it.second.node);
-		technique.depthStencilDesc.StencilReadMask = techSource.ReadByte(L"StencilReadMask", it.second.node);
-		technique.depthStencilDesc.StencilWriteMask = techSource.ReadByte(L"StencilWriteMask", it.second.node);
+		technique.depthStencilDesc.StencilEnable = techSource.ReadBool("StencilEnable", it.second.node);
+		technique.depthStencilDesc.StencilReadMask = techSource.ReadByte("StencilReadMask", it.second.node);
+		technique.depthStencilDesc.StencilWriteMask = techSource.ReadByte("StencilWriteMask", it.second.node);
 
-		technique.depthStencilDesc.FrontFace.StencilFunc = StringToData::GetCompareFunc(techSource.ReadString(L"FrontFace.StencilFunc", it.second.node));
-		technique.depthStencilDesc.FrontFace.StencilFailOp = StringToData::GetStencilOp(techSource.ReadString(L"FrontFace.StencilFailOp", it.second.node));
-		technique.depthStencilDesc.FrontFace.StencilDepthFailOp = StringToData::GetStencilOp(techSource.ReadString(L"FrontFace.StencilDepthFailOp", it.second.node));
-		technique.depthStencilDesc.FrontFace.StencilPassOp = StringToData::GetStencilOp(techSource.ReadString(L"FrontFace.StencilPassOp", it.second.node));
+		technique.depthStencilDesc.FrontFace.StencilFunc = StringToData::GetCompareFunc(techSource.ReadString("FrontFace.StencilFunc", it.second.node));
+		technique.depthStencilDesc.FrontFace.StencilFailOp = StringToData::GetStencilOp(techSource.ReadString("FrontFace.StencilFailOp", it.second.node));
+		technique.depthStencilDesc.FrontFace.StencilDepthFailOp = StringToData::GetStencilOp(techSource.ReadString("FrontFace.StencilDepthFailOp", it.second.node));
+		technique.depthStencilDesc.FrontFace.StencilPassOp = StringToData::GetStencilOp(techSource.ReadString("FrontFace.StencilPassOp", it.second.node));
 
-		technique.depthStencilDesc.BackFace.StencilFunc = StringToData::GetCompareFunc(techSource.ReadString(L"BackFace.StencilFunc", it.second.node));
-		technique.depthStencilDesc.BackFace.StencilFailOp = StringToData::GetStencilOp(techSource.ReadString(L"BackFace.StencilFailOp", it.second.node));
-		technique.depthStencilDesc.BackFace.StencilDepthFailOp = StringToData::GetStencilOp(techSource.ReadString(L"BackFace.StencilDepthFailOp", it.second.node));
-		technique.depthStencilDesc.BackFace.StencilPassOp = StringToData::GetStencilOp(techSource.ReadString(L"BackFace.StencilPassOp", it.second.node));
+		technique.depthStencilDesc.BackFace.StencilFunc = StringToData::GetCompareFunc(techSource.ReadString("BackFace.StencilFunc", it.second.node));
+		technique.depthStencilDesc.BackFace.StencilFailOp = StringToData::GetStencilOp(techSource.ReadString("BackFace.StencilFailOp", it.second.node));
+		technique.depthStencilDesc.BackFace.StencilDepthFailOp = StringToData::GetStencilOp(techSource.ReadString("BackFace.StencilDepthFailOp", it.second.node));
+		technique.depthStencilDesc.BackFace.StencilPassOp = StringToData::GetStencilOp(techSource.ReadString("BackFace.StencilPassOp", it.second.node));
 	
 		// D3D11_BLEND_DESC
 		ZeroMemory(&technique.blendDesc, sizeof(D3D11_BLEND_DESC));
-		technique.blendDesc.AlphaToCoverageEnable = techSource.ReadBool(L"AlphaToCoverageEnable", it.second.node);
+		technique.blendDesc.AlphaToCoverageEnable = techSource.ReadBool("AlphaToCoverageEnable", it.second.node);
 		technique.blendDesc.IndependentBlendEnable = false; // todo???
-		technique.blendDesc.RenderTarget[0].BlendEnable = techSource.ReadBool(L"BlendEnable", it.second.node);
-		technique.blendDesc.RenderTarget[0].BlendOp = StringToData::GetBlendOp(techSource.ReadString(L"BlendOp", it.second.node));
-		technique.blendDesc.RenderTarget[0].BlendOpAlpha = StringToData::GetBlendOp(techSource.ReadString(L"BlendOpAlpha", it.second.node));
+		technique.blendDesc.RenderTarget[0].BlendEnable = techSource.ReadBool("BlendEnable", it.second.node);
+		technique.blendDesc.RenderTarget[0].BlendOp = StringToData::GetBlendOp(techSource.ReadString("BlendOp", it.second.node));
+		technique.blendDesc.RenderTarget[0].BlendOpAlpha = StringToData::GetBlendOp(techSource.ReadString("BlendOpAlpha", it.second.node));
 
-		technique.blendDesc.RenderTarget[0].SrcBlend = StringToData::GetBlend(techSource.ReadString(L"SrcBlend", it.second.node));
-		technique.blendDesc.RenderTarget[0].DestBlend = StringToData::GetBlend(techSource.ReadString(L"DestBlend", it.second.node));
-		technique.blendDesc.RenderTarget[0].SrcBlendAlpha = StringToData::GetBlend(techSource.ReadString(L"SrcBlendAlpha", it.second.node));
-		technique.blendDesc.RenderTarget[0].DestBlendAlpha = StringToData::GetBlend(techSource.ReadString(L"DestBlendAlpha", it.second.node));
+		technique.blendDesc.RenderTarget[0].SrcBlend = StringToData::GetBlend(techSource.ReadString("SrcBlend", it.second.node));
+		technique.blendDesc.RenderTarget[0].DestBlend = StringToData::GetBlend(techSource.ReadString("DestBlend", it.second.node));
+		technique.blendDesc.RenderTarget[0].SrcBlendAlpha = StringToData::GetBlend(techSource.ReadString("SrcBlendAlpha", it.second.node));
+		technique.blendDesc.RenderTarget[0].DestBlendAlpha = StringToData::GetBlend(techSource.ReadString("DestBlendAlpha", it.second.node));
 
-		if(techSource.IsNodeExist(L"RenderTargetWriteMask", it.second.node))
-			technique.blendDesc.RenderTarget[0].RenderTargetWriteMask = StringToData::GetRTWriteMask(techSource.ReadString(L"RenderTargetWriteMask", it.second.node));
+		if(techSource.IsNodeExist("RenderTargetWriteMask", it.second.node))
+			technique.blendDesc.RenderTarget[0].RenderTargetWriteMask = StringToData::GetRTWriteMask(techSource.ReadString("RenderTargetWriteMask", it.second.node));
 		else
 			technique.blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 		// D3D11_RASTERIZER_DESC
 		ZeroMemory(&technique.rastDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		if(techSource.IsNodeExist(L"AntialiasedLineEnable", it.second.node))
-			technique.rastDesc.AntialiasedLineEnable = techSource.ReadBool(L"AntialiasedLineEnable", it.second.node);
+		if(techSource.IsNodeExist("AntialiasedLineEnable", it.second.node))
+			technique.rastDesc.AntialiasedLineEnable = techSource.ReadBool("AntialiasedLineEnable", it.second.node);
 		else
 			technique.rastDesc.AntialiasedLineEnable = true;
 
-		technique.rastDesc.DepthBias = techSource.ReadInt(L"DepthBias", it.second.node);
-		technique.rastDesc.DepthBiasClamp = techSource.ReadFloat(L"DepthBiasClamp", it.second.node);
+		technique.rastDesc.DepthBias = techSource.ReadInt("DepthBias", it.second.node);
+		technique.rastDesc.DepthBiasClamp = techSource.ReadFloat("DepthBiasClamp", it.second.node);
 
-		if(techSource.IsNodeExist(L"DepthClipEnable", it.second.node))
-			technique.rastDesc.DepthClipEnable = techSource.ReadBool(L"DepthClipEnable", it.second.node);
+		if(techSource.IsNodeExist("DepthClipEnable", it.second.node))
+			technique.rastDesc.DepthClipEnable = techSource.ReadBool("DepthClipEnable", it.second.node);
 		else
 			technique.rastDesc.DepthClipEnable = true;
 
-		technique.rastDesc.FrontCounterClockwise = techSource.ReadBool(L"FrontCounterClockwise", it.second.node);
-		technique.rastDesc.MultisampleEnable = techSource.ReadBool(L"MultisampleEnable", it.second.node);
-		technique.rastDesc.ScissorEnable = techSource.ReadBool(L"ScissorEnable", it.second.node);
-		technique.rastDesc.SlopeScaledDepthBias = techSource.ReadFloat(L"SlopeScaledDepthBias", it.second.node);
+		technique.rastDesc.FrontCounterClockwise = techSource.ReadBool("FrontCounterClockwise", it.second.node);
+		technique.rastDesc.MultisampleEnable = techSource.ReadBool("MultisampleEnable", it.second.node);
+		technique.rastDesc.ScissorEnable = techSource.ReadBool("ScissorEnable", it.second.node);
+		technique.rastDesc.SlopeScaledDepthBias = techSource.ReadFloat("SlopeScaledDepthBias", it.second.node);
 
-		technique.rastDesc.FillMode = StringToData::GetFill(techSource.ReadString(L"FillMode", it.second.node));
-		technique.rastDesc.CullMode = StringToData::GetCull(techSource.ReadString(L"CullMode", it.second.node));
+		technique.rastDesc.FillMode = StringToData::GetFill(techSource.ReadString("FillMode", it.second.node));
+		technique.rastDesc.CullMode = StringToData::GetCull(techSource.ReadString("CullMode", it.second.node));
 
 		techsDesc.push_back(technique);
 	}

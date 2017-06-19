@@ -44,7 +44,7 @@ GuiStyles.assetname_textfield = {
 
     text = {
         color = 'text_01',
-        color_live = 'bg_06',
+        color_live = 'bg_01',
         color_nonactive = 'text_02',
         offset = { x = 3, y = 0 },
         center = { x = false, y = true },

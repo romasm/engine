@@ -5,7 +5,7 @@ GuiStyles.menu_dash_default = {
     },
 
     background = {
-        color = 'text_04',
+        color = 'text_02',
     },
 
     width = 100,
@@ -74,17 +74,12 @@ GuiStyles.menu_default = {
     offset = {x = 0, y = 0},
 
     background = {
-        color = 'bg_06',
+        color = 'bg_01',
     },
 
     border = {
         color = 'bg_05',
         width = 1,
-    },
-    
-    shadow = {
-        color = 'bg_00',
-        width = 0
     },
 }
 

@@ -113,9 +113,9 @@ GuiStyles.window_colors = {
     },
     
     shadow = {
-        color = 'bg_02',
-        color_live = 'bg_02',
-        color_nonactive = 'bg_02',
+        color = 'bg_05',
+        color_live = 'bg_05',
+        color_nonactive = 'bg_05',
     },
 }
 

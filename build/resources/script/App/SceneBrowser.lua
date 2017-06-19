@@ -21,7 +21,7 @@ function SceneBrowser.reload()
 
     Tools.right_side_area.entity:UpdatePosSize()
 
-    if SceneBrowser.active == true then SceneBrowser:Activate() 
+    if Viewport.lua_world then SceneBrowser:Activate(Viewport.lua_world.world) 
     else SceneBrowser:Deactivate() end
 end
 
@@ -38,7 +38,6 @@ function SceneBrowser:Init()
     self.selectedBtns = {}
     self.prevSelectedNum = 0
 
-    self.active = false
     self.world = nil
         
     loader.require("SceneBrowser", SceneBrowser.reload)
@@ -53,7 +52,8 @@ function SceneBrowser:Refill()
     for i, entType in ipairs(self.entTypes) do
         local currentEnt = self.world:GetFirstEntityByType( entType )
         while not currentEnt:IsNull() do
-            if self.world:GetEntityName(currentEnt):find(EDITOR_VARS.TYPE) == nil then
+            local name = self.world:GetEntityName(currentEnt)
+            if name:find(EDITOR_VARS.TYPE) == nil and name:find(EDITOR_VARS.INVIS) == nil then
                 self.entList[#self.entList + 1] = currentEnt
             end
             currentEnt = self.world:GetNextEntityByType()
