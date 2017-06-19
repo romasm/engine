@@ -106,10 +106,10 @@ function GuiWindow:init(props)
         self.entity.left = 0
         self.entity.top = 0
         
-        local sys_bg_color = CoreGui.GetColor('main_win_bg')
+        local sys_bg_color = CoreGui.GetColor('bg_01_v1')
 	    self.sys_win:SetColorBgPtr(sys_bg_color)
-	    self.sys_win:SetColorBorderPtr(CoreGui.GetColor('main_win_brd'))
-	    self.sys_win:SetColorBorderFocusPtr(CoreGui.GetColor('main_win_brd_focus'))
+	    --self.sys_win:SetColorBorderPtr(CoreGui.GetColor('main_win_brd'))
+	    --self.sys_win:SetColorBorderFocusPtr(CoreGui.GetColor('main_win_brd_focus'))
 	    self.sys_win:SetAlpha(sys_bg_color.w)
                 
         self.sys_win_root = GuiRoot(CoreGui.GetRootByWindow(self.sys_win))

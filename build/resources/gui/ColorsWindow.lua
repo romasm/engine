@@ -1,6 +1,5 @@
 function Gui.ColorsWindow(x_coord, y_coord)
     local colorsList = {
-        'main_win_bg',
         'bg_01',
         'bg_01_v1',
         'bg_01_v3',

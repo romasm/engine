@@ -41,10 +41,10 @@ function MainWindow:Init()
     self.mainwin:SetBorderSize(4)
     self.mainwin:SetIcons("../resources/textures/icons/main_icon.ico", "../resources/textures/icons/main_icon.ico")
 
-    local main_win_bg = CoreGui.GetColor('main_win_bg')
+    local main_win_bg = CoreGui.GetColor('bg_01_v1')
 	self.mainwin:SetColorBgPtr(main_win_bg)
-	self.mainwin:SetColorBorderPtr(CoreGui.GetColor('main_win_brd'))
-	self.mainwin:SetColorBorderFocusPtr(CoreGui.GetColor('main_win_brd_focus'))
+	--self.mainwin:SetColorBorderPtr(CoreGui.GetColor('main_win_brd'))
+	--self.mainwin:SetColorBorderFocusPtr(CoreGui.GetColor('main_win_brd_focus'))
 	self.mainwin:SetAlpha(main_win_bg.w)
     
     self.mainWinRoot = GuiRoot(CoreGui.GetRootByWindow(self.mainwin))
