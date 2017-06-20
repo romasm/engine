@@ -30,6 +30,8 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 		static bool Load(string filename);
 		static bool Save(string filename);
 
+		static string GetName() {return instance->configName;};
+
 		static void RegLuaFunctions()
 		{
 			getGlobalNamespace(LSTATE)
@@ -38,6 +40,7 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 				.addFunction("SetColor", &GlobalColor::SetColor)
 				.addFunction("SaveColors", &GlobalColor::Save)
 				.addFunction("LoadColors", &GlobalColor::Load)
+				.addFunction("GetColorsPresetName", &GlobalColor::GetName)
 				.endNamespace();
 		}
 
@@ -45,6 +48,8 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 		static GlobalColor *instance;
 		bool init;
 		
+		string configName;
+
 		map<string, XMFLOAT4> colorsMap;
 	};
 

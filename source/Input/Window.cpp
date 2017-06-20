@@ -47,12 +47,11 @@ namespace EngineCore
 		ZeroMemory(&presetParams, sizeof(presetParams));
 	}
 
-	bool Window::Create(int16_t id, const DescWindow &desc, bool main)
+	bool Window::Create(int16_t id, bool main)
 	{		
 		crs_arrow = WindowsMgr::Get()->GetCursors(CURSOR_ARROW);
 
 		LOG("Window Create");
-		m_desc = desc;
 
 		if(main)
 		{
@@ -82,7 +81,8 @@ namespace EngineCore
 
 		if( !(m_hwnd = CreateWindowEx(0, wndClass, StringToWstring(m_desc.caption).c_str(), 
 			WS_OVERLAPPED | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_EX_ACCEPTFILES,
-			 m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, 0, 0, 0, 0)) )
+			 m_desc.posx, m_desc.posy, m_desc.width, m_desc.height, 
+			 main ? 0 : WindowsMgr::Get()->GetMainWindow()->m_hwnd, 0, 0, 0)) )
 		{
 			ERR("CreateWindowEx failed");
 			return false;
@@ -324,9 +324,6 @@ namespace EngineCore
 		case WM_ERASEBKGND: 
 			return 0;
 		case WM_SIZE:
-			if (!m_desc.resizing)
-				return 0;
-
 			if( wParam == SIZE_MINIMIZED )
 			{
 				m_active = false;

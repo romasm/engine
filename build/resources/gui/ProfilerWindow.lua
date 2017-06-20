@@ -88,6 +88,7 @@ return GuiWindow({
     },
 
     independent = true,
+    dragable = true,
 
     closeable = false,
     close = {

@@ -90,11 +90,21 @@ function GuiWindow:init(props)
     if self.independent == true then
         self.sys_win = CoreGui.SysWindows.Create()
         
-        -- todo
-        self.sys_win:HideWinBorder(false)
+        -- TODO: win params
+        self.sys_win:HideWinBorder(not self.dragable)
+        self.dragable = false
+        self.closeable = self.closeable and not self.dragable
+        
+        --self.sys_win:SetMinMaxBox(false)
+        --self.sys_win:SetPopup(true)
+
         self.sys_win:SetCaptionRect(0, self.header_size, 0, self.header_size)
         self.sys_win:SetBorderSize(4)
         self.sys_win:SetIcons("../resources/textures/icons/main_icon.ico", "../resources/textures/icons/main_icon.ico")
+        
+        self.sys_win:SetResizable(self.resizeable.x or self.resizeable.y)
+        self.resizeable.x = false
+        self.resizeable.y = false
 
         self.sys_win.caption_text = self.header.str ~= nil and self.header.str or "[empty header]"
         

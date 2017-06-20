@@ -51,6 +51,8 @@ namespace EngineCore
 		for(auto& it: *colors)
 			instance->AddColor(string(it.first), CharToXMFloat4((char*)it.second.value.c_str()));
 
+		instance->configName = filename;
+
 		return true;
 	}
 

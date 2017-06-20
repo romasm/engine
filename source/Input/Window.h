@@ -34,12 +34,13 @@ namespace EngineCore
 			height = 500;
 			posx = 0;
 			posy = 0;
-			resizing = true;
 			borderWidth = 0;
+
 			captionRect.bottom = 0;
 			captionRect.top = 0;
 			captionRect.left = 0;
 			captionRect.right = 0;
+
 			bg_color = &black_color;
 			border_color = &black_color;
 			border_focus_color = &black_color;
@@ -50,8 +51,7 @@ namespace EngineCore
 		int posy;
 		string caption;	
 		int width;				
-		int height;				
-		bool resizing;
+		int height;		
 		RECT captionRect;
 		int borderWidth;
 		XMFLOAT4* bg_color;
@@ -85,7 +85,7 @@ namespace EngineCore
 		Window();
 		~Window() { Close(); }
 
-		bool Create(int16_t id, const DescWindow &desc, bool main = false);
+		bool Create(int16_t id, bool main = false);
 		bool CreateSwapChain();
 
 		inline bool IsNull() {return m_hwnd == 0;}
@@ -202,6 +202,58 @@ namespace EngineCore
 			return res;
 		}
 
+		void SetResizable(bool allow)
+		{
+			LONG_PTR style = GetWindowLongPtr(m_hwnd, GWL_STYLE);
+			if(allow)
+				style = style | WS_THICKFRAME;
+			else
+				style = style & ~WS_THICKFRAME;
+
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, style);
+			SetWindowPos(m_hwnd, 0,0,0,0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_DRAWFRAME);
+		}
+		void SetMinMaxBox(bool allow)
+		{
+			LONG_PTR style = GetWindowLongPtr(m_hwnd, GWL_STYLE);
+			if(allow)
+				style = style | (WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+			else
+				style = style & ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, style);
+			SetWindowPos(m_hwnd, 0,0,0,0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_DRAWFRAME);
+		}
+		void SetSysMenu(bool allow)
+		{
+			LONG_PTR style = GetWindowLongPtr(m_hwnd, GWL_STYLE);
+			if(allow)
+				style = style | WS_SYSMENU;
+			else
+				style = style & ~WS_SYSMENU;
+
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, style);
+			SetWindowPos(m_hwnd, 0,0,0,0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_DRAWFRAME);
+		}
+
+		void SetPopup(bool is_popup)
+		{
+			LONG_PTR style = GetWindowLongPtr(m_hwnd, GWL_STYLE);
+			if(is_popup)
+			{
+				style = style & ~WS_OVERLAPPEDWINDOW;
+				style = style | WS_POPUP;
+			}
+			else
+			{
+				style = style & ~WS_POPUP;
+				style = style | WS_OVERLAPPEDWINDOW;
+			}
+
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, style);
+			SetWindowPos(m_hwnd, 0,0,0,0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_DRAWFRAME);
+		}
+
 		void Show(bool visible = true)
 		{
 			ShowWindow(m_hwnd, visible ? SW_SHOW : SW_HIDE);
@@ -280,6 +332,12 @@ namespace EngineCore
 					.addFunction("GetCaptionRect", &Window::GetCaptionRect)
 					.addFunction("SetBorderSize", &Window::SetBorderSize)
 					.addFunction("GetBorderSize", &Window::GetBorderSize)
+
+					.addFunction("SetResizable", &Window::SetResizable)
+					.addFunction("SetMinMaxBox", &Window::SetMinMaxBox)
+					.addFunction("SetSysMenu", &Window::SetSysMenu)
+
+					.addFunction("SetPopup", &Window::SetPopup)
 
 					.addFunction("HideWinBorder", &Window::HideWinBorder)
 					.addFunction("IsWinBorderHided", &Window::IsWinBorderHided)

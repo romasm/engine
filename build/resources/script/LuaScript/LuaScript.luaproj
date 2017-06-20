@@ -65,6 +65,12 @@
     <Compile Include="..\..\gui\EntityProps.lua">
       <Link>Gui\EntityProps.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\Localization\en.lua">
+      <Link>Gui\Localization\en.lua</Link>
+    </Compile>
+    <Compile Include="..\..\gui\Localization\ru.lua">
+      <Link>Gui\Localization\ru.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\MaterialGui\Albedo.lua">
       <Link>Gui\MaterialGui\Albedo.lua</Link>
     </Compile>
@@ -325,6 +331,7 @@
     <Folder Include="Gui\Menus\" />
     <Folder Include="Gui\ComponentsGui\" />
     <Folder Include="Gui\MaterialGui\" />
+    <Folder Include="Gui\Localization\" />
     <Folder Include="Gui\Pieces\" />
     <Folder Include="Gui\Styles\" />
     <Folder Include="Entities\" />

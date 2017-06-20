@@ -69,7 +69,7 @@ return GuiRect({
 
     top = 0,
 
-    id = "topbar",
+    id = 'topbar',
 
     focus_mode = GUI_FOCUS_MODE.NONE,
 
@@ -81,7 +81,7 @@ return GuiRect({
         left = 12,
         width = 62,
 
-        text = {str = 'File'},
+        text = {str = "File"},
         id = 'tb_file',
 
         events = {
@@ -101,7 +101,7 @@ return GuiRect({
         left = 85,
         width = 102,
 
-        text = {str = 'Configs'},
+        text = {str = "Configs"},
         id = 'tb_settings',
 
         events = {

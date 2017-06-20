@@ -1,70 +1,69 @@
+GuiStyles.colorwin_button = {
+    styles = {GuiStyles.solid_button,},
+    background = {
+        color = 'bg_08',
+        color_hover = 'act_01',
+        color_press = 'act_00',
+        color_nonactive = 'bg_01',
+    },
+    text = {
+        font = "../resources/fonts/opensans_normal_20px",
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        color_nonactive = 'text_02',
+    },
+    align = GUI_ALIGN.RIGHT,
+    right = 10,
+    width = 100,
+    height = 30,
+}
+
 function Gui.ColorsWindow(x_coord, y_coord)
     local colorsList = {
-        'bg_01',
-        'bg_01_v1',
-        'bg_01_v3',
-        'bg_03',
-        'bg_05',
-        'bg_05_a4',
-        'bg_05_a6',
-        'bg_05_a7',
-        'bg_08',
-        'bg_10',
-
-        'act_00',
-        'act_00_a0',
-        'act_01',
-        'act_02',
-        'act_03',
-        'act_04',
-        'act_05',
-
-        'text_01',
-        'text_02',
-        'text_06',
+        {'bg_01',       "BG primary main"},
+        {'bg_01_v1',    "BG primary #1"},
+        {'bg_01_v3',    "BG primary #2"},
+        {'bg_03',       "BG primary #3"},
+        {'bg_08',       "BG primary #4"},
+        {'bg_05',       "BG secondary main"},
+        {'bg_05_a4',    "BG secondary #1 alpha"},
+        {'bg_05_a6',    "BG secondary #2 alpha"},
+        {'bg_05_a7',    "BG secondary #3 alpha"},
+        {'bg_10',       "BG secondary #4"},
+        {'act_00',      "Important"},
+        {'act_00_a0',   "Important alpha"},
+        {'act_04',      "Warning"},
+        {'act_01',      "GUI #1"},
+        {'act_02',      "GUI #2"},
+        {'act_03',      "GUI #3"},
+        {'act_05',      "GUI #4"},
+        {'text_01',     "GUI #5"},
+        {'text_02',     "GUI #6"},
+        {'text_06',     "GUI #7"},
     }
 
 local window = GuiWindow({
     styles = {
         GuiStyles.integrated_window,
     },
-
     background = {
         color = 'bg_01',
         color_live = 'bg_01',
         color_nonactive = 'bg_01',
     },
-
-    border = {
-        color = 'bg_01',
-        color_live = 'bg_01',
-        color_nonactive = 'bg_01',
-    },
-
+    cleintarea_padding = { r = 120, },
     independent = true,
-
     closeable = false,
-    close = {
-        styles = {
-            GuiStyles.close_button_alpha,
-        },
-    },
-    
     left = x_coord - 350,
     top = y_coord - 250,
-    width = 570,
-    height = 501,
-
+    width = 500,
+    height = 550,
     id = "colors_window",
-
     header_size = 0,
-    header = {
-        styles = {
-            GuiStyles.window_header,
-        },
-
-        str = "Color scheme"
-    },
+    header = {str = lcl.colorscheme},
+    resizeable = {x = false, y = false},
+    dragable = true,
     
     events = {
         [GUI_EVENTS.KILL] = function(self, ev) 
@@ -73,10 +72,44 @@ local window = GuiWindow({
         end,
     },
     
+    GuiButton({
+        styles = {GuiStyles.colorwin_button,},
+        top = 10,
+        id = 'save_btn',
+        text = {str = lcl.save,},
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
+                local preset = Config.GetColorsPresetName()
+                Config.SaveColors(preset)
+                return true
+            end,
+        },
+    }),
+
+    GuiButton({
+        styles = {GuiStyles.colorwin_button,},
+        top = 50,
+        id = 'reset_btn',
+        text = {str = lcl.reset,},
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
+                local preset = Config.GetColorsPresetName()
+                Config.LoadColors(preset)
+                CoreGui.UpdateShaderData()
+
+                local ev = HEvent()
+                ev.event = GUI_EVENTS.UPDATE
+                local body = self.entity:GetParent():GetInherited():GetBody()
+                body.entity:SendEvent(ev)   
+                return true
+            end,
+        },
+    }),
+
     GuiClientarea({
         GuiBody({
-            width = 540,
-            height = 460,
+            width = 345,
+            height = 0,
 
         }),
     }),
@@ -84,24 +117,23 @@ local window = GuiWindow({
 
     local body = window:GetBody()
     local offset_h = 10
-    local offset_l = 10
     for i = 1, #colorsList do 
         local str = GuiString({
             styles = {GuiStyles.string_props_01,},
-            str = colorsList[i],
-            left = offset_l,
+            str = colorsList[i][2],
+            left = 10,
             top = offset_h,
         })
         body.entity:AttachChild( str.entity )
 
         local btn = GuiButton({
             styles = {GuiStyles.color_button,},
-            left = offset_l + 90,
+            left = 180,
             top = offset_h,
             width = 155,
-            alt = "Pick ".. colorsList[i] .." color",
+            alt = lcl.pickcolor .." ".. colorsList[i][2],
             background = {color_nonactive = 'bg_03',},
-            id = colorsList[i],
+            id = colorsList[i][1],
 
             events = {
                 [GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev)
@@ -135,23 +167,9 @@ local window = GuiWindow({
         body.entity:AttachChild( btn.entity )
 
         offset_h = offset_h + 30
-        if offset_h > 430 then
-            offset_l = offset_l + 260
-            offset_h = 10
-
-            local rect = GuiRect({
-                styles = {GuiStyles.ghost,},
-                width = 1,
-                valign = GUI_VALIGN.BOTH,
-                top = 10,
-                bottom = 10,
-                left = offset_l,
-                background = {color = 'text_02',},        
-            })
-            body.entity:AttachChild( rect.entity )
-            offset_l = offset_l + 10
-        end
     end
+
+    body.entity.height = offset_h
 
     local ev = HEvent()
     ev.event = GUI_EVENTS.UPDATE

@@ -141,17 +141,8 @@ Window* WindowsMgr::AddWindow()
 	
 	app_windows[idx] = Window();
 	just_created = idx;
-		
-	// desc TODO
-	DescWindow desc;
-	RECT captionR;
-	captionR.left = 0;
-	captionR.top = 0;
-	captionR.right = 0;
-	captionR.bottom = 25;
-	desc.captionRect = captionR;
 	
-	if ( !app_windows[idx].Create(idx, desc, main_window < 0) )
+	if( !app_windows[idx].Create(idx, main_window < 0) )
 	{
 		ERR("Unable to create window");
 		return nullptr;

@@ -75,9 +75,10 @@ loader.require("App.SceneBrowser")
 loader.require("App.Profiler")
 
 
-
 function Main:Start()	
     print("Main:Start")  
+    
+    Main:LoadLocalization()
 
     Resource.PreloadSystemResources()
 
@@ -104,4 +105,9 @@ function Main:onTick(dt)
     MainWindow:Tick(dt)
 
     return true
+end
+
+function Main:LoadLocalization()
+    local path = Config.GetString('localization')
+    loader.require("Localization."..path)
 end

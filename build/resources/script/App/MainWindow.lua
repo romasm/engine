@@ -1,8 +1,6 @@
 if not MainWindow then MainWindow = {} end
 
 local CAPTION_DELIM = " - "
-local APP_NAME = "Appname"
-local NEW_SCENE_NAME = "New scene"
 
 function MainWindow.reloadTopBar()
     local root = CoreGui.GetMainRoot()
@@ -17,7 +15,7 @@ function MainWindow.reloadTopBar()
     root:AttachChild(MainWindow.window.entity)
     MainWindow.window.entity:UpdatePosSize()
     
-	MainWindow.mainwin.caption_text = APP_NAME
+	MainWindow.mainwin.caption_text = lcl.apptitle
 end
 
 function MainWindow:Init()
@@ -85,13 +83,13 @@ end
 
 function MainWindow:SetCaption(world_path)
     if world_path == nil then 
-        MainWindow.mainwin.caption_text = APP_NAME
+        MainWindow.mainwin.caption_text = lcl.apptitle
         return
     end
 
     local world_name = ""
     if world_path:len() == 0 then
-        world_name = NEW_SCENE_NAME
+        world_name = lcl.newscene
     else
         world_name = world_path
         while world_name:len() > 0 do
@@ -104,7 +102,7 @@ function MainWindow:SetCaption(world_path)
         end
     end
 
-    local caption = world_name..CAPTION_DELIM..APP_NAME
+    local caption = world_name..CAPTION_DELIM .. lcl.apptitle
     MainWindow.mainwin.caption_text = caption
 end
 
@@ -253,7 +251,7 @@ function MainWindow:SetsMenuClick(btn, ev)
     elseif ev.id == "tb_colors" then
         if MainWindow.colorsWindow == nil then
             print("Opening color settings")
-            MainWindow.reloadColors()
+            MainWindow.OpenColorsWindow()
         end
         
     elseif ev.id == "tb_dev_skyrebake" then
@@ -278,11 +276,13 @@ function MainWindow:SetsMenuClick(btn, ev)
 end
 
 function MainWindow.reloadColors()
-    if MainWindow.colorsWindow ~= nil then
-        MainWindow.colorsWindow:Close()
-        MainWindow.colorsWindow = nil
-    end
+    if MainWindow.colorsWindow == nil then return end
+    MainWindow.colorsWindow:Close()
+    MainWindow.colorsWindow = nil
+    MainWindow.OpenColorsWindow()
+end
 
+function MainWindow.OpenColorsWindow()
     local x = MainWindow.mainwin:GetLeft() + MainWindow.mainwin:GetWidth() / 2
     local y = MainWindow.mainwin:GetTop() + MainWindow.mainwin:GetHeight() / 2
 
