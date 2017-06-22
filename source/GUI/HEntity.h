@@ -137,7 +137,7 @@ public:
 	HEvent MousePressed(const MouseEventClick &arg, bool pressed);
 	HEvent MouseWheel(const MouseEventWheel &arg);
 	HEvent MouseMove(const MouseEvent &arg, bool collide);
-	HEvent DropEvent(uint32_t dropEvent, POINT pos);
+	HEvent DragDropEvent(uint32_t dropEvent, POINT pos);
 
 	inline MLRECT GetRectRelative() const {return relativeRect;}
 	inline MLRECT GetRectAbsolute() const {return RECTtoMLRECT(globalPos);}
@@ -355,6 +355,7 @@ protected:
 	bool active_branch;
 
 	bool hover;
+	bool dragHover;
 	
 	float dclick_time;
 

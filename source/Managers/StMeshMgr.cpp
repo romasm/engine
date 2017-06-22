@@ -357,6 +357,12 @@ StMeshData* StMeshMgr::loadSTMFileFromMemory(string& name, uint8_t* data, uint32
 	return mesh;
 }
 
+bool StMeshMgr::IsSupported(string filename)
+{
+	string extension = filename.substr(filename.rfind('.'));
+	return instance->m_importer.IsExtensionSupported(extension);
+}
+
 StMeshData* StMeshMgr::loadNoNativeFileFromMemory(string& name, uint8_t* data, uint32_t size, bool onlyConvert)
 {
 	string extension = name.substr(name.rfind('.'));

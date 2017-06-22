@@ -687,10 +687,10 @@ namespace EngineCore
 	}
 //------------------------------------------------------------------
 
-	DropTarget::DropTarget(void* window)
+	DropTarget::DropTarget(void* win)
 	{
-		m_refCount = 1;
-		m_window = window;
+		refCount = 1;
+		window = win;
 	}
 
 	DropTarget::~DropTarget()
@@ -712,46 +712,23 @@ namespace EngineCore
 
 	ULONG DropTarget::AddRef()
 	{
-		return ++m_refCount;
+		return ++refCount;
 	}
 
 	ULONG DropTarget::Release()
 	{
-		if (--m_refCount == 0)
+		if (--refCount == 0)
 		{
 			delete this;
 			return 0;
 		}
-		return m_refCount;
+		return refCount;
 	}
 
-	HRESULT DropTarget::DragEnter(IDataObject* dataObject, DWORD grfKeyState, POINTL mousePos, DWORD* effect)
-	{
-		//DBG_SHORT("DropTarget Enter");
+	HRESULT DropTarget::DragEnter(IDataObject* dataObject, DWORD keyState, POINTL mousePos, DWORD* effect)
+	{			
+		Hud::Get()->ClearDropItems();
 
-		*effect = DROPEFFECT_MOVE;
-		return NOERROR;
-	}
-	 
-	HRESULT DropTarget::DragOver(DWORD keyState, POINTL mousePos, DWORD* effect)
-	{
-		//DBG_SHORT("DropTarget Over");
-
-		*effect = DROPEFFECT_MOVE;
-		return NOERROR;
-	}
- 
-	HRESULT DropTarget::DragLeave()
-	{
-		//DBG_SHORT("DropTarget Leave");
-
-		return NOERROR;
-	}
- 
-	HRESULT DropTarget::Drop(IDataObject* dataObject, DWORD keyState, POINTL mousePos, DWORD* effect)
-	{
-		//DBG_SHORT("DropTarget Drop");
-		
 		FORMATETC fmtetc = { CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 		STGMEDIUM stgmed;
 
@@ -760,7 +737,7 @@ namespace EngineCore
 			if(dataObject->GetData(&fmtetc, &stgmed) == S_OK)
 			{
 				HDROP hDrop = (HDROP)GlobalLock(stgmed.hGlobal);
-				
+
 				uint32_t filesCount = DragQueryFile(hDrop, 0xffffffff, NULL, NULL);
 
 				for(uint16_t i = 0; i < filesCount; i++)
@@ -769,23 +746,60 @@ namespace EngineCore
 					lpszFile[0] = '\0';
 
 					if (DragQueryFile(hDrop, i, lpszFile, MAX_PATH))
-						Hud::Get()->AddDropItems(lpszFile);
-
+					{
+						string filename = WstringToString(wstring(lpszFile));
+						Hud::Get()->AddDropItems(filename);
+					}
 				}
-
-				POINT dropPoint;
-				dropPoint.x = mousePos.x - ((Window*)m_window)->m_desc.posx;
-				dropPoint.y = mousePos.y - ((Window*)m_window)->m_desc.posy;
-
-				if(filesCount > 0)
-					Hud::Get()->FinishDropItems(dropPoint, (Window*)m_window);
 
 				GlobalUnlock(stgmed.hGlobal);
 				ReleaseStgMedium(&stgmed);
 			}
 		}
 
-		*effect = DROPEFFECT_MOVE;
+		
+		POINT dropPoint;
+		dropPoint.x = mousePos.x - ((Window*)window)->m_desc.posx;
+		dropPoint.y = mousePos.y - ((Window*)window)->m_desc.posy;
+
+		bool allow = Hud::Get()->DragDropItems(GuiEvents::GE_ITEMS_DRAG_ENTER, dropPoint, (Window*)window);
+		
+		*effect = allow ? DROPEFFECT_MOVE : DROPEFFECT_NONE;
+		return NOERROR;
+	}
+	 
+	HRESULT DropTarget::DragOver(DWORD keyState, POINTL mousePos, DWORD* effect)
+	{
+		POINT dropPoint;
+		dropPoint.x = mousePos.x - ((Window*)window)->m_desc.posx;
+		dropPoint.y = mousePos.y - ((Window*)window)->m_desc.posy;
+
+		bool allow = Hud::Get()->DragDropItems(GuiEvents::GE_ITEMS_DRAG_MOVE, dropPoint, (Window*)window);
+		
+		*effect = allow ? DROPEFFECT_MOVE : DROPEFFECT_NONE;
+		return NOERROR;
+	}
+ 
+	HRESULT DropTarget::DragLeave()
+	{
+		POINT dropPoint;
+		dropPoint.x = dropPoint.y = 0;
+
+		bool allow = Hud::Get()->DragDropItems(GuiEvents::GE_ITEMS_DRAG_LEAVE, dropPoint, (Window*)window);
+		Hud::Get()->ClearDropItems();
+		
+		return NOERROR;
+	}
+ 
+	HRESULT DropTarget::Drop(IDataObject* dataObject, DWORD keyState, POINTL mousePos, DWORD* effect)
+	{
+		POINT dropPoint;
+		dropPoint.x = mousePos.x - ((Window*)window)->m_desc.posx;
+		dropPoint.y = mousePos.y - ((Window*)window)->m_desc.posy;
+
+		bool allow = Hud::Get()->FinishDropItems(dropPoint, (Window*)window);
+
+		*effect = allow ? DROPEFFECT_MOVE : DROPEFFECT_NONE;
 		return NOERROR;
 	}
 

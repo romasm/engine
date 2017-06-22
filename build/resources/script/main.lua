@@ -94,7 +94,7 @@ function Main:onTick(dt)
     -- remove in consumer
 	self.reload_time = self.reload_time + dt
 
-    if self.reload_time > 2000 then
+    if self.reload_time > 2000 then -- LAG: one file check in a frame
         loader.check_modif()
         self.reload_time = 0
     end

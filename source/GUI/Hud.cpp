@@ -69,6 +69,7 @@ static HEntityWraper GetEntityByIdLua(string id) {return Hud::Get()->GetEntityBy
 static void UpdateEntitiesLua(Window* win) {Hud::Get()->UpdateEntities(win);}
 static uint32_t GetDropedItemsCountLua() {return Hud::Get()->GetDropedItemsCount();}
 static string GetDropedItemLua(uint32_t i) {return Hud::Get()->GetDropedItem(i);}
+static void AllowDropLua(bool allow) {Hud::Get()->AllowDrop(allow);}
 
 static Window* GetMainSysWindow() {return WindowsMgr::Get()->GetMainWindow();}
 static Window* GetSysWindowByHwnd(luaHWND h) {return WindowsMgr::Get()->GetWindowByHwnd(h.hwnd);}
@@ -175,9 +176,10 @@ void Hud::RegLuaClass()
 			.addFunction("GetEntityById", &GetEntityByIdLua)
 			.addFunction("UpdateEntities", &UpdateEntitiesLua)
 
-			.beginNamespace("DropedItems")
+			.beginNamespace("DragDrop")
 				.addFunction("GetCount", &GetDropedItemsCountLua)
 				.addFunction("GetItem", &GetDropedItemLua)
+				.addFunction("AllowDrop", &AllowDropLua)
 			.endNamespace()
 
 			.addFunction("SetHCursor", &SetHCursor)
@@ -226,6 +228,7 @@ Hud::Hud()
 		cursor_pos.y = 0;
 
 		dropedItems.reserve(10);
+		dropAllowed = false;
 
 		winForRoots.resize(GUI_ENTITY_COUNT);
 		winForRoots.assign(nullptr);
@@ -476,13 +479,34 @@ bool Hud::MouseMove(const MouseEvent &arg, Window* win)
 	return true;
 }
 
-void Hud::FinishDropItems(POINT dropPoint, Window* win)
+bool Hud::FinishDropItems(POINT dropPoint, Window* win)
+{
+	dropAllowed = false;
+	
+	auto it = rootEnts.find(win->GetHWND());
+	if(it == rootEnts.end())
+		return false;
+
+	GET_HENTITY(it->second.rootEnt)->DragDropEvent(GuiEvents::GE_ITEMS_DROPED, dropPoint);
+
+	ClearDropItems();
+
+	dropAllowed = false;
+	return true;
+}
+
+bool Hud::DragDropItems(GuiEvents ev, POINT dropPoint, Window* win)
 {
 	auto it = rootEnts.find(win->GetHWND());
 	if(it == rootEnts.end())
-		return;
+	{
+		dropAllowed = false;
+		return false;
+	}
 
-	GET_HENTITY(it->second.rootEnt)->DropEvent(GuiEvents::GE_ITEMS_DROPED, dropPoint);
+	GET_HENTITY(it->second.rootEnt)->DragDropEvent(ev, dropPoint);
 
-	dropedItems.resize(0);
+	bool temp = dropAllowed;
+	dropAllowed = false;
+	return temp;
 }

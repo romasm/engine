@@ -94,6 +94,8 @@ namespace EngineCore
 
 		void SaveSTMFile(string& file);
 
+		static bool IsSupported(string name);
+
 	private:
 		static StMeshMgr *instance;
 		static StMeshData* null_mesh;

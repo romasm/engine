@@ -114,6 +114,7 @@ void HEntity::ZeroEntity()
 	collide_through = false;
 
 	hover = false;
+	dragHover = false;
 
 	focus_mode = 0;
 	
@@ -572,7 +573,7 @@ HEvent HEntity::MouseMove(const MouseEvent &arg, bool collide)
 		}
 
 		if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
-			(temp_event.event_id != GuiEvents::GE_MOUSE_MOVE || res_event.event_id == GuiEvents::GE_ERROR))	 // todo
+			temp_event.event_id != GuiEvents::GE_MOUSE_MOVE)	 // todo
 			res_event = temp_event;
 
 		it = it->prev;
@@ -610,25 +611,38 @@ HEvent HEntity::MouseMove(const MouseEvent &arg, bool collide)
 	temp_event = LocalCallback(gui_event);
 
 	if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
-		(temp_event.event_id != GuiEvents::GE_MOUSE_MOVE || res_event.event_id == GuiEvents::GE_ERROR))	 // todo
+		temp_event.event_id != GuiEvents::GE_MOUSE_MOVE)	 // todo
 		return temp_event;
 	return res_event;
 }
 
-HEvent HEntity::DropEvent(uint32_t dropEvent, POINT pos)
+HEvent HEntity::DragDropEvent(uint32_t dropEvent, POINT pos)
 {
 	HEvent gui_event;
 
+	if( dropEvent == GuiEvents::GE_ITEMS_DRAG_LEAVE || dropEvent == GuiEvents::GE_ITEMS_DROPED )
+	{
+		dragHover = false;
+	}
+	else if( dropEvent == GuiEvents::GE_ITEMS_DRAG_ENTER || 
+		(dropEvent == GuiEvents::GE_ITEMS_DRAG_MOVE && dragHover == false) )
+	{
+		dragHover = true;
+		dropEvent = GuiEvents::GE_ITEMS_DRAG_ENTER;
+	}
+
 	// children
 	if(focus_lock && focus)
-	{
+	{ 
 		auto fent = GET_HENTITY(focus->e);
 		if(!fent)
 			return HEvent();
 
-		return LocalCallback(fent->DropEvent(dropEvent, pos));
+		return LocalCallback(fent->DragDropEvent(dropEvent, pos));
 	}
 
+	HEvent res_event;
+	HEvent temp_event;
 	HChild* it = last_child->prev;
 	while(it != first_child)
 	{
@@ -636,18 +650,34 @@ HEvent HEntity::DropEvent(uint32_t dropEvent, POINT pos)
 		if(!ent)
 			break;
 
-		if( !ent->ignore_events && ent->IsCollide(int16_t(pos.x), int16_t(pos.y)) )
-			return LocalCallback(ent->DropEvent(dropEvent, pos));
+		if( !ent->ignore_events )
+		{
+			if( ent->IsCollide(int16_t(pos.x), int16_t(pos.y)) )
+				temp_event = LocalCallback(ent->DragDropEvent(dropEvent, pos));
+			else
+				if( ent->dragHover )
+					temp_event = LocalCallback(ent->DragDropEvent(GuiEvents::GE_ITEMS_DRAG_LEAVE, pos));
+		}
+
+		if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
+			temp_event.event_id < GuiEvents::GE_ITEMS_DROPED && temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE)
+			res_event = temp_event;
 
 		it = it->prev;
 	}
-	
+
 	// self
 	gui_event.event_id = dropEvent;
 	gui_event.coords = pos;
 	gui_event.object_sysid = sys_ID;
 	gui_event.object_id = ID;
-	return LocalCallback(gui_event);
+	temp_event = LocalCallback(gui_event);
+
+	if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
+		temp_event.event_id < GuiEvents::GE_ITEMS_DROPED && temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE)
+		res_event = temp_event;
+
+	return res_event;
 }
 
 bool HEntity::IsCollide(int16_t x, int16_t y)

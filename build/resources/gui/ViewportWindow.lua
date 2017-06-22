@@ -39,7 +39,11 @@ return GuiEntity({
         [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
         [GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
         [GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
+
         [GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
+        [GUI_EVENTS.ITEMS_DRAG_ENTER] = function(self, ev) return Viewport:onItemStartDrag(ev) end,
+        [GUI_EVENTS.ITEMS_DRAG_LEAVE] = function(self, ev) return Viewport:onItemStopDrag(ev) end,
+        [GUI_EVENTS.ITEMS_DRAG_MOVE] = function(self, ev) return Viewport:onItemDrag(ev) end,
 
         [GUI_EVENTS.MENU_CLOSE] = function(self, ev) Viewport:MenuClose(self) end,
         [GUI_EVENTS.MENU_CLICK] = function(self, ev) Viewport:MenuClick(self, ev) end, 

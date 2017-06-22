@@ -644,21 +644,52 @@ function Viewport:onMouseWheel(eventData)
     return true
 end
 
+function Viewport:onItemStartDrag(eventData)
+    self.allowDrop = false
+
+    local itemCount = CoreGui.DragDrop.GetCount()
+    if itemCount == 0 then return true end
+    
+    local firstFile = CoreGui.DragDrop.GetItem(0)
+
+    if not self.lua_world then
+        if itemCount > 1 then return true end
+        if string.find(firstFile, ".mls") == nil then return true end
+    else
+        if Resource.IsMeshSupported(firstFile) == false then return true end
+    end
+    
+    self.allowDrop = true
+    return true
+end
+
+function Viewport:onItemDrag(eventData)
+    CoreGui.DragDrop.AllowDrop(self.allowDrop)
+    return true
+end
+
+function Viewport:onItemStopDrag(eventData)
+    self.allowDrop = false
+    return true
+end
+
 function Viewport:onItemDroped(eventData)
-    local itemCount = CoreGui.DropedItems.GetCount()
+    if not self.allowDrop then return true end
+
+    local itemCount = CoreGui.DragDrop.GetCount()
     if itemCount == 0 then return true end
 
     if not self.lua_world then
         if itemCount > 1 then return true end
         
-        local worldPath = CoreGui.DropedItems.GetItem(0)
+        local worldPath = CoreGui.DragDrop.GetItem(0)
         if string.find(worldPath, ".mls") ~= nil then
             SceneMgr:LoadWorld(worldPath)
         end
     else
         local entities = {}
         for i = 0, itemCount-1 do
-            local meshName = CoreGui.DropedItems.GetItem(i)
+            local meshName = CoreGui.DragDrop.GetItem(i)
             print("Droped: " .. meshName)
 
             local entity = EntityTypes.StaticModel(self.lua_world.world) -- to history

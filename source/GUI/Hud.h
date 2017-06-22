@@ -73,11 +73,16 @@ public:
 
 	POINT GetCursorPos(){return cursor_pos;}
 
-	void AddDropItems(wchar_t* filename)
+	bool DragDropItems(GuiEvents ev, POINT dropPoint, Window* win);
+	inline void AddDropItems(string& filename)
 	{
-		dropedItems.push_back(WstringToString(wstring(filename)));
+		dropedItems.push_back(filename);
 	}
-	void FinishDropItems(POINT dropPoint, Window* win);
+	inline void ClearDropItems()
+	{
+		dropedItems.resize(0);
+	}
+	bool FinishDropItems(POINT dropPoint, Window* win);
 	DArray<string>* GetDropedItems() {return &dropedItems;}
 
 	uint32_t GetDropedItemsCount() {return uint32_t(dropedItems.size());}
@@ -87,6 +92,8 @@ public:
 			return string();
 		return dropedItems[i];
 	}
+
+	void AllowDrop(bool allow) {dropAllowed = allow;}
 
 	void RegLuaClass();
 	
@@ -125,4 +132,5 @@ protected:
 	POINT cursor_pos;
 
 	DArray<string> dropedItems;
+	bool dropAllowed;
 };

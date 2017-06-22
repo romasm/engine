@@ -71,12 +71,12 @@ namespace EngineCore
 		HRESULT __stdcall DragLeave(void);
 		HRESULT __stdcall Drop(IDataObject * pDataObject, DWORD grfKeyState, POINTL pt, DWORD * pdwEffect);
  
-		DropTarget(void* window);
+		DropTarget(void* win);
 		virtual ~DropTarget();
  
 	private:
-		void*  m_window;
-		ULONG m_refCount;
+		void* window;
+		ULONG refCount;
 	};
 
 	class Window

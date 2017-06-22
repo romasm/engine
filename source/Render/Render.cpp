@@ -60,6 +60,7 @@ namespace EngineCore
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
 				.addFunction("DropMaterial", &DropMaterialLua)
+				.addFunction("IsMeshSupported", &StMeshMgr::IsSupported)
 
 				.addFunction("ConvertMeshToSTM", &ConvertMeshToSTM)
 			.endNamespace();
