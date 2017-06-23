@@ -48,6 +48,8 @@ namespace EngineCore
 		void Postload(uint32_t id);
 		void UpdateTextures();
 
+		static bool IsSupported(string name);
+
 	private:
 		static TexMgr *instance;
 		static ID3D11ShaderResourceView* null_texture;
@@ -77,6 +79,9 @@ namespace EngineCore
 		uint32_t FindTextureInList(string& name);
 
 		void LoadFromMemory(TexHandle& handle, uint8_t* data, uint32_t size);
+
+		WICCodecs WICCodec(string& name);
+
 	public:
 		static bool SaveTexture(string& name, ID3D11ShaderResourceView* srv);
 	};

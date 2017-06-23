@@ -506,7 +506,7 @@ end
 -- TEXTURE
 function MaterialProps.SetTexture(self, textureSlot, flagSlot, str)
     local texture = self:GetTexture()
-
+    
     local history = {
         s_oldval = "",
         s_newval = "",

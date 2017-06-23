@@ -8,11 +8,11 @@ Texture2D reflectivityTexture : register(t25);
 Texture2D aoTexture : register(t26);
 Texture2D alphaTexture : register(t27);
 Texture2D emissiveTexture : register(t28);
-Texture2D subsurfTexture : register(t29);
-Texture2D absorptionTexture : register(t30);
-Texture2D insideRoughnessTexture : register(t31);
-Texture2D opacityTexture : register(t32);
-Texture2D thicknessTexture : register(t33);
+Texture2D absorptionTexture : register(t29);
+Texture2D insideRoughnessTexture : register(t30);
+Texture2D opacityTexture : register(t31);
+Texture2D subsurfTexture : register(t32); // todo UNUSED
+Texture2D thicknessTexture : register(t33); // todo UNUSED
 
 #else
 Texture2D albedoTexture : register(t0);

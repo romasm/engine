@@ -105,7 +105,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	mediumData.attenuation = AttenuationCalculate();
 	mediumData.invIOR = IORCalculate();
 	mediumData.tirAmount = TIRCalculate();
-	
+	//return float4(absorptionTexture.Sample(samplerAnisotropicWrap, input.tex).rgb, 1.0f);
 	[branch] 
 	if(!front) 
 		gbuffer.normal = -gbuffer.normal;

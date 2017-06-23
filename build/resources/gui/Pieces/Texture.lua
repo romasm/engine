@@ -8,7 +8,7 @@ local res = GuiDumb({
     id = props.id,
 
     events = props.events,
-
+    
     GuiRect({
         styles = {GuiStyles.ghost,},
         width = 100,
@@ -53,14 +53,51 @@ local res = GuiDumb({
     }),
 
     GuiRect({
-        styles = {GuiStyles.ghost,},
+        styles = {GuiStyles.live,},
         enable = false,
         width = 98,
         height = 98,
         left = 1,
         top = 1,
         material = props.material == nil and GuiMaterials.texture or props.material,
-        id = 'texture_rect'
+        id = 'texture_rect',
+
+        events = {
+            [GUI_EVENTS.ITEMS_DRAG_ENTER] = function(self, ev)
+                    self.allowDrop = false
+                    local itemCount = CoreGui.DragDrop.GetCount()
+                    if itemCount == 0 then return true end
+
+                    local firstFile = CoreGui.DragDrop.GetItem(0)
+                    if Resource.IsTextureSupported(firstFile) == true then self.allowDrop = true end
+                    return true
+                end,
+
+            [GUI_EVENTS.ITEMS_DRAG_LEAVE] = function(self, ev)
+                    self.allowDrop = false
+                    return true
+                end,
+
+            [GUI_EVENTS.ITEMS_DRAG_MOVE] = function(self, ev)     
+                    CoreGui.DragDrop.AllowDrop(self.allowDrop)
+                    return true
+                end,
+
+            [GUI_EVENTS.ITEMS_DROPED] = function(self, ev)
+                    if not self.allowDrop then return true end
+                    local itemCount = CoreGui.DragDrop.GetCount()
+                    if itemCount == 0 then return true end
+
+                    local path = CoreGui.DragDrop.GetItem(0)
+                    local parent = self.entity:GetParent():GetInherited()
+                    if path:len() > 0 and parent:GetTexture() ~= path then
+                        parent:SetTexture(path)
+                        ev.event = GUI_EVENTS.TEXTURE_SET
+                        return false 
+                    end
+                    return true
+                end,
+        },
     }),
 
     GuiFilefield({
@@ -71,14 +108,15 @@ local res = GuiDumb({
         align = GUI_ALIGN.BOTH,
         browse_header = (props.str == nil and "" or props.str) .." texture open",
         filetypes = {
-            {"All supported", "*.bmp;*.dds;*.gif;*.jpg;*.tga;*.tif;*.png;"},
+            {"All supported", "*.bmp;*.dds;*.gif;*.jpg;*.tga;*.tif;*.tiff;*.png;"},
             {"BMP", "*.bmp;"},
             {"DDS", "*.dds;"},
             {"GIF", "*.gif;"},
             {"JPEG", "*.jpg;"},
             {"TGA", "*.tga;"},
-            {"TIFF", "*.tif;"},
+            {"TIFF", "*.tif;*.tiff;"},
             {"PNG", "*.png;"},
+            droptypes = {".bmp",".dds",".gif",".jpg",".tga",".tif",".png"},
         },
         id = "texture_field",
 
@@ -90,7 +128,6 @@ local res = GuiDumb({
                     if tr.rect_mat:SetTextureNameByID(self:GetPath(), 0, SHADERS.PS) == true then 
                         tr.entity.enable = true
                     end
-
                     ev.event = GUI_EVENTS.TEXTURE_SET
                     return false 
                 end,

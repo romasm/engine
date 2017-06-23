@@ -858,19 +858,23 @@ function Viewport:Select(coords)
             end
         end
 
+        local insert = true
         while self.lua_world.world:IsEntityType(s_ent, EDITOR_VARS.TYPE) do
             s_ent = self.lua_world.world.transform:GetParent(s_ent)
-            if s_ent:IsNull() then return end
+            if s_ent:IsNull() then 
+                insert = false
+                break
+            end
         end
 
-        table.insert(self.selection_set, s_ent)
-		
-		self:PlaceArrows()
-
-        self.lua_world.world.lineGeometry:AddComponent(s_ent)
-        self.lua_world.world.lineGeometry:SetFromVis(s_ent)
-        self.lua_world.world.lineGeometry:SetColor(s_ent, self.selection_color)
+        if insert then
+            table.insert(self.selection_set, s_ent)
+            self.lua_world.world.lineGeometry:AddComponent(s_ent)
+            self.lua_world.world.lineGeometry:SetFromVis(s_ent)
+            self.lua_world.world.lineGeometry:SetColor(s_ent, self.selection_color)
+		end
     end
+	self:PlaceArrows()
     
     if self.selection_mode ~= SELECTION_MODE.SNAKE then self:PushSelectHistory() end
     Properties:Update()

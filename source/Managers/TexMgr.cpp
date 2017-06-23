@@ -210,6 +210,22 @@ void TexMgr::DeleteTextureByName(string& name)
 		handle.refcount--;
 }
 
+bool TexMgr::IsSupported(string filename)
+{
+	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos ||
+		filename.find(".tga") != string::npos || filename.find(".TGA") != string::npos)
+	{
+		return true;
+	}
+	else 
+	{
+		WICCodecs codec = instance->WICCodec(filename);	
+		if(codec == 0)
+			return false;
+	}
+	return true;
+}
+
 void TexMgr::Postload(uint32_t id) // TODO: callback, mip gen
 {
 	auto& handle = tex_array[id];
@@ -344,21 +360,12 @@ bool TexMgr::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
 	}
 	else
 	{
-		WICCodecs codec = WIC_CODEC_JPEG;
-		if( name.find(".bmp") != string::npos || name.find(".BMP") != string::npos )
-			codec = WIC_CODEC_BMP;
-		else if( name.find(".jpg") != string::npos || name.find(".JPG") != string::npos )
-			codec = WIC_CODEC_JPEG;
-		else if( name.find(".png") != string::npos || name.find(".PNG") != string::npos )
-			codec = WIC_CODEC_PNG;
-		else if( name.find(".tif") != string::npos || name.find(".TIF") != string::npos )
-			codec = WIC_CODEC_TIFF;
-		else if( name.find(".gif") != string::npos || name.find(".GIF") != string::npos )
-			codec = WIC_CODEC_GIF;
-		else if( name.find(".wmp") != string::npos || name.find(".WMP") != string::npos )
-			codec = WIC_CODEC_WMP;
-		else if( name.find(".ico") != string::npos || name.find(".ICO") != string::npos )
-			codec = WIC_CODEC_ICO;			
+		WICCodecs codec = instance->WICCodec(name);	
+		if(codec == 0)
+		{
+			ERR("Unsupported texture format for %s !", name.c_str());
+			return nullptr;
+		}
 
 		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(name).data() );
 		if(FAILED(hr))
@@ -370,4 +377,24 @@ bool TexMgr::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
 
 	LOG_GOOD("Texture saved %s", name.c_str());
 	return true;
+}
+
+WICCodecs TexMgr::WICCodec(string& name)
+{
+	WICCodecs codec = (WICCodecs)0;
+	if( name.find(".bmp") != string::npos || name.find(".BMP") != string::npos )
+		codec = WIC_CODEC_BMP;
+	else if( name.find(".jpg") != string::npos || name.find(".JPG") != string::npos )
+		codec = WIC_CODEC_JPEG;
+	else if( name.find(".png") != string::npos || name.find(".PNG") != string::npos )
+		codec = WIC_CODEC_PNG;
+	else if( name.find(".tif") != string::npos || name.find(".TIF") != string::npos )
+		codec = WIC_CODEC_TIFF;
+	else if( name.find(".gif") != string::npos || name.find(".GIF") != string::npos )
+		codec = WIC_CODEC_GIF;
+	else if( name.find(".wmp") != string::npos || name.find(".WMP") != string::npos )
+		codec = WIC_CODEC_WMP;
+	else if( name.find(".ico") != string::npos || name.find(".ICO") != string::npos )
+		codec = WIC_CODEC_ICO;	
+	return codec;
 }

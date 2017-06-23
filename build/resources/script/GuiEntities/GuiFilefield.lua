@@ -63,6 +63,8 @@ function GuiFilefield:init(props)
     for i, ext in ipairs(self.filetypes) do 
 	    self.filefilter:Add(ext[1], ext[2])
     end
+
+    self.allowDrop = false
 end
 
 function GuiFilefield:ApplyProps(props)
@@ -131,6 +133,48 @@ function GuiFilefield:callback(eventData)
                 res.event = GUI_EVENTS.NULL
             end
             res.entity = self.entity
+        end
+        
+    elseif eventData.event == GUI_EVENTS.ITEMS_DRAG_ENTER then
+        if not self.filetypes.droptypes then
+            self.allowDrop = true
+        else
+            self.allowDrop = false
+            local itemCount = CoreGui.DragDrop.GetCount()
+            if itemCount > 0 then
+                local path = CoreGui.DragDrop.GetItem(0)
+                path = path:lower()
+                for i, ext in ipairs(self.filetypes.droptypes) do
+                    if path:find(ext) then
+                        self.allowDrop = true
+                        break
+                    end
+                end
+            end
+        end
+        res.event = GUI_EVENTS.NULL
+
+    elseif eventData.event == GUI_EVENTS.ITEMS_DRAG_LEAVE then 
+        self.allowDrop = false
+        res.event = GUI_EVENTS.NULL
+
+    elseif eventData.event == GUI_EVENTS.ITEMS_DRAG_MOVE then         
+        CoreGui.DragDrop.AllowDrop(self.allowDrop)
+        res.event = GUI_EVENTS.NULL
+
+    elseif eventData.event == GUI_EVENTS.ITEMS_DROPED then 
+        if self.allowDrop then     
+            res.event = GUI_EVENTS.NULL 
+            res.entity = self.entity  
+
+            local itemCount = CoreGui.DragDrop.GetCount()
+            if itemCount > 0 then
+                local path = CoreGui.DragDrop.GetItem(0)
+                if path:len() > 0 and self.filepath_tf:GetText() ~= path then
+                    self.filepath_tf:SetText(path)
+                    res.event = GUI_EVENTS.FF_SET
+                end
+            end
         end
 
     elseif eventData.event == GUI_EVENTS.UNFOCUS then

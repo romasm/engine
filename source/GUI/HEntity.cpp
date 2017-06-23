@@ -660,7 +660,7 @@ HEvent HEntity::DragDropEvent(uint32_t dropEvent, POINT pos)
 		}
 
 		if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
-			temp_event.event_id < GuiEvents::GE_ITEMS_DROPED && temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE)
+			(temp_event.event_id < GuiEvents::GE_ITEMS_DROPED || temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE))
 			res_event = temp_event;
 
 		it = it->prev;
@@ -674,7 +674,7 @@ HEvent HEntity::DragDropEvent(uint32_t dropEvent, POINT pos)
 	temp_event = LocalCallback(gui_event);
 
 	if(temp_event.event_id != GuiEvents::GE_ERROR && temp_event.event_id != GuiEvents::GE_NULL && 
-		temp_event.event_id < GuiEvents::GE_ITEMS_DROPED && temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE)
+		(temp_event.event_id < GuiEvents::GE_ITEMS_DROPED || temp_event.event_id > GuiEvents::GE_ITEMS_DRAG_MOVE))
 		res_event = temp_event;
 
 	return res_event;
