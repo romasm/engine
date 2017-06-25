@@ -24,61 +24,65 @@ TECHNIQUE_DEFAULT
 #include "../../common/shared.hlsl"
 #include "../../common/structs.hlsl"
 
-// config
-static const float lineAlpha[3] = {0.5, 0.7, 0.5};
-static const float lineContrast[3] = {0.0, 0.5, 0.0};
-static const float lineBrightness[3] = {0.8, 0.8, 0.5};
-static const float lineHardness = 1000.0;
+Texture2D colorTex : register(t0);
+SamplerState samplerAnisotropicWrap : register(s0);
 
-static const float lineThickness = 0.003;
-static const float lineThicknessDist = 0.04;
-static const float lineNearClip = 0.15;
-static const float lineNearFade = 0.2;
-static const float lineFarClip[3] = {3.0, 15, 150};
-static const float lineFarFade[3] = {3.0, 15, 150};
-
-float4 GridCascade(float2 wpos, float distToCam, int i)
-{
-	float distFadeFar = 1 - saturate( ( distToCam - lineFarClip[i]) / lineFarFade[i]);
-	float distFadeNear = saturate( ( distToCam - lineNearClip) / lineNearFade);
-
-	float2 wposNear = floor(wpos + 0.5);
-	float targetThickness = lerp(lineThickness, lineThicknessDist, saturate(distToCam / lineFarClip[i]));
-	float2 edge = 1 - saturate(abs(wposNear - wpos) - targetThickness);
-	edge = pow(edge, lineHardness);
-	
-	float alpha = lineAlpha[i] * max(edge.x, edge.y) * distFadeFar * distFadeNear;
-
-	float3 color = float3(edge.y, 0.0, edge.x);
-	color = lerp(float3(1,1,1), color, lineContrast[i]) * lineBrightness[i];
-
-	return float4(color, alpha);
-}
-
-float4 PlanePS(PI_ToolMesh input) : SV_TARGET
-{	
-	float3 V = g_CamPos - input.worldPos.xyz;
-	float NoV = abs(dot(normalize(V), input.normal));
-	NoV = saturate(pow(NoV * 5, 1.0));
-	
-	float distToCam = length(V);
-
-	float4 cascade0 = GridCascade(input.worldPos.xz * 10, distToCam, 0);
-	float4 cascade1 = GridCascade(input.worldPos.xz, distToCam, 1);
-
-	cascade0 *= 1 - (cascade1.a > 0.1 ? 1 : 0);
-	cascade0 = lerp(cascade0, cascade1, float(cascade1.a > 0.1));
-	cascade0.a *= NoV;
-	return saturate(cascade0);
-}
-
-// vetrex
 cbuffer matrixBuffer : register(b2)
 {
 	matrix worldMatrix;
 	matrix normalMatrix;
 };
 
+// config
+static const float lineAlpha = 0.65;
+static const float lineContrast = 0.8;
+static const float lineBrightness[2] = {0.7, 1.0};
+static const float lineHardness = 1000.0;
+
+static const float lineThickness = 0.01;
+static const float lineNearClip = 0.1;
+static const float lineNearFade = 0.1;
+
+float4 GridCascade(float2 wpos, float distToCam, int i)
+{
+	float2 wposNear = floor(wpos + 0.5);
+	float2 edge = 1 - saturate(abs(wposNear - wpos) - lineThickness);
+	edge = pow(edge, lineHardness);
+	
+	float alpha = max(edge.x, edge.y);
+
+	float3 color = float3(edge.y, 0.0, edge.x);
+	color = lerp(float3(1,1,1), color, lineContrast) * lineBrightness[i];
+
+	return float4(color, alpha);
+}
+
+float4 PlanePS(PI_ToolMesh input) : SV_TARGET
+{	
+	float4 cascade0 = colorTex.Sample(samplerAnisotropicWrap, input.worldPos.xz * 10 + 0.5).r;
+	cascade0.a *= lineAlpha;
+	if( cascade0.a < 0.1 )
+		discard;
+	
+	cascade0.rgb = lineBrightness[0];
+
+	float3 V = g_CamPos - input.worldPos.xyz;
+	float NoV = abs(dot(normalize(V), input.normal));
+	NoV = saturate(pow(NoV * 5, 1.0));
+	
+	float distToCam = length(V);
+
+	float4 cascade1 = GridCascade(input.worldPos.xz, distToCam, 1);
+
+	cascade0.rgb = lerp(cascade0.rgb, cascade1.rgb, cascade1.a);
+	
+	float distFadeNear = saturate( ( distToCam - lineNearClip) / lineNearFade);
+	cascade0.a *= distFadeNear;
+
+	return saturate(cascade0);
+}
+
+// vetrex
 PI_ToolMesh PlaneVS(VI_Mesh input)
 {
     PI_ToolMesh output;
