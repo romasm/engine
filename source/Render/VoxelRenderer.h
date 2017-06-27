@@ -16,7 +16,8 @@
 
 #define VCT_VOLUME_RES 64
 #define VCT_CLIPMAP_COUNT 6
-#define VCT_CLIPMAP_COUNT_MAX 12
+#define VCT_MIPMAP_COUNT 6
+#define VCT_MAX_COUNT 20
 #define VCT_SUBSAMPLES 8
 #define VCT_VOLUME_SIZE 8.0f
 
@@ -27,7 +28,7 @@ namespace EngineCore
 {
 	struct VolumeMatrix
 	{
-		XMMATRIX volumeVP[VCT_CLIPMAP_COUNT_MAX][3];
+		XMMATRIX volumeVP[VCT_MAX_COUNT][3];
 	};
 
 	struct VolumeData
@@ -52,12 +53,12 @@ namespace EngineCore
 	struct VolumeDownsample
 	{
 		XMFLOAT3 writeOffset;
-		uint32_t _padding0;
+		uint32_t clipmapOffset;
 
 		uint32_t currentLevel;
 		uint32_t currentRes;
 		uint32_t currentResMore;
-		uint32_t _padding1;
+		uint32_t levelOffset;
 
 		XMFLOAT3 isShifted;
 		uint32_t _padding2;
@@ -204,7 +205,7 @@ namespace EngineCore
 		ID3D11Buffer* volumeDownsampleBuffer;
 
 		D3D11_VIEWPORT viewport;
-		VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+		VolumeData volumeData[VCT_MAX_COUNT];
 
 		ID3D11Buffer* instanceMatrixBuffer;
 		
@@ -222,6 +223,7 @@ namespace EngineCore
 		uint16_t volumeResolution;
 		float volumeSize;
 		uint16_t clipmapCount;
+		uint16_t mipmapCount;
 		uint16_t AAquality;
 
 		uint16_t injectGroupsCount[3];

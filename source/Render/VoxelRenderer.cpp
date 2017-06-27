@@ -49,6 +49,7 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 
 	volumeResolution = 0;
 	clipmapCount = 0;
+	mipmapCount = 0;
 	volumeSize = 0;
 
 	calcVolumesConfigs();
@@ -124,16 +125,19 @@ void VoxelRenderer::calcVolumesConfigs()
 	// temp configs
 	volumeResolution = VCT_VOLUME_RES;
 	clipmapCount = VCT_CLIPMAP_COUNT;
+	mipmapCount = VCT_MIPMAP_COUNT;
 	volumeSize = VCT_VOLUME_SIZE;
 	AAquality = VCT_SUBSAMPLES;
+
+	uint16_t levelsCount = clipmapCount + mipmapCount;
 
 	injectGroupsCount[2] = volumeResolution / 4;
 	injectGroupsCount[0] = injectGroupsCount[2] * VCT_CLIPMAP_COUNT;
 	injectGroupsCount[1] = injectGroupsCount[2] * 6;
 
 	volumesConfig.destroy();
-	volumesConfig.create(clipmapCount);
-	volumesConfig.resize(clipmapCount);
+	volumesConfig.create(levelsCount);
+	volumesConfig.resize(levelsCount);
 
 	for(uint8_t i = 0; i < clipmapCount; i++)
 	{
@@ -150,7 +154,27 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
 		volumeData[i].voxelDiagRcp = 1.0f / volumeData[i].voxelDiag;
-		volumeData[i].maxLevel = clipmapCount - 1;
+		volumeData[i].maxLevel = levelsCount - 1;
+	}
+
+	for(uint8_t i = clipmapCount; i < levelsCount; i++)
+	{
+		uint16_t resolution = volumeResolution / pow(2.0f, (float)(i - clipmapCount + 1));
+
+		volumesConfig[i].worldSize = volumesConfig[clipmapCount - 1].worldSize;
+		volumesConfig[i].voxelSize = volumesConfig[i].worldSize / resolution;
+		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
+		volumesConfig[i].volumeBox.Extents = XMFLOAT3(halfWorldSize, halfWorldSize, halfWorldSize);
+
+		volumeData[i].worldSize = volumesConfig[i].worldSize;
+		volumeData[i].worldSizeRcp = 1.0f / volumesConfig[i].worldSize;
+		volumeData[i].scaleHelper = (float)resolution / volumesConfig[i].worldSize;
+		volumeData[i].volumeRes = resolution;
+		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / resolution;
+		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
+		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
+		volumeData[i].voxelDiagRcp = 1.0f / volumeData[i].voxelDiag;
+		volumeData[i].maxLevel = levelsCount - 1;
 	}
 
 	viewport.TopLeftX = 0.0f;
@@ -190,7 +214,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	// visibility
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = volumeResolution * clipmapCount;			// x - level
+	volumeDesc.Width = volumeResolution * clipmapCount + volumeResolution / 2;	// x - level
 	volumeDesc.Height = volumeResolution * 6;					// y - face
 	volumeDesc.Depth = volumeResolution;
 	volumeDesc.MipLevels = 1;
@@ -321,6 +345,10 @@ void VoxelRenderer::updateBuffers()
 			matrixBuffer.volumeVP[level][i] = XMMatrixTranspose(matrixBuffer.volumeVP[level][i]);
 		}
 	}
+
+	for(uint8_t level = clipmapCount; level < clipmapCount + mipmapCount; level++)
+		for(uint8_t i = 0; i < 3; i++)
+			matrixBuffer.volumeVP[level][i] = matrixBuffer.volumeVP[clipmapCount - 1][i];
 
 	Render::UpdateDynamicResource(volumeMatBuffer, (void*)&matrixBuffer, sizeof(VolumeMatrix));
 }
@@ -467,6 +495,8 @@ void VoxelRenderer::ProcessEmittance()
 	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
+	ZeroMemory(&volumeDownsample, sizeof(VolumeDownsample));
+
 	uint32_t currentRes = volumeResolution / 2;
 	ID3D11ShaderResourceView* null_srv = nullptr;
 	
@@ -500,6 +530,7 @@ void VoxelRenderer::ProcessEmittance()
 		volumeDownsample.writeOffset.z += volumeDownsample.isShifted.z;
 		
 		volumeDownsample.currentLevel = level;
+		volumeDownsample.levelOffset = volumeData[level].volumeRes * level;
 		volumeDownsample.currentRes = currentRes;
 		volumeDownsample.currentResMore = currentRes + 1;
 
@@ -521,6 +552,49 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsampleMove->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
 
 		voxelDownsampleMove->UnbindUAV();
+		Render::CSSetShaderResources(0, 1, &null_srv);
+	}
+
+	uint32_t levelOffset = 0;
+	volumeDownsample.clipmapOffset = clipmapCount * volumeData[0].volumeRes;
+	for(uint32_t level = clipmapCount; level < mipmapCount; level++)
+	{
+		currentRes /= 2;
+
+		uint32_t shaderId = 0;
+		uint32_t temp = min(uint32_t(8), currentRes);
+		while(temp >>= 1) ++shaderId;
+
+		threadCount[0] = max(uint32_t(1), currentRes / 8);
+		threadCount[1] = threadCount[0] * 6;
+		threadCount[2] = max(uint32_t(1), currentRes / 4);
+
+		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
+		
+		volumeDownsample.currentLevel = level - clipmapCount;
+		volumeDownsample.levelOffset = levelOffset;
+		levelOffset += currentRes;
+		volumeDownsample.currentRes = currentRes;
+		volumeDownsample.currentResMore = currentRes + 1;
+
+		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
+
+		// downsample
+		voxelDownsampleMip[shaderId]->BindUAV(voxelDownsampleTempUAV);
+		Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
+
+		voxelDownsampleMip[shaderId]->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
+
+		voxelDownsampleMip[shaderId]->UnbindUAV();
+		Render::CSSetShaderResources(0, 1, &null_srv);
+
+		// move data
+		voxelDownsampleMoveMip[shaderId]->BindUAV(voxelEmittanceUAV);
+		Render::CSSetShaderResources(0, 1, &voxelDownsampleTempSRV);
+
+		voxelDownsampleMoveMip[shaderId]->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
+
+		voxelDownsampleMoveMip[shaderId]->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
 	}
 }

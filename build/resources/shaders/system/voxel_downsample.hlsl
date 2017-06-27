@@ -11,12 +11,12 @@ cbuffer volumeBuffer : register(b0)
 cbuffer downsampleBuffer : register(b1)
 {
 	float3 writeOffset;
-	uint _padding0;
+	uint clipmapOffset;
 
 	uint currentLevel;
 	uint currentRes;
 	uint currentResMore;
-	uint _padding1;
+	uint levelOffset;
 
 	float3 isShifted;
 	uint _padding2;
@@ -124,9 +124,25 @@ void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
 
 	uint face = emitID.y / currentRes;
 	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
-	emitID.x += volumeData[0].volumeRes * currentLevel; 
+	emitID.x += levelOffset; 
 	
 	// write shift
 	emitID += (uint3)writeOffset;
 	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
 }
+
+#define DOWNSAMPLE(x, y, z) \
+[numthreads( x, y, z )]void DownsampleMoveMip##x(uint3 treadID : SV_DispatchThreadID)\
+{\
+	uint3 emitID = treadID;\
+	uint face = emitID.y / currentRes;\
+	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);\
+	emitID.y += levelOffset; \
+	emitID.x += clipmapOffset; 	\
+	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));\
+}
+
+DOWNSAMPLE(8,8,4)
+DOWNSAMPLE(4,4,4)
+DOWNSAMPLE(2,2,2)
+DOWNSAMPLE(1,1,1)
