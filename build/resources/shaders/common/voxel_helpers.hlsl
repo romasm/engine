@@ -1,6 +1,6 @@
 
 #define VCT_MESH_MAX_INSTANCE 128
-#define VCT_CLIPMAP_COUNT_MAX 12
+#define VCT_CLIPMAP_COUNT_MAX 20
 
 #define VOXEL_SUBSAMPLES_COUNT 8
 #define VOXEL_SUBSAMPLES_COUNT_RCP 1.0f / VOXEL_SUBSAMPLES_COUNT
@@ -84,7 +84,7 @@ static const float diffuseConeWeightsCheap[4] =
 #define VOXEL_FACE_COUNT_RCP 1.0f / 6
 
 float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
-					  Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
+					  VolumeTraceData volumeTraceData, Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
 	float faces[3];
 	faces[0] = (direction.x >= 0) ? 0 : 1;
@@ -195,7 +195,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 #define RAY_TRACE_EPCILON 0.00005f
 #define RAY_TRACE_MAX_I 512
 
-int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], uint minLevel, Texture3D <float4> voxelEmittance, out float3 collideWS)
+int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData volumeTraceData, uint minLevel, 
+				   Texture3D <float4> voxelEmittance, out float3 collideWS)
 {
 	collideWS = 0;
 	
@@ -305,7 +306,7 @@ struct LightComponentsWeight
 	float scatteringW;
 };
 
-LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittance, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], 
+LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittance, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData vTraceData, 
 								  in GBufferData gbuffer, in DataForLightCompute mData, in float3 specularBrdf, in float3 diffuseBrdf, in float SO)
 {
 	LightComponentsWeight result = (LightComponentsWeight)0;
@@ -333,7 +334,7 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 		coneDirection += diffuseConeDirectionsCheap[diffuseCones].x * coneTangent + diffuseConeDirectionsCheap[diffuseCones].z * coneBinormal;
 		coneDirection = normalize(coneDirection);
         
-		float4 VCTdiffuse = VoxelConeTrace(gbuffer.wpos, coneDirection, apertureDiffuse, gbuffer.normal, vData, Emittance, samp);
+		float4 VCTdiffuse = VoxelConeTrace(gbuffer.wpos, coneDirection, apertureDiffuse, gbuffer.normal, vData, vTraceData, Emittance, samp);
 		diffuse += VCTdiffuse * diffuseConeWeightsCheap[diffuseCones];
 	}
 
@@ -344,7 +345,7 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 	float3 coneReflDirection = normalize(mData.reflect);
 
 	float apertureSpecular = tan( clamp( PIDIV2 * mData.avgR, 0.0174533f, PI) );
-	float4 specular = VoxelConeTrace(gbuffer.wpos, coneReflDirection, apertureSpecular, gbuffer.normal, vData, Emittance, samp);
+	float4 specular = VoxelConeTrace(gbuffer.wpos, coneReflDirection, apertureSpecular, gbuffer.normal, vData, vTraceData, Emittance, samp);
 	 	
 	result.specular = specular.rgb * specularBrdf * SO;
 	result.specularW = specular.a;

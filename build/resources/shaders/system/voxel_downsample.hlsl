@@ -61,7 +61,7 @@ static const uint perFaceOpacity[6][8] =
 Texture3D <float4> emittanceVolume : register(t0);  
 RWTexture3D <float4> downsampleVolumeRW : register(u0);  
 
-void DownsampleEmittance(uint3 currentID)
+inline void DownsampleEmittance(uint3 currentID)
 {
 	uint face = currentID.y / currentRes;
 	uint negative = face % 2;
@@ -122,18 +122,19 @@ DOWNSAMPLE(1,1,1)
 RWTexture3D <float4> emittanceVolumeRW : register(u0);  
 Texture3D <float4> downsampleVolume : register(t0);  
 
-void DownsampleMove(uint3 emitID)
+inline void DownsampleMove(uint3 currentID)
 {
+	uint3 emitID = currentID;
 	[branch]
-	if(any( isShifted * ( (currentRes - 1) == treadID % currentRes ) )) 
+	if(any( isShifted * ( (currentRes - 1) == currentID % currentRes ) )) 
 		return;
-
+	
 	uint face = emitID.y / currentRes;
 	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
 	emitID.xy += volumeData[currentLevel].levelOffset;
 
 	emitID += (uint3)writeOffset;
-	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
+	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(currentID, 0));
 }
 
 #define DOWNSAMPLE_MOVE(x, y, z) [numthreads( x, y, z )] \

@@ -535,7 +535,7 @@ void VoxelRenderer::ProcessEmittance()
 	
 	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
-
+	
 	uint32_t threadCount[3];
 	threadCount[0] = currentRes / 8;
 	threadCount[1] = threadCount[0] * 6;
@@ -593,7 +593,7 @@ void VoxelRenderer::ProcessEmittance()
 	volumeDownsample.writeOffset.x = 0;
 	volumeDownsample.writeOffset.y = 0;
 	volumeDownsample.writeOffset.z = 0;
-
+	
 	for(uint32_t level = clipmapCount; level < mipmapCount; level++)
 	{
 		uint32_t shaderId = 0;

@@ -12,7 +12,7 @@ return GuiRect({
         GuiStyles.live,
     },
     width = 400,
-    height = 521,
+    height = 546,
     background = {
         color = 'bg_05_a6',
     },
@@ -224,13 +224,13 @@ return GuiRect({
         styles = {
             GuiStyles.common_dataslider,
         },
-        left = 110,
-        width = 80,
+        left = 20,
+        width = 170,
         height = 20,
-        top = 491,
+        top = 516,
         data = {
             min = 0,
-            max = 5,
+            max = 11,
             decimal = 0,
             step = 1
         },

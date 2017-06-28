@@ -135,7 +135,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
 	// VCTGI   
-	LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, gbuffer, mData, 
+	LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, 
 		specularBrdf, diffuseBrdf, SO);
 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);

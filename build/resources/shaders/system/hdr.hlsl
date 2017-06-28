@@ -124,7 +124,7 @@ struct PO_LDR
 float2 GetVoxelOpacity(float2 uv, uint level)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, level, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
 	 
@@ -137,7 +137,7 @@ float2 GetVoxelOpacity(float2 uv, uint level)
 float4 GetVoxelEmittance(float2 uv, uint level)
 { 
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, level, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
 	    
@@ -151,7 +151,7 @@ float4 GetVoxelColor(float2 uv, out float depth)
 {
 	depth = 0;
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, 0, voxelEmittanceTex, collidePosWS);	 
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, 0, voxelEmittanceTex, collidePosWS);	 
 	if( sampleCoords.w < 0.0f )
 		return 0;
 	            
@@ -170,7 +170,7 @@ float4 GetVoxelColor(float2 uv, out float depth)
 float4 GetVoxelNormal(float2 uv)
 {
 	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, 0, voxelEmittanceTex, collidePosWS);
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, 0, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
 

@@ -1,4 +1,5 @@
 @echo off
+cd ../resources/shaders
 Setlocal enabledelayedexpansion
 
 color 87

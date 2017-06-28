@@ -172,7 +172,7 @@ float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 	if(configs.isLightweight == 0)
 	{ 
 		// VCTGI   
-		LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, sys_volumeEmittance, volumeData, gbuffer, mData, 
+		LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, sys_volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, 
 			specularBrdf, diffuseBrdf, SO);
 
 		indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);

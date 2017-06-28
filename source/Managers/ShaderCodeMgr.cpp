@@ -48,8 +48,14 @@ ShaderCodeMgr::~ShaderCodeMgr()
 void ShaderCodeMgr::PreloadPureCodes()
 {
 	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "2" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "4" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "8" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "2" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "4" );
+	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "8" );
 	Compute::Preload( SHADER_DEFFERED_OPAQUE_IBL );
 	Compute::Preload( SHADER_DEFFERED_OPAQUE_FULL );	
 }

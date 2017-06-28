@@ -77,7 +77,7 @@ float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint
 	// coords 
 	uint3 uavCoords = uint3(input.voxelCoords.xyz);
 	uavCoords.y += volumeData[0].volumeRes * 2 * input.planeId;
-	uavCoords.x += volumeData[0].volumeRes * currentLevel;
+	uavCoords.xy += volumeData[currentLevel].levelOffset;
 
 	if(!front)
 		uavCoords.y += volumeData[0].volumeRes;
