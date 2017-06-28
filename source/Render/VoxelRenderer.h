@@ -43,22 +43,33 @@ namespace EngineCore
 
 		float voxelDiag;
 		float voxelDiagRcp;
-		float worldSizeRcp;
-		float _padding0;
-
+		XMFLOAT2 levelOffset;
+		
 		XMFLOAT3 volumeOffset;
+		float worldSizeRcp;
+
+		XMFLOAT2 levelOffsetTex;
+		float _padding0;
+		float _padding1;
+	};
+
+	struct VolumeTraceData
+	{
 		uint32_t maxLevel;
+		uint32_t levelsCount;
+		float levelsCountRcp;
+		uint32_t clipmapCount;
 	};
 
 	struct VolumeDownsample
 	{
 		XMFLOAT3 writeOffset;
-		uint32_t clipmapOffset;
+		uint32_t _padding0;
 
 		uint32_t currentLevel;
 		uint32_t currentRes;
 		uint32_t currentResMore;
-		uint32_t levelOffset;
+		uint32_t _padding1;
 
 		XMFLOAT3 isShifted;
 		uint32_t _padding2;
@@ -130,6 +141,7 @@ namespace EngineCore
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
 
 		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
+		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
 
 		void RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
 
@@ -168,8 +180,8 @@ namespace EngineCore
 		StructBuf dirLightInjectBuffer;
 
 		Compute* voxelInjectLight;
-		Compute* voxelDownsample;
-		Compute* voxelDownsampleMove;
+		Compute* voxelDownsample[4];
+		Compute* voxelDownsampleMove[4];
 
 		ID3D11Texture2D* voxelizationDumb;
 		ID3D11RenderTargetView* voxelizationDumbRTV;
@@ -199,12 +211,14 @@ namespace EngineCore
 		
 		ID3D11Buffer* volumeMatBuffer;
 		ID3D11Buffer* volumeDataBuffer;
+		ID3D11Buffer* volumeTraceDataBuffer;
 		ID3D11Buffer* levelBuffer;
 
 		ID3D11Buffer* volumeLightInfo;
 		ID3D11Buffer* volumeDownsampleBuffer;
 
 		D3D11_VIEWPORT viewport;
+
 		VolumeData volumeData[VCT_MAX_COUNT];
 
 		ID3D11Buffer* instanceMatrixBuffer;

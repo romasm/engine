@@ -60,10 +60,15 @@ cbuffer materialBuffer : register(b1)
 	float _padding2;
 };
 
-cbuffer volumeBuffer : register(b2)
+cbuffer volumeBuffer0 : register(b2)
 {
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
+
+cbuffer volumeBuffer1 : register(b3)
+{ 
+	VolumeTraceData volumeTraceData;
+};   
 
 #include "tonemapping.hlsl"
 

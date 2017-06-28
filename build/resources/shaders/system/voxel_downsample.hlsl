@@ -11,12 +11,12 @@ cbuffer volumeBuffer : register(b0)
 cbuffer downsampleBuffer : register(b1)
 {
 	float3 writeOffset;
-	uint clipmapOffset;
+	uint _padding0;
 
 	uint currentLevel;
 	uint currentRes;
 	uint currentResMore;
-	uint levelOffset;
+	uint _padding1;
 
 	float3 isShifted;
 	uint _padding2;
@@ -57,20 +57,20 @@ static const uint perFaceOpacity[6][8] =
 	{0,1,2,3,0,1,2,3}
 };
 
+// DOWNSAMPLE
 Texture3D <float4> emittanceVolume : register(t0);  
 RWTexture3D <float4> downsampleVolumeRW : register(u0);  
 
-[numthreads( 8, 8, 4 )]
-void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
+void DownsampleEmittance(uint3 currentID)
 {
-	uint face = treadID.y / currentRes;
+	uint face = currentID.y / currentRes;
 	uint negative = face % 2;
 
-	uint3 voxelID = treadID;
-	voxelID.y = treadID.y % currentRes;
+	uint3 voxelID = currentID;
+	voxelID.y = currentID.y % currentRes;
 	voxelID *= 2;
 	voxelID.y += volumeData[0].volumeRes * face;
-	voxelID.x += volumeData[0].volumeRes * (currentLevel - 1);
+	voxelID.xy += volumeData[currentLevel - 1].levelOffset;
 
 	voxelID += (uint3)isShifted;
 
@@ -107,42 +107,39 @@ void DownsampleEmittance(uint3 treadID : SV_DispatchThreadID)
 	finalEmittance /= finalOpacity;
 	finalOpacity *= 0.25f;
 	
-	downsampleVolumeRW[treadID] = float4(finalEmittance, finalOpacity);
+	downsampleVolumeRW[currentID] = float4(finalEmittance, finalOpacity);
 }
 
-RWTexture3D <float4> emittanceVolumeRW : register(u0);  
-Texture3D <float4> downsampleVolume : register(t0);  
-
-[numthreads( 8, 8, 4 )]
-void DownsampleMove(uint3 treadID : SV_DispatchThreadID)
-{
-	uint3 emitID = treadID;
-
-	[branch]
-	if(any( isShifted * ((currentRes - 1) == treadID % currentRes) ))
-		return;
-
-	uint face = emitID.y / currentRes;
-	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
-	emitID.x += levelOffset; 
-	
-	// write shift
-	emitID += (uint3)writeOffset;
-	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
-}
-
-#define DOWNSAMPLE(x, y, z) \
-[numthreads( x, y, z )]void DownsampleMoveMip##x(uint3 treadID : SV_DispatchThreadID)\
-{\
-	uint3 emitID = treadID;\
-	uint face = emitID.y / currentRes;\
-	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);\
-	emitID.y += levelOffset; \
-	emitID.x += clipmapOffset; 	\
-	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));\
-}
+#define DOWNSAMPLE(x, y, z) [numthreads( x, y, z )] \
+void DownsampleEmittance##x(uint3 treadID : SV_DispatchThreadID) {DownsampleEmittance(treadID);}
 
 DOWNSAMPLE(8,8,4)
 DOWNSAMPLE(4,4,4)
 DOWNSAMPLE(2,2,2)
 DOWNSAMPLE(1,1,1)
+
+// MOVE DATA
+RWTexture3D <float4> emittanceVolumeRW : register(u0);  
+Texture3D <float4> downsampleVolume : register(t0);  
+
+void DownsampleMove(uint3 emitID)
+{
+	[branch]
+	if(any( isShifted * ( (currentRes - 1) == treadID % currentRes ) )) 
+		return;
+
+	uint face = emitID.y / currentRes;
+	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
+	emitID.xy += volumeData[currentLevel].levelOffset;
+
+	emitID += (uint3)writeOffset;
+	emittanceVolumeRW[emitID] = downsampleVolume.Load(int4(treadID, 0));
+}
+
+#define DOWNSAMPLE_MOVE(x, y, z) [numthreads( x, y, z )] \
+void DownsampleMove##x(uint3 treadID : SV_DispatchThreadID)	{DownsampleMove(treadID);}
+
+DOWNSAMPLE_MOVE(8,8,4)
+DOWNSAMPLE_MOVE(4,4,4)
+DOWNSAMPLE_MOVE(2,2,2)
+DOWNSAMPLE_MOVE(1,1,1)

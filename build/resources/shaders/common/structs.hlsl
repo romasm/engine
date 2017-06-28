@@ -127,11 +127,22 @@ struct VolumeData
 
 	float voxelDiag;
 	float voxelDiagRcp;
-	float worldSizeRcp;
-	float _padding0;
+	float2 levelOffset;
 
 	float3 volumeOffset;
+	float worldSizeRcp;
+
+	float2 levelOffsetTex;
+	float _padding0;
+	float _padding1;
+};
+
+struct VolumeTraceData
+{
 	uint maxLevel;
+	uint levelsCount;
+	float levelsCountRcp;
+	uint clipmapCount;
 };
 
 struct GBufferData

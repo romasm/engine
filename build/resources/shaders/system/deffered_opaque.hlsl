@@ -84,11 +84,15 @@ cbuffer lightsCount : register(b2)
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
 
-cbuffer volumeBuffer : register(b3)
+cbuffer volumeBuffer0 : register(b3)
 { 
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
+cbuffer volumeBuffer1 : register(b4)
+{ 
+	VolumeTraceData volumeTraceData;
+};
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)

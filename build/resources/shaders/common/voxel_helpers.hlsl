@@ -86,8 +86,6 @@ static const float diffuseConeWeightsCheap[4] =
 float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
 					  Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
-	uint levelCount = volumeData[0].maxLevel + 1;
-
 	float faces[3];
 	faces[0] = (direction.x >= 0) ? 0 : 1;
     faces[1] = (direction.y >= 0) ? 2 : 3;
@@ -108,7 +106,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 	uint startLevel;
 	[unroll]
-	for(startLevel = 0; startLevel < levelCount; startLevel++)
+	for(startLevel = 0; startLevel < volumeTraceData.clipmapCount; startLevel++)
 	{
 		float3 startCoords = (coneStart - volumeData[startLevel].cornerOffset) * volumeData[startLevel].worldSizeRcp;
 
@@ -119,25 +117,22 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 			break;
 	}
 
-	if( startLevel == levelCount )
+	if( startLevel == volumeTraceData.levelsCount )
 		return 0;
 
 	float distance = volumeData[startLevel].voxelSize;
 	float4 coneColor = 0;
 	float level = 0;
-
-	// temp 
-	float levelCountRcp = 1.0f / levelCount;
-	
+		
 	int i = 0;
 	[loop]
-	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel <= volumeData[0].maxLevel)
+	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel <= volumeTraceData.maxLevel)
     {
         float3 currentConePos = coneStart + direction * distance;
 
         float diameter = apertureDouble * distance;
         level = log2(diameter * volumeData[0].voxelSizeRcp);
-		level = clamp(level, startLevel, volumeData[0].maxLevel);
+		level = clamp(level, startLevel, volumeTraceData.maxLevel);
 		
 		float levelUpDown[2];
 		levelUpDown[0] = ceil(level);
@@ -167,8 +162,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
 		{
 			float3 coordsLevel = sampleCoords[voxelLevel];
-			coordsLevel.xy *= float2(levelCountRcp, VOXEL_FACE_COUNT_RCP);
-			coordsLevel.x += levelCountRcp * levelUpDown[voxelLevel];
+			coordsLevel.xy *= float2(volumeTraceData.levelsCountRcp, VOXEL_FACE_COUNT_RCP);
+			coordsLevel.xy += volumeData[levelUpDown[voxelLevel]].levelOffsetTex;
 
 			voxelSample[voxelLevel] = 0;
 			[unroll]
@@ -204,7 +199,6 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 {
 	collideWS = 0;
 	
-	uint levelCount = volumeData[0].maxLevel + 1;
 	uint currentLevel = minLevel;
 		
 	float3 epcilon = RAY_TRACE_EPCILON;
@@ -225,7 +219,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	
 	int i = 0;
 	[loop]
-	while( i < RAY_TRACE_MAX_I && currentLevel < levelCount )
+	while( i < RAY_TRACE_MAX_I && currentLevel < volumeTraceData.levelsCount )
 	{
 		float3 inVolumePoint = samplePoint - volumeData[currentLevel].cornerOffset;
 		
@@ -241,7 +235,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 		voxelSnap = floor(inVolumePoint * volumeData[currentLevel].scaleHelper);
 
 		int4 voxelCoords = int4(voxelSnap, 0);
-		voxelCoords.x += volumeData[currentLevel].volumeRes * currentLevel;
+		voxelCoords.xy += volumeData[currentLevel].levelOffset;
 		float anyValue = 0;
 		[unroll]
 		for(int j = 0; j < 6; j++)
@@ -273,7 +267,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	}
 	
 	[branch]
-	if( i == RAY_TRACE_MAX_I || currentLevel >= levelCount )
+	if( i == RAY_TRACE_MAX_I || currentLevel >= volumeTraceData.levelsCount )
 		return -1;
 
 	float3 voxelExtend = volumeData[currentLevel].voxelSize * 0.5f;
@@ -295,7 +289,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 
 	prevVoxel = (prevVoxel - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
 	prevVoxel.y += volumeData[currentLevel].volumeRes * faceID;
-	prevVoxel.x += volumeData[currentLevel].volumeRes * currentLevel;
+	prevVoxel.xy += volumeData[currentLevel].levelOffset;
 
 	return int4(prevVoxel, 0);	
 }

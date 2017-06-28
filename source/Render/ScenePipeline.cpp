@@ -778,6 +778,9 @@ void ScenePipeline::TransparentForwardStage()
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::PSSetConstantBuffers(5, 1, &volumeBuffer); 
+
+		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
+		Render::PSSetConstantBuffers(6, 1, &volumeBuffer); 
 	}
 
 	render_mgr->DrawTransparent(this);
@@ -1035,6 +1038,9 @@ void ScenePipeline::OpaqueDefferedStage()
 
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::CSSetConstantBuffers(3, 1, &volumeBuffer); 
+
+		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
+		Render::CSSetConstantBuffers(4, 1, &volumeBuffer); 
 	}
 		
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
@@ -1108,6 +1114,9 @@ void ScenePipeline::HDRtoLDRStage()
 	{
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
 		Render::PSSetConstantBuffers(2, 1, &volumeBuffer); 
+
+		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
+		Render::PSSetConstantBuffers(3, 1, &volumeBuffer); 
 	}
 
 	sp_HDRtoLDR->Draw();

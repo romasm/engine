@@ -74,11 +74,15 @@ cbuffer lightsCount : register(b4)
 
 #include "../common/transparency_helpers.hlsl"
 
-cbuffer volumeBuffer : register(b5)
+cbuffer volumeBuffer0 : register(b5)
 {
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
-   
+
+cbuffer volumeBuffer1 : register(b6)
+{ 
+	VolumeTraceData volumeTraceData;
+};   
             
 float4 MediumPS(PI_Mesh input, bool front: SV_IsFrontFace) : SV_TARGET
 {	 
