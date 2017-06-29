@@ -117,7 +117,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 			break;
 	}
 
-	if( startLevel == volumeTraceData.levelsCount )
+	if( startLevel == volumeTraceData.clipmapCount )
 		return 0;
 
 	float distance = volumeData[startLevel].voxelSize;
@@ -126,7 +126,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		
 	int i = 0;
 	[loop]
-	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel <= volumeTraceData.maxLevel)
+	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && startLevel < volumeTraceData.levelsCount)
     {
         float3 currentConePos = coneStart + direction * distance;
 
@@ -162,7 +162,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
 		{
 			float3 coordsLevel = sampleCoords[voxelLevel];
-			coordsLevel.xy *= float2(volumeTraceData.levelsCountRcp, VOXEL_FACE_COUNT_RCP);
+			coordsLevel.xy *= float2(volumeTraceData.xVolumeSizeRcp, VOXEL_FACE_COUNT_RCP);
 			coordsLevel.xy += volumeData[levelUpDown[voxelLevel]].levelOffsetTex;
 
 			voxelSample[voxelLevel] = 0;
@@ -242,7 +242,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 		for(int j = 0; j < 6; j++)
 		{
 			anyValue += voxelEmittance.Load(voxelCoords).w;
-			voxelCoords.y += volumeData[currentLevel].volumeRes;
+			voxelCoords.y += volumeData[0].volumeRes;
 		}
 		
 		voxelSnap *= volumeData[currentLevel].voxelSize;
@@ -289,7 +289,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	else faceID = ray.z < 0 ? 5 : 4;
 
 	prevVoxel = (prevVoxel - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
-	prevVoxel.y += volumeData[currentLevel].volumeRes * faceID;
+	prevVoxel.y += volumeData[0].volumeRes * faceID;
 	prevVoxel.xy += volumeData[currentLevel].levelOffset;
 
 	return int4(prevVoxel, 0);	

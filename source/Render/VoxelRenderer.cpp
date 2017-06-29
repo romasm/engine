@@ -163,7 +163,7 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumeData[i].scaleHelper = (float)volumeResolution / volumesConfig[i].worldSize;
 		volumeData[i].volumeRes = volumeResolution;
 		volumeData[i].levelOffset = XMFLOAT2((float)(volumeResolution * i), 0);
-		volumeData[i].levelOffsetTex = XMFLOAT2( fullXRes / volumeData[i].levelOffset.x, 0);
+		volumeData[i].levelOffsetTex = XMFLOAT2( volumeData[i].levelOffset.x / fullXRes, 0);
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / volumeResolution;
 		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
@@ -185,7 +185,7 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumeData[i].scaleHelper = (float)resolution / volumesConfig[i].worldSize;
 		volumeData[i].volumeRes = resolution;
 		volumeData[i].levelOffset = XMFLOAT2( (float)(volumeResolution * clipmapCount), (float)levelOffset );
-		volumeData[i].levelOffsetTex = XMFLOAT2( fullXRes / volumeData[i].levelOffset.x, fullYRes / volumeData[i].levelOffset.y );
+		volumeData[i].levelOffsetTex = XMFLOAT2( volumeData[i].levelOffset.x / fullXRes, volumeData[i].levelOffset.y / fullYRes );
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / resolution;
 		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
@@ -339,7 +339,7 @@ bool VoxelRenderer::initVoxelBuffers()
 
 	VolumeTraceData volumeTraceData;
 	volumeTraceData.levelsCount = clipmapCount + mipmapCount;
-	volumeTraceData.levelsCountRcp = 1.0f / volumeTraceData.levelsCount;
+	volumeTraceData.xVolumeSizeRcp = 1.0f / ( (float)clipmapCount + 0.5f );
 	volumeTraceData.maxLevel = volumeTraceData.levelsCount - 1;
 	volumeTraceData.clipmapCount = clipmapCount;
 	Render::UpdateDynamicResource(volumeTraceDataBuffer, &volumeTraceData, sizeof(VolumeTraceData));
@@ -349,7 +349,7 @@ bool VoxelRenderer::initVoxelBuffers()
 
 void VoxelRenderer::updateBuffers()
 {
-	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * clipmapCount);
+	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
 	
 	XMVECTOR camDirs[3];
 	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
@@ -362,7 +362,7 @@ void VoxelRenderer::updateBuffers()
 	camUps[2] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	VolumeMatrix matrixBuffer;
-	for(uint8_t level = 0; level < clipmapCount; level++)
+	for(uint16_t level = 0; level < clipmapCount; level++)
 	{
 		auto& bbox = volumesConfig[level].volumeBox;
 
@@ -540,7 +540,7 @@ void VoxelRenderer::ProcessEmittance()
 	threadCount[0] = currentRes / 8;
 	threadCount[1] = threadCount[0] * 6;
 	threadCount[2] = currentRes / 4;
-	for(uint32_t level = 1; level < clipmapCount; level++)
+	for(uint16_t level = 1; level < clipmapCount; level++)
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
 
@@ -564,7 +564,6 @@ void VoxelRenderer::ProcessEmittance()
 		
 		volumeDownsample.currentLevel = level;
 		volumeDownsample.currentRes = currentRes;
-		volumeDownsample.currentResMore = currentRes + 1;
 
 		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
 		
@@ -594,7 +593,7 @@ void VoxelRenderer::ProcessEmittance()
 	volumeDownsample.writeOffset.y = 0;
 	volumeDownsample.writeOffset.z = 0;
 	
-	for(uint32_t level = clipmapCount; level < mipmapCount; level++)
+	for(uint16_t level = clipmapCount; level < clipmapCount + mipmapCount; level++)
 	{
 		uint32_t shaderId = 0;
 		uint32_t temp = min(uint32_t(8), currentRes);
@@ -608,7 +607,6 @@ void VoxelRenderer::ProcessEmittance()
 		
 		volumeDownsample.currentLevel = level;
 		volumeDownsample.currentRes = currentRes;
-		volumeDownsample.currentResMore = currentRes + 1;
 
 		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
 
@@ -718,5 +716,17 @@ void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
 		XMStoreFloat3(&volumeData[i].volumeOffset, volumeOffset);
 
 		prevCornerOffset = corner;
+	}
+
+	uint16_t lastClipmap = clipmapCount - 1;
+	for(uint16_t i = clipmapCount; i < clipmapCount + mipmapCount; i++)
+	{
+		volumesConfig[i].volumeBox.Center = volumesConfig[lastClipmap].volumeBox.Center;
+		volumesConfig[i].corner = volumesConfig[lastClipmap].corner;
+
+		volumeData[i].cornerOffset = volumeData[lastClipmap].cornerOffset;
+		volumeData[i].volumeOffset.x = 0;
+		volumeData[i].volumeOffset.y = 0;
+		volumeData[i].volumeOffset.z = 0;
 	}
 }

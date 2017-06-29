@@ -11,15 +11,10 @@ cbuffer volumeBuffer : register(b0)
 cbuffer downsampleBuffer : register(b1)
 {
 	float3 writeOffset;
-	uint _padding0;
-
 	uint currentLevel;
-	uint currentRes;
-	uint currentResMore;
-	uint _padding1;
 
+	uint currentRes;
 	float3 isShifted;
-	uint _padding2;
 };
 
 static const uint3 voxelOffset[2][8] = 
@@ -127,10 +122,10 @@ inline void DownsampleMove(uint3 currentID)
 	uint3 emitID = currentID;
 	[branch]
 	if(any( isShifted * ( (currentRes - 1) == currentID % currentRes ) )) 
-		return;
+		return; 
 	
-	uint face = emitID.y / currentRes;
-	emitID.y = face * volumeData[0].volumeRes + (emitID.y % currentRes);
+	uint face = currentID.y / currentRes;
+	emitID.y = face * volumeData[0].volumeRes + (currentID.y % currentRes);
 	emitID.xy += volumeData[currentLevel].levelOffset;
 
 	emitID += (uint3)writeOffset;

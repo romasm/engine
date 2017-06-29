@@ -57,22 +57,17 @@ namespace EngineCore
 	{
 		uint32_t maxLevel;
 		uint32_t levelsCount;
-		float levelsCountRcp;
+		float xVolumeSizeRcp;
 		uint32_t clipmapCount;
 	};
 
 	struct VolumeDownsample
 	{
 		XMFLOAT3 writeOffset;
-		uint32_t _padding0;
-
 		uint32_t currentLevel;
-		uint32_t currentRes;
-		uint32_t currentResMore;
-		uint32_t _padding1;
 
+		uint32_t currentRes;
 		XMFLOAT3 isShifted;
-		uint32_t _padding2;
 	};
 
 	class SceneRenderMgr;

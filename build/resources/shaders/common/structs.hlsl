@@ -141,7 +141,7 @@ struct VolumeTraceData
 {
 	uint maxLevel;
 	uint levelsCount;
-	float levelsCountRcp;
+	float xVolumeSizeRcp;
 	uint clipmapCount;
 };
 
