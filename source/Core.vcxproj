@@ -81,15 +81,15 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -114,8 +114,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -127,7 +127,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -138,8 +138,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>

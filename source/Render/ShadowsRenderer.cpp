@@ -283,7 +283,7 @@ void ShadowsRenderer::RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_m
 	for(uint i=0; i<num; i++)
 		shm = shadowmap_array[shm.next];
 
-	Render::OMSetRenderTargets(0, nullptr, shadowsBufferDSV[min(shm.dsv, SHADOWS_BUF_SIZE-1)]);
+	Render::OMSetRenderTargets(0, nullptr, shadowsBufferDSV[std::min<uint8_t>(shm.dsv, SHADOWS_BUF_SIZE-1)]);
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = shm.x;
 	viewport.TopLeftY = shm.y;

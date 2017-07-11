@@ -181,8 +181,8 @@ bool Text::updateMatrix()
 int16_t Text::GetSymPos(uint16_t s) const 
 {
 	if(!symbolsPos) return 0;
-	if(s > symbolsCount) return max(0, symbolsPos[symbolsCount]);
-	return max(0, symbolsPos[s]);
+	if(s > symbolsCount) return std::max<int16_t>(0, symbolsPos[symbolsCount]);
+	return std::max<int16_t>(0, symbolsPos[s]);
 }
 
 uint16_t Text::GetClosestSym(uint16_t x) 

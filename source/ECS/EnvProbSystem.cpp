@@ -7,7 +7,7 @@ using namespace EngineCore;
 
 EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 {
-	maxCount = min(maxCount, ENTITY_COUNT);
+	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 	components.reserve(ENVPROBS_INIT_COUNT); // only dist for now
 

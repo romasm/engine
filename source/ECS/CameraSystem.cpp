@@ -9,7 +9,7 @@ using namespace EngineCore;
 CameraSystem::CameraSystem(BaseWorld* w, uint32_t maxCount)
 {
 	world = w;
-	maxCount = min(maxCount, ENTITY_COUNT);
+	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 	components.reserve(CAMERAS_INIT_COUNT);
 

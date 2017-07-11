@@ -9,7 +9,7 @@ ScriptSystem::ScriptSystem(BaseWorld* w, uint32_t maxCount)
 	world = w;
 	typeMgr = w->GetTypeMgr();
 	
-	maxCount = min(maxCount, ENTITY_COUNT);
+	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 }
 

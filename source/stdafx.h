@@ -76,3 +76,8 @@ using namespace luabridge;
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#undef max
+#undef min
+
+#include <reactphysics3d.h>

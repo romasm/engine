@@ -511,9 +511,9 @@ StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool 
 
 	XMFLOAT3 center = XMFLOAT3(0.5f * (posMin.x + posMax.x), 0.5f * (posMin.y + posMax.y), 0.5f * (posMin.z + posMax.z));
 	XMFLOAT3 extents = XMFLOAT3(posMax.x - center.x, posMax.y - center.y, posMax.z - center.z);
-	extents.x = max(extents.x, 0);
-	extents.y = max(extents.y, 0);
-	extents.z = max(extents.z, 0);
+	extents.x = std::max<float>(extents.x, 0);
+	extents.y = std::max<float>(extents.y, 0);
+	extents.z = std::max<float>(extents.z, 0);
 	stmesh->box = BoundingBox(center, extents);
 
 	if(convert)

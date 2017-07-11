@@ -14,7 +14,7 @@ StaticMeshSystem::StaticMeshSystem(BaseWorld* w, uint32_t maxCount)
 	visibilitySys = w->GetVisibilitySystem();
 	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
 
-	maxCount = min(maxCount, ENTITY_COUNT);
+	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 }
 

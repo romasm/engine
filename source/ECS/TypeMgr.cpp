@@ -10,7 +10,7 @@ TypeMgr::TypeMgr(BaseWorld* wld, uint32_t maxCount) :
 {
 	world = wld;
 
-	maxCount = min(ENTITY_COUNT, maxCount);
+	maxCount = std::min<uint32_t>(ENTITY_COUNT, maxCount);
 
 	typeOfEntity.create(maxCount);
 	typeOfEntity.resize(maxCount);
@@ -161,7 +161,7 @@ Entity TypeMgr::GetNextByType()
 
 NameMgr::NameMgr(uint32_t maxCount)
 {
-	maxCount = min(ENTITY_COUNT, maxCount);
+	maxCount = std::min<uint32_t>(ENTITY_COUNT, maxCount);
 
 	nameOfEntity.create(maxCount);
 	nameOfEntity.resize(maxCount);

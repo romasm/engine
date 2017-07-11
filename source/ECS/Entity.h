@@ -12,8 +12,8 @@ namespace EngineCore
 	public:
 		EntityMgr(uint32_t maxCount)
 		{
-			maxCount = min(ENTITY_COUNT, maxCount);
-			minFreeIdx = min(MINIMUM_FREE_INDICES, maxCount / 32);
+			maxCount = std::min<uint32_t>(ENTITY_COUNT, maxCount);
+			minFreeIdx = std::min<uint32_t>(MINIMUM_FREE_INDICES, maxCount / 32);
 
 			generation.create(maxCount);
 			generation.resize(maxCount);
