@@ -15,6 +15,9 @@ function EntityTypes.StaticModel:init(world, ent)
         self:Kill()
     end
     self.staticMeshSys:SetMaterial(self.ent, 0, AssetBrowser.nullMat)
+
+    -- temp
+    self.world.physics:AddComponent(self.ent)
 end
 
 function EntityTypes.StaticModel:SetMaterial(material, id)

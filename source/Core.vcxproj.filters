@@ -260,6 +260,9 @@
     <ClInclude Include="Common\Multithreading.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\PhysicsSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -427,6 +430,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ECS\SceneGraph.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\PhysicsSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
   </ItemGroup>

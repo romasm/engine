@@ -163,6 +163,7 @@
     <ClInclude Include="ECS\GlobalLightSystem.h" />
     <ClInclude Include="ECS\LightSystem.h" />
     <ClInclude Include="ECS\LineGeometrySystem.h" />
+    <ClInclude Include="ECS\PhysicsSystem.h" />
     <ClInclude Include="ECS\SceneGraph.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
@@ -244,6 +245,7 @@
     <ClCompile Include="ECS\GlobalLightSystem.cpp" />
     <ClCompile Include="ECS\LightSystem.cpp" />
     <ClCompile Include="ECS\LineGeometrySystem.cpp" />
+    <ClCompile Include="ECS\PhysicsSystem.cpp" />
     <ClCompile Include="ECS\SceneGraph.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />

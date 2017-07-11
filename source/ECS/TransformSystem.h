@@ -132,6 +132,7 @@ namespace EngineCore
 		{XMVECTOR v = GetVectPositionL(e); XMFLOAT3 res;
 			XMStoreFloat3(&res, v); return res;}
 
+		XMVECTOR GetQuatRotationL(Entity e);
 		XMFLOAT3 GetRotationL(Entity e);
 		inline XMVECTOR GetVectRotationL(Entity e)
 		{XMFLOAT3 res = GetRotationL(e); return XMLoadFloat3(&res);}
@@ -148,6 +149,7 @@ namespace EngineCore
 		{XMVECTOR v = GetVectPositionW(e); XMFLOAT3 res;
 			XMStoreFloat3(&res, v); return res;}
 
+		XMVECTOR GetQuatRotationW(Entity e);
 		XMFLOAT3 GetRotationW(Entity e);
 		inline XMVECTOR GetVectRotationW(Entity e)
 		{XMFLOAT3 res = GetRotationW(e); return XMLoadFloat3(&res);}

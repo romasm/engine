@@ -415,6 +415,14 @@ XMVECTOR TransformSystem::GetVectPositionL(Entity e)
 	return pos;
 }
 
+XMVECTOR TransformSystem::GetQuatRotationL(Entity e)
+{
+	GET_COMPONENT(XMVECTOR())
+		XMVECTOR pos, rot, scale;
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+	return rot;
+}
+
 XMFLOAT3 TransformSystem::GetRotationL(Entity e)
 {
 	GET_COMPONENT(XMFLOAT3())
@@ -443,6 +451,14 @@ XMVECTOR TransformSystem::GetVectPositionW(Entity e)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return pos;
+}
+
+XMVECTOR TransformSystem::GetQuatRotationW(Entity e)
+{
+	GET_COMPONENT(XMVECTOR())
+	XMVECTOR pos, rot, scale;
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
+	return rot;
 }
 
 XMFLOAT3 TransformSystem::GetRotationW(Entity e)

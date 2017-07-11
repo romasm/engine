@@ -20,6 +20,7 @@ BaseWorld::BaseWorld()
 
 void BaseWorld::SetDirty(Entity e)
 {
+	//m_physicsSystem->SetDirty(e);
 	m_transformSystem->SetDirty(e);
 }
 
@@ -29,7 +30,7 @@ void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 
 	if(m_earlyVisibilitySystem)
 		m_earlyVisibilitySystem->SetDirty(e);
-
+	
 	m_staticMeshSystem->SetDirty(e);
 	m_cameraSystem->SetDirty(e);
 	m_envProbSystem->SetDirty(e);
@@ -106,6 +107,7 @@ void BaseWorld::Close()
 	_DELETE(m_visibilitySystem);
 	_DELETE(m_earlyVisibilitySystem);
 	_DELETE(m_scriptSystem);
+	_DELETE(m_physicsSystem);
 
 	_DELETE(m_staticMeshSystem);
 	_DELETE(m_cameraSystem);
@@ -142,6 +144,7 @@ void BaseWorld::DestroyEntity(Entity e)
 		m_earlyVisibilitySystem->DeleteComponent(e);
 
 	m_scriptSystem->DeleteComponent(e);
+	m_physicsSystem->DeleteComponent(e);
 	m_staticMeshSystem->DeleteComponent(e);
 	m_cameraSystem->DeleteComponent(e);
 	m_controllerSystem->DeleteComponent(e);
@@ -181,6 +184,7 @@ Entity BaseWorld::CopyEntity(Entity e)
 		m_earlyVisibilitySystem->CopyComponent(e, newEnt);
 
 	m_scriptSystem->CopyComponent(e, newEnt);
+	m_physicsSystem->CopyComponent(e, newEnt);
 
 	m_staticMeshSystem->CopyComponent(e, newEnt);
 	m_cameraSystem->CopyComponent(e, newEnt);
@@ -469,6 +473,7 @@ World::World() : BaseWorld()
 	m_visibilitySystem = new VisibilitySystem(this, ENTITY_COUNT);
 	m_earlyVisibilitySystem = new EarlyVisibilitySystem(this, ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
@@ -558,6 +563,9 @@ void World::Frame()
 	// start update
 
 	m_scriptSystem->Update(m_dt);
+
+	m_physicsSystem->Simulate(m_dt);
+	m_physicsSystem->UpdateTransformations();
 	
 	m_sceneGraph->Update();
 
@@ -657,6 +665,7 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_transformSystem = new TransformSystem(this, SMALL_ENTITY_COUNT);
 	m_visibilitySystem = new VisibilitySystem(this, SMALL_ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, SMALL_ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
@@ -719,6 +728,9 @@ void SmallWorld::Frame()
 	// start update
 
 	m_scriptSystem->Update(m_dt);
+
+	m_physicsSystem->Simulate(m_dt);
+	m_physicsSystem->UpdateTransformations();
 	
 	m_sceneGraph->Update();
 	

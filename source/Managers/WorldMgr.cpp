@@ -50,6 +50,7 @@ WorldMgr::WorldMgr()
 		LightSystem::RegLuaClass();
 		GlobalLightSystem::RegLuaClass();
 		LineGeometrySystem::RegLuaClass();
+		PhysicsSystem::RegLuaClass();
 		ControllerSystem::RegLuaClass();
 
 		TransformControls::RegLuaClass();

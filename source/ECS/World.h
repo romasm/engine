@@ -19,6 +19,8 @@
 #include "GlobalLightSystem.h"
 #include "TypeMgr.h"
 #include "ScriptSystem.h"
+#include "PhysicsSystem.h"
+
 #include "Frustum.h"
 #include "TransformControls.h"
 #include "SceneGraph.h"
@@ -126,6 +128,7 @@ namespace EngineCore
 		inline ShadowSystem* GetShadowSystem() const {return m_shadowSystem;}
 		inline GlobalLightSystem* GetGlobalLightSystem() const {return m_globalLightSystem;}
 		inline ScriptSystem* GetScriptSystem() const {return m_scriptSystem;}
+		inline PhysicsSystem* GetPhysicsSystem() const {return m_physicsSystem;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
 		inline NameMgr* GetNameMgr() const {return m_nameMgr;}
@@ -260,6 +263,7 @@ namespace EngineCore
 					.addProperty("lineGeometry", &BaseWorld::GetLineGeometrySystem)
 					.addProperty("controller", &BaseWorld::GetControllerSystem)
 					.addProperty("script", &BaseWorld::GetScriptSystem)
+					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
 				.endClass();
@@ -302,6 +306,7 @@ namespace EngineCore
 		ShadowSystem* m_shadowSystem;
 		GlobalLightSystem* m_globalLightSystem;
 		ScriptSystem* m_scriptSystem;
+		PhysicsSystem* m_physicsSystem;
 
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;
