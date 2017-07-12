@@ -60,6 +60,7 @@ void PhysicsSystem::Simulate(float dt)
 		Transform transform(position, rotation);
 
 		i.body->setTransform(transform);
+		i.body->setIsSleeping(false);
 
 		i.dirty = false;
 	}
@@ -99,7 +100,7 @@ void PhysicsSystem::UpdateTransformations()
 		XMVECTOR quat = XMVectorSet(rot.x, rot.y, rot.z, rot.w);
 		transformSystem->SetRotation(e, quat);
 
-		transformSystem->SetDirty(e);
+		i.dirty = false;
 	}
 }
 

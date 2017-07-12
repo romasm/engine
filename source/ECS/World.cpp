@@ -20,12 +20,13 @@ BaseWorld::BaseWorld()
 
 void BaseWorld::SetDirty(Entity e)
 {
-	//m_physicsSystem->SetDirty(e);
 	m_transformSystem->SetDirty(e);
 }
 
 void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 {
+	m_physicsSystem->SetDirty(e);
+
 	m_visibilitySystem->SetDirty(e);
 
 	if(m_earlyVisibilitySystem)
