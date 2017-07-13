@@ -61,7 +61,7 @@ function GuiDataSlider:init(props)
         },
     }
     
-    self._base.init(self, props)
+    self:base(GuiDataSlider).init(self, props)
     
     self.btn_slider = GuiButton(self.slider)
     self.entity:AttachChild(self.btn_slider.entity)

@@ -233,9 +233,6 @@
     <Compile Include="..\App\Viewport.lua">
       <Link>App\Viewport.lua</Link>
     </Compile>
-    <Compile Include="..\App\WinTable.lua">
-      <Link>App\WinTable.lua</Link>
-    </Compile>
     <Compile Include="..\class.lua">
       <Link>class.lua</Link>
     </Compile>
@@ -256,6 +253,9 @@
     </Compile>
     <Compile Include="..\Entities\LocalLight.lua">
       <Link>Entities\LocalLight.lua</Link>
+    </Compile>
+    <Compile Include="..\Entities\PhysicsModel.lua">
+      <Link>Entities\PhysicsModel.lua</Link>
     </Compile>
     <Compile Include="..\Entities\StaticModel.lua">
       <Link>Entities\StaticModel.lua</Link>

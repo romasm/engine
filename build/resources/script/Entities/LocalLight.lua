@@ -1,7 +1,7 @@
 if not EntityTypes.LocalLight then EntityTypes.LocalLight = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.LocalLight:init(world, ent)
-    if not self._base.init(self, world, ent) then return end
+    if not self:base(EntityTypes.LocalLight).init(self, world, ent) then return false end
 
     self.world:SetEntityType(self.ent, "LocalLight")
 
@@ -19,6 +19,8 @@ function EntityTypes.LocalLight:init(world, ent)
     self.lightSys:UpdateLightProps(self.ent)
 
     self:editor_init()
+
+    return true
 end
 
 function EntityTypes.LocalLight:editor_init()

@@ -26,7 +26,7 @@ function GuiGroup:init(props, no_background)
         width = 0
     }
 
-    --replace self._base.init(self, props)
+    --replace self:base(GuiGroup).init(self, props)
     self.entity = HEntity()
     self.entity:Create()
     

@@ -25,7 +25,7 @@ return GuiMenu({
             id = "vp_create_sub",
     
             width = 135,
-            height = 100, 
+            height = 125, 
     
             offset = {x = 250, y = -25},
 
@@ -38,22 +38,29 @@ return GuiMenu({
 
             GuiButton({
                 styles = {GuiStyles.menu_button_default,},
-                id = "vp_create_light",
+                id = "vp_create_physics",
                 top = 25,
+                text = {str = "Physics model",},
+            }),
+
+            GuiButton({
+                styles = {GuiStyles.menu_button_default,},
+                id = "vp_create_light",
+                top = 50,
                 text = {str = "Light",},
             }),
 
             GuiButton({
                 styles = {GuiStyles.menu_button_default,},
                 id = "vp_create_glight",
-                top = 50,
+                top = 75,
                 text = {str = "Global light",},
             }),
 
             GuiButton({
                 styles = {GuiStyles.menu_button_default,},
                 id = "vp_player",
-                top = 75,
+                top = 100,
                 text = {str = "Player",},
             }),
         }),

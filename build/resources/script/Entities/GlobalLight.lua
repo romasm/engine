@@ -1,7 +1,7 @@
 if not EntityTypes.GlobalLight then EntityTypes.GlobalLight = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.GlobalLight:init(world, ent)
-    if not self._base.init(self, world, ent) then return end
+    if not self:base(EntityTypes.GlobalLight).init(self, world, ent) then return false end
     
     self.world:SetEntityType(self.ent, "GlobalLight")
 
@@ -16,6 +16,8 @@ function EntityTypes.GlobalLight:init(world, ent)
     self.globalLightSys:SetArea(self.ent, 0.0094)
     
     self:editor_init()
+
+    return true
 end
 
 function EntityTypes.GlobalLight:editor_init()

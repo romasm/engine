@@ -11,9 +11,9 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, uint32_t maxCount)
 	physWorld = new rp3d::DynamicsWorld(defaultGravity);
 
 	// temp floor
-	bodyFloor = physWorld->createRigidBody(rp3d::Transform::identity());
+	bodyFloor = physWorld->createRigidBody(rp3d::Transform(Vector3(0, -1.0f, 0), Quaternion()));
 	bodyFloor->setType(rp3d::STATIC);
-	shapeFloor = new rp3d::BoxShape(Vector3(100.0f, 0.1f, 100.0f));
+	shapeFloor = new rp3d::BoxShape(Vector3(100.0f, 1.0f, 100.0f));
 	bodyFloor->addCollisionShape(shapeFloor, rp3d::Transform::identity(), 10.0f);
 	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
@@ -38,23 +38,26 @@ PhysicsSystem::~PhysicsSystem()
 	_DELETE(physWorld);
 }
 
-void PhysicsSystem::Simulate(float dt)
+void PhysicsSystem::UpdateTransformations()
 {
-	// update physics transform
 	for(auto& i: *components.data())
 	{
 		if(!i.dirty)
 			continue;
 
 		Entity e = i.get_entity();
+
+		i.previousTransform = transformSystem->GetTransformL(e);
+		i.body->setTransform(i.previousTransform);
 		
-		i.body->setTransform(transformSystem->GetTransformL(e));
 		i.body->setIsSleeping(false);
 
 		i.dirty = false;
 	}
+}
 
-	// simulation
+void PhysicsSystem::Simulate(float dt)
+{
 	updateAccum += dt; 
 	while( updateAccum >= PHYSICS_TIME_STEP_MS )
 	{
@@ -65,11 +68,11 @@ void PhysicsSystem::Simulate(float dt)
 	interpolationFactor = updateAccum / PHYSICS_TIME_STEP_MS;
 }
 
-void PhysicsSystem::UpdateTransformations()
+void PhysicsSystem::UpdateSceneGraph()
 {
 	for(auto& i: *components.data())
 	{
-		if( !i.body->isActive() || i.body->isSleeping() )
+		if( !i.body->isActive() || i.body->isSleeping() || i.body->getType() == rp3d::STATIC )
 			continue;
 
 		const rp3d::Transform& currentTransform = i.body->getTransform();
@@ -126,6 +129,18 @@ bool PhysicsSystem::SetDirty(Entity e)
 	GET_COMPONENT(false);
 	comp.dirty = true;
 	return true;
+}
+
+void PhysicsSystem::SetType(Entity e, int32_t type)
+{
+	GET_COMPONENT(void());
+	comp.body->setType(rp3d::BodyType(type));
+}
+
+int32_t PhysicsSystem::GetType(Entity e)
+{
+	GET_COMPONENT(-1);
+	return (int32_t)comp.body->getType();
 }
 
 uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)

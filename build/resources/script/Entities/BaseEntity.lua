@@ -161,7 +161,7 @@ end
 if not EntityTypes.Node then EntityTypes.Node = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.Node:init(world, ent)
-    if not self._base.init(self, world, ent) then 
+    if not self:base(EntityTypes.Node).init(self, world, ent) then 
         return 
     end
 

@@ -52,7 +52,7 @@ function GuiButton:init(props)
         font = ""
     }
     
-    self._base.init(self, props)
+    self:base(GuiButton).init(self, props)
     
     local is_bg = self.background.color.w + self.background.color_nonactive.w + 
         self.background.color_hover.w + self.background.color_press.w

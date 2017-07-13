@@ -85,7 +85,7 @@ function GuiWindow:init(props)
         width = 0
     }
     
-    self._base.init(self, props)
+    self:base(GuiWindow).init(self, props)
     
     if self.independent == true then
         self.sys_win = CoreGui.SysWindows.Create()

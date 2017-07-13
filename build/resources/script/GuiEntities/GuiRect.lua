@@ -15,7 +15,7 @@ function GuiRect:init(props)
     
     self.material = {shader = RECT_MAT}
 
-    self._base.init(self, props)
+    self:base(GuiRect).init(self, props)
     
     self.rect = self.entity:AddRect(self.material.shader)
     self.rect_mat = self:SetRectMaterial(self.rect, self.material)

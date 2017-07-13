@@ -1,9 +1,9 @@
 if not EntityTypes.TestEnt then EntityTypes.TestEnt = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.TestEnt:init(world, ent)
-    if not self._base.init(self, world, ent) then 
+    if not self:base(EntityTypes.TestEnt).init(self, world, ent) then 
         self:initVars()
-        return 
+        return false
     end
 
     self:initVars()
@@ -18,6 +18,8 @@ function EntityTypes.TestEnt:init(world, ent)
     -- temp
     self.world.visibility:AddComponent(self.ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
+
+    return true
 end
 
 function EntityTypes.TestEnt:initVars()

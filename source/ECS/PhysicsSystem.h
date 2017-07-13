@@ -72,6 +72,7 @@ namespace EngineCore
 		
 		void Simulate(float dt);
 		void UpdateTransformations();
+		void UpdateSceneGraph();
 
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
@@ -79,7 +80,8 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		ALIGNED_ALLOCATION
+		void SetType(Entity e, int32_t type);
+		int32_t GetType(Entity e);
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
@@ -87,6 +89,9 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<PhysicsSystem>("PhysicsSystem")
+					.addFunction("SetType", &PhysicsSystem::SetType)
+					.addFunction("GetType", &PhysicsSystem::GetType)
+
 					.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 					.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
 					.addFunction("HasComponent", &PhysicsSystem::HasComponent)

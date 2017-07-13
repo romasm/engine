@@ -58,7 +58,7 @@ function GuiCombo:init(props)
         length = 64
     }
     
-    -- replace self._base.init(self, props)
+    -- replace self:base(GuiCombo).init(self, props)
     self.entity = HEntity()
     self.entity:Create()
     

@@ -20,7 +20,7 @@ function GuiCheckGroup:GetCheck()
 end
 
 function GuiCheckGroup:init(props)
-    --replace self._base.init(self, props)
+    --replace self:base(GuiCheckGroup).init(self, props)
     self.entity = HEntity()
     self.entity:Create()
     

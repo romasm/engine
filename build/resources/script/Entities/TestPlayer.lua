@@ -1,9 +1,9 @@
 if not EntityTypes.TestPlayer then EntityTypes.TestPlayer = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.TestPlayer:init(world, ent)
-    if not self._base.init(self, world, ent) then 
+    if not self:base(EntityTypes.TestPlayer).init(self, world, ent) then 
         self:initVars()
-        return 
+        return false
     end
 
     self:initVars()
@@ -21,12 +21,17 @@ function EntityTypes.TestPlayer:init(world, ent)
     -- temp
     self.world.visibility:AddComponent(self.ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
+        
+    self.world.physics:AddComponent(self.ent)
+    self.world.physics:SetType(self.ent, PHYSICS_TYPES.KINEMATIC)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)
     self.camera:SetPosition(0.0, 1.8, 0.0)
     self.camera:SetFov(1.3)
     self.camera:Attach(self)
+
+    return true
 end
 
 function EntityTypes.TestPlayer:initVars()

@@ -11,7 +11,7 @@ function GuiFilefield:init(props)
     self.ChildBrowse = {}
     self.ChildDelete = {}
     
-    self._base.init(self, props)
+    self:base(GuiFilefield).init(self, props)
     
     if self.allow_none then
         self.ChildDelete.align = GUI_ALIGN.RIGHT

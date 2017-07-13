@@ -40,7 +40,7 @@ function GuiCheck:init(props)
         font = ""
     }
     
-    self._base.init(self, props)
+    self:base(GuiCheck).init(self, props)
     
     self.group_id = 0
 

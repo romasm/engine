@@ -1,7 +1,7 @@
 if not EntityTypes.StaticModel then EntityTypes.StaticModel = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.StaticModel:init(world, ent)
-    if not self._base.init(self, world, ent) then return end
+    if not self:base(EntityTypes.StaticModel).init(self, world, ent) then return false end
 
     self.world:SetEntityType(self.ent, "StaticModel")
 
@@ -15,9 +15,8 @@ function EntityTypes.StaticModel:init(world, ent)
         self:Kill()
     end
     self.staticMeshSys:SetMaterial(self.ent, 0, AssetBrowser.nullMat)
-
-    -- temp
-    self.world.physics:AddComponent(self.ent)
+    
+    return true
 end
 
 function EntityTypes.StaticModel:SetMaterial(material, id)

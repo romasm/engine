@@ -289,7 +289,7 @@ function GuiTextfield:init(props)
         decimal = 0
     }
 
-    self._base.init(self, props)
+    self:base(GuiTextfield).init(self, props)
     
     self.bgrect = self.entity:AddRect(BG_MAT)
     self.bgrect_mat = self:SetRectMaterial(self.bgrect)

@@ -70,7 +70,7 @@ function GuiMenu:Open(x, y)
         self.closed = false
         self.is_hide = false
 
-        --self._base.init(self, self.props)
+        --self:base(GuiMenu).init(self, self.props)
         --self.entity = HEntity()
         self.entity:Create()
     

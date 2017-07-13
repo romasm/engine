@@ -45,7 +45,7 @@ function GuiSlider:init(props)
     self.slider = {}
     self.axis = {}
     
-    self._base.init(self, props)
+    self:base(GuiSlider).init(self, props)
     
     self.btn_axis = GuiButton(self.axis)
     self.entity:AttachChild(self.btn_axis.entity)

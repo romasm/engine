@@ -30,7 +30,6 @@ local function _isnot_instance()
    return false
 end
 
-
 -- clear a class object that can be inherited from
 -- base is a base class.
 function class(base)
@@ -79,6 +78,15 @@ function class(base)
       end
       return false
    end
+
+    c.base = function(self, klass)
+        local m = getmetatable(self)
+        while m do
+            if m == klass then return m._base end
+            m = m._base
+        end
+        return nil
+    end
 
    -- mixin is added to the class. klass is a class that supports
    -- the mixin methods:

@@ -279,6 +279,10 @@ function Viewport:MenuClick(ent, ev) -- to history
     if ev.id == "vp_create_static" then
         local stmodel = EntityTypes.StaticModel(self.lua_world.world)
         self:PlaceAndSelect(stmodel.ent, self.prev_coords)
+        
+    elseif ev.id == "vp_create_physics" then
+        local phymodel = EntityTypes.PhysicsModel(self.lua_world.world)
+        self:PlaceAndSelect(phymodel.ent, self.prev_coords)
 
     elseif ev.id == "vp_create_light" then
         local light = EntityTypes.LocalLight(self.lua_world.world)

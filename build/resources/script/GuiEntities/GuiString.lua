@@ -14,7 +14,7 @@ function GuiString:init(props)
     self.color = Vector4(0.0, 0.0, 0.0, 1.0)
     self.color_nonactive = Vector4(0.0, 0.0, 0.0, 1.0)
     
-    self._base.init(self, props)
+    self:base(GuiString).init(self, props)
     
     if self.font:len() == 0 or 
         (self.str:len() == 0 and self.static) or 

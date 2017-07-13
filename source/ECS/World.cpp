@@ -565,8 +565,9 @@ void World::Frame()
 
 	m_scriptSystem->Update(m_dt);
 
-	m_physicsSystem->Simulate(m_dt);
 	m_physicsSystem->UpdateTransformations();
+	m_physicsSystem->Simulate(m_dt);
+	m_physicsSystem->UpdateSceneGraph();
 	
 	m_sceneGraph->Update();
 
@@ -730,8 +731,9 @@ void SmallWorld::Frame()
 
 	m_scriptSystem->Update(m_dt);
 
-	m_physicsSystem->Simulate(m_dt);
 	m_physicsSystem->UpdateTransformations();
+	m_physicsSystem->Simulate(m_dt);
+	m_physicsSystem->UpdateSceneGraph();
 	
 	m_sceneGraph->Update();
 	

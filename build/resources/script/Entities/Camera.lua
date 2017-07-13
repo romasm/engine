@@ -1,7 +1,7 @@
 if not EntityTypes.Camera then EntityTypes.Camera = class(EntityTypes.BaseEntity) end
 
 function EntityTypes.Camera:init(world, ent)
-    if not self._base.init(self, world, ent) then return end
+    if not self:base(EntityTypes.Camera).init(self, world, ent) then return false end
 
     self.world:SetEntityType(self.ent, "Camera")
 
@@ -17,6 +17,8 @@ function EntityTypes.Camera:init(world, ent)
     self.cameraSys:SetNear(self.ent, 0.1)
 
     -- editor: todo
+
+    return true
 end
 
 function EntityTypes.Camera:SetFov(fov)
