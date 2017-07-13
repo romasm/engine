@@ -326,24 +326,24 @@ uint32_t LightSystem::Serialize(Entity e, uint8_t* data)
 	*(bool*)t_data = comp.active;
 	t_data += sizeof(bool);
 	size += sizeof(bool);
-	*(XMFLOAT3*)t_data = comp.color;
-	t_data += sizeof(XMFLOAT3);
-	size += sizeof(XMFLOAT3);
+	*(Vector3*)t_data = comp.color;
+	t_data += sizeof(Vector3);
+	size += sizeof(Vector3);
 	*(float*)t_data = comp.brightness;
 	t_data += sizeof(float);
 	size += sizeof(float);
-	*(XMFLOAT2*)t_data = comp.area;
-	t_data += sizeof(XMFLOAT2);	
-	size += sizeof(XMFLOAT2);
+	*(Vector2*)t_data = comp.area;
+	t_data += sizeof(Vector2);	
+	size += sizeof(Vector2);
 	*t_data = comp.type;
 	t_data += sizeof(uint8_t);	
 	size += sizeof(uint8_t);
 	*(float*)t_data = comp.range;
 	t_data += sizeof(float);	
 	size += sizeof(float);
-	*(XMFLOAT2*)t_data = comp.cone;
-	t_data += sizeof(XMFLOAT2);	
-	size += sizeof(XMFLOAT2);
+	*(Vector2*)t_data = comp.cone;
+	t_data += sizeof(Vector2);	
+	size += sizeof(Vector2);
 	*(bool*)t_data = comp.cast_shadows;
 	t_data += sizeof(bool);	
 	size += sizeof(bool);
@@ -363,24 +363,24 @@ uint32_t LightSystem::Deserialize(Entity e, uint8_t* data)
 	comp.active = *(bool*)t_data;
 	t_data += sizeof(bool);
 	size += sizeof(bool);
-	comp.color = *(XMFLOAT3*)t_data;
-	t_data += sizeof(XMFLOAT3);
-	size += sizeof(XMFLOAT3);
+	comp.color = *(Vector3*)t_data;
+	t_data += sizeof(Vector3);
+	size += sizeof(Vector3);
 	comp.brightness = *(float*)t_data;
 	t_data += sizeof(float);
 	size += sizeof(float);
-	comp.area = *(XMFLOAT2*)t_data;
-	t_data += sizeof(XMFLOAT2);
-	size += sizeof(XMFLOAT2);
+	comp.area = *(Vector2*)t_data;
+	t_data += sizeof(Vector2);
+	size += sizeof(Vector2);
 	comp.type = *(uint8_t*)t_data;
 	t_data += sizeof(uint8_t);
 	size += sizeof(uint8_t);
 	comp.range = *(float*)t_data;
 	t_data += sizeof(float);
 	size += sizeof(float);
-	comp.cone = *(XMFLOAT2*)t_data;
-	t_data += sizeof(XMFLOAT2);
-	size += sizeof(XMFLOAT2);
+	comp.cone = *(Vector2*)t_data;
+	t_data += sizeof(Vector2);
+	size += sizeof(Vector2);
 	comp.cast_shadows = *(bool*)t_data;
 	t_data += sizeof(bool);
 	size += sizeof(bool);
@@ -422,16 +422,16 @@ uint8_t LightSystem::GetType(Entity e)
 	return comp.type;
 }
 
-bool LightSystem::SetColor(Entity e, XMFLOAT3 color)
+bool LightSystem::SetColor(Entity e, Vector3 color)
 {
 	GET_COMPONENT(false)
 	comp.color = color;
 	comp.dirty = true;
 	return true;
 }
-XMFLOAT3 LightSystem::GetColor(Entity e)
+Vector3 LightSystem::GetColor(Entity e)
 {
-	GET_COMPONENT(XMFLOAT3())
+	GET_COMPONENT(Vector3())
 	return comp.color;
 }
 
@@ -662,7 +662,7 @@ void LightSystem::UpdateLightProps(Entity e)
 		frust.Transform(frust, XMMatrixTranslation(0, 0, -comp.virt_clip) * XMMatrixRotationRollPitchYaw(XM_PIDIV2, 0, 0));
 
 		earlyVisibilitySys->SetBFrustum(comp.get_entity(), frust);
-		earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(XMFLOAT3(0,0,0), comp.range));
+		earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(Vector3(0,0,0), comp.range));
 	}
 	else
 	{
@@ -689,7 +689,7 @@ void LightSystem::UpdateLightProps(Entity e)
 		updatePoint(comp);
 	
 		earlyVisibilitySys->SetType(comp.get_entity(), BoundingType::BT_SPHERE);
-		earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(XMFLOAT3(0,0,0), comp.range));
+		earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(Vector3(0,0,0), comp.range));
 	}
 
 	comp.farNearData.x = SHADOW_NEARCLIP + comp.virt_clip;

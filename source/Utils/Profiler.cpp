@@ -198,22 +198,22 @@ void Profiler::GPU_EndFrame()
 	++querySwitch &= 1;
 }
 
-XMFLOAT2 Profiler::GetCurrentTimeSlice(uint32_t id, uint32_t thread) 
+Vector2 Profiler::GetCurrentTimeSlice(uint32_t id, uint32_t thread) 
 {
 	int32_t frame_id = (int32_t)currentFrameID - PERF_FRAMES_OFFSET;
 	if(frame_id < 0)
 		frame_id = PERF_FRAMES_DUMP + frame_id;
 	auto& id_slice = perf_data[id][thread][frame_id];
-	return XMFLOAT2(id_slice.begin, id_slice.length);
+	return Vector2(id_slice.begin, id_slice.length);
 }
 
-XMFLOAT2 Profiler::GetGpuCurrentTimeSlice(uint32_t id)
+Vector2 Profiler::GetGpuCurrentTimeSlice(uint32_t id)
 {
 	int32_t frame_id = (int32_t)currentFrameID - PERF_FRAMES_OFFSET;
 	if(frame_id < 0)
 		frame_id = PERF_FRAMES_DUMP + frame_id;
 	auto& id_slice = gpu_perf_data[id][frame_id];
-	return XMFLOAT2(id_slice.begin, id_slice.length);
+	return Vector2(id_slice.begin, id_slice.length);
 }
 
 void Profiler::GPU_GrabData()

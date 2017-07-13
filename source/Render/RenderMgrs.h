@@ -184,25 +184,25 @@ namespace EngineCore
 			skyEP.matrix = envRot;
 		}
 
-		bool RegSpotLight(XMFLOAT4& color, float range, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir);
-		bool RegSpotLightDisk(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos);
-		bool RegSpotLightRect(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos);
+		bool RegSpotLight(Vector4& color, float range, Vector2& cone, Vector3& pos, Vector3& dir);
+		bool RegSpotLightDisk(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& virtpos);
+		bool RegSpotLightRect(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos);
 
-		bool RegPointLight(XMFLOAT4& color, float range, XMFLOAT3& pos);
-		bool RegPointLightSphere(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT3& pos);
-		bool RegPointLightTube(XMFLOAT4& color, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir);
+		bool RegPointLight(Vector4& color, float range, Vector3& pos);
+		bool RegPointLightSphere(Vector4& color, float range, Vector3& area, Vector3& pos);
+		bool RegPointLightTube(Vector4& color, float range, Vector3& area, Vector3& pos, Vector3& dir);
 
-		bool RegDirLight(XMFLOAT4& color, XMFLOAT2& area, XMFLOAT3& dir, XMMATRIX* view_proj, XMFLOAT3* pos, uint64_t id);
+		bool RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XMMATRIX* view_proj, Vector3* pos, uint64_t id);
 		
-		bool RegSpotCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT4& farNear, CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
-		bool RegSpotCasterDisk(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& virtpos, XMFLOAT4& farNear, 
+		bool RegSpotCaster(Vector4& color, Vector4& nonAreaColor, float range, Vector2& cone, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
+		bool RegSpotCasterDisk(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& virtpos, Vector4& farNear, 
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
-		bool RegSpotCasterRect(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT2& cone, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT3& up, XMFLOAT3& side, XMFLOAT3& virtpos, XMFLOAT4& farNear,
+		bool RegSpotCasterRect(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos, Vector4& farNear,
 			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
 
-		bool RegPointCaster(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& pos, XMFLOAT4& farNear, CXMMATRIX proj, uint64_t id);
-		bool RegPointCasterSphere(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT4& farNear, CXMMATRIX proj, uint64_t id);
-		bool RegPointCasterTube(XMFLOAT4& color, XMFLOAT4& nonAreaColor, float range, XMFLOAT3& area, XMFLOAT3& pos, XMFLOAT3& dir, XMFLOAT4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
+		bool RegPointCaster(Vector4& color, Vector4& nonAreaColor, float range, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
+		bool RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
+		bool RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);

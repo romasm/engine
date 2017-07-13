@@ -113,15 +113,15 @@ namespace EngineCore
 		{m_instance->m_pImmediateContext->Unmap(pResource, Subresource);}
 
 		// RTV
-		inline static void ClearUnorderedAccessViewFloat(ID3D11UnorderedAccessView *pUnorderedAccessView, XMFLOAT4 ColorRGBA)
+		inline static void ClearUnorderedAccessViewFloat(ID3D11UnorderedAccessView *pUnorderedAccessView, Vector4 ColorRGBA)
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
 		m_instance->m_pImmediateContext->ClearUnorderedAccessViewFloat(pUnorderedAccessView, color);}
 
-		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, XMFLOAT4 ColorRGBA)
+		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, Vector4 ColorRGBA)
 		{const UINT color[4] = {UINT(ColorRGBA.x), UINT(ColorRGBA.y), UINT(ColorRGBA.z), UINT(ColorRGBA.w)};
 		m_instance->m_pImmediateContext->ClearUnorderedAccessViewUint(pUnorderedAccessView, color);}
 
-		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, XMFLOAT4 ColorRGBA)
+		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, Vector4 ColorRGBA)
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
 		m_instance->m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, color);}
 

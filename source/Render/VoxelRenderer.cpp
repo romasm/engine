@@ -156,14 +156,14 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumesConfig[i].worldSize = volumeSize * pow(2.0f, (float)i);
 		volumesConfig[i].voxelSize = volumesConfig[i].worldSize / volumeResolution;
 		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
-		volumesConfig[i].volumeBox.Extents = XMFLOAT3(halfWorldSize, halfWorldSize, halfWorldSize);
+		volumesConfig[i].volumeBox.Extents = Vector3(halfWorldSize, halfWorldSize, halfWorldSize);
 
 		volumeData[i].worldSize = volumesConfig[i].worldSize;
 		volumeData[i].worldSizeRcp = 1.0f / volumesConfig[i].worldSize;
 		volumeData[i].scaleHelper = (float)volumeResolution / volumesConfig[i].worldSize;
 		volumeData[i].volumeRes = volumeResolution;
-		volumeData[i].levelOffset = XMFLOAT2((float)(volumeResolution * i), 0);
-		volumeData[i].levelOffsetTex = XMFLOAT2( volumeData[i].levelOffset.x / fullXRes, 0);
+		volumeData[i].levelOffset = Vector2((float)(volumeResolution * i), 0);
+		volumeData[i].levelOffsetTex = Vector2( volumeData[i].levelOffset.x / fullXRes, 0);
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / volumeResolution;
 		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
@@ -178,14 +178,14 @@ void VoxelRenderer::calcVolumesConfigs()
 		volumesConfig[i].worldSize = volumesConfig[clipmapCount - 1].worldSize;
 		volumesConfig[i].voxelSize = volumesConfig[i].worldSize / resolution;
 		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
-		volumesConfig[i].volumeBox.Extents = XMFLOAT3(halfWorldSize, halfWorldSize, halfWorldSize);
+		volumesConfig[i].volumeBox.Extents = Vector3(halfWorldSize, halfWorldSize, halfWorldSize);
 
 		volumeData[i].worldSize = volumesConfig[i].worldSize;
 		volumeData[i].worldSizeRcp = 1.0f / volumesConfig[i].worldSize;
 		volumeData[i].scaleHelper = (float)resolution / volumesConfig[i].worldSize;
 		volumeData[i].volumeRes = resolution;
-		volumeData[i].levelOffset = XMFLOAT2( (float)(volumeResolution * clipmapCount), (float)levelOffset );
-		volumeData[i].levelOffsetTex = XMFLOAT2( volumeData[i].levelOffset.x / fullXRes, volumeData[i].levelOffset.y / fullYRes );
+		volumeData[i].levelOffset = Vector2( (float)(volumeResolution * clipmapCount), (float)levelOffset );
+		volumeData[i].levelOffsetTex = Vector2( volumeData[i].levelOffset.x / fullXRes, volumeData[i].levelOffset.y / fullYRes );
 		volumeData[i].voxelSize = float(volumesConfig[i].worldSize) / resolution;
 		volumeData[i].voxelSizeRcp = 1.0f / volumeData[i].voxelSize;
 		volumeData[i].voxelDiag = sqrt( volumeData[i].voxelSize * volumeData[i].voxelSize * 3 );
@@ -390,10 +390,10 @@ void VoxelRenderer::VoxelizeScene()
 {
 	prepareMeshData();
 	
-	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, XMFLOAT4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneColor0UAV, XMFLOAT4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneColor1UAV, XMFLOAT4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneNormalUAV, XMFLOAT4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, Vector4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneColor0UAV, Vector4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneColor1UAV, Vector4(0,0,0,0));
+	Render::ClearUnorderedAccessViewUint(voxelSceneNormalUAV, Vector4(0,0,0,0));
 
 	ID3D11UnorderedAccessView* uavs[4];
 	uavs[0] = voxelSceneUAV;
@@ -495,7 +495,7 @@ void VoxelRenderer::ProcessEmittance()
 {
 	PERF_GPU_TIMESTAMP(_LIGHTINJECT);
 
-	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, XMFLOAT4(0,0,0,0));
+	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, Vector4(0,0,0,0));
 
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
@@ -542,10 +542,10 @@ void VoxelRenderer::ProcessEmittance()
 	threadCount[2] = currentRes / 4;
 	for(uint16_t level = 1; level < clipmapCount; level++)
 	{
-		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
+		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, Vector4(0,0,0,0));
 
-		XMFLOAT3& prevCornerOffset = volumeData[level - 1].cornerOffset;
-		XMFLOAT3& currCornerOffset = volumeData[level].cornerOffset;
+		Vector3& prevCornerOffset = volumeData[level - 1].cornerOffset;
+		Vector3& currCornerOffset = volumeData[level].cornerOffset;
 		XMVECTOR volumeOffset = XMVectorSet(prevCornerOffset.x - currCornerOffset.x, 
 										prevCornerOffset.y - currCornerOffset.y,
 										prevCornerOffset.z - currCornerOffset.z, 0.0f);
@@ -603,7 +603,7 @@ void VoxelRenderer::ProcessEmittance()
 		threadCount[1] = threadCount[0] * 6;
 		threadCount[2] = max(uint32_t(1), currentRes / 4);
 
-		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, XMFLOAT4(0,0,0,0));
+		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, Vector4(0,0,0,0));
 		
 		volumeDownsample.currentLevel = level;
 		volumeDownsample.currentRes = currentRes;

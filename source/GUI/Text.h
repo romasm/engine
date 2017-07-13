@@ -19,13 +19,13 @@ namespace EngineCore
 
 		bool SetText(wstring &text);
 
-		inline void SetColor(XMFLOAT4& color)
+		inline void SetColor(Vector4& color)
 		{shaderInst->SetVector(color, 0);}
 		inline void SetPos(int16_t x, int16_t y)
-		{textPos = XMFLOAT2(float(x),float(y)); dirty = true;}
+		{textPos = Vector2(float(x),float(y)); dirty = true;}
 		
 		inline void SetClip(RECT& r)
-		{shaderInst->SetVector(XMFLOAT4( float(r.left), float(r.top), float(r.right), float(r.bottom) ), 1);}
+		{shaderInst->SetVector(Vector4( float(r.left), float(r.top), float(r.right), float(r.bottom) ), 1);}
 
 		inline uint16_t GetSymbolsCount() const 
 		{return symbolsCount;}
@@ -44,7 +44,7 @@ namespace EngineCore
 
 		inline SimpleShaderInst* GetShaderInst(){return shaderInst;}
 		inline void SetFloat(float f, uint8_t i){shaderInst->SetFloat(f, i);}
-		inline void SetVector(XMFLOAT4 v, uint8_t i){shaderInst->SetVector(v, i);}
+		inline void SetVector(Vector4 v, uint8_t i){shaderInst->SetVector(v, i);}
 
 		inline void SetTexture(ID3D11ShaderResourceView *tex, uint8_t id){shaderInst->SetTexture(tex, id);}
 		inline void SetTextureByName(string& name, uint8_t id){shaderInst->SetTextureByName(name, id);}
@@ -81,7 +81,7 @@ namespace EngineCore
 		int16_t* symbolsPos;
 		uint16_t symbolsCount;
 
-		XMFLOAT2 textPos;
+		Vector2 textPos;
 
 		bool is_static;
 		uint16_t maxLength;

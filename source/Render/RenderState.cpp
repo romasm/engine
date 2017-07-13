@@ -306,7 +306,7 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 		desc.ComparisonFunc = StringToData::GetCompareFunc(techSource.ReadString("ComparisonFunc", it.second.node));
 		desc.Filter = StringToData::GetFilter(techSource.ReadString("Filter", it.second.node));
 
-		XMFLOAT4 borderColor = techSource.ReadFloat4("BorderColor", it.second.node);
+		Vector4 borderColor = techSource.ReadFloat4("BorderColor", it.second.node);
 		desc.BorderColor[0] = borderColor.x;
 		desc.BorderColor[1] = borderColor.y;
 		desc.BorderColor[2] = borderColor.z;

@@ -90,16 +90,18 @@ namespace EngineCore
 		Entity GetChildFirst(Entity parent);
 		Entity GetChildNext(Entity child);
 
+		bool SetPhysicsTransform(Entity e, XMMATRIX& transform);
+
 		bool SetPosition(Entity e, float x, float y, float z);
 		bool SetPosition(Entity e, XMVECTOR p);
 
 		bool SetRotation(Entity e, float p, float y, float r);
 		bool SetRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool SetRotation(Entity e, XMFLOAT3 axis, float angle) 
+		inline bool SetRotation(Entity e, Vector3 axis, float angle) 
 		{return SetRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
 
 		bool SetRotation(Entity e, XMVECTOR quat);
-		inline bool SetRotation(Entity e, XMFLOAT4 quat)
+		inline bool SetRotation(Entity e, Vector4 quat)
 		{return SetRotation(e, XMLoadFloat4(&quat));}
 
 		bool SetScale(Entity e, float x, float y, float z);
@@ -114,11 +116,11 @@ namespace EngineCore
 
 		bool AddRotation(Entity e, float p, float y, float r);
 		bool AddRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool AddRotation(Entity e, XMFLOAT3 axis, float angle) 
+		inline bool AddRotation(Entity e, Vector3 axis, float angle) 
 		{return AddRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
 
 		bool AddRotation(Entity e, XMVECTOR quat);
-		inline bool AddRotation(Entity e, XMFLOAT4 quat)
+		inline bool AddRotation(Entity e, Vector4 quat)
 		{return AddRotation(e, XMLoadFloat4(&quat));}
 
 		bool AddScale(Entity e, float x, float y, float z);
@@ -128,35 +130,35 @@ namespace EngineCore
 
 		
 		XMVECTOR GetVectPositionL(Entity e);
-		inline XMFLOAT3 GetPositionL(Entity e)
-		{XMVECTOR v = GetVectPositionL(e); XMFLOAT3 res;
+		inline Vector3 GetPositionL(Entity e)
+		{XMVECTOR v = GetVectPositionL(e); Vector3 res;
 			XMStoreFloat3(&res, v); return res;}
 
-		XMVECTOR GetQuatRotationL(Entity e);
-		XMFLOAT3 GetRotationL(Entity e);
+		Quaternion GetQuatRotationL(Entity e);
+		Vector3 GetRotationL(Entity e);
 		inline XMVECTOR GetVectRotationL(Entity e)
-		{XMFLOAT3 res = GetRotationL(e); return XMLoadFloat3(&res);}
+		{Vector3 res = GetRotationL(e); return XMLoadFloat3(&res);}
 
 		XMVECTOR GetVectScaleL(Entity e);
-		inline XMFLOAT3 GetScaleL(Entity e)
-		{XMVECTOR v = GetVectScaleL(e); XMFLOAT3 res;
+		inline Vector3 GetScaleL(Entity e)
+		{XMVECTOR v = GetVectScaleL(e); Vector3 res;
 			XMStoreFloat3(&res, v); return res;}
 
 		XMMATRIX GetTransformL(Entity e);
 
 		XMVECTOR GetVectPositionW(Entity e);
-		inline XMFLOAT3 GetPositionW(Entity e)
-		{XMVECTOR v = GetVectPositionW(e); XMFLOAT3 res;
+		inline Vector3 GetPositionW(Entity e)
+		{XMVECTOR v = GetVectPositionW(e); Vector3 res;
 			XMStoreFloat3(&res, v); return res;}
 
-		XMVECTOR GetQuatRotationW(Entity e);
-		XMFLOAT3 GetRotationW(Entity e);
+		Quaternion GetQuatRotationW(Entity e);
+		Vector3 GetRotationW(Entity e);
 		inline XMVECTOR GetVectRotationW(Entity e)
-		{XMFLOAT3 res = GetRotationW(e); return XMLoadFloat3(&res);}
+		{Vector3 res = GetRotationW(e); return XMLoadFloat3(&res);}
 
 		XMVECTOR GetVectScaleW(Entity e);
-		inline XMFLOAT3 GetScaleW(Entity e)
-		{XMVECTOR v = GetVectScaleW(e); XMFLOAT3 res;
+		inline Vector3 GetScaleW(Entity e)
+		{XMVECTOR v = GetVectScaleW(e); Vector3 res;
 			XMStoreFloat3(&res, v); return res;}
 
 		XMMATRIX GetTransformW(Entity e);
@@ -165,11 +167,11 @@ namespace EngineCore
 
 		inline bool _SetPosition(Entity e, float x, float y, float z){return SetPosition(e, x, y, z);}
 		inline bool _SetRotation1(Entity e, float p, float y, float r){return SetRotation(e, p, y, r);}
-		inline bool _SetRotation2(Entity e, XMFLOAT3 axis, float angle){return SetRotation(e, axis, angle);}
+		inline bool _SetRotation2(Entity e, Vector3 axis, float angle){return SetRotation(e, axis, angle);}
 		inline bool _SetScale(Entity e, float x, float y, float z){return SetScale(e, x, y, z);}
 		inline bool _AddPosition(Entity e, float x, float y, float z){return AddPosition(e, x, y, z);}
 		inline bool _AddRotation1(Entity e, float x, float y, float z){return AddRotation(e, x, y, z);}
-		inline bool _AddRotation2(Entity e, XMFLOAT3 normalAxis, float angle){return AddRotation(e, normalAxis, angle);}
+		inline bool _AddRotation2(Entity e, Vector3 normalAxis, float angle){return AddRotation(e, normalAxis, angle);}
 		inline bool _AddScale(Entity e, float x, float y, float z){return AddScale(e, x, y, z);}
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}

@@ -61,10 +61,16 @@ struct Vector2 {
         Vector2(decimal newX, decimal newY);
 
         /// Copy-constructor
-        Vector2(const Vector2& vector);
+		Vector2(const Vector2& vector);
+
+		/// From in-engine format conversion
+		Vector2(const DirectX::SimpleMath::Vector2& v);
 
         /// Destructor
         ~Vector2();
+
+		/// To in-engine format conversion
+		operator DirectX::SimpleMath::Vector2() const { return DirectX::SimpleMath::Vector2( this->x, this->y ); }
 
         /// Set all the values of the vector
         void setAllValues(decimal newX, decimal newY);

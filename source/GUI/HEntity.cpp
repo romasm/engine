@@ -1222,7 +1222,7 @@ void HEntity::UpdateClip()
 
 	if(rects)
 		for(auto& it: *rects)
-			it.GetShaderInst()->SetVector(XMFLOAT4(float(clipRect.left), float(clipRect.top), float(clipRect.right), float(clipRect.bottom)), 0);
+			it.GetShaderInst()->SetVector(Vector4(float(clipRect.left), float(clipRect.top), float(clipRect.right), float(clipRect.bottom)), 0);
 	if(texts)
 		for(auto& jt: *texts)
 			jt.SetClip(clipRect);

@@ -121,7 +121,7 @@ namespace EngineCore
 		uint16_t GetMaterialsCount(Entity e);
 
 		XMVECTOR GetCenter(Entity e);
-		XMFLOAT3 GetCenterLua(Entity e) {XMFLOAT3 res; XMStoreFloat3(&res, GetCenter(e)); return res;}
+		Vector3 GetCenterLua(Entity e) {Vector3 res; XMStoreFloat3(&res, GetCenter(e)); return res;}
 
 		void PostReload();
 

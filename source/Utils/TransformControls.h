@@ -35,14 +35,14 @@ namespace EngineCore
 #define MATERIAL_ROT_Y PATH_SYS_MESHES "editor/rot_y" EXT_MATERIAL
 #define MATERIAL_ROT_Z PATH_SYS_MESHES "editor/rot_z" EXT_MATERIAL
 
-#define TC_COLOR_ALL XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f)
-#define TC_COLOR_X XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
-#define TC_COLOR_Y XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
-#define TC_COLOR_Z XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)
-#define TC_COLOR_XY XMFLOAT4(0.7f, 0.7f, 0.0f, 1.0f)
-#define TC_COLOR_XZ XMFLOAT4(0.7f, 0.0f, 0.7f, 1.0f)
-#define TC_COLOR_YZ XMFLOAT4(0.0f, 0.7f, 0.7f, 1.0f)
-#define TC_COLOR_HOVER XMFLOAT4(1.0f, 0.5f, 0.0f, 1.0f)
+#define TC_COLOR_ALL Vector4(0.9f, 0.9f, 0.9f, 1.0f)
+#define TC_COLOR_X Vector4(1.0f, 0.0f, 0.0f, 1.0f)
+#define TC_COLOR_Y Vector4(0.0f, 1.0f, 0.0f, 1.0f)
+#define TC_COLOR_Z Vector4(0.0f, 0.0f, 1.0f, 1.0f)
+#define TC_COLOR_XY Vector4(0.7f, 0.7f, 0.0f, 1.0f)
+#define TC_COLOR_XZ Vector4(0.7f, 0.0f, 0.7f, 1.0f)
+#define TC_COLOR_YZ Vector4(0.0f, 0.7f, 0.7f, 1.0f)
+#define TC_COLOR_HOVER Vector4(1.0f, 0.5f, 0.0f, 1.0f)
 
 #define TC_MAX_CAMS 10
 
@@ -96,9 +96,9 @@ namespace EngineCore
 			m_transformation *= XMMatrixTranslationFromVector(pos);
 		}
 
-		void ApplyMove(XMFLOAT3 move, Entity e);
-		void ApplyRot(XMFLOAT4 rot, Entity e);
-		void ApplyScale(XMFLOAT4 scale, Entity e);
+		void ApplyMove(Vector3 move, Entity e);
+		void ApplyRot(Vector4 rot, Entity e);
+		void ApplyScale(Vector4 scale, Entity e);
 
 		void SetFromEntity(Entity e)
 		{SetTransformation(transformSys->GetTransformW(e));}
@@ -116,11 +116,11 @@ namespace EngineCore
 
 		void RegToDraw();
 
-		bool CheckHover(XMFLOAT3 HoverRay, Entity cam);
+		bool CheckHover(Vector3 HoverRay, Entity cam);
 		void Unhover() {b_hover = E_TRANSFORM_NOPE;}
-		XMFLOAT3 CalcMove(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam);
-		XMFLOAT4 CalcScale(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam);
-		XMFLOAT4 CalcRot(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam);
+		Vector3 CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam);
+		Vector4 CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam);
+		Vector4 CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam);
 
 		void Activate() {active = true;}
 		void Deactivate() {active = false;}

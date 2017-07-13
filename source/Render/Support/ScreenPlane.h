@@ -21,7 +21,7 @@ namespace EngineCore
 
 		inline SimpleShaderInst* GetShaderInst(){return shaderInst;}
 		inline void SetFloat(float f, uint8_t i){shaderInst->SetFloat(f, i);}
-		inline void SetVector(XMFLOAT4 v, uint8_t i){shaderInst->SetVector(v, i);}
+		inline void SetVector(Vector4 v, uint8_t i){shaderInst->SetVector(v, i);}
 
 		inline void SetTexture(ID3D11ShaderResourceView *tex, uint8_t id){shaderInst->SetTexture(tex, id);}
 		inline void SetTextureByName(string& name, uint8_t id){shaderInst->SetTextureByName(name, id);}

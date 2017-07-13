@@ -105,12 +105,12 @@ uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
 
 	for(uint32_t row = 0; row < 4; row++)
 	{
-		XMFLOAT4 row_data;
+		Vector4 row_data;
 		XMStoreFloat4(&row_data, localMatrix->r[row]);
 
-		*(XMFLOAT4*)t_data = row_data;
-		t_data += sizeof(XMFLOAT4);
-		size += sizeof(XMFLOAT4);
+		*(Vector4*)t_data = row_data;
+		t_data += sizeof(Vector4);
+		size += sizeof(Vector4);
 	}
 
 	uint32_t parentNode = sceneGraph->GetParent(comp.nodeID);
@@ -154,10 +154,10 @@ uint32_t TransformSystem::Deserialize(Entity e, uint8_t* data)
 	XMMATRIX localMatrix;
 	for(uint32_t row = 0; row < 4; row++)
 	{
-		XMFLOAT4 row_data;
-		row_data = *(XMFLOAT4*)t_data;
-		t_data += sizeof(XMFLOAT4);
-		size += sizeof(XMFLOAT4);
+		Vector4 row_data;
+		row_data = *(Vector4*)t_data;
+		t_data += sizeof(Vector4);
+		size += sizeof(Vector4);
 
 		localMatrix.r[row] = XMLoadFloat4(&row_data);
 	}
@@ -208,6 +208,19 @@ bool TransformSystem::PostLoadParentsResolve()
 
 	attachments_map->clear();
 	_DELETE(attachments_map);
+	return true;
+}
+
+bool TransformSystem::SetPhysicsTransform(Entity e, XMMATRIX& transform)
+{
+	GET_COMPONENT(false)
+	XMVECTOR pos, rot, scale;
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
+
+	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * transform;
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
+
+	world->SetDirty(e);
 	return true;
 }
 
@@ -415,17 +428,17 @@ XMVECTOR TransformSystem::GetVectPositionL(Entity e)
 	return pos;
 }
 
-XMVECTOR TransformSystem::GetQuatRotationL(Entity e)
+Quaternion TransformSystem::GetQuatRotationL(Entity e)
 {
-	GET_COMPONENT(XMVECTOR())
-		XMVECTOR pos, rot, scale;
+	GET_COMPONENT(Quaternion())
+	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return rot;
 }
 
-XMFLOAT3 TransformSystem::GetRotationL(Entity e)
+Vector3 TransformSystem::GetRotationL(Entity e)
 {
-	GET_COMPONENT(XMFLOAT3())
+	GET_COMPONENT(Vector3())
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return PYRFromQuat(rot);
@@ -453,17 +466,17 @@ XMVECTOR TransformSystem::GetVectPositionW(Entity e)
 	return pos;
 }
 
-XMVECTOR TransformSystem::GetQuatRotationW(Entity e)
+Quaternion TransformSystem::GetQuatRotationW(Entity e)
 {
-	GET_COMPONENT(XMVECTOR())
+	GET_COMPONENT(Quaternion())
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return rot;
 }
 
-XMFLOAT3 TransformSystem::GetRotationW(Entity e)
+Vector3 TransformSystem::GetRotationW(Entity e)
 {
-	GET_COMPONENT(XMFLOAT3())
+	GET_COMPONENT(Vector3())
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return PYRFromQuat(rot);

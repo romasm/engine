@@ -33,7 +33,7 @@ namespace EngineCore
 		BoundingOrientedBox worldFrustum[LIGHT_DIR_NUM_CASCADES];
 		XMMATRIX view_proj[LIGHT_DIR_NUM_CASCADES];
 		XMMATRIX view[LIGHT_DIR_NUM_CASCADES];
-		XMFLOAT3 pos[LIGHT_DIR_NUM_CASCADES];
+		Vector3 pos[LIGHT_DIR_NUM_CASCADES];
 		
 		ID3D11Buffer* vp_buf[LIGHT_DIR_NUM_CASCADES];
 
@@ -79,18 +79,18 @@ namespace EngineCore
 		bool dirty;
 		bool active;
 		
-		XMFLOAT3 color;
+		Vector3 color;
 		float brightness;
 		float area;
 		
 	private:
-		XMFLOAT3 dir;
-		XMFLOAT3 dir_up;
+		Vector3 dir;
+		Vector3 dir_up;
 
-		XMFLOAT4 hdr_color;
+		Vector4 hdr_color;
 
 		// dir disk: x - sin ang, y - cos ang
-		XMFLOAT2 area_data; 
+		Vector2 area_data; 
 
 		DArray<CascadeShadow> cascadePerCamera;				
 
@@ -101,7 +101,7 @@ namespace EngineCore
 			parent.setnull();
 			area = 0;
 			active = true;
-			color = XMFLOAT3(1.0f,1.0f,1.0f);
+			color = Vector3(1.0f,1.0f,1.0f);
 			brightness = 1.0f;
 		}
 	};
@@ -198,8 +198,8 @@ namespace EngineCore
 		
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
-		bool SetColor(Entity e, XMFLOAT3 color);
-		XMFLOAT3 GetColor(Entity e);
+		bool SetColor(Entity e, Vector3 color);
+		Vector3 GetColor(Entity e);
 		
 		bool SetBrightness(Entity e, float brightness);
 		float GetBrightness(Entity e);

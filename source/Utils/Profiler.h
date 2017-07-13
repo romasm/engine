@@ -116,8 +116,8 @@ namespace EngineCore
 		string GetGpuIDName(uint32_t id) const {return gpu_ids_name[id].name;}
 		uint32_t GetGpuIDDepth(uint32_t id) const {return gpu_ids_name[id].depth;}
 
-		XMFLOAT2 GetCurrentTimeSlice(uint32_t id, uint32_t thread);
-		XMFLOAT2 GetGpuCurrentTimeSlice(uint32_t id);
+		Vector2 GetCurrentTimeSlice(uint32_t id, uint32_t thread);
+		Vector2 GetGpuCurrentTimeSlice(uint32_t id);
 
 		void Dump();
 

@@ -140,7 +140,7 @@ bool Material::loadMat()
 
 		if(vects_count > 0)
 		{
-			uint32_t vsize = (uint32_t)vects_count * sizeof(XMFLOAT4);
+			uint32_t vsize = (uint32_t)vects_count * sizeof(Vector4);
 			dataVector[i].resize(vects_count);
 			memcpy(dataVector[i].data(), t_data, vsize);
 			t_data += vsize;
@@ -201,7 +201,7 @@ bool Material::createMat()
 		
 		dataVector[i].create(vects_count);
 		dataVector[i].resize(vects_count);
-		dataVector[i].assign(XMFLOAT4(0,0,0,0));
+		dataVector[i].assign(Vector4(0,0,0,0));
 
 		offsetFloat[i] = Hcode.input.matInfo_VectorCount;
 
@@ -224,7 +224,7 @@ bool Material::Save()
 
 	for(uint8_t i = 0; i < 5; i++)
 	{
-		data_size += (uint32_t)dataVector[i].size() * sizeof(XMFLOAT4);
+		data_size += (uint32_t)dataVector[i].size() * sizeof(Vector4);
 		data_size += (uint32_t)textures[i].size() * TEX_STR_LEN;
 	}
 
@@ -248,7 +248,7 @@ bool Material::Save()
 
 	for(uint8_t i = 0; i < 5; i++)
 	{
-		auto dataVectorSize = dataVector[i].size() * sizeof(XMFLOAT4);
+		auto dataVectorSize = dataVector[i].size() * sizeof(Vector4);
 		memcpy(t_data, dataVector[i].data(), dataVectorSize);
 		t_data += dataVectorSize;
 
@@ -330,7 +330,7 @@ bool Material::ñonvertMat(string& nameBin)
 		
 		dataVector[i].create(vects_count);
 		dataVector[i].resize(vects_count);
-		dataVector[i].assign(XMFLOAT4(0,0,0,0));
+		dataVector[i].assign(Vector4(0,0,0,0));
 		offsetFloat[i] = Hcode.input.matInfo_VectorCount;
 	}
 
@@ -411,7 +411,7 @@ bool Material::initBuffers()
 		if(dataVector[i].size() == 0)
 			continue;
 
-		inputBuf[i] = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector[i].size() * sizeof(XMFLOAT4), true);
+		inputBuf[i] = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector[i].size() * sizeof(Vector4), true);
 		if (!inputBuf[i])
 			return false;
 	}
@@ -451,7 +451,7 @@ bool Material::SetShader(string shaderName)
 		return false;
 
 	RArray<TextureHandle> oldTextures[5];
-	RArray<XMFLOAT4> oldDataVector[5];
+	RArray<Vector4> oldDataVector[5];
 	uint8_t oldOffsetFloat[5];
 
 	for(uint8_t i = 0; i < 5; i++)
@@ -491,7 +491,7 @@ bool Material::SetShader(string shaderName)
 		dataVector[i].resize(vects_count);
 		offsetFloat[i] = Hcode.input.matInfo_VectorCount;
 		
-		dataVector[i].assign(XMFLOAT4(0,0,0,0));
+		dataVector[i].assign(Vector4(0,0,0,0));
 		
 		uint8_t oldVectorCount = min(offsetFloat[i], oldOffsetFloat[i]);
 		for(uint8_t j = 0; j < oldVectorCount; j++)
@@ -614,7 +614,7 @@ void Material::updateBuffers()
 	b_dirty = false;
 	for(uint i=0; i<5; i++)
 		if(inputBuf[i] != nullptr)
-			Render::UpdateDynamicResource(inputBuf[i], (void*)dataVector[i].data(), sizeof(XMFLOAT4) * dataVector[i].size());
+			Render::UpdateDynamicResource(inputBuf[i], (void*)dataVector[i].data(), sizeof(Vector4) * dataVector[i].size());
 }
 
 void Material::AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i)
@@ -691,7 +691,7 @@ void Material::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
 		Render::Context()->GSSetConstantBuffers(matrixReg[SHADER_GS], 1, &matrixBuf);	
 }
 
-void Material::SetVectorWithSlotName(XMFLOAT4& vect, string slot, uint8_t shaderType)
+void Material::SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType)
 {
 	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot, shaderType);
 	if(id < 0)
@@ -700,7 +700,7 @@ void Material::SetVectorWithSlotName(XMFLOAT4& vect, string slot, uint8_t shader
 		SetVector(vect, (uint8_t)id, shaderType);
 }
 
-void Material::SetVector(XMFLOAT4& vect, uint8_t id, uint8_t shader)
+void Material::SetVector(Vector4& vect, uint8_t id, uint8_t shader)
 {
 	if(id >= offsetFloat[shader])
 		return;
@@ -744,22 +744,22 @@ void Material::SetFloat(float f, uint8_t id, uint8_t shader)
 	b_dirty = true;
 }
 
-XMFLOAT4 Material::GetVectorWithSlotName(string slot, uint8_t shaderType)
+Vector4 Material::GetVectorWithSlotName(string slot, uint8_t shaderType)
 {
 	int16_t id = ((Shader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot, shaderType);
 	if(id < 0)
 	{
 		ERR("Vector slot %s does not exist!", slot.data());
-		return XMFLOAT4(0,0,0,0);
+		return Vector4(0,0,0,0);
 	}
 	else
 		return GetVector((uint8_t)id, shaderType);
 }
 
-XMFLOAT4 Material::GetVector(uint8_t id, uint8_t shader)
+Vector4 Material::GetVector(uint8_t id, uint8_t shader)
 {
 	if(id >= offsetFloat[shader])
-		return XMFLOAT4(0,0,0,0);
+		return Vector4(0,0,0,0);
 	return dataVector[shader][id];
 }
 
@@ -941,7 +941,7 @@ bool SimpleShaderInst::initInst(string& shaderName)
 	uint16_t vects_count = PScode.input.matInfo_FloatCount / 4 + PScode.input.matInfo_VectorCount;
 	dataVector.create(vects_count);
 	dataVector.resize(vects_count);
-	dataVector.assign(XMFLOAT4(0,0,0,0));
+	dataVector.assign(Vector4(0,0,0,0));
 	
 	offsetFloat = PScode.input.matInfo_VectorCount;
 
@@ -954,7 +954,7 @@ bool SimpleShaderInst::initBuffers()
 	if(dataVector.size() == 0)
 		return true;
 
-	inputBuf = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector.size() * sizeof(XMFLOAT4), true);
+	inputBuf = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector.size() * sizeof(Vector4), true);
 	if (!inputBuf)
 		return false;
 
@@ -968,7 +968,7 @@ void SimpleShaderInst::updateBuffers()
 	if(inputBuf == nullptr)
 		return;
 	
-	Render::UpdateDynamicResource(inputBuf, (void*)dataVector.data(), sizeof(XMFLOAT4) * dataVector.size());
+	Render::UpdateDynamicResource(inputBuf, (void*)dataVector.data(), sizeof(Vector4) * dataVector.size());
 }
 
 void SimpleShaderInst::Set()
@@ -1005,7 +1005,7 @@ void SimpleShaderInst::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
 		Render::Context()->VSSetConstantBuffers(matrixReg, 1, &matrixBuf);
 }
 
-void SimpleShaderInst::SetVectorWithSlotName(XMFLOAT4& vect, string slot)
+void SimpleShaderInst::SetVectorWithSlotName(Vector4& vect, string slot)
 {
 	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot);
 	if(id < 0)
@@ -1014,7 +1014,7 @@ void SimpleShaderInst::SetVectorWithSlotName(XMFLOAT4& vect, string slot)
 		SetVector(vect, (uint8_t)id);
 }
 
-void SimpleShaderInst::SetVector(XMFLOAT4& vect, uint8_t id)
+void SimpleShaderInst::SetVector(Vector4& vect, uint8_t id)
 {
 	if(id >= offsetFloat)
 		return;
@@ -1058,22 +1058,22 @@ void SimpleShaderInst::SetFloat(float f, uint8_t id)
 	b_dirty = true;
 }
 
-XMFLOAT4 SimpleShaderInst::GetVectorWithSlotName(string slot)
+Vector4 SimpleShaderInst::GetVectorWithSlotName(string slot)
 {
 	int16_t id = ((SimpleShader*)(ShaderMgr::GetShaderPtr(shaderID)))->GetVectorIdBySlot(slot);
 	if(id < 0)
 	{
 		ERR("Vector slot %s does not exist!", slot.data());
-		return XMFLOAT4(0,0,0,0);
+		return Vector4(0,0,0,0);
 	}
 	else
 		return GetVector((uint8_t)id);
 }
 
-XMFLOAT4 SimpleShaderInst::GetVector(uint8_t id)
+Vector4 SimpleShaderInst::GetVector(uint8_t id)
 {
 	if(id >= offsetFloat)
-		return XMFLOAT4(0,0,0,0);
+		return Vector4(0,0,0,0);
 	return dataVector[id];
 }
 

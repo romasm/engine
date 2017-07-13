@@ -112,9 +112,9 @@ inline void FloatToChar(char* str, float f)
 	sprintf_s(str, SRT_SIZE, "%f", f); 
 }
 
-inline XMFLOAT3 CharToXMFloat3(char *str)
+inline Vector3 CharToVector3(char *str)
 {
-	XMFLOAT3 res = XMFLOAT3(0.0f,0.0f,0.0f);
+	Vector3 res = Vector3(0.0f,0.0f,0.0f);
 	
 	char temp[128];
 	strcpy_s(temp, 128, str);
@@ -152,22 +152,22 @@ inline XMFLOAT3 CharToXMFloat3(char *str)
 	return res;
 }
 
-inline void XMFloat3ToChar(char* str, XMFLOAT3 f)
+inline void Vector3ToChar(char* str, Vector3 f)
 {
 	if(!str)return;
 	sprintf_s(str, SRT_SIZE, "%f %f %f", f.x, f.y, f.z); 
 }
 
-inline string XMFloat3ToString(XMFLOAT3 f)
+inline string Vector3ToString(Vector3 f)
 {
 	char str[SRT_SIZE];
 	sprintf_s(str, SRT_SIZE, "%f %f %f", f.x, f.y, f.z); 
 	return string(str);  
 }
 
-inline XMFLOAT4 CharToXMFloat4(char *str)
+inline Vector4 CharToVector4(char *str)
 {
-	XMFLOAT4 res = XMFLOAT4(0.0f,0.0f,0.0f,0.0f);
+	Vector4 res = Vector4(0.0f,0.0f,0.0f,0.0f);
 	
 	char temp[128];
 	strcpy_s(temp, 128, str);
@@ -210,13 +210,13 @@ inline XMFLOAT4 CharToXMFloat4(char *str)
 	return res;
 }
 
-inline void XMFloat4ToChar(char* str, XMFLOAT4 f)
+inline void Vector4ToChar(char* str, Vector4 f)
 {
 	if(!str)return;
 	sprintf_s(str, SRT_SIZE, "%f %f %f %f", f.x, f.y, f.z, f.w); 
 }
 
-inline string XMFloat4ToString(XMFLOAT4 f)
+inline string Vector4ToString(Vector4 f)
 {
 	char str[SRT_SIZE];
 	sprintf_s(str, SRT_SIZE, "%f %f %f %f", f.x, f.y, f.z, f.w); 
@@ -310,31 +310,19 @@ inline wchar_t* WCharToWChar(wchar_t *str)
 }
 
 // Математические функции
-inline XMFLOAT4 XMFloat4Lerp(XMFLOAT4 f1, XMFLOAT4 f2, float l)
+inline Vector4 Vector4Lerp(Vector4 f1, Vector4 f2, float l)
 {
-	XMFLOAT4 res; 
-	res.x = f1.x * (1 - l) + f2.x * l;
-	res.y = f1.y * (1 - l) + f2.y * l;
-	res.z = f1.z * (1 - l) + f2.z * l;
-	res.w = f1.w * (1 - l) + f2.w * l;
-	return res;
+	return Vector4::Lerp(f1, f2, l);
 }
 
-inline XMFLOAT3 XMFloat3Lerp(XMFLOAT3 f1, XMFLOAT3 f2, float l)
+inline Vector3 Vector3Lerp(Vector3 f1, Vector3 f2, float l)
 {
-	XMFLOAT3 res; 
-	res.x = f1.x * (1 - l) + f2.x * l;
-	res.y = f1.y * (1 - l) + f2.y * l;
-	res.z = f1.z * (1 - l) + f2.z * l;
-	return res;
+	return Vector3::Lerp(f1, f2, l);
 }
 
-inline XMFLOAT2 XMFloat2Lerp(XMFLOAT2 f1, XMFLOAT2 f2, float l)
+inline Vector2 Vector2Lerp(Vector2 f1, Vector2 f2, float l)
 {
-	XMFLOAT2 res; 
-	res.x = f1.x * (1 - l) + f2.x * l;
-	res.y = f1.y * (1 - l) + f2.y * l;
-	return res;
+	return Vector2::Lerp(f1, f2, l);
 }
 
 inline float lerp(float f1, float f2, float l)

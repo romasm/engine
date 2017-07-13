@@ -30,36 +30,36 @@ namespace EngineCore
 
 		uint8_t type;
 
-		XMFLOAT3 color;
+		Vector3 color;
 		float brightness;
 		float nonAreaBrightness;
 		float range;
-		XMFLOAT2 area; 
-		XMFLOAT2 cone; // x - in, y - out
+		Vector2 area; 
+		Vector2 cone; // x - in, y - out
 		
 		bool cast_shadows;
 		bool transparent_shadows;
 
 	private:
-		XMFLOAT3 pos;
-		XMFLOAT3 dir;
-		XMFLOAT3 dir_up;
-		XMFLOAT3 dir_side;
+		Vector3 pos;
+		Vector3 dir;
+		Vector3 dir_up;
+		Vector3 dir_side;
 
-		XMFLOAT4 hdr_color;
-		XMFLOAT4 nonAreaColor;
+		Vector4 hdr_color;
+		Vector4 nonAreaColor;
 		float rangeInvSqr;
-		XMFLOAT2 cone_data;
+		Vector2 cone_data;
 
-		XMFLOAT4 farNearData;
+		Vector4 farNearData;
 
 		// spot disk: x - radius
 		// spot rect: x, y, z - length, width/2, length/2
 		// point sphere: x - radius
 		// point tube: x - radius, y - length
-		XMFLOAT3 area_data; 
+		Vector3 area_data; 
 
-		XMFLOAT3 virt_pos;
+		Vector3 virt_pos;
 		float virt_clip;
 				
 	};
@@ -79,12 +79,12 @@ namespace EngineCore
 			res->parent = e;
 			res->cast_shadows = false;
 			res->transparent_shadows = false;
-			res->area = XMFLOAT2(1.0f, 1.0f);
-			res->cone = XMFLOAT2(XM_PIDIV2, 0.1f);
+			res->area = Vector2(1.0f, 1.0f);
+			res->cone = Vector2(XM_PIDIV2, 0.1f);
 			res->range = 1.0f;
 			res->type = 0;
 			res->active = true;
-			res->color = XMFLOAT3(0,0,0);
+			res->color = Vector3(0,0,0);
 			res->brightness = 1.0f;
 			res->nonAreaBrightness = 1.0f;
 
@@ -138,8 +138,8 @@ namespace EngineCore
 		bool SetType(Entity e, uint8_t type);
 		uint8_t GetType(Entity e);
 
-		bool SetColor(Entity e, XMFLOAT3 color);
-		XMFLOAT3 GetColor(Entity e);
+		bool SetColor(Entity e, Vector3 color);
+		Vector3 GetColor(Entity e);
 		
 		bool SetBrightness(Entity e, float brightness);
 		float GetBrightness(Entity e);

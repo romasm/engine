@@ -2,23 +2,19 @@
 #include "PhysicsSystem.h"
 #include "World.h"
 
-using namespace rp3d;
-
 PhysicsSystem::PhysicsSystem(BaseWorld* w, uint32_t maxCount)
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
 
 	Vector3 defaultGravity(0, -9.81f, 0);
-	physWorld = new DynamicsWorld(defaultGravity);
+	physWorld = new rp3d::DynamicsWorld(defaultGravity);
 
 	// temp floor
-	Transform tr = Transform::identity();
-	tr.setPosition(Vector3(0, 0, 0));
-	bodyFloor = physWorld->createRigidBody(tr);
-	bodyFloor->setType(STATIC);
-	shapeFloor = new BoxShape(Vector3(100.0f, 0.1f, 100.0f));
-	bodyFloor->addCollisionShape(shapeFloor, Transform::identity(), 10.0f);
+	bodyFloor = physWorld->createRigidBody(rp3d::Transform::identity());
+	bodyFloor->setType(rp3d::STATIC);
+	shapeFloor = new rp3d::BoxShape(Vector3(100.0f, 0.1f, 100.0f));
+	bodyFloor->addCollisionShape(shapeFloor, rp3d::Transform::identity(), 10.0f);
 	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
@@ -51,15 +47,8 @@ void PhysicsSystem::Simulate(float dt)
 			continue;
 
 		Entity e = i.get_entity();
-
-		XMFLOAT3 pos = transformSystem->GetPositionL(e);
-		XMVECTOR rot = transformSystem->GetQuatRotationL(e);
-
-		Vector3 position(pos.x, pos.y, pos.z);
-		Quaternion rotation(XMVectorGetX(rot), XMVectorGetY(rot), XMVectorGetZ(rot), XMVectorGetW(rot));
-		Transform transform(position, rotation);
-
-		i.body->setTransform(transform);
+		
+		i.body->setTransform(transformSystem->GetTransformL(e));
 		i.body->setIsSleeping(false);
 
 		i.dirty = false;
@@ -83,22 +72,14 @@ void PhysicsSystem::UpdateTransformations()
 		if( !i.body->isActive() || i.body->isSleeping() )
 			continue;
 
-		const Transform& currentTransform = i.body->getTransform();
+		const rp3d::Transform& currentTransform = i.body->getTransform();
 		if( currentTransform == i.previousTransform )
 			continue;
 
-		Transform interpolatedTransform = Transform::interpolateTransforms(i.previousTransform, currentTransform, interpolationFactor);
+		rp3d::Transform interpolatedTransform = rp3d::Transform::interpolateTransforms(i.previousTransform, currentTransform, interpolationFactor);
 		i.previousTransform = currentTransform;
-
-		// update matrix: TODO
-		const Vector3& pos = interpolatedTransform.getPosition();
-		const Quaternion& rot = interpolatedTransform.getOrientation();
-
-		Entity e = i.get_entity();
-
-		transformSystem->SetPosition(e, pos.x, pos.y, pos.z);
-		XMVECTOR quat = XMVectorSet(rot.x, rot.y, rot.z, rot.w);
-		transformSystem->SetRotation(e, quat);
+		
+		transformSystem->SetPhysicsTransform(i.get_entity(), XMMATRIX(interpolatedTransform));
 
 		i.dirty = false;
 	}
@@ -116,15 +97,14 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->parent = e;
 	res->dirty = true;
 	
-	res->body = physWorld->createRigidBody(Transform::identity());
+	res->body = physWorld->createRigidBody(rp3d::Transform::identity());
 
 	// test shape
 	auto visSys = world->GetVisibilitySystem();
 	auto bbox = visSys->GetBBoxL(e);
-	Transform shapeTransform = Transform::identity();
-	shapeTransform.setPosition(Vector3(bbox.Center.x, bbox.Center.y, bbox.Center.z));
 
-	res->testBox = new BoxShape(Vector3(bbox.Extents.x, bbox.Extents.y, bbox.Extents.z));
+	rp3d::Transform shapeTransform(VECTOR3_CAST(bbox.Center), Quaternion());
+	res->testBox = new rp3d::BoxShape(VECTOR3_CAST(bbox.Extents));
 
 	res->body->addCollisionShape(res->testBox, shapeTransform, 10.0f);
 	
@@ -159,12 +139,12 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 
 	for(uint32_t row = 0; row < 4; row++)
 	{
-		XMFLOAT4 row_data;
+		Vector4 row_data;
 		XMStoreFloat4(&row_data, localMatrix->r[row]);
 
-		*(XMFLOAT4*)t_data = row_data;
-		t_data += sizeof(XMFLOAT4);
-		size += sizeof(XMFLOAT4);
+		*(Vector4*)t_data = row_data;
+		t_data += sizeof(Vector4);
+		size += sizeof(Vector4);
 	}
 
 	uint32_t parentNode = sceneGraph->GetParent(comp.nodeID);
@@ -209,10 +189,10 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	XMMATRIX localMatrix;
 	for(uint32_t row = 0; row < 4; row++)
 	{
-		XMFLOAT4 row_data;
-		row_data = *(XMFLOAT4*)t_data;
-		t_data += sizeof(XMFLOAT4);
-		size += sizeof(XMFLOAT4);
+		Vector4 row_data;
+		row_data = *(Vector4*)t_data;
+		t_data += sizeof(Vector4);
+		size += sizeof(Vector4);
 
 		localMatrix.r[row] = XMLoadFloat4(&row_data);
 	}

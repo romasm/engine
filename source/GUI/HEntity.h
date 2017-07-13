@@ -216,7 +216,7 @@ public:
 			return false;
 		return (*texts)[i].SetText(StringToWstring(text));
 	}
-	bool SetTextColor(uint32_t i, XMFLOAT4 color)
+	bool SetTextColor(uint32_t i, Vector4 color)
 	{
 		if(i >= texts->size())
 			return false;
@@ -553,7 +553,7 @@ public:
 	{return GET_HENTITY(ID)->AddText(font, text, shader, static_text, length);}
 	inline bool SetText(uint32_t i, string text){return GET_HENTITY(ID)->SetText(i, text);}
 	inline bool SetTextPos(uint32_t i, int16_t x, int16_t y){return GET_HENTITY(ID)->SetTextPos(i, x, y);}
-	inline bool SetTextColor(uint32_t i, XMFLOAT4 color){return GET_HENTITY(ID)->SetTextColor(i, color);}
+	inline bool SetTextColor(uint32_t i, Vector4 color){return GET_HENTITY(ID)->SetTextColor(i, color);}
 	inline MLRECT GetTextBounds(uint32_t i){return GET_HENTITY(ID)->GetTextBounds(i);}
 	inline Text* GetText(uint32_t i){return GET_HENTITY(ID)->GetText(i);}
 	inline SimpleShaderInst* GetTextShaderInst(uint32_t i){return GET_HENTITY(ID)->GetTextShaderInst(i);}

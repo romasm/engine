@@ -33,6 +33,10 @@
 #include <cassert>
 #include <cmath>
 
+// Modification
+#include "../../DirectXTK/Inc/SimpleMath.h"
+#include "../../DirectXTK/Inc/SimpleMath.inl"
+
 /// ReactPhysics3D namespace
 namespace reactphysics3d {
 

@@ -61,17 +61,17 @@ bool Image2D::updateVertices()
 
 	UnlitVertex vertices_quad[4];
 
-	vertices_quad[0].Pos = XMFLOAT3(left, top, 0.0f);
-	vertices_quad[0].Tex = XMFLOAT2(0.0f, 0.0f);
+	vertices_quad[0].Pos = Vector3(left, top, 0.0f);
+	vertices_quad[0].Tex = Vector2(0.0f, 0.0f);
 
-	vertices_quad[1].Pos = XMFLOAT3(right, bottom, 0.0f);
-	vertices_quad[1].Tex = XMFLOAT2(1.0f, 1.0f);
+	vertices_quad[1].Pos = Vector3(right, bottom, 0.0f);
+	vertices_quad[1].Tex = Vector2(1.0f, 1.0f);
 
-	vertices_quad[2].Pos = XMFLOAT3(left, bottom, 0.0f);
-	vertices_quad[2].Tex = XMFLOAT2(0.0f, 1.0f);
+	vertices_quad[2].Pos = Vector3(left, bottom, 0.0f);
+	vertices_quad[2].Tex = Vector2(0.0f, 1.0f);
 
-	vertices_quad[3].Pos = XMFLOAT3(right, top, 0.0f);
-	vertices_quad[3].Tex = XMFLOAT2(1.0f, 0.0f);
+	vertices_quad[3].Pos = Vector3(right, top, 0.0f);
+	vertices_quad[3].Tex = Vector2(1.0f, 0.0f);
 
 	Render::UpdateDynamicResource(vertexBuffer, (void*)vertices_quad, sizeof(UnlitVertex) * 4);
 

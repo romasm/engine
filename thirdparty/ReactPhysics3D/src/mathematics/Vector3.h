@@ -66,8 +66,14 @@ struct Vector3 {
         /// Copy-constructor
         Vector3(const Vector3& vector);
 
+		/// From in-engine format conversion
+		Vector3(const DirectX::SimpleMath::Vector3& v);
+
         /// Destructor
-        ~Vector3();
+		~Vector3();
+
+		/// To in-engine format conversion
+		operator DirectX::SimpleMath::Vector3() const { return DirectX::SimpleMath::Vector3( this->x, this->y, this->z ); }
 
         /// Set all the values of the vector
         void setAllValues(decimal newX, decimal newY, decimal newZ);

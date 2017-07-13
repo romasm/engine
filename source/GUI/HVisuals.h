@@ -97,8 +97,8 @@ struct GuiGroups
 
 struct RectInstData
 {
-	XMFLOAT4 rect;
-	XMFLOAT4 depth;
+	Vector4 rect;
+	Vector4 depth;
 
 	RectInstData(): rect(0,0,0,0), depth(0,0,0,0) {}
 	RectInstData& operator=(const RectInstData& r)

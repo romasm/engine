@@ -39,22 +39,22 @@ void VisibilitySystem::CheckVisibility()
 	}
 }
 
-Entity VisibilitySystem::CollideRay(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id)
+Entity VisibilitySystem::CollideRay(Vector3 origin, Vector3 ray, int frust_id)
 {
 	Entity ent;
 	collide_ray(origin, ray, frust_id, nullptr, &ent);
 	return ent;
 }
 
-XMFLOAT4 VisibilitySystem::CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id)
+Vector4 VisibilitySystem::CollideRayCoords(Vector3 origin, Vector3 ray, int frust_id)
 {
-	XMFLOAT4 colide_coord;
+	Vector4 colide_coord;
 	Entity ent;
 	collide_ray(origin, ray, frust_id, &colide_coord, &ent);
 	return colide_coord;
 }
 
-void VisibilitySystem::collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT4* colide_coord, Entity* ent)
+void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Vector4* colide_coord, Entity* ent)
 {
 	XMVECTOR vorigin = XMLoadFloat3(&origin);
 	XMVECTOR vray = XMLoadFloat3(&ray);

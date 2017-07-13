@@ -45,6 +45,11 @@ Vector2::Vector2(const Vector2& vector) : x(vector.x), y(vector.y) {
 
 }
 
+/// From in-engine format conversion
+Vector2::Vector2(const DirectX::SimpleMath::Vector2& v) : x(v.x), y(v.y) {
+
+}
+
 // Destructor
 Vector2::~Vector2() {
 

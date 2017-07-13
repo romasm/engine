@@ -270,7 +270,7 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	sharedconst.PixSize.x = 1.0f/width;
 	sharedconst.PixSize.y = 1.0f/height;
 
-	sharedconst.uvCorrectionForPow2 = XMFLOAT2(float(width) / width_pow2, float(height) / height_pow2);
+	sharedconst.uvCorrectionForPow2 = Vector2(float(width) / width_pow2, float(height) / height_pow2);
 
 	sharedconst.maxScreenCoords.x = float(width - 1);
 	sharedconst.maxScreenCoords.y = float(height - 1);
@@ -1129,7 +1129,7 @@ void ScenePipeline::HDRtoLDRStage()
 	rt_Antialiased->SetRenderTarget(0, 1);
 	sp_Antialiased[1]->Draw();
 
-	Render::ClearRenderTargetView(rt_Antialiased->m_RTV[1], XMFLOAT4(0,0,0,0));
+	Render::ClearRenderTargetView(rt_Antialiased->m_RTV[1], Vector4(0,0,0,0));
 
 	rt_Antialiased->SetRenderTarget(1, 2);
 	sp_Antialiased[2]->Draw();
@@ -1160,8 +1160,8 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targe
 
 	struct ParamsBuffer
 	{
-		XMFLOAT4 samplesPerPixel;
-		XMFLOAT4 pixelSize;
+		Vector4 samplesPerPixel;
+		Vector4 pixelSize;
 	} params;
 
 	auto paramsBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(ParamsBuffer), true);

@@ -111,13 +111,13 @@ public:
 			{if(!node)return false; auto n = node->find(name); 
 			if(n == node->end())return false; return CharToBool((char*)n->second.value.data());}
 		
-		XMFLOAT3 ReadFloat3(string name, file_map* node)
-			{if(!node)return XMFLOAT3(0,0,0); auto n = node->find(name); 
-			if(n == node->end())return XMFLOAT3(0,0,0); return CharToXMFloat3((char*)n->second.value.data());}
+		Vector3 ReadFloat3(string name, file_map* node)
+			{if(!node)return Vector3(0,0,0); auto n = node->find(name); 
+			if(n == node->end())return Vector3(0,0,0); return CharToVector3((char*)n->second.value.data());}
 		
-		XMFLOAT4 ReadFloat4(string name, file_map* node)
-			{if(!node)return XMFLOAT4(0,0,0,0); auto n = node->find(name); 
-			if(n == node->end())return XMFLOAT4(0,0,0,0); return CharToXMFloat4((char*)n->second.value.data());}
+		Vector4 ReadFloat4(string name, file_map* node)
+			{if(!node)return Vector4(0,0,0,0); auto n = node->find(name); 
+			if(n == node->end())return Vector4(0,0,0,0); return CharToVector4((char*)n->second.value.data());}
 		
 		uint8_t ReadByte(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
@@ -146,15 +146,15 @@ public:
 			if(n != node->end())n->second.value = BoolToString(value); else{FileNode newvalue;
 			(*node)[name] = newvalue; (*node)[name].value = BoolToString(value);}}
 		
-		void WriteFloat3(string name, XMFLOAT3 value, file_map* node)
+		void WriteFloat3(string name, Vector3 value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = XMFloat3ToString(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = XMFloat3ToString(value);}}
+			if(n != node->end())n->second.value = Vector3ToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = Vector3ToString(value);}}
 		
-		void WriteFloat4(string name, XMFLOAT4 value, file_map* node)
+		void WriteFloat4(string name, Vector4 value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
-			if(n != node->end())n->second.value = XMFloat4ToString(value); else{FileNode newvalue;
-			(*node)[name] = newvalue; (*node)[name].value = XMFloat4ToString(value);}}
+			if(n != node->end())n->second.value = Vector4ToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = Vector4ToString(value);}}
 		
 		void WriteByte(string name, uint8_t value, file_map* node)
 			{if(!node)return; auto n = node->find(name);

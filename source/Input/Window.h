@@ -54,9 +54,9 @@ namespace EngineCore
 		int height;		
 		RECT captionRect;
 		int borderWidth;
-		XMFLOAT4* bg_color;
-		XMFLOAT4* border_color;
-		XMFLOAT4* border_focus_color;
+		Vector4* bg_color;
+		Vector4* border_color;
+		Vector4* border_focus_color;
 	};
 		
 	class DropTarget : public IDropTarget
@@ -265,13 +265,13 @@ namespace EngineCore
 
 		LRESULT WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
 		
-		void SetColorBg(XMFLOAT4* color) {m_desc.bg_color = color;}
-		void SetColorBorder(XMFLOAT4* color) {m_desc.border_color = color;}
-		void SetColorBorderFocus(XMFLOAT4* color) {m_desc.border_focus_color = color;}
+		void SetColorBg(Vector4* color) {m_desc.bg_color = color;}
+		void SetColorBorder(Vector4* color) {m_desc.border_color = color;}
+		void SetColorBorderFocus(Vector4* color) {m_desc.border_focus_color = color;}
 
-		inline XMFLOAT4* GetColorBg() const {return m_desc.bg_color;}
-		inline XMFLOAT4* GetColorBorder() const {return m_desc.border_color;}
-		inline XMFLOAT4* GetColorBorderFocus() const {return m_desc.border_focus_color;}
+		inline Vector4* GetColorBg() const {return m_desc.bg_color;}
+		inline Vector4* GetColorBorder() const {return m_desc.border_color;}
+		inline Vector4* GetColorBorderFocus() const {return m_desc.border_focus_color;}
 
 		void SetAlpha(float alpha)
 		{

@@ -77,30 +77,30 @@ namespace EngineCore
 		BoundingBox GetBBoxL(Entity e);
 		BoundingOrientedBox GetBBoxW(Entity e);
 
-		Entity CollideRay(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id);
-		XMFLOAT4 CollideRayCoords(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id);
+		Entity CollideRay(Vector3 origin, Vector3 ray, int frust_id);
+		Vector4 CollideRayCoords(Vector3 origin, Vector3 ray, int frust_id);
 
-		XMFLOAT3 GetBoxSizeW(Entity e)
+		Vector3 GetBoxSizeW(Entity e)
 		{
 			BoundingOrientedBox box = GetBBoxW(e);
-			return box.Extents;
+			return VECTOR3_CAST(box.Extents);
 		}
-		XMFLOAT3 GetBoxSizeL(Entity e)
+		Vector3 GetBoxSizeL(Entity e)
 		{
 			BoundingBox box = GetBBoxL(e);
-			return box.Extents;
+			return VECTOR3_CAST(box.Extents);
 		}
-		XMFLOAT3 GetBoxCenterW(Entity e)
+		Vector3 GetBoxCenterW(Entity e)
 		{
 			BoundingOrientedBox box = GetBBoxW(e);
-			return box.Center;
+			return VECTOR3_CAST(box.Center);
 		}
-		XMFLOAT3 GetBoxCenterL(Entity e)
+		Vector3 GetBoxCenterL(Entity e)
 		{
 			BoundingBox box = GetBBoxL(e);
-			return box.Center;
+			return VECTOR3_CAST(box.Center);
 		}
-
+		
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass()
@@ -121,7 +121,7 @@ namespace EngineCore
 		}
 
 	private:
-		void collide_ray(XMFLOAT3 origin, XMFLOAT3 ray, int frust_id, XMFLOAT4* colide_coord, Entity* ent);
+		void collide_ray(Vector3 origin, Vector3 ray, int frust_id, Vector4* colide_coord, Entity* ent);
 
 		ComponentRArray<VisibilityComponent> components;
 

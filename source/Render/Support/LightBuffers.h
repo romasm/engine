@@ -117,155 +117,155 @@ namespace EngineCore
 	// for deffered
 	struct SpotLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
 	};
 
 	struct DiskLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 AreaInfoEmpty;
-		XMFLOAT4 VirtposEmpty;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 AreaInfoEmpty;
+		Vector4 VirtposEmpty;
 	};
 
 	struct RectLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 DirUpAreaX;
-		XMFLOAT4 DirSideAreaY;
-		XMFLOAT4 VirtposAreaZ;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 DirUpAreaX;
+		Vector4 DirSideAreaY;
+		Vector4 VirtposAreaZ;
 	};
 
 	struct SpotCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 ShadowmapAdress;
-		XMFLOAT4 ShadowmapParams;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 ShadowmapAdress;
+		Vector4 ShadowmapParams;
+		Vector4 farNear;
 		XMMATRIX matViewProj;
 	};
 
 	struct DiskCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 AreaInfoEmpty;
-		XMFLOAT4 VirtposEmpty;
-		XMFLOAT4 ShadowmapAdress;
-		XMFLOAT4 ShadowmapParams;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 AreaInfoEmpty;
+		Vector4 VirtposEmpty;
+		Vector4 ShadowmapAdress;
+		Vector4 ShadowmapParams;
+		Vector4 farNear;
 		XMMATRIX matViewProj;
 	};
 
 	struct RectCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 DirUpAreaX;
-		XMFLOAT4 DirSideAreaY;
-		XMFLOAT4 VirtposAreaZ;
-		XMFLOAT4 ShadowmapAdress;
-		XMFLOAT4 ShadowmapParams;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 DirUpAreaX;
+		Vector4 DirSideAreaY;
+		Vector4 VirtposAreaZ;
+		Vector4 ShadowmapAdress;
+		Vector4 ShadowmapParams;
+		Vector4 farNear;
 		XMMATRIX matViewProj;
 	};
 
 	struct PointLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 Color;
+		Vector4 PosRange;
+		Vector4 Color;
 	};
 
 	struct SphereLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 Color;
-		XMFLOAT4 AreaInfo;
+		Vector4 PosRange;
+		Vector4 Color;
+		Vector4 AreaInfo;
 	};
 
 	struct TubeLightBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 Color;
-		XMFLOAT4 AreaInfo;
-		XMFLOAT4 DirAreaA;
+		Vector4 PosRange;
+		Vector4 Color;
+		Vector4 AreaInfo;
+		Vector4 DirAreaA;
 	};
 
 	struct PointCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorShParams;
-		XMFLOAT4 ShadowmapParams0;
-		XMFLOAT4 ShadowmapParams1;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
-		XMFLOAT4 ShadowmapAdress4;
-		XMFLOAT4 ShadowmapAdress5;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorShParams;
+		Vector4 ShadowmapParams0;
+		Vector4 ShadowmapParams1;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		Vector4 ShadowmapAdress4;
+		Vector4 ShadowmapAdress5;
+		Vector4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
 
 	struct SphereCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorShParams;
-		XMFLOAT4 AreaInfo;
-		XMFLOAT4 ShadowmapParams0;
-		XMFLOAT4 ShadowmapParams1;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
-		XMFLOAT4 ShadowmapAdress4;
-		XMFLOAT4 ShadowmapAdress5;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorShParams;
+		Vector4 AreaInfo;
+		Vector4 ShadowmapParams0;
+		Vector4 ShadowmapParams1;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		Vector4 ShadowmapAdress4;
+		Vector4 ShadowmapAdress5;
+		Vector4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
 
 	struct TubeCasterBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorShParams;
-		XMFLOAT4 AreaInfo;
-		XMFLOAT4 DirAreaA;
-		XMFLOAT4 ShadowmapParams0;
-		XMFLOAT4 ShadowmapParams1;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
-		XMFLOAT4 ShadowmapAdress4;
-		XMFLOAT4 ShadowmapAdress5;
-		XMFLOAT4 farNear;
+		Vector4 PosRange;
+		Vector4 ColorShParams;
+		Vector4 AreaInfo;
+		Vector4 DirAreaA;
+		Vector4 ShadowmapParams0;
+		Vector4 ShadowmapParams1;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		Vector4 ShadowmapAdress4;
+		Vector4 ShadowmapAdress5;
+		Vector4 farNear;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
 
 	struct DirLightBuffer
 	{
-		XMFLOAT4 ColorAreaX;
-		XMFLOAT4 DirAreaY;
-		XMFLOAT4 Pos0;
-		XMFLOAT4 Pos1;
-		XMFLOAT4 Pos2;
-		XMFLOAT4 Pos3;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
+		Vector4 ColorAreaX;
+		Vector4 DirAreaY;
+		Vector4 Pos0;
+		Vector4 Pos1;
+		Vector4 Pos2;
+		Vector4 Pos3;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
 		XMMATRIX matViewProj0;
 		XMMATRIX matViewProj1;
 		XMMATRIX matViewProj2;
@@ -275,43 +275,43 @@ namespace EngineCore
 	// voxels
 	struct SpotVoxelBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorConeX;
-		XMFLOAT4 DirConeY;
-		XMFLOAT4 Virtpos;
-		XMFLOAT4 ShadowmapAdress;
-		XMFLOAT4 ShadowmapHPixProjNearclip;
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 Virtpos;
+		Vector4 ShadowmapAdress;
+		Vector4 ShadowmapHPixProjNearclip;
 		XMMATRIX matViewProj;
 	};
 
 	struct PointVoxelBuffer
 	{
-		XMFLOAT4 PosRange;
-		XMFLOAT4 ColorShadowmapProj;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
-		XMFLOAT4 ShadowmapAdress4;
-		XMFLOAT4 ShadowmapAdress5;
-		XMFLOAT4 ShadowmapHPix0;
-		XMFLOAT4 ShadowmapHPix1;
+		Vector4 PosRange;
+		Vector4 ColorShadowmapProj;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		Vector4 ShadowmapAdress4;
+		Vector4 ShadowmapAdress5;
+		Vector4 ShadowmapHPix0;
+		Vector4 ShadowmapHPix1;
 		XMMATRIX matProj;
 		XMMATRIX matView;
 	};
 
 	struct DirVoxelBuffer
 	{
-		XMFLOAT4 Color;
-		XMFLOAT4 Dir;
-		XMFLOAT4 PosHPix0;
-		XMFLOAT4 PosHPix1;
-		XMFLOAT4 PosHPix2;
-		XMFLOAT4 PosHPix3;
-		XMFLOAT4 ShadowmapAdress0;
-		XMFLOAT4 ShadowmapAdress1;
-		XMFLOAT4 ShadowmapAdress2;
-		XMFLOAT4 ShadowmapAdress3;
+		Vector4 Color;
+		Vector4 Dir;
+		Vector4 PosHPix0;
+		Vector4 PosHPix1;
+		Vector4 PosHPix2;
+		Vector4 PosHPix3;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
 		XMMATRIX ViewProj0;
 		XMMATRIX ViewProj1;
 		XMMATRIX ViewProj2;

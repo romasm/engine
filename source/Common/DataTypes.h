@@ -11,11 +11,15 @@
 
 #define SELECT_3D_MAX_DIST 10000.0f
 
-#define QUAT_ROT_NULL XMFLOAT4(0,0,0,1.0f)
+#define QUAT_ROT_NULL Vector4(0,0,0,1.0f)
 
 // global constants
 #define XM_PI_SQR XM_PI * XM_PI
 #define XM_PI_SQRT sqrt(XM_PI)
+
+#define VECTOR2_CAST(xmfloat) Vector3(xmfloat.x, xmfloat.y)
+#define VECTOR3_CAST(xmfloat) Vector3(xmfloat.x, xmfloat.y, xmfloat.z)
+#define VECTOR4_CAST(xmfloat) Vector3(xmfloat.x, xmfloat.y, xmfloat.z, xmfloat.w)
 
 // -------------------------------
 static float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -99,35 +103,35 @@ struct CollVertex
 
 struct OnlyVertex
 {
-	XMFLOAT3 Pos;
+	Vector3 Pos;
 };
 
 struct UnlitVertex
 {
-	XMFLOAT3 Pos;
-	XMFLOAT2 Tex;
+	Vector3 Pos;
+	Vector2 Tex;
 };
 
 struct LitVertex
 {
-	XMFLOAT3 Pos;
-	XMFLOAT2 Tex;
-	XMFLOAT3 Norm;
-	XMFLOAT3 Tang;
-	XMFLOAT3 Binorm;
+	Vector3 Pos;
+	Vector2 Tex;
+	Vector3 Norm;
+	Vector3 Tang;
+	Vector3 Binorm;
 };
 
 // ------------------------------
 
 struct BBox
 {
-	XMFLOAT3 p_max;
-	XMFLOAT3 p_min;
+	Vector3 p_max;
+	Vector3 p_min;
 
 	BBox()
 	{
-		p_max = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		p_min = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		p_max = Vector3(0.0f, 0.0f, 0.0f);
+		p_min = Vector3(0.0f, 0.0f, 0.0f);
 	}
 
 	BBox& operator=(const BBox& right)

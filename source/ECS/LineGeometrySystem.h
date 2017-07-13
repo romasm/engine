@@ -24,7 +24,7 @@ namespace EngineCore
 
 	struct LineGeometryVertex
 	{
-		XMFLOAT3 pos;
+		Vector3 pos;
 	};
 
 	enum LineGeometryTypes
@@ -102,18 +102,18 @@ namespace EngineCore
 
 		bool SetFromVis(Entity e, bool forceEVS = false);
 
-		bool SetLine(Entity e, XMFLOAT3 p1, XMFLOAT3 p2);
+		bool SetLine(Entity e, Vector3 p1, Vector3 p2);
 
 		bool SetBox(Entity e, BoundingBox box);
 		bool SetBox(Entity e, BoundingOrientedBox box);
 		bool SetBox(Entity e, BoundingFrustum box);
 
-		bool SetSpline(Entity e, XMFLOAT3* p, UINT size);
+		bool SetSpline(Entity e, Vector3* p, UINT size);
 
 		bool SetPoint(Entity e);
 		bool SetSphere(Entity e, float radius);
 
-		bool SetColor(Entity e, XMFLOAT4 color);
+		bool SetColor(Entity e, Vector4 color);
 
 		LineGeometryTypes GetType(Entity e);
 

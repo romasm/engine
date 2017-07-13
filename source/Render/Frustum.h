@@ -115,11 +115,11 @@ namespace EngineCore
 			if(shape.Contains(XMLoadFloat3(&screen.GetViewPoint())))
 				return 1.0f;
 			
-			XMFLOAT3 corners[8];
+			Vector3 corners[8];
 			shape.GetCorners(corners);
 
-			XMFLOAT3 corners_vs[8];
-			XMVector3TransformCoordStream(corners_vs, sizeof(XMFLOAT3), corners, sizeof(XMFLOAT3), 8, screen.GetWV());
+			Vector3 corners_vs[8];
+			XMVector3TransformCoordStream(corners_vs, sizeof(Vector3), corners, sizeof(Vector3), 8, screen.GetWV());
 			
 			// TODO: некоректное проецирование точек за камерой
 			for(uint8_t i = 0; i < 8; i++)
@@ -143,10 +143,10 @@ namespace EngineCore
 				p1.z = 0.1f;
 			}
 
-			XMFLOAT3 corners_cs[8];
-			XMVector3TransformCoordStream(corners_cs, sizeof(XMFLOAT3), corners_vs, sizeof(XMFLOAT3), 8, screen.GetProj());
+			Vector3 corners_cs[8];
+			XMVector3TransformCoordStream(corners_cs, sizeof(Vector3), corners_vs, sizeof(Vector3), 8, screen.GetProj());
 
-			XMFLOAT2 p_min, p_max;
+			Vector2 p_min, p_max;
 			p_min.x = p_min.y = 1.0f;
 			p_max.x = p_max.y = -1.0f;
 			for(uint8_t i = 0; i < 8; i++)

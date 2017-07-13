@@ -46,7 +46,7 @@ void GlobalLightSystem::cleanCascades(CascadeShadow& cascade)
 	{
 		cascade.render_mgr[j] = nullptr;
 		cascade.vp_buf[j] = nullptr;
-		cascade.pos[j] = XMFLOAT3(0,0,0);
+		cascade.pos[j] = Vector3(0,0,0);
 		cascade.view[j] = XMMatrixIdentity();
 		cascade.view_proj[j] = XMMatrixIdentity();
 	}
@@ -160,7 +160,7 @@ void GlobalLightSystem::buildProj(uint16_t camId, CameraComponent* cam)
 		BoundingFrustum cam_frust_first;
 		BoundingFrustum::CreateFromMatrix(cam_frust_first, projMatrix);
 
-		XMFLOAT3 frust_corners[8];
+		Vector3 frust_corners[8];
 		cam_frust_first.GetCorners(frust_corners);
 		XMVECTOR diag = XMLoadFloat3(&frust_corners[0]) - XMLoadFloat3(&frust_corners[6]);
 		
@@ -377,9 +377,9 @@ uint32_t GlobalLightSystem::Serialize(Entity e, uint8_t* data)
 	*(bool*)t_data = comp.active;
 	t_data += sizeof(bool);
 	size += sizeof(bool);
-	*(XMFLOAT3*)t_data = comp.color;
-	t_data += sizeof(XMFLOAT3);
-	size += sizeof(XMFLOAT3);
+	*(Vector3*)t_data = comp.color;
+	t_data += sizeof(Vector3);
+	size += sizeof(Vector3);
 	*(float*)t_data = comp.brightness;
 	t_data += sizeof(float);
 	size += sizeof(float);
@@ -399,9 +399,9 @@ uint32_t GlobalLightSystem::Deserialize(Entity e, uint8_t* data)
 	comp.active = *(bool*)t_data;
 	t_data += sizeof(bool);
 	size += sizeof(bool);
-	comp.color = *(XMFLOAT3*)t_data;
-	t_data += sizeof(XMFLOAT3);
-	size += sizeof(XMFLOAT3);
+	comp.color = *(Vector3*)t_data;
+	t_data += sizeof(Vector3);
+	size += sizeof(Vector3);
 	comp.brightness = *(float*)t_data;
 	t_data += sizeof(float);
 	size += sizeof(float);
@@ -426,16 +426,16 @@ bool GlobalLightSystem::SetActive(Entity e, bool active)
 	return true;
 }
 
-bool GlobalLightSystem::SetColor(Entity e, XMFLOAT3 color)
+bool GlobalLightSystem::SetColor(Entity e, Vector3 color)
 {
 	GET_COMPONENT(false)
 	comp.color = color;
 	comp.dirty = true;
 	return true;
 }
-XMFLOAT3 GlobalLightSystem::GetColor(Entity e)
+Vector3 GlobalLightSystem::GetColor(Entity e)
 {
-	GET_COMPONENT(XMFLOAT3())
+	GET_COMPONENT(Vector3())
 	return comp.color;
 }
 

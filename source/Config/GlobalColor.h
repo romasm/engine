@@ -7,9 +7,9 @@ namespace EngineCore
 {
 //------------------------------------------------------------------
 
-static XMFLOAT4 null_color = XMFLOAT4(0,0,0,0);
-static XMFLOAT4 black_color = XMFLOAT4(0,0,0,1);
-static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
+static Vector4 null_color = Vector4(0,0,0,0);
+static Vector4 black_color = Vector4(0,0,0,1);
+static Vector4 white_color = Vector4(1,1,1,1);
 
 #define GCOLOR(name) GlobalColor::Get()->GetColorPtr(name)
 
@@ -21,11 +21,11 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 
 		inline static GlobalColor* Get(){return instance;}
 
-		void AddColor(string& id, XMFLOAT4 color);
-		XMFLOAT4* GetColorPtr(string& id);
+		void AddColor(string& id, Vector4 color);
+		Vector4* GetColorPtr(string& id);
 		
-		static XMFLOAT4 GetColor(string id) {return *(instance->GetColorPtr(id));}
-		static void SetColor(string id, XMFLOAT4 color);
+		static Vector4 GetColor(string id) {return *(instance->GetColorPtr(id));}
+		static void SetColor(string id, Vector4 color);
 
 		static bool Load(string filename);
 		static bool Save(string filename);
@@ -50,7 +50,7 @@ static XMFLOAT4 white_color = XMFLOAT4(1,1,1,1);
 		
 		string configName;
 
-		map<string, XMFLOAT4> colorsMap;
+		map<string, Vector4> colorsMap;
 	};
 
 //------------------------------------------------------------------

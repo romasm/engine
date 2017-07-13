@@ -121,27 +121,27 @@ namespace EngineCore
 
 		XMVECTOR GetVectorFromScreen(Entity e, XMVECTOR screen_point, float screen_w, float screen_h);
 
-		XMFLOAT3 GetPos(Entity e)
+		Vector3 GetPos(Entity e)
 		{
-			XMFLOAT3 res;
+			Vector3 res;
 			XMStoreFloat3(&res, GetPosV(e));
 			return res;
 		}
-		XMFLOAT3 GetUp(Entity e)
+		Vector3 GetUp(Entity e)
 		{
-			XMFLOAT3 res;
+			Vector3 res;
 			XMStoreFloat3(&res, GetUpV(e));
 			return res;
 		}
-		XMFLOAT3 GetLookDir(Entity e)
+		Vector3 GetLookDir(Entity e)
 		{
-			XMFLOAT3 res;
+			Vector3 res;
 			XMStoreFloat3(&res, GetLookDirV(e));
 			return res;
 		}
-		XMFLOAT3 GetLookTangent(Entity e)
+		Vector3 GetLookTangent(Entity e)
 		{
-			XMFLOAT3 res;
+			Vector3 res;
 			XMStoreFloat3(&res, GetLookTangentV(e));
 			return res;
 		}
@@ -168,9 +168,9 @@ namespace EngineCore
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
-		XMFLOAT3 _GetVectorFromScreen(Entity e, int x, int y, int screen_w, int screen_h)
+		Vector3 _GetVectorFromScreen(Entity e, int x, int y, int screen_w, int screen_h)
 		{
-			XMFLOAT3 res;
+			Vector3 res;
 			XMVECTOR t = GetVectorFromScreen(e, XMVectorSet(float(x), float(y), 0, 0), float(screen_w), float(screen_h));
 			XMStoreFloat3(&res, t);
 			return res;

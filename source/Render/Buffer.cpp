@@ -13,17 +13,17 @@ Buffer::Buffer()
 {
 	UnlitVertex vertices_quad[4];
 	
-	vertices_quad[0].Pos = XMFLOAT3(-1.0f, 1.0f, 0.0f);
-	vertices_quad[0].Tex = XMFLOAT2(0.0f, 0.0f);
+	vertices_quad[0].Pos = Vector3(-1.0f, 1.0f, 0.0f);
+	vertices_quad[0].Tex = Vector2(0.0f, 0.0f);
 
-	vertices_quad[1].Pos = XMFLOAT3(1.0f, -1.0f, 0.0f);
-	vertices_quad[1].Tex = XMFLOAT2(1.0f, 1.0f);
+	vertices_quad[1].Pos = Vector3(1.0f, -1.0f, 0.0f);
+	vertices_quad[1].Tex = Vector2(1.0f, 1.0f);
 
-	vertices_quad[2].Pos = XMFLOAT3(-1.0f, -1.0f, 0.0f);
-	vertices_quad[2].Tex = XMFLOAT2(0.0f, 1.0f);
+	vertices_quad[2].Pos = Vector3(-1.0f, -1.0f, 0.0f);
+	vertices_quad[2].Tex = Vector2(0.0f, 1.0f);
 
-	vertices_quad[3].Pos = XMFLOAT3(1.0f, 1.0f, 0.0f);
-	vertices_quad[3].Tex = XMFLOAT2(1.0f, 0.0f);
+	vertices_quad[3].Pos = Vector3(1.0f, 1.0f, 0.0f);
+	vertices_quad[3].Tex = Vector2(1.0f, 0.0f);
 		
 	unsigned short indices_quad[6] = 
 	{
@@ -37,12 +37,12 @@ Buffer::Buffer()
 	QuadIndex = Buffer::CreateIndexBuffer(DEVICE, sizeof(unsigned short)*6, false, &indices_quad);
 
 	UnlitVertex vertices_tris[3];
-	vertices_tris[0].Pos = XMFLOAT3(-1.0f, 1.0f, 0.0f);
-	vertices_tris[0].Tex = XMFLOAT2(0.0f, 0.0f);
-	vertices_tris[1].Pos = XMFLOAT3(3.0f ,1.0f, 0.0f);
-	vertices_tris[1].Tex = XMFLOAT2(2.0f, 0.0f);
-	vertices_tris[2].Pos = XMFLOAT3(-1.0f, -3.0f, 0.0f);
-	vertices_tris[2].Tex = XMFLOAT2(0.0f,2.0f);
+	vertices_tris[0].Pos = Vector3(-1.0f, 1.0f, 0.0f);
+	vertices_tris[0].Tex = Vector2(0.0f, 0.0f);
+	vertices_tris[1].Pos = Vector3(3.0f ,1.0f, 0.0f);
+	vertices_tris[1].Tex = Vector2(2.0f, 0.0f);
+	vertices_tris[2].Pos = Vector3(-1.0f, -3.0f, 0.0f);
+	vertices_tris[2].Tex = Vector2(0.0f,2.0f);
 
 	unsigned short indices_tris[3] = 
 	{

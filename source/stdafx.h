@@ -51,6 +51,8 @@
 
 #include <DirectXmath.h>
 using namespace DirectX;
+#include <SimpleMath.h>
+using namespace SimpleMath;
 
 #pragma comment(lib,"dxguid.lib")
 

@@ -128,6 +128,16 @@ Quaternion::Quaternion(const Matrix3x3& matrix) {
     }
 }
 
+/// From in-engine format conversion
+Quaternion::Quaternion(const DirectX::SimpleMath::Quaternion& q) : x(q.x), y(q.y), z(q.z), w(q.w) {
+
+}
+
+/// From in-engine format conversion
+Quaternion::Quaternion(const DirectX::SimpleMath::Vector4& v) : x(v.x), y(v.y), z(v.z), w(v.w) {
+
+}
+
 // Destructor
 Quaternion::~Quaternion() {
 

@@ -52,7 +52,29 @@ Transform::Transform(const Transform& transform)
 
 }
 
+/// From in-engine format conversion
+Transform::Transform(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Quaternion& rot) 
+	: mPosition(pos), mOrientation(rot) {
+
+}
+
+/// From in-engine format conversion
+Transform::Transform(const DirectX::XMMATRIX& transformMatrix)
+{
+	DirectX::XMVECTOR scale, rot, pos;
+	DirectX::XMMatrixDecompose(&scale, &rot, &pos, transformMatrix);
+	mPosition = DirectX::SimpleMath::Vector3(pos);
+	mOrientation = DirectX::SimpleMath::Quaternion(rot);
+}
+
 // Destructor
 Transform::~Transform() {
     
+}
+
+/// To in-engine format conversion
+Transform::operator DirectX::XMMATRIX() const
+{
+	return DirectX::XMMatrixRotationQuaternion(DirectX::SimpleMath::Quaternion(mOrientation)) * 
+		DirectX::XMMatrixTranslation(mPosition.x, mPosition.y, mPosition.z);
 }

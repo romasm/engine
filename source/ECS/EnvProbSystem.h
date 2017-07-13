@@ -52,7 +52,7 @@ namespace EngineCore
 		EnvParallaxType type;
 		float fade;		
 		UINT mips_count; // mipsNum - 1
-		XMFLOAT3 offset;
+		Vector3 offset;
 
 		float near_clip, far_clip;
 		int resolution;
@@ -60,7 +60,7 @@ namespace EngineCore
 		// update on dirty
 		XMMATRIX invTransform;
 		float distance;
-		XMFLOAT3 pos;
+		Vector3 pos;
 		
 		ALIGNED_ALLOCATION
 	};
@@ -89,7 +89,7 @@ namespace EngineCore
 			{
 				D.far_clip = 1000000.0f;
 				D.near_clip = 1000.0f;
-				D.offset = XMFLOAT3(0,0,0);
+				D.offset = Vector3(0,0,0);
 				D.resolution = ENVPROBS_DIST_RES;
 			}
 
@@ -105,11 +105,11 @@ namespace EngineCore
 			case EP_PARALLAX_SPHERE:
 			case EP_PARALLAX_NONE:
 				earlyVisibilitySys->SetType(comp.get_entity(), BT_SPHERE);
-				earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(XMFLOAT3(0,0,0), 1));
+				earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(Vector3(0,0,0), 1));
 				break;
 			case EP_PARALLAX_BOX:
 				earlyVisibilitySys->SetType(comp.get_entity(), BT_BOX);
-				earlyVisibilitySys->SetBBox(comp.get_entity(), BoundingBox(XMFLOAT3(0,0,0), XMFLOAT3(1,1,1)));
+				earlyVisibilitySys->SetBBox(comp.get_entity(), BoundingBox(Vector3(0,0,0), Vector3(1,1,1)));
 				break;
 			}
 		}

@@ -201,13 +201,13 @@ bool EnvProbSystem::Bake(Entity e)
 
 	ScratchImage raw_cube[6];
 
-	const XMFLOAT3 m_cam_rot[6] = {
-		XMFLOAT3(0, XM_PIDIV2, 0),
-		XMFLOAT3(0, -XM_PIDIV2, 0),
-		XMFLOAT3(-XM_PIDIV2, 0, 0),
-		XMFLOAT3(XM_PIDIV2, 0, 0),
-		XMFLOAT3(0, 0, 0),
-		XMFLOAT3(0, XM_PI, 0)
+	const Vector3 m_cam_rot[6] = {
+		Vector3(0, XM_PIDIV2, 0),
+		Vector3(0, -XM_PIDIV2, 0),
+		Vector3(-XM_PIDIV2, 0, 0),
+		Vector3(XM_PIDIV2, 0, 0),
+		Vector3(0, 0, 0),
+		Vector3(0, XM_PI, 0)
 	};
 	
 	for(int i=0; i<6; i++)

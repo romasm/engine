@@ -307,22 +307,22 @@ StMeshData* StMeshMgr::loadSTMFileFromMemory(string& name, uint8_t* data, uint32
 		}
 	}
 
-	XMFLOAT3 center;
+	Vector3 center;
 	//							temp: REMOVE
 	float radius;
-	center = *(XMFLOAT3*)t_data;
-	t_data += sizeof(XMFLOAT3); 
+	center = *(Vector3*)t_data;
+	t_data += sizeof(Vector3); 
 
 	radius = *(float*)t_data;
 	t_data += sizeof(float);
 	//mesh->sphere = BoundingSphere(center, radius);
 	
-	XMFLOAT3 extents;
-	center = *(XMFLOAT3*)t_data;
-	t_data += sizeof(XMFLOAT3); 
+	Vector3 extents;
+	center = *(Vector3*)t_data;
+	t_data += sizeof(Vector3); 
 
-	extents = *(XMFLOAT3*)t_data;
-	t_data += sizeof(XMFLOAT3); 
+	extents = *(Vector3*)t_data;
+	t_data += sizeof(Vector3); 
 
 	mesh->box = BoundingBox(center, extents);
 	
@@ -413,8 +413,8 @@ StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool 
 	uint32_t** indices = new uint32_t*[stmesh->matCount];
 	LitVertex** vertices = new LitVertex*[stmesh->matCount];
 
-	XMFLOAT3 posMin = XMFLOAT3(9999999.0f,9999999.0f,9999999.0f);
-	XMFLOAT3 posMax = XMFLOAT3(-9999999.0f,-9999999.0f,-9999999.0f);
+	Vector3 posMin = Vector3(9999999.0f,9999999.0f,9999999.0f);
+	Vector3 posMax = Vector3(-9999999.0f,-9999999.0f,-9999999.0f);
 
 	for(uint32_t i=0; i<stmesh->matCount; i++)
 	{
@@ -462,7 +462,7 @@ StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool 
 
 		for(uint32_t j=0; j<stmesh->vertexCount[i]; j++)
 		{
-			vertices[i][j].Pos = XMFLOAT3(mesh[i]->mVertices[j].x, mesh[i]->mVertices[j].y, mesh[i]->mVertices[j].z);
+			vertices[i][j].Pos = Vector3(mesh[i]->mVertices[j].x, mesh[i]->mVertices[j].y, mesh[i]->mVertices[j].z);
 
 			posMin.x = min(vertices[i][j].Pos.x, posMin.x);
 			posMin.y = min(vertices[i][j].Pos.y, posMin.y);
@@ -473,25 +473,25 @@ StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool 
 			posMax.z = max(vertices[i][j].Pos.z, posMax.z);
 
 			if(mesh[i]->mNormals)
-				vertices[i][j].Norm = XMFLOAT3(mesh[i]->mNormals[j].x, mesh[i]->mNormals[j].y, mesh[i]->mNormals[j].z);
+				vertices[i][j].Norm = Vector3(mesh[i]->mNormals[j].x, mesh[i]->mNormals[j].y, mesh[i]->mNormals[j].z);
 			else
-				vertices[i][j].Norm = XMFLOAT3(0,0,0);
+				vertices[i][j].Norm = Vector3(0,0,0);
 
 			if(mesh[i]->mTangents)
 			{
-				vertices[i][j].Tang = XMFLOAT3(mesh[i]->mTangents[j].x, mesh[i]->mTangents[j].y, mesh[i]->mTangents[j].z);
-				vertices[i][j].Binorm = XMFLOAT3(mesh[i]->mBitangents[j].x, mesh[i]->mBitangents[j].y, mesh[i]->mBitangents[j].z);
+				vertices[i][j].Tang = Vector3(mesh[i]->mTangents[j].x, mesh[i]->mTangents[j].y, mesh[i]->mTangents[j].z);
+				vertices[i][j].Binorm = Vector3(mesh[i]->mBitangents[j].x, mesh[i]->mBitangents[j].y, mesh[i]->mBitangents[j].z);
 			}
 			else
 			{
-				vertices[i][j].Tang = XMFLOAT3(0,0,0);
-				vertices[i][j].Binorm = XMFLOAT3(0,0,0);
+				vertices[i][j].Tang = Vector3(0,0,0);
+				vertices[i][j].Binorm = Vector3(0,0,0);
 			}
 
 			if(mesh[i]->HasTextureCoords(0))
-				vertices[i][j].Tex = XMFLOAT2(mesh[i]->mTextureCoords[0][j].x, mesh[i]->mTextureCoords[0][j].y);
+				vertices[i][j].Tex = Vector2(mesh[i]->mTextureCoords[0][j].x, mesh[i]->mTextureCoords[0][j].y);
 			else
-				vertices[i][j].Tex = XMFLOAT2(0.5f, 0.5f);
+				vertices[i][j].Tex = Vector2(0.5f, 0.5f);
 		}
 
 		if(noInit)
@@ -509,8 +509,8 @@ StMeshData* StMeshMgr::loadAIScene(string& filename, const aiScene* scene, bool 
 		}
 	}
 
-	XMFLOAT3 center = XMFLOAT3(0.5f * (posMin.x + posMax.x), 0.5f * (posMin.y + posMax.y), 0.5f * (posMin.z + posMax.z));
-	XMFLOAT3 extents = XMFLOAT3(posMax.x - center.x, posMax.y - center.y, posMax.z - center.z);
+	Vector3 center = Vector3(0.5f * (posMin.x + posMax.x), 0.5f * (posMin.y + posMax.y), 0.5f * (posMin.z + posMax.z));
+	Vector3 extents = Vector3(posMax.x - center.x, posMax.y - center.y, posMax.z - center.z);
 	extents.x = std::max<float>(extents.x, 0);
 	extents.y = std::max<float>(extents.y, 0);
 	extents.z = std::max<float>(extents.z, 0);
@@ -536,7 +536,7 @@ void StMeshMgr::convertToSTM(string& filename, StMeshData* mesh, uint32_t** indi
 {
 	string stm_file = filename.substr(0, filename.rfind('.')) + EXT_STATIC;
 
-	uint32_t file_size = sizeof(int32_t) + sizeof(XMFLOAT3) + sizeof(float) + sizeof(XMFLOAT3) + sizeof(XMFLOAT3);
+	uint32_t file_size = sizeof(int32_t) + sizeof(Vector3) + sizeof(float) + sizeof(Vector3) + sizeof(Vector3);
 	for(uint16_t i = 0; i < mesh->matCount; i++)
 	{
 		file_size += sizeof(uint32_t) + sizeof(uint32_t);
@@ -574,15 +574,15 @@ void StMeshMgr::convertToSTM(string& filename, StMeshData* mesh, uint32_t** indi
 	}
 
 	// temp
-	*(XMFLOAT3*)t_data = XMFLOAT3(0,0,0);
-	t_data += sizeof(XMFLOAT3);
+	*(Vector3*)t_data = Vector3(0,0,0);
+	t_data += sizeof(Vector3);
 	*(float*)t_data = 0;
 	t_data += sizeof(float);
 	
-	*(XMFLOAT3*)t_data = mesh->box.Center;
-	t_data += sizeof(XMFLOAT3);
-	*(XMFLOAT3*)t_data = mesh->box.Extents;
-	t_data += sizeof(XMFLOAT3);
+	*(Vector3*)t_data = VECTOR3_CAST(mesh->box.Center);
+	t_data += sizeof(Vector3);
+	*(Vector3*)t_data = VECTOR3_CAST(mesh->box.Extents);
+	t_data += sizeof(Vector3);
 
 	if(!FileIO::WriteFileData( stm_file, data.get(), file_size ))
 	{

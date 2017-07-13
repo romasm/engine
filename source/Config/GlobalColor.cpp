@@ -49,14 +49,14 @@ namespace EngineCore
 			return false;
 
 		for(auto& it: *colors)
-			instance->AddColor(string(it.first), CharToXMFloat4((char*)it.second.value.c_str()));
+			instance->AddColor(string(it.first), CharToVector4((char*)it.second.value.c_str()));
 
 		instance->configName = filename;
 
 		return true;
 	}
 
-	void GlobalColor::AddColor(string& id, XMFLOAT4 l_color)
+	void GlobalColor::AddColor(string& id, Vector4 l_color)
 	{
 		if(init)
 		{
@@ -68,20 +68,20 @@ namespace EngineCore
 			colorsMap.insert(make_pair(id, l_color));
 	}
 
-	XMFLOAT4* GlobalColor::GetColorPtr(string& id)
+	Vector4* GlobalColor::GetColorPtr(string& id)
 	{
 		auto it = colorsMap.find(id);
 		if(it == colorsMap.end())
 		{
 			if(id != "null")
 				ERR("Undefined color id %s", id.c_str());
-			return (XMFLOAT4*)&null_color;
+			return (Vector4*)&null_color;
 		}
 
 		return &it->second;
 	}
 
-	void GlobalColor::SetColor(string id, XMFLOAT4 color)
+	void GlobalColor::SetColor(string id, Vector4 color)
 	{
 		auto it = instance->colorsMap.find(id);
 		if(it == instance->colorsMap.end())

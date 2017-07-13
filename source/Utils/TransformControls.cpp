@@ -301,9 +301,9 @@ void TransformControls::RegToDraw()
 	}
 }
 
-XMFLOAT3 TransformControls::CalcMove(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
+Vector3 TransformControls::CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam)
 {
-	XMFLOAT3 res = XMFLOAT3(0,0,0);
+	Vector3 res = Vector3(0,0,0);
 	if(!active || b_hover == E_TRANSFORM_NOPE || mode != E_MOVE)
 		return res;
 
@@ -368,9 +368,9 @@ XMFLOAT3 TransformControls::CalcMove(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
 	return res;
 }
 
-XMFLOAT4 TransformControls::CalcScale(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
+Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 {
-	XMFLOAT4 res = XMFLOAT4(0,0,0,0);
+	Vector4 res = Vector4(0,0,0,0);
 	if(!active || b_hover == E_TRANSFORM_NOPE || mode != E_SCALE)
 		return res;
 
@@ -458,9 +458,9 @@ XMFLOAT4 TransformControls::CalcScale(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam
 	return res;
 }
 
-XMFLOAT4 TransformControls::CalcRot(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
+Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 {
-	XMFLOAT4 res = XMFLOAT4(1,0,0,0);
+	Vector4 res = Vector4(1,0,0,0);
 	if(!active || b_hover == E_TRANSFORM_NOPE || mode != E_ROT)
 		return res;
 
@@ -503,7 +503,7 @@ XMFLOAT4 TransformControls::CalcRot(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
 			if(XMVectorGetX(XMVector3Dot(norm, rot_dir_test)) < 0)
 				angle = -angle;
 
-			res = XMFLOAT4(XMVectorGetX(norm), XMVectorGetY(norm), XMVectorGetZ(norm), angle);
+			res = Vector4(XMVectorGetX(norm), XMVectorGetY(norm), XMVectorGetZ(norm), angle);
 		}
 		break;
 	case TransformControls::E_TRANSFORM_ALL:
@@ -519,7 +519,7 @@ XMFLOAT4 TransformControls::CalcRot(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
 			XMVECTOR rot_dir_test = XMVector3Cross(point_from, point_to);
 			if(XMVectorGetX(XMVector3Dot(norm, rot_dir_test)) < 0)
 				angle = -angle;
-			res = XMFLOAT4(XMVectorGetX(norm), XMVectorGetY(norm), XMVectorGetZ(norm), angle);
+			res = Vector4(XMVectorGetX(norm), XMVectorGetY(norm), XMVectorGetZ(norm), angle);
 		}
 		break;
 	}
@@ -527,24 +527,24 @@ XMFLOAT4 TransformControls::CalcRot(XMFLOAT3 Ray, XMFLOAT3 PrevRay, Entity cam)
 	return res;
 }
 
-void TransformControls::ApplyMove(XMFLOAT3 move, Entity e)
+void TransformControls::ApplyMove(Vector3 move, Entity e)
 {
 	transformSys->AddPosition(e, move.x, move.y, move.z);
 	SetTransformation(transformSys->GetTransformL(e)); // todo
 }
 
-void TransformControls::ApplyRot(XMFLOAT4 rot, Entity e)
+void TransformControls::ApplyRot(Vector4 rot, Entity e)
 {
-	transformSys->AddRotation(e, XMFLOAT3(rot.x, rot.y, rot.z), rot.w);
+	transformSys->AddRotation(e, Vector3(rot.x, rot.y, rot.z), rot.w);
 	SetTransformation(transformSys->GetTransformL(e)); // todo
 }
 
-void TransformControls::ApplyScale(XMFLOAT4 scale, Entity e)
+void TransformControls::ApplyScale(Vector4 scale, Entity e)
 {
 	transformSys->AddScale(e, 1 + (scale.x * scale.w), 1 + (scale.y * scale.w), 1 + (scale.z * scale.w));
 }
 
-bool TransformControls::CheckHover(XMFLOAT3 HoverRay, Entity cam)
+bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 {
 	if(!active || mode == E_PIVOT)
 		return false;

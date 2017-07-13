@@ -33,7 +33,7 @@ namespace EngineCore
 
 	struct VolumeData
 	{
-		XMFLOAT3 cornerOffset;
+		Vector3 cornerOffset;
 		float worldSize;
 		
 		float scaleHelper;
@@ -43,12 +43,12 @@ namespace EngineCore
 
 		float voxelDiag;
 		float voxelDiagRcp;
-		XMFLOAT2 levelOffset;
+		Vector2 levelOffset;
 		
-		XMFLOAT3 volumeOffset;
+		Vector3 volumeOffset;
 		float worldSizeRcp;
 
-		XMFLOAT2 levelOffsetTex;
+		Vector2 levelOffsetTex;
 		float _padding0;
 		float _padding1;
 	};
@@ -63,11 +63,11 @@ namespace EngineCore
 
 	struct VolumeDownsample
 	{
-		XMFLOAT3 writeOffset;
+		Vector3 writeOffset;
 		uint32_t currentLevel;
 
 		uint32_t currentRes;
-		XMFLOAT3 isShifted;
+		Vector3 isShifted;
 	};
 
 	class SceneRenderMgr;
@@ -220,7 +220,7 @@ namespace EngineCore
 		
 		struct VolumeConfig
 		{
-			XMFLOAT3 corner;
+			Vector3 corner;
 			float worldSize;
 			float voxelSize;
 			BoundingOrientedBox volumeBox;

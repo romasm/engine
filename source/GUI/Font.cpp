@@ -156,17 +156,17 @@ void Font::BuildVertexArray(UnlitVertex *vertex, uint16_t numvert, wstring& sent
 			symbols_pos[i+1] = (int16_t)(drawX + symData.xAdv);
 		}
 
-		vertex[index].Pos = XMFLOAT3(left, top, 0.0f);
-		vertex[index].Tex = XMFLOAT2(lefttex, toptex);
+		vertex[index].Pos = Vector3(left, top, 0.0f);
+		vertex[index].Tex = Vector2(lefttex, toptex);
 		index++;		
-		vertex[index].Pos = XMFLOAT3(right, bottom, 0.0f);
-		vertex[index].Tex = XMFLOAT2(righttex, bottomtex);
+		vertex[index].Pos = Vector3(right, bottom, 0.0f);
+		vertex[index].Tex = Vector2(righttex, bottomtex);
 		index++;
-		vertex[index].Pos = XMFLOAT3(left, bottom, 0.0f);
-		vertex[index].Tex = XMFLOAT2(lefttex, bottomtex);
+		vertex[index].Pos = Vector3(left, bottom, 0.0f);
+		vertex[index].Tex = Vector2(lefttex, bottomtex);
 		index++;
-		vertex[index].Pos = XMFLOAT3(right, top, 0.0f);
-		vertex[index].Tex = XMFLOAT2(righttex, toptex);
+		vertex[index].Pos = Vector3(right, top, 0.0f);
+		vertex[index].Tex = Vector2(righttex, toptex);
 		index++;
 		
 		drawX += symData.xAdv;

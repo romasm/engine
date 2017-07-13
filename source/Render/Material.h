@@ -94,14 +94,14 @@ namespace EngineCore
 
 		void ClearTextures();
 
-		void SetVector(XMFLOAT4& vect, uint8_t id, uint8_t shaderType);
+		void SetVector(Vector4& vect, uint8_t id, uint8_t shaderType);
 		void SetFloat(float f, uint8_t id, uint8_t shaderType);
-		void SetVectorWithSlotName(XMFLOAT4& vect, string slot, uint8_t shaderType);
+		void SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType);
 		void SetFloatWithSlotName(float f, string slot, uint8_t shaderType);
 
-		XMFLOAT4 GetVector(uint8_t id, uint8_t shader);
+		Vector4 GetVector(uint8_t id, uint8_t shader);
 		float GetFloat(uint8_t id, uint8_t shader);
-		XMFLOAT4 GetVectorWithSlotName(string slot, uint8_t shaderType);
+		Vector4 GetVectorWithSlotName(string slot, uint8_t shaderType);
 		float GetFloatWithSlotName(string slot, uint8_t shaderType);
 
 		inline void SetSR(luaSRV view, uint8_t id, uint8_t shader) {SetTexture(view.srv, id, shader);}
@@ -175,7 +175,7 @@ namespace EngineCore
 
 		RArray<TextureHandle> textures[5];
 
-		RArray<XMFLOAT4> dataVector[5];
+		RArray<Vector4> dataVector[5];
 		uint8_t offsetFloat[5];
 
 		MaterialParamsStructBuffer* defferedParams;
@@ -215,13 +215,13 @@ namespace EngineCore
 		bool SetTextureByNameWithSlotName(string name, string slot);
 		void ClearTextures();
 
-		void SetVector(XMFLOAT4& vect, uint8_t id);
-		void SetVectorWithSlotName(XMFLOAT4& vect, string slot);
+		void SetVector(Vector4& vect, uint8_t id);
+		void SetVectorWithSlotName(Vector4& vect, string slot);
 		void SetFloat(float f, uint8_t id);
 		void SetFloatWithSlotName(float f, string slot);
 
-		XMFLOAT4 GetVector(uint8_t id);
-		XMFLOAT4 GetVectorWithSlotName(string slot);
+		Vector4 GetVector(uint8_t id);
+		Vector4 GetVectorWithSlotName(string slot);
 		float GetFloat(uint8_t id);
 		float GetFloatWithSlotName(string slot);
 
@@ -259,7 +259,7 @@ namespace EngineCore
 
 		RArray<TextureHandle> textures;
 
-		RArray<XMFLOAT4> dataVector;
+		RArray<Vector4> dataVector;
 		uint8_t offsetFloat;
 		
 		ID3D11Buffer* inputBuf;

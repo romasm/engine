@@ -24,7 +24,7 @@ inline static bool GetShift(){return Hud::Get()->KeyState.shift;}
 inline static bool GetCtrl(){return Hud::Get()->KeyState.ctrl;}
 inline static bool GetAlt(){return Hud::Get()->KeyState.alt;}
 
-static XMFLOAT4* GetColor(string id){return GCOLOR(id);}
+static Vector4* GetColor(string id){return GCOLOR(id);}
 
 static void PutInClipboard(string str)
 {
@@ -85,9 +85,9 @@ static void UpdateRootRectLua(HEntityWraper e)
 static void SetHCursor(uint16_t crs) {SetCursor(WindowsMgr::Get()->GetCursors((HCursors)crs));}
 
 #define RCP255 1.0f / 255.0f
-static XMFLOAT4 GetColorUnderCursor() {
+static Vector4 GetColorUnderCursor() {
 	if(!Hud::Get()->screenContext)
-		return XMFLOAT4(0,0,0,0);
+		return Vector4(0,0,0,0);
 
 	POINT pos = Hud::Get()->GetSystemCursorPos();
 	HDC hdc = GetDC(NULL);
@@ -96,7 +96,7 @@ static XMFLOAT4 GetColorUnderCursor() {
     int g = GetGValue(color);
     int b = GetBValue(color);
 
-	return XMFLOAT4(float(r) * RCP255, float(g) * RCP255, float(b) * RCP255, 1.0f);
+	return Vector4(float(r) * RCP255, float(g) * RCP255, float(b) * RCP255, 1.0f);
 }
 static void StartColorRead() {
 	Hud::Get()->screenContext = GetDC(NULL);
@@ -273,8 +273,8 @@ bool Hud::CreateRoot(Window* wnd)
 	r.border->Init(string(BORDER_SHADER));
 	r.border->SetRect(MLRECT());
 	auto borderShader = r.border->GetShaderInst();
-	borderShader->SetVector(XMFLOAT4(-1000000.0f,-10000000.0f,1000000.0f,1000000.0f), 0);
-	borderShader->SetVector(XMFLOAT4(0,0,0,0), 2);
+	borderShader->SetVector(Vector4(-1000000.0f,-10000000.0f,1000000.0f,1000000.0f), 0);
+	borderShader->SetVector(Vector4(0,0,0,0), 2);
 
 	rootEnts.insert(make_pair(hwnd, r));
 
@@ -334,7 +334,7 @@ void Hud::UpdateRootRect(HEntityWraper root)
 	MLRECT rect = ent->GetRectAbsolute();
 
 	it->second.border->SetRect(rect);
-	XMFLOAT4 shader_data = XMFLOAT4(1.0f / rect.width, 1.0f / rect.height, 0, 0);
+	Vector4 shader_data = Vector4(1.0f / rect.width, 1.0f / rect.height, 0, 0);
 	shader_data.z = 1.0f - shader_data.x;
 	shader_data.w = 1.0f - shader_data.y;
 

@@ -193,7 +193,7 @@ void LineGeometrySystem::DestroyGeometry(LineGeometryComponent* comp, bool delet
 #define INIT_MAT \
 	comp.material = MATERIAL_S(LG_MAT);
 
-bool LineGeometrySystem::SetLine(Entity e, XMFLOAT3 p1, XMFLOAT3 p2)
+bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 {
 	GET_COMPONENT(false)
 
@@ -222,7 +222,7 @@ bool LineGeometrySystem::SetLine(Entity e, XMFLOAT3 p1, XMFLOAT3 p2)
 #define INIT_BOX_VRTX \
 	const UINT vertex_count = 8;\
 	LineGeometryVertex vertices[vertex_count];\
-	XMFLOAT3 box_corners[8];\
+	Vector3 box_corners[8];\
 	box.GetCorners(box_corners);\
 	vertices[0].pos = box_corners[0];\
 	vertices[1].pos = box_corners[1];\
@@ -293,7 +293,7 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingFrustum box)
 	}	
 }
 
-bool LineGeometrySystem::SetSpline(Entity e, XMFLOAT3* p, UINT size)
+bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, UINT size)
 {
 	GET_COMPONENT(false)
 
@@ -355,12 +355,12 @@ bool LineGeometrySystem::SetPoint(Entity e)
 	const unsigned long indices[index_count] = {0,1,2,3,4,5};
 
 	LineGeometryVertex vertices[vertex_count];
-	vertices[0].pos = XMFLOAT3(LG_POINT_SIZE,0.0f,0.0f);
-	vertices[1].pos = XMFLOAT3(-LG_POINT_SIZE,0.0f,0.0f);
-	vertices[2].pos = XMFLOAT3(0.0f,LG_POINT_SIZE,0.0f);
-	vertices[3].pos = XMFLOAT3(0.0f,-LG_POINT_SIZE,0.0f);
-	vertices[4].pos = XMFLOAT3(0.0f,0.0f,LG_POINT_SIZE);
-	vertices[5].pos = XMFLOAT3(0.0f,0.0f,-LG_POINT_SIZE);
+	vertices[0].pos = Vector3(LG_POINT_SIZE,0.0f,0.0f);
+	vertices[1].pos = Vector3(-LG_POINT_SIZE,0.0f,0.0f);
+	vertices[2].pos = Vector3(0.0f,LG_POINT_SIZE,0.0f);
+	vertices[3].pos = Vector3(0.0f,-LG_POINT_SIZE,0.0f);
+	vertices[4].pos = Vector3(0.0f,0.0f,LG_POINT_SIZE);
+	vertices[5].pos = Vector3(0.0f,0.0f,-LG_POINT_SIZE);
 
 	INIT_MAT
 	INIT_BUFS
@@ -391,7 +391,7 @@ bool LineGeometrySystem::SetSphere(Entity e, float radius)
 	{
 		float angle = i * step;
 		int vetex_i = i;
-		vertices[vetex_i].pos = XMFLOAT3(sin(angle), cos(angle), 0);
+		vertices[vetex_i].pos = Vector3(sin(angle), cos(angle), 0);
 		int index_i = vetex_i * 2;
 		indices[index_i] = vetex_i;
 		if(i == LG_SPHERE_SUBD - 1)
@@ -400,7 +400,7 @@ bool LineGeometrySystem::SetSphere(Entity e, float radius)
 			indices[index_i + 1] = vetex_i + 1;
 
 		vetex_i = LG_SPHERE_SUBD + i;
-		vertices[vetex_i].pos = XMFLOAT3(sin(angle), 0, cos(angle));
+		vertices[vetex_i].pos = Vector3(sin(angle), 0, cos(angle));
 		index_i = vetex_i * 2;
 		indices[index_i] = vetex_i;
 		if(i == LG_SPHERE_SUBD - 1)
@@ -409,7 +409,7 @@ bool LineGeometrySystem::SetSphere(Entity e, float radius)
 			indices[index_i + 1] = vetex_i + 1;
 
 		vetex_i = 2 * LG_SPHERE_SUBD + i;
-		vertices[vetex_i].pos = XMFLOAT3(0, sin(angle), cos(angle));
+		vertices[vetex_i].pos = Vector3(0, sin(angle), cos(angle));
 		index_i = vetex_i * 2;
 		indices[index_i] = vetex_i;
 		if(i == LG_SPHERE_SUBD - 1)
@@ -425,7 +425,7 @@ bool LineGeometrySystem::SetSphere(Entity e, float radius)
 	INIT_BUFS
 }
 
-bool LineGeometrySystem::SetColor(Entity e, XMFLOAT4 color)
+bool LineGeometrySystem::SetColor(Entity e, Vector4 color)
 {
 	GET_COMPONENT(false)
 	if(!comp.material)

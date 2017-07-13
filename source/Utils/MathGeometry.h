@@ -67,10 +67,10 @@ public:
 			WV = P = XMMatrixIdentity();
 	}
 
-	inline XMFLOAT3 GetViewPoint() const
+	inline Vector3 GetViewPoint() const
 	{
-		if(ortho) return orthographic.Center;
-		else return perspective.Origin;
+		if(ortho) return VECTOR3_CAST(orthographic.Center);
+		else return VECTOR3_CAST(perspective.Origin);
 	}
 
 	inline CXMMATRIX GetWV() const {return WV;}
@@ -194,7 +194,7 @@ inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata
     QSortSwap(mid + 1, end, compare_func, swap_func, p_array, q_array);
 }
 
-/*inline bool RayBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, XMFLOAT3 box_min, XMFLOAT3 box_max, CXMMATRIX box_transform, float min_dist, float max_dist)
+/*inline bool RayBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, Vector3 box_min, Vector3 box_max, CXMMATRIX box_transform, float min_dist, float max_dist)
 {
 	XMVECTOR box_pos, box_rot, box_scale;
 	if(!XMMatrixDecompose(&box_scale, &box_rot, &box_pos, box_transform))
@@ -218,15 +218,15 @@ inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata
 	l_box_min = XMVector3Transform(l_box_min, box_scale_m);
 	l_box_max = XMVector3Transform(l_box_max, box_scale_m);
 
-	XMFLOAT3 f_ray_dir, f_ray_origin;
-	XMFLOAT3 bounds[2];
+	Vector3 f_ray_dir, f_ray_origin;
+	Vector3 bounds[2];
 	XMStoreFloat3(&f_ray_dir, l_ray_dir); 
 	XMStoreFloat3(&f_ray_origin, l_ray_origin); 
 	XMStoreFloat3(&bounds[0], l_box_min); 
 	XMStoreFloat3(&bounds[1], l_box_max); 
 	
 
-	XMFLOAT3 ray_inv_dir = XMFLOAT3( 1.0f/f_ray_dir.x, 1.0f/f_ray_dir.y, 1.0f/f_ray_dir.z );
+	Vector3 ray_inv_dir = Vector3( 1.0f/f_ray_dir.x, 1.0f/f_ray_dir.y, 1.0f/f_ray_dir.z );
 	int ray_sign[3];
 	ray_sign[0] = (ray_inv_dir.x < 0);
 	ray_sign[1] = (ray_inv_dir.y < 0);
@@ -308,7 +308,7 @@ inline float RayOrientedBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, Boun
 		return dist;
 }
 
-inline XMMATRIX TransformationFromViewPos(CXMMATRIX view, XMFLOAT3 pos)
+inline XMMATRIX TransformationFromViewPos(CXMMATRIX view, Vector3 pos)
 {
 	XMMATRIX transf = XMMatrixIdentity();
 	XMVECTOR scale, rot, translate;
@@ -328,7 +328,7 @@ inline XMMATRIX TransformationFromViewPos(CXMMATRIX view, XMVECTOR pos)
 	return transf;
 }
 
-inline void DirectionToPitchYaw(XMFLOAT3 dir_float, float *pitch, float* yaw)
+inline void DirectionToPitchYaw(Vector3 dir_float, float *pitch, float* yaw)
 {
 	XMVECTOR yaw_null = XMVectorSet(1.0f,0.0f,0.0f,0.0f);
 	XMVECTOR pitch_null = XMVectorSet(0.0f,1.0f,0.0f,0.0f);
@@ -350,7 +350,7 @@ inline void DirectionToPitchYaw(XMFLOAT3 dir_float, float *pitch, float* yaw)
 
 inline void DirectionToPitchYaw(XMVECTOR dir, float *pitch, float* yaw)
 {
-	XMFLOAT3 dir_float;
+	Vector3 dir_float;
 	XMStoreFloat3(&dir_float, dir);
 
 	DirectionToPitchYaw(dir_float, pitch, yaw);
@@ -358,13 +358,13 @@ inline void DirectionToPitchYaw(XMVECTOR dir, float *pitch, float* yaw)
 
 inline void QuaternionToPitchYawRoll(XMVECTOR quat, float* pitch, float* yaw, float* roll)
 {
-	XMFLOAT4 q;
+	Vector4 q;
 	XMStoreFloat4(&q, quat);
 
 	/*XMVECTOR dir;
 	float angle;
 	XMQuaternionToAxisAngle(&dir, &angle, quat);
-	XMFLOAT4 d;
+	Vector4 d;
 	XMStoreFloat4(&d, dir);
 
 	*pitch = -atan2f(d.y, sqrt( d.x*d.x + d.z*d.z ));
@@ -398,12 +398,12 @@ inline float RollFromMatrix(CXMMATRIX M)
 {
 	XMVECTOR z_unit = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR z_rot = XMVector3Normalize(XMVector3TransformNormal(z_unit, M));
-	XMFLOAT3 z_rot_f;
+	Vector3 z_rot_f;
 	XMStoreFloat3(&z_rot_f, z_rot);
 
 	XMVECTOR x_unit = XMVectorSet(1, 0, 0, 0);
 	XMVECTOR x_rot = XMVector3Normalize(XMVector3TransformNormal(x_unit, M));
-	XMFLOAT3 x_rot_f;
+	Vector3 x_rot_f;
 	XMStoreFloat3(&x_rot_f, x_rot);
 
 	const float z_proj_len = sqrtf(z_rot_f.z * z_rot_f.z + z_rot_f.x * z_rot_f.x);
@@ -417,18 +417,18 @@ inline float RollFromMatrix(CXMMATRIX M)
 	return x_rot_f.y < 0.0f ? -roll : roll;
 }
 
-inline XMFLOAT3 PYRFromMatrix(CXMMATRIX M)
+inline Vector3 PYRFromMatrix(CXMMATRIX M)
 {
-	XMFLOAT3 res;
+	Vector3 res;
 	
 	XMVECTOR z_unit = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR z_rot = XMVector3Normalize(XMVector3TransformNormal(z_unit, M));
-	XMFLOAT3 z_rot_f;
+	Vector3 z_rot_f;
 	XMStoreFloat3(&z_rot_f, z_rot);
 
 	XMVECTOR x_unit = XMVectorSet(1, 0, 0, 0);
 	XMVECTOR x_rot = XMVector3Normalize(XMVector3TransformNormal(x_unit, M));
-	XMFLOAT3 x_rot_f;
+	Vector3 x_rot_f;
 	XMStoreFloat3(&x_rot_f, x_rot);
 
 	res.x = -asinf(clamp(-1.0f, z_rot_f.y, 1.0f));
@@ -466,12 +466,12 @@ inline float RollFromQuat(XMVECTOR Q)
 {
 	XMVECTOR z_unit = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR z_rot = XMVector3Normalize(XMVector3Rotate(z_unit, Q));
-	XMFLOAT3 z_rot_f;
+	Vector3 z_rot_f;
 	XMStoreFloat3(&z_rot_f, z_rot);
 
 	XMVECTOR x_unit = XMVectorSet(1, 0, 0, 0);
 	XMVECTOR x_rot = XMVector3Normalize(XMVector3Rotate(x_unit, Q));
-	XMFLOAT3 x_rot_f;
+	Vector3 x_rot_f;
 	XMStoreFloat3(&x_rot_f, x_rot);
 
 	const float z_proj_len = sqrtf(z_rot_f.z * z_rot_f.z + z_rot_f.x * z_rot_f.x);
@@ -485,18 +485,18 @@ inline float RollFromQuat(XMVECTOR Q)
 	return x_rot_f.y < 0.0f ? -roll : roll;
 }
 
-inline XMFLOAT3 PYRFromQuat(XMVECTOR Q)
+inline Vector3 PYRFromQuat(XMVECTOR Q)
 {
-	XMFLOAT3 res;
+	Vector3 res;
 	
 	XMVECTOR z_unit = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR z_rot = XMVector3Normalize(XMVector3Rotate(z_unit, Q));
-	XMFLOAT3 z_rot_f;
+	Vector3 z_rot_f;
 	XMStoreFloat3(&z_rot_f, z_rot);
 
 	XMVECTOR x_unit = XMVectorSet(1, 0, 0, 0);
 	XMVECTOR x_rot = XMVector3Normalize(XMVector3Rotate(x_unit, Q));
-	XMFLOAT3 x_rot_f;
+	Vector3 x_rot_f;
 	XMStoreFloat3(&x_rot_f, x_rot);
 
 	res.x = -asinf(clamp(-1.0f, z_rot_f.y, 1.0f));

@@ -322,7 +322,7 @@ void RenderTarget::GenerateMipmaps(ScenePipeline* scene)
 					Render::OMSetRenderTargets(1, &(mipRes[i].mip_RTV[j]), nullptr);
 					plane->ClearTex();
 					plane->SetTexture(mipRes[i].mip_SRV[j], 0);
-					plane->SetVector(XMFLOAT4(1.0f/float(mip_res[j].x), 1.0f/float(mip_res[j].y), float(prevX%2==0), float(prevY%2==0)), 0);
+					plane->SetVector(Vector4(1.0f/float(mip_res[j].x), 1.0f/float(mip_res[j].y), float(prevX%2==0), float(prevY%2==0)), 0);
 					plane->Draw();
 					prevX = mip_res[j].x;
 					prevY = mip_res[j].y;
@@ -344,7 +344,7 @@ void RenderTarget::SetRenderTarget(UINT rt_start, UINT rt_end)
 void RenderTarget::ClearRenderTargets(float red, float green, float blue, float alpha, bool clearDS)
 {
 	for(int i=0; i<(int)RT_count; i++)
-		Render::ClearRenderTargetView(m_RTV[i], XMFLOAT4(red, green, blue, alpha));
+		Render::ClearRenderTargetView(m_RTV[i], Vector4(red, green, blue, alpha));
 	
 	if(clearDS && m_DSV) Render::ClearDepthStencilView(m_DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }

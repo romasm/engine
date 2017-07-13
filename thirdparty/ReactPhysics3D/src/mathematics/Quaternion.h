@@ -79,10 +79,22 @@ struct Quaternion {
         Quaternion(const Quaternion& quaternion);
 
         /// Create a unit quaternion from a rotation matrix
-        Quaternion(const Matrix3x3& matrix);
+		Quaternion(const Matrix3x3& matrix);
+
+		/// From in-engine format conversion
+		Quaternion(const DirectX::SimpleMath::Quaternion& q);
+
+		/// From in-engine format conversion
+		Quaternion(const DirectX::SimpleMath::Vector4& v);
 
         /// Destructor
-        ~Quaternion();
+		~Quaternion();
+
+		/// To in-engine format conversion
+		operator DirectX::SimpleMath::Vector4() const { return DirectX::SimpleMath::Vector4( this->x, this->y, this->z, this->w ); }
+
+		/// To in-engine format conversion
+		operator DirectX::SimpleMath::Quaternion() const { return DirectX::SimpleMath::Quaternion( this->x, this->y, this->z, this->w ); }
 
         /// Set all the values
         void setAllValues(decimal newX, decimal newY, decimal newZ, decimal newW);

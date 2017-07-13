@@ -131,37 +131,37 @@ namespace EngineCore
 			XMMATRIX view;
 			XMMATRIX projection;
 
-			XMFLOAT3 CamPos;
+			Vector3 CamPos;
 			int screenW;
 
 			int screenH;
-			XMFLOAT3 CamDir;
+			Vector3 CamDir;
 
 			float time; 
 			float dt; 
-			XMFLOAT2 PixSize; 
+			Vector2 PixSize; 
 
-			XMFLOAT4 maxScreenCoords;	
+			Vector4 maxScreenCoords;	
 
-			XMFLOAT3 CamTangent; 
+			Vector3 CamTangent; 
 			float mipCount; 
 
-			XMFLOAT3 CamBinormal; 
+			Vector3 CamBinormal; 
 			float perspParam;
 
-			XMFLOAT2 uvCorrectionForPow2;
-			XMFLOAT2 padding0;
+			Vector2 uvCorrectionForPow2;
+			Vector2 padding0;
 
 			// 0 ---- 1
 			// |      |
 			// 2 ---- 3
-			XMFLOAT3 g_CamFrust0;
+			Vector3 g_CamFrust0;
 			float g_nearMulFar;
-			XMFLOAT3 g_CamFrust1;
+			Vector3 g_CamFrust1;
 			float g_far;
-			XMFLOAT3 g_CamFrust2;
+			Vector3 g_CamFrust2;
 			float g_farMinusNear;
-			XMFLOAT3 g_CamFrust3;
+			Vector3 g_CamFrust3;
 			float padding4;
 		};
 

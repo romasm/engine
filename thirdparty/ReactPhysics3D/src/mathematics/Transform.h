@@ -62,10 +62,19 @@ class Transform {
         Transform(const Vector3& position, const Matrix3x3& orientation);
 
         /// Constructor
-        Transform(const Vector3& position, const Quaternion& orientation);
+		Transform(const Vector3& position, const Quaternion& orientation);
+
+		/// From in-engine format conversion
+		Transform(const DirectX::SimpleMath::Vector3& pos, const DirectX::SimpleMath::Quaternion& rot);
+
+		/// From in-engine format conversion
+		Transform(const DirectX::XMMATRIX& transformMatrix);
 
         /// Destructor
         ~Transform();
+		
+		/// To in-engine format conversion
+		operator DirectX::XMMATRIX() const;
 
         /// Copy-constructor
         Transform(const Transform& transform);

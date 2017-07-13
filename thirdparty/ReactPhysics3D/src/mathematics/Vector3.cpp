@@ -46,6 +46,11 @@ Vector3::Vector3(const Vector3& vector) : x(vector.x), y(vector.y), z(vector.z) 
 
 }
 
+/// From in-engine format conversion
+Vector3::Vector3(const DirectX::SimpleMath::Vector3& v) : x(v.x), y(v.y), z(v.z) {
+
+}
+
 // Destructor
 Vector3::~Vector3() {
 
