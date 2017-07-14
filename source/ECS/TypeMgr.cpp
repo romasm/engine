@@ -94,7 +94,7 @@ bool TypeMgr::SetType(Entity ent, string& type)
 	auto& toe = typeOfEntity[ent.index()];
 	if(toe.size())
 	{
-		auto range = entitiesPerType.equal_range(type);
+		auto range = entitiesPerType.equal_range(toe);
 		for(auto it = range.first; it != range.second; it++)
 			if(EntIsEq(it->second, ent))
 			{

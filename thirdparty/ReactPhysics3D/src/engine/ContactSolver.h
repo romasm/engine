@@ -231,7 +231,13 @@ class ContactSolver {
             bool isBody1DynamicType;
 
             /// True if the body 2 is of type dynamic
-            bool isBody2DynamicType;
+			bool isBody2DynamicType;
+
+			/// True if the body 1 is non rotatable
+			bool isBody1NonRotatable;
+
+			/// True if the body 2 is non rotatable
+			bool isBody2NonRotatable;
 
             /// Mix of the restitution factor for two bodies
             decimal restitutionFactor;

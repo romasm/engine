@@ -106,7 +106,9 @@ void ContactSolver::initializeForIsland(decimal dt, Island* island) {
         internalManifold.rollingResistanceFactor = computeMixedRollingResistance(body1, body2);
         internalManifold.externalContactManifold = externalManifold;
         internalManifold.isBody1DynamicType = body1->getType() == DYNAMIC;
-        internalManifold.isBody2DynamicType = body2->getType() == DYNAMIC;
+		internalManifold.isBody2DynamicType = body2->getType() == DYNAMIC;
+		internalManifold.isBody1NonRotatable = body1->getNonRotatable();
+		internalManifold.isBody2NonRotatable = body2->getNonRotatable();
 
         // If we solve the friction constraints at the center of the contact manifold
         if (mIsSolveFrictionAtContactManifoldCenterActive) {
@@ -816,13 +818,15 @@ void ContactSolver::applyImpulse(const Impulse& impulse,
     // Update the velocities of the body 1 by applying the impulse P
     mLinearVelocities[manifold.indexBody1] += manifold.massInverseBody1 *
                                               impulse.linearImpulseBody1;
-    mAngularVelocities[manifold.indexBody1] += manifold.inverseInertiaTensorBody1 *
+	if(!manifold.isBody1NonRotatable)
+		mAngularVelocities[manifold.indexBody1] += manifold.inverseInertiaTensorBody1 *
                                                impulse.angularImpulseBody1;
 
     // Update the velocities of the body 1 by applying the impulse P
     mLinearVelocities[manifold.indexBody2] += manifold.massInverseBody2 *
                                               impulse.linearImpulseBody2;
-    mAngularVelocities[manifold.indexBody2] += manifold.inverseInertiaTensorBody2 *
+	if(!manifold.isBody2NonRotatable)
+		mAngularVelocities[manifold.indexBody2] += manifold.inverseInertiaTensorBody2 *
                                                impulse.angularImpulseBody2;
 }
 
@@ -833,13 +837,15 @@ void ContactSolver::applySplitImpulse(const Impulse& impulse,
     // Update the velocities of the body 1 by applying the impulse P
     mSplitLinearVelocities[manifold.indexBody1] += manifold.massInverseBody1 *
                                                    impulse.linearImpulseBody1;
-    mSplitAngularVelocities[manifold.indexBody1] += manifold.inverseInertiaTensorBody1 *
+	if(!manifold.isBody1NonRotatable)
+		mSplitAngularVelocities[manifold.indexBody1] += manifold.inverseInertiaTensorBody1 *
                                                     impulse.angularImpulseBody1;
 
     // Update the velocities of the body 1 by applying the impulse P
     mSplitLinearVelocities[manifold.indexBody2] += manifold.massInverseBody2 *
                                                    impulse.linearImpulseBody2;
-    mSplitAngularVelocities[manifold.indexBody2] += manifold.inverseInertiaTensorBody2 *
+	if(!manifold.isBody2NonRotatable)
+		mSplitAngularVelocities[manifold.indexBody2] += manifold.inverseInertiaTensorBody2 *
                                                     impulse.angularImpulseBody2;
 }
 

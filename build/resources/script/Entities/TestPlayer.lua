@@ -23,7 +23,8 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
         
     self.world.physics:AddComponent(self.ent)
-    self.world.physics:SetType(self.ent, PHYSICS_TYPES.KINEMATIC)
+    --self.world.physics:SetType(self.ent, PHYSICS_TYPES.KINEMATIC)
+    self.world.physics:SetNonRotatable(self.ent, true)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)

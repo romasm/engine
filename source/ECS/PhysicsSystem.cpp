@@ -101,17 +101,51 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->dirty = true;
 	
 	res->body = physWorld->createRigidBody(rp3d::Transform::identity());
-
-	// test shape
-	auto visSys = world->GetVisibilitySystem();
-	auto bbox = visSys->GetBBoxL(e);
-
-	rp3d::Transform shapeTransform(VECTOR3_CAST(bbox.Center), Quaternion());
-	res->testBox = new rp3d::BoxShape(VECTOR3_CAST(bbox.Extents));
-
-	res->body->addCollisionShape(res->testBox, shapeTransform, 10.0f);
-	
+	res->body->setIsActive(false);
+		
 	return res;
+}
+
+void PhysicsSystem::DeleteComponent(Entity e)
+{
+	auto comp = GetComponent(e);
+	if(!comp) 
+		return;
+
+	physWorld->destroyRigidBody(comp->body);
+	comp->body = nullptr;
+
+	for(auto it: comp->shapes)
+	{
+		auto type = it.shape->getType();
+		if( type == rp3d::CollisionShapeType::CONVEX_MESH || 
+			type == rp3d::CollisionShapeType::CONCAVE_MESH ||
+			type == rp3d::CollisionShapeType::HEIGHTFIELD )
+		{
+			// TODO
+			ERR("TODO: Remove collision shape from resource mgr!");
+		}
+		else
+		{
+			_DELETE(it.shape);
+		}
+	}
+	comp->shapes.destroy();
+
+	components.remove(e.index());
+}
+
+void PhysicsSystem::CopyComponent(Entity src, Entity dest)
+{
+	auto comp = GetComponent(src);
+	if(!comp || HasComponent(dest)) 
+		return;
+
+	PhysicsComponent* res = AddComponent(dest);
+	if(!res)
+		return;
+
+	// TODO
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
@@ -129,18 +163,6 @@ bool PhysicsSystem::SetDirty(Entity e)
 	GET_COMPONENT(false);
 	comp.dirty = true;
 	return true;
-}
-
-void PhysicsSystem::SetType(Entity e, int32_t type)
-{
-	GET_COMPONENT(void());
-	comp.body->setType(rp3d::BodyType(type));
-}
-
-int32_t PhysicsSystem::GetType(Entity e)
-{
-	GET_COMPONENT(-1);
-	return (int32_t)comp.body->getType();
 }
 
 uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
@@ -232,4 +254,99 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 
 	return size;*/
 	return 0;
+}
+
+bool PhysicsSystem::IsActive(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.body->isActive();
+}
+
+void PhysicsSystem::SetActive(Entity e, bool active)
+{
+	GET_COMPONENT(void());
+	comp.body->setIsActive(active);
+}
+
+bool PhysicsSystem::IsSleeping(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.body->isSleeping();
+}
+
+void PhysicsSystem::SetSleeping(Entity e, bool sleep)
+{
+	GET_COMPONENT(void());
+	comp.body->setIsSleeping(sleep);
+}
+
+bool PhysicsSystem::IsUnsleepable(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.body->isAllowedToSleep();
+}
+
+void PhysicsSystem::SetUnsleepable(Entity e, bool unsleepable)
+{
+	GET_COMPONENT(void());
+	comp.body->setIsAllowedToSleep(unsleepable);
+}
+
+void PhysicsSystem::SetType(Entity e, int32_t type)
+{
+	GET_COMPONENT(void());
+	comp.body->setType(rp3d::BodyType(type));
+}
+
+int32_t PhysicsSystem::GetType(Entity e)
+{
+	GET_COMPONENT(-1);
+	return (int32_t)comp.body->getType();
+}
+
+void PhysicsSystem::SetNonRotatable(Entity e, bool isNonRot)
+{
+	GET_COMPONENT(void());
+	comp.body->setNonRotatable(isNonRot);
+}
+
+bool PhysicsSystem::GetNonRotatable(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.body->getNonRotatable();
+}
+
+int32_t PhysicsSystem::AddBoxShape(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize)
+{
+	GET_COMPONENT(-1);
+	auto shape = new rp3d::BoxShape(halfSize);
+	return AddShape(comp, pos, rot, mass, shape);
+}
+
+int32_t PhysicsSystem::AddSphereShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius)
+{
+	GET_COMPONENT(-1);
+	auto shape = new rp3d::SphereShape(radius);
+	return AddShape(comp, pos, rot, mass, shape);
+}
+
+int32_t PhysicsSystem::AddConeShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
+{
+	GET_COMPONENT(-1);
+	auto shape = new rp3d::ConeShape(radius, height);
+	return AddShape(comp, pos, rot, mass, shape);
+}
+
+int32_t PhysicsSystem::AddCylinderShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
+{
+	GET_COMPONENT(-1);
+	auto shape = new rp3d::CylinderShape(radius, height);
+	return AddShape(comp, pos, rot, mass, shape);
+}
+
+int32_t PhysicsSystem::AddCapsuleShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
+{
+	GET_COMPONENT(-1);
+	auto shape = new rp3d::CapsuleShape(radius, height);
+	return AddShape(comp, pos, rot, mass, shape);
 }

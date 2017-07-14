@@ -98,6 +98,9 @@ class RigidBody : public CollisionBody {
         /// Angular velocity damping factor
         decimal mAngularDamping;
 
+		/// Is non rotatable
+		bool mNonRotatable;
+
         /// First element of the linked list of joints involving this body
         JointListElement* mJointsList;        
 
@@ -130,6 +133,12 @@ class RigidBody : public CollisionBody {
 
         /// Set the type of the body (static, kinematic or dynamic)
         void setType(BodyType type);
+
+		/// Return true if body is allowed to rotate during physics impacts
+		bool getNonRotatable() const;
+
+		/// If true passed disallow body rotation during physics impacts
+		void setNonRotatable(bool isNonRotatable);
 
         /// Set the current position and orientation
         virtual void setTransform(const Transform& transform);
@@ -365,6 +374,22 @@ inline decimal RigidBody::getAngularDamping() const {
 inline void RigidBody::setAngularDamping(decimal angularDamping) {
     assert(angularDamping >= decimal(0.0));
     mAngularDamping = angularDamping;
+}
+
+// Return true if body is allowed to rotate during physics impacts
+/**
+ * @return True if body is allowed to rotate during physics impacts
+ */
+inline bool RigidBody::getNonRotatable() const {
+    return mNonRotatable;
+}
+
+// If true passed disallow body rotation during physics impacts
+/**
+ * @param isNonRotatable If body rotation disallowed
+ */
+inline void RigidBody::setNonRotatable(bool isNonRotatable) {
+    mNonRotatable = isNonRotatable;
 }
 
 // Return the first element of the linked list of joints involving this body
