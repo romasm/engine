@@ -310,6 +310,11 @@ inline wchar_t* WCharToWChar(wchar_t *str)
 }
 
 // Математические функции
+static Quaternion q_identity(0, 0, 0, 1.0f);
+static Vector2 v2_zero(0, 0);
+static Vector3 v3_zero(0, 0, 0);
+static Vector4 v4_zero(0, 0, 0, 0);
+
 inline Vector4 Vector4Lerp(Vector4 f1, Vector4 f2, float l)
 {
 	return Vector4::Lerp(f1, f2, l);

@@ -65,10 +65,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="common\PCF.hlsl" />
+    <None Include="common\common_helpers.hlsl" />
+    <None Include="common\ibl_helpers.hlsl" />
     <None Include="common\light_helpers.hlsl" />
+    <None Include="common\light_structs.hlsl" />
     <None Include="common\math.hlsl" />
+    <None Include="common\shadow_helpers.hlsl" />
     <None Include="common\shared.hlsl" />
     <None Include="common\structs.hlsl" />
+    <None Include="common\transparency_helpers.hlsl" />
     <None Include="common\voxel_helpers.hlsl" />
     <None Include="gui\color.hlsl" />
     <None Include="gui\example.hlsl" />
@@ -80,6 +85,7 @@
     <None Include="gui\rect_color_icon_alpha.hlsl" />
     <None Include="gui\rect_icon.hlsl" />
     <None Include="gui\rect_icon_bg.hlsl" />
+    <None Include="gui\rendered_preview.hlsl" />
     <None Include="gui\shadow.hlsl" />
     <None Include="gui\sv_picker.hlsl" />
     <None Include="gui\t_picker.hlsl" />
@@ -93,11 +99,14 @@
     <None Include="objects\editor\line_geometry.hlsl" />
     <None Include="objects\editor\line_geometry_sphere.hlsl" />
     <None Include="objects\editor\tools_mesh.hlsl" />
+    <None Include="objects\editor\unit_plane.hlsl" />
     <None Include="objects\opaque_main.hlsl" />
     <None Include="objects\opaque_vertex.hlsl" />
     <None Include="objects\pixel.hlsl" />
     <None Include="objects\pixel_input.hlsl" />
     <None Include="objects\sky_sphere.hlsl" />
+    <None Include="objects\transparency.hlsl" />
+    <None Include="objects\transparent_medium.hlsl" />
     <None Include="objects\voxelization.hlsl" />
     <None Include="offline\envmap_diffgen.hlsl" />
     <None Include="offline\envmap_mipgen.hlsl" />
@@ -165,17 +174,6 @@
     <None Include="system\tonemapping.hlsl" />
     <None Include="system\voxel_downsample.hlsl" />
     <None Include="system\voxel_light_inject.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="common\common_helpers.hlsl" />
-    <FxCompile Include="common\ibl_helpers.hlsl" />
-    <FxCompile Include="common\light_structs.hlsl" />
-    <FxCompile Include="common\shadow_helpers.hlsl" />
-    <FxCompile Include="common\transparency_helpers.hlsl" />
-    <FxCompile Include="gui\rendered_preview.hlsl" />
-    <FxCompile Include="objects\editor\unit_plane.hlsl" />
-    <FxCompile Include="objects\transparency.hlsl" />
-    <FxCompile Include="objects\transparent_medium.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

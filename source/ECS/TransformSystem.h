@@ -139,6 +139,8 @@ namespace EngineCore
 		inline XMVECTOR GetVectRotationL(Entity e)
 		{Vector3 res = GetRotationL(e); return XMLoadFloat3(&res);}
 
+		Vector3 GetDirectionL(Entity e);
+
 		XMVECTOR GetVectScaleL(Entity e);
 		inline Vector3 GetScaleL(Entity e)
 		{XMVECTOR v = GetVectScaleL(e); Vector3 res;
@@ -150,6 +152,8 @@ namespace EngineCore
 		inline Vector3 GetPositionW(Entity e)
 		{XMVECTOR v = GetVectPositionW(e); Vector3 res;
 			XMStoreFloat3(&res, v); return res;}
+
+		Vector3 GetDirectionW(Entity e);
 
 		Quaternion GetQuatRotationW(Entity e);
 		Vector3 GetRotationW(Entity e);
@@ -186,9 +190,11 @@ namespace EngineCore
 					.addFunction("SetScale", &TransformSystem::_SetScale)
 					.addFunction("GetPositionL", &TransformSystem::GetPositionL)
 					.addFunction("GetRotationL", &TransformSystem::GetRotationL)
+					.addFunction("GetDirectionL", &TransformSystem::GetDirectionL)
 					.addFunction("GetScaleL", &TransformSystem::GetScaleL)
 					.addFunction("GetPositionW", &TransformSystem::GetPositionW)
 					.addFunction("GetRotationW", &TransformSystem::GetRotationW)
+					.addFunction("GetDirectionW", &TransformSystem::GetDirectionW)
 					.addFunction("GetScaleW", &TransformSystem::GetScaleW)
 					.addFunction("AddPosition", &TransformSystem::_AddPosition)
 					.addFunction("AddRotation", &TransformSystem::_AddRotation1)

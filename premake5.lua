@@ -29,6 +29,7 @@ workspace "Engine"
 			"thirdparty/Lua/LuaJIT/src" ,
 			"thirdparty/DirectXTK/Inc" ,
 			"thirdparty/DirectXTex/Inc" ,
+			"thirdparty/ReactPhysics3D/src" ,
 		}
 		
 		libdirs {			

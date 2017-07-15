@@ -7,6 +7,8 @@ function EntityTypes.TestPlayer:init(world, ent)
     end
 
     self:initVars()
+    
+    self.physicsSys = self.world.physics
 
     -- init
     self.world:SetEntityType(self.ent, "TestPlayer")
@@ -22,13 +24,20 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.world.visibility:AddComponent(self.ent)
     self.world.staticMesh:AddComponentMesh(self.ent, "")
         
-    self.world.physics:AddComponent(self.ent)
-    --self.world.physics:SetType(self.ent, PHYSICS_TYPES.KINEMATIC)
-    self.world.physics:SetNonRotatable(self.ent, true)
+    -- collision
+    self.physicsSys:AddComponent(self.ent)    
+    self.physicsSys:AddCapsuleShape(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.8)
+    self.physicsSys:SetNonRotatable(self.ent, true)
+    self.physicsSys:SetUnsleepable(self.ent, true)
+    self.physicsSys:SetBounciness(self.ent, 0.0)
+    self.physicsSys:SetFriction(self.ent, 0.9)
+    self.physicsSys:SetVelocityDamping(self.ent, 0.5)
+
+    self.physicsSys:SetActive(self.ent, true)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)
-    self.camera:SetPosition(0.0, 1.8, 0.0)
+    self.camera:SetPosition(0.0, 0.8, 0.0)
     self.camera:SetFov(1.3)
     self.camera:Attach(self)
 
@@ -44,7 +53,6 @@ function EntityTypes.TestPlayer:initVars()
 
     -- lifetime only exist vars
     self.jumping = false
-    self.jumpProgress = 0
 
     self.forward = false
     self.backward = false
@@ -68,35 +76,31 @@ function EntityTypes.TestPlayer:onTick(dt)
     local dtSeconds = dt * 0.001
 
     if self.jumping == true then
-        if self.jumpProgress > 1 then
-            self.jumpProgress = 1
-            self.jumping = false
-        end
-        
-        local jumpDelta = self.p_jump_power * (0.5 - self.jumpProgress)
-        self:AddPosition(0, jumpDelta, 0)
-
-        self.jumpProgress = self.jumpProgress + dtSeconds * self.p_jump_speed
-    end
-
-    local moveDist = self.p_move_speed * dtSeconds
-
-    if self.forward then self:AddPositionLocal(0, 0, moveDist) end
-    if self.backward then self:AddPositionLocal(0, 0, -moveDist) end
-    if self.right then self:AddPositionLocal(-moveDist, 0, 0) end
-    if self.left then self:AddPositionLocal(moveDist, 0, 0) end
-
-    if self.dYaw ~= 0 then
-        self:AddRotation(0, self.dYaw * self.p_rot_sence, 0)
-        self.dYaw = 0
+        self.physicsSys:ApplyForceToCenterOfMass(self.ent, Vector3(0, 25000.0, 0))
+        self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, self.p_move_speed))
+        self.jumping = false
     end
     
-    if self.dPitch ~= 0 then
+    local camDir = self.camera:GetDirectionL()
+    camDir.y = 0
+    local sideDir = camDir
+    sideDir.z = -sideDir.z
+
+
+
+    if self.forward then self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, self.p_move_speed)) end
+    if self.backward then self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, -self.p_move_speed)) end
+    if self.right then self.physicsSys:SetVelocity(self.ent, Vector3(-self.p_move_speed, 0, 0)) end
+    if self.left then self.physicsSys:SetVelocity(self.ent, Vector3(self.p_move_speed, 0, 0)) end
+        
+    if self.dPitch ~= 0 or self.dYaw ~= 0 then
         local rotation = self.camera:GetRotationL()
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
         rotation.x = math.max( -math.pi * 0.5, math.min( rotation.x, math.pi * 0.5 ) )
-        self.camera:SetRotation(rotation.x, 0, 0)
+        rotation.y = rotation.y + self.dYaw * self.p_rot_sence
+        self.camera:SetRotation(rotation.x, rotation.y, 0)
         self.dPitch = 0
+        self.dYaw = 0
     end
 end
 
@@ -107,11 +111,7 @@ end
 
 function EntityTypes.TestPlayer:onJump(key, pressed, x, y, z)
     if pressed == false then return end
-
-    if self.jumping == false then
-        self.jumping = true
-        self.jumpProgress = 0
-    end
+    self.jumping = true
 end
 
 function EntityTypes.TestPlayer:onMoveForward(key, pressed, x, y, z)

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="common">
@@ -27,16 +27,31 @@
     <None Include="common\PCF.hlsl">
       <Filter>common</Filter>
     </None>
+    <None Include="common\common_helpers.hlsl">
+      <Filter>common</Filter>
+    </None>
+    <None Include="common\ibl_helpers.hlsl">
+      <Filter>common</Filter>
+    </None>
     <None Include="common\light_helpers.hlsl">
       <Filter>common</Filter>
     </None>
+    <None Include="common\light_structs.hlsl">
+      <Filter>common</Filter>
+    </None>
     <None Include="common\math.hlsl">
+      <Filter>common</Filter>
+    </None>
+    <None Include="common\shadow_helpers.hlsl">
       <Filter>common</Filter>
     </None>
     <None Include="common\shared.hlsl">
       <Filter>common</Filter>
     </None>
     <None Include="common\structs.hlsl">
+      <Filter>common</Filter>
+    </None>
+    <None Include="common\transparency_helpers.hlsl">
       <Filter>common</Filter>
     </None>
     <None Include="common\voxel_helpers.hlsl">
@@ -70,6 +85,9 @@
       <Filter>gui</Filter>
     </None>
     <None Include="gui\rect_icon_bg.hlsl">
+      <Filter>gui</Filter>
+    </None>
+    <None Include="gui\rendered_preview.hlsl">
       <Filter>gui</Filter>
     </None>
     <None Include="gui\shadow.hlsl">
@@ -111,6 +129,9 @@
     <None Include="objects\editor\tools_mesh.hlsl">
       <Filter>objects\editor</Filter>
     </None>
+    <None Include="objects\editor\unit_plane.hlsl">
+      <Filter>objects\editor</Filter>
+    </None>
     <None Include="objects\opaque_main.hlsl">
       <Filter>objects</Filter>
     </None>
@@ -124,6 +145,12 @@
       <Filter>objects</Filter>
     </None>
     <None Include="objects\sky_sphere.hlsl">
+      <Filter>objects</Filter>
+    </None>
+    <None Include="objects\transparency.hlsl">
+      <Filter>objects</Filter>
+    </None>
+    <None Include="objects\transparent_medium.hlsl">
       <Filter>objects</Filter>
     </None>
     <None Include="objects\voxelization.hlsl">
@@ -325,34 +352,5 @@
     <None Include="system\voxel_light_inject.hlsl">
       <Filter>system</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="common\ibl_helpers.hlsl">
-      <Filter>common</Filter>
-    </FxCompile>
-    <FxCompile Include="common\common_helpers.hlsl">
-      <Filter>common</Filter>
-    </FxCompile>
-    <FxCompile Include="common\shadow_helpers.hlsl">
-      <Filter>common</Filter>
-    </FxCompile>
-    <FxCompile Include="common\light_structs.hlsl">
-      <Filter>common</Filter>
-    </FxCompile>
-    <FxCompile Include="objects\transparent_medium.hlsl">
-      <Filter>objects</Filter>
-    </FxCompile>
-    <FxCompile Include="objects\transparency.hlsl">
-      <Filter>objects</Filter>
-    </FxCompile>
-    <FxCompile Include="common\transparency_helpers.hlsl">
-      <Filter>common</Filter>
-    </FxCompile>
-    <FxCompile Include="gui\rendered_preview.hlsl">
-      <Filter>gui</Filter>
-    </FxCompile>
-    <FxCompile Include="objects\editor\unit_plane.hlsl">
-      <Filter>objects\editor</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

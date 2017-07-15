@@ -71,18 +71,42 @@ namespace EngineCore
 
 		bool IsActive(Entity e);
 		void SetActive(Entity e, bool active);
-
 		bool IsSleeping(Entity e);
 		void SetSleeping(Entity e, bool sleep);
-
 		bool IsUnsleepable(Entity e);
 		void SetUnsleepable(Entity e, bool unsleepable);
+		bool IsGravityEnabled(Entity e);
+		void SetGravityEnabled(Entity e, bool enabled);
 
 		void SetType(Entity e, int32_t type);
 		int32_t GetType(Entity e);
-
 		bool GetNonRotatable(Entity e);
 		void SetNonRotatable(Entity e, bool isNonRot);
+
+		float GetBounciness(Entity e);
+		void SetBounciness(Entity e, float bounciness);
+		float GetFriction(Entity e);
+		void SetFriction(Entity e, float friction);
+		float GetRollingResistance(Entity e);
+		void SetRollingResistance(Entity e, float resistance);
+		float GetVelocityDamping(Entity e);
+		void SetVelocityDamping(Entity e, float damping);
+		float GetAngularDamping(Entity e);
+		void SetAngularDamping(Entity e, float damping);
+
+		float GetMass(Entity e);
+		void SetMass(Entity e, float mass);
+		//Vector3 GetCenterOfMassL(Entity e); // TODO
+		void SetCenterOfMass(Entity e, Vector3 local_point);
+
+		Vector3 GetVelocity(Entity e);
+		void SetVelocity(Entity e, Vector3 velocity);
+		Vector3 GetAngularVelocity(Entity e);
+		void SetAngularVelocity(Entity e, Vector3 velocity);
+
+		void ApplyForce(Entity e, Vector3 point, Vector3 force);
+		void ApplyForceToCenterOfMass(Entity e, Vector3 force);
+		void ApplyTorque(Entity e, Vector3 torque);
 
 		int32_t AddBoxShape(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize);
 		int32_t AddSphereShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius);
@@ -92,32 +116,7 @@ namespace EngineCore
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
-		static void RegLuaClass()
-		{
-			getGlobalNamespace(LSTATE)
-				.beginClass<PhysicsSystem>("PhysicsSystem")
-					.addFunction("SetType", &PhysicsSystem::SetType)
-					.addFunction("GetType", &PhysicsSystem::GetType)
-					.addFunction("GetNonRotatable", &PhysicsSystem::GetNonRotatable)
-					.addFunction("SetNonRotatable", &PhysicsSystem::SetNonRotatable)
-					.addFunction("IsActive", &PhysicsSystem::IsActive)
-					.addFunction("SetActive", &PhysicsSystem::SetActive)
-					.addFunction("IsSleeping", &PhysicsSystem::IsSleeping)
-					.addFunction("SetSleeping", &PhysicsSystem::SetSleeping)
-					.addFunction("IsUnsleepable", &PhysicsSystem::IsUnsleepable)
-					.addFunction("SetUnsleepable", &PhysicsSystem::SetUnsleepable)
-
-					.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
-					.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
-					.addFunction("HasComponent", &PhysicsSystem::HasComponent)
-
-					.addFunction("AddBoxShape", &PhysicsSystem::AddBoxShape)
-					.addFunction("AddSphereShape", &PhysicsSystem::AddSphereShape)
-					.addFunction("AddConeShape", &PhysicsSystem::AddConeShape)
-					.addFunction("AddCylinderShape", &PhysicsSystem::AddCylinderShape)
-					.addFunction("AddCapsuleShape", &PhysicsSystem::AddCapsuleShape)
-				.endClass();
-		}
+		static void RegLuaClass();
 
 	private:
 		inline int32_t AddShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, 
@@ -126,7 +125,31 @@ namespace EngineCore
 			rp3d::Transform shapeTransform(pos, rot);
 			auto proxy = comp.body->addCollisionShape(shape, shapeTransform, mass);
 			comp.shapes.push_back(CollisionHandle(shape, proxy));
-			return comp.shapes.size() - 1;
+			return (int32_t)comp.shapes.size() - 1;
+		}
+
+		inline void _DeleteComponent(PhysicsComponent* comp)
+		{
+			physWorld->destroyRigidBody(comp->body);
+			comp->body = nullptr;
+
+			for(auto& handle: comp->shapes)
+			{
+				auto type = handle.shape->getType();
+				if( type == rp3d::CollisionShapeType::CONVEX_MESH || 
+					type == rp3d::CollisionShapeType::CONCAVE_MESH ||
+					type == rp3d::CollisionShapeType::HEIGHTFIELD )
+				{
+					// TODO
+					ERR("TODO: Remove collision shape from resource mgr!");
+				}
+				else
+				{
+					_DELETE(handle.shape);
+				}
+				handle.proxy = nullptr;
+			}
+			comp->shapes.destroy();
 		}
 
 	private:

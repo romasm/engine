@@ -89,7 +89,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib\Debug;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;..\thirdparty\ReactPhysics3D\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -115,7 +115,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib\Release;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;..\thirdparty\ReactPhysics3D\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\ReactPhysics3D\lib\Release;..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;..\thirdparty\ReactPhysics3D\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -168,9 +168,9 @@
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
     <ClInclude Include="ECS\SkeletalMeshSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="ECS\StaticMeshSystem.h" />
     <ClInclude Include="ECS\TransformSystem.h" />
@@ -181,9 +181,9 @@
     <ClInclude Include="GUI\HDefines.h" />
     <ClInclude Include="GUI\HEntity.h" />
     <ClInclude Include="GUI\HVisuals.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="GUI\Hud.h" />
     <ClInclude Include="GUI\Image.h" />
@@ -234,6 +234,7 @@
     <ClInclude Include="Utils\TransformControls.h" />
     <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="Utils\WinAPIDialogs.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -250,9 +251,9 @@
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />
     <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ECS\StaticMeshSystem.cpp" />
     <ClCompile Include="ECS\TransformSystem.cpp" />
@@ -262,9 +263,9 @@
     <ClCompile Include="GUI\Font.cpp" />
     <ClCompile Include="GUI\HEntity.cpp" />
     <ClCompile Include="GUI\HVisuals.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GUI\Hud.cpp" />
     <ClCompile Include="GUI\Image.cpp" />

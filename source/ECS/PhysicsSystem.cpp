@@ -27,8 +27,7 @@ PhysicsSystem::~PhysicsSystem()
 {
 	for(auto& i: *components.data())
 	{
-		physWorld->destroyRigidBody(i.body);
-		_DELETE(i.testBox);
+		_DeleteComponent(&i);
 	}
 
 	// temp
@@ -112,26 +111,7 @@ void PhysicsSystem::DeleteComponent(Entity e)
 	if(!comp) 
 		return;
 
-	physWorld->destroyRigidBody(comp->body);
-	comp->body = nullptr;
-
-	for(auto it: comp->shapes)
-	{
-		auto type = it.shape->getType();
-		if( type == rp3d::CollisionShapeType::CONVEX_MESH || 
-			type == rp3d::CollisionShapeType::CONCAVE_MESH ||
-			type == rp3d::CollisionShapeType::HEIGHTFIELD )
-		{
-			// TODO
-			ERR("TODO: Remove collision shape from resource mgr!");
-		}
-		else
-		{
-			_DELETE(it.shape);
-		}
-	}
-	comp->shapes.destroy();
-
+	_DeleteComponent(comp);
 	components.remove(e.index());
 }
 
@@ -256,6 +236,8 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	return 0;
 }
 
+// PARAMS
+
 bool PhysicsSystem::IsActive(Entity e)
 {
 	GET_COMPONENT(false);
@@ -292,6 +274,18 @@ void PhysicsSystem::SetUnsleepable(Entity e, bool unsleepable)
 	comp.body->setIsAllowedToSleep(unsleepable);
 }
 
+bool PhysicsSystem::IsGravityEnabled(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.body->isGravityEnabled();
+}
+
+void PhysicsSystem::SetGravityEnabled(Entity e, bool enabled)
+{
+	GET_COMPONENT(void());
+	comp.body->enableGravity(enabled);
+}
+
 void PhysicsSystem::SetType(Entity e, int32_t type)
 {
 	GET_COMPONENT(void());
@@ -315,6 +309,128 @@ bool PhysicsSystem::GetNonRotatable(Entity e)
 	GET_COMPONENT(false);
 	return comp.body->getNonRotatable();
 }
+
+float PhysicsSystem::GetBounciness(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getMaterial().getBounciness();
+}
+
+void PhysicsSystem::SetBounciness(Entity e, float bounciness)
+{
+	GET_COMPONENT(void());
+	comp.body->getMaterial().setBounciness(bounciness);
+}
+
+float PhysicsSystem::GetFriction(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getMaterial().getFrictionCoefficient();
+}
+
+void PhysicsSystem::SetFriction(Entity e, float friction)
+{
+	GET_COMPONENT(void());
+	comp.body->getMaterial().setFrictionCoefficient(friction);
+}
+
+float PhysicsSystem::GetRollingResistance(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getMaterial().getRollingResistance();
+}
+
+void PhysicsSystem::SetRollingResistance(Entity e, float resistance)
+{
+	GET_COMPONENT(void());
+	comp.body->getMaterial().setRollingResistance(resistance);
+}
+
+float PhysicsSystem::GetVelocityDamping(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getLinearDamping();
+}
+
+void PhysicsSystem::SetVelocityDamping(Entity e, float damping)
+{
+	GET_COMPONENT(void());
+	comp.body->setLinearDamping(damping);
+}
+
+float PhysicsSystem::GetAngularDamping(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getAngularDamping();
+}
+
+void PhysicsSystem::SetAngularDamping(Entity e, float damping)
+{
+	GET_COMPONENT(void());
+	comp.body->setAngularDamping(damping);
+}
+
+float PhysicsSystem::GetMass(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getMass();
+}
+
+void PhysicsSystem::SetMass(Entity e, float mass)
+{
+	GET_COMPONENT(void());
+	comp.body->setMass(mass);
+}
+
+void PhysicsSystem::SetCenterOfMass(Entity e, Vector3 local_point)
+{
+	GET_COMPONENT(void());
+	comp.body->setCenterOfMassLocal(local_point);
+}
+
+Vector3 PhysicsSystem::GetVelocity(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	return comp.body->getLinearVelocity();
+}
+
+void PhysicsSystem::SetVelocity(Entity e, Vector3 velocity)
+{
+	GET_COMPONENT(void());
+	comp.body->setLinearVelocity(velocity);
+}
+
+Vector3 PhysicsSystem::GetAngularVelocity(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	return comp.body->getAngularVelocity();
+}
+
+void PhysicsSystem::SetAngularVelocity(Entity e, Vector3 velocity)
+{
+	GET_COMPONENT(void());
+	comp.body->setAngularVelocity(velocity);
+}
+
+void PhysicsSystem::ApplyForce(Entity e, Vector3 point, Vector3 force)
+{
+	GET_COMPONENT(void());
+	comp.body->applyForce(force, point);
+}
+
+void PhysicsSystem::ApplyForceToCenterOfMass(Entity e, Vector3 force)
+{
+	GET_COMPONENT(void());
+	comp.body->applyForceToCenterOfMass(force);
+}
+
+void PhysicsSystem::ApplyTorque(Entity e, Vector3 torque)
+{
+	GET_COMPONENT(void());
+	comp.body->applyTorque(torque);
+}
+
+// SHAPES
 
 int32_t PhysicsSystem::AddBoxShape(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize)
 {
@@ -349,4 +465,63 @@ int32_t PhysicsSystem::AddCapsuleShape(Entity e, Vector3 pos, Quaternion rot, fl
 	GET_COMPONENT(-1);
 	auto shape = new rp3d::CapsuleShape(radius, height);
 	return AddShape(comp, pos, rot, mass, shape);
+}
+
+void PhysicsSystem::RegLuaClass()
+{
+	getGlobalNamespace(LSTATE)
+		.beginClass<PhysicsSystem>("PhysicsSystem")
+		.addFunction("IsActive", &PhysicsSystem::IsActive)
+		.addFunction("SetActive", &PhysicsSystem::SetActive)
+		.addFunction("IsSleeping", &PhysicsSystem::IsSleeping)
+		.addFunction("SetSleeping", &PhysicsSystem::SetSleeping)
+		.addFunction("IsUnsleepable", &PhysicsSystem::IsUnsleepable)
+		.addFunction("SetUnsleepable", &PhysicsSystem::SetUnsleepable)
+		.addFunction("IsGravityEnabled", &PhysicsSystem::IsGravityEnabled)
+		.addFunction("SetGravityEnabled", &PhysicsSystem::SetGravityEnabled)
+
+		.addFunction("SetType", &PhysicsSystem::SetType)
+		.addFunction("GetType", &PhysicsSystem::GetType)
+		.addFunction("GetNonRotatable", &PhysicsSystem::GetNonRotatable)
+		.addFunction("SetNonRotatable", &PhysicsSystem::SetNonRotatable)
+
+		.addFunction("GetBounciness", &PhysicsSystem::GetBounciness)
+		.addFunction("SetBounciness", &PhysicsSystem::SetBounciness)
+
+		.addFunction("GetFriction", &PhysicsSystem::GetFriction)
+		.addFunction("SetFriction", &PhysicsSystem::SetFriction)
+
+		.addFunction("GetRollingResistance", &PhysicsSystem::GetRollingResistance)
+		.addFunction("SetRollingResistance", &PhysicsSystem::SetRollingResistance)
+
+		.addFunction("GetVelocityDamping", &PhysicsSystem::GetVelocityDamping)
+		.addFunction("SetVelocityDamping", &PhysicsSystem::SetVelocityDamping)
+
+		.addFunction("GetAngularDamping", &PhysicsSystem::GetAngularDamping)
+		.addFunction("SetAngularDamping", &PhysicsSystem::SetAngularDamping)
+
+		.addFunction("GetMass", &PhysicsSystem::GetMass)
+		.addFunction("SetMass", &PhysicsSystem::SetMass)
+		.addFunction("SetCenterOfMass", &PhysicsSystem::SetCenterOfMass)
+
+		.addFunction("GetVelocity", &PhysicsSystem::GetVelocity)
+		.addFunction("SetVelocity", &PhysicsSystem::SetVelocity)
+
+		.addFunction("GetAngularVelocity", &PhysicsSystem::GetAngularVelocity)
+		.addFunction("SetAngularVelocity", &PhysicsSystem::SetAngularVelocity)
+
+		.addFunction("ApplyForce", &PhysicsSystem::ApplyForce)
+		.addFunction("ApplyForceToCenterOfMass", &PhysicsSystem::ApplyForceToCenterOfMass)
+		.addFunction("ApplyTorque", &PhysicsSystem::ApplyTorque)
+
+		.addFunction("AddBoxShape", &PhysicsSystem::AddBoxShape)
+		.addFunction("AddSphereShape", &PhysicsSystem::AddSphereShape)
+		.addFunction("AddConeShape", &PhysicsSystem::AddConeShape)
+		.addFunction("AddCylinderShape", &PhysicsSystem::AddCylinderShape)
+		.addFunction("AddCapsuleShape", &PhysicsSystem::AddCapsuleShape)
+
+		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
+		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
+		.addFunction("HasComponent", &PhysicsSystem::HasComponent)
+		.endClass();
 }

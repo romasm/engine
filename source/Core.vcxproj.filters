@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Common">
@@ -42,6 +42,9 @@
     <ClInclude Include="Common\DataTypes.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Multithreading.h">
+      <Filter>Common</Filter>
+    </ClInclude>
     <ClInclude Include="Common\Pathes.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -82,6 +85,12 @@
       <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="ECS\LineGeometrySystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\PhysicsSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\SceneGraph.h">
       <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="ECS\ScriptSystem.h">
@@ -253,16 +262,8 @@
     <ClInclude Include="Utils\WinAPIDialogs.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="ECS\SceneGraph.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\Multithreading.h">
-      <Filter>Common</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\PhysicsSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -287,6 +288,12 @@
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\LineGeometrySystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\PhysicsSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\SceneGraph.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\ScriptSystem.cpp">
@@ -429,11 +436,5 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="ECS\SceneGraph.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS\PhysicsSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
