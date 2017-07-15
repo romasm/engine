@@ -309,42 +309,6 @@ inline wchar_t* WCharToWChar(wchar_t *str)
 	return res;
 }
 
-// Математические функции
-static Quaternion q_identity(0, 0, 0, 1.0f);
-static Vector2 v2_zero(0, 0);
-static Vector3 v3_zero(0, 0, 0);
-static Vector4 v4_zero(0, 0, 0, 0);
-
-inline Vector4 Vector4Lerp(Vector4 f1, Vector4 f2, float l)
-{
-	return Vector4::Lerp(f1, f2, l);
-}
-
-inline Vector3 Vector3Lerp(Vector3 f1, Vector3 f2, float l)
-{
-	return Vector3::Lerp(f1, f2, l);
-}
-
-inline Vector2 Vector2Lerp(Vector2 f1, Vector2 f2, float l)
-{
-	return Vector2::Lerp(f1, f2, l);
-}
-
-inline float lerp(float f1, float f2, float l)
-{
-	return f1 * (1 - l) + f2 * l;
-}
-
-inline float clamp(float fmin, float f, float fmax)
-{
-	return max(fmin, min(f, fmax));
-}
-
-inline int FloatRoundInt(float f)
-{
-	return int(f < 0.0f ? ceil(f - 0.5f) : floor(f + 0.5f));
-}
-
 inline MLRECT RECTtoMLRECT(RECT r)
 {
 	MLRECT res;
@@ -373,23 +337,3 @@ inline bool isInRect(RECT child, RECT parent)
 	else
 		return true;
 }
-
-inline POINT ClampPoint(POINT x, POINT xmin, POINT xmax)
-{
-	POINT r;
-	r.x = min(x.x, xmax.x);
-	r.x = max(r.x, xmin.x);
-	r.y = min(x.y, xmax.y);
-	r.y = max(r.y, xmin.y);
-	return r;
-}
-
-//Расширение для vector
-template<typename E>
-static bool isIn(vector<E>& v, E d)
-{
-	for(int i=0; i<(int)v.size(); i++)
-		if(d == v.[i])
-			return true;
-	return false;
-};

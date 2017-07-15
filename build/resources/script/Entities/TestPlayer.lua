@@ -54,10 +54,10 @@ function EntityTypes.TestPlayer:initVars()
     -- lifetime only exist vars
     self.jumping = false
 
-    self.forward = false
-    self.backward = false
-    self.right = false
-    self.left = false
+    self.forward = 0
+    self.backward = 0
+    self.right = 0
+    self.left = 0
 
     self.dYaw = 0
     self.dPitch = 0
@@ -77,22 +77,39 @@ function EntityTypes.TestPlayer:onTick(dt)
 
     if self.jumping == true then
         self.physicsSys:ApplyForceToCenterOfMass(self.ent, Vector3(0, 25000.0, 0))
-        self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, self.p_move_speed))
         self.jumping = false
     end
-    
-    local camDir = self.camera:GetDirectionL()
-    camDir.y = 0
-    local sideDir = camDir
-    sideDir.z = -sideDir.z
-
-
-
-    if self.forward then self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, self.p_move_speed)) end
-    if self.backward then self.physicsSys:SetVelocity(self.ent, Vector3(0, 0, -self.p_move_speed)) end
-    if self.right then self.physicsSys:SetVelocity(self.ent, Vector3(-self.p_move_speed, 0, 0)) end
-    if self.left then self.physicsSys:SetVelocity(self.ent, Vector3(self.p_move_speed, 0, 0)) end
         
+    local forwardDir = self.camera:GetLookDir()
+    forwardDir.y = 0
+    forwardDir:Normalize()
+
+    local rightDir = self.camera:GetLookTangent()
+    rightDir.y = 0
+    rightDir:Normalize()
+
+    local backwardDir = Vector3.Inverse(forwardDir)
+    local leftDir = Vector3.Inverse(rightDir)
+    
+    forwardDir = Vector3.MulScalar(forwardDir, self.forward)
+    backwardDir = Vector3.MulScalar(backwardDir, self.backward)
+    leftDir = Vector3.MulScalar(leftDir, self.left)
+    rightDir = Vector3.MulScalar(rightDir, self.right)
+    
+    local moveDir = Vector3.Add(forwardDir, backwardDir)
+    moveDir = Vector3.Add(moveDir, leftDir)
+    moveDir = Vector3.Add(moveDir, rightDir)
+    moveDir:Normalize()
+    
+    moveDir = Vector3.MulScalar(moveDir, self.p_move_speed)
+
+    local velocity = self.physicsSys:GetVelocity(self.ent)
+    velocity = Vector3.Lerp(velocity, moveDir, 0.25)
+
+    self.physicsSys:SetVelocity(self.ent, velocity)
+
+    self.physicsSys:ApplyForceToCenterOfMass(self.ent, moveDir)
+    
     if self.dPitch ~= 0 or self.dYaw ~= 0 then
         local rotation = self.camera:GetRotationL()
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
@@ -115,19 +132,19 @@ function EntityTypes.TestPlayer:onJump(key, pressed, x, y, z)
 end
 
 function EntityTypes.TestPlayer:onMoveForward(key, pressed, x, y, z)
-    self.forward = pressed
+    self.forward = pressed and 1 or 0
 end
 
 function EntityTypes.TestPlayer:onMoveBackward(key, pressed, x, y, z)
-    self.backward = pressed
+    self.backward = pressed and 1 or 0
 end
 
 function EntityTypes.TestPlayer:onMoveLeft(key, pressed, x, y, z)
-    self.right = pressed
+    self.right = pressed and 1 or 0
 end
 
 function EntityTypes.TestPlayer:onMoveRight(key, pressed, x, y, z)
-    self.left = pressed
+    self.left = pressed and 1 or 0
 end
 
 function EntityTypes.TestPlayer:onTurnYaw(key, pressed, x, y, z)

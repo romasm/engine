@@ -529,11 +529,11 @@ function GuiCombo:onTick(dt)
         self.anim_progress = self.anim_progress + self.anim_go * dt / fade_time
         self.anim_progress = math.max(0, math.min(self.anim_progress, 1))
 
-        local color_icon = Vector4Lerp(self.icon.color, self.icon.color_hover, self.anim_progress)
-        local color_icon_bg = Vector4Lerp(self.icon.background.color, self.icon.background.color_hover, self.anim_progress)
-        local color_background = Vector4Lerp(self.background.color, self.background.color_hover, self.anim_progress)
-        local color_border = Vector4Lerp(self.border.color, self.border.color_hover, self.anim_progress)
-        local color_text = Vector4Lerp(self.text.color, self.text.color_hover, self.anim_progress)
+        local color_icon = Vector4.Lerp(self.icon.color, self.icon.color_hover, self.anim_progress)
+        local color_icon_bg = Vector4.Lerp(self.icon.background.color, self.icon.background.color_hover, self.anim_progress)
+        local color_background = Vector4.Lerp(self.background.color, self.background.color_hover, self.anim_progress)
+        local color_border = Vector4.Lerp(self.border.color, self.border.color_hover, self.anim_progress)
+        local color_text = Vector4.Lerp(self.text.color, self.text.color_hover, self.anim_progress)
         
         if self.rect_mat ~= nil then
             self.rect_mat:SetVectorByID(color_background, 2)

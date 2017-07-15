@@ -88,27 +88,35 @@ function EntityTypes.BaseEntity:AddScale(x, y, z)
 end
 
 function EntityTypes.BaseEntity:GetPositionW()
-    return self.transformSys:GetPositionW(self.ent, x, y, z)
+    return self.transformSys:GetPositionW(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetRotationW()
-    return self.transformSys:GetRotationW(self.ent, p, y, r)
+    return self.transformSys:GetRotationW(self.ent)
+end
+
+function EntityTypes.BaseEntity:GetDirectionW()
+    return self.transformSys:GetDirectionW(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetScaleW()
-    return self.transformSys:GetScaleW(self.ent, x, y, z)
+    return self.transformSys:GetScaleW(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetPositionL()
-    return self.transformSys:GetPositionL(self.ent, x, y, z)
+    return self.transformSys:GetPositionL(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetRotationL()
-    return self.transformSys:GetRotationL(self.ent, p, y, r)
+    return self.transformSys:GetRotationL(self.ent)
+end
+
+function EntityTypes.BaseEntity:GetDirectionL()
+    return self.transformSys:GetDirectionL(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetScaleL()
-    return self.transformSys:GetScaleL(self.ent, x, y, z)
+    return self.transformSys:GetScaleL(self.ent)
 end
 
 function EntityTypes.BaseEntity:ForceUpdateTransform()

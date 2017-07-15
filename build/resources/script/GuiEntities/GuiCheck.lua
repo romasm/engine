@@ -278,10 +278,10 @@ function GuiCheck:onTick(dt)
         self.anim_progress = self.anim_progress + self.anim_go * dt / fade_time
         self.anim_progress = math.max(0, math.min(self.anim_progress, 1))
 
-        local color_box = Vector4Lerp(self.box.color, self.box.color_hover, self.anim_progress)
-        local color_check = self.undef and self.check.color_nonactive or (self.state_check and Vector4Lerp(self.check.color, self.check.color_hover, self.anim_progress) or color_box)
-        local color_border = Vector4Lerp(self.border.color, self.border.color_hover, self.anim_progress)
-        local color_text = Vector4Lerp(self.text.color, self.text.color_hover, self.anim_progress)
+        local color_box = Vector4.Lerp(self.box.color, self.box.color_hover, self.anim_progress)
+        local color_check = self.undef and self.check.color_nonactive or (self.state_check and Vector4.Lerp(self.check.color, self.check.color_hover, self.anim_progress) or color_box)
+        local color_border = Vector4.Lerp(self.border.color, self.border.color_hover, self.anim_progress)
+        local color_text = Vector4.Lerp(self.text.color, self.text.color_hover, self.anim_progress)
         
         if self.boxrect_mat ~= nil then
             self.boxrect_mat:SetVectorByID(color_box, 2)

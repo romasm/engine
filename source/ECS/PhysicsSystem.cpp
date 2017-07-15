@@ -15,6 +15,8 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, uint32_t maxCount)
 	bodyFloor->setType(rp3d::STATIC);
 	shapeFloor = new rp3d::BoxShape(Vector3(100.0f, 1.0f, 100.0f));
 	bodyFloor->addCollisionShape(shapeFloor, rp3d::Transform::identity(), 10.0f);
+	bodyFloor->getMaterial().setBounciness(0);
+	bodyFloor->getMaterial().setFrictionCoefficient(1.0f);
 	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);

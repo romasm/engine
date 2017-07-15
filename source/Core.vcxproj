@@ -229,6 +229,7 @@
     <ClInclude Include="Utils\Generate_PBS_Env_LUT.h" />
     <ClInclude Include="Utils\Log.h" />
     <ClInclude Include="Utils\MathGeometry.h" />
+    <ClInclude Include="Utils\MathVector.h" />
     <ClInclude Include="Utils\Profiler.h" />
     <ClInclude Include="Utils\ProfilerIDs.h" />
     <ClInclude Include="Utils\TransformControls.h" />

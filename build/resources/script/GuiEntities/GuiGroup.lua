@@ -286,8 +286,8 @@ function GuiGroup:onTick(dt)
         self.anim_progress = math.max(0, math.min(self.anim_progress, 1))
 
         if self.rect then
-            self.rect.background.color = Vector4Lerp(self.background.color_closed, self.background.color, self.anim_progress)
-            self.rect.border.color = Vector4Lerp(self.border.color_closed, self.border.color, self.anim_progress)
+            self.rect.background.color = Vector4.Lerp(self.background.color_closed, self.background.color, self.anim_progress)
+            self.rect.border.color = Vector4.Lerp(self.border.color_closed, self.border.color, self.anim_progress)
             self.rect:onActivate()
         end
 

@@ -7,6 +7,7 @@
 #include "Util.h"
 #include "macros.h"
 #include "DataTypes.h"
+#include "MathVector.h"
 #include "MathGeometry.h"
 #include "GlobalColor.h"
 #include "LuaVM.h"

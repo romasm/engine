@@ -447,7 +447,7 @@ Vector3 TransformSystem::GetRotationL(Entity e)
 Vector3 TransformSystem::GetDirectionL(Entity e)
 {
 	GET_COMPONENT(Vector3())
-	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetLocalTransformation(comp.nodeID)));
+	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetLocalTransformation(comp.nodeID)));
 }
 
 XMVECTOR TransformSystem::GetVectScaleL(Entity e)
@@ -491,7 +491,7 @@ Vector3 TransformSystem::GetRotationW(Entity e)
 Vector3 TransformSystem::GetDirectionW(Entity e)
 {
 	GET_COMPONENT(Vector3())
-	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetWorldTransformation(comp.nodeID)));
+	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetWorldTransformation(comp.nodeID)));
 }
 
 XMVECTOR TransformSystem::GetVectScaleW(Entity e)
