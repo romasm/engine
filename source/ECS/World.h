@@ -181,6 +181,7 @@ namespace EngineCore
 
 		inline bool IsEntityAlive(Entity e) {return m_entityMgr->IsAlive(e);}
 		void DestroyEntity(Entity e);
+		void DestroyEntityHierarchically(Entity e);
 		Entity CopyEntity(Entity e);
 
 		inline void RenameEntity(Entity e, string name) {m_nameMgr->SetName(e, name);}
@@ -225,8 +226,6 @@ namespace EngineCore
 		}
 	#endif
 		
-
-
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
@@ -245,6 +244,7 @@ namespace EngineCore
 					.addFunction("GetEntityName", &BaseWorld::GetEntityName)
 					.addFunction("IsEntityAlive", &BaseWorld::IsEntityAlive)
 					.addFunction("DestroyEntity", &BaseWorld::DestroyEntity)
+					.addFunction("DestroyEntityHierarchically", &BaseWorld::DestroyEntityHierarchically)
 					.addFunction("CopyEntity", &BaseWorld::CopyEntity)
 					.addFunction("RenameEntity", &BaseWorld::RenameEntity)
 					.addFunction("GetEntityByName", &BaseWorld::GetEntityByName)
@@ -283,6 +283,8 @@ namespace EngineCore
 		}
 
 	protected:
+		void destroyEntity(Entity e);
+
 		bool loadWorld(string& filename, WorldHeader& header);
 		void initMainEntities(WorldHeader& header);
 		

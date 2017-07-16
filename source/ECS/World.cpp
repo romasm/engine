@@ -124,10 +124,20 @@ void BaseWorld::Close()
 	_DELETE(m_nameMgr);
 }
 
+void BaseWorld::DestroyEntityHierarchically(Entity e)
+{
+	Entity child = m_transformSystem->GetChildFirst(e);
+	while(!child.isnull()) 
+	{
+		DestroyEntityHierarchically(child);
+		child = m_transformSystem->GetChildNext(child);
+	}	
+
+	return destroyEntity(e);
+}
+
 void BaseWorld::DestroyEntity(Entity e)
 {
-	// immidiate
-
 #ifdef _EDITOR
 	Entity child = m_transformSystem->GetChildFirst(e);
 	string editorType(EDITOR_TYPE);
@@ -139,9 +149,15 @@ void BaseWorld::DestroyEntity(Entity e)
 	}	
 #endif
 
+	return destroyEntity(e);
+}
+
+void BaseWorld::destroyEntity(Entity e)
+{
+	// immidiate
 	m_transformSystem->DeleteComponent(e);
 	m_visibilitySystem->DeleteComponent(e);
-	
+
 	if(m_earlyVisibilitySystem)
 		m_earlyVisibilitySystem->DeleteComponent(e);
 

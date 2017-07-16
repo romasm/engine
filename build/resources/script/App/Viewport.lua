@@ -70,7 +70,9 @@ function Viewport:Init()
     self.freelook = false
     self.drawhud = true
 
+    self.worldlive = false
     self.gamemode = false
+    self.fullscreen = false
 
     self.tc_action = false
 	self.tc_hover = false
@@ -201,9 +203,51 @@ function Viewport:CloseRenderConfig()
 end
 
 function Viewport:ToggleFullscreen()
-    if not self.lua_world then return end
+    if not self.lua_world or not self.window then return end
+    
+    if self.fullscreen then
+        self.window.entity.focus_mode = GUI_FOCUS_MODE.NORMAL
+        self.window.entity.top = self.oldTop
+        self.window.entity.bottom = self.oldBottom
+        self.window.entity.left = self.oldLeft
+        self.window.entity.right = self.oldRight
+        
+        self.window.entity:UpdatePosSize()
+        self:onResize(true)
 
-    -- TODO
+        self.fullscreen = false
+    else
+        self.oldTop = self.window.entity.top
+        self.oldBottom = self.window.entity.bottom
+        self.oldLeft = self.window.entity.left
+        self.oldRight = self.window.entity.right
+        
+        self.window.entity.focus_mode = GUI_FOCUS_MODE.ONTOP
+        self.window.entity.top = 0
+        self.window.entity.bottom = 0
+        self.window.entity.left = 0
+        self.window.entity.right = 0
+        
+        self.window.entity:UpdatePosSize()
+        self:onResize(true)
+        
+        local root = self.window.entity:GetRoot()
+        root:SetFocus(self.window.entity)
+
+        self.fullscreen = true
+    end
+end
+
+function Viewport:ToggleWorldLive()
+    if not self.lua_world then return end
+    
+    if self.worldlive == true then
+        self.lua_world.world.mode = WORLDMODES.NO_LIVE
+        self.worldlive = false
+    else
+        self.lua_world.world.mode = WORLDMODES.LIVE        
+        self.worldlive = true
+    end
 end
 
 function Viewport:ToggleGamemode()
@@ -221,7 +265,7 @@ function Viewport:ToggleGamemode()
         
         self:SetMouseVis(true)
         
-        self.lua_world.world:DestroyEntity(player.ent)
+        self.lua_world.world:DestroyEntityHierarchically(player.ent)
         self.lua_world.world.mode = WORLDMODES.NO_LIVE
 
         self.gamemode = false
@@ -266,7 +310,7 @@ function Viewport:onResize(force)
 
         self.viewport.entity.width = vp_w
         self.viewport.entity.height = vp_h
-
+        
         if self.sys_win:IsEndResize() or force then
             self.viewport.rect_mat:ClearTextures()
             self.lua_world.scenepl:Resize(vp_w, vp_h)
@@ -274,6 +318,10 @@ function Viewport:onResize(force)
             self.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)
 
             print("Viewport resize to "..vp_w.." x "..vp_h)
+        end
+
+        if force then 
+            self.viewport.entity:UpdatePosSize()
         end
     end
     return true

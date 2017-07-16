@@ -128,7 +128,7 @@ namespace EngineCore
 			return (int32_t)comp.shapes.size() - 1;
 		}
 
-		inline void _DeleteComponent(PhysicsComponent* comp)
+		inline void _DeleteComponent(PhysicsComponent* comp) // TODO: crash after deletion
 		{
 			physWorld->destroyRigidBody(comp->body);
 			comp->body = nullptr;
@@ -161,9 +161,5 @@ namespace EngineCore
 		rp3d::DynamicsWorld* physWorld;
 		float updateAccum;
 		float interpolationFactor;
-
-		// temp
-		rp3d::RigidBody* bodyFloor;
-		rp3d::BoxShape* shapeFloor;
 	};
 }

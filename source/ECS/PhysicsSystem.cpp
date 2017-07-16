@@ -10,14 +10,6 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, uint32_t maxCount)
 	Vector3 defaultGravity(0, -9.81f, 0);
 	physWorld = new rp3d::DynamicsWorld(defaultGravity);
 
-	// temp floor
-	bodyFloor = physWorld->createRigidBody(rp3d::Transform(Vector3(0, -1.0f, 0), Quaternion()));
-	bodyFloor->setType(rp3d::STATIC);
-	shapeFloor = new rp3d::BoxShape(Vector3(100.0f, 1.0f, 100.0f));
-	bodyFloor->addCollisionShape(shapeFloor, rp3d::Transform::identity(), 10.0f);
-	bodyFloor->getMaterial().setBounciness(0);
-	bodyFloor->getMaterial().setFrictionCoefficient(1.0f);
-	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 
@@ -31,11 +23,7 @@ PhysicsSystem::~PhysicsSystem()
 	{
 		_DeleteComponent(&i);
 	}
-
-	// temp
-	physWorld->destroyRigidBody(bodyFloor);
-	_DELETE(shapeFloor);
-
+	
 	_DELETE(physWorld);
 }
 

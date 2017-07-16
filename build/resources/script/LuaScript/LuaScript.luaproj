@@ -254,6 +254,9 @@
     <Compile Include="..\Entities\LocalLight.lua">
       <Link>Entities\LocalLight.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\Mesh.lua">
+      <Link>Entities\Mesh.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\PhysicsModel.lua">
       <Link>Entities\PhysicsModel.lua</Link>
     </Compile>

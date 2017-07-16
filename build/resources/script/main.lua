@@ -47,6 +47,7 @@ loader.require("Pieces.DialogScreen")
 loader.require("Entities.const_EntityDefines")
 loader.require("Entities.BaseEntity", Core.UpdateLuaFuncs)
 
+loader.require("Entities.Mesh", Core.UpdateLuaFuncs)
 loader.require("Entities.LocalLight", Core.UpdateLuaFuncs)
 loader.require("Entities.GlobalLight", Core.UpdateLuaFuncs)
 loader.require("Entities.StaticModel", Core.UpdateLuaFuncs)

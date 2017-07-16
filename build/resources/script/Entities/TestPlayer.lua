@@ -22,7 +22,7 @@ function EntityTypes.TestPlayer:init(world, ent)
             
     -- collision
     self.physicsSys:AddComponent(self.ent)    
-    self.physicsSys:AddCapsuleShape(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.8)
+    self.physicsSys:AddCapsuleShape(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.2)
     self.physicsSys:SetNonRotatable(self.ent, true)
     self.physicsSys:SetUnsleepable(self.ent, true)
     self.physicsSys:SetBounciness(self.ent, 0.0)
@@ -42,14 +42,12 @@ end
 
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_jump_power = 0.3
-    self.p_jump_speed = 2.0
-    self.p_move_speed = 4.0
+    self.p_jump_accel = 25000.0
+    self.p_move_accel = 100.0
+    self.p_move_max_speed = 1.5
     self.p_rot_sence = 0.02
 
     -- lifetime only exist vars
-    self.jumping = false
-
     self.forward = 0
     self.backward = 0
     self.right = 0
@@ -68,14 +66,7 @@ function EntityTypes.TestPlayer:Deactivate()
 end
 
 -- tick
-function EntityTypes.TestPlayer:onTick(dt)
-    local dtSeconds = dt * 0.001
-
-    if self.jumping == true then
-        self.physicsSys:ApplyForceToCenterOfMass(self.ent, Vector3(0, 25000.0, 0))
-        self.jumping = false
-    end
-        
+function EntityTypes.TestPlayer:onTick(dt)        
     if self.forward + self.backward + self.left + self.right > 0 then
         local forwardDir = self.camera:GetLookDir()
         forwardDir.y = 0
@@ -93,17 +84,18 @@ function EntityTypes.TestPlayer:onTick(dt)
         leftDir = Vector3.MulScalar(leftDir, self.left)
         rightDir = Vector3.MulScalar(rightDir, self.right)
     
-        local moveDir = Vector3.Add(forwardDir, backwardDir)
-        moveDir = Vector3.Add(moveDir, leftDir)
-        moveDir = Vector3.Add(moveDir, rightDir)
-        moveDir:Normalize()
-    
-        moveDir = Vector3.MulScalar(moveDir, self.p_move_speed)
+        local unitDir = Vector3.Add(forwardDir, backwardDir)
+        unitDir = Vector3.Add(unitDir, leftDir)
+        unitDir = Vector3.Add(unitDir, rightDir)
+        unitDir:Normalize()
 
         local velocity = self.physicsSys:GetVelocity(self.ent)
-        velocity = Vector3.Lerp(velocity, moveDir, 0.5)
+        local speedOnMoveDir = velocity:Dot(unitDir)
 
-        self.physicsSys:SetVelocity(self.ent, velocity)
+        if speedOnMoveDir < self.p_move_max_speed then
+            local moveDir = Vector3.MulScalar(unitDir, self.p_move_accel * dt)
+            self.physicsSys:ApplyForceToCenterOfMass(self.ent, moveDir)
+        end
     end
     
     if self.dPitch ~= 0 or self.dYaw ~= 0 then
@@ -124,7 +116,7 @@ end
 
 function EntityTypes.TestPlayer:onJump(key, pressed, x, y, z)
     if pressed == false then return end
-    self.jumping = true
+    self.physicsSys:ApplyForceToCenterOfMass(self.ent, Vector3(0, self.p_jump_accel, 0))
 end
 
 function EntityTypes.TestPlayer:onMoveForward(key, pressed, x, y, z)
