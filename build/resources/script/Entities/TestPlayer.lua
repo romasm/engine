@@ -19,19 +19,15 @@ function EntityTypes.TestPlayer:init(world, ent)
 
     -- controller after script
     self.world.controller:AddComponent(self.ent, "FirstPerson")
-    
-    -- temp
-    self.world.visibility:AddComponent(self.ent)
-    self.world.staticMesh:AddComponentMesh(self.ent, "")
-        
+            
     -- collision
     self.physicsSys:AddComponent(self.ent)    
     self.physicsSys:AddCapsuleShape(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.8)
     self.physicsSys:SetNonRotatable(self.ent, true)
     self.physicsSys:SetUnsleepable(self.ent, true)
     self.physicsSys:SetBounciness(self.ent, 0.0)
-    self.physicsSys:SetFriction(self.ent, 0.9)
-    self.physicsSys:SetVelocityDamping(self.ent, 0.5)
+    self.physicsSys:SetFriction(self.ent, 1.0)
+    --self.physicsSys:SetVelocityDamping(self.ent, 0.9)
 
     self.physicsSys:SetActive(self.ent, true)
 
@@ -80,40 +76,40 @@ function EntityTypes.TestPlayer:onTick(dt)
         self.jumping = false
     end
         
-    local forwardDir = self.camera:GetLookDir()
-    forwardDir.y = 0
-    forwardDir:Normalize()
+    if self.forward + self.backward + self.left + self.right > 0 then
+        local forwardDir = self.camera:GetLookDir()
+        forwardDir.y = 0
+        forwardDir:Normalize()
 
-    local rightDir = self.camera:GetLookTangent()
-    rightDir.y = 0
-    rightDir:Normalize()
+        local rightDir = self.camera:GetLookTangent()
+        rightDir.y = 0
+        rightDir:Normalize()
 
-    local backwardDir = Vector3.Inverse(forwardDir)
-    local leftDir = Vector3.Inverse(rightDir)
+        local backwardDir = Vector3.Inverse(forwardDir)
+        local leftDir = Vector3.Inverse(rightDir)
     
-    forwardDir = Vector3.MulScalar(forwardDir, self.forward)
-    backwardDir = Vector3.MulScalar(backwardDir, self.backward)
-    leftDir = Vector3.MulScalar(leftDir, self.left)
-    rightDir = Vector3.MulScalar(rightDir, self.right)
+        forwardDir = Vector3.MulScalar(forwardDir, self.forward)
+        backwardDir = Vector3.MulScalar(backwardDir, self.backward)
+        leftDir = Vector3.MulScalar(leftDir, self.left)
+        rightDir = Vector3.MulScalar(rightDir, self.right)
     
-    local moveDir = Vector3.Add(forwardDir, backwardDir)
-    moveDir = Vector3.Add(moveDir, leftDir)
-    moveDir = Vector3.Add(moveDir, rightDir)
-    moveDir:Normalize()
+        local moveDir = Vector3.Add(forwardDir, backwardDir)
+        moveDir = Vector3.Add(moveDir, leftDir)
+        moveDir = Vector3.Add(moveDir, rightDir)
+        moveDir:Normalize()
     
-    moveDir = Vector3.MulScalar(moveDir, self.p_move_speed)
+        moveDir = Vector3.MulScalar(moveDir, self.p_move_speed)
 
-    local velocity = self.physicsSys:GetVelocity(self.ent)
-    velocity = Vector3.Lerp(velocity, moveDir, 0.25)
+        local velocity = self.physicsSys:GetVelocity(self.ent)
+        velocity = Vector3.Lerp(velocity, moveDir, 0.5)
 
-    self.physicsSys:SetVelocity(self.ent, velocity)
-
-    self.physicsSys:ApplyForceToCenterOfMass(self.ent, moveDir)
+        self.physicsSys:SetVelocity(self.ent, velocity)
+    end
     
     if self.dPitch ~= 0 or self.dYaw ~= 0 then
         local rotation = self.camera:GetRotationL()
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
-        rotation.x = math.max( -math.pi * 0.5, math.min( rotation.x, math.pi * 0.5 ) )
+        rotation.x = math.max( -math.pi * 0.499, math.min( rotation.x, math.pi * 0.499 ) )
         rotation.y = rotation.y + self.dYaw * self.p_rot_sence
         self.camera:SetRotation(rotation.x, rotation.y, 0)
         self.dPitch = 0

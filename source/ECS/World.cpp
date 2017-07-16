@@ -9,6 +9,7 @@ using namespace EngineCore;
 BaseWorld::BaseWorld()
 {
 	b_active = false;
+	m_mode = StateMode::NO_LIVE;
 	
 	world_name = "";
 	ID = 0;
@@ -563,11 +564,18 @@ void World::Frame()
 	
 	// start update
 
-	m_scriptSystem->Update(m_dt);
+	if( m_mode == StateMode::LIVE )
+	{
+		m_scriptSystem->Update(m_dt);
+	}
 
 	m_physicsSystem->UpdateTransformations();
-	m_physicsSystem->Simulate(m_dt);
-	m_physicsSystem->UpdateSceneGraph();
+
+	if( m_mode == StateMode::LIVE )
+	{
+		m_physicsSystem->Simulate(m_dt);
+		m_physicsSystem->UpdateSceneGraph();
+	}
 	
 	m_sceneGraph->Update();
 
@@ -729,11 +737,18 @@ void SmallWorld::Frame()
 	
 	// start update
 
-	m_scriptSystem->Update(m_dt);
+	if( m_mode == StateMode::LIVE )
+	{
+		m_scriptSystem->Update(m_dt);
+	}
 
 	m_physicsSystem->UpdateTransformations();
-	m_physicsSystem->Simulate(m_dt);
-	m_physicsSystem->UpdateSceneGraph();
+
+	if( m_mode == StateMode::LIVE )
+	{
+		m_physicsSystem->Simulate(m_dt);
+		m_physicsSystem->UpdateSceneGraph();
+	}
 	
 	m_sceneGraph->Update();
 	

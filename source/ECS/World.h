@@ -52,6 +52,24 @@ namespace EngineCore
 	{
 		friend TypeMgr;
 	public:
+		
+		struct WorldHeader
+		{
+			uint32_t version;
+
+			char env_name[256];
+			XMVECTOR env_rot;
+
+			XMVECTOR free_cam_pos;
+			XMVECTOR free_cam_rot;
+		};
+
+		enum StateMode
+		{
+			NO_LIVE = 0,
+			LIVE,
+		};
+
 		BaseWorld();
 
 		bool Init(string filename);
@@ -109,6 +127,9 @@ namespace EngineCore
 
 		bool IsActive() const {return b_active;}
 		void SetActive(bool active) {b_active = active;}
+
+		int32_t GetMode() const {return (int32_t)m_mode;}
+		void SetMode(int32_t m) {m_mode = (StateMode)m;}
 
 		inline float GetDT() const {return m_dt;} 
 
@@ -204,16 +225,7 @@ namespace EngineCore
 		}
 	#endif
 		
-		struct WorldHeader
-		{
-			uint32_t version;
 
-			char env_name[256];
-			XMVECTOR env_rot;
-			
-			XMVECTOR free_cam_pos;
-			XMVECTOR free_cam_rot;
-		};
 
 		static void RegLuaClass()
 		{
@@ -266,6 +278,7 @@ namespace EngineCore
 					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
+					.addProperty("mode", &BaseWorld::GetMode, &BaseWorld::SetMode)
 				.endClass();
 		}
 
@@ -276,6 +289,7 @@ namespace EngineCore
 		bool saveWorld(string& filename);
 
 		bool b_active;
+		StateMode m_mode;
 
 		LocalTimer m_world_timer;
 		float m_dt;

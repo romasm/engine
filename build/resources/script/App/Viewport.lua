@@ -208,32 +208,43 @@ end
 
 function Viewport:ToggleGamemode()
     if not self.lua_world then return end
-
-    local player = self.lua_world.world:GetLuaEntity( self.lua_world.world:GetEntityByName("Player0") )
-    if player == nil then return end
-
+    
     if self.gamemode == true then
+        local player = self.lua_world.world:GetLuaEntity( self.lua_world.world:GetEntityByName("Player0") )
+        if player == nil then return end
+
         player:Deactivate()
         EditorCamera.camera:Activate(self.lua_world.scenepl)
 
         self.drawhud = true
         self.lua_world.scenepl:GetConfig().editorGuiEnable = true
-        self.overlay_gui.enable = true
         
         self:SetMouseVis(true)
+        
+        self.lua_world.world:DestroyEntity(player.ent)
+        self.lua_world.world.mode = WORLDMODES.NO_LIVE
 
         self.gamemode = false
     else
+        local player = EntityTypes.TestPlayer(self.lua_world.world)
+        player:Rename("Player0")
+
+        local cameraPos = EditorCamera.camera:GetPositionW()
+        local cameraRot = EditorCamera.camera:GetRotationW()
+        player:SetPosition(cameraPos.x, cameraPos.y, cameraPos.z)
+        player.camera:SetRotation(cameraRot.x, cameraRot.y, 0)
+
         player.camera:Activate(self.lua_world.scenepl)
         player:Activate()
 
         self.drawhud = false
         self.lua_world.scenepl:GetConfig().editorGuiEnable = false
-        self.overlay_gui.enable = false
 
         self:SetFreelook(false)
         self:SetMouseVis(false)
 
+        self.lua_world.world.mode = WORLDMODES.LIVE
+        
         self.gamemode = true
     end
 end

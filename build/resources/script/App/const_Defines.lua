@@ -70,6 +70,11 @@ COMPONENTS = {
     SCRIPT = 5,
 }
 
+WORLDMODES = {
+    NO_LIVE = 0,
+    LIVE = 1,
+}
+
 SELECTION = {
     MAXDIST = 10000,
     DEFAULT_CAM_OFFSET = 5.0,
