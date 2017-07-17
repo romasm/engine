@@ -8,16 +8,6 @@
 
 namespace EngineCore
 {
-	struct CollisionHandle
-	{
-		rp3d::CollisionShape* shape;
-		rp3d::ProxyShape* proxy;
-
-		CollisionHandle() : shape(nullptr), proxy(nullptr) {}
-		CollisionHandle(rp3d::CollisionShape* s, rp3d::ProxyShape* p) 
-			: shape(s), proxy(p) {}
-	};
-
 	struct PhysicsComponent
 	{
 		ENTITY_IN_COMPONENT
@@ -26,14 +16,16 @@ namespace EngineCore
 
 		rp3d::RigidBody* body;
 		rp3d::Transform previousTransform;
-		
-		// TODO: use resource IDs
-		DArray<CollisionHandle> shapes;
+
+		bool overwriteMass;
+		bool overwriteCenterOfMass;
 
 		PhysicsComponent()
 		{
 			body = nullptr;
 			dirty = false;
+			overwriteMass = false;
+			overwriteCenterOfMass = false;
 		}
 	};
 
@@ -42,7 +34,7 @@ namespace EngineCore
 	class PhysicsSystem
 	{
 	public:
-		PhysicsSystem(BaseWorld* w, uint32_t maxCount);
+		PhysicsSystem(BaseWorld* w, rp3d::DynamicsWorld* dynamicsW, uint32_t maxCount);
 		~PhysicsSystem();
 
 		PhysicsComponent* AddComponent(Entity e);
@@ -96,7 +88,7 @@ namespace EngineCore
 
 		float GetMass(Entity e);
 		void SetMass(Entity e, float mass);
-		//Vector3 GetCenterOfMassL(Entity e); // TODO
+		Vector3 GetCenterOfMass(Entity e);
 		void SetCenterOfMass(Entity e, Vector3 local_point);
 
 		Vector3 GetVelocity(Entity e);
@@ -108,48 +100,16 @@ namespace EngineCore
 		void ApplyForceToCenterOfMass(Entity e, Vector3 force);
 		void ApplyTorque(Entity e, Vector3 torque);
 
-		int32_t AddBoxShape(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize);
-		int32_t AddSphereShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius);
-		int32_t AddConeShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
-		int32_t AddCylinderShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
-		int32_t AddCapsuleShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
-
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass();
 
 	private:
-		inline int32_t AddShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, 
-			float& mass, rp3d::CollisionShape* shape)
-		{
-			rp3d::Transform shapeTransform(pos, rot);
-			auto proxy = comp.body->addCollisionShape(shape, shapeTransform, mass);
-			comp.shapes.push_back(CollisionHandle(shape, proxy));
-			return (int32_t)comp.shapes.size() - 1;
-		}
 
 		inline void _DeleteComponent(PhysicsComponent* comp) // TODO: crash after deletion
 		{
-			physWorld->destroyRigidBody(comp->body);
+			dynamicsWorld->destroyRigidBody(comp->body);
 			comp->body = nullptr;
-
-			for(auto& handle: comp->shapes)
-			{
-				auto type = handle.shape->getType();
-				if( type == rp3d::CollisionShapeType::CONVEX_MESH || 
-					type == rp3d::CollisionShapeType::CONCAVE_MESH ||
-					type == rp3d::CollisionShapeType::HEIGHTFIELD )
-				{
-					// TODO
-					ERR("TODO: Remove collision shape from resource mgr!");
-				}
-				else
-				{
-					_DELETE(handle.shape);
-				}
-				handle.proxy = nullptr;
-			}
-			comp->shapes.destroy();
 		}
 
 	private:
@@ -158,7 +118,7 @@ namespace EngineCore
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 
-		rp3d::DynamicsWorld* physWorld;
+		rp3d::DynamicsWorld* dynamicsWorld;
 		float updateAccum;
 		float interpolationFactor;
 	};

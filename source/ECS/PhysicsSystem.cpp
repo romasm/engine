@@ -2,13 +2,12 @@
 #include "PhysicsSystem.h"
 #include "World.h"
 
-PhysicsSystem::PhysicsSystem(BaseWorld* w, uint32_t maxCount)
+PhysicsSystem::PhysicsSystem(BaseWorld* w, rp3d::DynamicsWorld* dynamicsW, uint32_t maxCount)
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
 
-	Vector3 defaultGravity(0, -9.81f, 0);
-	physWorld = new rp3d::DynamicsWorld(defaultGravity);
+	dynamicsWorld = dynamicsW;
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
@@ -23,8 +22,6 @@ PhysicsSystem::~PhysicsSystem()
 	{
 		_DeleteComponent(&i);
 	}
-	
-	_DELETE(physWorld);
 }
 
 void PhysicsSystem::UpdateTransformations()
@@ -50,7 +47,7 @@ void PhysicsSystem::Simulate(float dt)
 	updateAccum += dt; 
 	while( updateAccum >= PHYSICS_TIME_STEP_MS )
 	{
-		physWorld->update( PHYSICS_TIME_STEP_MS * 0.001f ); 
+		dynamicsWorld->update( PHYSICS_TIME_STEP_MS * 0.001f ); 
 		updateAccum -= PHYSICS_TIME_STEP_MS; 
 	}
 
@@ -88,8 +85,10 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	PhysicsComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
+	res->overwriteMass = false;
+	res->overwriteCenterOfMass = false;
 	
-	res->body = physWorld->createRigidBody(rp3d::Transform::identity());
+	res->body = dynamicsWorld->createRigidBody(rp3d::Transform::identity());
 	res->body->setIsActive(false);
 		
 	return res;
@@ -115,7 +114,34 @@ void PhysicsSystem::CopyComponent(Entity src, Entity dest)
 	if(!res)
 		return;
 
-	// TODO
+	res->body->setIsActive(comp->body->isActive());
+	res->body->setIsAllowedToSleep(comp->body->isAllowedToSleep());
+	res->body->setIsSleeping(comp->body->isSleeping());
+	res->body->enableGravity(comp->body->isGravityEnabled());
+	res->body->setType(comp->body->getType());
+	res->body->setNonRotatable(comp->body->getNonRotatable());
+
+	auto& matSrc = comp->body->getMaterial();
+	auto& matDest = res->body->getMaterial();
+
+	matDest.setBounciness(matSrc.getBounciness());
+	matDest.setFrictionCoefficient(matSrc.getFrictionCoefficient());
+	matDest.setRollingResistance(matSrc.getRollingResistance());
+
+	res->body->setLinearDamping(comp->body->getLinearDamping());
+	res->body->setAngularDamping(comp->body->getAngularDamping());
+
+	res->overwriteMass = comp->overwriteMass;
+	if(comp->overwriteMass)
+	{
+		res->body->setMass(comp->body->getMass()); // to post copy, or will be overwritten in collision system
+	}
+
+	res->overwriteCenterOfMass = comp->overwriteCenterOfMass;
+	if(comp->overwriteCenterOfMass)
+	{
+		res->body->setCenterOfMassLocal(comp->body->getCenterOfMassLocal()); // to post copy
+	}
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
@@ -138,50 +164,63 @@ bool PhysicsSystem::SetDirty(Entity e)
 uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 {
 	GET_COMPONENT(0)
-		/*
+	
 	uint8_t* t_data = data;
-	uint32_t size = 0;
+	
+	*(uint8_t*)t_data = comp.body->isActive() ? 1 : 0;
+	t_data += sizeof(uint8_t);
 
-	const XMMATRIX* localMatrix = sceneGraph->GetLocalTransformation(comp.nodeID);
+	*(uint8_t*)t_data = comp.body->isAllowedToSleep() ? 1 : 0;
+	t_data += sizeof(uint8_t);
 
-	for(uint32_t row = 0; row < 4; row++)
+	*(uint8_t*)t_data = comp.body->isSleeping() ? 1 : 0;
+	t_data += sizeof(uint8_t);
+
+	*(uint8_t*)t_data = comp.body->isGravityEnabled() ? 1 : 0;
+	t_data += sizeof(uint8_t);
+
+	*(uint8_t*)t_data = (uint8_t)comp.body->getType();
+	t_data += sizeof(uint8_t);
+
+	*(uint8_t*)t_data = comp.body->getNonRotatable() ? 1 : 0;
+	t_data += sizeof(uint8_t);
+
+	auto& mat = comp.body->getMaterial();
+
+	*(float*)t_data = (float)mat.getBounciness();
+	t_data += sizeof(float);
+
+	*(float*)t_data = (float)mat.getFrictionCoefficient();
+	t_data += sizeof(float);
+
+	*(float*)t_data = (float)mat.getRollingResistance();
+	t_data += sizeof(float);
+
+	*(float*)t_data = (float)comp.body->getLinearDamping();
+	t_data += sizeof(float);
+
+	*(float*)t_data = (float)comp.body->getAngularDamping();
+	t_data += sizeof(float);
+
+	*(uint8_t*)t_data = comp.overwriteMass ? 1 : 0;
+	t_data += sizeof(uint8_t);
+
+	if(comp.overwriteMass)
 	{
-		Vector4 row_data;
-		XMStoreFloat4(&row_data, localMatrix->r[row]);
-
-		*(Vector4*)t_data = row_data;
-		t_data += sizeof(Vector4);
-		size += sizeof(Vector4);
+		*(float*)t_data = (float)comp.body->getMass();
+		t_data += sizeof(float);
 	}
 
-	uint32_t parentNode = sceneGraph->GetParent(comp.nodeID);
+	*(uint8_t*)t_data = comp.overwriteCenterOfMass ? 1 : 0;
+	t_data += sizeof(uint8_t);
 
-	if(parentNode == SCENEGRAPH_NULL_ID)
+	if(comp.overwriteCenterOfMass)
 	{
-		*(uint32_t*)t_data = 0;
-		t_data += sizeof(uint32_t);
-		size += sizeof(uint32_t);
-	}
-	else
-	{
-		Entity parentEntity = sceneGraph->GetEntityByNode(parentNode);
-		string name = world->GetNameMgr()->GetName(parentEntity);
-
-		uint32_t name_size = (uint32_t)name.size();
-		*(uint32_t*)t_data = name_size;
-		t_data += sizeof(uint32_t);
-		size += sizeof(uint32_t);
-
-		if(name_size > 0)
-		{
-			memcpy_s(t_data, name_size, name.data(), name_size);
-			t_data += name_size * sizeof(char);
-			size += name_size * sizeof(char);
-		}
+		*(Vector3*)t_data = (Vector3)comp.body->getCenterOfMassLocal();
+		t_data += sizeof(Vector3);
 	}
 
-	return size;*/
-	return 0;
+	return (uint32_t)(t_data - data);
 }
 
 uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
@@ -189,41 +228,63 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	auto comp = AddComponent(e);
 	if(!comp)
 		return 0;
-		
-	/*uint8_t* t_data = data;
-	uint32_t size = 0;
 
-	XMMATRIX localMatrix;
-	for(uint32_t row = 0; row < 4; row++)
+	uint8_t* t_data = data;
+	
+	comp->body->setIsActive(*(uint8_t*)t_data > 0);
+	t_data += sizeof(uint8_t);
+
+	comp->body->setIsAllowedToSleep(*(uint8_t*)t_data > 0);
+	t_data += sizeof(uint8_t);
+
+	comp->body->setIsSleeping(*(uint8_t*)t_data > 0);
+	t_data += sizeof(uint8_t);
+
+	comp->body->enableGravity(*(uint8_t*)t_data > 0);
+	t_data += sizeof(uint8_t);
+
+	comp->body->setType((rp3d::BodyType)(*(uint8_t*)t_data));
+	t_data += sizeof(uint8_t);
+
+	comp->body->setNonRotatable(*(uint8_t*)t_data > 0);
+	t_data += sizeof(uint8_t);
+
+	auto& mat = comp->body->getMaterial();
+
+	mat.setBounciness(*(float*)t_data);
+	t_data += sizeof(float);
+
+	mat.setFrictionCoefficient(*(float*)t_data);
+	t_data += sizeof(float);
+
+	mat.setRollingResistance(*(float*)t_data);
+	t_data += sizeof(float);
+
+	comp->body->setLinearDamping(*(float*)t_data);
+	t_data += sizeof(float);
+
+	comp->body->setAngularDamping(*(float*)t_data);
+	t_data += sizeof(float);
+
+	comp->overwriteMass = *(uint8_t*)t_data > 0;
+	t_data += sizeof(uint8_t);
+
+	if(comp->overwriteMass)
 	{
-		Vector4 row_data;
-		row_data = *(Vector4*)t_data;
-		t_data += sizeof(Vector4);
-		size += sizeof(Vector4);
-
-		localMatrix.r[row] = XMLoadFloat4(&row_data);
+		comp->body->setMass(*(float*)t_data); // to post load, or will be overwritten in collision system
+		t_data += sizeof(float);
 	}
 
-	sceneGraph->SetTransformation(comp->nodeID, localMatrix);
+	comp->overwriteCenterOfMass = *(uint8_t*)t_data > 0;
+	t_data += sizeof(uint8_t);
 
-	uint32_t parentName_size = *(uint32_t*)t_data;
-	t_data += sizeof(uint32_t);
-	size += sizeof(uint32_t);
+	if(comp->overwriteCenterOfMass)
+	{
+		comp->body->setCenterOfMassLocal(*(Vector3*)t_data); // to post load
+		t_data += sizeof(Vector3);
+	}
 
-	if(parentName_size == 0)
-		return size;
-	
-	string parentName((char*)t_data, parentName_size);
-	t_data += parentName_size * sizeof(char);
-	size += parentName_size * sizeof(char);
-
-	if(!attachments_map)
-		ERR("Attachments map uninitialized, need PreLoad call first!");
-	else
-		attachments_map->insert(make_pair(UintFromEntity(e), parentName));
-
-	return size;*/
-	return 0;
+	return (uint32_t)(t_data - data);
 }
 
 // PARAMS
@@ -370,12 +431,20 @@ void PhysicsSystem::SetMass(Entity e, float mass)
 {
 	GET_COMPONENT(void());
 	comp.body->setMass(mass);
+	comp.overwriteMass = true;
+}
+
+Vector3 PhysicsSystem::GetCenterOfMass(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	return comp.body->getCenterOfMassLocal();
 }
 
 void PhysicsSystem::SetCenterOfMass(Entity e, Vector3 local_point)
 {
 	GET_COMPONENT(void());
 	comp.body->setCenterOfMassLocal(local_point);
+	comp.overwriteCenterOfMass = true;
 }
 
 Vector3 PhysicsSystem::GetVelocity(Entity e)
@@ -418,43 +487,6 @@ void PhysicsSystem::ApplyTorque(Entity e, Vector3 torque)
 {
 	GET_COMPONENT(void());
 	comp.body->applyTorque(torque);
-}
-
-// SHAPES
-
-int32_t PhysicsSystem::AddBoxShape(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize)
-{
-	GET_COMPONENT(-1);
-	auto shape = new rp3d::BoxShape(halfSize);
-	return AddShape(comp, pos, rot, mass, shape);
-}
-
-int32_t PhysicsSystem::AddSphereShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius)
-{
-	GET_COMPONENT(-1);
-	auto shape = new rp3d::SphereShape(radius);
-	return AddShape(comp, pos, rot, mass, shape);
-}
-
-int32_t PhysicsSystem::AddConeShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
-{
-	GET_COMPONENT(-1);
-	auto shape = new rp3d::ConeShape(radius, height);
-	return AddShape(comp, pos, rot, mass, shape);
-}
-
-int32_t PhysicsSystem::AddCylinderShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
-{
-	GET_COMPONENT(-1);
-	auto shape = new rp3d::CylinderShape(radius, height);
-	return AddShape(comp, pos, rot, mass, shape);
-}
-
-int32_t PhysicsSystem::AddCapsuleShape(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height)
-{
-	GET_COMPONENT(-1);
-	auto shape = new rp3d::CapsuleShape(radius, height);
-	return AddShape(comp, pos, rot, mass, shape);
 }
 
 void PhysicsSystem::RegLuaClass()
@@ -503,13 +535,7 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("ApplyForce", &PhysicsSystem::ApplyForce)
 		.addFunction("ApplyForceToCenterOfMass", &PhysicsSystem::ApplyForceToCenterOfMass)
 		.addFunction("ApplyTorque", &PhysicsSystem::ApplyTorque)
-
-		.addFunction("AddBoxShape", &PhysicsSystem::AddBoxShape)
-		.addFunction("AddSphereShape", &PhysicsSystem::AddSphereShape)
-		.addFunction("AddConeShape", &PhysicsSystem::AddConeShape)
-		.addFunction("AddCylinderShape", &PhysicsSystem::AddCylinderShape)
-		.addFunction("AddCapsuleShape", &PhysicsSystem::AddCapsuleShape)
-
+		
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
 		.addFunction("HasComponent", &PhysicsSystem::HasComponent)

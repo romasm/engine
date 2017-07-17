@@ -146,7 +146,7 @@ void StaticMeshSystem::RegToDraw()
 	}
 }
 
-void StaticMeshSystem::CopyComponent(Entity src, Entity dest) // TODO!!! copied with sky shader, then crashed on delete
+void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 {
 	auto comp = GetComponent(src);
 	if(!comp) 

@@ -26,7 +26,7 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.physicsSys:SetNonRotatable(self.ent, true)
     self.physicsSys:SetUnsleepable(self.ent, true)
     self.physicsSys:SetBounciness(self.ent, 0.0)
-    self.physicsSys:SetFriction(self.ent, 1.0)
+    self.physicsSys:SetFriction(self.ent, 2.0)
     --self.physicsSys:SetVelocityDamping(self.ent, 0.9)
 
     self.physicsSys:SetActive(self.ent, true)
@@ -43,8 +43,8 @@ end
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
     self.p_jump_accel = 25000.0
-    self.p_move_accel = 100.0
-    self.p_move_max_speed = 1.5
+    self.p_move_accel = 200.0
+    self.p_move_max_speed = 1.8
     self.p_rot_sence = 0.02
 
     -- lifetime only exist vars
@@ -136,9 +136,9 @@ function EntityTypes.TestPlayer:onMoveRight(key, pressed, x, y, z)
 end
 
 function EntityTypes.TestPlayer:onTurnYaw(key, pressed, x, y, z)
-    self.dYaw = y
+    self.dYaw = self.dYaw + y
 end
 
 function EntityTypes.TestPlayer:onTurnPitch(key, pressed, x, y, z)
-    self.dPitch = x
+    self.dPitch = self.dPitch + x
 end

@@ -101,7 +101,7 @@ void BaseWorld::Close()
 			_CLOSE(scene);
 		}
 	m_scenes.clear();
-
+	
 	_DELETE(m_frustumMgr);
 	_DELETE(m_sceneGraph);
 	_DELETE(m_entityMgr);
@@ -122,6 +122,8 @@ void BaseWorld::Close()
 
 	_DELETE(m_typeMgr);
 	_DELETE(m_nameMgr);
+
+	_DELETE(dynamicsWorld);
 }
 
 void BaseWorld::DestroyEntityHierarchically(Entity e)
@@ -479,6 +481,9 @@ bool BaseWorld::saveWorld(string& filename)
 // World ---------------------
 World::World() : BaseWorld()
 {
+	Vector3 defaultGravity(0, -9.81f, 0); // TODO
+	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+
 	m_frustumMgr = new FrustumMgr;
 	
 	m_sceneGraph = new SceneGraph(SCENEGRAPH_SIZE, this);
@@ -491,7 +496,7 @@ World::World() : BaseWorld()
 	m_visibilitySystem = new VisibilitySystem(this, ENTITY_COUNT);
 	m_earlyVisibilitySystem = new EarlyVisibilitySystem(this, ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
@@ -680,6 +685,9 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_globalLightSystem = nullptr;
 	m_lineGeometrySystem = nullptr;
 
+	Vector3 defaultGravity(0, -9.81f, 0); // TODO
+	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+
 	m_frustumMgr = new FrustumMgr;
 	
 	m_sceneGraph = new SceneGraph(SMALL_SCENEGRAPH_SIZE, this);
@@ -691,7 +699,7 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_transformSystem = new TransformSystem(this, SMALL_ENTITY_COUNT);
 	m_visibilitySystem = new VisibilitySystem(this, SMALL_ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, SMALL_ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, SMALL_ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);

@@ -267,6 +267,9 @@
     <ClInclude Include="Utils\MathVector.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\CollisionSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -439,5 +442,8 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="ECS\CollisionSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

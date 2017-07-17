@@ -168,7 +168,10 @@ class RigidBody : public CollisionBody {
         void setInertiaTensorLocal(const Matrix3x3& inertiaTensorLocal);
 
         /// Set the local center of mass of the body (in local-space coordinates)
-        void setCenterOfMassLocal(const Vector3& centerOfMassLocal);
+		void setCenterOfMassLocal(const Vector3& centerOfMassLocal);
+
+		/// Get the local center of mass of the body (in local-space coordinates)
+		Vector3 getCenterOfMassLocal() const;
 
         /// Set the mass of the rigid body
         void setMass(decimal mass);
@@ -246,6 +249,14 @@ class RigidBody : public CollisionBody {
  */
 inline decimal RigidBody::getMass() const {
     return mInitMass;
+}
+
+// Method that return the local center of mass of the body
+/**
+ * @return The local center of mass of the body
+ */
+inline Vector3 RigidBody::getCenterOfMassLocal() const {
+    return mCenterOfMassLocal;
 }
 
 // Return the linear velocity

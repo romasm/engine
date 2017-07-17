@@ -20,7 +20,7 @@ function EntityTypes.StaticModel:SetMesh(mesh)
     
     local physicsSys = self.world.physics
 
-    physicsSys:AddBoxShape(self.ent, bb_pos, Quaternion.Identity, 1.0, bb_size)
+    physicsSys:AddBoxShape(self.ent, bb_pos, Quaternion.Identity, 1.0, bb_size, 0)
     physicsSys:SetType(self.ent, PHYSICS_TYPES.STATIC)
     physicsSys:SetBounciness(self.ent, 0.0)
     physicsSys:SetFriction(self.ent, 1.0)
