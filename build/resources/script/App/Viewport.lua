@@ -202,6 +202,13 @@ function Viewport:CloseRenderConfig()
     return true
 end
 
+function Viewport:MoveCameraToSelection()
+    if #self.selection_set == 0 then return end
+
+    pos = self.lua_world.world.transform:GetPositionW(self.selection_set[1])
+    EditorCamera.cameraNode:SetPosition(pos.x, pos.y, pos.z)
+end
+
 function Viewport:ToggleFullscreen()
     if not self.lua_world or not self.window then return end
     

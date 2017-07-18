@@ -77,6 +77,10 @@ function Hotkeys:Process(eventData, root)
         Viewport:ToggleWorldLive()
         resEvent.event = GUI_EVENTS.NULL
 
+    elseif eventData.key == KEYBOARD_CODES.KEY_Z then 
+        Viewport:MoveCameraToSelection()
+        resEvent.event = GUI_EVENTS.NULL
+
     elseif eventData.key == KEYBOARD_CODES.KEY_F and CoreGui.Keys.Ctrl() then 
         Viewport:ToggleFullscreen()
         resEvent.event = GUI_EVENTS.NULL
