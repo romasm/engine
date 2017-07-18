@@ -194,6 +194,9 @@ public:
 			PERF_GPU_GRABDATA;
 			//PERF_GPU_FRAME_END;
 
+			// Resource loading callbacks
+			m_resourceProc->Tick();
+
 			PERF_CPU_FRAME_END;
 		}
 		return true;

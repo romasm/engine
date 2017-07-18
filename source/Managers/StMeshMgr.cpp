@@ -102,7 +102,7 @@ uint32_t StMeshMgr::AddStMeshToList(string& name, bool reload)
 	if(reload)
 		handle.filedate = FileIO::GetDateModifRaw(name);
 	else
-		handle.filedate = ReloadingType::RELOAD_NOT;
+		handle.filedate = ReloadingType::RELOAD_NONE;
 
 	mesh_map.insert(make_pair(name, idx));
 	mesh_free.pop_front();
@@ -193,18 +193,18 @@ void StMeshMgr::UpdateStMeshes()
 	{
 		auto& handle = mesh_array[it->second];
 
-		if(handle.filedate == ReloadingType::RELOAD_NOT)
+		if(handle.filedate == ReloadingType::RELOAD_NONE)
 		{
 			it++;
 			continue;
 		}
 
 		if( handle.filedate == ReloadingType::RELOAD_ONCE )
-			handle.filedate = ReloadingType::RELOAD_NOT;
+			handle.filedate = ReloadingType::RELOAD_NONE;
 		else
 		{
 			uint32_t last_date = FileIO::GetDateModifRaw(handle.name);
-			if(last_date == handle.filedate || handle.filedate == ReloadingType::RELOAD_NOT)
+			if(last_date == handle.filedate || handle.filedate == ReloadingType::RELOAD_NONE)
 			{
 				it++;
 				continue;

@@ -5,7 +5,8 @@
 #include "Render.h"
 
 #include "ScenePipeline.h"
-#include "ECS\EnvProbSystem.h"
+#include "EnvProbSystem.h"
+#include "TexLoader.h"
 
 using namespace EngineCore;
 
@@ -25,7 +26,7 @@ TexMgr::TexMgr()
 			tex_free[i] = i;
 		tex_map.reserve(TEX_INIT_COUNT);
 
-		null_texture = LoadFromFile(string(PATH_TEXTURE_NULL));
+		null_texture = TexLoader::LoadFromFile(string(PATH_TEXTURE_NULL));
 	}
 	else
 		ERR("Only one instance of TexMgr is allowed!");
@@ -78,7 +79,7 @@ void TexMgr::PreloadTextures()
 	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/new_mat"EXT_TEXTURE), reload);
 }
 
-uint32_t TexMgr::GetTexture(string& name, bool reload)
+uint32_t TexMgr::GetTexture(string& name, bool reload, onLoadCallback callback)
 {
 	uint32_t res = TEX_NULL;
 	if(name.length() == 0)
@@ -86,9 +87,13 @@ uint32_t TexMgr::GetTexture(string& name, bool reload)
 
 	res = FindTextureInList(name);
 	if(res != TEX_NULL)
+	{
+		const LoadingStatus status = (tex_array[res].tex == null_texture) ? LoadingStatus::NEW : LoadingStatus::LOADED;
+		CallCallback(res, callback, status);
 		return res;
+	}
 
-	res = AddTextureToList(name, reload);
+	res = AddTextureToList(name, reload, callback);
 	if(res != TEX_NULL)
 		return res;
 
@@ -97,7 +102,7 @@ uint32_t TexMgr::GetTexture(string& name, bool reload)
 	return res;
 }
 
-uint32_t TexMgr::AddTextureToList(string& name, bool reload)
+uint32_t TexMgr::AddTextureToList(string& name, bool reload, onLoadCallback callback)
 {
 	if(tex_free.size() == 0)
 	{
@@ -116,7 +121,7 @@ uint32_t TexMgr::AddTextureToList(string& name, bool reload)
 	{
 		WRN("Texture file %s doesn\'t exist, creation expected in future.", name.data());
 		if(reload)
-			handle.filedate = ReloadingType::RELOAD_YES;
+			handle.filedate = ReloadingType::RELOAD_ALWAYS;
 		else
 			handle.filedate = ReloadingType::RELOAD_ONCE;
 	}
@@ -125,8 +130,8 @@ uint32_t TexMgr::AddTextureToList(string& name, bool reload)
 		if(reload)
 			handle.filedate = FileIO::GetDateModifRaw(name);
 		else
-			handle.filedate = ReloadingType::RELOAD_NOT;
-		ResourceProcessor::Get()->QueueLoad(idx, ResourceType::TEXTURE);
+			handle.filedate = ReloadingType::RELOAD_NONE;
+		ResourceProcessor::Get()->QueueLoad(idx, ResourceType::TEXTURE, callback);
 	}
 	
 	tex_map.insert(make_pair(name, idx));
@@ -210,27 +215,25 @@ void TexMgr::DeleteTextureByName(string& name)
 		handle.refcount--;
 }
 
-bool TexMgr::IsSupported(string filename)
+void TexMgr::OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status)
 {
-	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos ||
-		filename.find(".tga") != string::npos || filename.find(".TGA") != string::npos)
-	{
-		return true;
-	}
-	else 
-	{
-		WICCodecs codec = instance->WICCodec(filename);	
-		if(codec == 0)
-			return false;
-	}
-	return true;
+	CallCallback(id, func, status);
 }
 
-void TexMgr::Postload(uint32_t id) // TODO: callback, mip gen
+void TexMgr::CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status) // TODO
+{
+	if(func)
+		func(id, status == LOADED);
+}
+
+void TexMgr::OnLoad(uint32_t id, ID3D11ShaderResourceView* data)
 {
 	auto& handle = tex_array[id];
 
-
+	auto oldTex = handle.tex;
+	handle.tex = data;
+	if(oldTex != null_texture)
+		_RELEASE(oldTex);
 }
 
 void TexMgr::UpdateTextures()
@@ -240,18 +243,18 @@ void TexMgr::UpdateTextures()
 	{
 		auto& handle = tex_array[it->second];
 
-		if( handle.filedate == ReloadingType::RELOAD_NOT )
+		if( handle.filedate == ReloadingType::RELOAD_NONE )
 		{
 			it++;
 			continue;
 		}
 
 		if( handle.filedate == ReloadingType::RELOAD_ONCE )
-			handle.filedate = ReloadingType::RELOAD_NOT;
+			handle.filedate = ReloadingType::RELOAD_NONE;
 		else
 		{
 			uint32_t last_date = FileIO::GetDateModifRaw(handle.name);
-			if( last_date == handle.filedate || last_date == 0 || handle.filedate == ReloadingType::RELOAD_NOT )
+			if( last_date == handle.filedate || last_date == 0 || handle.filedate == ReloadingType::RELOAD_NONE )
 			{	
 				it++;
 				continue;
@@ -262,139 +265,4 @@ void TexMgr::UpdateTextures()
 		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::TEXTURE);
 		it++;
 	}
-}
-
-ID3D11ShaderResourceView* TexMgr::LoadFromFile(string& filename)
-{
-	TexHandle nullHandle;
-	nullHandle.name = filename;
-	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(nullHandle.name, &size);
-	if(!data)
-		return nullptr;
-	
-	LoadFromMemory(nullHandle, data, size);
-	_DELETE_ARRAY(data);
-	return nullHandle.tex;
-}
-
-void TexMgr::LoadFromMemory(TexHandle& handle, uint8_t* data, uint32_t size)
-{
-	ID3D11ShaderResourceView* newTex = nullptr;
-
-	if(handle.name.find(".dds") != string::npos || handle.name.find(".DDS") != string::npos)
-	{
-		HRESULT hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
-		if(FAILED(hr))
-		{
-			ERR("Cant load DDS texture %s !", handle.name.c_str());
-			return;
-		}
-	}
-	else if(handle.name.find(".tga") != string::npos || handle.name.find(".TGA") != string::npos)
-	{
-		TexMetadata metaData;
-		ScratchImage image;
-		HRESULT hr = LoadFromTGAMemory(data, size, &metaData, image);
-		if(FAILED(hr))
-		{
-			ERR("Cant load TGA texture %s !", handle.name.c_str());
-			return;
-		}
-
-		ScratchImage imageMips;
-		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
-	}
-	else
-	{
-		TexMetadata metaData;
-		ScratchImage image;
-		HRESULT hr = LoadFromWICMemory(data, size, WIC_FLAGS_IGNORE_SRGB, &metaData, image);
-		if(FAILED(hr))
-		{
-			ERR("Cant load WIC texture %s !", handle.name.c_str());
-			return;
-		}
-
-		ScratchImage imageMips;
-		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
-	}	
-
-	auto oldTex = handle.tex;
-	handle.tex = newTex;
-	if(oldTex != null_texture)
-		_RELEASE(oldTex);
-
-	LOG("Texture loaded %s", handle.name.c_str());
-}
-
-bool TexMgr::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
-{
-	ID3D11Resource* resource = nullptr;
-	srv->GetResource(&resource);
-
-	ScratchImage texture;
-	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
-	if ( FAILED(hr) )
-		return false;
-	
-	if(name.find(".dds") != string::npos || name.find(".DDS") != string::npos)
-	{
-		HRESULT hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(name).data() );
-		if(FAILED(hr))
-		{
-			ERR("Cant save DDS texture %s !", name.c_str());
-			return false;
-		}
-	}
-	else if(name.find(".tga") != string::npos || name.find(".TGA") != string::npos)
-	{
-		HRESULT hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(name).data() );
-		if(FAILED(hr))
-		{
-			ERR("Cant save TGA texture %s !", name.c_str());
-			return false;
-		}
-	}
-	else
-	{
-		WICCodecs codec = instance->WICCodec(name);	
-		if(codec == 0)
-		{
-			ERR("Unsupported texture format for %s !", name.c_str());
-			return nullptr;
-		}
-
-		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(name).data() );
-		if(FAILED(hr))
-		{
-			ERR("Cant save WIC texture %s !", name.c_str());
-			return nullptr;
-		}
-	}	
-
-	LOG_GOOD("Texture saved %s", name.c_str());
-	return true;
-}
-
-WICCodecs TexMgr::WICCodec(string& name)
-{
-	WICCodecs codec = (WICCodecs)0;
-	if( name.find(".bmp") != string::npos || name.find(".BMP") != string::npos )
-		codec = WIC_CODEC_BMP;
-	else if( name.find(".jpg") != string::npos || name.find(".JPG") != string::npos )
-		codec = WIC_CODEC_JPEG;
-	else if( name.find(".png") != string::npos || name.find(".PNG") != string::npos )
-		codec = WIC_CODEC_PNG;
-	else if( name.find(".tif") != string::npos || name.find(".TIF") != string::npos )
-		codec = WIC_CODEC_TIFF;
-	else if( name.find(".gif") != string::npos || name.find(".GIF") != string::npos )
-		codec = WIC_CODEC_GIF;
-	else if( name.find(".wmp") != string::npos || name.find(".WMP") != string::npos )
-		codec = WIC_CODEC_WMP;
-	else if( name.find(".ico") != string::npos || name.find(".ICO") != string::npos )
-		codec = WIC_CODEC_ICO;	
-	return codec;
 }

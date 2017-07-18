@@ -11,7 +11,8 @@
 #include "FontMgr.h"
 #include "ScenePipeline.h"
 #include "WorldMgr.h"
-#include "Utils/Profiler.h"
+#include "Profiler.h"
+#include "TexLoader.h"
 
 #include "ResourceProcessor.h"
 
@@ -60,8 +61,8 @@ namespace EngineCore
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
 				.addFunction("DropMaterial", &DropMaterialLua)
-				.addFunction("IsMeshSupported", &StMeshMgr::IsSupported)
-				.addFunction("IsTextureSupported", &TexMgr::IsSupported)
+				.addFunction("IsMeshSupported", &TexLoader::IsSupported)
+				.addFunction("IsTextureSupported", &TexLoader::IsSupported)
 
 				.addFunction("ConvertMeshToSTM", &ConvertMeshToSTM)
 			.endNamespace();

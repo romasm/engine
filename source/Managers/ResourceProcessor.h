@@ -19,15 +19,28 @@ namespace EngineCore
 	{
 		TEXTURE = 0,
 		MESH,
+		COLLISION,
+		SKELETON,
+		ANIMATION,
 	};
+	enum LoadingStatus
+	{
+		NEW = 0,
+		LOADED,
+		FAILED,
+	};
+
+	typedef void (*onLoadCallback)(uint32_t, bool);
 
 	struct ResourceSlot
 	{
 		uint32_t id;
 		ResourceType type;
+		LoadingStatus status;
+		onLoadCallback callback;
 
-		ResourceSlot() : id(0), type(ResourceType::TEXTURE) {}
-		ResourceSlot(uint32_t i, ResourceType t) : id(i), type(t) {}
+		ResourceSlot() : id(0), type(ResourceType::TEXTURE), callback(nullptr), status(LoadingStatus::NEW) {}
+		ResourceSlot(uint32_t i, ResourceType t, onLoadCallback func) : id(i), type(t), callback(func), status(LoadingStatus::NEW) {}
 	};
 
 	class ResourceProcessor
@@ -36,10 +49,10 @@ namespace EngineCore
 		ResourceProcessor();
 		~ResourceProcessor();
 
-		void Tick(float dt);
+		void Tick();
 
 		void Loading();
-		bool QueueLoad(uint32_t id, ResourceType type);
+		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback);
 
 		void Preload();
 		void AddUpdateJobs();
@@ -57,6 +70,7 @@ namespace EngineCore
 		class WorldMgr* worldMgr;
 
 		RQueueLockfree<ResourceSlot>* loadingQueue;
+		RQueueLockfree<ResourceSlot>* postLoadingQueue;
 
 		thread* loader;
 		mutex m_loading;

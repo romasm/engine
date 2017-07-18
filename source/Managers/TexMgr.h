@@ -8,6 +8,7 @@
 
 #define TEXTURE(name) TexMgr::Get()->GetTexture(name)
 #define RELOADABLE_TEXTURE(name, need_reload) TexMgr::Get()->GetTexture(name, need_reload)
+#define RELOADABLE_CALLBACK_TEXTURE(name, need_reload, callback) TexMgr::Get()->GetTexture(name, need_reload, callback)
 #define TEXTURE_DROP(id) {TexMgr::Get()->DeleteTexture((uint32_t)id); id = TEX_NULL;}
 #define TEXTURE_NAME_DROP(name) TexMgr::Get()->DeleteTextureByName(name);
 
@@ -29,7 +30,7 @@ namespace EngineCore
 			return instance->tex_array[id].name;
 		}
 
-		uint32_t GetTexture(string& name, bool reload = false);
+		uint32_t GetTexture(string& name, bool reload = false, onLoadCallback callback = nullptr);
 		void DeleteTexture(uint32_t id);
 		void DeleteTextureByName(string& name);
 
@@ -40,17 +41,18 @@ namespace EngineCore
 			if(id == TEX_NULL) return null_texture;
 			return instance->tex_array[id].tex;
 		}
+		
+		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
+		void OnLoad(uint32_t id, ID3D11ShaderResourceView* data);
 
-		inline void LoadFromMemory(uint32_t id, uint8_t* data, uint32_t size)
-		{ LoadFromMemory(tex_array[id], data, size); }
-		ID3D11ShaderResourceView* LoadFromFile(string& filename);
-
-		void Postload(uint32_t id);
 		void UpdateTextures();
 
-		static bool IsSupported(string name);
-
 	private:
+		uint32_t AddTextureToList(string& name, bool reload, onLoadCallback callback);
+		uint32_t FindTextureInList(string& name);
+
+		void CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status);
+
 		static TexMgr *instance;
 		static ID3D11ShaderResourceView* null_texture;
 		static string null_name;
@@ -74,15 +76,5 @@ namespace EngineCore
 		
 		SArray<TexHandle, TEX_MAX_COUNT> tex_array;
 		SDeque<uint32_t, TEX_MAX_COUNT> tex_free;
-		
-		uint32_t AddTextureToList(string& name, bool reload);
-		uint32_t FindTextureInList(string& name);
-
-		void LoadFromMemory(TexHandle& handle, uint8_t* data, uint32_t size);
-
-		WICCodecs WICCodec(string& name);
-
-	public:
-		static bool SaveTexture(string& name, ID3D11ShaderResourceView* srv);
 	};
 }

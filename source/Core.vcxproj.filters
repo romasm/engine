@@ -31,6 +31,9 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{F68B420E-62A0-6ABF-2B22-0E1F97F566F0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Managers\Loaders">
+      <UniqueIdentifier>{98bcbc65-adcb-4069-95f1-1b7f31d99f98}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\Arrays.h">
@@ -270,6 +273,9 @@
     <ClInclude Include="ECS\CollisionSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Managers\Loaders\TexLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -444,6 +450,9 @@
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ECS\CollisionSystem.cpp">
       <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\Loaders\TexLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

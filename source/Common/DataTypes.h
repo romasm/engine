@@ -27,8 +27,8 @@ static float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 enum ReloadingType
 {
-	RELOAD_NOT = 0,
-	RELOAD_YES,
+	RELOAD_NONE = 0,
+	RELOAD_ALWAYS,
 	RELOAD_ONCE
 };
 

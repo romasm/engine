@@ -81,7 +81,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
     </ClCompile>
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -127,7 +127,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\ReactPhysics3D\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -193,6 +193,7 @@
     <ClInclude Include="Input\Window.h" />
     <ClInclude Include="MainLoop.h" />
     <ClInclude Include="Managers\FontMgr.h" />
+    <ClInclude Include="Managers\Loaders\TexLoader.h" />
     <ClInclude Include="Managers\MaterialMgr.h" />
     <ClInclude Include="Managers\ResourceProcessor.h" />
     <ClInclude Include="Managers\ShaderCodeMgr.h" />
@@ -275,6 +276,7 @@
     <ClCompile Include="GUI\Text.cpp" />
     <ClCompile Include="Input\Window.cpp" />
     <ClCompile Include="Managers\FontMgr.cpp" />
+    <ClCompile Include="Managers\Loaders\TexLoader.cpp" />
     <ClCompile Include="Managers\MaterialMgr.cpp" />
     <ClCompile Include="Managers\ResourceProcessor.cpp" />
     <ClCompile Include="Managers\ShaderCodeMgr.cpp" />

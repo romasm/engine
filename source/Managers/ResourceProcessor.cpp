@@ -8,6 +8,7 @@
 #include "ShaderMgr.h"
 #include "StMeshMgr.h"
 #include "TexMgr.h"
+#include "TexLoader.h"
 
 using namespace EngineCore;
 
@@ -20,6 +21,7 @@ ResourceProcessor::ResourceProcessor()
 		instance = this;
 
 		loadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
+		postLoadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 
 		loaderRunning = true;
 		loader = new thread(&ResourceProcessor::Loading, &(*this));
@@ -61,13 +63,30 @@ ResourceProcessor::~ResourceProcessor()
 	_DELETE(shaderCodeMgr);
 
 	_DELETE(loadingQueue);
+	_DELETE(postLoadingQueue);
 	
 	instance = nullptr;
 }
 
-void ResourceProcessor::Tick(float dt)
+void ResourceProcessor::Tick()
 {
-	
+	ResourceSlot loadedSlot;
+	while(loadingQueue->pop(loadedSlot))
+	{
+		switch(loadedSlot.type)
+		{
+		case ResourceType::TEXTURE:
+			texMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback);
+			break;
+
+		case ResourceType::MESH:
+			stmeshMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback);
+			break;
+
+		default:
+			continue;
+		}
+	}
 }
 
 void ResourceProcessor::Loading()
@@ -86,6 +105,8 @@ void ResourceProcessor::Loading()
 		ResourceSlot loadingSlot;
 		while(loadingQueue->pop(loadingSlot))
 		{
+			loadingSlot.status = LoadingStatus::FAILED;
+
 			switch(loadingSlot.type)
 			{
 			case ResourceType::TEXTURE:
@@ -93,10 +114,17 @@ void ResourceProcessor::Loading()
 					string& fileName = texMgr->GetName(loadingSlot.id);
 					uint32_t size = 0;
 					uint8_t* data = FileIO::ReadFileData(fileName, &size);
-					if(!data)
-						continue;
-					texMgr->LoadFromMemory(loadingSlot.id, data, size);
-					_DELETE_ARRAY(data);
+					if(data)
+					{
+						auto loadedData = TexLoader::LoadFromMemory(fileName, data, size);
+						_DELETE_ARRAY(data);
+
+						if(loadedData)
+						{
+							texMgr->OnLoad(loadingSlot.id, loadedData);
+							loadingSlot.status = LOADED;
+						}
+					}
 				}
 				break;
 
@@ -105,25 +133,35 @@ void ResourceProcessor::Loading()
 					string& fileName = stmeshMgr->GetName(loadingSlot.id);
 					uint32_t size = 0;
 					uint8_t* data = FileIO::ReadFileData(fileName, &size);
-					if(!data)
-						continue;
-					stmeshMgr->LoadFromMemory(loadingSlot.id, data, size);
-					_DELETE_ARRAY(data);
+					if(data)
+					{
+						auto loadedData = StMeshLoader::LoadFromMemory(fileName, data, size);
+						_DELETE_ARRAY(data);
+
+						if(loadedData)
+						{
+							stmeshMgr->OnLoad(loadingSlot.id, loadedData);
+							loadingSlot.status = LOADED;
+						}
+					}
 				}
 				break;
 
 			default:
 				continue;
 			}
+
+			if(!postLoadingQueue->push(loadingSlot))
+				WRN("Resource post loading queue overflow!");
 		}
 	}
 
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
-bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type)
+bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback)
 {
-	if(!loadingQueue->push(ResourceSlot(id, type)))
+	if(!loadingQueue->push(ResourceSlot(id, type, callback)))
 	{
 		WRN("Resource loading queue overflow!");
 		return false;
