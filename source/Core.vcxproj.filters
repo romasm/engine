@@ -102,9 +102,6 @@
     <ClInclude Include="ECS\ShadowSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
-    <ClInclude Include="ECS\SkeletalMeshSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
     <ClInclude Include="ECS\StaticMeshSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
@@ -161,9 +158,6 @@
       <Filter>Managers</Filter>
     </ClInclude>
     <ClInclude Include="Managers\ShaderMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\SkeletalMeshMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
     <ClInclude Include="Managers\StMeshMgr.h">
@@ -317,9 +311,6 @@
     <ClCompile Include="ECS\ShadowSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
-    <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
     <ClCompile Include="ECS\StaticMeshSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
@@ -369,9 +360,6 @@
       <Filter>Managers</Filter>
     </ClCompile>
     <ClCompile Include="Managers\ShaderMgr.cpp">
-      <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="Managers\SkeletalMeshMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
     <ClCompile Include="Managers\StMeshMgr.cpp">

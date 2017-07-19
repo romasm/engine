@@ -10,7 +10,7 @@
 using namespace EngineCore;
 
 StMeshMgr* StMeshMgr::instance = nullptr;
-StMeshData* StMeshMgr::null_mesh = nullptr;
+MeshData* StMeshMgr::null_mesh = nullptr;
 string StMeshMgr::null_name = "";
 
 StMeshMgr::StMeshMgr()
@@ -91,7 +91,7 @@ uint32_t StMeshMgr::AddStMeshToList(string& name, bool reload)
 		return STMESH_NULL;
 
 	handle.mesh = MeshLoader::LoadStaticMeshFromFile( name ); // TODO: loading in background
-	if(!handle.mesh || handle.mesh->matCount == 0)
+	if( !handle.mesh || handle.mesh->vertexBuffers.empty() )
 	{
 		_CLOSE(handle.mesh);
 		handle.mesh = null_mesh;

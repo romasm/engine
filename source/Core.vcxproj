@@ -168,11 +168,6 @@
     <ClInclude Include="ECS\SceneGraph.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
-    <ClInclude Include="ECS\SkeletalMeshSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="ECS\StaticMeshSystem.h" />
     <ClInclude Include="ECS\TransformSystem.h" />
     <ClInclude Include="ECS\TypeMgr.h" />
@@ -199,11 +194,6 @@
     <ClInclude Include="Managers\ResourceProcessor.h" />
     <ClInclude Include="Managers\ShaderCodeMgr.h" />
     <ClInclude Include="Managers\ShaderMgr.h" />
-    <ClInclude Include="Managers\SkeletalMeshMgr.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Managers\StMeshMgr.h" />
     <ClInclude Include="Managers\TexMgr.h" />
     <ClInclude Include="Managers\WindowsMgr.h" />
@@ -255,11 +245,6 @@
     <ClCompile Include="ECS\SceneGraph.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />
-    <ClCompile Include="ECS\SkeletalMeshSystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="ECS\StaticMeshSystem.cpp" />
     <ClCompile Include="ECS\TransformSystem.cpp" />
     <ClCompile Include="ECS\TypeMgr.cpp" />
@@ -283,11 +268,6 @@
     <ClCompile Include="Managers\ResourceProcessor.cpp" />
     <ClCompile Include="Managers\ShaderCodeMgr.cpp" />
     <ClCompile Include="Managers\ShaderMgr.cpp" />
-    <ClCompile Include="Managers\SkeletalMeshMgr.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Managers\StMeshMgr.cpp" />
     <ClCompile Include="Managers\TexMgr.cpp" />
     <ClCompile Include="Managers\WindowsMgr.cpp" />

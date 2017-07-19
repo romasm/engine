@@ -24,7 +24,7 @@ namespace EngineCore
 		
 		void PreloadStMeshes();
 
-		inline static StMeshData* GetStMeshPtr(uint32_t id)
+		inline static MeshData* GetStMeshPtr(uint32_t id)
 		{
 			if(id == STMESH_NULL) return null_mesh;
 			return instance->mesh_array[id].mesh;
@@ -50,7 +50,7 @@ namespace EngineCore
 
 	private:
 		static StMeshMgr *instance;
-		static StMeshData* null_mesh;
+		static MeshData* null_mesh;
 		static string null_name;
 
 		struct StMeshHandle
