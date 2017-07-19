@@ -82,7 +82,7 @@ ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* da
 	return newTex;
 }
 
-bool TexLoader::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
+bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 {
 	ID3D11Resource* resource = nullptr;
 	srv->GetResource(&resource);
@@ -92,61 +92,61 @@ bool TexLoader::SaveTexture(string& name, ID3D11ShaderResourceView* srv)
 	if ( FAILED(hr) )
 		return false;
 	
-	if(name.find(".dds") != string::npos || name.find(".DDS") != string::npos)
+	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos)
 	{
 		HRESULT hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(name).data() );
 		if(FAILED(hr))
 		{
-			ERR("Cant save DDS texture %s !", name.c_str());
+			ERR("Cant save DDS texture %s !", filename.c_str());
 			return false;
 		}
 	}
-	else if(name.find(".tga") != string::npos || name.find(".TGA") != string::npos)
+	else if(filename.find(".tga") != string::npos || filename.find(".TGA") != string::npos)
 	{
-		HRESULT hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(name).data() );
+		HRESULT hr = SaveToTGAFile( *texture.GetImage(0, 0, 0), StringToWstring(filename).data() );
 		if(FAILED(hr))
 		{
-			ERR("Cant save TGA texture %s !", name.c_str());
+			ERR("Cant save TGA texture %s !", filename.c_str());
 			return false;
 		}
 	}
 	else
 	{
-		WICCodecs codec = WICCodec(name);	
+		WICCodecs codec = WICCodec(filename);	
 		if(codec == 0)
 		{
-			ERR("Unsupported texture format for %s !", name.c_str());
+			ERR("Unsupported texture format for %s !", filename.c_str());
 			return nullptr;
 		}
 
 		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(name).data() );
 		if(FAILED(hr))
 		{
-			ERR("Cant save WIC texture %s !", name.c_str());
+			ERR("Cant save WIC texture %s !", filename.c_str());
 			return nullptr;
 		}
 	}	
 
-	LOG_GOOD("Texture saved %s", name.c_str());
+	LOG_GOOD("Texture saved %s", filename.c_str());
 	return true;
 }
 
-WICCodecs TexLoader::WICCodec(string& name)
+WICCodecs TexLoader::WICCodec(string& filename)
 {
 	WICCodecs codec = (WICCodecs)0;
-	if( name.find(".bmp") != string::npos || name.find(".BMP") != string::npos )
+	if( filename.find(".bmp") != string::npos || filename.find(".BMP") != string::npos )
 		codec = WIC_CODEC_BMP;
-	else if( name.find(".jpg") != string::npos || name.find(".JPG") != string::npos )
+	else if( filename.find(".jpg") != string::npos || filename.find(".JPG") != string::npos )
 		codec = WIC_CODEC_JPEG;
-	else if( name.find(".png") != string::npos || name.find(".PNG") != string::npos )
+	else if( filename.find(".png") != string::npos || filename.find(".PNG") != string::npos )
 		codec = WIC_CODEC_PNG;
-	else if( name.find(".tif") != string::npos || name.find(".TIF") != string::npos )
+	else if( filename.find(".tif") != string::npos || filename.find(".TIF") != string::npos )
 		codec = WIC_CODEC_TIFF;
-	else if( name.find(".gif") != string::npos || name.find(".GIF") != string::npos )
+	else if( filename.find(".gif") != string::npos || filename.find(".GIF") != string::npos )
 		codec = WIC_CODEC_GIF;
-	else if( name.find(".wmp") != string::npos || name.find(".WMP") != string::npos )
+	else if( filename.find(".wmp") != string::npos || filename.find(".WMP") != string::npos )
 		codec = WIC_CODEC_WMP;
-	else if( name.find(".ico") != string::npos || name.find(".ICO") != string::npos )
+	else if( filename.find(".ico") != string::npos || filename.find(".ICO") != string::npos )
 		codec = WIC_CODEC_ICO;	
 	return codec;
 }

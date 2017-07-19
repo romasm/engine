@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "Common.h"
+#include "ResourceProcessor.h"
 
 #define TEX_MAX_COUNT 65536
 #define TEX_INIT_COUNT 1024
@@ -8,7 +9,6 @@
 
 #define TEXTURE(name) TexMgr::Get()->GetTexture(name)
 #define RELOADABLE_TEXTURE(name, need_reload) TexMgr::Get()->GetTexture(name, need_reload)
-#define RELOADABLE_CALLBACK_TEXTURE(name, need_reload, callback) TexMgr::Get()->GetTexture(name, need_reload, callback)
 #define TEXTURE_DROP(id) {TexMgr::Get()->DeleteTexture((uint32_t)id); id = TEX_NULL;}
 #define TEXTURE_NAME_DROP(name) TexMgr::Get()->DeleteTextureByName(name);
 

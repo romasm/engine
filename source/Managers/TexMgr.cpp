@@ -220,7 +220,7 @@ void TexMgr::OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatu
 	CallCallback(id, func, status);
 }
 
-void TexMgr::CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status) // TODO
+void TexMgr::CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status)
 {
 	if(func)
 		func(id, status == LOADED);
@@ -262,7 +262,7 @@ void TexMgr::UpdateTextures()
 			handle.filedate = last_date;
 		}
 		
-		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::TEXTURE);
+		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::TEXTURE, nullptr);
 		it++;
 	}
 }

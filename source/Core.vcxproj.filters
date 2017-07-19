@@ -276,6 +276,9 @@
     <ClInclude Include="Managers\Loaders\TexLoader.h">
       <Filter>Managers\Loaders</Filter>
     </ClInclude>
+    <ClInclude Include="Managers\Loaders\MeshLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -452,6 +455,9 @@
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="Managers\Loaders\TexLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\Loaders\MeshLoader.cpp">
       <Filter>Managers\Loaders</Filter>
     </ClCompile>
   </ItemGroup>

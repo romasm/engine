@@ -30,7 +30,8 @@ namespace EngineCore
 		FAILED,
 	};
 
-	typedef void (*onLoadCallback)(uint32_t, bool);
+	//typedef void (*onLoadCallback)(uint32_t, bool);
+	typedef function<void (uint32_t, bool)> onLoadCallback;
 
 	struct ResourceSlot
 	{

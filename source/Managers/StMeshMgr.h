@@ -10,46 +10,6 @@
 
 namespace EngineCore
 {
-	struct StMeshData
-	{
-		uint16_t matCount;
-
-		uint32_t* vertexCount;
-		ID3D11Buffer **vertexBuffer;
-
-		uint32_t* indexCount;
-		ID3D11Buffer **indexBuffer;
-
-		BoundingBox box;
-
-		StMeshData()
-		{
-			vertexBuffer = nullptr;
-			indexBuffer = nullptr;
-			indexCount = nullptr;
-			vertexCount = nullptr;
-			matCount = 0;
-		}
-
-		inline void Close()
-		{
-			if(vertexBuffer)
-				for(int i = 0; i < matCount; i++)
-					_RELEASE(vertexBuffer[i]);
-			_DELETE_ARRAY(vertexBuffer);
-			_DELETE_ARRAY(vertexCount);
-
-			if(indexBuffer)
-				for(int i = 0; i < matCount; i++)
-					_RELEASE(indexBuffer[i]);
-			_DELETE_ARRAY(indexBuffer);
-			_DELETE_ARRAY(indexCount);
-			
-			matCount = 0;
-			box = BoundingBox();
-		}
-	};
-
 	class StMeshMgr
 	{
 	public:
@@ -88,14 +48,6 @@ namespace EngineCore
 			return res;
 		}
 
-		inline void LoadFromMemory(uint32_t id, uint8_t* data, uint32_t size)
-		{ LoadFromMemory(mesh_array[id], data, size); }
-		StMeshData* LoadFromFile(string& filename);
-
-		void SaveSTMFile(string& file);
-
-		static bool IsSupported(string name);
-
 	private:
 		static StMeshMgr *instance;
 		static StMeshData* null_mesh;
@@ -103,7 +55,7 @@ namespace EngineCore
 
 		struct StMeshHandle
 		{
-			StMeshData* mesh;
+			MeshData* mesh;
 			uint32_t refcount;
 			uint32_t filedate;
 			string name;
@@ -122,18 +74,8 @@ namespace EngineCore
 		SDeque<uint32_t, STMESH_MAX_COUNT> mesh_free;
 
 		SArray<uint32_t, STMESH_MAX_COUNT> mesh_reloaded;
-
-		Assimp::Importer m_importer;
-		
+				
 		uint32_t AddStMeshToList(string& name, bool reload);
 		uint32_t FindStMeshInList(string& name);
-		
-		void LoadFromMemory(StMeshHandle& tex, uint8_t* data, uint32_t size);
-
-		StMeshData* loadSTMFileFromMemory(string& name, uint8_t* data, uint32_t size);
-		StMeshData* loadNoNativeFileFromMemory(string& name, uint8_t* data, uint32_t size, bool onlyConvert = false);
-		StMeshData* loadAIScene(string& filename, const aiScene* scene, bool convert, bool noLoad);
-
-		void convertToSTM(string& filename, StMeshData* mesh, uint32_t** indices, LitVertex** vertices);
 	};
 }

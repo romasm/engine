@@ -22,7 +22,17 @@ namespace EngineCore
 	
 	uint32_t GetTextureLua(string path)
 	{
-		return RELOADABLE_TEXTURE(path, true); // todo
+		return RELOADABLE_TEXTURE(path, true/*todo*/);
+	}
+
+	uint32_t GetTextureCallbackLua(string path, LuaRef func, LuaRef self)
+	{
+		return TexMgr::Get()->GetTexture(path, true/*todo*/, 
+			[func, self](uint32_t id, bool status) -> void
+			{
+				if(func.isFunction())
+					func(self, id, status);
+			});
 	}
 	
 	void DropTextureLua(string path)
@@ -58,6 +68,7 @@ namespace EngineCore
 			.beginNamespace("Resource")
 				.addFunction("PreloadSystemResources", &PreloadSystemResources)
 				.addFunction("GetTexture", &GetTextureLua)
+				.addFunction("GetTextureCallback", &GetTextureCallbackLua)
 				.addFunction("DropTexture", &DropTextureLua)
 				.addFunction("GetMaterial", &GetMaterialLua)
 				.addFunction("DropMaterial", &DropMaterialLua)

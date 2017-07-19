@@ -9,9 +9,9 @@ namespace EngineCore
 		ID3D11ShaderResourceView* LoadFromMemory(string& resName, uint8_t* data, uint32_t size);
 		ID3D11ShaderResourceView* LoadFromFile(string& filename);
 		
-		bool SaveTexture(string& name, ID3D11ShaderResourceView* srv);
+		bool SaveTexture(string& filename, ID3D11ShaderResourceView* srv);
 
-		bool IsSupported(string name);
-		WICCodecs WICCodec(string& name);
+		bool IsSupported(string filename);
+		WICCodecs WICCodec(string& filename);
 	};
 }
