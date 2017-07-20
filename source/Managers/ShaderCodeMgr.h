@@ -75,8 +75,6 @@ namespace EngineCore
 	public:
 		ShaderCodeMgr();
 		~ShaderCodeMgr();
-
-		void PreloadPureCodes();
 	
 		inline static ShaderCodeMgr* Get(){return instance;}
 
@@ -90,7 +88,7 @@ namespace EngineCore
 		}
 
 	#ifdef _DEV
-		void UpdateShadersCode();
+		void CheckForReload();
 	#endif
 
 	private:

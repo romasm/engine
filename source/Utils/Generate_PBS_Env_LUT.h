@@ -17,7 +17,7 @@
 #include "ScreenPlane.h"
 #include "TexMgr.h"
 #include "ShaderMgr.h"
-#include "StMeshMgr.h"
+#include "MeshMgr.h"
 #include "Material.h"
 #include "EngineSettings.h"
 #include "Common.h"

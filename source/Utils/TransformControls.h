@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "Common.h"
-#include "StMeshMgr.h"
+#include "MeshMgr.h"
 #include "Material.h"
 #include "Frustum.h"
 #include "CameraSystem.h"

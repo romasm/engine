@@ -22,6 +22,7 @@ namespace EngineCore
 		COLLISION,
 		SKELETON,
 		ANIMATION,
+		SHADER,
 	};
 	enum LoadingStatus
 	{
@@ -52,10 +53,9 @@ namespace EngineCore
 
 		void Tick();
 
-		void Loading();
+		void ThreadMain();
 		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback);
 
-		void Preload();
 		void AddUpdateJobs();
 
 		inline static ResourceProcessor* Get(){return instance;}
@@ -66,7 +66,7 @@ namespace EngineCore
 		class ShaderMgr* shaderMgr;
 		class MaterialMgr* materialMgr;
 		class TexMgr* texMgr;
-		class StMeshMgr* stmeshMgr;
+		class MeshMgr* meshMgr;
 		class FontMgr* fontMgr;
 		class WorldMgr* worldMgr;
 

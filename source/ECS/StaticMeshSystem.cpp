@@ -29,10 +29,10 @@ void StaticMeshSystem::FixBBoxes()
 {
 	for(auto& i: *components.data())
 	{
-		if(!StMeshMgr::Get()->IsJustReloaded(i.stmesh))
+		if(!MeshMgr::Get()->IsJustReloaded(i.stmesh))
 			continue;
 
-		auto meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
+		auto meshPtr = MeshMgr::GetStMeshPtr(i.stmesh);
 		visibilitySys->SetBBox(i.parent, meshPtr->box);
 	}
 }
@@ -80,7 +80,7 @@ void StaticMeshSystem::RegToDraw()
 
 		if(i.dirty || true) // TEMP FOR VCTGI
 		{
-			meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
+			meshPtr = MeshMgr::GetStMeshPtr(i.stmesh);
 			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			XMVECTOR scale, pos, rot;
@@ -107,7 +107,7 @@ void StaticMeshSystem::RegToDraw()
 				if( !f.rendermgr->IsShadow() )
 				{
 					if(!meshPtr)
-						meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
+						meshPtr = MeshMgr::GetStMeshPtr(i.stmesh);
 
 					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr->indexCount, meshPtr->vertexBuffer, meshPtr->indexBuffer, i.constantBuffer, sizeof(LitVertex), i.materials, i.center);
 				}
@@ -120,7 +120,7 @@ void StaticMeshSystem::RegToDraw()
 			if( (bits & f.bit) == f.bit )
 			{
 				if(!meshPtr)
-					meshPtr = StMeshMgr::GetStMeshPtr(i.stmesh);
+					meshPtr = MeshMgr::GetStMeshPtr(i.stmesh);
 
 				if( f.rendermgr->IsShadow() )// todo
 				{
@@ -156,9 +156,9 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 
 	auto newComp = AddComponent(dest);
 
-	newComp->stmesh = StMeshMgr::Get()->GetStMesh(StMeshMgr::GetName(comp->stmesh), true);
+	newComp->stmesh = MeshMgr::Get()->GetStMesh(MeshMgr::GetName(comp->stmesh), true);
 
-	auto meshPtr = StMeshMgr::GetStMeshPtr(newComp->stmesh);
+	auto meshPtr = MeshMgr::GetStMeshPtr(newComp->stmesh);
 
 	newComp->dirty = true;
 	visibilitySys->SetBBox(dest, meshPtr->box);
@@ -200,7 +200,7 @@ uint32_t StaticMeshSystem::Serialize(Entity e, uint8_t* data)
 	t_data += sizeof(uint32_t);
 	size += sizeof(uint32_t);
 	
-	string mesh_name = StMeshMgr::GetName(comp.stmesh);
+	string mesh_name = MeshMgr::GetName(comp.stmesh);
 	uint32_t mesh_name_size = (uint32_t)mesh_name.size();
 
 	*(uint32_t*)t_data = mesh_name_size;
@@ -287,10 +287,10 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 	auto oldMesh = comp.stmesh;
 	uint16_t oldMatCount = (uint16_t)comp.materials.capacity();
 	
-	comp.stmesh = StMeshMgr::Get()->GetStMesh( mesh, true );
-	StMeshMgr::Get()->DeleteStMesh(oldMesh);
+	comp.stmesh = MeshMgr::Get()->GetStMesh( mesh, true );
+	MeshMgr::Get()->DeleteStMesh(oldMesh);
 
-	auto meshPtr = StMeshMgr::GetStMeshPtr(comp.stmesh);
+	auto meshPtr = MeshMgr::GetStMeshPtr(comp.stmesh);
 
 	comp.dirty = true;
 	visibilitySys->SetBBox(e, meshPtr->box);
@@ -348,10 +348,10 @@ bool StaticMeshSystem::SetMeshMats(Entity e, string& mesh, RArray<string>& mats)
 
 	auto oldMesh = comp.stmesh;
 
-	comp.stmesh = StMeshMgr::Get()->GetStMesh( mesh, true );
-	StMeshMgr::Get()->DeleteStMesh(oldMesh);
+	comp.stmesh = MeshMgr::Get()->GetStMesh( mesh, true );
+	MeshMgr::Get()->DeleteStMesh(oldMesh);
 
-	auto meshPtr = StMeshMgr::GetStMeshPtr(comp.stmesh);
+	auto meshPtr = MeshMgr::GetStMeshPtr(comp.stmesh);
 
 	comp.dirty = true;
 	visibilitySys->SetBBox(e, meshPtr->box);
@@ -413,7 +413,7 @@ void StaticMeshSystem::destroyMeshData(StaticMeshComponent& comp)
 		
 	comp.materials.destroy();
 
-	StMeshMgr::Get()->DeleteStMesh(comp.stmesh);
+	MeshMgr::Get()->DeleteStMesh(comp.stmesh);
 	comp.stmesh = STMESH_NULL;
 
 	_RELEASE(comp.constantBuffer);

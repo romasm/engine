@@ -4,7 +4,7 @@
 #include "Entity.h"
 #include "VisibilitySystem.h"
 #include "EarlyVisibilitySystem.h"
-#include "StMeshMgr.h"
+#include "MeshMgr.h"
 #include "MaterialMgr.h"
 
 namespace EngineCore
@@ -75,7 +75,7 @@ namespace EngineCore
 			D.parent = e;
 			if(!D.constantBuffer)
 				D.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
-			visibilitySys->SetBBox(e, StMeshMgr::GetStMeshPtr(D.stmesh)->box);
+			visibilitySys->SetBBox(e, MeshMgr::GetStMeshPtr(D.stmesh)->box);
 			components.add(e.index(), D);
 		}
 		void CopyComponent(Entity src, Entity dest);
@@ -105,7 +105,7 @@ namespace EngineCore
 		bool GetShadow(Entity e);
 
 		uint32_t GetMeshID(Entity e);
-		string GetMeshLua(Entity e) {return StMeshMgr::GetName(GetMeshID(e));}
+		string GetMeshLua(Entity e) {return MeshMgr::GetName(GetMeshID(e));}
 
 		bool SetMaterial(Entity e, int i, string matname);
 		bool SetMeshMats(Entity e, string& mesh, RArray<string>& mats);

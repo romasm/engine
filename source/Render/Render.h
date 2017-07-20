@@ -35,7 +35,7 @@ namespace EngineCore
 		friend class ScreenPlane;
 		friend class ShaderMgr;
 		friend class MaterialMgr;
-		friend class StMeshMgr;
+		friend class MeshMgr;
 		friend class FontMgr;
 		friend class ScenePipeline;
 		friend class WorldMgr;

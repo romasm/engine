@@ -35,10 +35,10 @@ BaseMgr::~BaseMgr()
 {
 	for(uint32_t i=0; i<RESOURCE_MAX_COUNT; i++)
 	{
-		_RELEASE(resource_array[i].resource);
+		ResourceDeallocate(resource_array[i].resource);
 		resource_array[i].name.erase();
 	}
-	_RELEASE(null_resource);
+	ResourceDeallocate(null_resource);
 	null_name.clear();
 
 	instance = nullptr;
@@ -81,7 +81,7 @@ uint32_t BaseMgr::AddResourceToList(string& name, bool reload, onLoadCallback ca
 	auto& handle = resource_array[idx];
 
 	handle.name = name;
-	handle.tex = null_resource;
+	handle.resource = null_resource;
 	handle.refcount = 1;
 	
 	if(!FileIO::IsExist(name))
@@ -120,7 +120,7 @@ uint32_t BaseMgr::FindResourceInList(string& name)
 }
 
 template<DataType>
-void BaseMgr::DeleteTexture(uint32_t id)
+void BaseMgr::DeleteResource(uint32_t id)
 {
 	if(id == RESOURCE_NULL)
 		return;
@@ -129,10 +129,10 @@ void BaseMgr::DeleteTexture(uint32_t id)
 
 	if(handle.refcount == 1)
 	{
-		if(handle.tex != null_resource)
+		if(handle.resource != null_resource)
 		{
-			_RELEASE(handle.tex);
-			LOG("Texture droped %s", handle.name.c_str());
+			ResourceDeallocate(handle.resource);
+			LOG("Resource droped %s", handle.name.c_str());
 		}
 
 		handle.refcount = 0;
@@ -153,7 +153,7 @@ void BaseMgr::DeleteTexture(uint32_t id)
 }
 
 template<DataType>
-void BaseMgr::DeleteTextureByName(string& name)
+void BaseMgr::DeleteResourceByName(string& name)
 {
 	if(name.length() == 0)
 		return;
@@ -166,9 +166,9 @@ void BaseMgr::DeleteTextureByName(string& name)
 
 	if(handle.refcount == 1)
 	{
-		if(handle.tex != null_resource)
+		if(handle.resource != null_resource)
 		{
-			_RELEASE(handle.resource);
+			ResourceDeallocate(handle.resource);
 			LOG("Resource droped %s", handle.name.c_str());
 		}
 		
@@ -200,11 +200,11 @@ void BaseMgr::OnLoad(uint32_t id, ID3D11ShaderResourceView* data)
 	auto oldResource = handle.resource;
 	handle.resource = data;
 	if(oldResource != null_resource)
-		_RELEASE(oldResource);
+		ResourceDeallocate(oldResource);
 }
 
 template<DataType>
-void BaseMgr::UpdateTextures()
+void BaseMgr::CheckForReload()
 {
 	auto it = resource_map.begin();
 	while(it != resource_map.end())

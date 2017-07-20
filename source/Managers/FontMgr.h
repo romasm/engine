@@ -11,8 +11,6 @@ namespace EngineCore
 	public:
 		FontMgr();
 		~FontMgr();
-		
-		void PreloadFonts();
 
 		inline static FontMgr* Get(){return instance;}
 

@@ -7,7 +7,7 @@
 #include "Log.h"
 #include "ShaderMgr.h"
 #include "MaterialMgr.h"
-#include "StMeshMgr.h"
+#include "MeshMgr.h"
 #include "FontMgr.h"
 #include "ScenePipeline.h"
 #include "WorldMgr.h"
@@ -42,7 +42,7 @@ namespace EngineCore
 
 	void ConvertMeshToSTM(string file)
 	{
-		StMeshMgr::Get()->SaveSTMFile(file);
+		MeshMgr::Get()->SaveSTMFile(file);
 	}
 
 	Material* GetMaterialLua(string name)

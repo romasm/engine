@@ -5,7 +5,6 @@
 using namespace EngineCore;
 
 MaterialMgr* MaterialMgr::instance = nullptr;
-Material* MaterialMgr::null_material = nullptr;
 
 MaterialMgr::MaterialMgr()
 {

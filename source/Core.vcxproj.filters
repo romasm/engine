@@ -160,9 +160,6 @@
     <ClInclude Include="Managers\ShaderMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
-    <ClInclude Include="Managers\StMeshMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
     <ClInclude Include="Managers\TexMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
@@ -273,6 +270,12 @@
     <ClInclude Include="Managers\Loaders\MeshLoader.h">
       <Filter>Managers\Loaders</Filter>
     </ClInclude>
+    <ClInclude Include="Managers\BaseMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\MeshMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -362,12 +365,6 @@
     <ClCompile Include="Managers\ShaderMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
-    <ClCompile Include="Managers\StMeshMgr.cpp">
-      <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="Managers\TexMgr.cpp">
-      <Filter>Managers</Filter>
-    </ClCompile>
     <ClCompile Include="Managers\WindowsMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
@@ -447,6 +444,12 @@
     </ClCompile>
     <ClCompile Include="Managers\Loaders\MeshLoader.cpp">
       <Filter>Managers\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\BaseMgr.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\MeshMgr.cpp">
+      <Filter>Managers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

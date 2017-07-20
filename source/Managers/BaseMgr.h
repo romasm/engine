@@ -3,13 +3,13 @@
 #include "Common.h"
 #include "ResourceProcessor.h"
 
-#define RESOURCE_MAX_COUNT 65536
+#define RESOURCE_MAX_COUNT 16384
 #define RESOURCE_INIT_COUNT 1024
 #define RESOURCE_NULL RESOURCE_MAX_COUNT
 
 namespace EngineCore
 {
-	template<DataType>
+	template<typename DataType>
 	class BaseMgr
 	{
 	public:
@@ -20,7 +20,7 @@ namespace EngineCore
 		
 		static string& GetName(uint32_t id)
 		{
-			if(id == RESOURCE_NULL) return null_name;
+			if(id == RESOURCE_NULL) return instance->null_name;
 			return instance->resource_array[id].name;
 		}
 
@@ -30,18 +30,28 @@ namespace EngineCore
 		
 		inline static DataType* GetResourcePtr(uint32_t id)
 		{
-			if(id == RESOURCE_NULL) return null_resource;
-			return instance->resource_array[id].tex;
+			if(id == RESOURCE_NULL) return instance->null_resource;
+			return instance->resource_array[id].resource;
 		}
+
+		inline static bool IsNull(DataType* resource) {return resource == instance->null_resource;}
 		
 		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
 		void OnLoad(uint32_t id, DataType* data);
 
 		void CheckForReload();
 
-	private:
+	protected:
 		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
 		uint32_t FindResourceInList(string& name);
+
+		template<typename T = DataType>
+		typename std::enable_if< std::is_base_of<IUnknown, T>::value >::type
+		inline ResourceDeallocate(T*& resource) { _RELEASE((IUnknown*)resource); }
+
+		template<typename T = DataType>
+		typename std::enable_if< !std::is_base_of<IUnknown, T>::value >::type
+		inline ResourceDeallocate(T*& resource) { _DELETE(resource); }
 
 		static BaseMgr *instance;
 

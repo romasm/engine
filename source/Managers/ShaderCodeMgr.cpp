@@ -38,26 +38,11 @@ ShaderCodeMgr::~ShaderCodeMgr()
 	for(uint32_t i=0; i<SHADER_MAX_COUNT; i++)
 	{
 		if(shader_array[i].code)
-			((ID3D11DeviceChild*)shader_array[i].code)->Release();
+			((IUnknown*)shader_array[i].code)->Release();
 		shader_array[i].name.erase();
 	}
 
 	instance = nullptr;
-}
-
-void ShaderCodeMgr::PreloadPureCodes()
-{
-	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "2" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "4" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "8" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "2" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "4" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "8" );
-	Compute::Preload( SHADER_DEFFERED_OPAQUE_IBL );
-	Compute::Preload( SHADER_DEFFERED_OPAQUE_FULL );	
 }
 
 uint16_t ShaderCodeMgr::GetShaderCode(string& name, uint8_t type)
@@ -225,7 +210,7 @@ uint16_t ShaderCodeMgr::AddShaderToList(string& name, uint8_t type)
 }
 
 #ifdef _DEV
-void ShaderCodeMgr::UpdateShadersCode()
+void ShaderCodeMgr::CheckForReload()
 {
 	for(uint8_t type = 0; type < 6; type++)
 	{

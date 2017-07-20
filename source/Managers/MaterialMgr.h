@@ -20,7 +20,7 @@ namespace EngineCore
 		
 		inline static MaterialMgr* Get(){return instance;}
 
-		inline static bool IsNull(Material* mat){return mat == null_material;}
+		inline static bool IsNull(Material* mat){return mat == instance->null_material;}
 
 		Material* GetMaterial(string& name);
 		void DeleteMaterial(string& name);
@@ -43,7 +43,7 @@ namespace EngineCore
 		};
 
 		static MaterialMgr *instance;
-		static Material* null_material;
+		Material* null_material;
 
 		unordered_map<string, MaterialHandle> material_map;
 	};

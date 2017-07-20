@@ -1,11 +1,9 @@
 #pragma once
 #include "stdafx.h"
 #include "Common.h"
-#include "ResourceProcessor.h"
-
-#define TEX_MAX_COUNT 65536
-#define TEX_INIT_COUNT 1024
-#define TEX_NULL TEX_MAX_COUNT
+#include "BaseMgr.h"
+#include "TexLoader.h"
+#include "Pathes.h"
 
 #define TEXTURE(name) TexMgr::Get()->GetTexture(name)
 #define RELOADABLE_TEXTURE(name, need_reload) TexMgr::Get()->GetTexture(name, need_reload)
@@ -16,65 +14,13 @@
 
 namespace EngineCore
 {
-	class TexMgr
+	class TexMgr : public BaseMgr<ID3D11ShaderResourceView>
 	{
 	public:
-		TexMgr();
-		~TexMgr();
-		
-		inline static TexMgr* Get(){return instance;}
-		
-		static string& GetName(uint32_t id)
+		TexMgr() : BaseMgr<ID3D11ShaderResourceView>()
 		{
-			if(id == TEX_NULL) return null_name;
-			return instance->tex_array[id].name;
+			null_resource = TexLoader::LoadFromFile(string(PATH_TEXTURE_NULL));
+			resType = ResourceType::TEXTURE;
 		}
-
-		uint32_t GetTexture(string& name, bool reload = false, onLoadCallback callback = nullptr);
-		void DeleteTexture(uint32_t id);
-		void DeleteTextureByName(string& name);
-
-		void PreloadTextures();
-
-		inline static ID3D11ShaderResourceView* GetTexturePtr(uint32_t id)
-		{
-			if(id == TEX_NULL) return null_texture;
-			return instance->tex_array[id].tex;
-		}
-		
-		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
-		void OnLoad(uint32_t id, ID3D11ShaderResourceView* data);
-
-		void UpdateTextures();
-
-	private:
-		uint32_t AddTextureToList(string& name, bool reload, onLoadCallback callback);
-		uint32_t FindTextureInList(string& name);
-
-		void CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status);
-
-		static TexMgr *instance;
-		static ID3D11ShaderResourceView* null_texture;
-		static string null_name;
-
-		struct TexHandle
-		{
-			ID3D11ShaderResourceView* tex;
-			uint32_t refcount;
-			uint32_t filedate;
-			string name;
-
-			TexHandle()
-			{
-				tex = nullptr;
-				refcount = 0;
-				filedate = 0;
-			}
-		};
-
-		unordered_map<string, uint32_t> tex_map;
-		
-		SArray<TexHandle, TEX_MAX_COUNT> tex_array;
-		SDeque<uint32_t, TEX_MAX_COUNT> tex_free;
 	};
 }
