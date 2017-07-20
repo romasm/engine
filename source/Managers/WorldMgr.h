@@ -34,11 +34,13 @@ namespace EngineCore
 
 		static WorldMgr* GetWorldMgr(){return WorldMgr::Get();}
 
-		inline void PostStMeshesReload() 
+	#ifdef _EDITOR
+		inline void PostMeshesReload() 
 		{
 			for(auto& it: m_worldsMap)
-				it.second->PostStMeshesReload();
+				it.second->PostMeshesReload();
 		}
+	#endif
 
 		static void UpdateLuaFuncs() 
 		{

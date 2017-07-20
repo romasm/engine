@@ -177,7 +177,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 		if (!mesh->vertexBuffers[i].buffer || !mesh->indexBuffers[i].buffer)
 		{
 			ERR("Cant init mesh vertex or index buffer for %s", filename.c_str());
-			_CLOSE(mesh);
+			_RELEASE(mesh);
 			break;
 		}
 	}
@@ -230,7 +230,7 @@ MeshData* MeshLoader::loadNoNativeMeshFromMemory(string& filename, uint8_t* data
 	if(onlyConvert)
 	{
 		LOG("Mesh %s converted to engine format", filename.c_str());
-		_CLOSE(mesh);
+		_RELEASE(mesh);
 		return nullptr;
 	}
 

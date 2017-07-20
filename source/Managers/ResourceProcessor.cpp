@@ -9,6 +9,7 @@
 #include "StMeshMgr.h"
 #include "TexMgr.h"
 #include "TexLoader.h"
+#include "MeshLoader.h"
 
 using namespace EngineCore;
 
@@ -70,6 +71,11 @@ ResourceProcessor::~ResourceProcessor()
 
 void ResourceProcessor::Tick()
 {
+#ifdef _EDITOR
+	if( stmeshMgr->IsBBoxesDirty() )
+		worldMgr->PostMeshesReload();
+#endif
+
 	ResourceSlot loadedSlot;
 	while(loadingQueue->pop(loadedSlot))
 	{
@@ -135,7 +141,7 @@ void ResourceProcessor::Loading()
 					uint8_t* data = FileIO::ReadFileData(fileName, &size);
 					if(data)
 					{
-						auto loadedData = StMeshLoader::LoadFromMemory(fileName, data, size);
+						auto loadedData = MeshLoader::LoadStaticMeshFromMemory(fileName, data, size);
 						_DELETE_ARRAY(data);
 
 						if(loadedData)
@@ -172,16 +178,20 @@ bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback
 
 void ResourceProcessor::AddUpdateJobs()
 {
-#ifdef _DEV
-	JOBSYSTEM->addPeriodicalJob(SHADER_JOB_NAME, JOB_F_MEMBER(ShaderMgr, ShaderMgr::Get(), UpdateShaders), 
-		SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
-	JOBSYSTEM->addPeriodicalJob(SHADERCODE_JOB_NAME, JOB_F_MEMBER(ShaderCodeMgr, ShaderCodeMgr::Get(), UpdateShadersCode), 
-		SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
-#endif
+#ifdef _EDITOR
+
+	#ifdef _DEV
+		JOBSYSTEM->addPeriodicalJob(SHADER_JOB_NAME, JOB_F_MEMBER(ShaderMgr, ShaderMgr::Get(), UpdateShaders), 
+			SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
+		JOBSYSTEM->addPeriodicalJob(SHADERCODE_JOB_NAME, JOB_F_MEMBER(ShaderCodeMgr, ShaderCodeMgr::Get(), UpdateShadersCode), 
+			SHADERS_UPDATE_PERIOD, JobPriority::BACKGROUND);
+	#endif
 	JOBSYSTEM->addPeriodicalJob(TEXTURE_JOB_NAME, JOB_F_MEMBER(TexMgr, TexMgr::Get(), UpdateTextures), 
 		TEXTURES_UPDATE_PERIOD, JobPriority::BACKGROUND);
 	JOBSYSTEM->addPeriodicalJob(STMESH_JOB_NAME, JOB_F_MEMBER(StMeshMgr, StMeshMgr::Get(), UpdateStMeshes), 
 		STMESHES_UPDATE_PERIOD, JobPriority::BACKGROUND);
+
+#endif
 }
 
 // TODO: move preloading managment to Lua

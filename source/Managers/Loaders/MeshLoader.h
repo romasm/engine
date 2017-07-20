@@ -30,7 +30,7 @@ namespace EngineCore
 
 		MeshData() : vertexFormat(MeshVertexFormat::LIT_VERTEX) {}
 
-		inline void Close()
+		inline void Release()
 		{
 			for(uint32_t i = 0; i < (uint32_t)vertexBuffers.size(); i++)
 				_RELEASE(vertexBuffers[i].buffer);

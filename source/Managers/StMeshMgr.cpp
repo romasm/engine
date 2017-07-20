@@ -5,7 +5,6 @@
 #include "Buffer.h"
 #include "Material.h"
 #include "WorldMgr.h"
-#include "MeshLoader.h"
 
 using namespace EngineCore;
 
@@ -24,10 +23,13 @@ StMeshMgr::StMeshMgr()
 		for(uint32_t i=0; i<STMESH_MAX_COUNT; i++)
 			mesh_free[i] = i;
 		mesh_map.reserve(STMESH_INIT_COUNT);
+		null_mesh = MeshLoader::LoadStaticMeshFromFile(string(PATH_STMESH_NULL));
+		
+#ifdef _EDITOR
 		mesh_reloaded.resize(STMESH_MAX_COUNT);
 		mesh_reloaded.assign(0);
-		
-		null_mesh = MeshLoader::LoadStaticMeshFromFile(string(PATH_STMESH_NULL));
+		something_reloaded = false;
+#endif		
 	}
 	else
 		ERR("Only one instance of StMeshMgr is allowed!");
@@ -186,9 +188,34 @@ void StMeshMgr::DeleteStMeshByName(string& name)
 		handle.refcount--;
 }
 
-void StMeshMgr::UpdateStMeshes()
+void StMeshMgr::OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status)
 {
-	bool something_reloaded = false;
+	CallCallback(id, func, status);
+}
+
+void StMeshMgr::CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status)
+{
+	if(func)
+		func(id, status == LOADED);
+}
+
+void StMeshMgr::OnLoad(uint32_t id, MeshData* data)
+{
+	auto& handle = mesh_array[id];
+
+	auto oldMesh = handle.mesh;
+	handle.mesh = data;
+	if(oldMesh != null_mesh)
+		_CLOSE(oldMesh);
+	
+#ifdef _EDITOR
+	something_reloaded = true;
+	mesh_reloaded[id] = handle.refcount;
+#endif
+}
+
+void StMeshMgr::UpdateStMeshes()
+{	
 	auto it = mesh_map.begin();
 	while(it != mesh_map.end())
 	{
@@ -213,13 +240,7 @@ void StMeshMgr::UpdateStMeshes()
 			handle.filedate = last_date;
 		}
 
-		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::MESH);
-		
-		something_reloaded = true;
-		mesh_reloaded[it->second] = handle.refcount;
+		ResourceProcessor::Get()->QueueLoad(it->second, ResourceType::MESH, nullptr);
 		it++;
 	}
-
-	if(something_reloaded) // TODO: valid bbox update
-		WorldMgr::Get()->PostStMeshesReload();
 }

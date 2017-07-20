@@ -118,7 +118,9 @@ namespace EngineCore
 		XMVECTOR GetCenter(Entity e);
 		Vector3 GetCenterLua(Entity e) {Vector3 res; XMStoreFloat3(&res, GetCenter(e)); return res;}
 
-		void PostReload();
+	#ifdef _EDITOR
+		void FixBBoxes();
+	#endif
 
 		inline bool _AddComponent(Entity e)
 		{

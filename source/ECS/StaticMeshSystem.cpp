@@ -24,7 +24,8 @@ StaticMeshSystem::~StaticMeshSystem()
 		destroyMeshData(i);
 }
 
-void StaticMeshSystem::PostReload()
+#ifdef _EDITOR
+void StaticMeshSystem::FixBBoxes()
 {
 	for(auto& i: *components.data())
 	{
@@ -35,6 +36,7 @@ void StaticMeshSystem::PostReload()
 		visibilitySys->SetBBox(i.parent, meshPtr->box);
 	}
 }
+#endif
 
 void StaticMeshSystem::RegToDraw()
 {
@@ -74,7 +76,7 @@ void StaticMeshSystem::RegToDraw()
 				bits = 0;
 		}
 
-		StMeshData* meshPtr = nullptr;
+		MeshData* meshPtr = nullptr;
 
 		if(i.dirty || true) // TEMP FOR VCTGI
 		{

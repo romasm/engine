@@ -113,12 +113,13 @@ namespace EngineCore
 			}
 			return false;
 		}
-
-		inline void PostStMeshesReload()
+	#ifdef _EDITOR
+		inline void PostMeshesReload()
 		{
 			if(m_staticMeshSystem)
-				m_staticMeshSystem->PostReload();
+				m_staticMeshSystem->FixBBoxes();
 		}
+	#endif
 				
 		void RawInput(RawInputData& data)
 		{

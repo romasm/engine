@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "Common.h"
+#include "MeshLoader.h"
 
 #define STMESH_MAX_COUNT 16384
 #define STMESH_INIT_COUNT 1024
@@ -38,6 +39,7 @@ namespace EngineCore
 
 		void UpdateStMeshes();
 
+	#ifdef _EDITOR
 		inline bool IsJustReloaded(uint32_t id) 
 		{
 			if(id == STMESH_NULL)
@@ -48,7 +50,23 @@ namespace EngineCore
 			return res;
 		}
 
+		inline bool IsBBoxesDirty()
+		{
+			bool res = something_reloaded;
+			something_reloaded = false;
+			return res;
+		}
+	#endif
+
+		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
+		void OnLoad(uint32_t id, MeshData* data);
+
 	private:
+		uint32_t AddStMeshToList(string& name, bool reload);
+		uint32_t FindStMeshInList(string& name);
+
+		void CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status);
+
 		static StMeshMgr *instance;
 		static MeshData* null_mesh;
 		static string null_name;
@@ -73,9 +91,9 @@ namespace EngineCore
 		SArray<StMeshHandle, STMESH_MAX_COUNT> mesh_array;
 		SDeque<uint32_t, STMESH_MAX_COUNT> mesh_free;
 
+#ifdef _EDITOR
 		SArray<uint32_t, STMESH_MAX_COUNT> mesh_reloaded;
-				
-		uint32_t AddStMeshToList(string& name, bool reload);
-		uint32_t FindStMeshInList(string& name);
+		bool something_reloaded;
+#endif
 	};
 }

@@ -119,7 +119,7 @@ uint32_t TexMgr::AddTextureToList(string& name, bool reload, onLoadCallback call
 	
 	if(!FileIO::IsExist(name))
 	{
-		WRN("Texture file %s doesn\'t exist, creation expected in future.", name.data());
+		WRN("File %s doesn\'t exist, creation expected in future.", name.data());
 		if(reload)
 			handle.filedate = ReloadingType::RELOAD_ALWAYS;
 		else
