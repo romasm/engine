@@ -85,7 +85,7 @@ function Main:Start()
     
     Main:LoadLocalization()
 
-    PreloadList.PreloadResources()
+    PreloadList:PreloadResources()
 
     MainWindow:Init()
     History:Init()

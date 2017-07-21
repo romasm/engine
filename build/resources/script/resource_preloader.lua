@@ -98,7 +98,7 @@ PreloadList = {
 
 function PreloadList:PreloadResources()
     for i = 1, #self do
-        Resource.PreloadResource( self[i][0], self[i][1] )
+        Resource.PreloadResource( self[i][1], self[i][2] )
     end
     Resource.WaitLoadingComplete()
 end

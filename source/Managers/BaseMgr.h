@@ -43,7 +43,7 @@ namespace EngineCore
 		static const uint32_t nullres = MaxCount;
 
 	protected:
-		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
+		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
 		uint32_t FindResourceInList(string& name);
 
 		static BaseMgr *instance;
@@ -213,6 +213,10 @@ namespace EngineCore
 				ResourceDeallocate(handle.resource);
 				LOG("Resource droped %s", handle.name.c_str());
 			}
+			else
+			{
+				handle.resource = nullptr;
+			}
 
 			handle.refcount = 0;
 			handle.filedate = 0;
@@ -241,27 +245,7 @@ namespace EngineCore
 		if(it == resource_map.end())
 			return;
 
-		auto& handle = resource_array[it->second];
-
-		if(handle.refcount == 1)
-		{
-			if(handle.resource != null_resource)
-			{
-				ResourceDeallocate(handle.resource);
-				LOG("Resource droped %s", handle.name.c_str());
-			}
-
-			handle.refcount = 0;
-			handle.filedate = 0;
-
-			free_ids.push_back(it->second);
-
-			resource_map.erase(name);
-
-			handle.name.clear();
-		}
-		else
-			handle.refcount--;
+		DeleteResource(it->second);
 	}
 
 	template<typename DataType, uint32_t MaxCount>

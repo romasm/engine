@@ -118,6 +118,15 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	if( header.version != MESH_FILE_VERSION )
 	{
 		ERR("Mesh %s has wrong version!", filename.c_str());
+
+#ifdef _EDITOR
+		string fbxMesh = filename.substr(0, filename.find(EXT_STATIC)) + ".fbx";
+		if( FileIO::IsExist(fbxMesh) )
+		{
+			LOG("Trying to reimport mesh %s, restart needed!", fbxMesh.c_str());
+			ConvertStaticMeshToEngineFormat(fbxMesh);
+		}
+#endif
 		return nullptr;
 	}
 

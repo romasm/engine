@@ -47,14 +47,7 @@ namespace EngineCore
 		StaticMeshSystem(BaseWorld* w, uint32_t maxCount);
 		~StaticMeshSystem();
 
-		StaticMeshComponent* AddComponent(Entity e)
-		{
-			StaticMeshComponent* res = components.add(e.index());
-			res->parent = e;
-			// todo: static alloc???
-			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
-			return res;
-		}
+		StaticMeshComponent* AddComponent(Entity e);
 
 		void CopyComponent(Entity src, Entity dest);
 		void DeleteComponent(Entity e);
@@ -129,6 +122,7 @@ namespace EngineCore
 	private:
 		inline void destroyMeshData(StaticMeshComponent& comp);
 		bool setMeshMats(StaticMeshComponent* comp, string& mesh, DArray<string>& mats);
+		bool setMesh(StaticMeshComponent* comp, string& mesh);
 
 		ComponentRArray<StaticMeshComponent> components;
 

@@ -25,9 +25,11 @@ namespace EngineCore
 			shaderID = SHADER_NULL;
 		}
 
-		static void Preload(string shader, string function)
+		static void Preload(string& shader, string& function)
 		{
-			ShaderCodeMgr::Get()->GetShaderCode(shader + "_" + function, SHADER_CS);
+			auto res = ShaderCodeMgr::Get()->GetShaderCode(shader + "_" + function, SHADER_CS);
+			if( res != SHADER_NULL )
+				LOG("Compute shader %s with entry %s preloaded", shader.c_str(), function.c_str());
 		}
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)

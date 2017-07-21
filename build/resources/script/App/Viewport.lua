@@ -760,7 +760,7 @@ function Viewport:onItemDroped(eventData)
         local entities = {}
         for i = 0, itemCount-1 do
             local meshName = CoreGui.DragDrop.GetItem(i)
-            print("Droped: " .. meshName)
+            print("Drag&Drop: " .. meshName)
 
             local entity = EntityTypes.StaticModel(self.lua_world.world) -- to history
             if not entity:IsAlive() then return true end

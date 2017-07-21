@@ -132,7 +132,6 @@ namespace EngineCore
 			comp->shapes.destroy();
 		}
 
-	private:
 		ComponentRArray<CollisionComponent> components;
 				
 		BaseWorld* world;

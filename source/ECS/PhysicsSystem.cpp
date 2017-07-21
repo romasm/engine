@@ -104,6 +104,16 @@ void PhysicsSystem::DeleteComponent(Entity e)
 	components.remove(e.index());
 }
 
+void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp) // TODO: crash after deletion
+{
+	dynamicsWorld->destroyRigidBody(comp->body);
+	comp->body = nullptr;
+
+	auto collisionComp = world->GetCollisionSystem()->GetComponent(comp->get_entity());
+	if(collisionComp)
+		collisionComp->body = nullptr;
+}
+
 void PhysicsSystem::CopyComponent(Entity src, Entity dest)
 {
 	auto comp = GetComponent(src);

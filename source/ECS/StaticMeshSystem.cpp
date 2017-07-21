@@ -76,11 +76,12 @@ void StaticMeshSystem::RegToDraw()
 				bits = 0;
 		}
 
-		MeshData* meshPtr = nullptr;
+		MeshData* meshPtr = MeshMgr::GetResourcePtr(i.stmesh); // TODO: non thread safe - mesh may be deleted in background
+		if(!meshPtr)
+			continue;			
 
 		if(i.dirty || true) // TEMP FOR VCTGI
 		{
-			meshPtr = MeshMgr::GetResourcePtr(i.stmesh);
 			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
 			XMVECTOR scale, pos, rot;
@@ -106,9 +107,6 @@ void StaticMeshSystem::RegToDraw()
 			{
 				if( !f.rendermgr->IsShadow() )
 				{
-					if(!meshPtr)
-						meshPtr = MeshMgr::GetResourcePtr(i.stmesh);
-
 					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, i.constantBuffer, i.materials, i.center);
 				}
 			}
@@ -119,9 +117,6 @@ void StaticMeshSystem::RegToDraw()
 		{
 			if( (bits & f.bit) == f.bit )
 			{
-				if(!meshPtr)
-					meshPtr = MeshMgr::GetResourcePtr(i.stmesh);
-
 				if( f.rendermgr->IsShadow() )// todo
 				{
 					if(i.cast_shadow)
@@ -146,6 +141,20 @@ void StaticMeshSystem::RegToDraw()
 			}
 		}
 	}
+}
+
+StaticMeshComponent* StaticMeshSystem::AddComponent(Entity e)
+{
+	StaticMeshComponent* res = components.add(e.index());
+	res->parent = e;
+	// todo: static alloc???
+	res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
+	
+	auto meshPtr = MeshMgr::GetResourcePtr(res->stmesh);
+	if(meshPtr)
+		visibilitySys->SetBBox(e, meshPtr->box);
+
+	return res;
 }
 
 void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
@@ -286,20 +295,59 @@ bool StaticMeshSystem::SetShadow(Entity e, bool cast)
 
 bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 {
+	size_t idx = components.getArrayIdx(e.index());
+	if(idx == components.capacity())
+		return false;
+	auto comp = &components.getDataByArrayIdx(idx);
+	
+	return setMesh(comp, mesh);
+}
+
+bool StaticMeshSystem::SetMaterial(Entity e, int32_t i, string matname)
+{
 	GET_COMPONENT(false)
-	
-	auto oldMesh = comp.stmesh;
-	
-	comp.stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
-
-		[&](uint32_t id, bool status) -> void
+	const auto oldSize = comp.materials.size();
+	if(i >= oldSize)
 	{
-		auto meshPtr = MeshMgr::GetResourcePtr(comp.stmesh);
+		const auto newSize = i + 1;
+		comp.materials.reserve(newSize);
+		comp.materials.resize(newSize);
+		comp.materials.assign(nullptr, oldSize, newSize);
+	}
 
-		comp.dirty = true;
-		visibilitySys->SetBBox(e, meshPtr->box);
+	if(comp.materials[i])
+		MATERIAL_PTR_DROP(comp.materials[i]);
+	comp.materials[i] = MATERIAL(matname);
 
-		auto oldMatCount = comp.materials.size();
+	return true;
+}
+
+bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh)
+{
+	auto oldMesh = comp->stmesh;
+
+	auto visSys = visibilitySys;
+	auto worldPtr = world;
+	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
+
+		[comp, visSys, worldPtr](uint32_t id, bool status) -> void
+	{
+		auto meshPtr = MeshMgr::GetResourcePtr(comp->stmesh);
+		if(!meshPtr)
+			return;
+
+		comp->dirty = true;
+
+		const Entity e = comp->get_entity();
+		visSys->SetBBox(e, meshPtr->box);
+
+	#ifdef _EDITOR
+		auto lineGeom = worldPtr->GetLineGeometrySystem();
+		if(lineGeom)
+			lineGeom->SetFromVis(e);
+	#endif
+
+		auto oldMatCount = comp->materials.size();
 		auto newMatCount = meshPtr->vertexBuffers.size();
 		if(newMatCount == oldMatCount)
 			return;
@@ -313,9 +361,9 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 			for(int32_t i = 0; i < oldMatCount; i++)
 			{
 				if(i < newMatCount) 
-					temp_materials[i] = comp.materials[i];
+					temp_materials[i] = comp->materials[i];
 				else 
-					MATERIAL_PTR_DROP(comp.materials[i]);
+					MATERIAL_PTR_DROP(comp->materials[i]);
 			}
 		}
 		else
@@ -323,12 +371,12 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 			for(int32_t i = 0; i < newMatCount; i++)
 			{
 				if(i < oldMatCount)
-					temp_materials[i] = comp.materials[i];
+					temp_materials[i] = comp->materials[i];
 				else
 					temp_materials[i] = MATERIAL_S("");//MATERIAL_S("$"PATH_SHADERS"objects/opaque_main");
 			}
 		}
-		comp.materials.swap(temp_materials);
+		comp->materials.swap(temp_materials);
 		temp_materials.destroy();
 	});
 
@@ -336,56 +384,19 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 	return true;
 }
 
-bool StaticMeshSystem::SetMaterial(Entity e, int32_t i, string matname)
-{
-	GET_COMPONENT(false)
-	if(i >= comp.materials.size())
-		comp.materials.reserve(i + 1);
-	if(comp.materials[i])
-		MATERIAL_PTR_DROP(comp.materials[i]);
-	comp.materials[i] = MATERIAL(matname);
-
-	return true;
-}
-
 bool StaticMeshSystem::setMeshMats(StaticMeshComponent* comp, string& mesh, DArray<string>& mats)
 {
 	for(int i=0; i<comp->materials.size(); i++)
 		MATERIAL_PTR_DROP(comp->materials[i]);
-		
 	comp->materials.destroy();
+		
+	auto matsCount = mats.size();
+	comp->materials.reserve(matsCount);
 
-	auto oldMesh = comp->stmesh;
-
-	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
-
-		[&](uint32_t id, bool status) -> void
-	{
-		auto meshPtr = MeshMgr::GetResourcePtr(comp->stmesh);
-
-		comp->dirty = true;
-		visibilitySys->SetBBox(comp->get_entity(), meshPtr->box);
-
-		auto matsCount = meshPtr->vertexBuffers.size();
-		comp->materials.reserve(matsCount);
-
-		if(mats.size() != matsCount)
-			WRN("Materials wrong count for mesh %s", mesh.c_str());
-
-		for(int i=0; i < matsCount; i++)
-		{
-			string mat_name;
-			if(i < mats.size())
-				mat_name = mats[i];
-			else
-				mat_name = "";
-
-			comp->materials.push_back(MATERIAL(mat_name));
-		}
-	});
-
-	MeshMgr::Get()->DeleteResource(oldMesh);
-	return true;
+	for(int32_t i = 0; i < matsCount; i++)
+		comp->materials.push_back(MATERIAL(mats[i]));
+	
+	return setMesh(comp, mesh);
 }
 
 uint32_t StaticMeshSystem::GetMeshID(Entity e)

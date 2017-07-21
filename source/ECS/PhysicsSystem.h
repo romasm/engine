@@ -106,11 +106,7 @@ namespace EngineCore
 
 	private:
 
-		inline void _DeleteComponent(PhysicsComponent* comp) // TODO: crash after deletion
-		{
-			dynamicsWorld->destroyRigidBody(comp->body);
-			comp->body = nullptr;
-		}
+		void _DeleteComponent(PhysicsComponent* comp);
 
 	private:
 		ComponentRArray<PhysicsComponent> components;

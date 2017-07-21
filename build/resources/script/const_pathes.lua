@@ -16,24 +16,24 @@ EXT = {
 PATH = {
     BIN = "bin/",
     ROOT = "../",
-
-    SYS_TEXTURES = ROOT.."resources/textures/",
-    SYS_MESHES = ROOT.."resources/meshes/",
-    SYS_MATS = ROOT.."resources/materials/",
-    EDITOR_MESHES = SYS_MESHES.."editor/",
-    ENVS = ROOT.."content/environments/",
-    RSC = ROOT.."resources/",
-    SHADERS = RSC.."shaders/",
-    SCRIPTS = ROOT.."resources/script/",
-    GUI = ROOT.."resources/gui/",
-    CONFIG = ROOT.."config/",
-    FONTS = RSC"fonts/",
-
-    KEYMAPS = CONFIG.."keymaps/",
-
-    MATERIAL_TECH = MATERIALS.."tech/",
-    EDITOR_MATERIAL = MATERIALS.."editor/",
-    MATERIALS_GUI = MATERIALS.."hud/",
-
-    RUNTIME_STATS = ROOT.."stats/",
 }
+
+PATH.SYS_TEXTURES = PATH.ROOT.."resources/textures/"
+PATH.SYS_MESHES = PATH.ROOT.."resources/meshes/"
+PATH.SYS_MATS = PATH.ROOT.."resources/materials/"
+PATH.EDITOR_MESHES = PATH.SYS_MESHES.."editor/"
+PATH.ENVS = PATH.ROOT.."content/environments/"
+PATH.RSC = PATH.ROOT.."resources/"
+PATH.SHADERS = PATH.RSC.."shaders/"
+PATH.SCRIPTS = PATH.ROOT.."resources/script/"
+PATH.GUI = PATH.ROOT.."resources/gui/"
+PATH.CONFIG = PATH.ROOT.."config/"
+PATH.FONTS = PATH.RSC.. "fonts/"
+
+PATH.KEYMAPS = PATH.CONFIG.."keymaps/"
+
+--PATH.MATERIAL_TECH = PATH.MATERIALS.."tech/"
+--PATH.EDITOR_MATERIAL = PATH.MATERIALS.."editor/"
+--PATH.MATERIALS_GUI = PATH.MATERIALS.."hud/"
+
+PATH.RUNTIME_STATS = PATH.ROOT.."stats/"

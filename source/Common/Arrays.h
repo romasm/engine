@@ -62,9 +62,11 @@ namespace EngineCore
 		inline const T& front() const {return m_data[ 0 ];}
 		inline T& front() {return m_data[ 0 ];}
 
-		inline void assign( T val )
+		inline void assign( T val, size_t start = 0, size_t end = 0 )
 		{
-			for ( size_t i = 0; i < m_size; i++ )
+			if(end == 0)
+				end = m_size;
+			for ( size_t i = start; i < end; i++ )
 				m_data[i] = val;
 		}
 
@@ -232,15 +234,11 @@ namespace EngineCore
 		inline const T& front() const {return m_data[ 0 ];}
 		inline T& front() {return m_data[ 0 ];}
 
-		inline void assign( T val )
+		inline void assign( T val, size_t start = 0, size_t end = 0 )
 		{
-			for ( size_t i = 0; i < m_size; i++ )
-				m_data[i] = val;
-		}
-
-		inline void assign( T val, size_t start, size_t size )
-		{
-			for ( size_t i = start; i < min(m_size, size); i++ )
+			if(end == 0)
+				end = m_size;
+			for ( size_t i = start; i < end; i++ )
 				m_data[i] = val;
 		}
 
@@ -373,9 +371,11 @@ namespace EngineCore
 		inline const T& front() const {return m_data[ 0 ];}
 		inline T& front() {return m_data[ 0 ];}
 
-		inline void assign( T val )
+		inline void assign( T val, size_t start = 0, size_t end = 0 )
 		{
-			for ( size_t i = 0; i < m_size; i++ )
+			if(end == 0)
+				end = m_size;
+			for ( size_t i = start; i < end; i++ )
 				m_data[i] = val;
 		}
 
@@ -561,9 +561,11 @@ namespace EngineCore
 
 		inline size_t front_idx() {return m_begin;}
 
-		inline void assign( T val )
+		inline void assign( T val, size_t start = 0, size_t end = 0 )
 		{
-			for ( size_t i = 0; i < m_size; i++ )
+			if(end == 0)
+				end = m_size;
+			for ( size_t i = start; i < end; i++ )
 				m_data[getIdx(i)] = val;
 		}
 
@@ -729,9 +731,11 @@ namespace EngineCore
 
 		inline size_t front_idx() {return m_begin;}
 
-		inline void assign( T val )
+		inline void assign( T val, size_t start = 0, size_t end = 0 )
 		{
-			for ( size_t i = 0; i < m_size; i++ )
+			if(end == 0)
+				end = m_size;
+			for ( size_t i = start; i < end; i++ )
 				m_data[getIdx(i)] = val;
 		}
 

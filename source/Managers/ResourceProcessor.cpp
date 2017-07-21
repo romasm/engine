@@ -78,7 +78,7 @@ void ResourceProcessor::Tick()
 #endif
 
 	ResourceSlot loadedSlot;
-	while(loadingQueue->pop(loadedSlot))
+	while(postLoadingQueue->pop(loadedSlot))
 	{
 		switch(loadedSlot.type)
 		{
@@ -325,7 +325,7 @@ void ResourceProcessor::RegLuaFunctions()
 		.addFunction("DropTexture", &DropTextureLua)
 		.addFunction("GetMaterial", &GetMaterialLua)
 		.addFunction("DropMaterial", &DropMaterialLua)
-		.addFunction("IsMeshSupported", &TexLoader::IsSupported)
+		.addFunction("IsMeshSupported", &MeshLoader::IsSupported)
 		.addFunction("IsTextureSupported", &TexLoader::IsSupported)
 
 		.addFunction("ConvertMeshToEngineFormat", &ConvertMeshToEngineFormat)

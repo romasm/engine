@@ -22,7 +22,9 @@ function EntityTypes.TestPlayer:init(world, ent)
             
     -- collision
     self.physicsSys:AddComponent(self.ent)    
-    self.physicsSys:AddCapsuleShape(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.2)
+    self.world.collision:AddComponent(self.ent)    
+    self.world.collision:AddCapsuleCollider(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.2)
+
     self.physicsSys:SetNonRotatable(self.ent, true)
     self.physicsSys:SetUnsleepable(self.ent, true)
     self.physicsSys:SetBounciness(self.ent, 0.0)

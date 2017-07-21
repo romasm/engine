@@ -634,6 +634,9 @@ void VoxelRenderer::ProcessEmittance()
 
 void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
 {
+	if( !material )
+		return;
+
 	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
 		// discard if in lower level

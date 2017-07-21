@@ -51,6 +51,7 @@ WorldMgr::WorldMgr()
 		GlobalLightSystem::RegLuaClass();
 		LineGeometrySystem::RegLuaClass();
 		PhysicsSystem::RegLuaClass();
+		CollisionSystem::RegLuaClass();
 		ControllerSystem::RegLuaClass();
 
 		TransformControls::RegLuaClass();

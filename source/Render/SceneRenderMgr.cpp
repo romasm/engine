@@ -123,6 +123,9 @@ bool SceneRenderMgr::regToDraw(uint32_t index_count,
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
 			uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo)
 {
+	if(!material)
+		return false;
+	
 	bool has_tq = false;
 	auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_DEFAULT, &has_tq);
 
@@ -186,11 +189,14 @@ bool SceneRenderMgr::regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DA
 	uint reged = 0;
 	for(uint16_t i = 0; i < matCount; i++)
 	{
+		if( !material[i] )
+			continue;
+
 		bool has_tq = false;
 		auto queue = material[i]->GetTechQueue(TECHNIQUES::TECHNIQUE_DEFAULT, &has_tq);
 
 		if(!has_tq)
-			return false;
+			continue;
 
 		RenderMesh* mesh_new = new RenderMesh;
 		mesh_new->index_count = mesh->indexBuffers[i].size;
