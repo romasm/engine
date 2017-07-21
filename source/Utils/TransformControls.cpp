@@ -17,20 +17,20 @@ TransformControls::TransformControls(World* wrd)
 	m_transformation = XMMatrixIdentity();
 	m_pos = XMVectorZero();
 	
-	arrow_x = MeshMgr::Get()->GetStMesh(string(MESH_ARROW_X));
-	arrow_y = MeshMgr::Get()->GetStMesh(string(MESH_ARROW_Y));
-	arrow_z = MeshMgr::Get()->GetStMesh(string(MESH_ARROW_Z));
-	plane_xy = MeshMgr::Get()->GetStMesh(string(MESH_PLANE_XY));
-	plane_xz = MeshMgr::Get()->GetStMesh(string(MESH_PLANE_XZ));
-	plane_yz = MeshMgr::Get()->GetStMesh(string(MESH_PLANE_YZ));
-	box_all = MeshMgr::Get()->GetStMesh(string(MESH_BOX_ALL));
-	box_x = MeshMgr::Get()->GetStMesh(string(MESH_BOX_X));
-	box_y = MeshMgr::Get()->GetStMesh(string(MESH_BOX_Y));
-	box_z = MeshMgr::Get()->GetStMesh(string(MESH_BOX_Z));
-	rot_all = MeshMgr::Get()->GetStMesh(string(MESH_ROT_ALL));
-	rot_x = MeshMgr::Get()->GetStMesh(string(MESH_ROT_X));
-	rot_y = MeshMgr::Get()->GetStMesh(string(MESH_ROT_Y));
-	rot_z = MeshMgr::Get()->GetStMesh(string(MESH_ROT_Z));
+	arrow_x = MeshMgr::Get()->GetResource(string(MESH_ARROW_X));
+	arrow_y = MeshMgr::Get()->GetResource(string(MESH_ARROW_Y));
+	arrow_z = MeshMgr::Get()->GetResource(string(MESH_ARROW_Z));
+	plane_xy = MeshMgr::Get()->GetResource(string(MESH_PLANE_XY));
+	plane_xz = MeshMgr::Get()->GetResource(string(MESH_PLANE_XZ));
+	plane_yz = MeshMgr::Get()->GetResource(string(MESH_PLANE_YZ));
+	box_all = MeshMgr::Get()->GetResource(string(MESH_BOX_ALL));
+	box_x = MeshMgr::Get()->GetResource(string(MESH_BOX_X));
+	box_y = MeshMgr::Get()->GetResource(string(MESH_BOX_Y));
+	box_z = MeshMgr::Get()->GetResource(string(MESH_BOX_Z));
+	rot_all = MeshMgr::Get()->GetResource(string(MESH_ROT_ALL));
+	rot_x = MeshMgr::Get()->GetResource(string(MESH_ROT_X));
+	rot_y = MeshMgr::Get()->GetResource(string(MESH_ROT_Y));
+	rot_z = MeshMgr::Get()->GetResource(string(MESH_ROT_Z));
 	
 	mat_axis_x = MATERIAL_S(MATERIAL_X);
 	mat_axis_y = MATERIAL_S(MATERIAL_Y);
@@ -62,20 +62,20 @@ TransformControls::TransformControls(World* wrd)
 
 TransformControls::~TransformControls()
 {
-	MeshMgr::Get()->DeleteStMesh(arrow_x);
-	MeshMgr::Get()->DeleteStMesh(arrow_y);
-	MeshMgr::Get()->DeleteStMesh(arrow_z);
-	MeshMgr::Get()->DeleteStMesh(plane_xy);
-	MeshMgr::Get()->DeleteStMesh(plane_xz);
-	MeshMgr::Get()->DeleteStMesh(plane_yz);
-	MeshMgr::Get()->DeleteStMesh(box_all);
-	MeshMgr::Get()->DeleteStMesh(box_x);
-	MeshMgr::Get()->DeleteStMesh(box_y);
-	MeshMgr::Get()->DeleteStMesh(box_z);
-	MeshMgr::Get()->DeleteStMesh(rot_all);
-	MeshMgr::Get()->DeleteStMesh(rot_x);
-	MeshMgr::Get()->DeleteStMesh(rot_y);
-	MeshMgr::Get()->DeleteStMesh(rot_z);
+	MeshMgr::Get()->DeleteResource(arrow_x);
+	MeshMgr::Get()->DeleteResource(arrow_y);
+	MeshMgr::Get()->DeleteResource(arrow_z);
+	MeshMgr::Get()->DeleteResource(plane_xy);
+	MeshMgr::Get()->DeleteResource(plane_xz);
+	MeshMgr::Get()->DeleteResource(plane_yz);
+	MeshMgr::Get()->DeleteResource(box_all);
+	MeshMgr::Get()->DeleteResource(box_x);
+	MeshMgr::Get()->DeleteResource(box_y);
+	MeshMgr::Get()->DeleteResource(box_z);
+	MeshMgr::Get()->DeleteResource(rot_all);
+	MeshMgr::Get()->DeleteResource(rot_x);
+	MeshMgr::Get()->DeleteResource(rot_y);
+	MeshMgr::Get()->DeleteResource(rot_z);
 
 	MATERIAL_PTR_DROP(mat_axis_x);
 	MATERIAL_PTR_DROP(mat_axis_y);
@@ -153,25 +153,25 @@ void TransformControls::RegToDraw()
 				break;
 			}
 
-			auto arrow_x_mesh = MeshMgr::GetStMeshPtr(arrow_x);
-			auto arrow_y_mesh = MeshMgr::GetStMeshPtr(arrow_y);
-			auto arrow_z_mesh = MeshMgr::GetStMeshPtr(arrow_z);
-			auto arrow_xy_mesh = MeshMgr::GetStMeshPtr(plane_xy);
-			auto arrow_xz_mesh = MeshMgr::GetStMeshPtr(plane_xz);
-			auto arrow_yz_mesh = MeshMgr::GetStMeshPtr(plane_yz);
+			auto arrow_x_mesh = MeshMgr::GetResourcePtr(arrow_x);
+			auto arrow_y_mesh = MeshMgr::GetResourcePtr(arrow_y);
+			auto arrow_z_mesh = MeshMgr::GetResourcePtr(arrow_z);
+			auto arrow_xy_mesh = MeshMgr::GetResourcePtr(plane_xy);
+			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
+			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_x_mesh->indexCount[0], arrow_x_mesh->vertexBuffer[0], arrow_x_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_x_mesh->indexBuffers[0].size, arrow_x_mesh->vertexBuffers[0].buffer, arrow_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_x, XMVector3TransformCoord(XMLoadFloat3(&arrow_x_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_y_mesh->indexCount[0], arrow_y_mesh->vertexBuffer[0], arrow_y_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_y_mesh->indexBuffers[0].size, arrow_y_mesh->vertexBuffers[0].buffer, arrow_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_y, XMVector3TransformCoord(XMLoadFloat3(&arrow_y_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_z_mesh->indexCount[0], arrow_z_mesh->vertexBuffer[0], arrow_z_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_z_mesh->indexBuffers[0].size, arrow_z_mesh->vertexBuffers[0].buffer, arrow_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_z, XMVector3TransformCoord(XMLoadFloat3(&arrow_z_mesh->box.Center), m_transformation));
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexCount[0], arrow_xy_mesh->vertexBuffer[0], arrow_xy_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].size, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_xy, XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexCount[0], arrow_xz_mesh->vertexBuffer[0], arrow_xz_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].size, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_xz, XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexCount[0], arrow_yz_mesh->vertexBuffer[0], arrow_yz_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].size, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_yz, XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation));
 	
 			frustCount++;
@@ -211,18 +211,18 @@ void TransformControls::RegToDraw()
 				break;
 			}
 
-			auto rot_x_mesh = MeshMgr::GetStMeshPtr(rot_x);
-			auto rot_y_mesh = MeshMgr::GetStMeshPtr(rot_y);
-			auto rot_z_mesh = MeshMgr::GetStMeshPtr(rot_z);
-			auto rot_all_mesh = MeshMgr::GetStMeshPtr(rot_all);
+			auto rot_x_mesh = MeshMgr::GetResourcePtr(rot_x);
+			auto rot_y_mesh = MeshMgr::GetResourcePtr(rot_y);
+			auto rot_z_mesh = MeshMgr::GetResourcePtr(rot_z);
+			auto rot_all_mesh = MeshMgr::GetResourcePtr(rot_all);
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_x_mesh->indexCount[0], rot_x_mesh->vertexBuffer[0], rot_x_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_x_mesh->indexBuffers[0].size, rot_x_mesh->vertexBuffers[0].buffer, rot_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_rot_x, XMVector3TransformCoord(XMLoadFloat3(&rot_x_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_y_mesh->indexCount[0], rot_y_mesh->vertexBuffer[0], rot_y_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_y_mesh->indexBuffers[0].size, rot_y_mesh->vertexBuffers[0].buffer, rot_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_rot_y, XMVector3TransformCoord(XMLoadFloat3(&rot_y_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_z_mesh->indexCount[0], rot_z_mesh->vertexBuffer[0], rot_z_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_z_mesh->indexBuffers[0].size, rot_z_mesh->vertexBuffers[0].buffer, rot_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_rot_z, XMVector3TransformCoord(XMLoadFloat3(&rot_z_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_all_mesh->indexCount[0], rot_all_mesh->vertexBuffer[0], rot_all_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_all_mesh->indexBuffers[0].size, rot_all_mesh->vertexBuffers[0].buffer, rot_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_all, XMVector3TransformCoord(XMLoadFloat3(&rot_all_mesh->box.Center), m_transformation));
 		
 			frustCount++;
@@ -271,28 +271,28 @@ void TransformControls::RegToDraw()
 				break;
 			}
 
-			auto box_x_mesh = MeshMgr::GetStMeshPtr(box_x);
-			auto box_y_mesh = MeshMgr::GetStMeshPtr(box_y);
-			auto box_z_mesh = MeshMgr::GetStMeshPtr(box_z);
-			auto box_all_mesh = MeshMgr::GetStMeshPtr(box_all);
-			auto arrow_xy_mesh = MeshMgr::GetStMeshPtr(plane_xy);
-			auto arrow_xz_mesh = MeshMgr::GetStMeshPtr(plane_xz);
-			auto arrow_yz_mesh = MeshMgr::GetStMeshPtr(plane_yz);
+			auto box_x_mesh = MeshMgr::GetResourcePtr(box_x);
+			auto box_y_mesh = MeshMgr::GetResourcePtr(box_y);
+			auto box_z_mesh = MeshMgr::GetResourcePtr(box_z);
+			auto box_all_mesh = MeshMgr::GetResourcePtr(box_all);
+			auto arrow_xy_mesh = MeshMgr::GetResourcePtr(plane_xy);
+			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
+			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_x_mesh->indexCount[0], box_x_mesh->vertexBuffer[0], box_x_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_x_mesh->indexBuffers[0].size, box_x_mesh->vertexBuffers[0].buffer, box_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_x, XMVector3TransformCoord(XMLoadFloat3(&box_x_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_y_mesh->indexCount[0], box_y_mesh->vertexBuffer[0], box_y_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_y_mesh->indexBuffers[0].size, box_y_mesh->vertexBuffers[0].buffer, box_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_y, XMVector3TransformCoord(XMLoadFloat3(&box_y_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_z_mesh->indexCount[0], box_z_mesh->vertexBuffer[0], box_z_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_z_mesh->indexBuffers[0].size, box_z_mesh->vertexBuffers[0].buffer, box_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_axis_z, XMVector3TransformCoord(XMLoadFloat3(&box_z_mesh->box.Center), m_transformation));
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexCount[0], arrow_xy_mesh->vertexBuffer[0], arrow_xy_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].size, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_xy, XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexCount[0], arrow_xz_mesh->vertexBuffer[0], arrow_xz_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].size, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_xz, XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexCount[0], arrow_yz_mesh->vertexBuffer[0], arrow_yz_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].size, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_plane_yz, XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_all_mesh->indexCount[0], box_all_mesh->vertexBuffer[0], box_all_mesh->indexBuffer[0], matricies[frustCount].constantBuffer, 
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_all_mesh->indexBuffers[0].size, box_all_mesh->vertexBuffers[0].buffer, box_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
 				sizeof(LitVertex), mat_all, XMVector3TransformCoord(XMLoadFloat3(&box_all_mesh->box.Center), m_transformation));
 		
 			frustCount++;
@@ -565,12 +565,12 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 		{
 			float dist;
 
-			auto arrow_x_mesh = MeshMgr::GetStMeshPtr(arrow_x);
-			auto arrow_y_mesh = MeshMgr::GetStMeshPtr(arrow_y);
-			auto arrow_z_mesh = MeshMgr::GetStMeshPtr(arrow_z);
-			auto arrow_xy_mesh = MeshMgr::GetStMeshPtr(plane_xy);
-			auto arrow_xz_mesh = MeshMgr::GetStMeshPtr(plane_xz);
-			auto arrow_yz_mesh = MeshMgr::GetStMeshPtr(plane_yz);
+			auto arrow_x_mesh = MeshMgr::GetResourcePtr(arrow_x);
+			auto arrow_y_mesh = MeshMgr::GetResourcePtr(arrow_y);
+			auto arrow_z_mesh = MeshMgr::GetResourcePtr(arrow_z);
+			auto arrow_xy_mesh = MeshMgr::GetResourcePtr(plane_xy);
+			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
+			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
 			if( (dist = RayBoxIntersect(camPos, rayDir, arrow_x_mesh->box, transform)) >= 0 )
 			{
@@ -623,10 +623,10 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 		{
 			float dist;
 
-			auto rot_x_mesh = MeshMgr::GetStMeshPtr(rot_x);
-			auto rot_y_mesh = MeshMgr::GetStMeshPtr(rot_y);
-			auto rot_z_mesh = MeshMgr::GetStMeshPtr(rot_z);
-			auto rot_all_mesh = MeshMgr::GetStMeshPtr(rot_all);
+			auto rot_x_mesh = MeshMgr::GetResourcePtr(rot_x);
+			auto rot_y_mesh = MeshMgr::GetResourcePtr(rot_y);
+			auto rot_z_mesh = MeshMgr::GetResourcePtr(rot_z);
+			auto rot_all_mesh = MeshMgr::GetResourcePtr(rot_all);
 
 			if( (dist = RayBoxIntersect(camPos, rayDir, rot_x_mesh->box, transform)) >= 0 )
 			{
@@ -675,13 +675,13 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 		{
 			float dist;
 
-			auto box_x_mesh = MeshMgr::GetStMeshPtr(box_x);
-			auto box_y_mesh = MeshMgr::GetStMeshPtr(box_y);
-			auto box_z_mesh = MeshMgr::GetStMeshPtr(box_z);
-			auto box_all_mesh = MeshMgr::GetStMeshPtr(box_all);
-			auto arrow_xy_mesh = MeshMgr::GetStMeshPtr(plane_xy);
-			auto arrow_xz_mesh = MeshMgr::GetStMeshPtr(plane_xz);
-			auto arrow_yz_mesh = MeshMgr::GetStMeshPtr(plane_yz);
+			auto box_x_mesh = MeshMgr::GetResourcePtr(box_x);
+			auto box_y_mesh = MeshMgr::GetResourcePtr(box_y);
+			auto box_z_mesh = MeshMgr::GetResourcePtr(box_z);
+			auto box_all_mesh = MeshMgr::GetResourcePtr(box_all);
+			auto arrow_xy_mesh = MeshMgr::GetResourcePtr(plane_xy);
+			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
+			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
 			if( (dist = RayBoxIntersect(camPos, rayDir, box_x_mesh->box, transform)) >= 0 )
 			{

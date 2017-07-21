@@ -8,7 +8,7 @@
 
 using namespace EngineCore;
 
-MeshMgr::MeshMgr() : BaseMgr<MeshData>()
+MeshMgr::MeshMgr() : BaseMgr<MeshData, RESOURCE_MAX_COUNT>()
 {
 	null_resource = MeshLoader::LoadStaticMeshFromFile(string(PATH_STMESH_NULL));
 	resType = ResourceType::MESH;
@@ -22,7 +22,7 @@ MeshMgr::MeshMgr() : BaseMgr<MeshData>()
 
 void MeshMgr::OnLoad(uint32_t id, MeshData* data)
 {
-	BaseMgr<MeshData>::OnLoad(id, data);
+	BaseMgr<MeshData, RESOURCE_MAX_COUNT>::OnLoad(id, data);
 
 #ifdef _EDITOR
 	something_reloaded = true;

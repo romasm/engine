@@ -262,7 +262,7 @@ function MainWindow:SetsMenuClick(btn, ev)
         print("Converting meshes")
         for i, ent in ipairs(Viewport.selection_set) do
             local mesh = Viewport.lua_world.world.staticMesh:GetMesh(ent)
-            if mesh:len() ~= 0 then Resource.ConvertMeshToSTM(mesh) end
+            if mesh:len() ~= 0 then Resource.ConvertMeshToEngineFormat(mesh) end
         end 
         
     elseif ev.id == "tb_dev_profiler" then

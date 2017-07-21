@@ -3,6 +3,7 @@
 #include "ECS_defines.h"
 #include "Entity.h"
 #include "TransformSystem.h"
+#include "PhysicsSystem.h"
 
 #define COLLISION_RESOURCE_NULL 0
 

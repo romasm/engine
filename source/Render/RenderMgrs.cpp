@@ -148,19 +148,21 @@ bool ShadowRenderMgr::RegMesh(uint32_t index_count,
 	return true;
 }
 
-bool ShadowRenderMgr::RegMultiMesh(uint32_t* index_count, 
-			ID3D11Buffer** vertex_buffer, ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, RArray<Material*>& material, XMVECTOR center)
+bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center)
 {
+	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
+	if( matCount == 0 )
+		return false;
+
 	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
 	group_new->ID = meshgroup_count;
 	meshgroup_count++;
-	group_new->meshes = new RenderMesh*[material.size()];
+	group_new->meshes = new RenderMesh*[matCount];
 	group_new->center = center - cameraPosition;
-	group_new->mesh_count = (uint)material.size();
+	group_new->mesh_count = (uint32_t)matCount;
 
 	uint16_t reged = 0;
-	for(uint16_t i=0; i<material.size(); i++)
+	for(uint16_t i = 0; i < matCount; i++)
 	{
 		bool has_tq = false;
 		auto queue = material[i]->GetTechQueue(TECHNIQUES::TECHNIQUE_SHADOW, &has_tq);
@@ -173,11 +175,11 @@ bool ShadowRenderMgr::RegMultiMesh(uint32_t* index_count,
 			return false;
 
 		RenderMesh* mesh_new = new RenderMesh;
-		mesh_new->index_count = index_count[i];
-		mesh_new->vertex_buffer = vertex_buffer[i];
-		mesh_new->index_buffer = index_buffer[i];
+		mesh_new->index_count = mesh->indexBuffers[i].size;
+		mesh_new->vertex_buffer = mesh->vertexBuffers[i].buffer;
+		mesh_new->index_buffer = mesh->indexBuffers[i].buffer;
 		mesh_new->constant_buffer = constant_buffer;
-		mesh_new->vertex_size = vertex_size;
+		mesh_new->vertex_size = MeshLoader::GetVertexSize(mesh->vertexFormat);
 		mesh_new->material = material[i];
 
 		group_new->meshes[i] = mesh_new;

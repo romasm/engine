@@ -44,7 +44,7 @@ ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* da
 		if(FAILED(hr))
 		{
 			ERR("Cant load DDS texture %s !", resName.c_str());
-			return;
+			return nullptr;
 		}
 	}
 	else if(resName.find(".tga") != string::npos || resName.find(".TGA") != string::npos)
@@ -55,7 +55,7 @@ ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* da
 		if(FAILED(hr))
 		{
 			ERR("Cant load TGA texture %s !", resName.c_str());
-			return;
+			return nullptr;
 		}
 
 		ScratchImage imageMips;
@@ -70,7 +70,7 @@ ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* da
 		if(FAILED(hr))
 		{
 			ERR("Cant load WIC texture %s !", resName.c_str());
-			return;
+			return nullptr;
 		}
 
 		ScratchImage imageMips;
@@ -94,7 +94,7 @@ bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 	
 	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos)
 	{
-		HRESULT hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(name).data() );
+		HRESULT hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(filename).data() );
 		if(FAILED(hr))
 		{
 			ERR("Cant save DDS texture %s !", filename.c_str());
@@ -119,7 +119,7 @@ bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 			return nullptr;
 		}
 
-		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(name).data() );
+		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(filename).data() );
 		if(FAILED(hr))
 		{
 			ERR("Cant save WIC texture %s !", filename.c_str());

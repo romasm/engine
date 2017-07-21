@@ -17,7 +17,7 @@ function EntityTypes.TestEnt:init(world, ent)
 
     -- temp
     self.world.visibility:AddComponent(self.ent)
-    self.world.staticMesh:AddComponentMesh(self.ent, "")
+    self.world.staticMesh:AddComponent(self.ent)
 
     return true
 end

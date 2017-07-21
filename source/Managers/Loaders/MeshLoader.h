@@ -12,18 +12,18 @@ namespace EngineCore
 		LIT_SKINNED_VERTEX,
 	};
 
+	struct GPUMeshBuffer
+	{
+		uint32_t size;
+		ID3D11Buffer* buffer;
+
+		GPUMeshBuffer() : size(0), buffer(nullptr) {}
+	};
+
 	struct MeshData
 	{
-		struct mesh_buffer
-		{
-			uint32_t size;
-			ID3D11Buffer* buffer;
-
-			mesh_buffer() : size(0), buffer(nullptr) {}
-		};
-
-		RArray<mesh_buffer> vertexBuffers;
-		RArray<mesh_buffer> indexBuffers;
+		RArray<GPUMeshBuffer> vertexBuffers;
+		RArray<GPUMeshBuffer> indexBuffers;
 
 		BoundingBox box;
 		MeshVertexFormat vertexFormat;
@@ -58,7 +58,7 @@ namespace EngineCore
 
 	namespace MeshLoader
 	{		
-		Assimp::Importer meshImporter;
+		static Assimp::Importer meshImporter;
 
 
 		MeshData* LoadStaticMeshFromMemory(string& resName, uint8_t* data, uint32_t size);

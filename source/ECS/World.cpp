@@ -27,6 +27,7 @@ void BaseWorld::SetDirty(Entity e)
 void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 {
 	m_physicsSystem->SetDirty(e);
+	m_collisionSystem->SetDirty(e);
 
 	m_visibilitySystem->SetDirty(e);
 
@@ -110,6 +111,7 @@ void BaseWorld::Close()
 	_DELETE(m_earlyVisibilitySystem);
 	_DELETE(m_scriptSystem);
 	_DELETE(m_physicsSystem);
+	_DELETE(m_collisionSystem);
 
 	_DELETE(m_staticMeshSystem);
 	_DELETE(m_cameraSystem);
@@ -165,6 +167,7 @@ void BaseWorld::destroyEntity(Entity e)
 
 	m_scriptSystem->DeleteComponent(e);
 	m_physicsSystem->DeleteComponent(e);
+	m_collisionSystem->DeleteComponent(e);
 	m_staticMeshSystem->DeleteComponent(e);
 	m_cameraSystem->DeleteComponent(e);
 	m_controllerSystem->DeleteComponent(e);
@@ -205,6 +208,7 @@ Entity BaseWorld::CopyEntity(Entity e)
 
 	m_scriptSystem->CopyComponent(e, newEnt);
 	m_physicsSystem->CopyComponent(e, newEnt);
+	m_collisionSystem->CopyComponent(e, newEnt);
 
 	m_staticMeshSystem->CopyComponent(e, newEnt);
 	m_cameraSystem->CopyComponent(e, newEnt);
@@ -309,6 +313,10 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 				break;
 			case SCRIPT_BYTE: compSize = m_scriptSystem->Deserialize(ent, t_data);
 				break;
+			case PHYSICS_BYTE: compSize = m_physicsSystem->Deserialize(ent, t_data);
+				break;
+			case COLLISION_BYTE: compSize = m_collisionSystem->Deserialize(ent, t_data);
+				break;
 			}
 			t_data += compSize;
 		}
@@ -348,8 +356,8 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 	EnvProbComponent ep_comp;
 	ep_comp.eptex_name = PATH_ENVS;
 	ep_comp.eptex_name += header.env_name;
-	ep_comp.specCube = TEX_NULL;
-	ep_comp.diffCube = TEX_NULL;
+	ep_comp.specCube = TexMgr::nullres;
+	ep_comp.diffCube = TexMgr::nullres;
 	ep_comp.is_distant = true;
 	m_envProbSystem->AddComponent(skyEP, ep_comp);
 	m_envProbSystem->SetActive(skyEP, true);
@@ -436,6 +444,10 @@ bool BaseWorld::saveWorld(string& filename)
 			components += CAMERA_BYTE;
 		if(m_scriptSystem->HasComponent(iterator))
 			components += SCRIPT_BYTE;
+		if(m_physicsSystem->HasComponent(iterator))
+			components += PHYSICS_BYTE;
+		if(m_collisionSystem->HasComponent(iterator))
+			components += COLLISION_BYTE;
 
 		uint32_t comp_count = (uint32_t)components.size();
 		file.write( (char*)&comp_count, sizeof(uint32_t) );
@@ -463,6 +475,10 @@ bool BaseWorld::saveWorld(string& filename)
 			case CAMERA_BYTE: compSize = m_cameraSystem->Serialize(iterator, buffer);
 				break;
 			case SCRIPT_BYTE: compSize = m_scriptSystem->Serialize(iterator, buffer);
+				break;
+			case PHYSICS_BYTE: compSize = m_physicsSystem->Serialize(iterator, buffer);
+				break;
+			case COLLISION_BYTE: compSize = m_collisionSystem->Serialize(iterator, buffer);
 				break;
 			}
 
@@ -497,6 +513,7 @@ World::World() : BaseWorld()
 	m_earlyVisibilitySystem = new EarlyVisibilitySystem(this, ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
 	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, ENTITY_COUNT);
+	m_collisionSystem = new CollisionSystem(this, dynamicsWorld, ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
@@ -590,6 +607,8 @@ void World::Frame()
 		m_scriptSystem->Update(m_dt);
 	}
 
+	m_sceneGraph->Update();
+	
 	m_physicsSystem->UpdateTransformations();
 
 	if( m_mode == StateMode::LIVE )
@@ -597,8 +616,8 @@ void World::Frame()
 		m_physicsSystem->Simulate(m_dt);
 		m_physicsSystem->UpdateSceneGraph();
 	}
-	
-	m_sceneGraph->Update();
+
+	m_collisionSystem->UpdateTransformations();
 
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
@@ -700,6 +719,7 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_visibilitySystem = new VisibilitySystem(this, SMALL_ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
 	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, SMALL_ENTITY_COUNT);
+	m_collisionSystem = new CollisionSystem(this, dynamicsWorld, SMALL_ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
@@ -766,6 +786,8 @@ void SmallWorld::Frame()
 		m_scriptSystem->Update(m_dt);
 	}
 
+	m_sceneGraph->Update();
+
 	m_physicsSystem->UpdateTransformations();
 
 	if( m_mode == StateMode::LIVE )
@@ -773,8 +795,8 @@ void SmallWorld::Frame()
 		m_physicsSystem->Simulate(m_dt);
 		m_physicsSystem->UpdateSceneGraph();
 	}
-	
-	m_sceneGraph->Update();
+
+	m_collisionSystem->UpdateTransformations();
 	
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegToDraw();

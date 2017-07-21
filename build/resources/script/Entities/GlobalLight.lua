@@ -26,9 +26,10 @@ function EntityTypes.GlobalLight:editor_init()
         self.world:SetEntityType(editorEnt, EDITOR_VARS.TYPE)
         self.transformSys:AddComponent(editorEnt)
         self.world.visibility:AddComponent(editorEnt)
-
-        if self.world.staticMesh:AddComponentMesh(editorEnt, "../resources/meshes/editor/pointlight.stm") then
-            self.world.staticMesh:SetMaterial(editorEnt, 0, "../resources/meshes/editor/pointlight.mtb")
+        
+        if self.world.staticMesh:AddComponent(editorEnt) then
+            self.world.staticMesh:SetMesh(editorEnt, PATH.EDITOR_MESHES.. "pointlight.stm")
+            self.world.staticMesh:SetMaterial(editorEnt, 0, PATH.EDITOR_MESHES.. "pointlight.mtb")
             self.transformSys:Attach(editorEnt, self.ent)
             return
         end

@@ -50,7 +50,7 @@ namespace EngineCore
 		bool is_ptr;
 		TextureHandle()
 		{
-			texture = TEX_NULL;
+			texture = TexMgr::nullres;
 			is_ptr = false;
 		}
 	};
@@ -65,13 +65,13 @@ namespace EngineCore
 
 		inline bool HasTechnique(TECHNIQUES tech)
 		{
-			auto sh = (Shader*) ShaderMgr::GetShaderPtr(shaderID);
+			auto sh = (Shader*) ShaderMgr::GetResourcePtr(shaderID);
 			return sh->HasTechnique(tech);
 		}
 
 		inline RENDER_QUEUES GetTechQueue(TECHNIQUES tech = TECHNIQUE_DEFAULT, bool* hasTech = nullptr)
 		{
-			auto sh = (Shader*) ShaderMgr::GetShaderPtr(shaderID);
+			auto sh = (Shader*) ShaderMgr::GetResourcePtr(shaderID);
 			if(!sh)
 				return RENDER_QUEUES::GUI_2D;
 			if(hasTech)
@@ -115,7 +115,7 @@ namespace EngineCore
 		bool SetShader(string shaderName);
 
 		inline string GetName() {return materialName;}
-		inline string GetShaderName() {return ShaderMgr::Get()->GetShaderName(shaderID);}
+		inline string GetShaderName() {return ShaderMgr::Get()->GetName(shaderID);}
 		
 		inline bool IsError() const {return shaderID == SHADER_NULL;}
 

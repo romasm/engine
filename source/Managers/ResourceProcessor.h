@@ -22,8 +22,13 @@ namespace EngineCore
 		COLLISION,
 		SKELETON,
 		ANIMATION,
+		MATERIAL,
+		FONT,
 		SHADER,
+		GUI_SHADER,
+		COMPUTE,
 	};
+
 	enum LoadingStatus
 	{
 		NEW = 0,
@@ -58,7 +63,13 @@ namespace EngineCore
 
 		void AddUpdateJobs();
 
+		void Preload(string& filename, ResourceType type);
+
+		void WaitLoadingComplete();
+
 		inline static ResourceProcessor* Get(){return instance;}
+
+		static void RegLuaFunctions();
 	private:
 		static ResourceProcessor *instance;
 		
@@ -75,7 +86,10 @@ namespace EngineCore
 
 		thread* loader;
 		mutex m_loading;
+		mutex m_complete;
 		condition_variable v_loadingRequest;
+		condition_variable v_loadingComplete;
+		bool loadingComplete;
 		bool loaderRunning;
 	};
 }

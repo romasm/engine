@@ -632,7 +632,7 @@ void VoxelRenderer::ProcessEmittance()
 	}
 }
 
-void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
+void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox)
 {
 	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
@@ -671,10 +671,10 @@ void VoxelRenderer::RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size,
 		auto meshPtr = meshesToRender[level].push_back();
 		auto matixPtr = matrixPerMesh[level].push_back();
 
-		meshPtr->index_count = index_count;
-		meshPtr->vertex_size = vertex_size;
-		meshPtr->index_buffer = index_buffer;
-		meshPtr->vertex_buffer = vertex_buffer;
+		meshPtr->index_count = index.size;
+		meshPtr->vertex_size = MeshLoader::GetVertexSize(format);
+		meshPtr->index_buffer = index.buffer;
+		meshPtr->vertex_buffer = index.buffer;
 		meshPtr->material = material;
 		meshPtr->arrayID = (uint32_t)meshesToRender[level].size() - 1;
 

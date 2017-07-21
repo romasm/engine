@@ -10,7 +10,7 @@ function EntityTypes.Mesh:init(world, ent)
     
     self.staticMeshSys = self.world.staticMesh
 
-    if not self.staticMeshSys:AddComponentMesh(self.ent, "") then
+    if not self.staticMeshSys:AddComponent(self.ent) then
         error("Cant init EntityTypes.Mesh")
         self:Kill()
     end

@@ -445,9 +445,6 @@
     <ClCompile Include="Managers\Loaders\MeshLoader.cpp">
       <Filter>Managers\Loaders</Filter>
     </ClCompile>
-    <ClCompile Include="Managers\BaseMgr.cpp">
-      <Filter>Managers</Filter>
-    </ClCompile>
     <ClCompile Include="Managers\MeshMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>

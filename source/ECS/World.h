@@ -20,6 +20,7 @@
 #include "TypeMgr.h"
 #include "ScriptSystem.h"
 #include "PhysicsSystem.h"
+#include "CollisionSystem.h"
 
 #include "Frustum.h"
 #include "TransformControls.h"
@@ -28,14 +29,16 @@
 #define DEFAULT_ENV "default"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
 
-#define TRANSFORM_BYTE 't'
-#define EARLYVIS_BYTE 'e'
-#define VIS_BYTE 'v'
-#define STATIC_BYTE 's'
-#define LIGHT_BYTE 'l'
-#define GLIGHT_BYTE 'g'
-#define CAMERA_BYTE 'c'
-#define SCRIPT_BYTE 'u'
+#define TRANSFORM_BYTE		't'
+#define EARLYVIS_BYTE		'e'
+#define VIS_BYTE			'v'
+#define STATIC_BYTE			's'
+#define LIGHT_BYTE			'l'
+#define GLIGHT_BYTE			'g'
+#define CAMERA_BYTE			'c'
+#define SCRIPT_BYTE			'u'
+#define PHYSICS_BYTE		'f'
+#define COLLISION_BYTE		'C'
 
 #define SMALL_ENTITY_COUNT 128
 #define SMALL_SCENEGRAPH_SIZE SMALL_ENTITY_COUNT * 4
@@ -151,6 +154,7 @@ namespace EngineCore
 		inline GlobalLightSystem* GetGlobalLightSystem() const {return m_globalLightSystem;}
 		inline ScriptSystem* GetScriptSystem() const {return m_scriptSystem;}
 		inline PhysicsSystem* GetPhysicsSystem() const {return m_physicsSystem;}
+		inline CollisionSystem* GetCollisionSystem() const {return m_collisionSystem;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
 		inline NameMgr* GetNameMgr() const {return m_nameMgr;}
@@ -277,6 +281,7 @@ namespace EngineCore
 					.addProperty("controller", &BaseWorld::GetControllerSystem)
 					.addProperty("script", &BaseWorld::GetScriptSystem)
 					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
+					.addProperty("collision", &BaseWorld::GetCollisionSystem)
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
 					.addProperty("mode", &BaseWorld::GetMode, &BaseWorld::SetMode)
@@ -324,6 +329,7 @@ namespace EngineCore
 		GlobalLightSystem* m_globalLightSystem;
 		ScriptSystem* m_scriptSystem;
 		PhysicsSystem* m_physicsSystem;
+		CollisionSystem* m_collisionSystem;
 
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;

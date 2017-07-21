@@ -26,10 +26,19 @@ void CollisionSystem::UpdateTransformations()
 {
 	for(auto& i: *components.data())
 	{
+		if(!i.dirty)
+			continue;
+
+		if(i.physicsBody)
+		{
+			i.dirty = false;
+			continue;
+		}
+
 		if(!i.dirty || i.physicsBody)
 			continue;
 
-		i.body->setTransform(transformSystem->GetTransformL(i.get_entity()));
+		i.body->setTransform(transformSystem->GetTransformW(i.get_entity()));
 		i.dirty = false;
 	}
 }
@@ -93,7 +102,7 @@ void CollisionSystem::CopyComponent(Entity src, Entity dest)
 
 		if( newHandle.stoarge == CollisionStorageType::RESOURCE )
 		{
-			newHandle.shape = CollisionMgr::GetCollisionPtr(handle.shape);
+			newHandle.shape = nullptr;//CollisionMgr::GetResource(handle.shape);
 
 			if(comp->physicsBody)
 				newHandle.proxy = ((rp3d::RigidBody*)comp->body)->addCollisionShape(newHandle.shape, 
@@ -207,7 +216,7 @@ uint32_t CollisionSystem::Serialize(Entity e, uint8_t* data)
 
 		if( handle.stoarge == CollisionStorageType::RESOURCE )
 		{
-			string collision_name = CollisionMgr::GetName(handle.shape);
+			string collision_name = "";//CollisionMgr::GetName(handle.shape);
 			uint32_t collision_name_size = (uint32_t)collision_name.size();
 
 			*(uint32_t*)t_data = collision_name_size;
@@ -342,7 +351,7 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 			string collision_name((char*)t_data, collision_name_size);
 			t_data += collision_name_size * sizeof(char);
 
-			auto shape = CollisionMgr::GetCollision(collision_name);
+			rp3d::CollisionShape* shape = nullptr;//CollisionMgr::GetResource(collision_name);
 
 			AddShape(*comp, pos, rot, mass, shape, CollisionStorageType::RESOURCE);
 		}

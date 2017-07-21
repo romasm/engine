@@ -239,6 +239,9 @@
     <Compile Include="..\common.lua">
       <Link>common.lua</Link>
     </Compile>
+    <Compile Include="..\const_pathes.lua">
+      <Link>const_pathes.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\BaseEntity.lua">
       <Link>Entities\BaseEntity.lua</Link>
     </Compile>
@@ -322,6 +325,9 @@
     </Compile>
     <Compile Include="..\main.lua">
       <Link>main.lua</Link>
+    </Compile>
+    <Compile Include="..\resource_preloader.lua">
+      <Link>resource_preloader.lua</Link>
     </Compile>
     <Compile Include="..\script_loader.lua">
       <Link>script_loader.lua</Link>

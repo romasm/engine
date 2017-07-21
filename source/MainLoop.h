@@ -136,7 +136,7 @@ public:
 
 			// job update
 			jobSystem->Tick(m_timer.dt_ms);
-			m_resourceProc->Tick(m_timer.dt_ms);
+			m_resourceProc->Tick();
 			
 			PERF_CPU_BEGIN(_LUA_TICK);
 			// Lua

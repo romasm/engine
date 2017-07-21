@@ -25,6 +25,7 @@ ResourceProcessor::ResourceProcessor()
 		postLoadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 
 		loaderRunning = true;
+		loadingComplete = true;
 		loader = new thread(&ResourceProcessor::ThreadMain, &(*this));
 		
 		shaderMgr = new ShaderMgr;
@@ -108,6 +109,7 @@ void ResourceProcessor::ThreadMain()
 			l.unlock();
 		}
 
+		loadingComplete = false;
 		ResourceSlot loadingSlot;
 		while(loadingQueue->pop(loadingSlot))
 		{
@@ -164,6 +166,9 @@ void ResourceProcessor::ThreadMain()
 			if(!postLoadingQueue->push(loadingSlot))
 				WRN("Resource post loading queue overflow!");
 		}
+
+		loadingComplete = true;
+		v_loadingComplete.notify_all();
 	}
 
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
@@ -178,6 +183,19 @@ bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback
 	}
 	v_loadingRequest.notify_one();
 	return true;
+}
+
+// TODO: forever lock? Hacked for unlock after 10 sec
+void ResourceProcessor::WaitLoadingComplete()
+{
+	if( !loadingComplete )
+	{
+		// wait loading compete
+		unique_lock<mutex> l(m_complete);
+		if( v_loadingComplete.wait_for(l, chrono::seconds(10)) == cv_status::timeout )
+			ERR("TODO: Waiting stucked and has been released after 10 sec!");
+		l.unlock();
+	}
 }
 
 void ResourceProcessor::AddUpdateJobs()
@@ -199,148 +217,117 @@ void ResourceProcessor::AddUpdateJobs()
 #endif
 }
 
-// TODO: move preloading managment to Lua
-void ResourceProcessor::Preload()
-{
-	shaderCodeMgr->PreloadPureCodes();
-	shaderMgr->PreloadShaders();
-
-	texMgr->PreloadTextures();
-
-	meshMgr->PreloadStMeshes();
-		
-	fontMgr->PreloadFonts();
-	
-	// force update
-	texMgr->UpdateTextures();
-}
-
-void TexMgr::PreloadTextures()
+void ResourceProcessor::Preload(string& filename, ResourceType type)
 {
 	bool reload = false;
 #ifdef _DEV
 	reload = true;
 #endif
 
-	GetTexture(string(TEX_NOISE2D), reload);
-	GetTexture(string(TEX_PBSENVLUT), reload);
-	GetTexture(string(TEX_SMAA_AREA), reload);
-	GetTexture(string(TEX_SMAA_SEARCH), reload);
-	GetTexture(string(TEX_HBAO_DITHER), reload);
-
-	GetTexture(string(TEX_HAMMERSLEY), reload);
-
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/arrow_down"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/arrow_right"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/maximize"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/minimize"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/move"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/pipet"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/reset"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/restore"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/rotate"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/scale"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/select"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/win_close"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/assign_asset"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/clear_str"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/delete"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/copy_mat"EXT_TEXTURE), reload);
-	GetTexture(string(PATH_SYS_TEXTURES"editor_hud/new_mat"EXT_TEXTURE), reload);
+	switch(type)
+	{
+	case EngineCore::TEXTURE:
+		texMgr->GetResource(filename, reload);
+		break;
+	case EngineCore::MESH:
+		meshMgr->GetResource(filename, reload);
+		break;
+	case EngineCore::COLLISION:
+		break;
+	case EngineCore::SKELETON:
+		break;
+	case EngineCore::ANIMATION:
+		break;
+	case EngineCore::SHADER:
+		shaderMgr->GetResource(filename, false);
+		break;
+	case EngineCore::GUI_SHADER:
+		shaderMgr->GetResource(filename, true);
+		break;
+	case EngineCore::COMPUTE:
+		{
+			auto del = filename.find("@");
+			if( del == string::npos )
+			{
+				ERR("Wrong compute shader path@entry!");
+			}
+			else
+			{
+				string file = filename.substr(0, del);
+				string entry = filename.substr(del + 1);
+				Compute::Preload( file, entry );
+			}
+		}
+		break;
+	case EngineCore::FONT:
+		fontMgr->GetFont(filename);
+		break;
+	case EngineCore::MATERIAL:
+		break;
+	}
 }
 
-#define MAT_MESH PATH_SYS_MESHES "mat_sphere" EXT_STATIC
+// LUA FUNCTIONS
 
-void MeshMgr::PreloadStMeshes()
+uint32_t GetTextureLua(string path)
 {
-	bool reload = false;
-#ifdef _DEV
-	reload = true;
-#endif
-
-	GetStMesh(string(ENV_MESH), reload);
-	GetStMesh(string(MAT_MESH), reload);
+	return RELOADABLE_TEXTURE(path, CONFIG(bool, reload_resources));
 }
 
-void ShaderMgr::PreloadShaders()
+uint32_t GetTextureCallbackLua(string path, LuaRef func, LuaRef self)
 {
-	GetShader(string(SP_MATERIAL_DEPTH_OPAC_DIR), true);
-	GetShader(string(SP_MATERIAL_HBAO), true);
-	GetShader(string(SP_MATERIAL_HBAO_PERPECTIVE_CORRECT), true);
-	GetShader(string(SP_MATERIAL_AO), true);
-	GetShader(string(SP_MATERIAL_HDR), true);
-	GetShader(string(SP_MATERIAL_COMBINE), true);
-	GetShader(string(SP_MATERIAL_HIZ_DEPTH), true);
-	GetShader(string(SP_MATERIAL_OPAQUE_BLUR), true);
-	GetShader(string(SP_MATERIAL_AVGLUM), true);
-	GetShader(string(SP_MATERIAL_BLOOM_FIND), true);
-	GetShader(string(SP_MATERIAL_AA_EDGE), true);
-	GetShader(string(SP_MATERIAL_AA_BLEND), true);
-	GetShader(string(SP_MATERIAL_AA), true);
-	GetShader(string(SP_SHADER_SSR), true);
-
-	GetShader(string(SP_SHADER_SCREENSHOT), true);
-
-	GetShader(string(LG_SHADER), false);
-	GetShader(string(LG_SHADER_SPHERE), false);
-
-	GetShader(string(COMMON_MATERIAL_SHADER_01), false);
-	GetShader(string(COMMON_MATERIAL_SHADER_02), false);
-	GetShader(string(COMMON_MATERIAL_SHADER_03), false);
-
-	GetShader(string(ENVPROBS_MAT), true);
-	GetShader(string(ENVPROBS_MIPS_MAT), true);
-	GetShader(string(ENVPROBS_DIFF_MAT), true);
-
-	GetShader(string(PATH_SHADERS"gui/color"), true);
-	GetShader(string(PATH_SHADERS"gui/font_default"), true);
-	GetShader(string(PATH_SHADERS"gui/group_arrow"), true);
-	GetShader(string(PATH_SHADERS"gui/h_picker"), true);
-	GetShader(string(PATH_SHADERS"gui/rect"), true);
-	GetShader(string(PATH_SHADERS"gui/rect_icon"), true);
-	GetShader(string(PATH_SHADERS"gui/rect_color_icon_alpha"), true);
-	GetShader(string(PATH_SHADERS"gui/rect_icon_bg"), true);
-	GetShader(string(PATH_SHADERS"gui/shadow"), true);
-	GetShader(string(PATH_SHADERS"gui/sv_picker"), true);
-	GetShader(string(PATH_SHADERS"gui/t_picker"), true);
-	GetShader(string(PATH_SHADERS"gui/viewport"), true);
-	GetShader(string(PATH_SHADERS"gui/viewport_2darr"), true);
-	GetShader(string(PATH_SHADERS"gui/viewport_cube"), true);
-
-#ifdef _DEV
-	GetShader(string(DFG_mat), true);
-	GetShader(string(NOISE2D_mat), true);
-#endif
+	return TexMgr::Get()->GetResource(path, CONFIG(bool, reload_resources), 
+		[func, self](uint32_t id, bool status) -> void
+	{
+		if(func.isFunction())
+			func(self, id, status);
+	});
 }
 
-void ShaderCodeMgr::PreloadPureCodes()
+void DropTextureLua(string path)
 {
-	Compute::Preload( COMPUTE_VOXEL_INJECT_LIGHT );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "2" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "4" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "8" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "2" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "4" );
-	Compute::Preload( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "8" );
-	Compute::Preload( SHADER_DEFFERED_OPAQUE_IBL );
-	Compute::Preload( SHADER_DEFFERED_OPAQUE_FULL );	
+	TEXTURE_NAME_DROP(path);
 }
 
-void FontMgr::PreloadFonts()
+void ConvertMeshToEngineFormat(string file)
 {
-	GetFont(string(PATH_FONTS "opensans_light_18px"));
-	GetFont(string(PATH_FONTS "opensans_light_20px"));
-	GetFont(string(PATH_FONTS "opensans_light_25px"));
-	GetFont(string(PATH_FONTS "opensans_light_40px"));
-	GetFont(string(PATH_FONTS "opensans_light_70px"));
-	GetFont(string(PATH_FONTS "opensans_normal_12px"));
-	GetFont(string(PATH_FONTS "opensans_normal_14px"));
-	GetFont(string(PATH_FONTS "opensans_normal_16px"));
-	GetFont(string(PATH_FONTS "opensans_normal_18px"));
-	GetFont(string(PATH_FONTS "opensans_normal_20px"));
-	GetFont(string(PATH_FONTS "opensans_normal_25px"));
-	GetFont(string(PATH_FONTS "opensans_normal_40px"));
-	GetFont(string(PATH_FONTS "opensans_normal_70px"));
+	MeshLoader::ConvertStaticMeshToEngineFormat(file);
+}
+
+Material* GetMaterialLua(string name)
+{
+	return MaterialMgr::Get()->GetMaterial(name);
+}
+
+void DropMaterialLua(string name)
+{
+	MaterialMgr::Get()->DeleteMaterial(name);
+}
+
+void PreloadResource(string filename, uint32_t type)
+{
+	ResourceProcessor::Get()->Preload(filename, ResourceType(type));
+}
+
+void WaitLoadingCompleteLua()
+{
+	ResourceProcessor::Get()->WaitLoadingComplete();
+}
+
+void ResourceProcessor::RegLuaFunctions()
+{
+	getGlobalNamespace(LSTATE)
+		.beginNamespace("Resource")
+		.addFunction("PreloadResource", &PreloadResource)
+		.addFunction("WaitLoadingComplete", &WaitLoadingCompleteLua)
+		.addFunction("GetTexture", &GetTextureLua)
+		.addFunction("GetTextureCallback", &GetTextureCallbackLua)
+		.addFunction("DropTexture", &DropTextureLua)
+		.addFunction("GetMaterial", &GetMaterialLua)
+		.addFunction("DropMaterial", &DropMaterialLua)
+		.addFunction("IsMeshSupported", &TexLoader::IsSupported)
+		.addFunction("IsTextureSupported", &TexLoader::IsSupported)
+
+		.addFunction("ConvertMeshToEngineFormat", &ConvertMeshToEngineFormat)
+		.endNamespace();
 }

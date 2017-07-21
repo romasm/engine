@@ -197,7 +197,7 @@ namespace EngineCore
 		inline static void PSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->PSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		inline static void PSSetShaderTexture(UINT slot, uint32_t texId)
-		{auto tex = TexMgr::GetTexturePtr(texId);
+		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->PSSetShaderResources(slot, 1, &tex);}
 
 		// VS
@@ -210,7 +210,7 @@ namespace EngineCore
 		inline static void VSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->VSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		inline static void VSSetShaderTexture(UINT slot, uint32_t texId)
-		{auto tex = TexMgr::GetTexturePtr(texId);
+		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->VSSetShaderResources(slot, 1, &tex);}
 
 		// HS
@@ -223,7 +223,7 @@ namespace EngineCore
 		inline static void HSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->HSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		inline static void HSSetShaderTexture(UINT slot, uint32_t texId)
-		{auto tex = TexMgr::GetTexturePtr(texId);
+		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->HSSetShaderResources(slot, 1, &tex);}
 
 		// DS
@@ -236,7 +236,7 @@ namespace EngineCore
 		inline static void DSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->DSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		inline static void DSSetShaderTexture(UINT slot, uint32_t texId)
-		{auto tex = TexMgr::GetTexturePtr(texId);
+		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->DSSetShaderResources(slot, 1, &tex);}
 
 		// GS
@@ -249,7 +249,7 @@ namespace EngineCore
 		inline static void GSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->GSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		inline static void GSSetShaderTexture(UINT slot, uint32_t texId)
-		{auto tex = TexMgr::GetTexturePtr(texId);
+		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->GSSetShaderResources(slot, 1, &tex);}
 
 		//CS

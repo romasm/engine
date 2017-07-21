@@ -6,7 +6,7 @@
 
 namespace EngineCore
 {
-	class MeshMgr : public BaseMgr<MeshData>
+	class MeshMgr : public BaseMgr<MeshData, RESOURCE_MAX_COUNT>
 	{
 	public:
 		MeshMgr();
@@ -16,7 +16,7 @@ namespace EngineCore
 	#ifdef _EDITOR
 		inline bool IsJustReloaded(uint32_t id) 
 		{
-			if(id == RESOURCE_NULL)
+			if(id == nullres)
 				return false;
 			bool res = mesh_reloaded[id] > 0;
 			if(res)
@@ -31,6 +31,8 @@ namespace EngineCore
 			return res;
 		}
 	#endif
+
+		inline static MeshMgr* Get(){return (MeshMgr*)BaseMgr<MeshData, RESOURCE_MAX_COUNT>::Get();}
 
 	private:
 

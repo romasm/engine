@@ -1188,5 +1188,5 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targe
 		
 	_RELEASE(paramsBuffer);
 
-	return TexMgr::SaveTexture(path, rt->GetShaderResourceView(0));
+	return TexLoader::SaveTexture(path, rt->GetShaderResourceView(0));
 }

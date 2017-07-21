@@ -33,7 +33,7 @@ void PhysicsSystem::UpdateTransformations()
 
 		Entity e = i.get_entity();
 
-		i.previousTransform = transformSystem->GetTransformL(e);
+		i.previousTransform = transformSystem->GetTransformW(e);
 		i.body->setTransform(i.previousTransform);
 		
 		i.body->setIsSleeping(false);

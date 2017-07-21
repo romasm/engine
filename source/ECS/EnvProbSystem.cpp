@@ -109,13 +109,13 @@ void EnvProbSystem::RegToScene()
 
 void EnvProbSystem::LoadCubemap(EnvProbComponent* comp)
 {
-	if(comp->specCube == TEX_NULL)
+	if(comp->specCube == TexMgr::nullres)
 	{
 		string spec_to_load = comp->eptex_name + ENVPROBS_POSTFIX_S;
 		comp->specCube = RELOADABLE_TEXTURE(spec_to_load, true);
 	}
 	
-	if(comp->diffCube == TEX_NULL && comp->is_distant)
+	if(comp->diffCube == TexMgr::nullres && comp->is_distant)
 	{
 		string diff_to_load = comp->eptex_name + ENVPROBS_POSTFIX_D;
 		comp->diffCube = RELOADABLE_TEXTURE(diff_to_load, true);

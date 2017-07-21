@@ -73,7 +73,7 @@ bool Font::parse(string& filename)
 					str = str.substr(1, Value.length()-2);
 					auto path_ptr = filename.rfind('/');
 					string tex_path = filename.substr(0, path_ptr+1) + str;
-				#ifdef _DEV
+				#ifndef _DEV
 					texture = TEXTURE( tex_path );
 				#else
 					texture = RELOADABLE_TEXTURE( tex_path, true );

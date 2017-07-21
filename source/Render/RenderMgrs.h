@@ -10,6 +10,7 @@
 #include "VoxelRenderer.h"
 #include "ShadowsRenderer.h"
 #include "Entity.h"
+#include "MeshLoader.h"
 
 namespace EngineCore
 {
@@ -130,9 +131,7 @@ namespace EngineCore
 		bool RegMesh(uint32_t index_count, 
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
 			uint32_t vertex_size, Material* material, XMVECTOR center);
-		bool RegMultiMesh(uint32_t* index_count, 
-			ID3D11Buffer** vertex_buffer, ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, RArray<Material*>& material, XMVECTOR center);
+		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center);
 		
 		void UpdateCamera(XMVECTOR pos) {cameraPosition = pos;}
 		
@@ -171,10 +170,8 @@ namespace EngineCore
 		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
 			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
-		bool RegMultiMesh(uint32_t* index_count, ID3D11Buffer** vertex_buffer, 
-			ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer, uint32_t vertex_size, RArray<Material*>& material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMultiMesh(uint32_t* index_count, ID3D11Buffer** vertex_buffer, 
-			ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer, uint32_t vertex_size, RArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 
 		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, UINT mipsCount, CXMMATRIX envRot)
 		{
@@ -267,8 +264,7 @@ namespace EngineCore
 	private:
 		bool regToDraw(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
 			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo);
-		bool regToDraw(uint32_t* index_count, ID3D11Buffer** vertex_buffer, 
-			ID3D11Buffer** index_buffer, ID3D11Buffer* constant_buffer, uint32_t vertex_size, RArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo);
+		bool regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo);
 
 		void cleanRenderArrayHud();
 		void cleanRenderArrayEnvProbs() {skyEP = distEP();}

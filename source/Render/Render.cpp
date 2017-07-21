@@ -20,63 +20,10 @@ namespace EngineCore
 {
 //------------------------------------------------------------------
 	
-	uint32_t GetTextureLua(string path)
-	{
-		return RELOADABLE_TEXTURE(path, true/*todo*/);
-	}
-
-	uint32_t GetTextureCallbackLua(string path, LuaRef func, LuaRef self)
-	{
-		return TexMgr::Get()->GetTexture(path, true/*todo*/, 
-			[func, self](uint32_t id, bool status) -> void
-			{
-				if(func.isFunction())
-					func(self, id, status);
-			});
-	}
-	
-	void DropTextureLua(string path)
-	{
-		TEXTURE_NAME_DROP(path);
-	}
-
-	void ConvertMeshToSTM(string file)
-	{
-		MeshMgr::Get()->SaveSTMFile(file);
-	}
-
-	Material* GetMaterialLua(string name)
-	{
-		return MaterialMgr::Get()->GetMaterial(name);
-	}
-
-	void DropMaterialLua(string name)
-	{
-		MaterialMgr::Get()->DeleteMaterial(name);
-	}
-
-	void PreloadSystemResources()
-	{
-		ResourceProcessor::Get()->Preload();
-	}
-
 	void Render::RegLuaClass()
 	{
 		GlobalColor::RegLuaFunctions();
-
-		getGlobalNamespace(LSTATE)
-			.beginNamespace("Resource")
-				.addFunction("PreloadSystemResources", &PreloadSystemResources)
-				.addFunction("GetTexture", &GetTextureLua)
-				.addFunction("GetTextureCallback", &GetTextureCallbackLua)
-				.addFunction("DropTexture", &DropTextureLua)
-				.addFunction("GetMaterial", &GetMaterialLua)
-				.addFunction("DropMaterial", &DropMaterialLua)
-				.addFunction("IsMeshSupported", &TexLoader::IsSupported)
-				.addFunction("IsTextureSupported", &TexLoader::IsSupported)
-
-				.addFunction("ConvertMeshToSTM", &ConvertMeshToSTM)
-			.endNamespace();
+		ResourceProcessor::RegLuaFunctions();
 	}
 	
 	Render* Render::m_instance = nullptr;

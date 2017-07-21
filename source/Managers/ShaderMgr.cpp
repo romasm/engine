@@ -4,7 +4,7 @@
 
 using namespace EngineCore;
 
-ShaderMgr::ShaderMgr() : BaseMgr<BaseShader>()
+ShaderMgr::ShaderMgr() : BaseMgr<BaseShader, SHADERS_MAX_COUNT>()
 {
 	resType = ResourceType::SHADER;
 }
@@ -14,7 +14,7 @@ uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback 
 	if(free_ids.size() == 0)
 	{
 		ERR("Shader resources amount overflow!");
-		return RESOURCE_NULL;
+		return nullres;
 	}
 
 	uint32_t idx = free_ids.front();

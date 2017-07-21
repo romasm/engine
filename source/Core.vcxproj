@@ -262,7 +262,6 @@
     <ClCompile Include="GUI\Image.cpp" />
     <ClCompile Include="GUI\Text.cpp" />
     <ClCompile Include="Input\Window.cpp" />
-    <ClCompile Include="Managers\BaseMgr.cpp" />
     <ClCompile Include="Managers\FontMgr.cpp" />
     <ClCompile Include="Managers\Loaders\MeshLoader.cpp" />
     <ClCompile Include="Managers\Loaders\TexLoader.cpp" />

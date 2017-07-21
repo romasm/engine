@@ -11,6 +11,7 @@ package.path = script_env.path..'?'..script_env.cpl_ext..';'..
 
 require "class"
 require "script_loader"
+require "const_pathes"
 
 Gui = {}
 Main = {}
@@ -76,13 +77,15 @@ loader.require("App.SceneBrowser")
 
 loader.require("App.Profiler")
 
+loader.require("resource_preloader")
+
 
 function Main:Start()	
     print("Main:Start")  
     
     Main:LoadLocalization()
 
-    Resource.PreloadSystemResources()
+    PreloadList.PreloadResources()
 
     MainWindow:Init()
     History:Init()

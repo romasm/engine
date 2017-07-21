@@ -54,7 +54,7 @@ void MeshLoader::convertMeshToEngineFormat(string& filename, MeshData* mesh, uin
 
 	MeshOnlyHeader header;
 	header.version = MESH_FILE_VERSION;
-	header.materialCount = mesh->vertexBuffers.size();
+	header.materialCount = (uint32_t)mesh->vertexBuffers.size();
 	header.bboxCenter = VECTOR3_CAST(mesh->box.Center);
 	header.bboxExtents = VECTOR3_CAST(mesh->box.Extents);
 	header.vertexFormat = mesh->vertexFormat;
@@ -146,7 +146,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
-		MeshData::mesh_buffer vBuffer;
+		GPUMeshBuffer vBuffer;
 		vBuffer.size = *(uint32_t*)t_data; 
 		t_data += sizeof(uint32_t);
 
@@ -157,7 +157,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 
 		mesh->vertexBuffers.push_back(vBuffer);
 		
-		MeshData::mesh_buffer iBuffer;
+		GPUMeshBuffer iBuffer;
 		iBuffer.size = *(uint32_t*)t_data;
 		t_data += sizeof(uint32_t);
 
@@ -269,7 +269,7 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 		}
 
 		// INDICES
-		MeshData::mesh_buffer iBuffer;
+		GPUMeshBuffer iBuffer;
 
 		iBuffer.size = mesh[i]->mNumFaces * 3;
 
@@ -296,7 +296,7 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 		stmesh->indexBuffers.push_back(iBuffer);
 
 		// VERTICES
-		MeshData::mesh_buffer vBuffer;
+		GPUMeshBuffer vBuffer;
 
 		vBuffer.size = mesh[i]->mNumVertices;
 

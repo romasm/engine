@@ -19,7 +19,7 @@ namespace EngineCore
 
 		// static data
 		uint32_t stmesh;
-		RArray<Material*> materials;
+		DArray<Material*> materials;
 
 		// update on transform
 		XMVECTOR center;
@@ -32,7 +32,7 @@ namespace EngineCore
 			parent = e;
 			dirty = true;
 			cast_shadow = true;
-			stmesh = STMESH_NULL;
+			stmesh = MeshMgr::nullres;
 			constantBuffer = nullptr;
 			center = XMVectorZero();
 		}
@@ -55,29 +55,7 @@ namespace EngineCore
 			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 			return res;
 		}
-		StaticMeshComponent* AddComponent(Entity e, string& mesh)
-		{
-			StaticMeshComponent* res = AddComponent(e);
-			if(!SetMesh(e, mesh))
-				return nullptr;
-			return res;
-		}
-		StaticMeshComponent* AddComponent(Entity e, string& mesh, RArray<string>& mats)
-		{
-			StaticMeshComponent* res = AddComponent(e);
-			if(!SetMeshMats(e, mesh, mats))
-				return nullptr;
-			return res;
-		}
-		void AddComponent(Entity e, StaticMeshComponent D)
-		{
-			D.dirty = true;
-			D.parent = e;
-			if(!D.constantBuffer)
-				D.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
-			visibilitySys->SetBBox(e, MeshMgr::GetStMeshPtr(D.stmesh)->box);
-			components.add(e.index(), D);
-		}
+
 		void CopyComponent(Entity src, Entity dest);
 		void DeleteComponent(Entity e);
 
@@ -107,12 +85,11 @@ namespace EngineCore
 		uint32_t GetMeshID(Entity e);
 		string GetMeshLua(Entity e) {return MeshMgr::GetName(GetMeshID(e));}
 
-		bool SetMaterial(Entity e, int i, string matname);
-		bool SetMeshMats(Entity e, string& mesh, RArray<string>& mats);
+		bool SetMaterial(Entity e, int32_t i, string matname);
 
-		Material* GetMaterial(Entity e, int i);
-		Material* GetMaterialObjectLua(Entity e, int i) {return GetMaterial(e, i);}
-		string GetMaterialLua(Entity e, int i) {return GetMaterial(e, i)->GetName();}
+		Material* GetMaterial(Entity e, int32_t i);
+		Material* GetMaterialObjectLua(Entity e, int32_t i) {return GetMaterial(e, i);}
+		string GetMaterialLua(Entity e, int32_t i) {return GetMaterial(e, i)->GetName();}
 		uint16_t GetMaterialsCount(Entity e);
 
 		XMVECTOR GetCenter(Entity e);
@@ -127,19 +104,12 @@ namespace EngineCore
 			if(AddComponent(e))	return true;
 			else return false;
 		}
-		
-		inline bool _AddComponentMesh(Entity e, string name)
-		{
-			if(AddComponent(e, name))return true;
-			else return false;
-		}
 
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<StaticMeshSystem>("StaticMeshSystem")
 					.addFunction("AddComponent", &StaticMeshSystem::_AddComponent)
-					.addFunction("AddComponentMesh", &StaticMeshSystem::_AddComponentMesh)
 					.addFunction("DeleteComponent", &StaticMeshSystem::DeleteComponent)
 					.addFunction("HasComponent", &StaticMeshSystem::HasComponent)
 					
@@ -158,6 +128,7 @@ namespace EngineCore
 
 	private:
 		inline void destroyMeshData(StaticMeshComponent& comp);
+		bool setMeshMats(StaticMeshComponent* comp, string& mesh, DArray<string>& mats);
 
 		ComponentRArray<StaticMeshComponent> components;
 

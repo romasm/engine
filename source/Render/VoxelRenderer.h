@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Compute.h"
 #include "LightBuffers.h"
+#include "MeshLoader.h"
 
 #define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject", "InjectLightToVolume"
 #define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample", "DownsampleEmittance"
@@ -138,7 +139,7 @@ namespace EngineCore
 		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
 		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
 
-		void RegMeshForVCT(uint32_t& index_count, uint32_t&& vertex_size, ID3D11Buffer* index_buffer, ID3D11Buffer* vertex_buffer, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
+		void RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
 
 		void CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir);
 		inline BoundingOrientedBox& GetBigVolumeBox() {return volumesConfig[clipmapCount - 1].volumeBox;}
