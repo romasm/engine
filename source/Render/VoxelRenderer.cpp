@@ -677,7 +677,7 @@ void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, M
 		meshPtr->index_count = index.size;
 		meshPtr->vertex_size = MeshLoader::GetVertexSize(format);
 		meshPtr->index_buffer = index.buffer;
-		meshPtr->vertex_buffer = index.buffer;
+		meshPtr->vertex_buffer = vertex.buffer;
 		meshPtr->material = material;
 		meshPtr->arrayID = (uint32_t)meshesToRender[level].size() - 1;
 

@@ -207,10 +207,12 @@ Entity BaseWorld::CopyEntity(Entity e)
 		m_earlyVisibilitySystem->CopyComponent(e, newEnt);
 
 	m_scriptSystem->CopyComponent(e, newEnt);
+
+	m_staticMeshSystem->CopyComponent(e, newEnt);
+
 	m_physicsSystem->CopyComponent(e, newEnt);
 	m_collisionSystem->CopyComponent(e, newEnt);
 
-	m_staticMeshSystem->CopyComponent(e, newEnt);
 	m_cameraSystem->CopyComponent(e, newEnt);
 	//m_envProbSystem->CopyComponent(e, newEnt);
 	

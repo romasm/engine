@@ -144,13 +144,13 @@ void PhysicsSystem::CopyComponent(Entity src, Entity dest)
 	res->overwriteMass = comp->overwriteMass;
 	if(comp->overwriteMass)
 	{
-		res->body->setMass(comp->body->getMass()); // to post copy, or will be overwritten in collision system
+		res->body->setMass(comp->body->getMass()); // TODO: to post copy, or will be overwritten in collision system
 	}
 
 	res->overwriteCenterOfMass = comp->overwriteCenterOfMass;
 	if(comp->overwriteCenterOfMass)
 	{
-		res->body->setCenterOfMassLocal(comp->body->getCenterOfMassLocal()); // to post copy
+		res->body->setCenterOfMassLocal(comp->body->getCenterOfMassLocal()); // TODO: to post copy
 	}
 }
 

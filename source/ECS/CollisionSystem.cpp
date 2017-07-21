@@ -104,11 +104,11 @@ void CollisionSystem::CopyComponent(Entity src, Entity dest)
 		{
 			newHandle.shape = nullptr;//CollisionMgr::GetResource(handle.shape);
 
-			if(comp->physicsBody)
-				newHandle.proxy = ((rp3d::RigidBody*)comp->body)->addCollisionShape(newHandle.shape, 
+			if(res->physicsBody)
+				newHandle.proxy = ((rp3d::RigidBody*)res->body)->addCollisionShape(newHandle.shape, 
 					handle.proxy->getLocalToBodyTransform(), handle.proxy->getMass());
 			else
-				newHandle.proxy = comp->body->addCollisionShape(newHandle.shape, 
+				newHandle.proxy = res->body->addCollisionShape(newHandle.shape, 
 					handle.proxy->getLocalToBodyTransform());
 		}
 		else
@@ -152,10 +152,10 @@ void CollisionSystem::CopyComponent(Entity src, Entity dest)
 			}			 
 			
 			if(comp->physicsBody)
-				newHandle.proxy = ((rp3d::RigidBody*)comp->body)->addCollisionShape(newHandle.shape, 
+				newHandle.proxy = ((rp3d::RigidBody*)res->body)->addCollisionShape(newHandle.shape, 
 					handle.proxy->getLocalToBodyTransform(), handle.proxy->getMass());
 			else
-				newHandle.proxy = comp->body->addCollisionShape(newHandle.shape, 
+				newHandle.proxy = res->body->addCollisionShape(newHandle.shape, 
 					handle.proxy->getLocalToBodyTransform());
 		}
 	}
