@@ -6,6 +6,7 @@
 
 #define EXT_MATERIAL ".mtb"
 #define EXT_STATIC ".stm"
+#define EXT_COLLISION ".clm"
 #define EXT_TEXTURE ".dds"
 #define EXT_RESOURCE ".rsc"
 #define EXT_CONFIG ".cfg"
@@ -43,6 +44,7 @@
 #define PATH_SHADER_NULL PATH_SHADERS "system/null_shader"
 
 #define PATH_STMESH_NULL PATH_SYS_MESHES "null_mesh" EXT_STATIC
+#define PATH_COLLISION_NULL PATH_SYS_MESHES "null_collision" EXT_COLLISION
 
 #define PATH_RU_LOCAL PATH_RSC "localization/ru" EXT_RESOURCE
 #define PATH_EN_LOCAL PATH_RSC "localization/en" EXT_RESOURCE

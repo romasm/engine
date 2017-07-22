@@ -276,6 +276,12 @@
     <ClInclude Include="Managers\MeshMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="Managers\Loaders\CollisionLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\CollisionMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -447,6 +453,9 @@
     </ClCompile>
     <ClCompile Include="Managers\MeshMgr.cpp">
       <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\Loaders\CollisionLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

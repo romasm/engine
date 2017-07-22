@@ -45,7 +45,7 @@ namespace EngineCore
 		}
 	};
 
-	struct MeshOnlyHeader
+	struct MeshFileHeader
 	{
 		uint32_t version;
 
@@ -67,7 +67,7 @@ namespace EngineCore
 		void ConvertStaticMeshToEngineFormat(string& filename);
 		bool IsSupported(string filename);
 
-		void convertMeshToEngineFormat(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
+		void saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
 
 		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal);
 		MeshData* loadNoNativeMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal, bool onlyConvert = false);

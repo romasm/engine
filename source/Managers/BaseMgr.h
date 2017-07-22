@@ -34,6 +34,8 @@ namespace EngineCore
 
 		inline static bool IsNull(DataType* resource) {return resource == instance->null_resource;}
 		
+		void DefferedDeallocate();
+
 		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
 		void CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status);
 		void OnLoad(uint32_t id, DataType* data);
@@ -71,6 +73,8 @@ namespace EngineCore
 		
 		SArray<ResourceHandle, MaxCount> resource_array;
 		SDeque<uint32_t, MaxCount> free_ids;
+
+		DArray<DataType*> deallocationQueue;
 	};
 
 	// for VS2015 include this in BaseMgr
@@ -98,7 +102,10 @@ namespace EngineCore
 			free_ids.resize(MaxCount);
 			for(uint32_t i = 0; i < MaxCount; i++)
 				free_ids[i] = i;
-			resource_map.reserve( MaxCount / 16 );
+
+			uint32_t smallSize = max<uint32_t>( MaxCount / 16, 16 );
+			resource_map.reserve( smallSize );
+			deallocationQueue.reserve( smallSize );
 
 			null_resource = nullptr;
 			null_name = "";
@@ -112,6 +119,8 @@ namespace EngineCore
 	template<typename DataType, uint32_t MaxCount>
 	BaseMgr<DataType, MaxCount>::~BaseMgr()
 	{
+		DefferedDeallocate();
+
 		for(uint32_t i=0; i<MaxCount; i++)
 		{
 			ResourceDeallocate(resource_array[i].resource);
@@ -121,6 +130,16 @@ namespace EngineCore
 		null_name.clear();
 
 		instance = nullptr;
+	}
+
+	template<typename DataType, uint32_t MaxCount>
+	void BaseMgr<DataType, MaxCount>::DefferedDeallocate()
+	{
+		for(auto& data: deallocationQueue)
+		{
+			ResourceDeallocate(data);
+		}
+		deallocationQueue.resize(0);
 	}
 
 	template<typename DataType, uint32_t MaxCount>
@@ -269,7 +288,7 @@ namespace EngineCore
 		auto oldResource = handle.resource;
 		handle.resource = data;
 		if(oldResource != null_resource)
-			ResourceDeallocate(oldResource);
+			deallocationQueue.push_back(oldResource);
 	}
 
 	template<typename DataType, uint32_t MaxCount>

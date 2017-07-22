@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "TransformSystem.h"
 #include "PhysicsSystem.h"
+#include "CollisionMgr.h"
 
 #define COLLISION_RESOURCE_NULL 0
 
@@ -35,7 +36,7 @@ namespace EngineCore
 		rp3d::CollisionBody* body;
 		bool physicsBody;
 		
-		// TODO: use resource IDs
+		uint32_t resourceId;
 		DArray<CollisionHandle> shapes;
 
 		CollisionComponent()
@@ -43,6 +44,7 @@ namespace EngineCore
 			body = nullptr;
 			dirty = false;
 			physicsBody = false;
+			resourceId = CollisionMgr::nullres;
 		}
 	};
 
@@ -85,6 +87,8 @@ namespace EngineCore
 		int32_t AddCylinderCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height, float margin);
 		int32_t AddCapsuleCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
 
+		int32_t AddConvexCollision(Entity e, string filename);
+
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass();
@@ -116,17 +120,19 @@ namespace EngineCore
 			}
 			comp->body = nullptr;
 
+			if( comp->resourceId != CollisionMgr::nullres )
+			{
+				CollisionMgr::Get()->DeleteResource(comp->resourceId);
+				comp->resourceId = CollisionMgr::nullres;
+			}
+
 			for(auto& handle: comp->shapes)
 			{
 				if( handle.stoarge == CollisionStorageType::RESOURCE )
-				{
-					// TODO
-					ERR("TODO: Remove collision shape from resource mgr!");
-				}
+					handle.shape = nullptr;
 				else
-				{
 					_DELETE(handle.shape);
-				}
+
 				handle.proxy = nullptr;
 			}
 			comp->shapes.destroy();

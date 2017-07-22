@@ -77,5 +77,7 @@ void ShaderMgr::CheckForReload()
 		OnLoad(it->second, newShader);
 		it++;
 	}
+
+	DefferedDeallocate();
 }
 #endif

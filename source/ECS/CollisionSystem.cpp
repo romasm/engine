@@ -54,6 +54,7 @@ CollisionComponent* CollisionSystem::AddComponent(Entity e)
 	CollisionComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
+	res->resourceId = CollisionMgr::nullres;
 
 	auto physicsComp = physicsSystem->GetComponent(e);
 		
@@ -95,14 +96,33 @@ void CollisionSystem::CopyComponent(Entity src, Entity dest)
 
 	res->body->setIsActive(comp->body->isActive());
 
+	CollisionData* collisionRes = nullptr;
+
+	if( comp->resourceId != CollisionMgr::nullres )
+	{
+		auto collisionName = CollisionMgr::GetName(comp->resourceId);
+		res->resourceId = CollisionMgr::Get()->GetResource(collisionName);
+		collisionRes = CollisionMgr::GetResourcePtr(res->resourceId);
+	}
+
+	uint32_t hullId = 0;
 	for(auto& handle: comp->shapes)
 	{
 		auto& newHandle = res->shapes.push_back();
 		newHandle.stoarge = handle.stoarge;
+		newHandle.proxy = nullptr;
+		newHandle.shape = nullptr;
 
 		if( newHandle.stoarge == CollisionStorageType::RESOURCE )
 		{
-			newHandle.shape = nullptr;//CollisionMgr::GetResource(handle.shape);
+			if( !collisionRes || hullId >= collisionRes->hulls.size() )
+			{
+				ERR("Collision resource is corrupted!");
+				continue;
+			}
+
+			newHandle.shape = collisionRes->hulls[hullId].collider;
+			hullId++;
 
 			if(res->physicsBody)
 				newHandle.proxy = ((rp3d::RigidBody*)res->body)->addCollisionShape(newHandle.shape, 
@@ -199,103 +219,104 @@ uint32_t CollisionSystem::Serialize(Entity e, uint8_t* data)
 	*(uint32_t*)t_data = shapesCount;
 	t_data += sizeof(uint32_t);
 
+	string collision_name = CollisionMgr::GetName(comp.resourceId);
+	uint32_t collision_name_size = (uint32_t)collision_name.size();
+
+	*(uint32_t*)t_data = collision_name_size;
+	t_data += sizeof(uint32_t);
+
+	if( collision_name_size != 0 )
+	{
+		memcpy_s(t_data, collision_name_size, collision_name.data(), collision_name_size);
+		t_data += collision_name_size * sizeof(char);
+	}
+
 	for(auto& handle: comp.shapes)
 	{
 		*(uint8_t*)t_data = (uint8_t)handle.stoarge;
 		t_data += sizeof(uint8_t);
 
+		if( handle.stoarge == CollisionStorageType::RESOURCE )
+			continue;
+		
 		*(float*)t_data = (float)handle.proxy->getMass();
 		t_data += sizeof(float);
 
 		auto& transform = handle.proxy->getLocalToBodyTransform();
 		*(Vector3*)t_data = transform.getPosition();
 		t_data += sizeof(Vector3);
-		
+
 		*(Quaternion*)t_data = transform.getOrientation();
 		t_data += sizeof(Quaternion);
 
-		if( handle.stoarge == CollisionStorageType::RESOURCE )
+		const rp3d::CollisionShapeType shapeType = handle.shape->getType();
+
+		*(uint8_t*)t_data = (uint8_t)shapeType;
+		t_data += sizeof(uint8_t);
+
+		switch (shapeType)
 		{
-			string collision_name = "";//CollisionMgr::GetName(handle.shape);
-			uint32_t collision_name_size = (uint32_t)collision_name.size();
-
-			*(uint32_t*)t_data = collision_name_size;
-			t_data += sizeof(uint32_t);
-
-			memcpy_s(t_data, collision_name_size, collision_name.data(), collision_name_size);
-			t_data += collision_name_size * sizeof(char);
-		}
-		else
-		{
-			const rp3d::CollisionShapeType shapeType = handle.shape->getType();
-
-			*(uint8_t*)t_data = (uint8_t)shapeType;
-			t_data += sizeof(uint8_t);
-
-			switch (shapeType)
+		case rp3d::CollisionShapeType::BOX:
 			{
-			case rp3d::CollisionShapeType::BOX:
-				{
-					rp3d::BoxShape* shape = (rp3d::BoxShape*)handle.shape;
-					
-					*(Vector3*)t_data = (Vector3)shape->getExtent();
-					t_data += sizeof(Vector3);
+				rp3d::BoxShape* shape = (rp3d::BoxShape*)handle.shape;
 
-					*(float*)t_data = (float)shape->getMargin();
-					t_data += sizeof(float);
-				}
-				break;
-			case rp3d::CollisionShapeType::SPHERE:
-				{
-					rp3d::SphereShape* shape = (rp3d::SphereShape*)handle.shape;
+				*(Vector3*)t_data = (Vector3)shape->getExtent();
+				t_data += sizeof(Vector3);
 
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-				}
-				break;
-			case rp3d::CollisionShapeType::CONE:
-				{
-					rp3d::ConeShape* shape = (rp3d::ConeShape*)handle.shape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-
-					*(float*)t_data = (float)shape->getHeight();
-					t_data += sizeof(float);
-
-					*(float*)t_data = (float)shape->getMargin();
-					t_data += sizeof(float);
-				}
-				break;
-			case rp3d::CollisionShapeType::CYLINDER:
-				{
-					rp3d::CylinderShape* shape = (rp3d::CylinderShape*)handle.shape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-
-					*(float*)t_data = (float)shape->getHeight();
-					t_data += sizeof(float);
-
-					*(float*)t_data = (float)shape->getMargin();
-					t_data += sizeof(float);
-				}
-				break;
-			case rp3d::CollisionShapeType::CAPSULE:
-				{
-					rp3d::CapsuleShape* shape = (rp3d::CapsuleShape*)handle.shape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-
-					*(float*)t_data = (float)shape->getHeight();
-					t_data += sizeof(float);
-				}
-				break;
-			default:
-				ERR("Wrong type of collision shape: %i", (int32_t)shapeType);
-				break;
+				*(float*)t_data = (float)shape->getMargin();
+				t_data += sizeof(float);
 			}
+			break;
+		case rp3d::CollisionShapeType::SPHERE:
+			{
+				rp3d::SphereShape* shape = (rp3d::SphereShape*)handle.shape;
+
+				*(float*)t_data = (float)shape->getRadius();
+				t_data += sizeof(float);
+			}
+			break;
+		case rp3d::CollisionShapeType::CONE:
+			{
+				rp3d::ConeShape* shape = (rp3d::ConeShape*)handle.shape;
+
+				*(float*)t_data = (float)shape->getRadius();
+				t_data += sizeof(float);
+
+				*(float*)t_data = (float)shape->getHeight();
+				t_data += sizeof(float);
+
+				*(float*)t_data = (float)shape->getMargin();
+				t_data += sizeof(float);
+			}
+			break;
+		case rp3d::CollisionShapeType::CYLINDER:
+			{
+				rp3d::CylinderShape* shape = (rp3d::CylinderShape*)handle.shape;
+
+				*(float*)t_data = (float)shape->getRadius();
+				t_data += sizeof(float);
+
+				*(float*)t_data = (float)shape->getHeight();
+				t_data += sizeof(float);
+
+				*(float*)t_data = (float)shape->getMargin();
+				t_data += sizeof(float);
+			}
+			break;
+		case rp3d::CollisionShapeType::CAPSULE:
+			{
+				rp3d::CapsuleShape* shape = (rp3d::CapsuleShape*)handle.shape;
+
+				*(float*)t_data = (float)shape->getRadius();
+				t_data += sizeof(float);
+
+				*(float*)t_data = (float)shape->getHeight();
+				t_data += sizeof(float);
+			}
+			break;
+		default:
+			ERR("Wrong type of collision shape: %i", (int32_t)shapeType);
+			break;
 		}
 	}
 
@@ -329,34 +350,40 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 	uint32_t shapesCount = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 
+	uint32_t collision_name_size = *(uint32_t*)t_data;
+	t_data += sizeof(uint32_t);
+
+	string collision_name((char*)t_data, collision_name_size);
+	t_data += collision_name_size * sizeof(char);
+
+	comp->resourceId = CollisionMgr::Get()->GetResource(collision_name);
+	CollisionData* collisionRes = nullptr;
+	if( comp->resourceId != CollisionMgr::nullres )
+		collisionRes = CollisionMgr::GetResourcePtr(comp->resourceId);
+
 	for(uint32_t i = 0; i < shapesCount; i++)
 	{
 		CollisionStorageType stoarge = (CollisionStorageType)(*(uint8_t*)t_data);
 		t_data += sizeof(uint8_t);
 
-		float mass = *(float*)t_data;
-		t_data += sizeof(float);
-
-		Vector3 pos = *(Vector3*)t_data;
-		t_data += sizeof(Vector3);
-
-		Quaternion rot = *(Quaternion*)t_data;
-		t_data += sizeof(Quaternion);
-
 		if( stoarge == CollisionStorageType::RESOURCE )
 		{
-			uint32_t collision_name_size = *(uint32_t*)t_data;
-			t_data += sizeof(uint32_t);
-
-			string collision_name((char*)t_data, collision_name_size);
-			t_data += collision_name_size * sizeof(char);
-
-			rp3d::CollisionShape* shape = nullptr;//CollisionMgr::GetResource(collision_name);
+			// TODO
+			rp3d::CollisionShape* shape = CollisionMgr::GetResource(collision_name);
 
 			AddShape(*comp, pos, rot, mass, shape, CollisionStorageType::RESOURCE);
 		}
 		else
 		{
+			float mass = *(float*)t_data;
+			t_data += sizeof(float);
+
+			Vector3 pos = *(Vector3*)t_data;
+			t_data += sizeof(Vector3);
+
+			Quaternion rot = *(Quaternion*)t_data;
+			t_data += sizeof(Quaternion);
+
 			rp3d::CollisionShapeType shapeType = (rp3d::CollisionShapeType)(*(uint8_t*)t_data);
 			t_data += sizeof(uint8_t);
 

@@ -188,7 +188,9 @@
     <ClInclude Include="Input\Window.h" />
     <ClInclude Include="MainLoop.h" />
     <ClInclude Include="Managers\BaseMgr.h" />
+    <ClInclude Include="Managers\CollisionMgr.h" />
     <ClInclude Include="Managers\FontMgr.h" />
+    <ClInclude Include="Managers\Loaders\CollisionLoader.h" />
     <ClInclude Include="Managers\Loaders\MeshLoader.h" />
     <ClInclude Include="Managers\Loaders\TexLoader.h" />
     <ClInclude Include="Managers\MaterialMgr.h" />
@@ -263,6 +265,7 @@
     <ClCompile Include="GUI\Text.cpp" />
     <ClCompile Include="Input\Window.cpp" />
     <ClCompile Include="Managers\FontMgr.cpp" />
+    <ClCompile Include="Managers\Loaders\CollisionLoader.cpp" />
     <ClCompile Include="Managers\Loaders\MeshLoader.cpp" />
     <ClCompile Include="Managers\Loaders\TexLoader.cpp" />
     <ClCompile Include="Managers\MaterialMgr.cpp" />

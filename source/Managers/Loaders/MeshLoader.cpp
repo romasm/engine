@@ -30,9 +30,26 @@ MeshData* MeshLoader::LoadStaticMeshFromMemory(string& resName, uint8_t* data, u
 {
 	MeshData* newMesh;
 	if(resName.find(EXT_STATIC) != string::npos)
+	{
 		newMesh = loadEngineMeshFromMemory( resName, data, size, false );
+
+#ifdef _EDITOR
+		if(!newMesh)
+		{
+			string fbxMesh = resName.substr(0, resName.find(EXT_STATIC)) + ".fbx";
+			if( FileIO::IsExist(fbxMesh) )
+			{
+				LOG("Trying to reimport mesh %s \n App restart may be needed!", fbxMesh.c_str());
+				ConvertStaticMeshToEngineFormat(fbxMesh);
+			}
+		}
+#endif
+
+	}
 	else
+	{
 		newMesh = loadNoNativeMeshFromMemory( resName, data, size, false );
+	}
 
 	return newMesh;
 }
@@ -48,11 +65,11 @@ void MeshLoader::ConvertStaticMeshToEngineFormat(string& filename)
 	_DELETE_ARRAY(data);
 }
 
-void MeshLoader::convertMeshToEngineFormat(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
+void MeshLoader::saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
 {
 	string stm_file = filename.substr(0, filename.rfind('.')) + EXT_STATIC;
 
-	MeshOnlyHeader header;
+	MeshFileHeader header;
 	header.version = MESH_FILE_VERSION;
 	header.materialCount = (uint32_t)mesh->vertexBuffers.size();
 	header.bboxCenter = VECTOR3_CAST(mesh->box.Center);
@@ -62,7 +79,7 @@ void MeshLoader::convertMeshToEngineFormat(string& filename, MeshData* mesh, uin
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
 
 	// calc file size
-	uint32_t file_size = sizeof(MeshOnlyHeader);
+	uint32_t file_size = sizeof(MeshFileHeader);
 	for(uint16_t i = 0; i < header.materialCount; i++)
 	{
 		file_size += sizeof(uint32_t) + sizeof(uint32_t);
@@ -73,8 +90,8 @@ void MeshLoader::convertMeshToEngineFormat(string& filename, MeshData* mesh, uin
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
 	uint8_t* t_data = data.get();
 
-	*(MeshOnlyHeader*)t_data = header;
-	t_data += sizeof(MeshOnlyHeader);
+	*(MeshFileHeader*)t_data = header;
+	t_data += sizeof(MeshFileHeader);
 
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
@@ -112,21 +129,12 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 
 	uint8_t* t_data = data;
 
-	MeshOnlyHeader header(*(MeshOnlyHeader*)t_data);
-	t_data += sizeof(MeshOnlyHeader);
+	MeshFileHeader header(*(MeshFileHeader*)t_data);
+	t_data += sizeof(MeshFileHeader);
 
 	if( header.version != MESH_FILE_VERSION )
 	{
 		ERR("Mesh %s has wrong version!", filename.c_str());
-
-#ifdef _EDITOR
-		string fbxMesh = filename.substr(0, filename.find(EXT_STATIC)) + ".fbx";
-		if( FileIO::IsExist(fbxMesh) )
-		{
-			LOG("Trying to reimport mesh %s, restart needed!", fbxMesh.c_str());
-			ConvertStaticMeshToEngineFormat(fbxMesh);
-		}
-#endif
 		return nullptr;
 	}
 
@@ -346,7 +354,7 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 	stmesh->box = BoundingBox(center, extents);
 
 	if(convert)
-		convertMeshToEngineFormat(filename, stmesh, indices, vertices);
+		saveEngineMesh(filename, stmesh, indices, vertices);
 
 	for(uint32_t i = 0; i < matCount; i++)
 	{

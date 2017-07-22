@@ -169,6 +169,10 @@ void ResourceProcessor::ThreadMain()
 
 		loadingComplete = true;
 		v_loadingComplete.notify_all();
+
+		// Deallocate old data
+		texMgr->DefferedDeallocate();
+		meshMgr->DefferedDeallocate();
 	}
 
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
