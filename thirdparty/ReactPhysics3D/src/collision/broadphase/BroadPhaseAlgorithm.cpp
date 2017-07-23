@@ -109,7 +109,8 @@ void BroadPhaseAlgorithm::removeMovedCollisionShape(int broadPhaseID) {
         if (mMovedShapes[i] == broadPhaseID) {
             mMovedShapes[i] = -1;
             mNbNonUsedMovedShapes++;
-            break;
+            // break;
+			// MODIF: mMovedShapes may consist multiple same broadPhaseID
         }
     }
 }

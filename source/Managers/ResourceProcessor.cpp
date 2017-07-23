@@ -7,9 +7,11 @@
 #include "ShaderCodeMgr.h"
 #include "ShaderMgr.h"
 #include "MeshMgr.h"
+#include "CollisionMgr.h"
 #include "TexMgr.h"
 #include "TexLoader.h"
 #include "MeshLoader.h"
+#include "CollisionLoader.h"
 
 using namespace EngineCore;
 
@@ -35,6 +37,7 @@ ResourceProcessor::ResourceProcessor()
 		texMgr = new TexMgr;
 		materialMgr = new MaterialMgr;
 		meshMgr = new MeshMgr;
+		collisionMgr = new CollisionMgr;
 	}
 	else
 		ERR("Only one instance of ResourceProcessor is allowed!");
@@ -58,7 +61,8 @@ ResourceProcessor::~ResourceProcessor()
 
 	_DELETE(worldMgr);
 	_DELETE(fontMgr);
-	_DELETE(meshMgr);		
+	_DELETE(meshMgr);	
+	_DELETE(collisionMgr);		
 	_DELETE(materialMgr);
 	_DELETE(shaderMgr);
 	_DELETE(texMgr);
@@ -88,6 +92,10 @@ void ResourceProcessor::Tick()
 
 		case ResourceType::MESH:
 			meshMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
+			break;
+
+		case ResourceType::COLLISION:
+			collisionMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
 			break;
 
 		default:
@@ -155,6 +163,25 @@ void ResourceProcessor::ThreadMain()
 				}
 				break;
 
+			case ResourceType::COLLISION:
+				{
+					string& fileName = collisionMgr->GetName(loadingSlot.id);
+					uint32_t size = 0;
+					uint8_t* data = FileIO::ReadFileData(fileName, &size);
+					if(data)
+					{
+						auto loadedData = CollisionLoader::LoadCollisionFromMemory(fileName, data, size);
+						_DELETE_ARRAY(data);
+
+						if(loadedData)
+						{
+							collisionMgr->OnLoad(loadingSlot.id, loadedData);
+							loadingSlot.status = LOADED;
+						}
+					}
+				}
+				break;
+
 			case ResourceType::SHADER:
 				ERR("TODO: Move shader & shader code loading\\compiling in ResourceProcessor");
 				break;
@@ -173,6 +200,7 @@ void ResourceProcessor::ThreadMain()
 		// Deallocate old data
 		texMgr->DefferedDeallocate();
 		meshMgr->DefferedDeallocate();
+		collisionMgr->DefferedDeallocate();
 	}
 
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());

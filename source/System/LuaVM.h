@@ -5,6 +5,7 @@
 namespace EngineCore
 {
 #define LSTATE LuaVM::Get()->GetState()
+#define LUANIL *LuaVM::nullLuaPtr
 
 	class LuaVM
 	{
@@ -18,8 +19,10 @@ namespace EngineCore
 
 		inline static LuaVM* Get(){return m_instance;}
 
+		static LuaRef* nullLuaPtr;
+
 	private:
-		static LuaVM *m_instance;
+		static LuaVM* m_instance;
 
 		void RegLuaToolClass();
 

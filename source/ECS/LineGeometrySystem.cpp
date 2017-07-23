@@ -187,12 +187,6 @@ void LineGeometrySystem::DestroyGeometry(LineGeometryComponent* comp, bool delet
 	if(!comp.indexBuffer)return false;\
 	return true;
 
-#define UPD_BUFS \
-	Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); return true;
-
-#define INIT_MAT \
-	comp.material = MATERIAL_S(LG_MAT);
-
 bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 {
 	GET_COMPONENT(false)
@@ -204,7 +198,8 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 
 	if(comp.type == LG_LINE && comp.vertexBuffer)
 	{
-		UPD_BUFS
+		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		return true;
 	}
 	else
 	{
@@ -214,7 +209,8 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 		const UINT index_count = 2;
 		const unsigned long indices[index_count] = {0,1};
 
-		INIT_MAT
+		comp.material = MATERIAL_S(LG_MAT);
+
 		INIT_BUFS
 	}
 }
@@ -247,12 +243,13 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingBox box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		UPD_BUFS
+		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		return true;
 	}
 	else
 	{
 		INIT_BOX
-		INIT_MAT
+		comp.material = MATERIAL_S(LG_MAT);
 		INIT_BUFS
 	}	
 }
@@ -265,12 +262,13 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingOrientedBox box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		UPD_BUFS
+		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		return true;
 	}
 	else
 	{
 		INIT_BOX
-		INIT_MAT
+		comp.material = MATERIAL_S(LG_MAT);
 		INIT_BUFS
 	}	
 }
@@ -283,12 +281,13 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingFrustum box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		UPD_BUFS
+		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		return true;
 	}
 	else
 	{
 		INIT_BOX
-		INIT_MAT
+		comp.material = MATERIAL_S(LG_MAT);
 		INIT_BUFS
 	}	
 }
@@ -309,14 +308,15 @@ bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, UINT size)
 	if(comp.type == LG_SPLINE && comp.vertexBuffer)
 	{
 		comp.index_count = index_count;
-		UPD_BUFS
+		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		return true;
 	}
 	else
 	{
 		DestroyGeometry(&comp, false);
 		comp.type = LG_SPLINE;
 
-		INIT_MAT
+		comp.material = MATERIAL_S(LG_MAT);
 
 		unsigned long indices[LG_SPLINE_MAX];
 		for(UINT i=0; i<LG_SPLINE_MAX; i+=2)
@@ -362,7 +362,7 @@ bool LineGeometrySystem::SetPoint(Entity e)
 	vertices[4].pos = Vector3(0.0f,0.0f,LG_POINT_SIZE);
 	vertices[5].pos = Vector3(0.0f,0.0f,-LG_POINT_SIZE);
 
-	INIT_MAT
+	comp.material = MATERIAL_S(LG_MAT);
 	INIT_BUFS
 }
 

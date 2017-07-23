@@ -374,5 +374,28 @@ return GuiRect({
             end,
         },
     }),
+
+    GuiCheck({
+        styles = {GuiStyles.rendercfg_check,},
+        top = 157,
+        left = 220,
+        text = { str = "Draw collision hulls" },
+        alt = "Visualisation of collision convex hulls",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
+                Viewport:SetCollisionDraw(true)
+                return true
+            end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
+                Viewport:SetCollisionDraw(false)
+                return true
+            end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) 
+                self:SetCheck( Viewport.collisionDraw )
+                return true
+            end,
+        },
+    }),
 })
 end

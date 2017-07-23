@@ -1,6 +1,7 @@
 EXT = {
     MATERIAL = ".mtb",
     MESH = ".stm",
+    COLLISION = ".clm",
     TEXTURE = ".dds",
     RESOURCE = ".rsc",
     CONFIG = ".cfg",

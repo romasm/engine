@@ -171,8 +171,6 @@ void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 
 	newComp->dirty = true;
 	visibilitySys->SetBBox(dest, meshPtr->box);
-
-	newComp->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 	
 	auto matCount = meshPtr->vertexBuffers.size();
 	newComp->materials.reserve(matCount);
@@ -299,8 +297,19 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 	if(idx == components.capacity())
 		return false;
 	auto comp = &components.getDataByArrayIdx(idx);
-	
-	return setMesh(comp, mesh);
+
+	return setMesh(comp, mesh, LUANIL);
+}
+
+bool StaticMeshSystem::SetMeshAndCallback(Entity e, string mesh, LuaRef func)
+{
+	size_t idx = components.getArrayIdx(e.index());
+	if(idx == components.capacity())
+		return false;
+	auto comp = &components.getDataByArrayIdx(idx);
+
+	LuaRef nullLuaPtr(LSTATE);
+	return setMesh(comp, mesh, func);
 }
 
 bool StaticMeshSystem::SetMaterial(Entity e, int32_t i, string matname)
@@ -322,7 +331,7 @@ bool StaticMeshSystem::SetMaterial(Entity e, int32_t i, string matname)
 	return true;
 }
 
-bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh)
+bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef func)
 {
 	auto oldMesh = comp->stmesh;
 
@@ -330,9 +339,9 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh)
 	auto worldPtr = world;
 	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
 
-		[comp, visSys, worldPtr](uint32_t id, bool status) -> void
+		[comp, visSys, worldPtr, func](uint32_t id, bool status) -> void
 	{
-		auto meshPtr = MeshMgr::GetResourcePtr(comp->stmesh);
+		auto meshPtr = MeshMgr::GetResourcePtr(id);
 		if(!meshPtr)
 			return;
 
@@ -349,35 +358,38 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh)
 
 		auto oldMatCount = comp->materials.size();
 		auto newMatCount = meshPtr->vertexBuffers.size();
-		if(newMatCount == oldMatCount)
-			return;
-
-		DArray<Material*> temp_materials;
-		temp_materials.reserve(newMatCount);
-		temp_materials.resize(newMatCount);
-
-		if(newMatCount < oldMatCount)
+		if(newMatCount != oldMatCount)
 		{
-			for(int32_t i = 0; i < oldMatCount; i++)
+			DArray<Material*> temp_materials;
+			temp_materials.reserve(newMatCount);
+			temp_materials.resize(newMatCount);
+
+			if(newMatCount < oldMatCount)
 			{
-				if(i < newMatCount) 
-					temp_materials[i] = comp->materials[i];
-				else 
-					MATERIAL_PTR_DROP(comp->materials[i]);
+				for(int32_t i = 0; i < oldMatCount; i++)
+				{
+					if(i < newMatCount) 
+						temp_materials[i] = comp->materials[i];
+					else 
+						MATERIAL_PTR_DROP(comp->materials[i]);
+				}
 			}
-		}
-		else
-		{
-			for(int32_t i = 0; i < newMatCount; i++)
+			else
 			{
-				if(i < oldMatCount)
-					temp_materials[i] = comp->materials[i];
-				else
-					temp_materials[i] = MATERIAL_S("");//MATERIAL_S("$"PATH_SHADERS"objects/opaque_main");
+				for(int32_t i = 0; i < newMatCount; i++)
+				{
+					if(i < oldMatCount)
+						temp_materials[i] = comp->materials[i];
+					else
+						temp_materials[i] = MATERIAL_S("");//MATERIAL_S("$"PATH_SHADERS"objects/opaque_main");
+				}
 			}
+			comp->materials.swap(temp_materials);
+			temp_materials.destroy();
 		}
-		comp->materials.swap(temp_materials);
-		temp_materials.destroy();
+
+		if(func.isFunction())
+			func(worldPtr, comp->get_entity(), id, status);
 	});
 
 	MeshMgr::Get()->DeleteResource(oldMesh);
@@ -396,7 +408,7 @@ bool StaticMeshSystem::setMeshMats(StaticMeshComponent* comp, string& mesh, DArr
 	for(int32_t i = 0; i < matsCount; i++)
 		comp->materials.push_back(MATERIAL(mats[i]));
 	
-	return setMesh(comp, mesh);
+	return setMesh(comp, mesh, LUANIL);
 }
 
 uint32_t StaticMeshSystem::GetMeshID(Entity e)

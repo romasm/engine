@@ -3,28 +3,34 @@ if not EntityTypes.StaticModel then EntityTypes.StaticModel = class(EntityTypes.
 function EntityTypes.StaticModel:init(world, ent)
     if not self:base(EntityTypes.StaticModel).init(self, world, ent) then return false end
     
-    self.world.physics:AddComponent(self.ent)
-    self.world.collision:AddComponent(self.ent)
-
     self.world:SetEntityType(self.ent, "StaticModel")
     
     return true
 end
 
 function EntityTypes.StaticModel:SetMesh(mesh)
-    if not self:base(EntityTypes.StaticModel).SetMesh(self, mesh) then return false end
-    
+    if not self:base(EntityTypes.StaticModel).SetMeshAndCallback(self, mesh, EntityTypes.StaticModel.OnLoad) then return false end
+    return true
+end
+
+function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
+    if not status then return end
     -- temp
-    local bb_size = self.world.visibility:GetBoxSizeL(self.ent)
-    local bb_pos = self.world.visibility:GetBoxCenterL(self.ent)
     
-    self.world.collision:AddBoxCollider(self.ent, bb_pos, Quaternion.Identity, 1.0, bb_size, 0)
+    print("SetCollision")
 
-    local physicsSys = self.world.physics
-    physicsSys:SetType(self.ent, PHYSICS_TYPES.STATIC)
-    physicsSys:SetBounciness(self.ent, 0.0)
-    physicsSys:SetFriction(self.ent, 1.0)
-    physicsSys:SetActive(self.ent, true)
+    world.physics:AddComponent(ent)
+    world.collision:AddComponent(ent)
 
+    local bb_size = world.visibility:GetBoxSizeL(ent)
+    local bb_pos = world.visibility:GetBoxCenterL(ent)
+    world.collision:AddBoxCollider(ent, bb_pos, Quaternion.Identity, 1.0, bb_size, 0)
+
+    local physicsSys = world.physics
+    physicsSys:SetType(ent, PHYSICS_TYPES.STATIC)
+    physicsSys:SetBounciness(ent, 0.0)
+    physicsSys:SetFriction(ent, 1.0)
+    physicsSys:SetActive(ent, true)
+    
     return true
 end

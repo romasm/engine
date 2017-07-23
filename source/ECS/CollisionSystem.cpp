@@ -12,6 +12,8 @@ CollisionSystem::CollisionSystem(BaseWorld* w, rp3d::CollisionWorld* collisionW,
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
+
+	b_debugDraw = false;
 }
 
 CollisionSystem::~CollisionSystem()
@@ -43,6 +45,98 @@ void CollisionSystem::UpdateTransformations()
 	}
 }
 
+#ifdef _DEV
+void CollisionSystem::DebugRegToDraw()
+{
+	if( !b_debugDraw )
+		return;
+
+	for(auto& i: *components.data())
+	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
+		// TODO
+		if( i.resourceId == CollisionMgr::nullres )
+			continue;
+
+		VisibilityComponent* visComponent = world->GetVisibilitySystem()->GetComponent(i.get_entity());
+
+		bitset<FRUSTUM_MAX_COUNT> bits;
+		if(visComponent)
+		{
+			bits = visComponent->inFrust;	
+			if(bits == 0)
+				continue;
+		}
+		else
+		{
+			const auto earlyVisibilitySys = world->GetEarlyVisibilitySystem();
+			if( earlyVisibilitySys )
+			{
+				EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+
+				if(earlyVisibilityComponent)
+				{
+					bits = earlyVisibilityComponent->inFrust;	
+					if(bits == 0)
+						continue;
+				}
+				else
+					bits = 0;
+			}
+			else
+				bits = 0;
+		}
+
+		if( i.dirty_vis )
+		{
+			XMMATRIX worldMatrix = transformSystem->GetTransformW(i.get_entity());
+
+			LineGeometryBuffer mb;
+			mb.world = XMMatrixTranspose(worldMatrix);
+
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(LineGeometryBuffer));	
+
+			i.dirty_vis = false;
+		}
+
+		const auto frustumMgr = world->GetFrustumMgr();
+		const auto collsionPtr = CollisionMgr::GetResourcePtr(i.resourceId);
+
+		if(bits == 0)
+		{
+			for(auto f: frustumMgr->camDataArray)
+			{
+				for (auto& hull: collsionPtr->hulls)
+				{
+					((SceneRenderMgr*)f->rendermgr)->RegMesh(hull.index.size, hull.vertex.buffer, hull.index.buffer, i.constantBuffer, 
+						sizeof(LineGeometryVertex), i.material, IA_TOPOLOGY::TRISLIST);
+				}
+			}
+
+			continue;
+		}
+
+		for(auto f: frustumMgr->camDataArray)
+		{
+			if((bits & f->bit) == f->bit)
+			{
+				for (auto& hull: collsionPtr->hulls)
+				{
+					((SceneRenderMgr*)f->rendermgr)->RegMesh(hull.index.size, hull.vertex.buffer, hull.index.buffer, i.constantBuffer, 
+						sizeof(LineGeometryVertex), i.material, IA_TOPOLOGY::TRISLIST);
+				}
+
+				bits &= ~f->bit;
+				if(bits == 0) 
+					break;
+			}
+		}
+	}
+}
+#endif
+
 CollisionComponent* CollisionSystem::AddComponent(Entity e)
 {
 	if(HasComponent(e))
@@ -55,6 +149,12 @@ CollisionComponent* CollisionSystem::AddComponent(Entity e)
 	res->parent = e;
 	res->dirty = true;
 	res->resourceId = CollisionMgr::nullres;
+
+#ifdef _DEV
+	res->dirty_vis = true;
+	res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LineGeometryBuffer), true);
+	res->material = MATERIAL_S(LG_MAT);
+#endif
 
 	auto physicsComp = physicsSystem->GetComponent(e);
 		
@@ -104,6 +204,8 @@ void CollisionSystem::CopyComponent(Entity src, Entity dest)
 		res->resourceId = CollisionMgr::Get()->GetResource(collisionName);
 		collisionRes = CollisionMgr::GetResourcePtr(res->resourceId);
 	}
+
+	res->shapes.reserve(comp->shapes.size());
 
 	uint32_t hullId = 0;
 	for(auto& handle: comp->shapes)
@@ -195,6 +297,9 @@ bool CollisionSystem::SetDirty(Entity e)
 {
 	GET_COMPONENT(false);
 	comp.dirty = true;
+#ifdef _DEV
+	comp.dirty_vis = true;
+#endif
 	return true;
 }
 
@@ -350,30 +455,25 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 	uint32_t shapesCount = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 
+	comp->shapes.reserve(shapesCount);
+
 	uint32_t collision_name_size = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 
 	string collision_name((char*)t_data, collision_name_size);
 	t_data += collision_name_size * sizeof(char);
 
-	comp->resourceId = CollisionMgr::Get()->GetResource(collision_name);
-	CollisionData* collisionRes = nullptr;
-	if( comp->resourceId != CollisionMgr::nullres )
-		collisionRes = CollisionMgr::GetResourcePtr(comp->resourceId);
+	if( !collision_name.empty() )
+	{
+		_addConvexCollision(comp, collision_name);
+	}
 
 	for(uint32_t i = 0; i < shapesCount; i++)
 	{
 		CollisionStorageType stoarge = (CollisionStorageType)(*(uint8_t*)t_data);
 		t_data += sizeof(uint8_t);
 
-		if( stoarge == CollisionStorageType::RESOURCE )
-		{
-			// TODO
-			rp3d::CollisionShape* shape = CollisionMgr::GetResource(collision_name);
-
-			AddShape(*comp, pos, rot, mass, shape, CollisionStorageType::RESOURCE);
-		}
-		else
+		if( stoarge != CollisionStorageType::RESOURCE )
 		{
 			float mass = *(float*)t_data;
 			t_data += sizeof(float);
@@ -462,6 +562,22 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 	return (uint32_t)(t_data - data);
 }
 
+void CollisionSystem::_addConvexCollision(CollisionComponent* comp, string& filename)
+{
+	comp->resourceId = CollisionMgr::Get()->GetResource(filename, false, 
+		[comp, this](uint32_t id, bool status) -> void
+	{
+		auto collisionRes = CollisionMgr::GetResourcePtr(id);
+
+		for(uint32_t i = 0; i < collisionRes->hulls.size(); i++)
+		{
+			float mass = 10.0f; // TODO
+			auto& hull = collisionRes->hulls[i];
+			this->AddShape(*comp, hull.pos, hull.rot, mass, hull.collider, CollisionStorageType::RESOURCE);
+		}
+	});
+}
+
 bool CollisionSystem::IsActive(Entity e)
 {
 	GET_COMPONENT(false);
@@ -472,6 +588,12 @@ void CollisionSystem::SetActive(Entity e, bool active)
 {
 	GET_COMPONENT(void());
 	comp.body->setIsActive(active);
+}
+
+void CollisionSystem::AddConvexCollision(Entity e, string filename)
+{
+	GET_COMPONENT(void());
+	_addConvexCollision(&comp, filename);
 }
 
 int32_t CollisionSystem::AddBoxCollider(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize, float margin)
@@ -521,6 +643,9 @@ void CollisionSystem::RegLuaClass()
 		.addFunction("AddConeCollider", &CollisionSystem::AddConeCollider)
 		.addFunction("AddCylinderCollider", &CollisionSystem::AddCylinderCollider)
 		.addFunction("AddCapsuleCollider", &CollisionSystem::AddCapsuleCollider)
+		.addFunction("AddConvexCollision", &CollisionSystem::AddConvexCollision)
+
+		.addFunction("SetDebugDraw", &CollisionSystem::SetDebugDraw)
 
 		.addFunction("AddComponent", &CollisionSystem::_AddComponent)
 		.addFunction("DeleteComponent", &CollisionSystem::DeleteComponent)

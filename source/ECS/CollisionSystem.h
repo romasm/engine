@@ -5,6 +5,7 @@
 #include "TransformSystem.h"
 #include "PhysicsSystem.h"
 #include "CollisionMgr.h"
+#include "MaterialMgr.h"
 
 #define COLLISION_RESOURCE_NULL 0
 
@@ -32,12 +33,18 @@ namespace EngineCore
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
-
+		
 		rp3d::CollisionBody* body;
 		bool physicsBody;
 		
 		uint32_t resourceId;
 		DArray<CollisionHandle> shapes;
+
+	#ifdef _DEV
+		bool dirty_vis;
+		ID3D11Buffer* constantBuffer;
+		Material* material;
+	#endif
 
 		CollisionComponent()
 		{
@@ -45,6 +52,12 @@ namespace EngineCore
 			dirty = false;
 			physicsBody = false;
 			resourceId = CollisionMgr::nullres;
+
+		#ifdef _DEV
+			dirty_vis = false;
+			constantBuffer = nullptr;
+			material = nullptr;
+		#endif
 		}
 	};
 
@@ -72,6 +85,10 @@ namespace EngineCore
 		
 		void UpdateTransformations();
 
+	#ifdef _DEV
+		void DebugRegToDraw();
+	#endif
+
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
 				
@@ -86,16 +103,20 @@ namespace EngineCore
 		int32_t AddConeCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height, float margin);
 		int32_t AddCylinderCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height, float margin);
 		int32_t AddCapsuleCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
-
-		int32_t AddConvexCollision(Entity e, string filename);
+		void AddConvexCollision(Entity e, string filename);
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
+
+		void SetDebugDraw(bool draw)
+		{
+			b_debugDraw = draw;
+		}
 
 		static void RegLuaClass();
 
 	private:
 		inline int32_t AddShape(CollisionComponent& comp, Vector3& pos, Quaternion& rot, 
-			float& mass, rp3d::CollisionShape* shape, CollisionStorageType strg)
+			float mass, rp3d::CollisionShape* shape, CollisionStorageType strg)
 		{
 			rp3d::Transform shapeTransform(pos, rot);
 			rp3d::ProxyShape* proxy;
@@ -107,7 +128,9 @@ namespace EngineCore
 			return (int32_t)comp.shapes.size() - 1;
 		}
 
-		inline void _DeleteComponent(CollisionComponent* comp) // TODO: crash after deletion
+		void _addConvexCollision(CollisionComponent* comp, string& filename);
+
+		inline void _DeleteComponent(CollisionComponent* comp)
 		{
 			if(comp->physicsBody)
 			{
@@ -136,6 +159,11 @@ namespace EngineCore
 				handle.proxy = nullptr;
 			}
 			comp->shapes.destroy();
+			
+		#ifdef _DEV
+			_RELEASE(comp->constantBuffer);
+			MATERIAL_PTR_DROP(comp->material);
+		#endif
 		}
 
 		ComponentRArray<CollisionComponent> components;
@@ -145,5 +173,7 @@ namespace EngineCore
 		PhysicsSystem* physicsSystem;
 
 		rp3d::CollisionWorld* collisionWorld;
+
+		bool b_debugDraw;
 	};
 }

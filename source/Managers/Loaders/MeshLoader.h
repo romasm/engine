@@ -14,6 +14,7 @@ namespace EngineCore
 
 	struct GPUMeshBuffer
 	{
+		// It's count of elements, NOT byte size
 		uint32_t size;
 		ID3D11Buffer* buffer;
 

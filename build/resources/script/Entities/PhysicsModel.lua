@@ -12,11 +12,13 @@ function EntityTypes.PhysicsModel:init(world, ent)
     self.world:SetEntityType(self.ent, "PhysicsModel")
 
     -- temp
-    local bb_size = self.world.visibility:GetBoxSizeL(self.ent)
+    --[[local bb_size = self.world.visibility:GetBoxSizeL(self.ent)
     local bb_pos = self.world.visibility:GetBoxCenterL(self.ent)
     local bb_mass = bb_size.x * bb_size.y * bb_size.z * 8 * 100
     
     self.collisionSys:AddBoxCollider(self.ent, bb_pos, Quaternion.Identity, bb_mass, bb_size, 0)
+    --]]
+    self.collisionSys:AddConvexCollision(self.ent, PATH.ROOT .."content/statics/teapot_coll.FBX")
     self.physicsSys:SetActive(self.ent, true)
 
     return true

@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "Common.h"
 #include "reactphysics3d.h"
+#include "MeshLoader.h"
 
 namespace EngineCore
 {
@@ -13,6 +14,11 @@ namespace EngineCore
 		rp3d::CollisionShape* collider;
 		Vector3 pos;
 		Quaternion rot;
+
+	#ifdef _DEV
+		GPUMeshBuffer vertex;
+		GPUMeshBuffer index;
+	#endif
 
 		ConvexHull() : boneId(0), collider(nullptr) {}
 	};
@@ -30,7 +36,15 @@ namespace EngineCore
 				hulls[i].boneId = 0;
 				hulls[i].pos = Vector3::Zero;
 				hulls[i].rot = Quaternion::Identity;
+
+			#ifdef _DEV
+				hulls[i].vertex.size = 0;
+				hulls[i].index.size = 0;
+				_RELEASE(hulls[i].vertex.buffer);
+				_RELEASE(hulls[i].index.buffer);
+			#endif
 			}
+			hulls.destroy();
 		}
 	};
 

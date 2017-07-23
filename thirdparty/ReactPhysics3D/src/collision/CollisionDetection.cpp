@@ -351,7 +351,10 @@ void CollisionDetection::computeNarrowPhaseBetweenShapes(CollisionCallback* call
 /// This method is called by the broad-phase collision detection algorithm
 void CollisionDetection::broadPhaseNotifyOverlappingPair(ProxyShape* shape1, ProxyShape* shape2) {
 
-    assert(shape1->mBroadPhaseID != shape2->mBroadPhaseID);
+    // assert(shape1->mBroadPhaseID != shape2->mBroadPhaseID);
+	// MODIF: Asserting if one body has been updated multiple times in one frame
+	// How is it supposed to work?
+	if (shape1->mBroadPhaseID == shape2->mBroadPhaseID) return;
 
     // If the two proxy collision shapes are from the same body, skip it
     if (shape1->getBody()->getID() == shape2->getBody()->getID()) return;

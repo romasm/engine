@@ -39,6 +39,10 @@ function EntityTypes.Mesh:SetMesh(mesh)
     return self.staticMeshSys:SetMesh(self.ent, mesh)
 end
 
+function EntityTypes.Mesh:SetMeshAndCallback(mesh, func, obj)
+    return self.staticMeshSys:SetMeshAndCallback(self.ent, mesh, func, obj)
+end
+
 function EntityTypes.Mesh:GetMeshName()
     return self.staticMeshSys:GetMesh(self.ent)
 end

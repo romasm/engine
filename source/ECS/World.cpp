@@ -653,6 +653,10 @@ void World::Frame()
 
 	m_staticMeshSystem->RegToDraw();
 	m_lineGeometrySystem->RegToDraw();
+
+#ifdef _DEV
+	m_collisionSystem->DebugRegToDraw();
+#endif
 	
 	PERF_GPU_TIMESTAMP(_SCENE_SHADOWS);
 	m_shadowSystem->RenderShadows();
@@ -808,6 +812,10 @@ void SmallWorld::Frame()
 	m_visibilitySystem->CheckVisibility();
 	
 	m_staticMeshSystem->RegToDraw();
+
+#ifdef _DEV
+	m_collisionSystem->DebugRegToDraw();
+#endif
 
 	for(auto& it: m_scenes)
 	{

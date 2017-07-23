@@ -73,6 +73,7 @@ function Viewport:Init()
     self.worldlive = false
     self.gamemode = false
     self.fullscreen = false
+    self.collisionDraw = false
 
     self.tc_action = false
 	self.tc_hover = false
@@ -145,6 +146,7 @@ function Viewport:SetWorld(WLD)
     self:SetTransform(TRANSFORM_MODE.NONE)
 
     self.overlay_gui.enable = true
+    self.collisionDraw = false
 
     History:Clear()
     self.history_push = false
@@ -255,6 +257,13 @@ function Viewport:ToggleWorldLive()
         self.lua_world.world.mode = WORLDMODES.LIVE        
         self.worldlive = true
     end
+end
+
+function Viewport:SetCollisionDraw(draw)
+    if not self.lua_world then return end
+    
+    self.collisionDraw = draw
+    self.lua_world.world.collision:SetDebugDraw(self.collisionDraw)
 end
 
 function Viewport:ToggleGamemode()

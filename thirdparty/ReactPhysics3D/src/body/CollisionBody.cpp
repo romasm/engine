@@ -83,12 +83,15 @@ ProxyShape* CollisionBody::addCollisionShape(CollisionShape* collisionShape,
         mProxyCollisionShapes = proxyShape;
     }
 
-    // Compute the world-space AABB of the new collision shape
-    AABB aabb;
-    collisionShape->computeAABB(aabb, mTransform * transform);
+	if(mIsActive)
+	{
+		// Compute the world-space AABB of the new collision shape
+		AABB aabb;
+		collisionShape->computeAABB(aabb, mTransform * transform);
 
-    // Notify the collision detection about this new collision shape
-    mWorld.mCollisionDetection.addProxyCollisionShape(proxyShape, aabb);
+		// Notify the collision detection about this new collision shape
+		mWorld.mCollisionDetection.addProxyCollisionShape(proxyShape, aabb);
+	}
 
     mNbCollisionShapes++;
 
@@ -190,6 +193,9 @@ void CollisionBody::resetContactManifoldsList() {
 
 // Update the broad-phase state for this body (because it has moved for instance)
 void CollisionBody::updateBroadPhaseState() const {
+
+	if(!mIsActive)
+		return;
 
     // For all the proxy collision shapes of the body
     for (ProxyShape* shape = mProxyCollisionShapes; shape != NULL; shape = shape->mNext) {

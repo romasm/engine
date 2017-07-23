@@ -44,6 +44,12 @@ void PhysicsSystem::UpdateTransformations()
 
 void PhysicsSystem::Simulate(float dt)
 {
+	if( components.empty() )
+	{
+		updateAccum = 0;
+		return;
+	}
+
 	updateAccum += dt; 
 	while( updateAccum >= PHYSICS_TIME_STEP_MS )
 	{
@@ -104,7 +110,7 @@ void PhysicsSystem::DeleteComponent(Entity e)
 	components.remove(e.index());
 }
 
-void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp) // TODO: crash after deletion
+void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp)
 {
 	dynamicsWorld->destroyRigidBody(comp->body);
 	comp->body = nullptr;

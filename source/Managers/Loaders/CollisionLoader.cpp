@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "MeshLoader.h"
 #include "CollisionLoader.h"
 #include "macros.h"
 #include "Log.h"
@@ -213,6 +212,33 @@ CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* sce
 	if(convert)
 		saveCollision(filename, collision, indices, trisCount, vertices, verticesCount);
 
+#ifdef _DEV
+	for(uint32_t i = 0; i < hullsCount; i++)
+	{
+		Matrix localTransform;
+		localTransform.CreateFromQuaternion(collision->hulls[i].rot);
+		Matrix temp;
+		temp.CreateTranslation(collision->hulls[i].pos);
+		localTransform *= temp;
+
+		for(uint32_t j = 0; j < verticesCount[i]; j++)
+		{
+			vertices[i][j] = Vector3::Transform(vertices[i][j], localTransform);
+		}
+
+		collision->hulls[i].vertex.size = verticesCount[i];
+		collision->hulls[i].vertex.buffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(Vector3) * collision->hulls[i].vertex.size, false, vertices[i]);
+
+		collision->hulls[i].index.size = trisCount[i] * 3;
+		collision->hulls[i].index.buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * collision->hulls[i].index.size, false, indices[i]);
+
+		if ( !collision->hulls[i].vertex.buffer || !collision->hulls[i].index.buffer )
+		{
+			ERR("Cant init collision debug vertex or index buffer for %s", filename.c_str());
+		}
+	}
+#endif
+
 	for(uint32_t i = 0; i < hullsCount; i++)
 	{
 		if(indices)
@@ -234,7 +260,7 @@ void CollisionLoader::saveCollision(string& filename, CollisionData* collision, 
 
 	CollisionHeader header;
 	header.version = MESH_FILE_VERSION;
-	header.hullsCount = collision->hulls.size();
+	header.hullsCount = (uint32_t)collision->hulls.size();
 
 	// calc file size
 	uint32_t file_size = sizeof(CollisionHeader);
@@ -353,6 +379,30 @@ CollisionData* CollisionLoader::loadEngineCollisionFromMemory(string& filename, 
 			rp3d::TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE, rp3d::TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE);
 
 		collision->hulls[i].collider = new rp3d::ConvexMeshShape(&hull, true);
+		
+#ifdef _DEV
+		Matrix localTransform;
+		localTransform.CreateFromQuaternion(collision->hulls[i].rot);
+		Matrix temp;
+		temp.CreateTranslation(collision->hulls[i].pos);
+		localTransform *= temp;
+
+		for(uint32_t j = 0; j < verticesCount[i]; j++)
+		{
+			vertices[i][j] = Vector3::Transform(vertices[i][j], localTransform);
+		}
+
+		collision->hulls[i].vertex.size = verticesCount[i];
+		collision->hulls[i].vertex.buffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(Vector3) * collision->hulls[i].vertex.size, false, vertices[i]);
+
+		collision->hulls[i].index.size = trisCount[i] * 3;
+		collision->hulls[i].index.buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * collision->hulls[i].index.size, false, indices[i]);
+
+		if ( !collision->hulls[i].vertex.buffer || !collision->hulls[i].index.buffer )
+		{
+			ERR("Cant init collision debug vertex or index buffer for %s", filename.c_str());
+		}
+#endif
 	}
 
 	for(int i = header.hullsCount - 1; i >= 0; i--)

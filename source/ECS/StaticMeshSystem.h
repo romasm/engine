@@ -71,6 +71,7 @@ namespace EngineCore
 		bool SetDirty(Entity e);
 
 		bool SetMesh(Entity e, string mesh);
+		bool SetMeshAndCallback(Entity e, string mesh, LuaRef func);
 		
 		bool SetShadow(Entity e, bool cast);
 		bool GetShadow(Entity e);
@@ -109,6 +110,7 @@ namespace EngineCore
 					.addFunction("SetShadow", &StaticMeshSystem::SetShadow)
 					.addFunction("GetShadow", &StaticMeshSystem::GetShadow)
 					.addFunction("SetMesh", &StaticMeshSystem::SetMesh)
+					.addFunction("SetMeshAndCallback", &StaticMeshSystem::SetMeshAndCallback)
 					.addFunction("GetMesh", &StaticMeshSystem::GetMeshLua)
 					.addFunction("SetMaterial", &StaticMeshSystem::SetMaterial)
 					.addFunction("GetMaterial", &StaticMeshSystem::GetMaterialLua)
@@ -122,7 +124,7 @@ namespace EngineCore
 	private:
 		inline void destroyMeshData(StaticMeshComponent& comp);
 		bool setMeshMats(StaticMeshComponent* comp, string& mesh, DArray<string>& mats);
-		bool setMesh(StaticMeshComponent* comp, string& mesh);
+		bool setMesh(StaticMeshComponent* comp, string& mesh, LuaRef func);
 
 		ComponentRArray<StaticMeshComponent> components;
 
