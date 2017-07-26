@@ -345,6 +345,8 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if(!meshPtr)
 			return;
 
+		WRN("TEST C++ CALLBACK");
+
 		comp->dirty = true;
 
 		const Entity e = comp->get_entity();
@@ -355,7 +357,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if(lineGeom)
 			lineGeom->SetFromVis(e);
 	#endif
-
+		
 		auto oldMatCount = comp->materials.size();
 		auto newMatCount = meshPtr->vertexBuffers.size();
 		if(newMatCount != oldMatCount)
@@ -387,6 +389,13 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 			comp->materials.swap(temp_materials);
 			temp_materials.destroy();
 		}
+
+		// TEMP
+		auto funcName = func.tostring();
+		if(funcName.empty())
+			LOG("Func: error");
+		else
+			LOG("Func: %s", funcName.c_str());
 
 		if(func.isFunction())
 			func(worldPtr, comp->get_entity(), id, status);

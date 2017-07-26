@@ -728,7 +728,10 @@ public:
     lua_call (m_L, 1, 1);
     const char* str = lua_tostring(m_L, 1);
     lua_pop(m_L, 1);
-    return std::string(str);
+	if(str)
+		return std::string(str);
+	else
+		return std::string();
   }
 
   //----------------------------------------------------------------------------

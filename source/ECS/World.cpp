@@ -500,7 +500,7 @@ bool BaseWorld::saveWorld(string& filename)
 World::World() : BaseWorld()
 {
 	Vector3 defaultGravity(0, -9.81f, 0); // TODO
-	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+	dynamicsWorld = nullptr;//new rp3d::DynamicsWorld(defaultGravity);
 
 	m_frustumMgr = new FrustumMgr;
 	
@@ -711,7 +711,7 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_lineGeometrySystem = nullptr;
 
 	Vector3 defaultGravity(0, -9.81f, 0); // TODO
-	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+	dynamicsWorld = nullptr;//new rp3d::DynamicsWorld(defaultGravity);
 
 	m_frustumMgr = new FrustumMgr;
 	

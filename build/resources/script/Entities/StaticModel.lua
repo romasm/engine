@@ -17,8 +17,13 @@ function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     if not status then return end
     -- temp
     
-    print("SetCollision")
+    print("TEST LUA CALLBACK")
 
+    -- TEST
+    world.staticMesh:SetMesh(ent, "")
+    world.staticMesh:SetMeshAndCallback(ent, PATH.ROOT .. "content/statics/ebisu_200.fbx", EntityTypes.StaticModel.OnLoad)
+
+    --[[
     world.physics:AddComponent(ent)
     world.collision:AddComponent(ent)
 
@@ -31,6 +36,6 @@ function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     physicsSys:SetBounciness(ent, 0.0)
     physicsSys:SetFriction(ent, 1.0)
     physicsSys:SetActive(ent, true)
-    
+    --]]
     return true
 end
