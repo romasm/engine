@@ -9,7 +9,6 @@
 using namespace EngineCore;
 
 LuaVM* LuaVM::m_instance = nullptr;
-LuaRef* LuaVM::nullLuaPtr = nullptr;
 
 LuaVM::LuaVM()
 {	
@@ -18,8 +17,6 @@ LuaVM::LuaVM()
 		m_instance = this;
 		L = nullptr;
 		Init();
-
-		nullLuaPtr = new LuaRef(LSTATE);
 	}
 	/*else
 		ERR(LuaVM уже был создан);*/
@@ -28,7 +25,6 @@ LuaVM::LuaVM()
 LuaVM::~LuaVM()
 {
 	m_instance = nullptr;
-	_DELETE(nullLuaPtr);
 	Close();
 }
 

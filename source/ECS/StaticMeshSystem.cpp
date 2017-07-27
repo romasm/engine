@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "StaticMeshSystem.h"
 #include "World.h"
+#include "WorldMgr.h"
 #include "Render.h"
 
 using namespace EngineCore;
@@ -298,7 +299,7 @@ bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 		return false;
 	auto comp = &components.getDataByArrayIdx(idx);
 
-	return setMesh(comp, mesh, LUANIL);
+	return setMesh(comp, mesh, LuaRef(LSTATE));
 }
 
 bool StaticMeshSystem::SetMeshAndCallback(Entity e, string mesh, LuaRef func)
@@ -335,22 +336,30 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 {
 	auto oldMesh = comp->stmesh;
 
-	auto visSys = visibilitySys;
-	auto worldPtr = world;
+	auto worldID = world->GetID();
+	auto ent = comp->get_entity();
 	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
 
-		[comp, visSys, worldPtr, func](uint32_t id, bool status) -> void
+		[comp, ent, worldID, func](uint32_t id, bool status) -> void
 	{
 		auto meshPtr = MeshMgr::GetResourcePtr(id);
 		if(!meshPtr)
 			return;
+		
+		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
+		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
+		{
+			MeshMgr::Get()->DeleteResource(id);
+			return;
+		}
 
+		// TEMP
 		WRN("TEST C++ CALLBACK");
 
 		comp->dirty = true;
 
 		const Entity e = comp->get_entity();
-		visSys->SetBBox(e, meshPtr->box);
+		worldPtr->GetVisibilitySystem()->SetBBox(e, meshPtr->box);
 
 	#ifdef _EDITOR
 		auto lineGeom = worldPtr->GetLineGeometrySystem();
@@ -417,7 +426,7 @@ bool StaticMeshSystem::setMeshMats(StaticMeshComponent* comp, string& mesh, DArr
 	for(int32_t i = 0; i < matsCount; i++)
 		comp->materials.push_back(MATERIAL(mats[i]));
 	
-	return setMesh(comp, mesh, LUANIL);
+	return setMesh(comp, mesh, LuaRef(LSTATE));
 }
 
 uint32_t StaticMeshSystem::GetMeshID(Entity e)
