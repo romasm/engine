@@ -62,6 +62,7 @@ namespace EngineCore
 		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback);
 
 		void AddUpdateJobs();
+		void DeleteUpdateJobs();
 
 		void Preload(string& filename, ResourceType type);
 

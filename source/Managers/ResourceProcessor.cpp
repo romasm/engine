@@ -43,7 +43,7 @@ ResourceProcessor::ResourceProcessor()
 		ERR("Only one instance of ResourceProcessor is allowed!");
 }
 
-ResourceProcessor::~ResourceProcessor()
+void ResourceProcessor::DeleteUpdateJobs()
 {
 #ifdef _DEV
 	JOBSYSTEM->deletePeriodicalJob(SHADER_JOB_NAME);
@@ -51,7 +51,10 @@ ResourceProcessor::~ResourceProcessor()
 #endif
 	JOBSYSTEM->deletePeriodicalJob(TEXTURE_JOB_NAME);
 	JOBSYSTEM->deletePeriodicalJob(STMESH_JOB_NAME);
+}
 
+ResourceProcessor::~ResourceProcessor()
+{
 	loaderRunning = false;
 	v_loadingRequest.notify_all();
 

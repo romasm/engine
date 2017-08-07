@@ -96,11 +96,14 @@ public:
 		_DELETE(tick_func);
 		_DELETE(main_table);
 		_DELETE(m_wins);
+
+		m_resourceProc->DeleteUpdateJobs();
+		_CLOSE(jobSystem);
+
 		_DELETE(m_resourceProc);
 
 		_CLOSE(m_hud);
 		_CLOSE(m_render);
-		_CLOSE(jobSystem);
 		init = false;
 		m_instance = nullptr;
 
