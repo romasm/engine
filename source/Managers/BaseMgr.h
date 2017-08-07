@@ -147,7 +147,10 @@ namespace EngineCore
 	{
 		uint32_t res = nullres;
 		if(name.length() == 0)
+		{
+			CallCallback(res, callback, LoadingStatus::FAILED);
 			return res;
+		}
 
 		res = FindResourceInList(name);
 		if(res != nullres)
@@ -162,7 +165,7 @@ namespace EngineCore
 			return res;
 
 		ERR("Cant load resource %s", name.c_str());
-
+		CallCallback(res, callback, LoadingStatus::FAILED);
 		return res;
 	}
 

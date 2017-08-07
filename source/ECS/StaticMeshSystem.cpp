@@ -339,6 +339,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 	auto worldID = world->GetID();
 	auto ent = comp->get_entity();
 
+	// TODO: potential memory leak
 	// This fixes wrong LuaRef capture by lambda
 	LuaRef* luaRef = new LuaRef(func);
 

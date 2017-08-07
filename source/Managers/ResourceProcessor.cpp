@@ -309,13 +309,18 @@ uint32_t GetTextureLua(string path)
 	return RELOADABLE_TEXTURE(path, CONFIG(bool, reload_resources));
 }
 
-uint32_t GetTextureCallbackLua(string path, LuaRef func, LuaRef self)
+uint32_t GetTextureCallbackLua(string path, LuaRef func)
 {
+	// TODO: potential memory leak
+	// This fixes wrong LuaRef capture by lambda
+	LuaRef* luaRef = new LuaRef(func);
+
 	return TexMgr::Get()->GetResource(path, CONFIG(bool, reload_resources), 
-		[func, self](uint32_t id, bool status) -> void
+		[luaRef](uint32_t id, bool status) -> void
 	{
-		if(func.isFunction())
-			func(self, id, status);
+		if(luaRef->isFunction())
+			(*luaRef)(id, status);
+		_DELETE((LuaRef*)luaRef);
 	});
 }
 

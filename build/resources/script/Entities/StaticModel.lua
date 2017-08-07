@@ -20,8 +20,8 @@ function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     print("TEST LUA CALLBACK")
 
     -- TEST
-    world.staticMesh:SetMesh(ent, "")
-    world.staticMesh:SetMeshAndCallback(ent, PATH.ROOT .. "content/statics/ebisu_200.fbx", EntityTypes.StaticModel.OnLoad)
+    --world.staticMesh:SetMesh(ent, "")
+    --world.staticMesh:SetMeshAndCallback(ent, PATH.ROOT .. "content/statics/ebisu_200.fbx", EntityTypes.StaticModel.OnLoad)
 
     --[[
     world.physics:AddComponent(ent)
