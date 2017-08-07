@@ -338,24 +338,29 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 
 	auto worldID = world->GetID();
 	auto ent = comp->get_entity();
+
+	// This fixes wrong LuaRef capture by lambda
+	LuaRef* luaRef = new LuaRef(func);
+
 	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
 
-		[comp, ent, worldID, func](uint32_t id, bool status) -> void
+		[comp, ent, worldID, luaRef](uint32_t id, bool status) -> void
 	{
 		auto meshPtr = MeshMgr::GetResourcePtr(id);
 		if(!meshPtr)
+		{
+			_DELETE((LuaRef*)luaRef);
 			return;
-		
+		}
+
 		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
 		{
 			MeshMgr::Get()->DeleteResource(id);
+			_DELETE((LuaRef*)luaRef);
 			return;
 		}
-
-		// TEMP
-		WRN("TEST C++ CALLBACK");
-
+		
 		comp->dirty = true;
 
 		const Entity e = comp->get_entity();
@@ -399,15 +404,10 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 			temp_materials.destroy();
 		}
 
-		// TEMP
-		auto funcName = func.tostring();
-		if(funcName.empty())
-			LOG("Func: error");
-		else
-			LOG("Func: %s", funcName.c_str());
+		if(luaRef->isFunction())
+			(*luaRef)(worldPtr, comp->get_entity(), id, status);
 
-		if(func.isFunction())
-			func(worldPtr, comp->get_entity(), id, status);
+		_DELETE((LuaRef*)luaRef);
 	});
 
 	MeshMgr::Get()->DeleteResource(oldMesh);
