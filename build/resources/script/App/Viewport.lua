@@ -267,7 +267,7 @@ function Viewport:SetCollisionDraw(draw)
 end
 
 function Viewport:ToggleGamemode()
-    if not self.lua_world or true then return end
+    if not self.lua_world then return end
     
     if self.gamemode == true then
         local player = self.lua_world.world:GetLuaEntity( self.lua_world.world:GetEntityByName("Player0") )

@@ -47,7 +47,7 @@ function EntityTypes.TestPlayer:initVars()
     self.p_jump_accel = 25000.0
     self.p_move_accel = 200.0
     self.p_move_max_speed = 1.8
-    self.p_rot_sence = 0.02
+    self.p_rot_sence = 0.002
 
     -- lifetime only exist vars
     self.forward = 0
