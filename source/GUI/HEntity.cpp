@@ -1214,10 +1214,10 @@ void HEntity::UpdateClip()
 	{
 		RECT clipParent = GET_HENTITY(parent)->GetClip();
 
-		clipRect.left = max(globalPos.left, clipParent.left);
-		clipRect.right = min(globalPos.right, clipParent.right);
-		clipRect.top = max(globalPos.top, clipParent.top);
-		clipRect.bottom = min(globalPos.bottom, clipParent.bottom);
+		clipRect.left = max<LONG>(globalPos.left, clipParent.left);
+		clipRect.right = min<LONG>(globalPos.right, clipParent.right);
+		clipRect.top = max<LONG>(globalPos.top, clipParent.top);
+		clipRect.bottom = min<LONG>(globalPos.bottom, clipParent.bottom);
 	}
 
 	if(rects)

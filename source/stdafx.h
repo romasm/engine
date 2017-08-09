@@ -50,9 +50,7 @@
 //#pragma comment(lib, "d3d11_1.lib")
 
 #include <DirectXmath.h>
-using namespace DirectX;
 #include <SimpleMath.h>
-using namespace SimpleMath;
 
 #pragma comment(lib,"dxguid.lib")
 
@@ -68,11 +66,9 @@ using namespace SimpleMath;
 #pragma comment(lib,"DirectXTex.lib")
 
 #include <fstream>
-using namespace std;
 
 #include <lua.hpp>
 #include <Luabridge.h>
-using namespace luabridge;
 //#pragma comment(lib,"lua51.lib")
 
 #include <assimp/Importer.hpp>
@@ -82,4 +78,29 @@ using namespace luabridge;
 #undef max
 #undef min
 
-#include <reactphysics3d.h>
+#include <btBulletDynamicsCommon.h>
+#pragma comment(lib,"Bullet3Collision_x64_release.lib")
+#pragma comment(lib,"Bullet3Common_x64_release.lib")
+#pragma comment(lib,"Bullet3Dynamics_x64_release.lib")
+#pragma comment(lib,"Bullet3Geometry_x64_release.lib")
+#pragma comment(lib,"BulletCollision_x64_release.lib")
+#pragma comment(lib,"BulletDynamics_x64_release.lib")
+#pragma comment(lib,"BulletInverseDynamics_x64_release.lib")
+#pragma comment(lib,"BulletInverseDynamicsUtils_x64_release.lib")
+#pragma comment(lib,"BulletSoftBody_x64_release.lib")
+#pragma comment(lib,"BussIK_x64_release.lib")
+#pragma comment(lib,"clsocket_x64_release.lib")
+#pragma comment(lib,"ConvexDecomposition_x64_release.lib")
+#pragma comment(lib,"enet_x64_release.lib")
+#pragma comment(lib,"gtest_x64_release.lib")
+#pragma comment(lib,"gwen_x64_release.lib")
+#pragma comment(lib,"HACD_x64_release.lib")
+#pragma comment(lib,"LinearMath_x64_release.lib")
+#pragma comment(lib,"vhacd_x64_release.lib")
+
+
+// namespaces
+using namespace DirectX;
+using namespace SimpleMath;
+using namespace std;
+using namespace luabridge;

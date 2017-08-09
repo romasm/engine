@@ -334,7 +334,12 @@ namespace EngineCore
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;
 
-		rp3d::DynamicsWorld* dynamicsWorld;
+		// physics world
+		btDefaultCollisionConfiguration* physCollisionConfiguration;
+		btCollisionDispatcher* physCollisionDispatcher;
+		btBroadphaseInterface* physBroadphase;
+		btSequentialImpulseConstraintSolver* physConstraintSolver;
+		btDiscreteDynamicsWorld* physDynamicsWorld;
 	};
 	
 	class World: public BaseWorld

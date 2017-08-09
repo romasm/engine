@@ -380,13 +380,13 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, aiMesh* mesh, Ve
 
 		vertex->Pos = Vector3(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
 
-		posMin.x = min(vertex->Pos.x, posMin.x);
-		posMin.y = min(vertex->Pos.y, posMin.y);
-		posMin.z = min(vertex->Pos.z, posMin.z);
+		posMin.x = min<float>(vertex->Pos.x, posMin.x);
+		posMin.y = min<float>(vertex->Pos.y, posMin.y);
+		posMin.z = min<float>(vertex->Pos.z, posMin.z);
 
-		posMax.x = max(vertex->Pos.x, posMax.x);
-		posMax.y = max(vertex->Pos.y, posMax.y);
-		posMax.z = max(vertex->Pos.z, posMax.z);
+		posMax.x = max<float>(vertex->Pos.x, posMax.x);
+		posMax.y = max<float>(vertex->Pos.y, posMax.y);
+		posMax.z = max<float>(vertex->Pos.z, posMax.z);
 
 		if(mesh->mNormals)
 			vertex->Norm = Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);

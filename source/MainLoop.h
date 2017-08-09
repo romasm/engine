@@ -119,7 +119,7 @@ public:
 		double rendertime = 0;
 		while(Frame(rendertime, false, false))
 		{
-			//Sleep(uint32_t( max(0, (fpslock - waittime) * 0.25f) )); // todo
+			//Sleep(uint32_t( max<float>(0, (fpslock - waittime) * 0.25f) )); // todo
 			Sleep(0); // todo
 		}
 	}

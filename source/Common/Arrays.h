@@ -183,7 +183,7 @@ namespace EngineCore
 			return res;
 		}
 
-		inline size_t calc_size( size_t N ) {return max(N, m_size + m_size / 2 );}
+		inline size_t calc_size( size_t N ) {return max<size_t>(N, m_size + m_size / 2 );}
 		inline void	grow( size_t N ) {reserve( calc_size( N ) );}
 
 		inline void	deallocate() {_DELETE_ARRAY(m_data);}

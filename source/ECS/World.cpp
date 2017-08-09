@@ -125,7 +125,11 @@ void BaseWorld::Close()
 	_DELETE(m_typeMgr);
 	_DELETE(m_nameMgr);
 
-	_DELETE(dynamicsWorld);
+	_DELETE(physDynamicsWorld);
+	_DELETE(physConstraintSolver);
+	_DELETE(physBroadphase);
+	_DELETE(physCollisionDispatcher);
+	_DELETE(physCollisionConfiguration);
 }
 
 void BaseWorld::DestroyEntityHierarchically(Entity e)
@@ -499,8 +503,14 @@ bool BaseWorld::saveWorld(string& filename)
 // World ---------------------
 World::World() : BaseWorld()
 {
+	physCollisionConfiguration = new btDefaultCollisionConfiguration();
+	physCollisionDispatcher = new btCollisionDispatcher(physCollisionConfiguration);
+	physBroadphase = new btDbvtBroadphase();
+	physConstraintSolver = new btSequentialImpulseConstraintSolver();
+	physDynamicsWorld = new btDiscreteDynamicsWorld(physCollisionDispatcher, physBroadphase, physConstraintSolver, physCollisionConfiguration);
+
 	Vector3 defaultGravity(0, -9.81f, 0); // TODO
-	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+	physDynamicsWorld->setGravity(defaultGravity);
 
 	m_frustumMgr = new FrustumMgr;
 	
@@ -514,8 +524,8 @@ World::World() : BaseWorld()
 	m_visibilitySystem = new VisibilitySystem(this, ENTITY_COUNT);
 	m_earlyVisibilitySystem = new EarlyVisibilitySystem(this, ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, ENTITY_COUNT);
-	m_collisionSystem = new CollisionSystem(this, dynamicsWorld, ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, ENTITY_COUNT);
+	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
@@ -710,8 +720,14 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_globalLightSystem = nullptr;
 	m_lineGeometrySystem = nullptr;
 
+	physCollisionConfiguration = new btDefaultCollisionConfiguration();
+	physCollisionDispatcher = new btCollisionDispatcher(physCollisionConfiguration);
+	physBroadphase = new btDbvtBroadphase();
+	physConstraintSolver = new btSequentialImpulseConstraintSolver();
+	physDynamicsWorld = new btDiscreteDynamicsWorld(physCollisionDispatcher, physBroadphase, physConstraintSolver, physCollisionConfiguration);
+
 	Vector3 defaultGravity(0, -9.81f, 0); // TODO
-	dynamicsWorld = new rp3d::DynamicsWorld(defaultGravity);
+	physDynamicsWorld->setGravity(defaultGravity);
 
 	m_frustumMgr = new FrustumMgr;
 	
@@ -724,8 +740,8 @@ SmallWorld::SmallWorld() : BaseWorld()
 	m_transformSystem = new TransformSystem(this, SMALL_ENTITY_COUNT);
 	m_visibilitySystem = new VisibilitySystem(this, SMALL_ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, dynamicsWorld, SMALL_ENTITY_COUNT);
-	m_collisionSystem = new CollisionSystem(this, dynamicsWorld, SMALL_ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
+	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);

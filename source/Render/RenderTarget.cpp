@@ -189,7 +189,7 @@ bool RenderTarget::AddRT(DXGI_FORMAT RT_format, unsigned short mips, bool UAV, b
 	{
 		if(mip_count == 0)
 		{
-			int res = max(t_width, t_height);
+			int res = max<int>(t_width, t_height);
 			mip_count = 1;
 			while(res > 1)
 			{
@@ -201,8 +201,8 @@ bool RenderTarget::AddRT(DXGI_FORMAT RT_format, unsigned short mips, bool UAV, b
 				mip_res = new POINT[mip_count-1];
 				for(int i=1; i<mip_count; i++)
 				{
-					mip_res[i-1].x = max(int(t_width / pow(2, i)), 1);
-					mip_res[i-1].y = max(int(t_height / pow(2, i)), 1);
+					mip_res[i-1].x = max<int>(int(t_width / pow(2, i)), 1);
+					mip_res[i-1].y = max<int>(int(t_height / pow(2, i)), 1);
 				}
 			}
 		}

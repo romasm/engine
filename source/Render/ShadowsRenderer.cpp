@@ -222,7 +222,7 @@ void ShadowsRenderer::PlaceShadowMaps()
 	{
 		WRN("Shadows buffer overflow! Target shadow resolution downscales.");
 		for(uint8_t k = 0; k < 6; k++)
-			shadows_sizes[k].res = max(shadows_sizes[k].res / 2, SHADOWS_MINRES);
+			shadows_sizes[k].res = max<uint16_t>(shadows_sizes[k].res / 2, SHADOWS_MINRES);
 		cascadeShadowRes = shadows_sizes[0].res;
 
 		PlaceShadowMaps();

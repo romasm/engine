@@ -30,11 +30,12 @@ workspace "Engine"
 			"thirdparty/Lua/LuaJIT/src" ,
 			"thirdparty/DirectXTK/Inc" ,
 			"thirdparty/DirectXTex/Inc" ,
-			"thirdparty/ReactPhysics3D/src" ,
+			"thirdparty/BulletPhysics/inc" ,
 		}
 		
 		libdirs {			
-			"thirdparty/Assimp/lib"
+			"thirdparty/Assimp/lib",
+			"thirdparty/BulletPhysics/lib",
 		}
 		
 		filter "platforms:x64"
@@ -52,7 +53,6 @@ workspace "Engine"
 				"thirdparty/Lua/lib/debug" ,
 				"thirdparty/DirectXTK/lib/x64/Debug" ,
 				"thirdparty/DirectXTex/lib/x64/Debug" ,
-				"thirdparty/ReactPhysics3D/lib/Debug",
 			}
 			
 		filter "configurations:Development"
@@ -65,7 +65,6 @@ workspace "Engine"
 				"thirdparty/Lua/lib/release" ,
 				"thirdparty/DirectXTK/lib/x64/Release" ,
 				"thirdparty/DirectXTex/lib/x64/Release" ,
-				"thirdparty/ReactPhysics3D/lib/Release",
 			}
 			
 		filter "configurations:Release"
@@ -77,12 +76,11 @@ workspace "Engine"
 				"thirdparty/Lua/lib/release" ,
 				"thirdparty/DirectXTK/lib/x64/Release" ,
 				"thirdparty/DirectXTex/lib/x64/Release" ,
-				"thirdparty/ReactPhysics3D/lib/Release",
 			}
 		
 		filter {}
 		
-		links { "assimp-vc110-mt", "lua51", "reactphysics3d" }
+		links { "assimp-vc110-mt", "lua51" }
 		
 		files {
 			"source/Common/*.h", 

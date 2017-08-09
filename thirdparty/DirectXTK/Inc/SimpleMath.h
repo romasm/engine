@@ -20,6 +20,9 @@
 #include "DirectXPackedVector.h"
 #include "DirectXCollision.h"
 
+// Bullet Physics
+#include "btBulletDynamicsCommon.h"
+
 namespace DirectX
 {
 
@@ -146,6 +149,13 @@ struct Vector3 : public XMFLOAT3
     Vector3(FXMVECTOR V) { XMStoreFloat3( this, V ); }
 
     operator XMVECTOR() const { return XMLoadFloat3( this ); }
+
+	// Bullet Physics
+	operator btVector3()
+	{
+		return btVector3(this->x, this->y, this->z);
+	}
+	Vector3(const btVector3& v) : XMFLOAT3(v.x, v.y, v.z) {}
 
     // Comparision operators
     bool operator == ( const Vector3& V ) const;
@@ -546,6 +556,13 @@ struct Quaternion : public XMFLOAT4
     Quaternion(FXMVECTOR V) { XMStoreFloat4( this, V ); }
 
     operator XMVECTOR() const { return XMLoadFloat4( this ); }
+
+	// Bullet Physics
+	operator btQuaternion()
+	{
+		return btQuaternion(this->x, this->y, this->z, this->w);
+	}
+	Quaternion(const btQuaternion& q) : XMFLOAT4(q.x, q.y, q.z, q.w) {}
 
     // Comparision operators
     bool operator == ( const Quaternion& q ) const;

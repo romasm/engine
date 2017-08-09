@@ -273,7 +273,7 @@ bool SceneRenderMgr::RegSpotCaster(Vector4& color, Vector4& nonAreaColor, float 
 	vData.Virtpos = vData.PosRange;
 	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
+	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -324,7 +324,7 @@ bool SceneRenderMgr::RegSpotCasterDisk(Vector4& color, Vector4& nonAreaColor, fl
 	vData.Virtpos = Vector4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
+	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -378,7 +378,7 @@ bool SceneRenderMgr::RegSpotCasterRect(Vector4& color, Vector4& nonAreaColor, fl
 	vData.Virtpos = Vector4(virtpos.x, virtpos.y, virtpos.z, 0);
 	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
+	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	vData.matViewProj = vp;
 	
 	voxelRenderer->RegisterSpotCaster(vData);
@@ -426,7 +426,7 @@ bool SceneRenderMgr::RegPointCaster(Vector4& color, Vector4& nonAreaColor, float
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
@@ -493,7 +493,7 @@ bool SceneRenderMgr::RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor,
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
@@ -562,7 +562,7 @@ bool SceneRenderMgr::RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, f
 	// to voxels
 	PointVoxelBuffer vData;
 	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
 	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 

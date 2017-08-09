@@ -599,9 +599,9 @@ void VoxelRenderer::ProcessEmittance()
 		uint32_t temp = min(uint32_t(8), currentRes);
 		while(temp >>= 1) ++shaderId;
 
-		threadCount[0] = max(uint32_t(1), currentRes / 8);
+		threadCount[0] = max<uint32_t>(uint32_t(1), currentRes / 8);
 		threadCount[1] = threadCount[0] * 6;
-		threadCount[2] = max(uint32_t(1), currentRes / 4);
+		threadCount[2] = max<uint32_t>(uint32_t(1), currentRes / 4);
 
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, Vector4(0,0,0,0));
 		
@@ -659,7 +659,7 @@ void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, M
 				continue;
 		}
 
-		float meshSize = max(max(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 2;
+		float meshSize = max<float>(max<float>(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 2;
 		if( meshSize < volumesConfig[level].voxelSize )
 			continue;
 		

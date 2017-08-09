@@ -405,7 +405,7 @@ bool FileIO::CreateDir(string path)
 			slash = 0;
 		auto Rslash = path.rfind('/');
 		if(Rslash != string::npos)
-			slash = max(slash, Rslash);
+			slash = max<string::size_type>(slash, Rslash);
 		if(slash == string::npos)
 		{
 			WRN("Can't create directory %s", path.data());
@@ -466,7 +466,7 @@ bool FileIO::Rename(string oldPath, string newPath)
 		slash = 0;
 	auto Rslash = newPath.rfind('/');
 	if(Rslash != string::npos)
-		slash = max(slash, Rslash);
+		slash = max<string::size_type>(slash, Rslash);
 	if(slash != string::npos)
 	{
 		string upDir = newPath.substr(0, slash);
@@ -557,7 +557,7 @@ bool FileIO::CopyByExt(string fromPath, string toPath, string ext)
 			slash = 0;
 		auto Rslash = toPath.rfind('/');
 		if(Rslash != string::npos)
-			slash = max(slash, Rslash);
+			slash = max<string::size_type>(slash, Rslash);
 
 		string fileName;
 		if(slash != string::npos)

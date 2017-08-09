@@ -151,16 +151,16 @@ namespace EngineCore
 			p_max.x = p_max.y = -1.0f;
 			for(uint8_t i = 0; i < 8; i++)
 			{
-				 p_min.x = min(p_min.x, corners_cs[i].x);
-				 p_min.y = min(p_min.y, corners_cs[i].y);
-				 p_max.x = max(p_max.x, corners_cs[i].x);
-				 p_max.y = max(p_max.y, corners_cs[i].y);
+				 p_min.x = min<float>(p_min.x, corners_cs[i].x);
+				 p_min.y = min<float>(p_min.y, corners_cs[i].y);
+				 p_max.x = max<float>(p_max.x, corners_cs[i].x);
+				 p_max.y = max<float>(p_max.y, corners_cs[i].y);
 			}
 
-			p_min.x = max(p_min.x, -1.0f);
-			p_min.y = max(p_min.y, -1.0f);
-			p_max.x = min(p_max.x, 1.0f);
-			p_max.y = min(p_max.y, 1.0f);
+			p_min.x = max<float>(p_min.x, -1.0f);
+			p_min.y = max<float>(p_min.y, -1.0f);
+			p_max.x = min<float>(p_max.x, 1.0f);
+			p_max.y = min<float>(p_max.y, 1.0f);
 
 			return (p_max.x - p_min.x) * (p_max.y - p_min.y) * 0.25f; // / 4 - screen square
 		}

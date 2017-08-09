@@ -6,6 +6,11 @@
 
 using namespace EngineCore;
 
+__forceinline Vector3 LRHconvertion(const Vector3& v)
+{
+	return Vector3(v.x, v.y, -v.z);
+}
+
 static Quaternion q_identity(0, 0, 0, 1.0f);
 static Vector2 v2_zero(0, 0);
 static Vector3 v3_zero(0, 0, 0);
@@ -18,7 +23,7 @@ inline float lerp(float f1, float f2, float l)
 
 inline float clamp(float fmin, float f, float fmax)
 {
-	return max(fmin, min(f, fmax));
+	return max<float>(fmin, min<float>(f, fmax));
 }
 
 inline int FloatRoundInt(float f)

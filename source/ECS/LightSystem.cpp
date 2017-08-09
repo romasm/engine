@@ -621,13 +621,13 @@ void LightSystem::UpdateLightProps(Entity e)
 	comp.nonAreaColor.y = comp.color.y * comp.nonAreaBrightness;
 	comp.nonAreaColor.z = comp.color.z * comp.nonAreaBrightness;
 
-	comp.range = max(comp.range, 0.001f);
+	comp.range = max<float>(comp.range, 0.001f);
 	comp.rangeInvSqr = 1.0f / (comp.range * comp.range);
 
 	if(comp.type >= 3)
 	{
 		float angleOffset = -cos(comp.cone.y);
-		comp.cone_data.x = 1.0f / max(0.005f, cos(comp.cone.x) + angleOffset);
+		comp.cone_data.x = 1.0f / max<float>(0.005f, cos(comp.cone.x) + angleOffset);
 		comp.cone_data.y = angleOffset * comp.cone_data.x;
 
 		switch (comp.type)
@@ -636,19 +636,19 @@ void LightSystem::UpdateLightProps(Entity e)
 			comp.virt_clip = 0;
 			break;
 		case LIGHT_TYPE_DISK:
-			comp.area.x = max(comp.area.x, 0.05f);
+			comp.area.x = max<float>(comp.area.x, 0.05f);
 			comp.area_data.x = comp.area.x;
 			comp.area_data.y = comp.area.x * comp.area.x;
 			comp.area_data.z = 0;
-			comp.virt_clip = (max(comp.area_data.x, comp.area_data.y * 2) / tan(comp.cone.y));
+			comp.virt_clip = (max<float>(comp.area_data.x, comp.area_data.y * 2) / tan(comp.cone.y));
 			break;
 		case LIGHT_TYPE_RECT:
-			comp.area.x = max(comp.area.x, 0.05f);
-			comp.area.y = max(comp.area.y, 0.05f);
+			comp.area.x = max<float>(comp.area.x, 0.05f);
+			comp.area.y = max<float>(comp.area.y, 0.05f);
 			comp.area_data.x = sqrt(comp.area.x * comp.area.x + comp.area.y * comp.area.y);
 			comp.area_data.y = comp.area.y * 0.5f;
 			comp.area_data.z = comp.area.x * 0.5f;
-			comp.virt_clip = (max(comp.area_data.x, comp.area_data.y * 2) / tan(comp.cone.y));
+			comp.virt_clip = (max<float>(comp.area_data.x, comp.area_data.y * 2) / tan(comp.cone.y));
 			break;
 		}
 
@@ -671,14 +671,14 @@ void LightSystem::UpdateLightProps(Entity e)
 		case LIGHT_TYPE_POINT:
 			break;
 		case LIGHT_TYPE_SPHERE:
-			comp.area.x = max(comp.area.x, 0.05f);
+			comp.area.x = max<float>(comp.area.x, 0.05f);
 			comp.area_data.x = comp.area.x;
 			comp.area_data.y = comp.area.x * comp.area.x;
 			comp.area_data.z = 0;
 			break;
 		case LIGHT_TYPE_TUBE:
-			comp.area.x = max(comp.area.x, 0.05f);
-			comp.area.y = max(comp.area.y, 0.05f);
+			comp.area.x = max<float>(comp.area.x, 0.05f);
+			comp.area.y = max<float>(comp.area.y, 0.05f);
 			comp.area_data.x = comp.area.x;
 			comp.area_data.y = comp.area.y;
 			comp.area_data.z = comp.area.x * comp.area.x;
