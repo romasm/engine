@@ -1,3 +1,3 @@
 @echo off
-premake5 vs2012
+"thirdparty/premake5.exe" vs2012
 pause

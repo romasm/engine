@@ -30,7 +30,7 @@ workspace "Engine"
 			"thirdparty/Lua/LuaJIT/src" ,
 			"thirdparty/DirectXTK/Inc" ,
 			"thirdparty/DirectXTex/Inc" ,
-			"thirdparty/BulletPhysics/inc" ,
+			"thirdparty/BulletPhysics/src" ,
 		}
 		
 		libdirs {			

@@ -79,24 +79,20 @@
 #undef min
 
 #include <btBulletDynamicsCommon.h>
-#pragma comment(lib,"Bullet3Collision_x64_release.lib")
-#pragma comment(lib,"Bullet3Common_x64_release.lib")
-#pragma comment(lib,"Bullet3Dynamics_x64_release.lib")
-#pragma comment(lib,"Bullet3Geometry_x64_release.lib")
-#pragma comment(lib,"BulletCollision_x64_release.lib")
-#pragma comment(lib,"BulletDynamics_x64_release.lib")
-#pragma comment(lib,"BulletInverseDynamics_x64_release.lib")
-#pragma comment(lib,"BulletInverseDynamicsUtils_x64_release.lib")
-#pragma comment(lib,"BulletSoftBody_x64_release.lib")
-#pragma comment(lib,"BussIK_x64_release.lib")
-#pragma comment(lib,"clsocket_x64_release.lib")
-#pragma comment(lib,"ConvexDecomposition_x64_release.lib")
-#pragma comment(lib,"enet_x64_release.lib")
-#pragma comment(lib,"gtest_x64_release.lib")
-#pragma comment(lib,"gwen_x64_release.lib")
-#pragma comment(lib,"HACD_x64_release.lib")
-#pragma comment(lib,"LinearMath_x64_release.lib")
-#pragma comment(lib,"vhacd_x64_release.lib")
+#pragma comment(lib,"Bullet3Collision.lib")
+#pragma comment(lib,"Bullet3Common.lib")
+#pragma comment(lib,"Bullet3Dynamics.lib")
+#pragma comment(lib,"Bullet3Geometry.lib")
+#pragma comment(lib,"BulletCollision.lib")
+#pragma comment(lib,"BulletDynamics.lib")
+#pragma comment(lib,"BulletInverseDynamics.lib")
+#pragma comment(lib,"BulletInverseDynamicsUtils.lib")
+#pragma comment(lib,"BulletSoftBody.lib")
+#pragma comment(lib,"LinearMath.lib")
+
+#pragma comment(lib,"ConvexDecomposition.lib")
+#pragma comment(lib,"HACD.lib")
+#pragma comment(lib,"vhacd.lib")
 
 
 // namespaces
