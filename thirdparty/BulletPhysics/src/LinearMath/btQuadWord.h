@@ -36,7 +36,8 @@ ATTRIBUTE_ALIGNED16(class) btQuadWord
 class btQuadWord
 #endif
 {
-protected:
+//protected:
+public:
 
 #if defined (__SPU__) && defined (__CELLOS_LV2__)
 	union {

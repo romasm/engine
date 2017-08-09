@@ -155,7 +155,7 @@ struct Vector3 : public XMFLOAT3
 	{
 		return btVector3(this->x, this->y, this->z);
 	}
-	Vector3(const btVector3& v) : XMFLOAT3(v.x, v.y, v.z) {}
+	Vector3(const btVector3& v) : XMFLOAT3(v.m_floats[0], v.m_floats[1], v.m_floats[2]) {}
 
     // Comparision operators
     bool operator == ( const Vector3& V ) const;
@@ -562,7 +562,7 @@ struct Quaternion : public XMFLOAT4
 	{
 		return btQuaternion(this->x, this->y, this->z, this->w);
 	}
-	Quaternion(const btQuaternion& q) : XMFLOAT4(q.x, q.y, q.z, q.w) {}
+	Quaternion(const btQuaternion& q) : XMFLOAT4(q.m_floats[0], q.m_floats[1], q.m_floats[2], q.m_floats[3]) {}
 
     // Comparision operators
     bool operator == ( const Quaternion& q ) const;

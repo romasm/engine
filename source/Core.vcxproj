@@ -81,7 +81,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
     </ClCompile>
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -127,7 +127,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
