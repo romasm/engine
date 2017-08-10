@@ -4,18 +4,38 @@
 #include "Entity.h"
 #include "TransformSystem.h"
 
-#define PHYSICS_TIME_STEP_MS 1000.0f / 60.0f
+#define MAX_PHYSICS_STEP_PER_FRAME 10
 
 namespace EngineCore
 {
+	ATTRIBUTE_ALIGNED16(struct)	btEngineMotionState : public btMotionState
+	{
+		Entity entity;
+		PhysicsSystem* physicsSystem;
+		btTransform	m_centerOfMassOffset;
+
+		BT_DECLARE_ALIGNED_ALLOCATOR();
+
+		btEngineMotionState(Entity e, PhysicsSystem* physics, const btTransform& centerOfMassOffset = btTransform::getIdentity()) :
+			m_centerOfMassOffset(centerOfMassOffset), physicsSystem(physics)
+		{
+			entity = e;
+		}
+
+		// synchronizes world transform from user to physics
+		void getWorldTransform(btTransform& centerOfMassWorldTrans ) const;
+
+		// synchronizes world transform from physics to user
+		void setWorldTransform(const btTransform& centerOfMassWorldTrans);
+	};
+
 	struct PhysicsComponent
 	{
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
 
-		rp3d::RigidBody* body;
-		rp3d::Transform previousTransform;
+		btRigidBody* body;
 
 		bool overwriteMass;
 		bool overwriteCenterOfMass;
@@ -34,7 +54,7 @@ namespace EngineCore
 	class PhysicsSystem
 	{
 	public:
-		PhysicsSystem(BaseWorld* w, rp3d::DynamicsWorld* dynamicsW, uint32_t maxCount);
+		PhysicsSystem(BaseWorld* w, btDynamicsWorld* dynamicsW, uint32_t maxCount);
 		~PhysicsSystem();
 
 		PhysicsComponent* AddComponent(Entity e);
@@ -53,7 +73,21 @@ namespace EngineCore
 		
 		void Simulate(float dt);
 		void UpdateTransformations();
-		void UpdateSceneGraph();
+		//void UpdateSceneGraph();
+
+		inline void setPhysicsTransform(Entity e, XMMATRIX& matrix)
+		{
+			transformSystem->SetPhysicsTransform(e, matrix);
+
+			size_t idx = components.getArrayIdx(e.index());
+			if(idx == components.capacity()) 
+				return;
+			components.getDataByArrayIdx(idx).dirty = false;
+		}
+		inline void getPhysicsTransform(Entity e, btTransform& transform)
+		{
+			transform = btTransform( transformSystem->GetTransformW(e) );
+		}
 
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
@@ -114,8 +148,6 @@ namespace EngineCore
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 
-		rp3d::DynamicsWorld* dynamicsWorld;
-		float updateAccum;
-		float interpolationFactor;
+		btDynamicsWorld* dynamicsWorld;
 	};
 }

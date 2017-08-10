@@ -2,7 +2,7 @@
 #include "PhysicsSystem.h"
 #include "World.h"
 
-PhysicsSystem::PhysicsSystem(BaseWorld* w, rp3d::DynamicsWorld* dynamicsW, uint32_t maxCount)
+PhysicsSystem::PhysicsSystem(BaseWorld* w, btDynamicsWorld* dynamicsW, uint32_t maxCount)
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
@@ -11,9 +11,6 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, rp3d::DynamicsWorld* dynamicsW, uint3
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
-
-	updateAccum = 0;
-	interpolationFactor = 1.0f;
 }
 
 PhysicsSystem::~PhysicsSystem()
@@ -22,6 +19,18 @@ PhysicsSystem::~PhysicsSystem()
 	{
 		_DeleteComponent(&i);
 	}
+}
+
+void btEngineMotionState::getWorldTransform(btTransform& centerOfMassWorldTrans ) const 
+{
+	physicsSystem->getPhysicsTransform(entity, centerOfMassWorldTrans);
+	centerOfMassWorldTrans = centerOfMassWorldTrans * m_centerOfMassOffset.inverse();
+}
+
+void btEngineMotionState::setWorldTransform(const btTransform& centerOfMassWorldTrans)
+{
+	physicsSystem->setPhysicsTransform(entity, 
+		XMMATRIX(centerOfMassWorldTrans * m_centerOfMassOffset));
 }
 
 void PhysicsSystem::UpdateTransformations()
@@ -33,10 +42,11 @@ void PhysicsSystem::UpdateTransformations()
 
 		Entity e = i.get_entity();
 
-		i.previousTransform = transformSystem->GetTransformW(e);
-		i.body->setTransform(i.previousTransform);
+		btTransform transform( transformSystem->GetTransformW(e) );
+		i.body->proceedToTransform( transform );
 		
-		i.body->setIsSleeping(false);
+		if( i.body->wantsSleeping() )
+			i.body->activate( true );
 
 		i.dirty = false;
 	}
@@ -44,22 +54,9 @@ void PhysicsSystem::UpdateTransformations()
 
 void PhysicsSystem::Simulate(float dt)
 {
-	if( components.empty() )
-	{
-		updateAccum = 0;
-		return;
-	}
-
-	updateAccum += dt; 
-	while( updateAccum >= PHYSICS_TIME_STEP_MS )
-	{
-		dynamicsWorld->update( PHYSICS_TIME_STEP_MS * 0.001f ); 
-		updateAccum -= PHYSICS_TIME_STEP_MS; 
-	}
-
-	interpolationFactor = updateAccum / PHYSICS_TIME_STEP_MS;
+	dynamicsWorld->stepSimulation( dt * 0.001f, MAX_PHYSICS_STEP_PER_FRAME );
 }
-
+/*
 void PhysicsSystem::UpdateSceneGraph()
 {
 	for(auto& i: *components.data())
@@ -78,7 +75,7 @@ void PhysicsSystem::UpdateSceneGraph()
 
 		i.dirty = false;
 	}
-}
+}*/
 
 PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 {
