@@ -6,6 +6,12 @@
 
 namespace EngineCore
 {
+	enum CollisionStorageType
+	{
+		LOCAL = 0,
+		RESOURCE,
+	};
+
 	class CollisionMgr : public BaseMgr<CollisionData, RESOURCE_MAX_COUNT>
 	{
 	public:

@@ -11,12 +11,6 @@
 
 namespace EngineCore
 {
-	enum CollisionStorageType
-	{
-		LOCAL = 0,
-		RESOURCE,
-	};
-
 	struct CollisionHandle
 	{
 		CollisionStorageType stoarge;
@@ -66,7 +60,7 @@ namespace EngineCore
 	class CollisionSystem
 	{
 	public:
-		CollisionSystem(BaseWorld* w, rp3d::CollisionWorld* collisionWorld, uint32_t maxCount);
+		CollisionSystem(BaseWorld* w, btDiscreteDynamicsWorld* collisionWorld, uint32_t maxCount);
 		~CollisionSystem();
 
 		CollisionComponent* AddComponent(Entity e);

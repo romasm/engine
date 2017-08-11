@@ -116,6 +116,7 @@ public:
 
 	///this can be useful to synchronize a single rigid body -> graphics object
 	void	synchronizeSingleMotionState(btRigidBody* body);
+	btTransform	getInterpolatedWorldTransform(btRigidBody* body);
 
 	virtual void	addConstraint(btTypedConstraint* constraint, bool disableCollisionsBetweenLinkedBodies=false);
 

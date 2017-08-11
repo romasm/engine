@@ -2,7 +2,7 @@
 #include "PhysicsSystem.h"
 #include "World.h"
 
-PhysicsSystem::PhysicsSystem(BaseWorld* w, btDynamicsWorld* dynamicsW, uint32_t maxCount)
+PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, uint32_t maxCount)
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
@@ -21,18 +21,6 @@ PhysicsSystem::~PhysicsSystem()
 	}
 }
 
-void btEngineMotionState::getWorldTransform(btTransform& centerOfMassWorldTrans ) const 
-{
-	physicsSystem->getPhysicsTransform(entity, centerOfMassWorldTrans);
-	centerOfMassWorldTrans = centerOfMassWorldTrans * m_centerOfMassOffset.inverse();
-}
-
-void btEngineMotionState::setWorldTransform(const btTransform& centerOfMassWorldTrans)
-{
-	physicsSystem->setPhysicsTransform(entity, 
-		XMMATRIX(centerOfMassWorldTrans * m_centerOfMassOffset));
-}
-
 void PhysicsSystem::UpdateTransformations()
 {
 	for(auto& i: *components.data())
@@ -42,7 +30,8 @@ void PhysicsSystem::UpdateTransformations()
 
 		Entity e = i.get_entity();
 
-		btTransform transform( transformSystem->GetTransformW(e) );
+		btTransform transform = ToTransform( transformSystem->GetTransformW(e) );
+		transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
 		i.body->proceedToTransform( transform );
 		
 		if( i.body->wantsSleeping() )
@@ -52,30 +41,22 @@ void PhysicsSystem::UpdateTransformations()
 	}
 }
 
-void PhysicsSystem::Simulate(float dt)
+void PhysicsSystem::SimulateAndUpdateSceneGraph(float dt)
 {
 	dynamicsWorld->stepSimulation( dt * 0.001f, MAX_PHYSICS_STEP_PER_FRAME );
-}
-/*
-void PhysicsSystem::UpdateSceneGraph()
-{
+
 	for(auto& i: *components.data())
 	{
-		if( !i.body->isActive() || i.body->isSleeping() || i.body->getType() == rp3d::STATIC )
+		if( !i.body->isActive() || i.body->isStaticOrKinematicObject() )
 			continue;
 
-		const rp3d::Transform& currentTransform = i.body->getTransform();
-		if( currentTransform == i.previousTransform )
-			continue;
-
-		rp3d::Transform interpolatedTransform = rp3d::Transform::interpolateTransforms(i.previousTransform, currentTransform, interpolationFactor);
-		i.previousTransform = currentTransform;
-		
-		transformSystem->SetPhysicsTransform(i.get_entity(), XMMATRIX(interpolatedTransform));
+		btTransform transform = dynamicsWorld->getInterpolatedWorldTransform( i.body );
+		transform.setOrigin( transform.getOrigin() - btVector3(i.centerOfMassOffset) );
+		transformSystem->SetPhysicsTransform(i.get_entity(), ToXMMATRIX(transform));
 
 		i.dirty = false;
 	}
-}*/
+}
 
 PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 {
@@ -88,12 +69,15 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	PhysicsComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
-	res->overwriteMass = false;
-	res->overwriteCenterOfMass = false;
+	res->centerOfMassOffset = Vector3::Zero;
+	res->collisionData = 0;
+	res->collisionStorage = LOCAL;
 	
-	res->body = dynamicsWorld->createRigidBody(rp3d::Transform::identity());
-	res->body->setIsActive(false);
-		
+	// TODO: use default collision
+	btRigidBody::btRigidBodyConstructionInfo info(1.0f, nullptr, nullptr);
+	res->body = new btRigidBody(info);
+	res->body->forceActivationState(DISABLE_SIMULATION);
+
 	return res;
 }
 
@@ -109,8 +93,8 @@ void PhysicsSystem::DeleteComponent(Entity e)
 
 void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp)
 {
-	dynamicsWorld->destroyRigidBody(comp->body);
-	comp->body = nullptr;
+	dynamicsWorld->removeRigidBody(comp->body);
+	_DELETE(comp->body);
 
 	auto collisionComp = world->GetCollisionSystem()->GetComponent(comp->get_entity());
 	if(collisionComp)

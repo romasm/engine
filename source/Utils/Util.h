@@ -337,3 +337,17 @@ inline bool isInRect(RECT child, RECT parent)
 	else
 		return true;
 }
+
+inline btTransform ToTransform(const XMMATRIX& mat)
+{
+	XMVECTOR scale, rot, pos;
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+	return btTransform(Quaternion(rot), Vector3(pos));
+}
+
+inline XMMATRIX ToXMMATRIX(const btTransform& transf)
+{
+	Vector3 pos = transf.getOrigin();
+	Quaternion rot = transf.getRotation();
+	return XMMatrixMultiply(XMMatrixRotationQuaternion(rot), XMMatrixTranslationFromVector(pos));
+}

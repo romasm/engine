@@ -625,8 +625,7 @@ void World::Frame()
 
 	if( m_mode == StateMode::LIVE )
 	{
-		m_physicsSystem->Simulate(m_dt);
-		m_physicsSystem->UpdateSceneGraph();
+		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
 	}
 
 	m_collisionSystem->UpdateTransformations();
@@ -814,8 +813,7 @@ void SmallWorld::Frame()
 
 	if( m_mode == StateMode::LIVE )
 	{
-		m_physicsSystem->Simulate(m_dt);
-		m_physicsSystem->UpdateSceneGraph();
+		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
 	}
 
 	m_collisionSystem->UpdateTransformations();

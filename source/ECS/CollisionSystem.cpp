@@ -2,7 +2,7 @@
 #include "CollisionSystem.h"
 #include "World.h"
 
-CollisionSystem::CollisionSystem(BaseWorld* w, rp3d::CollisionWorld* collisionW, uint32_t maxCount)
+CollisionSystem::CollisionSystem(BaseWorld* w, btDiscreteDynamicsWorld* collisionW, uint32_t maxCount)
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
