@@ -42,7 +42,7 @@ void ShadowSystem::Update()
 			continue;
 		
 		XMMATRIX view;
-		XMVECTOR pos;
+		Vector3 pos;
 		view = lightSys->GetView(i.get_entity(), i.num, &pos);
 		i.view = XMMatrixTranspose(view);
 		i.view_proj = i.proj * i.view;

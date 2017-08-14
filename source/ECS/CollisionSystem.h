@@ -5,53 +5,22 @@
 #include "TransformSystem.h"
 #include "PhysicsSystem.h"
 #include "CollisionMgr.h"
-#include "MaterialMgr.h"
 
 #define COLLISION_RESOURCE_NULL 0
 
 namespace EngineCore
 {
-	struct CollisionHandle
-	{
-		CollisionStorageType stoarge;
-		rp3d::CollisionShape* shape;
-		rp3d::ProxyShape* proxy;
-
-		CollisionHandle() : shape(nullptr), proxy(nullptr), stoarge(CollisionStorageType::LOCAL) {}
-		CollisionHandle(rp3d::CollisionShape* s, rp3d::ProxyShape* p, CollisionStorageType strg) 
-			: shape(s), proxy(p), stoarge(strg) {}
-	};
-
 	struct CollisionComponent
 	{
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
 		
-		rp3d::CollisionBody* body;
-		bool physicsBody;
-		
-		uint32_t resourceId;
-		DArray<CollisionHandle> shapes;
-
-	#ifdef _DEV
-		bool dirty_vis;
-		ID3D11Buffer* constantBuffer;
-		Material* material;
-	#endif
+		//TODO
 
 		CollisionComponent()
 		{
-			body = nullptr;
 			dirty = false;
-			physicsBody = false;
-			resourceId = CollisionMgr::nullres;
-
-		#ifdef _DEV
-			dirty_vis = false;
-			constantBuffer = nullptr;
-			material = nullptr;
-		#endif
 		}
 	};
 
@@ -92,13 +61,6 @@ namespace EngineCore
 		bool IsActive(Entity e);
 		void SetActive(Entity e, bool active);
 		
-		int32_t AddBoxCollider(Entity e, Vector3 pos, Quaternion rot, float mass, Vector3 halfSize, float margin);
-		int32_t AddSphereCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius);
-		int32_t AddConeCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height, float margin);
-		int32_t AddCylinderCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height, float margin);
-		int32_t AddCapsuleCollider(Entity e, Vector3 pos, Quaternion rot, float mass, float radius, float height);
-		void AddConvexCollision(Entity e, string filename);
-
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		void SetDebugDraw(bool draw)
@@ -109,55 +71,10 @@ namespace EngineCore
 		static void RegLuaClass();
 
 	private:
-		inline int32_t AddShape(CollisionComponent& comp, Vector3& pos, Quaternion& rot, 
-			float mass, rp3d::CollisionShape* shape, CollisionStorageType strg)
-		{
-			rp3d::Transform shapeTransform(pos, rot);
-			rp3d::ProxyShape* proxy;
-			if(comp.physicsBody)
-				proxy = ((rp3d::RigidBody*)comp.body)->addCollisionShape(shape, shapeTransform, mass);
-			else
-				proxy = comp.body->addCollisionShape(shape, shapeTransform);
-			comp.shapes.push_back(CollisionHandle(shape, proxy, strg));
-			return (int32_t)comp.shapes.size() - 1;
-		}
-
-		void _addConvexCollision(CollisionComponent* comp, string& filename);
 
 		inline void _DeleteComponent(CollisionComponent* comp)
 		{
-			if(comp->physicsBody)
-			{
-				if(comp->body != nullptr)
-					ERR("Delete PhysicsComponent before deletion of CollisionComponent");
-			}
-			else
-			{
-				collisionWorld->destroyCollisionBody(comp->body);
-			}
-			comp->body = nullptr;
-
-			if( comp->resourceId != CollisionMgr::nullres )
-			{
-				CollisionMgr::Get()->DeleteResource(comp->resourceId);
-				comp->resourceId = CollisionMgr::nullres;
-			}
-
-			for(auto& handle: comp->shapes)
-			{
-				if( handle.stoarge == CollisionStorageType::RESOURCE )
-					handle.shape = nullptr;
-				else
-					_DELETE(handle.shape);
-
-				handle.proxy = nullptr;
-			}
-			comp->shapes.destroy();
-			
-		#ifdef _DEV
-			_RELEASE(comp->constantBuffer);
-			MATERIAL_PTR_DROP(comp->material);
-		#endif
+			// TODO
 		}
 
 		ComponentRArray<CollisionComponent> components;
@@ -166,7 +83,7 @@ namespace EngineCore
 		TransformSystem* transformSystem;
 		PhysicsSystem* physicsSystem;
 
-		rp3d::CollisionWorld* collisionWorld;
+		btDiscreteDynamicsWorld* collisionWorld;
 
 		bool b_debugDraw;
 	};

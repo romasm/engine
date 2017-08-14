@@ -38,9 +38,9 @@ namespace EngineCore
 		// update on transform
 		BoundingFrustum worldFrustum;
 
-		XMVECTOR camPos;
-		XMVECTOR camLookDir;
-		XMVECTOR camUp;
+		Vector3 camPos;
+		Vector3 camLookDir;
+		Vector3 camUp;
 
 		XMMATRIX viewMatrix;
 		XMMATRIX prevViewProj;

@@ -169,7 +169,7 @@ namespace EngineCore
 		void UpdateShadows(Entity e);
 
 		XMMATRIX GetProj(Entity e);
-		XMMATRIX GetView(Entity e, uchar num, XMVECTOR* pos);
+		XMMATRIX GetView(Entity e, uchar num, Vector3* pos);
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 

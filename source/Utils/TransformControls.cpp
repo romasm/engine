@@ -92,10 +92,10 @@ TransformControls::~TransformControls()
 		_RELEASE(matricies[i].constantBuffer);
 }
 
-void TransformControls::calcSreenScaleMat(CXMVECTOR campos, uint id)
+void TransformControls::calcSreenScaleMat(const Vector3& campos, uint id)
 {
-	XMVECTOR v_dist = campos - m_pos;
-	matricies[id].scale = XMVectorGetX(XMVector3Length(v_dist)) * m_scale;
+	Vector3 v_dist = campos - m_pos;
+	matricies[id].scale = v_dist.Length() * m_scale;
 	matricies[id].actualTransform = XMMatrixScaling(matricies[id].scale, matricies[id].scale, matricies[id].scale) * m_transformation;
 
 	StmMatrixBuffer mb;
@@ -161,18 +161,18 @@ void TransformControls::RegToDraw()
 			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_x_mesh->indexBuffers[0].size, arrow_x_mesh->vertexBuffers[0].buffer, arrow_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_x, XMVector3TransformCoord(XMLoadFloat3(&arrow_x_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_x_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_y_mesh->indexBuffers[0].size, arrow_y_mesh->vertexBuffers[0].buffer, arrow_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_y, XMVector3TransformCoord(XMLoadFloat3(&arrow_y_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_y_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_z_mesh->indexBuffers[0].size, arrow_z_mesh->vertexBuffers[0].buffer, arrow_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_z, XMVector3TransformCoord(XMLoadFloat3(&arrow_z_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_z_mesh->box.Center), m_transformation)));
 
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].size, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xy, XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].size, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xz, XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].size, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_yz, XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
 	
 			frustCount++;
 		}
@@ -217,13 +217,13 @@ void TransformControls::RegToDraw()
 			auto rot_all_mesh = MeshMgr::GetResourcePtr(rot_all);
 
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_x_mesh->indexBuffers[0].size, rot_x_mesh->vertexBuffers[0].buffer, rot_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_x, XMVector3TransformCoord(XMLoadFloat3(&rot_x_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_rot_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_x_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_y_mesh->indexBuffers[0].size, rot_y_mesh->vertexBuffers[0].buffer, rot_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_y, XMVector3TransformCoord(XMLoadFloat3(&rot_y_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_rot_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_y_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_z_mesh->indexBuffers[0].size, rot_z_mesh->vertexBuffers[0].buffer, rot_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_z, XMVector3TransformCoord(XMLoadFloat3(&rot_z_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_rot_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_z_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_all_mesh->indexBuffers[0].size, rot_all_mesh->vertexBuffers[0].buffer, rot_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_all, XMVector3TransformCoord(XMLoadFloat3(&rot_all_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_all_mesh->box.Center), m_transformation)));
 		
 			frustCount++;
 		}
@@ -280,20 +280,20 @@ void TransformControls::RegToDraw()
 			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_x_mesh->indexBuffers[0].size, box_x_mesh->vertexBuffers[0].buffer, box_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_x, XMVector3TransformCoord(XMLoadFloat3(&box_x_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_x_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_y_mesh->indexBuffers[0].size, box_y_mesh->vertexBuffers[0].buffer, box_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_y, XMVector3TransformCoord(XMLoadFloat3(&box_y_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_y_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_z_mesh->indexBuffers[0].size, box_z_mesh->vertexBuffers[0].buffer, box_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_z, XMVector3TransformCoord(XMLoadFloat3(&box_z_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_z_mesh->box.Center), m_transformation)));
 
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].size, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xy, XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].size, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xz, XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].size, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_yz, XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
 			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_all_mesh->indexBuffers[0].size, box_all_mesh->vertexBuffers[0].buffer, box_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_all, XMVector3TransformCoord(XMLoadFloat3(&box_all_mesh->box.Center), m_transformation));
+				sizeof(LitVertex), mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_all_mesh->box.Center), m_transformation)));
 		
 			frustCount++;
 		}
@@ -313,23 +313,23 @@ Vector3 TransformControls::CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 	auto camComp = camSys->GetComponent(cam);
 
-	XMVECTOR l_PrevRay = XMVector3Normalize(XMLoadFloat3(&PrevRay));
-	XMVECTOR l_Ray = XMVector3Normalize(XMLoadFloat3(&Ray));
+	PrevRay.Normalize();
+	Ray.Normalize();
 
-	XMVECTOR axis;
+	Vector3 axis;
 	switch (b_hover)
 	{
-	case TransformControls::E_TRANSFORM_X: axis = XMVectorSet(1.0f,0.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_X: axis = Vector3(1.0f,0.0f,0.0f);
 		break;
-	case TransformControls::E_TRANSFORM_Y: axis = XMVectorSet(0.0f,1.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_Y: axis = Vector3(0.0f,1.0f,0.0f);
 		break;
-	case TransformControls::E_TRANSFORM_Z: axis = XMVectorSet(0.0f,0.0f,1.0f,0.0f);
+	case TransformControls::E_TRANSFORM_Z: axis = Vector3(0.0f,0.0f,1.0f);
 		break;
-	case TransformControls::E_TRANSFORM_XY: axis = XMVectorSet(0.0f,0.0f,1.0f,0.0f);
+	case TransformControls::E_TRANSFORM_XY: axis = Vector3(0.0f,0.0f,1.0f);
 		break;
-	case TransformControls::E_TRANSFORM_XZ: axis = XMVectorSet(0.0f,1.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_XZ: axis = Vector3(0.0f,1.0f,0.0f);
 		break;
-	case TransformControls::E_TRANSFORM_YZ: axis = XMVectorSet(1.0f,0.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_YZ: axis = Vector3(1.0f,0.0f,0.0f);
 		break;
 	}
 
@@ -339,28 +339,30 @@ Vector3 TransformControls::CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_Y:
 	case TransformControls::E_TRANSFORM_Z:
 		{
-			XMVECTOR dist = XMVector3Normalize(m_pos - camComp->camPos);
-			XMVECTOR dir = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
+			Vector3 dist = m_pos - camComp->camPos;
+			dist.Normalize();
+			Vector3 dir = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
 
-			XMVECTOR norm = XMVector3Normalize(XMVector3Cross(dir, XMVector3Cross(dir, dist)));
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 norm = dir.Cross( dir.Cross(dist) );
+			norm.Normalize();
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
 
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
-			XMVECTOR move_vect = point_to - point_from;
-			XMStoreFloat3(&res, XMVectorGetX(XMVector3Dot(move_vect, dir)) * dir);
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
+			Vector3 move_vect = point_to - point_from;
+			res = move_vect.Dot(dir) * dir;
 		}
 		break;
 	case TransformControls::E_TRANSFORM_XY:
 	case TransformControls::E_TRANSFORM_XZ:
 	case TransformControls::E_TRANSFORM_YZ:
 		{
-			XMVECTOR norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
 
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
-			XMStoreFloat3(&res, point_to - point_from);
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
+			res = point_to - point_from;
 		}
 		break;
 	}
@@ -380,29 +382,29 @@ Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 	auto camComp = camSys->GetComponent(cam);
 
-	XMVECTOR l_PrevRay = XMVector3Normalize(XMLoadFloat3(&PrevRay));
-	XMVECTOR l_Ray = XMVector3Normalize(XMLoadFloat3(&Ray));
+	PrevRay.Normalize();
+	Ray.Normalize();
 
-	XMVECTOR axis;
-	XMVECTOR plane_axis;
+	Vector3 axis;
+	Vector3 plane_axis;
 	switch (b_hover)
 	{
-	case TransformControls::E_TRANSFORM_X: axis = XMVectorSet(1.0f,0.0f,0.0f,0.0f); 
+	case TransformControls::E_TRANSFORM_X: axis = Vector3(1.0f,0.0f,0.0f); 
 		res.x = 1;
 		break;
-	case TransformControls::E_TRANSFORM_Y: axis = XMVectorSet(0.0f,1.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_Y: axis = Vector3(0.0f,1.0f,0.0f);
 		res.y = 1;
 		break;
-	case TransformControls::E_TRANSFORM_Z: axis = XMVectorSet(0.0f,0.0f,1.0f,0.0f); 
+	case TransformControls::E_TRANSFORM_Z: axis = Vector3(0.0f,0.0f,1.0f); 
 		res.z = 1;
 		break;
-	case TransformControls::E_TRANSFORM_XY: plane_axis = XMVectorSet(0.0f,0.0f,1.0f,0.0f); axis = XMVectorSet(1.0f,1.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_XY: plane_axis = Vector3(0.0f,0.0f,1.0f); axis = Vector3(1.0f,1.0f,0.0f);
 		res.x = 1; res.y = 1;
 		break;
-	case TransformControls::E_TRANSFORM_XZ: plane_axis = XMVectorSet(0.0f,1.0f,0.0f,0.0f); axis = XMVectorSet(1.0f,0.0f,1.0f,0.0f); 
+	case TransformControls::E_TRANSFORM_XZ: plane_axis = Vector3(0.0f,1.0f,0.0f); axis = Vector3(1.0f,0.0f,1.0f); 
 		res.x = 1; res.z = 1;
 		break;
-	case TransformControls::E_TRANSFORM_YZ: plane_axis = XMVectorSet(1.0f,0.0f,0.0f,0.0f); axis = XMVectorSet(0.0f,1.0f,1.0f,0.0f);
+	case TransformControls::E_TRANSFORM_YZ: plane_axis = Vector3(1.0f,0.0f,0.0f); axis = Vector3(0.0f,1.0f,1.0f);
 		res.y = 1; res.z = 1;
 		break;
 	case TransformControls::E_TRANSFORM_ALL:
@@ -416,39 +418,43 @@ Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_Y:
 	case TransformControls::E_TRANSFORM_Z:
 		{
-			XMVECTOR dist = XMVector3Normalize(m_pos - camComp->camPos);
-			XMVECTOR dir = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
+			Vector3 dist = m_pos - camComp->camPos;
+			dist.Normalize();
+			Vector3 dir = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
 
-			XMVECTOR norm = XMVector3Normalize(XMVector3Cross(dir, XMVector3Cross(dir, dist)));
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 norm = dir.Cross(dir.Cross(dist));
+			norm.Normalize();
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
 
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
-			XMVECTOR move_vect = point_to - point_from;
-			res.w = XMVectorGetX(XMVector3Dot(move_vect, dir));
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
+			Vector3 move_vect = point_to - point_from;
+			res.w = move_vect.Dot(dir);
 		}
 		break;
 	case TransformControls::E_TRANSFORM_XY:
 	case TransformControls::E_TRANSFORM_XZ:
 	case TransformControls::E_TRANSFORM_YZ:
 		{
-			XMVECTOR norm = XMVector3Normalize(XMVector3Transform(plane_axis, XMMatrixRotationQuaternion(rot)));
-			XMVECTOR axis_proj = XMVector3Normalize(XMVector3Transform(axis, XMMatrixRotationQuaternion(rot)));
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 norm = XMVector3Transform(plane_axis, XMMatrixRotationQuaternion(rot));
+			norm.Normalize();
+			Vector3 axis_proj = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
+			axis_proj.Normalize();
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
 
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
-			XMVECTOR move_vect = point_to - point_from;
-			res.w = XMVectorGetX(XMVector3Dot(move_vect, axis_proj));
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
+			Vector3 move_vect = point_to - point_from;
+			res.w = move_vect.Dot(axis_proj);
 		}
 		break;
 	case TransformControls::E_TRANSFORM_ALL:
 		{
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, XMVector3Normalize(-camComp->camLookDir));
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
-			XMVECTOR move_vect = point_to - point_from;
-			res.w = XMVectorGetX(XMVector3Dot(move_vect, XMVector3Normalize(XMVector3Cross(camComp->camUp, camComp->camLookDir) + camComp->camUp)));
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, XMVector3Normalize(-camComp->camLookDir));
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
+			Vector3 move_vect = point_to - point_from;
+			res.w = move_vect.Dot( XMVector3Normalize(camComp->camUp.Cross(camComp->camLookDir) + camComp->camUp) );
 		}
 		break;
 	}
@@ -470,17 +476,17 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 	auto camComp = camSys->GetComponent(cam);
 
-	XMVECTOR l_PrevRay = XMVector3Normalize(XMLoadFloat3(&PrevRay));
-	XMVECTOR l_Ray = XMVector3Normalize(XMLoadFloat3(&Ray));
+	PrevRay.Normalize();
+	Ray.Normalize();
 
-	XMVECTOR axis;
+	Vector3 axis;
 	switch (b_hover)
 	{
-	case TransformControls::E_TRANSFORM_X: axis = XMVectorSet(1.0f,0.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_X: axis = Vector3(1.0f,0.0f,0.0f);
 		break;
-	case TransformControls::E_TRANSFORM_Y: axis = XMVectorSet(0.0f,1.0f,0.0f,0.0f);
+	case TransformControls::E_TRANSFORM_Y: axis = Vector3(0.0f,1.0f,0.0f);
 		break;
-	case TransformControls::E_TRANSFORM_Z: axis = XMVectorSet(0.0f,0.0f,1.0f,0.0f);
+	case TransformControls::E_TRANSFORM_Z: axis = Vector3(0.0f,0.0f,1.0f);
 		break;
 	}
 
@@ -490,16 +496,16 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_Y:
 	case TransformControls::E_TRANSFORM_Z:
 		{
-			XMVECTOR norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
 
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
 			point_from = point_from - m_pos;
 			point_to = point_to - m_pos;
 
 			float angle = XMVectorGetX(XMVector3AngleBetweenVectors(point_from, point_to));
-			XMVECTOR rot_dir_test = XMVector3Cross(point_from, point_to);
+			Vector3 rot_dir_test = XMVector3Cross(point_from, point_to);
 			if(XMVectorGetX(XMVector3Dot(norm, rot_dir_test)) < 0)
 				angle = -angle;
 
@@ -508,15 +514,15 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 		break;
 	case TransformControls::E_TRANSFORM_ALL:
 		{
-			XMVECTOR norm = XMVector3Normalize(-camComp->camLookDir);
-			XMVECTOR plane = XMPlaneFromPointNormal(m_pos, norm);
-			XMVECTOR point_from = XMPlaneIntersectLine(plane, camComp->camPos, l_PrevRay * camComp->far_clip);
-			XMVECTOR point_to = XMPlaneIntersectLine(plane, camComp->camPos, l_Ray * camComp->far_clip);
+			Vector3 norm = XMVector3Normalize(-camComp->camLookDir);
+			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
+			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
 			point_from = point_from - m_pos;
 			point_to = point_to - m_pos;
 
 			float angle = XMVectorGetX(XMVector3AngleBetweenVectors(point_from, point_to));
-			XMVECTOR rot_dir_test = XMVector3Cross(point_from, point_to);
+			Vector3 rot_dir_test = XMVector3Cross(point_from, point_to);
 			if(XMVectorGetX(XMVector3Dot(norm, rot_dir_test)) < 0)
 				angle = -angle;
 			res = Vector4(XMVectorGetX(norm), XMVectorGetY(norm), XMVectorGetZ(norm), angle);
@@ -552,10 +558,10 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 	auto camComp = camSys->GetComponent(cam);
 
 	float curdist = camComp->far_clip;
-	XMVECTOR camPos = camComp->camPos;
+	Vector3 camPos = camComp->camPos;
 	eDirections hover = E_TRANSFORM_NOPE;
 
-	XMVECTOR rayDir = XMVector3Normalize(XMLoadFloat3(&HoverRay));
+	Vector3 rayDir = XMVector3Normalize(XMLoadFloat3(&HoverRay));
 	CXMMATRIX transform = matricies[frust_ids[camComp->frust_id]].actualTransform;
 	float scale = matricies[frust_ids[camComp->frust_id]].scale;
 	
@@ -630,7 +636,9 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 
 			if( (dist = RayBoxIntersect(camPos, rayDir, rot_x_mesh->box, transform)) >= 0 )
 			{
-				float radialDistSq = XMVectorGetX(XMVector3LengthSq( ((camPos + rayDir * dist) - m_pos) / scale ));
+				Vector3 temp = (camPos + rayDir * dist) - m_pos;
+				temp /= scale;
+				float radialDistSq = temp.LengthSquared();
 				if(radialDistSq <= TC_ROT_RADIAL_COLLISION_MAX_SQ && radialDistSq >= TC_ROT_RADIAL_COLLISION_MIN_SQ)
 				{
 					curdist = dist;
@@ -641,7 +649,9 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 			{
 				if(dist < curdist)
 				{
-					float radialDistSq = XMVectorGetX(XMVector3LengthSq( ((camPos + rayDir * dist) - m_pos) / scale ));
+					Vector3 temp = (camPos + rayDir * dist) - m_pos;
+					temp /= scale;
+					float radialDistSq = temp.LengthSquared();
 					if(radialDistSq <= TC_ROT_RADIAL_COLLISION_MAX_SQ && radialDistSq >= TC_ROT_RADIAL_COLLISION_MIN_SQ)
 					{
 						curdist = dist;
@@ -653,7 +663,9 @@ bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)
 			{
 				if(dist < curdist)
 				{
-					float radialDistSq = XMVectorGetX(XMVector3LengthSq( ((camPos + rayDir * dist) - m_pos) / scale ));
+					Vector3 temp = (camPos + rayDir * dist) - m_pos;
+					temp /= scale;
+					float radialDistSq = temp.LengthSquared();
 					if(radialDistSq <= TC_ROT_RADIAL_COLLISION_MAX_SQ && radialDistSq >= TC_ROT_RADIAL_COLLISION_MIN_SQ)
 					{
 						curdist = dist;

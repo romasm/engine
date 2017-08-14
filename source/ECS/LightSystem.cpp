@@ -260,23 +260,13 @@ void LightSystem::updateSpot(LightComponent& comp)
 	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
 	XMMATRIX transform = XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
 
-	XMVECTOR lightPos = XMVector3TransformCoord(XMVectorSet(0,0,0,1), transform);
-	XMStoreFloat3(&comp.pos, lightPos);
-
-	XMVECTOR lightDir = XMVector3TransformNormal(DIR_VECT, transform);
-	XMStoreFloat3(&comp.dir, lightDir);
-
-	XMVECTOR lightUp = XMVector3TransformNormal(UP_VECT, transform);
-	XMStoreFloat3(&comp.dir_up, lightUp);
-
-	XMVECTOR lightSide = XMVector3Cross(lightDir, lightUp);
-	XMStoreFloat3(&comp.dir_side, lightSide);
+	comp.pos = XMVector3TransformCoord(XMVectorSet(0,0,0,1), transform);
+	comp.dir = XMVector3TransformNormal(DIR_VECT, transform);
+	comp.dir_up = XMVector3TransformNormal(UP_VECT, transform);
+	comp.dir_side = comp.dir.Cross(comp.dir_up);
 			
 	if(comp.type != LIGHT_TYPE_SPOT)
-	{
-		XMVECTOR vpos = lightPos - lightDir * comp.virt_clip;
-		XMStoreFloat3(&comp.virt_pos, vpos); 
-	}
+		comp.virt_pos = comp.pos - comp.dir * comp.virt_clip;
 	else
 		comp.virt_pos = comp.pos;
 }
@@ -717,7 +707,7 @@ XMMATRIX LightSystem::GetProj(Entity e)
 	return XMMatrixIdentity();
 }
 
-XMMATRIX LightSystem::GetView(Entity e, uchar num, XMVECTOR* pos)
+XMMATRIX LightSystem::GetView(Entity e, uchar num, Vector3* pos)
 {
 	GET_COMPONENT(XMMatrixIdentity())
 
@@ -726,48 +716,48 @@ XMMATRIX LightSystem::GetView(Entity e, uchar num, XMVECTOR* pos)
 	case LIGHT_TYPE_SPOT:
 	case LIGHT_TYPE_DISK:
 	case LIGHT_TYPE_RECT:
-		*pos = XMLoadFloat3(&comp.virt_pos);
-		return XMMatrixLookAtLH( *pos, *pos + XMLoadFloat3(&comp.dir), -XMLoadFloat3(&comp.dir_up) );
+		*pos = comp.virt_pos;
+		return XMMatrixLookAtLH( comp.virt_pos, comp.virt_pos + comp.dir, -comp.dir_up );
 
 	case LIGHT_TYPE_POINT:
 	case LIGHT_TYPE_SPHERE:
 		{
-			XMVECTOR dir, up;
+			Vector3 dir, up;
 			switch (num)
 			{
 			case 0:
-				dir = XMVectorSet(1,0,0,0);
-				up = XMVectorSet(0,1,0,0);
+				dir = Vector3(1,0,0);
+				up = Vector3(0,1,0);
 				break;
 			case 1:
-				dir = XMVectorSet(-1,0,0,0);
-				up = XMVectorSet(0,1,0,0);
+				dir = Vector3(-1,0,0);
+				up = Vector3(0,1,0);
 				break;
 			case 2:
-				dir = XMVectorSet(0,0,1,0);
-				up = XMVectorSet(0,1,0,0);
+				dir = Vector3(0,0,1);
+				up = Vector3(0,1,0);
 				break;
 			case 3:
-				dir = XMVectorSet(0,0,-1,0);
-				up = XMVectorSet(0,1,0,0);
+				dir = Vector3(0,0,-1);
+				up = Vector3(0,1,0);
 				break;
 			case 4:
-				dir = XMVectorSet(0,1,0,0);
-				up = XMVectorSet(1,0,0,0);
+				dir = Vector3(0,1,0);
+				up = Vector3(1,0,0);
 				break;
 			case 5:
-				dir = XMVectorSet(0,-1,0,0);
-				up = XMVectorSet(-1,0,0,0);
+				dir = Vector3(0,-1,0);
+				up = Vector3(-1,0,0);
 				break;
 			}
 
-			*pos = XMLoadFloat3(&comp.pos);
-			return XMMatrixLookAtLH( *pos, *pos + dir, up );
+			*pos = comp.pos;
+			return XMMatrixLookAtLH( comp.pos, comp.pos + dir, up );
 		}
 	case LIGHT_TYPE_TUBE: // TODO: broked in voxels
 		{
-			XMVECTOR dir = XMLoadFloat3(&comp.dir);
-			XMVECTOR up = XMLoadFloat3(&comp.dir_up);
+			Vector3 dir = comp.dir;
+			Vector3 up = comp.dir_up;
 			switch (num)
 			{
 			case 0:
@@ -803,8 +793,8 @@ XMMATRIX LightSystem::GetView(Entity e, uchar num, XMVECTOR* pos)
 				break;
 			}
 
-			*pos = XMLoadFloat3(&comp.pos);
-			return XMMatrixLookAtLH( *pos, *pos + dir, up );
+			*pos = comp.pos;
+			return XMMatrixLookAtLH( comp.pos, comp.pos + dir, up );
 		}
 	}
 	return XMMatrixIdentity();

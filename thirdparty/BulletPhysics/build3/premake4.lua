@@ -173,16 +173,18 @@ end
 		defines {"BT_USE_DOUBLE_PRECISION"}
 	end
 	
+	--defines {"BT_NO_SIMD_OPERATOR_OVERLOADS"}
+	
 	platforms {"x64"}
 	
 	configurations {"Release", "Debug"}
 	configuration "Release"
-		flags { "Optimize", "EnableSSE2","StaticRuntime", "NoMinimalRebuild", "FloatFast"}
+		flags { "Optimize", "EnableSSE2", "NoMinimalRebuild", "FloatFast"}
 	configuration "Debug"
 		defines {"_DEBUG=1"}
 		symbols "On"
 		targetsuffix ("_d")
-		flags { "StaticRuntime" , "NoMinimalRebuild", "NoEditAndContinue" ,"FloatFast"}
+		flags { "NoMinimalRebuild", "NoEditAndContinue" ,"FloatFast"}
 
 	--[[if os.is("Linux") or os.is("macosx") then
 		if os.is64bit() then

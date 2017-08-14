@@ -109,19 +109,19 @@ void SceneRenderMgr::cleanRenderArrayLights()
 
 bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
 							ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, IA_TOPOLOGY topo)
-{return regToDraw(index_count, vertex_buffer, index_buffer, constant_buffer, vertex_size, material, XMVectorSet(current_cam->far_clip,0,0,0), topo);}
+{return regToDraw(index_count, vertex_buffer, index_buffer, constant_buffer, vertex_size, material, Vector3(current_cam->far_clip,0,0), topo);}
 bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-							 ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo)
+							 ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo)
 {return regToDraw(index_count, vertex_buffer, index_buffer, constant_buffer, vertex_size, material, center - cameraPosition, topo);}
 
 bool SceneRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, IA_TOPOLOGY topo)
-{return regToDraw(mesh, constant_buffer, material, XMVectorSet(current_cam->far_clip,0,0,0), topo);}
-bool SceneRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo)
+{return regToDraw(mesh, constant_buffer, material, Vector3(current_cam->far_clip,0,0), topo);}
+bool SceneRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo)
 {return regToDraw(mesh, constant_buffer, material, center - cameraPosition, topo);}
 
 bool SceneRenderMgr::regToDraw(uint32_t index_count, 
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo)
+			uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo)
 {
 	if(!material)
 		return false;
@@ -173,7 +173,7 @@ bool SceneRenderMgr::regToDraw(uint32_t index_count,
 	return true;
 }
 
-bool SceneRenderMgr::regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo)
+bool SceneRenderMgr::regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo)
 {
 	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
 	if( matCount == 0 )

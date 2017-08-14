@@ -3,6 +3,7 @@
 #include "ECS_defines.h"
 #include "Entity.h"
 #include "TransformSystem.h"
+#include "CollisionMgr.h"
 
 #define MAX_PHYSICS_STEP_PER_FRAME 10
 
@@ -111,7 +112,7 @@ namespace EngineCore
 		void AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
 		void AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius);
 		void AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
-		void AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
+		void AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
 		void AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
 
 		void ClearCollision(Entity e);
@@ -136,6 +137,7 @@ namespace EngineCore
 			Vector3 linFactor;
 			Vector3 angFactor;
 			float mass;
+			Vector3 localInertia;
 		};
 		
 		void _DeleteComponent(PhysicsComponent* comp);
@@ -144,7 +146,6 @@ namespace EngineCore
 
 		ComponentRArray<PhysicsComponent> components;
 				
-		btCollisionShape* defaultCollision;
 		float defaultMass;
 		btVector3 defaultInertia;
 

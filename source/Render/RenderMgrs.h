@@ -17,7 +17,7 @@ namespace EngineCore
 	template <typename MeshClass=void> struct MeshGroup
 	{
 		unsigned int ID;
-		XMVECTOR center;
+		Vector3 center;
 		
 		bool checked;
 		bool visible;
@@ -29,7 +29,7 @@ namespace EngineCore
 		{
 			ID = 0;
 			meshes = nullptr;
-			center = XMVectorZero();
+			center = Vector3::Zero;
 			checked = false;
 			visible = false;
 			mesh_count = 0;
@@ -112,7 +112,7 @@ namespace EngineCore
 		RArray<RenderMesh*> alphatest_array;
 		RArray<RenderMesh*> transparent_array;
 
-		XMVECTOR cameraPosition;
+		Vector3 cameraPosition;
 		
 		unsigned int meshgroup_count;
 	};
@@ -130,10 +130,10 @@ namespace EngineCore
 
 		bool RegMesh(uint32_t index_count, 
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, XMVECTOR center);
-		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center);
+			uint32_t vertex_size, Material* material, Vector3& center);
+		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center);
 		
-		void UpdateCamera(XMVECTOR pos) {cameraPosition = pos;}
+		void UpdateCamera(Vector3& pos) {cameraPosition = pos;}
 		
 		void DrawOpaque();
 		void DrawAlphatest();
@@ -168,10 +168,10 @@ namespace EngineCore
 		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
 			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
 		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 
 		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, UINT mipsCount, CXMMATRIX envRot)
 		{
@@ -263,8 +263,8 @@ namespace EngineCore
 
 	private:
 		bool regToDraw(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, XMVECTOR center, IA_TOPOLOGY topo);
-		bool regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center, IA_TOPOLOGY topo);
+			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo);
+		bool regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo);
 
 		void cleanRenderArrayHud();
 		void cleanRenderArrayEnvProbs() {skyEP = distEP();}

@@ -56,9 +56,6 @@ Vector4 VisibilitySystem::CollideRayCoords(Vector3 origin, Vector3 ray, int frus
 
 void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Vector4* colide_coord, Entity* ent)
 {
-	XMVECTOR vorigin = XMLoadFloat3(&origin);
-	XMVECTOR vray = XMLoadFloat3(&ray);
-
 	Frustum& f = frustumMgr->GetFrustum(frust_id);
 
 	float min_dist = SELECT_3D_MAX_DIST;
@@ -68,7 +65,7 @@ void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Ve
 	{
 		if((i.inFrust & f.bit) == f.bit)
 		{
-			float dist = RayOrientedBoxIntersect(vorigin, vray, i.worldBox);
+			float dist = RayOrientedBoxIntersect(origin, ray, i.worldBox);
 			if(dist > 0 && dist < min_dist)
 			{
 				min_dist = dist;
@@ -79,7 +76,11 @@ void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Ve
 
 	if(colide_coord)
 	{
-		XMStoreFloat4(colide_coord, vorigin + XMVector3Normalize(vray) * min_dist);
+		ray.Normalize();
+		Vector3 coords = origin + ray * min_dist;
+		colide_coord->x = coords.x;
+		colide_coord->y = coords.y;
+		colide_coord->z = coords.z;
 		colide_coord->w = min_dist;
 	}
 }

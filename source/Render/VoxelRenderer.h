@@ -141,7 +141,7 @@ namespace EngineCore
 
 		void RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
 
-		void CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir);
+		void CalcVolumeBox(Vector3& camPos, Vector3& camDir);
 		inline BoundingOrientedBox& GetBigVolumeBox() {return volumesConfig[clipmapCount - 1].volumeBox;}
 
 	private:

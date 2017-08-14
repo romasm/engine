@@ -6,18 +6,18 @@ using namespace EngineCore;
 
 BaseRenderMgr::BaseRenderMgr()
 {
-	cameraPosition = XMVectorZero();
+	cameraPosition = Vector3::Zero;
 	meshgroup_count = 0;
 }
 
 bool BaseRenderMgr::CompareMeshes(RenderMesh* first, RenderMesh* second)
 {
-	return XMVectorGetX(XMVector3LengthSq(first->group->center)) <  XMVectorGetX(XMVector3LengthSq(second->group->center));
+	return first->group->center.LengthSquared() <  second->group->center.LengthSquared();
 }
 
 bool BaseRenderMgr::InvCompareMeshes(RenderMesh* first, RenderMesh* second)
 {
-	return XMVectorGetX(XMVector3LengthSq(first->group->center)) >  XMVectorGetX(XMVector3LengthSq(second->group->center));
+	return first->group->center.LengthSquared() >  second->group->center.LengthSquared();
 }
 
 void BaseRenderMgr::cleanRenderArrayOpaque()
@@ -102,7 +102,7 @@ ShadowRenderMgr::ShadowRenderMgr() : BaseRenderMgr()
 
 bool ShadowRenderMgr::RegMesh(uint32_t index_count, 
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, XMVECTOR center)
+			uint32_t vertex_size, Material* material, Vector3& center)
 {
 	if(!material)
 		return false;
@@ -131,7 +131,7 @@ bool ShadowRenderMgr::RegMesh(uint32_t index_count,
 	group_new->meshes = new RenderMesh*[1];
 	group_new->mesh_count = 1;
 	group_new->meshes[0] = mesh_new;
-	group_new->center = XMVectorZero();
+	group_new->center = Vector3::Zero;
 	mesh_new->group = group_new;
 
 	switch(queue)
@@ -151,7 +151,7 @@ bool ShadowRenderMgr::RegMesh(uint32_t index_count,
 	return true;
 }
 
-bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, XMVECTOR center)
+bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center)
 {
 	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
 	if( matCount == 0 )

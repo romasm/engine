@@ -150,7 +150,7 @@ namespace EngineCore
 		}
 
 	private:
-		void calcSreenScaleMat(CXMVECTOR campos, uint id);
+		void calcSreenScaleMat(const Vector3& campos, uint id);
 
 		uint32_t arrow_x;
 		uint32_t arrow_y;
@@ -179,7 +179,7 @@ namespace EngineCore
 		Material* mat_all;
 
 		bool isLocal;
-		XMVECTOR m_pos;
+		Vector3 m_pos;
 		XMMATRIX m_transformation;
 
 		float m_scale;

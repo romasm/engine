@@ -88,8 +88,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;..\thirdparty\ReactPhysics3D\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -108,14 +108,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;..\thirdparty\ReactPhysics3D\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -138,8 +139,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;reactphysics3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;..\thirdparty\ReactPhysics3D\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>

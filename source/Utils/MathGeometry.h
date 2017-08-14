@@ -279,7 +279,7 @@ inline void BoundingOrientedBoxTransformFixed( BoundingOrientedBox& In, CXMMATRI
     vCenter = XMVector3Transform( vCenter, M );
 
     // Scale the box extents.
-    vExtents = vExtents * Scale;
+    vExtents = XMVectorMultiply(vExtents, Scale);
 
     // Store the box.
     XMStoreFloat3( &In.Center, vCenter );

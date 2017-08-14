@@ -79,6 +79,7 @@
 #undef min
 
 #include <btBulletDynamicsCommon.h>
+
 #pragma comment(lib,"Bullet3Collision.lib")
 #pragma comment(lib,"Bullet3Common.lib")
 #pragma comment(lib,"Bullet3Dynamics.lib")
@@ -93,7 +94,6 @@
 #pragma comment(lib,"ConvexDecomposition.lib")
 #pragma comment(lib,"HACD.lib")
 #pragma comment(lib,"vhacd.lib")
-
 
 // namespaces
 using namespace DirectX;

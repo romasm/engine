@@ -47,6 +47,8 @@
 
 #define WORLD_FILE_VERSION 2
 
+#define COPY_BUFFER_SIZE 512*1024
+
 namespace EngineCore
 {
 	class TypeMgr;
@@ -187,6 +189,7 @@ namespace EngineCore
 		inline bool IsEntityAlive(Entity e) {return m_entityMgr->IsAlive(e);}
 		void DestroyEntity(Entity e);
 		void DestroyEntityHierarchically(Entity e);
+		// TODO: move to serialization (expl: PhysicsSystem)
 		Entity CopyEntity(Entity e);
 
 		inline void RenameEntity(Entity e, string name) {m_nameMgr->SetName(e, name);}
@@ -231,6 +234,8 @@ namespace EngineCore
 		}
 	#endif
 		
+		inline uint8_t* GetCopyBuffer() {return copyBuffer;}
+
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
@@ -340,6 +345,8 @@ namespace EngineCore
 		btBroadphaseInterface* physBroadphase;
 		btSequentialImpulseConstraintSolver* physConstraintSolver;
 		btDiscreteDynamicsWorld* physDynamicsWorld;
+
+		uint8_t* copyBuffer;
 	};
 	
 	class World: public BaseWorld

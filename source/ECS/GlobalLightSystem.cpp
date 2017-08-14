@@ -162,7 +162,7 @@ void GlobalLightSystem::buildProj(uint16_t camId, CameraComponent* cam)
 
 		Vector3 frust_corners[8];
 		cam_frust_first.GetCorners(frust_corners);
-		XMVECTOR diag = XMLoadFloat3(&frust_corners[0]) - XMLoadFloat3(&frust_corners[6]);
+		XMVECTOR diag = frust_corners[0] - frust_corners[6];
 		
 		projCascade.posOffset[i] = (cascade_start + cascade_end) * 0.5f;
 		float size = projCascade.size[i] = XMVectorGetX(XMVector3Length(diag)) * 1.02f;
@@ -187,39 +187,37 @@ void GlobalLightSystem::matrixGenerate(GlobalLightComponent& comp, CascadeShadow
 	auto cam = cameraSystem->GetComponent(cascade.camera);
 	uint16_t shadowRes = cam->render_mgr->shadowsRenderer->GetShadowCascadeRes();
 
-	XMVECTOR lightDir = XMLoadFloat3(&comp.dir);
-	XMVECTOR Up = XMLoadFloat3(&comp.dir_up);
-	XMVECTOR Side = XMVector3Normalize(XMVector3Cross(Up, lightDir));
+	Vector3 Side = comp.dir_up.Cross(comp.dir);
+	Side.Normalize();
 	
 	for(uint8_t i = 0; i<LIGHT_DIR_NUM_CASCADES; i++)
 	{
 		float pix = projCascade.size[i] / float(shadowRes);
 
-		XMVECTOR lightLookAt = cam->camPos + cam->camLookDir * projCascade.posOffset[i];
+		Vector3 lightLookAt = cam->camPos + cam->camLookDir * projCascade.posOffset[i];
 
-		XMVECTOR upProj = pix * XMVectorFloor(XMVector3Dot(lightLookAt, Up) / pix);
-		XMVECTOR sideProj = pix * XMVectorFloor(XMVector3Dot(lightLookAt, Side) / pix);
-		XMVECTOR dirProj = XMVector3Dot(lightLookAt, lightDir);
+		float upProj = pix * floor(lightLookAt.Dot(comp.dir_up) / pix);
+		float sideProj = pix * floor(lightLookAt.Dot(Side) / pix);
+		float dirProj = lightLookAt.Dot(comp.dir);
 
-		lightLookAt = Up * upProj + Side * sideProj + lightDir * dirProj;
-		XMVectorSetW(lightLookAt, 1.0f);
+		lightLookAt = comp.dir_up * upProj + Side * sideProj + comp.dir * dirProj;
 
 		float depth_offset = projCascade.size[i];
 		depth_offset = sqrt(2.0f * depth_offset * depth_offset);
 
-		XMVECTOR lightPos = lightLookAt - lightDir * (depth_cascade[i] - depth_offset);
+		Vector3 lightPos = lightLookAt - comp.dir * (depth_cascade[i] - depth_offset);
 				
-		cascade.view[i] = XMMatrixLookAtLH(lightPos, lightLookAt, Up);
+		cascade.view[i] = XMMatrixLookAtLH(lightPos, lightLookAt, comp.dir_up);
 		cascade.view_proj[i] = XMMatrixTranspose(cascade.view[i] * projCascade.proj[i]);
-		XMStoreFloat3(&cascade.pos[i], lightPos);
+		cascade.pos[i] = lightPos;
 		
 		Render::UpdateDynamicResource(cascade.vp_buf[i], (void*)&cascade.view_proj[i], sizeof(XMMATRIX));
 
 		// Frustum
 		BoundingOrientedBox& viewbox = cascade.worldFrustum[i];
 
-		XMVECTOR viewboxPos = lightLookAt - lightDir * (depth_cascade_half[i] - depth_offset);
-		XMStoreFloat3(&viewbox.Center, viewboxPos);
+		Vector3 viewboxPos = lightLookAt - comp.dir * (depth_cascade_half[i] - depth_offset);
+		viewbox.Center = viewboxPos;
 
 		viewbox.Extents.x = projCascade.size[i] * 0.5f;
 		viewbox.Extents.y = viewbox.Extents.x;

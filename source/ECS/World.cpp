@@ -17,6 +17,8 @@ BaseWorld::BaseWorld()
 	m_scenes.reserve(16);
 
 	m_dt = 0;
+
+	copyBuffer = new uint8_t[COPY_BUFFER_SIZE];
 }
 
 void BaseWorld::SetDirty(Entity e)
@@ -130,6 +132,8 @@ void BaseWorld::Close()
 	_DELETE(physBroadphase);
 	_DELETE(physCollisionDispatcher);
 	_DELETE(physCollisionConfiguration);
+
+	_DELETE_ARRAY(copyBuffer);
 }
 
 void BaseWorld::DestroyEntityHierarchically(Entity e)

@@ -22,7 +22,7 @@ namespace EngineCore
 		DArray<Material*> materials;
 
 		// update on transform
-		XMVECTOR center;
+		Vector3 center;
 		ID3D11Buffer* constantBuffer;
 
 		StaticMeshComponent()
@@ -34,7 +34,7 @@ namespace EngineCore
 			cast_shadow = true;
 			stmesh = MeshMgr::nullres;
 			constantBuffer = nullptr;
-			center = XMVectorZero();
+			center = Vector3::Zero;
 		}
 	};
 
@@ -86,8 +86,7 @@ namespace EngineCore
 		string GetMaterialLua(Entity e, int32_t i) {return GetMaterial(e, i)->GetName();}
 		uint16_t GetMaterialsCount(Entity e);
 
-		XMVECTOR GetCenter(Entity e);
-		Vector3 GetCenterLua(Entity e) {Vector3 res; XMStoreFloat3(&res, GetCenter(e)); return res;}
+		Vector3 GetCenter(Entity e);
 
 	#ifdef _EDITOR
 		void FixBBoxes();
@@ -117,7 +116,7 @@ namespace EngineCore
 					.addFunction("GetMaterialObject", &StaticMeshSystem::GetMaterialObjectLua)
 					.addFunction("GetMaterialsCount", &StaticMeshSystem::GetMaterialsCount)
 
-					.addFunction("GetCenter", &StaticMeshSystem::GetCenterLua)
+					.addFunction("GetCenter", &StaticMeshSystem::GetCenter)
 				.endClass();
 		}
 

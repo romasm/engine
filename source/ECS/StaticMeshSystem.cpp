@@ -450,9 +450,9 @@ uint16_t StaticMeshSystem::GetMaterialsCount(Entity e)
 	return (uint16_t)comp.materials.size();
 }
 
-XMVECTOR StaticMeshSystem::GetCenter(Entity e)
+Vector3 StaticMeshSystem::GetCenter(Entity e)
 {
-	GET_COMPONENT(XMVectorZero())
+	GET_COMPONENT(Vector3::Zero)
 	return comp.center;
 }
 

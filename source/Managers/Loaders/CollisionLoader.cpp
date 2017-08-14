@@ -14,7 +14,7 @@ bool CollisionLoader::IsSupported(string filename)
 	return MeshLoader::meshImporter.IsExtensionSupported(extension);
 }
 
-CollisionData* CollisionLoader::LoadCollisionFromFile(string& filename)
+btCompoundShape* CollisionLoader::LoadCollisionFromFile(string& filename)
 {
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(filename, &size);
@@ -26,9 +26,9 @@ CollisionData* CollisionLoader::LoadCollisionFromFile(string& filename)
 	return result;
 }
 
-CollisionData* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
+btCompoundShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
 {
-	CollisionData* newCollision;
+	btCompoundShape* newCollision;
 	if(resName.find(EXT_COLLISION) != string::npos)
 	{
 		newCollision = loadEngineCollisionFromMemory( resName, data, size );
@@ -65,7 +65,7 @@ void CollisionLoader::ConvertCollisionToEngineFormat(string& filename)
 	_DELETE_ARRAY(data);
 }
 
-CollisionData* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
+btCompoundShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
 {
 	string extension = filename.substr(filename.rfind('.'));
 
@@ -85,7 +85,7 @@ CollisionData* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename
 		return nullptr;
 	}
 
-	CollisionData* collision = loadAIScene(filename, scene, onlyConvert, onlyConvert);
+	btCompoundShape* collision = loadAIScene(filename, scene, onlyConvert, onlyConvert);
 	MeshLoader::meshImporter.FreeScene();
 
 	if(onlyConvert)
@@ -124,9 +124,11 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 	}
 }
 
-CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert, bool noInit)
+btCompoundShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert, bool noInit)
 {
-	CollisionData* collision = new CollisionData;
+	return nullptr;/*
+
+	btCompoundShape* collision = new btCompoundShape;
 
 	aiMesh** mesh = scene->mMeshes;
 
@@ -212,33 +214,6 @@ CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* sce
 	if(convert)
 		saveCollision(filename, collision, indices, trisCount, vertices, verticesCount);
 
-#ifdef _DEV
-	for(uint32_t i = 0; i < hullsCount; i++)
-	{
-		Matrix localTransform;
-		localTransform.CreateFromQuaternion(collision->hulls[i].rot);
-		Matrix temp;
-		temp.CreateTranslation(collision->hulls[i].pos);
-		localTransform *= temp;
-
-		for(uint32_t j = 0; j < verticesCount[i]; j++)
-		{
-			vertices[i][j] = Vector3::Transform(vertices[i][j], localTransform);
-		}
-
-		collision->hulls[i].vertex.size = verticesCount[i];
-		collision->hulls[i].vertex.buffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(Vector3) * collision->hulls[i].vertex.size, false, vertices[i]);
-
-		collision->hulls[i].index.size = trisCount[i] * 3;
-		collision->hulls[i].index.buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * collision->hulls[i].index.size, false, indices[i]);
-
-		if ( !collision->hulls[i].vertex.buffer || !collision->hulls[i].index.buffer )
-		{
-			ERR("Cant init collision debug vertex or index buffer for %s", filename.c_str());
-		}
-	}
-#endif
-
 	for(uint32_t i = 0; i < hullsCount; i++)
 	{
 		if(indices)
@@ -251,11 +226,13 @@ CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* sce
 	_DELETE_ARRAY(trisCount);
 	_DELETE_ARRAY(verticesCount);
 
-	return collision;
+	return collision;*/
 }
 
-void CollisionLoader::saveCollision(string& filename, CollisionData* collision, uint32_t** indices, uint32_t* trisCount, Vector3** vertices, uint32_t* verticesCount)
+void CollisionLoader::saveCollision(string& filename, btCompoundShape* collision, uint32_t** indices, uint32_t* trisCount, Vector3** vertices, uint32_t* verticesCount)
 {
+	return;/*
+
 	string clm_file = filename.substr(0, filename.rfind('.')) + EXT_COLLISION;
 
 	CollisionHeader header;
@@ -312,11 +289,13 @@ void CollisionLoader::saveCollision(string& filename, CollisionData* collision, 
 	if(!FileIO::WriteFileData( clm_file, data.get(), file_size ))
 	{
 		ERR("Cant write collision file: %s", clm_file.c_str() );
-	}
+	}*/
 }
 
-CollisionData* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
+btCompoundShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
+	return nullptr;/*
+
 	Vector3 **vertices;
 	uint32_t **indices;
 
@@ -339,7 +318,7 @@ CollisionData* CollisionLoader::loadEngineCollisionFromMemory(string& filename, 
 	verticesCount = new uint32_t[header.hullsCount];
 	trisCount = new uint32_t[header.hullsCount];
 
-	CollisionData* collision = new CollisionData;
+	btCompoundShape* collision = new btCompoundShape;
 	collision->hulls.create(header.hullsCount);
 
 	for(uint32_t i = 0; i < header.hullsCount; i++)
@@ -379,30 +358,6 @@ CollisionData* CollisionLoader::loadEngineCollisionFromMemory(string& filename, 
 			rp3d::TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE, rp3d::TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE);
 
 		collision->hulls[i].collider = new rp3d::ConvexMeshShape(&hull, true);
-		
-#ifdef _DEV
-		Matrix localTransform;
-		localTransform.CreateFromQuaternion(collision->hulls[i].rot);
-		Matrix temp;
-		temp.CreateTranslation(collision->hulls[i].pos);
-		localTransform *= temp;
-
-		for(uint32_t j = 0; j < verticesCount[i]; j++)
-		{
-			vertices[i][j] = Vector3::Transform(vertices[i][j], localTransform);
-		}
-
-		collision->hulls[i].vertex.size = verticesCount[i];
-		collision->hulls[i].vertex.buffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(Vector3) * collision->hulls[i].vertex.size, false, vertices[i]);
-
-		collision->hulls[i].index.size = trisCount[i] * 3;
-		collision->hulls[i].index.buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * collision->hulls[i].index.size, false, indices[i]);
-
-		if ( !collision->hulls[i].vertex.buffer || !collision->hulls[i].index.buffer )
-		{
-			ERR("Cant init collision debug vertex or index buffer for %s", filename.c_str());
-		}
-#endif
 	}
 
 	for(int i = header.hullsCount - 1; i >= 0; i--)
@@ -416,5 +371,5 @@ CollisionData* CollisionLoader::loadEngineCollisionFromMemory(string& filename, 
 	_DELETE_ARRAY(trisCount);
 
 	LOG("Collision(.clm) loaded %s", filename.c_str());
-	return collision;
+	return collision;*/
 }

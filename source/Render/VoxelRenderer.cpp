@@ -351,25 +351,25 @@ void VoxelRenderer::updateBuffers()
 {
 	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
 	
-	XMVECTOR camDirs[3];
-	camDirs[0] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	camDirs[1] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	camDirs[2] = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	Vector3 camDirs[3];
+	camDirs[0] = Vector3(1.0f, 0.0f, 0.0f);
+	camDirs[1] = Vector3(0.0f, 1.0f, 0.0f);
+	camDirs[2] = Vector3(0.0f, 0.0f, 1.0f);
 
-	XMVECTOR camUps[3];
-	camUps[0] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	camUps[1] = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-	camUps[2] = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	Vector3 camUps[3];
+	camUps[0] = Vector3(0.0f, 1.0f, 0.0f);
+	camUps[1] = Vector3(1.0f, 0.0f, 0.0f);
+	camUps[2] = Vector3(0.0f, 1.0f, 0.0f);
 
 	VolumeMatrix matrixBuffer;
 	for(uint16_t level = 0; level < clipmapCount; level++)
 	{
 		auto& bbox = volumesConfig[level].volumeBox;
 
-		XMVECTOR camPoses[3];
-		camPoses[0] = XMVectorSet(bbox.Center.x - bbox.Extents.x, bbox.Center.y, bbox.Center.z, 1.0f);
-		camPoses[1] = XMVectorSet(bbox.Center.x, bbox.Center.y - bbox.Extents.y, bbox.Center.z, 1.0f);
-		camPoses[2] = XMVectorSet(bbox.Center.x, bbox.Center.y, bbox.Center.z - bbox.Extents.z, 1.0f);
+		Vector3 camPoses[3];
+		camPoses[0] = Vector3(bbox.Center.x - bbox.Extents.x, bbox.Center.y, bbox.Center.z);
+		camPoses[1] = Vector3(bbox.Center.x, bbox.Center.y - bbox.Extents.y, bbox.Center.z);
+		camPoses[2] = Vector3(bbox.Center.x, bbox.Center.y, bbox.Center.z - bbox.Extents.z);
 	
 		for(uint8_t i = 0; i < 3; i++)
 		{
@@ -544,23 +544,21 @@ void VoxelRenderer::ProcessEmittance()
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, Vector4(0,0,0,0));
 
-		Vector3& prevCornerOffset = volumeData[level - 1].cornerOffset;
-		Vector3& currCornerOffset = volumeData[level].cornerOffset;
-		XMVECTOR volumeOffset = XMVectorSet(prevCornerOffset.x - currCornerOffset.x, 
-										prevCornerOffset.y - currCornerOffset.y,
-										prevCornerOffset.z - currCornerOffset.z, 0.0f);
-		volumeOffset = volumeOffset * volumeData[level].scaleHelper;
-		XMVECTOR volumeOffsetFloor = XMVectorTruncate(volumeOffset);
-		XMVECTOR isShifted = volumeOffset - volumeOffsetFloor;
+		const Vector3& prevCornerOffset = volumeData[level - 1].cornerOffset;
+		const Vector3& currCornerOffset = volumeData[level].cornerOffset;
 
-		volumeDownsample.isShifted.x = XMVectorGetX(isShifted) > 0.1f ? 1.0f : 0.0f;
-		volumeDownsample.isShifted.y = XMVectorGetY(isShifted) > 0.1f ? 1.0f : 0.0f;
-		volumeDownsample.isShifted.z = XMVectorGetZ(isShifted) > 0.1f ? 1.0f : 0.0f;
+		Vector3 volumeOffset = prevCornerOffset - currCornerOffset; 
+		volumeOffset = volumeOffset * volumeData[level].scaleHelper;
+
+		Vector3 volumeOffsetFloor = XMVectorTruncate(volumeOffset);
+		Vector3 isShifted = volumeOffset - volumeOffsetFloor;
+
+		volumeDownsample.isShifted.x = isShifted.x > 0.1f ? 1.0f : 0.0f;
+		volumeDownsample.isShifted.y = isShifted.y > 0.1f ? 1.0f : 0.0f;
+		volumeDownsample.isShifted.z = isShifted.z > 0.1f ? 1.0f : 0.0f;
 		
-		XMStoreFloat3(&volumeDownsample.writeOffset, volumeOffsetFloor);
-		volumeDownsample.writeOffset.x += volumeDownsample.isShifted.x;
-		volumeDownsample.writeOffset.y += volumeDownsample.isShifted.y;
-		volumeDownsample.writeOffset.z += volumeDownsample.isShifted.z;
+		volumeDownsample.writeOffset = volumeOffsetFloor;
+		volumeDownsample.writeOffset += volumeDownsample.isShifted;
 		
 		volumeDownsample.currentLevel = level;
 		volumeDownsample.currentRes = currentRes;
@@ -688,27 +686,26 @@ void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, M
 	}
 }
 
-void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
+void VoxelRenderer::CalcVolumeBox(Vector3& camPos, Vector3& camDir)
 {
-	XMVECTOR prevCornerOffset = XMVectorZero();
+	Vector3 prevCornerOffset;
 	for(uint8_t i = 0; i < clipmapCount; i++)
 	{
 		float halfWorldSize = volumesConfig[i].worldSize * 0.5f;
 		float centerOffset = halfWorldSize - (volumesConfig[i].voxelSize * VCT_BACK_VOXEL_COUNT);
 
-		XMVECTOR center = camPos + camDir * centerOffset;
-		center = XMVectorFloor(center / volumesConfig[i].voxelSize) * volumesConfig[i].voxelSize;
-		XMStoreFloat3(&volumesConfig[i].volumeBox.Center, center);
+		Vector3 center = camPos + camDir * centerOffset;
+		center /= volumesConfig[i].voxelSize;
+		center = Vector3(XMVectorFloor(center)) * volumesConfig[i].voxelSize;
+		volumesConfig[i].volumeBox.Center = center;
 
-		XMVECTOR corner = center - XMVectorSet(halfWorldSize, halfWorldSize, halfWorldSize, 0.0f);
-		XMStoreFloat3(&volumesConfig[i].corner, corner);
-
+		volumesConfig[i].corner = center - Vector3(halfWorldSize, halfWorldSize, halfWorldSize);
 		volumeData[i].cornerOffset = volumesConfig[i].corner;
 
-		XMVECTOR volumeOffset;
+		Vector3 volumeOffset;
 		if( i > 0 )
 		{
-			volumeOffset = prevCornerOffset - corner;
+			volumeOffset = prevCornerOffset - volumesConfig[i].corner;
 			volumeOffset = volumeOffset * volumeData[i].scaleHelper;
 		}
 		else
@@ -716,9 +713,9 @@ void VoxelRenderer::CalcVolumeBox(XMVECTOR& camPos, XMVECTOR& camDir)
 			volumeOffset = prevCornerOffset;
 		}
 		
-		XMStoreFloat3(&volumeData[i].volumeOffset, volumeOffset);
+		volumeData[i].volumeOffset = volumeOffset;
 
-		prevCornerOffset = corner;
+		prevCornerOffset = volumesConfig[i].corner;
 	}
 
 	uint16_t lastClipmap = clipmapCount - 1;
