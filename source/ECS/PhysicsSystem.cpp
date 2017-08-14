@@ -11,6 +11,10 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
+
+	defaultCollision = new btBoxShape(Vector3(0.5f, 0.5f, 0.5f));
+	defaultMass = 1.0f;
+	defaultCollision->calculateLocalInertia(1.0f, defaultInertia);
 }
 
 PhysicsSystem::~PhysicsSystem()
@@ -19,6 +23,8 @@ PhysicsSystem::~PhysicsSystem()
 	{
 		_DeleteComponent(&i);
 	}
+
+	_DELETE(defaultCollision);
 }
 
 void PhysicsSystem::UpdateTransformations()
@@ -31,7 +37,7 @@ void PhysicsSystem::UpdateTransformations()
 		Entity e = i.get_entity();
 
 		btTransform transform = ToTransform( transformSystem->GetTransformW(e) );
-		transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
+		//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
 		i.body->proceedToTransform( transform );
 		
 		if( i.body->wantsSleeping() )
@@ -51,7 +57,7 @@ void PhysicsSystem::SimulateAndUpdateSceneGraph(float dt)
 			continue;
 
 		btTransform transform = dynamicsWorld->getInterpolatedWorldTransform( i.body );
-		transform.setOrigin( transform.getOrigin() - btVector3(i.centerOfMassOffset) );
+		//transform.setOrigin( transform.getOrigin() - btVector3(i.centerOfMassOffset) );
 		transformSystem->SetPhysicsTransform(i.get_entity(), ToXMMATRIX(transform));
 
 		i.dirty = false;
@@ -69,14 +75,12 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	PhysicsComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
-	res->centerOfMassOffset = Vector3::Zero;
 	res->collisionData = 0;
 	res->collisionStorage = LOCAL;
 	
-	// TODO: use default collision
-	btRigidBody::btRigidBodyConstructionInfo info(1.0f, nullptr, nullptr);
+	btRigidBody::btRigidBodyConstructionInfo info(defaultMass, nullptr, defaultCollision, defaultInertia);
 	res->body = new btRigidBody(info);
-	res->body->forceActivationState(DISABLE_SIMULATION);
+	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
 	return res;
 }
@@ -96,9 +100,38 @@ void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp)
 	dynamicsWorld->removeRigidBody(comp->body);
 	_DELETE(comp->body);
 
-	auto collisionComp = world->GetCollisionSystem()->GetComponent(comp->get_entity());
-	if(collisionComp)
-		collisionComp->body = nullptr;
+	_ClearCollision(comp);
+}
+
+void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
+{
+	if( comp->collisionStorage == CollisionStorageType::LOCAL )
+	{
+		if( comp->collisionData != 0 )
+		{
+			btCompoundShape* shape = (btCompoundShape*)comp->collisionData;
+
+			// multilayer compound collisions is NOT supported
+			auto childrenCount = shape->getNumChildShapes();
+			auto childrenPtrs = shape->getChildList();
+			while( childrenCount > 0 )
+			{
+				delete childrenPtrs;
+				childrenPtrs++;
+				childrenCount--;
+			}
+
+			_DELETE(shape);
+			comp->collisionData = 0;
+		}
+	}
+	else
+	{
+		CollisionMgr::Get()->DeleteResource((uint32_t)comp->collisionData);
+		comp->collisionData = (uint64_t)CollisionMgr::nullres;
+	}
+
+	comp->body->setCollisionShape(defaultCollision);
 }
 
 void PhysicsSystem::CopyComponent(Entity src, Entity dest)
@@ -164,57 +197,147 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 	
 	uint8_t* t_data = data;
 	
-	*(uint8_t*)t_data = comp.body->isActive() ? 1 : 0;
+	PhysicsData pdata;
+	pdata.state = comp.body->getActivationState();
+	if( pdata.state <= WANTS_DEACTIVATION )
+		pdata.state = ACTIVE_TAG;
+	pdata.type = GetType(e);
+	pdata.restitution = comp.body->getRestitution();
+	pdata.friction = comp.body->getFriction();
+	pdata.rollFriction = comp.body->getRollingFriction();
+	pdata.spinFriction = comp.body->getSpinningFriction();
+	pdata.contactStiffness = comp.body->getContactStiffness();
+	pdata.contactDamp = comp.body->getContactDamping();
+	pdata.linDamp = comp.body->getLinearDamping();
+	pdata.angDamp = comp.body->getAngularDamping();
+	pdata.linFactor = comp.body->getLinearFactor();
+	pdata.angFactor = comp.body->getAngularFactor();
+	pdata.mass = 1.0f / comp.body->getInvMass();
+
+	*(PhysicsData*)t_data = pdata;
+	t_data += sizeof(PhysicsData);
+	
+	*(uint8_t*)t_data = comp.collisionStorage;
 	t_data += sizeof(uint8_t);
 
-	*(uint8_t*)t_data = comp.body->isAllowedToSleep() ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	*(uint8_t*)t_data = comp.body->isSleeping() ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	*(uint8_t*)t_data = comp.body->isGravityEnabled() ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	*(uint8_t*)t_data = (uint8_t)comp.body->getType();
-	t_data += sizeof(uint8_t);
-
-	*(uint8_t*)t_data = comp.body->getNonRotatable() ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	auto& mat = comp.body->getMaterial();
-
-	*(float*)t_data = (float)mat.getBounciness();
-	t_data += sizeof(float);
-
-	*(float*)t_data = (float)mat.getFrictionCoefficient();
-	t_data += sizeof(float);
-
-	*(float*)t_data = (float)mat.getRollingResistance();
-	t_data += sizeof(float);
-
-	*(float*)t_data = (float)comp.body->getLinearDamping();
-	t_data += sizeof(float);
-
-	*(float*)t_data = (float)comp.body->getAngularDamping();
-	t_data += sizeof(float);
-
-	*(uint8_t*)t_data = comp.overwriteMass ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	if(comp.overwriteMass)
+	if( comp.collisionStorage == CollisionStorageType::LOCAL )
 	{
-		*(float*)t_data = (float)comp.body->getMass();
-		t_data += sizeof(float);
+		auto childrenCount = ((btCompoundShape*)comp.collisionData)->getNumChildShapes();
+		auto childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
+
+		*(uint32_t*)t_data = childrenCount;
+		t_data += sizeof(uint32_t);
+
+		while( childrenCount > 0 )
+		{
+			
+
+			childrenPtrs++;
+			childrenCount--;
+		}
+
+		for(auto& handle: comp.shapes)
+		{
+			*(uint8_t*)t_data = (uint8_t)handle.stoarge;
+			t_data += sizeof(uint8_t);
+
+			if( handle.stoarge == CollisionStorageType::RESOURCE )
+				continue;
+
+			*(float*)t_data = (float)handle.proxy->getMass();
+			t_data += sizeof(float);
+
+			auto& transform = handle.proxy->getLocalToBodyTransform();
+			*(Vector3*)t_data = transform.getPosition();
+			t_data += sizeof(Vector3);
+
+			*(Quaternion*)t_data = transform.getOrientation();
+			t_data += sizeof(Quaternion);
+
+			const rp3d::CollisionShapeType shapeType = handle.shape->getType();
+
+			*(uint8_t*)t_data = (uint8_t)shapeType;
+			t_data += sizeof(uint8_t);
+
+			switch (shapeType)
+			{
+			case rp3d::CollisionShapeType::BOX:
+				{
+					rp3d::BoxShape* shape = (rp3d::BoxShape*)handle.shape;
+
+					*(Vector3*)t_data = (Vector3)shape->getExtent();
+					t_data += sizeof(Vector3);
+
+					*(float*)t_data = (float)shape->getMargin();
+					t_data += sizeof(float);
+				}
+				break;
+			case rp3d::CollisionShapeType::SPHERE:
+				{
+					rp3d::SphereShape* shape = (rp3d::SphereShape*)handle.shape;
+
+					*(float*)t_data = (float)shape->getRadius();
+					t_data += sizeof(float);
+				}
+				break;
+			case rp3d::CollisionShapeType::CONE:
+				{
+					rp3d::ConeShape* shape = (rp3d::ConeShape*)handle.shape;
+
+					*(float*)t_data = (float)shape->getRadius();
+					t_data += sizeof(float);
+
+					*(float*)t_data = (float)shape->getHeight();
+					t_data += sizeof(float);
+
+					*(float*)t_data = (float)shape->getMargin();
+					t_data += sizeof(float);
+				}
+				break;
+			case rp3d::CollisionShapeType::CYLINDER:
+				{
+					rp3d::CylinderShape* shape = (rp3d::CylinderShape*)handle.shape;
+
+					*(float*)t_data = (float)shape->getRadius();
+					t_data += sizeof(float);
+
+					*(float*)t_data = (float)shape->getHeight();
+					t_data += sizeof(float);
+
+					*(float*)t_data = (float)shape->getMargin();
+					t_data += sizeof(float);
+				}
+				break;
+			case rp3d::CollisionShapeType::CAPSULE:
+				{
+					rp3d::CapsuleShape* shape = (rp3d::CapsuleShape*)handle.shape;
+
+					*(float*)t_data = (float)shape->getRadius();
+					t_data += sizeof(float);
+
+					*(float*)t_data = (float)shape->getHeight();
+					t_data += sizeof(float);
+				}
+				break;
+			default:
+				ERR("Wrong type of collision shape: %i", (int32_t)shapeType);
+				break;
+			}
+		}
 	}
-
-	*(uint8_t*)t_data = comp.overwriteCenterOfMass ? 1 : 0;
-	t_data += sizeof(uint8_t);
-
-	if(comp.overwriteCenterOfMass)
+	else
 	{
-		*(Vector3*)t_data = (Vector3)comp.body->getCenterOfMassLocal();
-		t_data += sizeof(Vector3);
+		string collision_name = CollisionMgr::GetName(comp.collisionData);
+		uint32_t collision_name_size = (uint32_t)collision_name.size();
+
+		*(uint32_t*)t_data = collision_name_size;
+		t_data += sizeof(uint32_t);
+
+		if( collision_name_size != 0 )
+		{
+			memcpy_s(t_data, collision_name_size, collision_name.data(), collision_name_size);
+			t_data += collision_name_size * sizeof(char);
+		}
 	}
 
 	return (uint32_t)(t_data - data);
@@ -292,118 +415,142 @@ bool PhysicsSystem::IsActive(Entity e)
 	return comp.body->isActive();
 }
 
-void PhysicsSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(void());
-	comp.body->setIsActive(active);
-}
-
-bool PhysicsSystem::IsSleeping(Entity e)
+bool PhysicsSystem::IsEnable(Entity e)
 {
 	GET_COMPONENT(false);
-	return comp.body->isSleeping();
+	return comp.body->getActivationState() != DISABLE_SIMULATION;
 }
 
-void PhysicsSystem::SetSleeping(Entity e, bool sleep)
+void PhysicsSystem::SetEnable(Entity e, bool enable, bool nonSleeping)
 {
 	GET_COMPONENT(void());
-	comp.body->setIsSleeping(sleep);
-}
-
-bool PhysicsSystem::IsUnsleepable(Entity e)
-{
-	GET_COMPONENT(false);
-	return comp.body->isAllowedToSleep();
-}
-
-void PhysicsSystem::SetUnsleepable(Entity e, bool unsleepable)
-{
-	GET_COMPONENT(void());
-	comp.body->setIsAllowedToSleep(unsleepable);
-}
-
-bool PhysicsSystem::IsGravityEnabled(Entity e)
-{
-	GET_COMPONENT(false);
-	return comp.body->isGravityEnabled();
-}
-
-void PhysicsSystem::SetGravityEnabled(Entity e, bool enabled)
-{
-	GET_COMPONENT(void());
-	comp.body->enableGravity(enabled);
+	int32_t state = enable ? (nonSleeping ? DISABLE_DEACTIVATION : ACTIVE_TAG) : DISABLE_SIMULATION;
+	comp.body->forceActivationState(state);
 }
 
 void PhysicsSystem::SetType(Entity e, int32_t type)
 {
 	GET_COMPONENT(void());
-	comp.body->setType(rp3d::BodyType(type));
+	auto flags = comp.body->getCollisionFlags();
+
+	switch (type)
+	{
+	case 0:
+		flags |= btCollisionObject::CF_STATIC_OBJECT;
+		flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
+		break;
+	case 1:
+		flags |= btCollisionObject::CF_KINEMATIC_OBJECT;
+		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
+		break;
+	case 2:
+		flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
+		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
+		break;
+	default:
+		WRN("Wrong physics body type");
+		break;
+	}
+
+	comp.body->setCollisionFlags(flags);
 }
 
 int32_t PhysicsSystem::GetType(Entity e)
 {
 	GET_COMPONENT(-1);
-	return (int32_t)comp.body->getType();
+	auto flags = comp.body->getCollisionFlags();
+	if( flags & btCollisionObject::CF_STATIC_OBJECT )
+		return 0;
+	else if( flags & btCollisionObject::CF_KINEMATIC_OBJECT )
+		return 1;
+	else
+		return 2;
+
+	return -1;
 }
 
-void PhysicsSystem::SetNonRotatable(Entity e, bool isNonRot)
-{
-	GET_COMPONENT(void());
-	comp.body->setNonRotatable(isNonRot);
-}
-
-bool PhysicsSystem::GetNonRotatable(Entity e)
-{
-	GET_COMPONENT(false);
-	return comp.body->getNonRotatable();
-}
-
-float PhysicsSystem::GetBounciness(Entity e)
+float PhysicsSystem::GetRestitution(Entity e)
 {
 	GET_COMPONENT(0);
-	return comp.body->getMaterial().getBounciness();
+	return comp.body->getRestitution();
 }
 
-void PhysicsSystem::SetBounciness(Entity e, float bounciness)
+void PhysicsSystem::SetRestitution(Entity e, float restitution)
 {
 	GET_COMPONENT(void());
-	comp.body->getMaterial().setBounciness(bounciness);
+	comp.body->setRestitution(restitution);
 }
 
 float PhysicsSystem::GetFriction(Entity e)
 {
 	GET_COMPONENT(0);
-	return comp.body->getMaterial().getFrictionCoefficient();
+	return comp.body->getFriction();
 }
 
 void PhysicsSystem::SetFriction(Entity e, float friction)
 {
 	GET_COMPONENT(void());
-	comp.body->getMaterial().setFrictionCoefficient(friction);
+	comp.body->setFriction(friction);
 }
 
-float PhysicsSystem::GetRollingResistance(Entity e)
+float PhysicsSystem::GetRollingFriction(Entity e)
 {
 	GET_COMPONENT(0);
-	return comp.body->getMaterial().getRollingResistance();
+	return comp.body->getRollingFriction();
 }
 
-void PhysicsSystem::SetRollingResistance(Entity e, float resistance)
+void PhysicsSystem::SetRollingFriction(Entity e, float friction)
 {
 	GET_COMPONENT(void());
-	comp.body->getMaterial().setRollingResistance(resistance);
+	comp.body->setRollingFriction(friction);
 }
 
-float PhysicsSystem::GetVelocityDamping(Entity e)
+float PhysicsSystem::GetSpinningFriction(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getSpinningFriction();
+}
+
+void PhysicsSystem::SetSpinningFriction(Entity e, float friction)
+{
+	GET_COMPONENT(void());
+	comp.body->setSpinningFriction(friction);
+}
+
+float PhysicsSystem::GetContactDamping(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getContactDamping();
+}
+
+void PhysicsSystem::SetContactDamping(Entity e, float damping)
+{
+	GET_COMPONENT(void());
+	comp.body->setContactStiffnessAndDamping(comp.body->getContactStiffness(), damping);
+}
+
+float PhysicsSystem::GetContactStiffness(Entity e)
+{
+	GET_COMPONENT(0);
+	return comp.body->getContactStiffness();
+}
+
+void PhysicsSystem::SetContactStiffness(Entity e, float stiffness)
+{
+	GET_COMPONENT(void());
+	comp.body->setContactStiffnessAndDamping(stiffness, comp.body->getContactDamping());
+}
+
+float PhysicsSystem::GetLinearDamping(Entity e)
 {
 	GET_COMPONENT(0);
 	return comp.body->getLinearDamping();
 }
 
-void PhysicsSystem::SetVelocityDamping(Entity e, float damping)
+void PhysicsSystem::SetLinearDamping(Entity e, float damping)
 {
 	GET_COMPONENT(void());
-	comp.body->setLinearDamping(damping);
+	comp.body->setDamping( damping, comp.body->getAngularDamping() );
 }
 
 float PhysicsSystem::GetAngularDamping(Entity e)
@@ -415,42 +562,55 @@ float PhysicsSystem::GetAngularDamping(Entity e)
 void PhysicsSystem::SetAngularDamping(Entity e, float damping)
 {
 	GET_COMPONENT(void());
-	comp.body->setAngularDamping(damping);
+	comp.body->setDamping( comp.body->getLinearDamping(), damping );
+}
+
+Vector3 PhysicsSystem::GetLinearFactor(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	return comp.body->getLinearFactor();
+}
+
+void PhysicsSystem::SetLinearFactor(Entity e, Vector3& factor)
+{
+	GET_COMPONENT(void());
+	comp.body->setLinearFactor(factor);
+}
+
+Vector3 PhysicsSystem::GetAngularFactor(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	return comp.body->getAngularFactor();
+}
+
+void PhysicsSystem::SetAngularFactor(Entity e, Vector3& factor)
+{
+	GET_COMPONENT(void());
+	comp.body->setAngularFactor(factor);
 }
 
 float PhysicsSystem::GetMass(Entity e)
 {
 	GET_COMPONENT(0);
-	return comp.body->getMass();
+	return 1.0f / comp.body->getInvMass();
 }
 
 void PhysicsSystem::SetMass(Entity e, float mass)
 {
 	GET_COMPONENT(void());
-	comp.body->setMass(mass);
-	comp.overwriteMass = true;
+
+	btVector3 localInertia;
+	comp.body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
+	comp.body->setMassProps(mass, localInertia);
 }
 
-Vector3 PhysicsSystem::GetCenterOfMass(Entity e)
-{
-	GET_COMPONENT(Vector3::Zero);
-	return comp.body->getCenterOfMassLocal();
-}
-
-void PhysicsSystem::SetCenterOfMass(Entity e, Vector3 local_point)
-{
-	GET_COMPONENT(void());
-	comp.body->setCenterOfMassLocal(local_point);
-	comp.overwriteCenterOfMass = true;
-}
-
-Vector3 PhysicsSystem::GetVelocity(Entity e)
+Vector3 PhysicsSystem::GetLinearVelocity(Entity e)
 {
 	GET_COMPONENT(Vector3::Zero);
 	return comp.body->getLinearVelocity();
 }
 
-void PhysicsSystem::SetVelocity(Entity e, Vector3 velocity)
+void PhysicsSystem::SetLinearVelocity(Entity e, Vector3& velocity)
 {
 	GET_COMPONENT(void());
 	comp.body->setLinearVelocity(velocity);
@@ -462,28 +622,120 @@ Vector3 PhysicsSystem::GetAngularVelocity(Entity e)
 	return comp.body->getAngularVelocity();
 }
 
-void PhysicsSystem::SetAngularVelocity(Entity e, Vector3 velocity)
+void PhysicsSystem::SetAngularVelocity(Entity e, Vector3& velocity)
 {
 	GET_COMPONENT(void());
 	comp.body->setAngularVelocity(velocity);
 }
 
-void PhysicsSystem::ApplyForce(Entity e, Vector3 point, Vector3 force)
+void PhysicsSystem::ApplyForce(Entity e, Vector3& point, Vector3& force)
 {
 	GET_COMPONENT(void());
 	comp.body->applyForce(force, point);
 }
 
-void PhysicsSystem::ApplyForceToCenterOfMass(Entity e, Vector3 force)
+void PhysicsSystem::ApplyCentralForce(Entity e, Vector3& force)
 {
 	GET_COMPONENT(void());
-	comp.body->applyForceToCenterOfMass(force);
+	comp.body->applyCentralForce(force);
 }
 
-void PhysicsSystem::ApplyTorque(Entity e, Vector3 torque)
+void PhysicsSystem::ApplyImpulse(Entity e, Vector3& point, Vector3& impulse)
+{
+	GET_COMPONENT(void());
+	comp.body->applyImpulse(impulse, point);
+}
+
+void PhysicsSystem::ApplyCentralImpulse(Entity e, Vector3& impulse)
+{
+	GET_COMPONENT(void());
+	comp.body->applyCentralForce(impulse);
+}
+
+void PhysicsSystem::ApplyTorque(Entity e, Vector3& torque)
 {
 	GET_COMPONENT(void());
 	comp.body->applyTorque(torque);
+}
+
+void PhysicsSystem::ApplyTorqueImpulse(Entity e, Vector3& torque)
+{
+	GET_COMPONENT(void());
+	comp.body->applyTorqueImpulse(torque);
+}
+
+Vector3 PhysicsSystem::GetTotalForce(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	comp.body->getTotalForce();
+}
+
+Vector3 PhysicsSystem::GetTotalTorque(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero);
+	comp.body->getTotalTorque();
+}
+
+void PhysicsSystem::ClearForces(Entity e)
+{
+	GET_COMPONENT(void());
+	comp.body->clearForces();
+}
+
+// COLLIDERS
+
+void PhysicsSystem::AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents)
+{
+	GET_COMPONENT(void());
+	_AddCollisionShape(comp, pos, rot, new btBoxShape(halfExtents));
+}
+
+void PhysicsSystem::AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius)
+{
+	GET_COMPONENT(void());
+	_AddCollisionShape(comp, pos, rot, new btSphereShape(radius));
+}
+
+void PhysicsSystem::AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height)
+{
+	GET_COMPONENT(void());
+	_AddCollisionShape(comp, pos, rot, new btConeShape(radius, height));
+}
+
+void PhysicsSystem::AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents)
+{
+	GET_COMPONENT(void());
+	_AddCollisionShape(comp, pos, rot, new btCylinderShape(halfExtents));
+}
+
+void PhysicsSystem::AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height)
+{
+	GET_COMPONENT(void());
+	_AddCollisionShape(comp, pos, rot, new btCapsuleShape(radius, height));
+}
+
+void PhysicsSystem::ClearCollision(Entity e)
+{
+	GET_COMPONENT(void());
+	_ClearCollision(&comp);
+}
+
+void PhysicsSystem::_AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, btCollisionShape* shape)
+{
+	if( comp.collisionStorage != LOCAL )
+	{
+		WRN("Shape collision can\'t be added to mesh collision");
+	}
+	else
+	{
+		if(!comp.collisionData)
+			comp.collisionData = (uint64_t)(new btCompoundShape());
+
+		btCompoundShape* shape = (btCompoundShape*)comp.collisionData;
+		shape->addChildShape(btTransform(rot, pos), shape);
+
+		comp.body->setCollisionShape(shape);
+	}
 }
 
 void PhysicsSystem::RegLuaClass()
@@ -491,47 +743,62 @@ void PhysicsSystem::RegLuaClass()
 	getGlobalNamespace(LSTATE)
 		.beginClass<PhysicsSystem>("PhysicsSystem")
 		.addFunction("IsActive", &PhysicsSystem::IsActive)
-		.addFunction("SetActive", &PhysicsSystem::SetActive)
-		.addFunction("IsSleeping", &PhysicsSystem::IsSleeping)
-		.addFunction("SetSleeping", &PhysicsSystem::SetSleeping)
-		.addFunction("IsUnsleepable", &PhysicsSystem::IsUnsleepable)
-		.addFunction("SetUnsleepable", &PhysicsSystem::SetUnsleepable)
-		.addFunction("IsGravityEnabled", &PhysicsSystem::IsGravityEnabled)
-		.addFunction("SetGravityEnabled", &PhysicsSystem::SetGravityEnabled)
+		.addFunction("IsEnable", &PhysicsSystem::IsEnable)
+		.addFunction("SetEnable", &PhysicsSystem::SetEnable)
 
 		.addFunction("SetType", &PhysicsSystem::SetType)
 		.addFunction("GetType", &PhysicsSystem::GetType)
-		.addFunction("GetNonRotatable", &PhysicsSystem::GetNonRotatable)
-		.addFunction("SetNonRotatable", &PhysicsSystem::SetNonRotatable)
 
-		.addFunction("GetBounciness", &PhysicsSystem::GetBounciness)
-		.addFunction("SetBounciness", &PhysicsSystem::SetBounciness)
-
+		.addFunction("GetRestitution", &PhysicsSystem::GetRestitution)
+		.addFunction("SetRestitution", &PhysicsSystem::SetRestitution)
 		.addFunction("GetFriction", &PhysicsSystem::GetFriction)
 		.addFunction("SetFriction", &PhysicsSystem::SetFriction)
+		.addFunction("GetRollingFriction", &PhysicsSystem::GetRollingFriction)
+		.addFunction("SetRollingFriction", &PhysicsSystem::SetRollingFriction)
+		.addFunction("GetSpinningFriction", &PhysicsSystem::GetSpinningFriction)
+		.addFunction("SetSpinningFriction", &PhysicsSystem::SetSpinningFriction)
 
-		.addFunction("GetRollingResistance", &PhysicsSystem::GetRollingResistance)
-		.addFunction("SetRollingResistance", &PhysicsSystem::SetRollingResistance)
+		.addFunction("GetContactStiffness", &PhysicsSystem::GetContactStiffness)
+		.addFunction("SetContactStiffness", &PhysicsSystem::SetContactStiffness)
+		.addFunction("GetContactDamping", &PhysicsSystem::GetContactDamping)
+		.addFunction("SetContactDamping", &PhysicsSystem::SetContactDamping)
 
-		.addFunction("GetVelocityDamping", &PhysicsSystem::GetVelocityDamping)
-		.addFunction("SetVelocityDamping", &PhysicsSystem::SetVelocityDamping)
-
+		.addFunction("GetLinearDamping", &PhysicsSystem::GetLinearDamping)
+		.addFunction("SetLinearDamping", &PhysicsSystem::SetLinearDamping)
 		.addFunction("GetAngularDamping", &PhysicsSystem::GetAngularDamping)
 		.addFunction("SetAngularDamping", &PhysicsSystem::SetAngularDamping)
 
+		.addFunction("GetLinearFactor", &PhysicsSystem::GetLinearFactor)
+		.addFunction("SetLinearFactor", &PhysicsSystem::SetLinearFactor)
+		.addFunction("GetAngularFactor", &PhysicsSystem::GetAngularFactor)
+		.addFunction("SetAngularFactor", &PhysicsSystem::SetAngularFactor)
+
 		.addFunction("GetMass", &PhysicsSystem::GetMass)
 		.addFunction("SetMass", &PhysicsSystem::SetMass)
-		.addFunction("SetCenterOfMass", &PhysicsSystem::SetCenterOfMass)
 
-		.addFunction("GetVelocity", &PhysicsSystem::GetVelocity)
-		.addFunction("SetVelocity", &PhysicsSystem::SetVelocity)
-
+		.addFunction("GetLinearVelocity", &PhysicsSystem::GetLinearVelocity)
+		.addFunction("SetLinearVelocity", &PhysicsSystem::SetLinearVelocity)
 		.addFunction("GetAngularVelocity", &PhysicsSystem::GetAngularVelocity)
 		.addFunction("SetAngularVelocity", &PhysicsSystem::SetAngularVelocity)
 
 		.addFunction("ApplyForce", &PhysicsSystem::ApplyForce)
-		.addFunction("ApplyForceToCenterOfMass", &PhysicsSystem::ApplyForceToCenterOfMass)
+		.addFunction("ApplyForceToCenterOfMass", &PhysicsSystem::ApplyCentralForce)
+		.addFunction("ApplyImpulse", &PhysicsSystem::ApplyImpulse)
+		.addFunction("ApplyCentralImpulse", &PhysicsSystem::ApplyCentralImpulse)
 		.addFunction("ApplyTorque", &PhysicsSystem::ApplyTorque)
+		.addFunction("ApplyTorqueImpulse", &PhysicsSystem::ApplyTorqueImpulse)
+
+		.addFunction("GetTotalForce", &PhysicsSystem::GetTotalForce)
+		.addFunction("GetTotalTorque", &PhysicsSystem::GetTotalTorque)
+		.addFunction("ClearForces", &PhysicsSystem::ClearForces)
+
+		.addFunction("AddBoxCollider", &PhysicsSystem::AddBoxCollider)
+		.addFunction("AddSphereCollider", &PhysicsSystem::AddSphereCollider)
+		.addFunction("AddConeCollider", &PhysicsSystem::AddConeCollider)
+		.addFunction("AddCylinderCollider", &PhysicsSystem::AddCylinderCollider)
+		.addFunction("AddCapsuleCollider", &PhysicsSystem::AddCapsuleCollider)
+
+		.addFunction("ClearCollision", &PhysicsSystem::ClearCollision)
 		
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)

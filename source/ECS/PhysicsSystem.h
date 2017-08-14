@@ -14,7 +14,6 @@ namespace EngineCore
 		
 		bool dirty;
 		btRigidBody* body;
-		Vector3	centerOfMassOffset;
 
 		uint64_t collisionData;		
 		CollisionStorageType collisionStorage;
@@ -23,7 +22,6 @@ namespace EngineCore
 		{
 			dirty = false;
 			body = nullptr;
-			centerOfMassOffset = Vector3::Zero;
 			collisionData = 0;
 			collisionStorage = LOCAL;
 		}
@@ -61,55 +59,95 @@ namespace EngineCore
 		bool SetDirty(Entity e);
 
 		bool IsActive(Entity e);
-		void SetActive(Entity e, bool active);
-		bool IsSleeping(Entity e);
-		void SetSleeping(Entity e, bool sleep);
-		bool IsUnsleepable(Entity e);
-		void SetUnsleepable(Entity e, bool unsleepable);
-		bool IsGravityEnabled(Entity e);
-		void SetGravityEnabled(Entity e, bool enabled);
+		bool IsEnable(Entity e);
+		void SetEnable(Entity e, bool enable, bool nonSleeping);
 
 		void SetType(Entity e, int32_t type);
 		int32_t GetType(Entity e);
-		bool GetNonRotatable(Entity e);
-		void SetNonRotatable(Entity e, bool isNonRot);
 
-		float GetBounciness(Entity e);
-		void SetBounciness(Entity e, float bounciness);
+		float GetRestitution(Entity e);
+		void SetRestitution(Entity e, float restitution);
 		float GetFriction(Entity e);
 		void SetFriction(Entity e, float friction);
-		float GetRollingResistance(Entity e);
-		void SetRollingResistance(Entity e, float resistance);
-		float GetVelocityDamping(Entity e);
-		void SetVelocityDamping(Entity e, float damping);
+		float GetRollingFriction(Entity e);
+		void SetRollingFriction(Entity e, float friction);
+		float GetSpinningFriction(Entity e);
+		void SetSpinningFriction(Entity e, float friction);
+
+		float GetContactStiffness(Entity e);
+		void SetContactStiffness(Entity e, float stiffness);
+		float GetContactDamping(Entity e);
+		void SetContactDamping(Entity e, float damping);
+
+		float GetLinearDamping(Entity e);
+		void SetLinearDamping(Entity e, float damping);
 		float GetAngularDamping(Entity e);
 		void SetAngularDamping(Entity e, float damping);
 
+		Vector3 GetLinearFactor(Entity e);
+		void SetLinearFactor(Entity e, Vector3& factor);
+		Vector3 GetAngularFactor(Entity e);
+		void SetAngularFactor(Entity e, Vector3& factor);
+
 		float GetMass(Entity e);
 		void SetMass(Entity e, float mass);
-		Vector3 GetCenterOfMass(Entity e);
-		void SetCenterOfMass(Entity e, Vector3 local_point);
 
-		Vector3 GetVelocity(Entity e);
-		void SetVelocity(Entity e, Vector3 velocity);
+		Vector3 GetLinearVelocity(Entity e);
+		void SetLinearVelocity(Entity e, Vector3& velocity);
 		Vector3 GetAngularVelocity(Entity e);
-		void SetAngularVelocity(Entity e, Vector3 velocity);
+		void SetAngularVelocity(Entity e, Vector3& velocity);
 
-		void ApplyForce(Entity e, Vector3 point, Vector3 force);
-		void ApplyForceToCenterOfMass(Entity e, Vector3 force);
-		void ApplyTorque(Entity e, Vector3 torque);
+		void ApplyForce(Entity e, Vector3& point, Vector3& force);
+		void ApplyCentralForce(Entity e, Vector3& force);
+		void ApplyImpulse(Entity e, Vector3& point, Vector3& impulse);
+		void ApplyCentralImpulse(Entity e, Vector3& impulse);
+		void ApplyTorque(Entity e, Vector3& torque);
+		void ApplyTorqueImpulse(Entity e, Vector3& torque);
+
+		Vector3 GetTotalForce(Entity e);
+		Vector3 GetTotalTorque(Entity e);
+		void ClearForces(Entity e);
+
+		void AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
+		void AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius);
+		void AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
+		void AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
+		void AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
+
+		void ClearCollision(Entity e);
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass();
 
 	private:
-
+		struct PhysicsData 
+		{
+			int32_t state;
+			int32_t type;
+			float restitution;
+			float friction;
+			float rollFriction;
+			float spinFriction;
+			float contactStiffness;
+			float contactDamp;
+			float linDamp;
+			float angDamp;
+			Vector3 linFactor;
+			Vector3 angFactor;
+			float mass;
+		};
+		
 		void _DeleteComponent(PhysicsComponent* comp);
+		void _AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, btCollisionShape* shape);
+		void _ClearCollision(PhysicsComponent* comp);
 
-	private:
 		ComponentRArray<PhysicsComponent> components;
 				
+		btCollisionShape* defaultCollision;
+		float defaultMass;
+		btVector3 defaultInertia;
+
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 
