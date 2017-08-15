@@ -24,6 +24,7 @@ function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     local bb_size = world.visibility:GetBoxSizeL(ent)
     local bb_pos = world.visibility:GetBoxCenterL(ent)
     physicsSys:AddBoxCollider(ent, bb_pos, Quaternion.Identity, bb_size)
+    physicsSys:SetType(ent, PHYSICS_TYPES.STATIC)
     physicsSys:UpdateState(ent)
 
     --physicsSys:SetRestitution(ent, 0.1)

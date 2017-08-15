@@ -158,10 +158,7 @@ namespace EngineCore
 		void _ClearCollision(PhysicsComponent* comp);
 
 		ComponentRArray<PhysicsComponent> components;
-				
-		float defaultMass;
-		btVector3 defaultInertia;
-
+		
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 
@@ -200,17 +197,14 @@ namespace EngineCore
 		{
 		}
 
-		virtual void setDebugMode(int debugMode)
-		{
-			m_debugMode = debugMode;
-		}
+		virtual DefaultColors getDefaultColors() const {return m_colors;}
 
-		virtual int	getDebugMode() const
-		{
-			return m_debugMode;
-		}
+		virtual int	getDebugMode() const {return m_debugMode;}
+		virtual void setDebugMode(int debugMode) {m_debugMode = debugMode;}
+
 	private:
 		int m_debugMode;
 		DebugDrawer* m_dbgDrawer;
+		DefaultColors m_colors;
 	};
 }

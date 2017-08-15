@@ -23,7 +23,7 @@ struct VI_PosTex
 
 struct VI_PosColor
 {
-    float3 position			: POSITION;   
+    float3 pos				: POSITION;   
     float3 color			: TEXCOORD;   
 };
 

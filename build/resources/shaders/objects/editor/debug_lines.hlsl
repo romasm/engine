@@ -21,9 +21,7 @@ PI_PosColor VS(VI_PosColor input)
 {
 	PI_PosColor output;
 	
-	output.position = mul(float4(input.position, 1), world);
-	output.position = mul(output.position, g_viewProj);
-
+	output.pos = mul(float4(input.pos, 1), g_viewProj);
 	output.color = input.color;
 	
 	return output;
@@ -31,5 +29,5 @@ PI_PosColor VS(VI_PosColor input)
 
 float4 PS(PI_PosColor input) : SV_TARGET
 {
-	return input.color;
+	return float4(input.color, 1);
 }

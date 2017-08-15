@@ -15,7 +15,7 @@ function EntityTypes.PhysicsModel:init(world, ent)
     local bb_mass = bb_size.x * bb_size.y * bb_size.z * 8 * 100
     
     self.physicsSys:AddBoxCollider(self.ent, bb_pos, Quaternion.Identity, bb_size)
-    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
+    --self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
     self.physicsSys:SetMass(self.ent, bb_mass)
     self.physicsSys:UpdateState(self.ent)
     

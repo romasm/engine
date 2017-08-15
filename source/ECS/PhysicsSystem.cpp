@@ -12,10 +12,7 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
-
-	defaultMass = 1.0f;
-	CollisionMgr::GetResourcePtr(CollisionMgr::nullres)->calculateLocalInertia(1.0f, defaultInertia);
-
+	
 	debugDraw = false;
 }
 
@@ -78,7 +75,7 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->collisionData = 0;
 	res->collisionStorage = LOCAL;
 	
-	btRigidBody::btRigidBodyConstructionInfo info(defaultMass, nullptr, CollisionMgr::GetResourcePtr(CollisionMgr::nullres), defaultInertia);
+	btRigidBody::btRigidBodyConstructionInfo info(0, nullptr, CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 	res->body = new btRigidBody(info);
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
@@ -841,6 +838,8 @@ PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
 	m_debugMode(btIDebugDraw::DBG_DrawWireframe),
 	m_dbgDrawer(dbgDrawer)
 {
+	m_colors.m_activeObject = btVector3(0, 1.0f, 0);
+	m_colors.m_deactivatedObject = btVector3(0.5f, 0.5f, 0);
 }
 
 void PhysicsDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)

@@ -420,6 +420,8 @@ bool Shader::initShader()
 void Shader::Set(TECHNIQUES tech)
 {
 	auto& tq = techs_array[tech];
+	if( tq.shadersID[SHADER_VS] == SHADER_NULL )
+		return;
 
 	Render::OMSetDepthState(tq.depthState);
 	Render::OMSetBlendState(tq.blendState);
@@ -589,6 +591,9 @@ bool SimpleShader::initShader()
 
 void SimpleShader::Set()
 {
+	if( data.shadersID[SHADER_VS] == SHADER_NULL )
+		return;
+
 	Render::OMSetDepthState(data.depthState);
 	Render::OMSetBlendState(data.blendState);
 	Render::RSSetState(data.rastState);

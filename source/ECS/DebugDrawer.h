@@ -47,6 +47,12 @@ namespace EngineCore
 
 		void Prepare()
 		{
+			if( dbgLines.empty() )
+			{
+				lineCount = 0;
+				return;
+			}
+
 			Render::UpdateDynamicResource(lineBuffer, dbgLines.data(), dbgLines.size() * sizeof(DBGLine));
 			lineCount = (uint32_t)dbgLines.size();
 			dbgLines.resize(0);
@@ -54,6 +60,9 @@ namespace EngineCore
 
 		void Render()
 		{
+			if( lineCount == 0 )
+				return;
+
 			const uint32_t stride = sizeof(DBGLine) / 2;
 			const uint32_t offset = 0;
 			Render::Context()->IASetVertexBuffers(0, 1, &lineBuffer, &stride, &offset);
@@ -61,6 +70,8 @@ namespace EngineCore
 			lineMat->Set();
 			Render::SetTopology(IA_TOPOLOGY::LINELIST);
 			Render::Context()->Draw(lineCount * 2, 0);
+
+			lineCount = 0;
 		}
 
 	private:
