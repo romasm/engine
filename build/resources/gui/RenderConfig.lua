@@ -384,11 +384,11 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
-                Viewport:SetCollisionDraw(true)
+                Viewport:SetPhysicsDraw(true)
                 return true
             end,
             [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
-                Viewport:SetCollisionDraw(false)
+                Viewport:SetPhysicsDraw(false)
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev) 

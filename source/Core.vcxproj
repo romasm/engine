@@ -158,6 +158,7 @@
     <ClInclude Include="ECS\CameraSystem.h" />
     <ClInclude Include="ECS\CollisionSystem.h" />
     <ClInclude Include="ECS\ControllerSystem.h" />
+    <ClInclude Include="ECS\DebugDrawer.h" />
     <ClInclude Include="ECS\ECS_defines.h" />
     <ClInclude Include="ECS\EarlyVisibilitySystem.h" />
     <ClInclude Include="ECS\Entity.h" />

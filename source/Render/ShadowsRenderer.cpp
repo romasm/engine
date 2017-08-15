@@ -279,6 +279,8 @@ bool ShadowsRenderer::RegShadowMap(uint id,  float size)
 
 void ShadowsRenderer::RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp)
 {
+	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
+
 	ShadowMap shm = shadowmap_array[castersIdx[id]];
 	for(uint i=0; i<num; i++)
 		shm = shadowmap_array[shm.next];

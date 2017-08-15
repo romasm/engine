@@ -15,6 +15,8 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 
 	defaultMass = 1.0f;
 	CollisionMgr::GetResourcePtr(CollisionMgr::nullres)->calculateLocalInertia(1.0f, defaultInertia);
+
+	debugDraw = false;
 }
 
 PhysicsSystem::~PhysicsSystem()
@@ -80,6 +82,8 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->body = new btRigidBody(info);
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
+	dynamicsWorld->addRigidBody(res->body);
+
 	return res;
 }
 
@@ -112,11 +116,14 @@ void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
 			// multilayer compound collisions is NOT supported
 			auto childrenCount = shape->getNumChildShapes();
 			auto childrenPtrs = shape->getChildList();
-			while( childrenCount > 0 )
+
+			int32_t i = 0;
+			while( childrenCount > 0 && i < childrenCount)
 			{
-				delete childrenPtrs->m_childShape;
-				childrenPtrs++;
-				childrenCount--;
+				auto child = (childrenPtrs + i)->m_childShape;
+				shape->removeChildShapeByIndex(i);
+				_DELETE(child);
+				i++;
 			}
 
 			_DELETE(shape);
@@ -129,7 +136,8 @@ void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
 		comp->collisionData = (uint64_t)CollisionMgr::nullres;
 	}
 
-	comp->body->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
+	if(comp->body)
+		comp->body->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 }
 
 void PhysicsSystem::CopyComponent(Entity src, Entity dest)
@@ -412,10 +420,19 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 		}
 	}
 	
+	UpdateState(e);
+
 	return (uint32_t)(t_data - data);
 }
 
 // PARAMS
+
+void PhysicsSystem::UpdateState(Entity e)
+{
+	GET_COMPONENT(void());
+	dynamicsWorld->removeRigidBody(comp.body);
+	dynamicsWorld->addRigidBody(comp.body);
+}
 
 bool PhysicsSystem::IsActive(Entity e)
 {
@@ -739,10 +756,10 @@ void PhysicsSystem::_AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Qua
 		if(!comp.collisionData)
 			comp.collisionData = (uint64_t)(new btCompoundShape());
 
-		btCompoundShape* shape = (btCompoundShape*)comp.collisionData;
-		shape->addChildShape(btTransform(rot, pos), shape);
+		btCompoundShape* compound = (btCompoundShape*)comp.collisionData;
+		compound->addChildShape(btTransform(rot, pos), shape);
 
-		comp.body->setCollisionShape(shape);
+		comp.body->setCollisionShape(compound);
 	}
 }
 
@@ -750,6 +767,8 @@ void PhysicsSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
 		.beginClass<PhysicsSystem>("PhysicsSystem")
+		.addFunction("UpdateState", &PhysicsSystem::UpdateState)
+
 		.addFunction("IsActive", &PhysicsSystem::IsActive)
 		.addFunction("IsEnable", &PhysicsSystem::IsEnable)
 		.addFunction("SetEnable", &PhysicsSystem::SetEnable)
@@ -811,5 +830,24 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
 		.addFunction("HasComponent", &PhysicsSystem::HasComponent)
+
+		.addFunction("SetDebugDraw", &PhysicsSystem::SetDebugDraw)
 		.endClass();
+}
+
+// DEBUG DRAW
+
+PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
+	m_debugMode(btIDebugDraw::DBG_DrawWireframe),
+	m_dbgDrawer(dbgDrawer)
+{
+}
+
+void PhysicsDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)
+{
+	Vector3 A(from);
+	Vector3 B(to);
+	Vector3 colorA(fromColor);
+	Vector3 colorB(toColor);
+	m_dbgDrawer->PushLine(A, B, colorA, colorB);
 }

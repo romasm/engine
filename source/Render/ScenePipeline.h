@@ -189,7 +189,7 @@ namespace EngineCore
 
 		inline bool IsLighweight() {return isLightweight;}
 		
-		void UIStage();
+		bool UIStage();
 		void UIOverlayStage();
 
 		void OpaqueForwardStage();

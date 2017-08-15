@@ -515,6 +515,9 @@ World::World() : BaseWorld()
 
 	Vector3 defaultGravity(0, -9.81f, 0); // TODO
 	physDynamicsWorld->setGravity(defaultGravity);
+	
+	physDebugDrawer = new PhysicsDebugDrawer(&dbgDrawer);
+	physDynamicsWorld->setDebugDrawer(physDebugDrawer);
 
 	m_frustumMgr = new FrustumMgr;
 	
@@ -626,11 +629,9 @@ void World::Frame()
 	m_sceneGraph->Update();
 	
 	m_physicsSystem->UpdateTransformations();
-
 	if( m_mode == StateMode::LIVE )
-	{
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
-	}
+	m_physicsSystem->DebugDraw();	
 
 	m_collisionSystem->UpdateTransformations();
 
@@ -642,6 +643,8 @@ void World::Frame()
 
 	m_globalLightSystem->Update();
 	
+	dbgDrawer.Prepare();
+
 	m_earlyVisibilitySystem->CheckEarlyVisibility();
 
 	m_lightSystem->RegShadowMaps();
@@ -694,7 +697,9 @@ void World::Frame()
 			it->TransparentForwardStage();
 			
 			PERF_GPU_TIMESTAMP(_SCENE_UI);
-			it->UIStage();
+			if( it->UIStage() )
+				dbgDrawer.Render();
+
 			it->UIOverlayStage();
 			
 			PERF_GPU_TIMESTAMP(_SCENE_LDR);
@@ -712,6 +717,8 @@ void World::Close()
 	_DELETE(m_transformControls);
 
 	BaseWorld::Close();
+
+	_DELETE(physDebugDrawer);
 }
 
 // World ---------------------

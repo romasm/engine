@@ -282,6 +282,9 @@
     <ClInclude Include="Managers\CollisionMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\DebugDrawer.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">

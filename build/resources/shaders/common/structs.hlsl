@@ -21,6 +21,18 @@ struct VI_PosTex
     float2 tex				: TEXCOORD;
 };
 
+struct VI_PosColor
+{
+    float3 position			: POSITION;   
+    float3 color			: TEXCOORD;   
+};
+
+struct PI_PosColor
+{
+    float4 pos				: SV_POSITION;   
+    float3 color			: TEXCOORD;  
+};
+
 struct VI_Mesh
 {
     float3 position			: POSITION;

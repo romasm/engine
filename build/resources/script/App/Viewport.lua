@@ -259,11 +259,11 @@ function Viewport:ToggleWorldLive()
     end
 end
 
-function Viewport:SetCollisionDraw(draw)
+function Viewport:SetPhysicsDraw(draw)
     if not self.lua_world then return end
     
     self.collisionDraw = draw
-    self.lua_world.world.collision:SetDebugDraw(self.collisionDraw)
+    self.lua_world.world.physics:SetDebugDraw(self.collisionDraw)
 end
 
 function Viewport:ToggleGamemode()

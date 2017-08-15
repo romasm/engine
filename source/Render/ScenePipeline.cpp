@@ -670,14 +670,16 @@ void ScenePipeline::EndFrame()
 	current_camera = nullptr;
 }
 
-void ScenePipeline::UIStage()
+bool ScenePipeline::UIStage()
 {
-	if(!renderConfig.editorGuiEnable) return;
+	if(!renderConfig.editorGuiEnable)
+		return false;
 
 	rt_3DHud->ClearRenderTargets(false);
 	rt_3DHud->SetRenderTarget();
 
 	render_mgr->DrawHud();
+	return true;
 }
 
 void ScenePipeline::UIOverlayStage()

@@ -53,6 +53,14 @@ namespace EngineCore
 		void SimulateAndUpdateSceneGraph(float dt);
 		void UpdateTransformations();
 
+		void DebugDraw()
+		{
+			if(debugDraw)
+				dynamicsWorld->debugDrawWorld();
+		}
+
+		void UpdateState(Entity e);
+
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
 		
@@ -117,6 +125,11 @@ namespace EngineCore
 
 		void ClearCollision(Entity e);
 
+		void SetDebugDraw(bool draw)
+		{
+			debugDraw = draw;
+		}
+
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass();
@@ -153,5 +166,51 @@ namespace EngineCore
 		TransformSystem* transformSystem;
 
 		btDiscreteDynamicsWorld* dynamicsWorld;
+
+		bool debugDraw;
+	};
+
+	class DebugDrawer;
+
+	class PhysicsDebugDrawer : public btIDebugDraw
+	{
+	public:
+		PhysicsDebugDrawer(DebugDrawer* dbgDrawer);
+		
+		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor);
+
+		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
+		{
+			drawLine(from, to, color, color);
+		}
+
+		virtual void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
+		{
+			drawLine(PointOnB, PointOnB + normalOnB * distance, color);
+			btVector3 ncolor(0, 0, 0);
+			drawLine(PointOnB, PointOnB + normalOnB * 0.01f, ncolor);
+		}
+
+		virtual void reportErrorWarning(const char* warningString)
+		{
+			WRN("[BulletPhysics] %s", warningString);
+		}
+
+		virtual void draw3dText(const btVector3& location,const char* textString)
+		{
+		}
+
+		virtual void setDebugMode(int debugMode)
+		{
+			m_debugMode = debugMode;
+		}
+
+		virtual int	getDebugMode() const
+		{
+			return m_debugMode;
+		}
+	private:
+		int m_debugMode;
+		DebugDrawer* m_dbgDrawer;
 	};
 }

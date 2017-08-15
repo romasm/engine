@@ -136,7 +136,7 @@ namespace EngineCore
 					.addFunction("HasComponent", &LineGeometrySystem::HasComponent)
 				.endClass();
 		}
-
+		
 	private:
 		void DestroyGeometry(LineGeometryComponent* comp, bool delete_all);
 

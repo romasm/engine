@@ -80,20 +80,26 @@
 
 #include <btBulletDynamicsCommon.h>
 
-#pragma comment(lib,"Bullet3Collision.lib")
-#pragma comment(lib,"Bullet3Common.lib")
-#pragma comment(lib,"Bullet3Dynamics.lib")
-#pragma comment(lib,"Bullet3Geometry.lib")
-#pragma comment(lib,"BulletCollision.lib")
-#pragma comment(lib,"BulletDynamics.lib")
-#pragma comment(lib,"BulletInverseDynamics.lib")
-#pragma comment(lib,"BulletInverseDynamicsUtils.lib")
-#pragma comment(lib,"BulletSoftBody.lib")
-#pragma comment(lib,"LinearMath.lib")
+#ifdef _DEBUG
+#define BT_POSTFIX "_d"
+#else
+#define BT_POSTFIX ""
+#endif
 
-#pragma comment(lib,"ConvexDecomposition.lib")
-#pragma comment(lib,"HACD.lib")
-#pragma comment(lib,"vhacd.lib")
+#pragma comment(lib,"Bullet3Collision"BT_POSTFIX".lib")
+#pragma comment(lib,"Bullet3Common"BT_POSTFIX".lib")
+#pragma comment(lib,"Bullet3Dynamics"BT_POSTFIX".lib")
+#pragma comment(lib,"Bullet3Geometry"BT_POSTFIX".lib")
+#pragma comment(lib,"BulletCollision"BT_POSTFIX".lib")
+#pragma comment(lib,"BulletDynamics"BT_POSTFIX".lib")
+#pragma comment(lib,"BulletInverseDynamics"BT_POSTFIX".lib")
+#pragma comment(lib,"BulletInverseDynamicsUtils"BT_POSTFIX".lib")
+#pragma comment(lib,"BulletSoftBody"BT_POSTFIX".lib")
+#pragma comment(lib,"LinearMath"BT_POSTFIX".lib")
+
+#pragma comment(lib,"ConvexDecomposition"BT_POSTFIX".lib")
+#pragma comment(lib,"HACD"BT_POSTFIX".lib")
+#pragma comment(lib,"vhacd"BT_POSTFIX".lib")
 
 // namespaces
 using namespace DirectX;

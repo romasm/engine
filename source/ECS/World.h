@@ -23,8 +23,10 @@
 #include "CollisionSystem.h"
 
 #include "Frustum.h"
-#include "TransformControls.h"
 #include "SceneGraph.h"
+
+#include "TransformControls.h"
+#include "DebugDrawer.h"
 
 #define DEFAULT_ENV "default"
 #define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
@@ -383,6 +385,9 @@ namespace EngineCore
 
 	protected:
 		TransformControls* m_transformControls;
+		DebugDrawer dbgDrawer;
+
+		PhysicsDebugDrawer* physDebugDrawer;
 	};
 
 	class SmallWorld: public BaseWorld

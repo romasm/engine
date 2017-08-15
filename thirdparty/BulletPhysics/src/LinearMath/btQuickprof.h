@@ -67,7 +67,7 @@ void btSetCustomLeaveProfileZoneFunc(btLeaveProfileZoneFunc* leaveFunc);
 
 #ifndef BT_NO_PROFILE // FIX redefinition
 //To disable built-in profiling, please comment out next line
-//#define BT_NO_PROFILE 1
+#define BT_NO_PROFILE 1
 #endif //BT_NO_PROFILE
 
 #ifndef BT_NO_PROFILE
