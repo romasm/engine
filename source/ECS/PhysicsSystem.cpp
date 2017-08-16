@@ -185,7 +185,8 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 	pdata.angDamp = comp.body->getAngularDamping();
 	pdata.linFactor = comp.body->getLinearFactor();
 	pdata.angFactor = comp.body->getAngularFactor();
-	pdata.mass = 1.0f / comp.body->getInvMass();
+	float invMass = comp.body->getInvMass();
+	pdata.mass = invMass == 0 ? 0 : (1.0f / invMass);
 	pdata.localInertia = comp.body->getLocalInertia();
 
 	*(PhysicsData*)t_data = pdata;
