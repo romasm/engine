@@ -26,9 +26,6 @@ function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     physicsSys:AddBoxCollider(ent, bb_pos, Quaternion.Identity, bb_size)
     physicsSys:SetType(ent, PHYSICS_TYPES.STATIC)
     physicsSys:UpdateState(ent)
-
-    --physicsSys:SetRestitution(ent, 0.1)
-    --physicsSys:SetFriction(ent, 1.0)
     
     return true
 end

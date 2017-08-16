@@ -9,7 +9,7 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 	transformSystem = world->GetTransformSystem();
 
 	dynamicsWorld = dynamicsW;
-
+	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 	
@@ -32,7 +32,7 @@ void PhysicsSystem::UpdateTransformations()
 			continue;
 
 		Entity e = i.get_entity();
-
+		
 		btTransform transform = ToTransform( transformSystem->GetTransformW(e) );
 		//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
 		i.body->proceedToTransform( transform );
@@ -835,7 +835,7 @@ void PhysicsSystem::RegLuaClass()
 // DEBUG DRAW
 
 PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
-	m_debugMode(btIDebugDraw::DBG_DrawWireframe),
+	m_debugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawContactPoints),
 	m_dbgDrawer(dbgDrawer)
 {
 	m_colors.m_activeObject = btVector3(0, 1.0f, 0);

@@ -513,7 +513,7 @@ World::World() : BaseWorld()
 	physConstraintSolver = new btSequentialImpulseConstraintSolver();
 	physDynamicsWorld = new btDiscreteDynamicsWorld(physCollisionDispatcher, physBroadphase, physConstraintSolver, physCollisionConfiguration);
 
-	Vector3 defaultGravity(0, -9.81f, 0); // TODO
+	Vector3 defaultGravity(0, -10.0f, 0); // TODO
 	physDynamicsWorld->setGravity(defaultGravity);
 	
 	physDebugDrawer = new PhysicsDebugDrawer(&dbgDrawer);

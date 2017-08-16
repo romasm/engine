@@ -27,6 +27,7 @@ LocalTimer::LocalTimer()
 	b_run = false;
 }
 
+// delta time in ms
 float LocalTimer::dt() const
 {
 	return Timer::Get()->dt_ms * m_scale;
