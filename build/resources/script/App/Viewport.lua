@@ -266,6 +266,26 @@ function Viewport:SetPhysicsDraw(draw)
     self.lua_world.world.physics:SetDebugDraw(self.collisionDraw)
 end
 
+-- TEMP
+function Viewport:SpawnPhysics()
+    if not self.lua_world then return end
+    
+    local phymodel = EntityTypes.PhysicsModel(self.lua_world.world)
+    
+    local pos = EditorCamera:GetPosition()
+    local dir = EditorCamera:GetDirection()
+    pos = Vector3.Add(pos, Vector3.MulScalar(dir, 3))
+    dir = Vector3.MulScalar(dir, 100000)
+    
+    phymodel:SetMesh(PATH.ROOT .. "content/statics/cube_ch.FBX")
+    
+    phymodel:SetPosition(pos.x, pos.y, pos.z)
+    phymodel:ApplyCentralImpulse(dir)
+
+    SceneBrowser:Refill()
+    SceneBrowser:SyncSelection()
+end
+
 function Viewport:ToggleGamemode()
     if not self.lua_world then return end
     
@@ -495,6 +515,12 @@ function Viewport:onKeyDown(eventData)
     
     if self.freelook then
         EditorCamera:onStartMove(eventData.key)
+        
+        --TEMP
+        if eventData.key == KEYBOARD_CODES.KEY_T then
+            self:SpawnPhysics()
+        end
+
         return true
      end
 

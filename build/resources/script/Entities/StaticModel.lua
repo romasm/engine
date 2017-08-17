@@ -8,6 +8,7 @@ function EntityTypes.StaticModel:init(world, ent)
     return true
 end
 
+-- temp 
 function EntityTypes.StaticModel:SetMesh(mesh)
     if not self:base(EntityTypes.StaticModel).SetMeshAndCallback(self, mesh, EntityTypes.StaticModel.OnLoad) then return false end
     return true
@@ -15,7 +16,7 @@ end
 
 function EntityTypes.StaticModel.OnLoad(world, ent, id, status)
     if not status then return end
-    -- temp    
+       
     print("TEST LUA CALLBACK")
     
     local physicsSys = world.physics

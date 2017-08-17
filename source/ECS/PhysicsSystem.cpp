@@ -76,6 +76,9 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->collisionStorage = LOCAL;
 	
 	btRigidBody::btRigidBodyConstructionInfo info(0, nullptr, CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
+	info.m_linearSleepingThreshold = SLEEP_THRESHOLD_LINEAR;
+	info.m_angularSleepingThreshold = SLEEP_THRESHOLD_ANGULAR;
+
 	res->body = new btRigidBody(info);
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
@@ -174,7 +177,7 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 	pdata.state = comp.body->getActivationState();
 	if( pdata.state <= WANTS_DEACTIVATION )
 		pdata.state = ACTIVE_TAG;
-	pdata.type = GetType(e);
+	pdata.flags = comp.body->getCollisionFlags();
 	pdata.restitution = comp.body->getRestitution();
 	pdata.friction = comp.body->getFriction();
 	pdata.rollFriction = comp.body->getRollingFriction();
@@ -301,8 +304,6 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	PhysicsData pdata = *(PhysicsData*)t_data;
 	t_data += sizeof(PhysicsData);
 
-	comp->body->forceActivationState(pdata.state);
-	SetType(e, pdata.type);
 	comp->body->setRestitution(pdata.restitution);
 	comp->body->setFriction(pdata.friction);
 	comp->body->setRollingFriction(pdata.rollFriction);
@@ -312,6 +313,8 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	comp->body->setLinearFactor(pdata.linFactor);
 	comp->body->setAngularFactor(pdata.angFactor);
 	comp->body->setMassProps(pdata.mass, pdata.localInertia);
+	comp->body->setCollisionFlags(pdata.flags);
+	comp->body->forceActivationState(pdata.state);
 	
 	comp->collisionStorage = *(CollisionStorageType*)t_data;
 	t_data += sizeof(CollisionStorageType);
@@ -807,7 +810,7 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("SetAngularVelocity", &PhysicsSystem::SetAngularVelocity)
 
 		.addFunction("ApplyForce", &PhysicsSystem::ApplyForce)
-		.addFunction("ApplyForceToCenterOfMass", &PhysicsSystem::ApplyCentralForce)
+		.addFunction("ApplyCentralForce", &PhysicsSystem::ApplyCentralForce)
 		.addFunction("ApplyImpulse", &PhysicsSystem::ApplyImpulse)
 		.addFunction("ApplyCentralImpulse", &PhysicsSystem::ApplyCentralImpulse)
 		.addFunction("ApplyTorque", &PhysicsSystem::ApplyTorque)
@@ -836,7 +839,7 @@ void PhysicsSystem::RegLuaClass()
 // DEBUG DRAW
 
 PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
-	m_debugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawContactPoints),
+	m_debugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints),
 	m_dbgDrawer(dbgDrawer)
 {
 	m_colors.m_activeObject = btVector3(0, 1.0f, 0);

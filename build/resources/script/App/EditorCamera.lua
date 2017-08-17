@@ -44,6 +44,14 @@ function EditorCamera:Init( world )
     }
 end
 
+function EditorCamera:GetPosition()
+    return self.camera:GetPositionW()
+end
+
+function EditorCamera:GetDirection()
+    return self.camera:GetLookDir()
+end
+
 function EditorCamera:EditorPlane()
     self.planeEnt = self.world:CreateEntity()
     if not self.planeEnt:IsNull() then 

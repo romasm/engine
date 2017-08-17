@@ -84,7 +84,7 @@ function Hotkeys:Process(eventData, root)
     elseif eventData.key == KEYBOARD_CODES.KEY_F and CoreGui.Keys.Ctrl() then 
         Viewport:ToggleFullscreen()
         resEvent.event = GUI_EVENTS.NULL
-
+        
     end
 
     return resEvent

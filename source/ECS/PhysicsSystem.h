@@ -7,6 +7,9 @@
 
 #define MAX_PHYSICS_STEP_PER_FRAME 10
 
+#define SLEEP_THRESHOLD_LINEAR 0.6f
+#define SLEEP_THRESHOLD_ANGULAR 0.5f
+
 namespace EngineCore
 {
 	struct PhysicsComponent
@@ -138,7 +141,7 @@ namespace EngineCore
 		struct PhysicsData 
 		{
 			int32_t state;
-			int32_t type;
+			int32_t flags;
 			float restitution;
 			float friction;
 			float rollFriction;

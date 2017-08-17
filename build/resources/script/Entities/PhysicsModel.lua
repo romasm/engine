@@ -6,18 +6,36 @@ function EntityTypes.PhysicsModel:init(world, ent)
     self.world:SetEntityType(self.ent, "PhysicsModel")
     
     self.physicsSys = self.world.physics
-
     self.physicsSys:AddComponent(self.ent)
-    
-    -- temp
-    local bb_size = self.world.visibility:GetBoxSizeL(self.ent)
-    local bb_pos = self.world.visibility:GetBoxCenterL(self.ent)
+    self.physicsSys:SetMass(self.ent, 100.0)
+
+    return true
+end
+
+function EntityTypes.PhysicsModel:ApplyCentralImpulse(impulse)
+    self.physicsSys:ApplyCentralImpulse(self.ent, impulse)
+end
+
+-- temp 
+function EntityTypes.PhysicsModel:SetMesh(mesh)
+    if not self:base(EntityTypes.PhysicsModel).SetMeshAndCallback(self, mesh, EntityTypes.PhysicsModel.OnLoad) then return false end
+    return true
+end
+
+function EntityTypes.PhysicsModel.OnLoad(world, ent, id, status)
+    if not status then return end
+       
+    print("TEST LUA CALLBACK")
+
+    world.physics:ClearCollision(ent)
+
+    local bb_size = world.visibility:GetBoxSizeL(ent)
+    local bb_pos = world.visibility:GetBoxCenterL(ent)
+    world.physics:AddBoxCollider(ent, bb_pos, Quaternion.Identity, bb_size)
+
     local bb_mass = bb_size.x * bb_size.y * bb_size.z * 8 * 100
-    
-    self.physicsSys:AddBoxCollider(self.ent, bb_pos, Quaternion.Identity, bb_size)
-    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
-    self.physicsSys:SetMass(self.ent, bb_mass)
-    self.physicsSys:UpdateState(self.ent)
+    world.physics:SetMass(ent, bb_mass)
+    world.physics:UpdateState(ent)
     
     return true
 end
