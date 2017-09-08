@@ -7,6 +7,8 @@
 #include "CameraSystem.h"
 #include "TransformSystem.h"
 
+// TODO: REMOVE from core code
+
 namespace EngineCore
 {
 #define MESH_ARROW_X PATH_SYS_MESHES "editor/move_arrow_x" EXT_STATIC

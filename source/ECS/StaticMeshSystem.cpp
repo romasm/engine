@@ -339,13 +339,13 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 	auto worldID = world->GetID();
 	auto ent = comp->get_entity();
 
-	// TODO: potential memory leak
+	// TODO: potential memory leak if callback never will be called
 	// This fixes wrong LuaRef capture by lambda
 	LuaRef* luaRef = new LuaRef(func);
 
 	comp->stmesh = MeshMgr::Get()->GetResource( mesh, CONFIG(bool, reload_resources), 
 
-		[comp, ent, worldID, luaRef](uint32_t id, bool status) -> void
+		[ent, worldID, luaRef](uint32_t id, bool status) -> void
 	{
 		auto meshPtr = MeshMgr::GetResourcePtr(id);
 		if(!meshPtr)
@@ -356,6 +356,14 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 
 		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
+		{
+			MeshMgr::Get()->DeleteResource(id);
+			_DELETE((LuaRef*)luaRef);
+			return;
+		}
+
+		auto comp = worldPtr->GetStaticMeshSystem()->GetComponent(ent);
+		if(!comp)
 		{
 			MeshMgr::Get()->DeleteResource(id);
 			_DELETE((LuaRef*)luaRef);

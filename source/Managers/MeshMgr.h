@@ -33,7 +33,7 @@ namespace EngineCore
 	#endif
 
 		inline static MeshMgr* Get(){return (MeshMgr*)BaseMgr<MeshData, RESOURCE_MAX_COUNT>::Get();}
-
+		
 	private:
 
 #ifdef _EDITOR

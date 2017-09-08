@@ -64,11 +64,11 @@ ResourceProcessor::~ResourceProcessor()
 
 	_DELETE(worldMgr);
 	_DELETE(fontMgr);
-	_DELETE(meshMgr);	
-	_DELETE(collisionMgr);		
+	_CLOSE(meshMgr);	
+	_CLOSE(collisionMgr);		
 	_DELETE(materialMgr);
-	_DELETE(shaderMgr);
-	_DELETE(texMgr);
+	_CLOSE(shaderMgr);
+	_CLOSE(texMgr);
 	_DELETE(shaderCodeMgr);
 
 	_DELETE(loadingQueue);

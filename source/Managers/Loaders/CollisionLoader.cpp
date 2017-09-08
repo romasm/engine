@@ -3,6 +3,7 @@
 #include "macros.h"
 #include "Log.h"
 #include "Render.h"
+#include "CollisionMgr.h"
 
 using namespace EngineCore;
 
@@ -14,7 +15,7 @@ bool CollisionLoader::IsSupported(string filename)
 	return MeshLoader::meshImporter.IsExtensionSupported(extension);
 }
 
-btCompoundShape* CollisionLoader::LoadCollisionFromFile(string& filename)
+btCollisionShape* CollisionLoader::LoadCollisionFromFile(string& filename)
 {
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(filename, &size);
@@ -26,9 +27,9 @@ btCompoundShape* CollisionLoader::LoadCollisionFromFile(string& filename)
 	return result;
 }
 
-btCompoundShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
+btCollisionShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
 {
-	btCompoundShape* newCollision;
+	btCollisionShape* newCollision;
 	if(resName.find(EXT_COLLISION) != string::npos)
 	{
 		newCollision = loadEngineCollisionFromMemory( resName, data, size );
@@ -65,7 +66,7 @@ void CollisionLoader::ConvertCollisionToEngineFormat(string& filename)
 	_DELETE_ARRAY(data);
 }
 
-btCompoundShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
+btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
 {
 	string extension = filename.substr(filename.rfind('.'));
 
@@ -75,7 +76,7 @@ btCompoundShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filena
 		return nullptr;
 	}
 
-	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_ConvertToLeftHanded;
+	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
 
 	const aiScene* scene = MeshLoader::meshImporter.ReadFileFromMemory( data, size, flags);
 
@@ -85,13 +86,13 @@ btCompoundShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filena
 		return nullptr;
 	}
 
-	btCompoundShape* collision = loadAIScene(filename, scene, onlyConvert, onlyConvert);
+	btCollisionShape* collision = loadAIScene(filename, scene, onlyConvert);
 	MeshLoader::meshImporter.FreeScene();
 
 	if(onlyConvert)
 	{
 		LOG("Collision %s converted to engine format", filename.c_str());
-		_DELETE(collision);
+		CollisionMgr::Get()->ResourceDeallocate(collision);
 		return nullptr;
 	}
 
@@ -124,12 +125,11 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 	}
 }
 
-btCompoundShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert, bool noInit)
+// TODO: only convex hulls for now
+btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
 {
-	return nullptr;/*
-
-	btCompoundShape* collision = new btCompoundShape;
-
+	btCollisionShape* collision = new btCompoundShape;
+	
 	aiMesh** mesh = scene->mMeshes;
 
 	unordered_map<uint, aiMatrix4x4> meshTransforms;
@@ -139,113 +139,80 @@ btCompoundShape* CollisionLoader::loadAIScene(string& filename, const aiScene* s
 
 	const uint32_t hullsCount = scene->mNumMeshes;
 
-	collision->hulls.create(hullsCount);
-
-	uint32_t** indices = new uint32_t*[hullsCount];
-	uint32_t* trisCount = new uint32_t[hullsCount];
-
-	Vector3** vertices = new Vector3*[hullsCount];
-	uint32_t* verticesCount = new uint32_t[hullsCount];
-
 	for(uint32_t i = 0; i < hullsCount; i++)
-	{
-		indices[i] = nullptr;
-		vertices[i] = nullptr;
-
-		collision->hulls.push_back(ConvexHull());
-
+	{		
 		if(mesh[i]->mPrimitiveTypes != aiPrimitiveType_TRIANGLE )
 		{
 			ERR("Unsupported primitive type on %s", mesh[i]->mName.C_Str());
 			continue;
 		}
 
-		// INDICES
-		trisCount[i] = mesh[i]->mNumFaces;
-		indices[i] = new uint32_t[trisCount[i] * 3];
+		uint32_t verticesCount = mesh[i]->mNumVertices;
+		Vector3* vertices = new Vector3[verticesCount];
 
-		uint32_t k = 0;
-		for(uint32_t j = 0; j < trisCount[i]; j++)
+		for(uint32_t j = 0; j < verticesCount; j++)
 		{
-			for(uint32_t q = 0; q < 3; q++)
-				indices[i][k+q] = mesh[i]->mFaces[j].mIndices[q];
-			k += 3;
+			vertices[j] = Vector3(mesh[i]->mVertices[j].x, mesh[i]->mVertices[j].y, mesh[i]->mVertices[j].z);
 		}
 
-		// VERTICES
-		verticesCount[i] = mesh[i]->mNumVertices;
-		vertices[i] = new Vector3[verticesCount[i]];
-
-		for(uint32_t j = 0; j < verticesCount[i]; j++)
-		{
-			vertices[i][j] = Vector3(mesh[i]->mVertices[j].x, mesh[i]->mVertices[j].y, mesh[i]->mVertices[j].z);
-		}
-
-		if( !noInit )
-		{
-			rp3d::TriangleVertexArray hull(verticesCount[i], vertices[i], sizeof(Vector3), trisCount[i], indices[i], sizeof(uint32_t), 
-				rp3d::TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE, rp3d::TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE);
-
-			collision->hulls[i].collider = new rp3d::ConvexMeshShape(&hull, true);
-		}
+		btTransform transform;
 
 		auto meshTransform = meshTransforms.find(i);
 		if(meshTransform == meshTransforms.end())
 		{
 			ERR("Corrupted node graph in %s", filename.c_str());
+			transform.setIdentity();
 		}
 		else
 		{
+			aiVector3D scale;
 			aiVector3D pos;
 			aiQuaternion rot;
-			meshTransform->second.DecomposeNoScaling(rot, pos);
+			meshTransform->second.Decompose(scale, rot, pos);
+			transform = btTransform(Quaternion(rot.x, rot.y, rot.z, rot.w), Vector3(pos.x, pos.y, pos.z));
 
-			collision->hulls[i].pos.x = pos.x;
-			collision->hulls[i].pos.y = pos.y;
-			collision->hulls[i].pos.z = pos.z;
-
-			collision->hulls[i].rot.x = rot.x;
-			collision->hulls[i].rot.y = rot.y;
-			collision->hulls[i].rot.z = rot.z;
-			collision->hulls[i].rot.w = rot.w;
+			// prescaling
+			for(uint32_t j = 0; j < verticesCount; j++)
+			{
+				vertices[j] = vertices[j] * Vector3(scale.x, scale.y, scale.z);
+			}
 		}
+
+		auto shape = new btConvexHullShape((float*)vertices, verticesCount, sizeof(float) * 3);
+		shape->optimizeConvexHull(CONVEX_DISTANCE_MARGIN);
+
+		((btCompoundShape*)collision)->addChildShape(transform, shape);
+
+		_DELETE_ARRAY(vertices);
 	}
 
 	if(convert)
-		saveCollision(filename, collision, indices, trisCount, vertices, verticesCount);
-
-	for(uint32_t i = 0; i < hullsCount; i++)
-	{
-		if(indices)
-			_DELETE_ARRAY(indices[i]);
-		if(vertices)
-			_DELETE_ARRAY(vertices[i]);
-	}
-	_DELETE_ARRAY(indices);
-	_DELETE_ARRAY(vertices);
-	_DELETE_ARRAY(trisCount);
-	_DELETE_ARRAY(verticesCount);
-
-	return collision;*/
+		saveCollision(filename, collision);
+	
+	return collision;
 }
 
-void CollisionLoader::saveCollision(string& filename, btCompoundShape* collision, uint32_t** indices, uint32_t* trisCount, Vector3** vertices, uint32_t* verticesCount)
+// TODO: only convex hulls for now
+void CollisionLoader::saveCollision(string& filename, btCollisionShape* collision)
 {
-	return;/*
-
 	string clm_file = filename.substr(0, filename.rfind('.')) + EXT_COLLISION;
 
 	CollisionHeader header;
-	header.version = MESH_FILE_VERSION;
-	header.hullsCount = (uint32_t)collision->hulls.size();
+	header.version = COLLISION_FILE_VERSION;
+	header.type = COMPOUND_SHAPE_PROXYTYPE;
+
+	auto compound = (btCompoundShape*)collision;
 
 	// calc file size
 	uint32_t file_size = sizeof(CollisionHeader);
-	for(uint32_t i = 0; i < header.hullsCount; i++)
+	file_size += sizeof(uint32_t);
+
+	uint32_t hullsCount = (uint32_t)compound->getNumChildShapes();
+
+	for(uint32_t i = 0; i < hullsCount; i++)
 	{
-		file_size += sizeof(uint32_t) + sizeof(Vector3) + sizeof(Quaternion) + sizeof(uint32_t) + sizeof(uint32_t);
-		file_size += trisCount[i] * 3 * sizeof(uint32_t);
-		file_size += verticesCount[i] * sizeof(Vector3);
+		file_size += sizeof(uint32_t) + sizeof(Vector3) + sizeof(Quaternion);
+		file_size += ((btConvexHullShape*)compound->getChildShape(i))->getNumPoints() * sizeof(Vector3);
 	}
 
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
@@ -254,53 +221,49 @@ void CollisionLoader::saveCollision(string& filename, btCompoundShape* collision
 	*(CollisionHeader*)t_data = header;
 	t_data += sizeof(CollisionHeader);
 
-	for(uint32_t i = 0; i < header.hullsCount; i++)
-	{
-		*(uint32_t*)t_data = collision->hulls[i].boneId;
-		t_data += sizeof(uint32_t);
+	*(uint32_t*)t_data = hullsCount;
+	t_data += sizeof(uint32_t);
 
-		*(Vector3*)t_data = collision->hulls[i].pos;
+	for(uint32_t i = 0; i < hullsCount; i++)
+	{
+		auto child = (btConvexHullShape*)compound->getChildShape(i);
+
+		//*(uint32_t*)t_data = collision->hulls[i].boneId;
+		//t_data += sizeof(uint32_t);
+
+		*(Vector3*)t_data = compound->getChildTransform(i).getOrigin();
 		t_data += sizeof(Vector3);
 
-		*(Quaternion*)t_data = collision->hulls[i].rot;
+		*(Quaternion*)t_data = compound->getChildTransform(i).getRotation();
 		t_data += sizeof(Quaternion);
 
-		*(uint32_t*)t_data = verticesCount[i];
+		uint32_t pointsCount = child->getNumPoints();
+
+		*(uint32_t*)t_data = pointsCount;
 		t_data += sizeof(uint32_t);
 
-		if(vertices[i])
-		{
-			const uint32_t size = verticesCount[i] * sizeof(Vector3);
-			memcpy(t_data, vertices[i], size);
-			t_data += size;
-		}
+		auto collisionPoints = child->getUnscaledPoints();
 
-		*(uint32_t*)t_data = trisCount[i];
-		t_data += sizeof(uint32_t);
+		const uint32_t size = pointsCount * sizeof(Vector3);
+		Vector3* points = new Vector3[pointsCount];
+		for(uint32_t k = 0; k < pointsCount; k++)
+			points[k] = collisionPoints[k];
 
-		if(indices[i])
-		{
-			uint32_t size = trisCount[i] * 3 * sizeof(uint32_t);
-			memcpy(t_data, indices[i], size);
-			t_data += size;
-		}
+		memcpy(t_data, points, size);
+		t_data += size;
+
+		_DELETE_ARRAY(points);
 	}
 
 	if(!FileIO::WriteFileData( clm_file, data.get(), file_size ))
 	{
 		ERR("Cant write collision file: %s", clm_file.c_str() );
-	}*/
+	}
 }
 
-btCompoundShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
+btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
-	return nullptr;/*
-
-	Vector3 **vertices;
-	uint32_t **indices;
-
-	uint32_t *verticesCount;
-	uint32_t *trisCount;
+	btCollisionShape* collision = nullptr;
 
 	uint8_t* t_data = data;
 
@@ -313,63 +276,43 @@ btCompoundShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename
 		return nullptr;
 	}
 
-	vertices = new Vector3*[header.hullsCount];
-	indices = new uint32_t*[header.hullsCount];
-	verticesCount = new uint32_t[header.hullsCount];
-	trisCount = new uint32_t[header.hullsCount];
-
-	btCompoundShape* collision = new btCompoundShape;
-	collision->hulls.create(header.hullsCount);
-
-	for(uint32_t i = 0; i < header.hullsCount; i++)
+	switch( header.type )
 	{
-		collision->hulls.push_back(ConvexHull());
+	case COMPOUND_SHAPE_PROXYTYPE:
+		{
+			uint32_t hullsCount = *(uint32_t*)t_data;
+			t_data += sizeof(uint32_t);
 
-		collision->hulls[i].boneId = *(uint32_t*)t_data; 
-		t_data += sizeof(uint32_t);
+			collision = new btCompoundShape();
 
-		collision->hulls[i].pos = *(Vector3*)t_data; 
-		t_data += sizeof(Vector3);
+			for(uint32_t i = 0; i < hullsCount; i++)
+			{
+				Vector3 pos = *(Vector3*)t_data;
+				t_data += sizeof(Vector3);
 
-		collision->hulls[i].rot = *(Quaternion*)t_data; 
-		t_data += sizeof(Quaternion);
+				Quaternion rot = *(Quaternion*)t_data;
+				t_data += sizeof(Quaternion);
+				
+				uint32_t pointsCount = *(uint32_t*)t_data;
+				t_data += sizeof(uint32_t);
 
-		verticesCount[i] = *(uint32_t*)t_data; 
-		t_data += sizeof(uint32_t);
+				const int stride = sizeof(float) * 3;
 
-		const auto sizeVB = verticesCount[i] * sizeof(Vector3);
-		vertices[i] = new Vector3[verticesCount[i]];
-		memcpy(vertices[i], t_data, sizeVB);
-		t_data += sizeVB;
+				float *points = (float*)t_data;
+				t_data += stride * pointsCount;
 
-		trisCount[i] = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
+				btTransform transform(rot, pos);
+				auto shape = new btConvexHullShape(points, pointsCount, stride);
 
-		auto sizeIB = trisCount[i] * 3;
-		indices[i] = new uint32_t[sizeIB];
-		sizeIB *= sizeof(uint32_t);
-		memcpy(indices[i], t_data, sizeIB);
-		t_data += sizeIB;
-	}	
-
-	for(uint32_t i = 0; i < header.hullsCount; i++)
-	{
-		rp3d::TriangleVertexArray hull(verticesCount[i], vertices[i], sizeof(Vector3), trisCount[i], indices[i], sizeof(uint32_t), 
-			rp3d::TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE, rp3d::TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE);
-
-		collision->hulls[i].collider = new rp3d::ConvexMeshShape(&hull, true);
+				((btCompoundShape*)collision)->addChildShape(transform, shape);
+			}
+		}
+		break;
+	default:
+		ERR("Unsupported collision type for %s", filename.c_str());
+		return nullptr;
 	}
-
-	for(int i = header.hullsCount - 1; i >= 0; i--)
-	{
-		_DELETE_ARRAY(vertices[i]);
-		_DELETE_ARRAY(indices[i]);
-	}
-	_DELETE_ARRAY(vertices);
-	_DELETE_ARRAY(indices);
-	_DELETE_ARRAY(verticesCount);
-	_DELETE_ARRAY(trisCount);
 
 	LOG("Collision(.clm) loaded %s", filename.c_str());
-	return collision;*/
+	return collision;
 }

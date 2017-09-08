@@ -5,26 +5,27 @@
 
 namespace EngineCore
 {
-#define COLLISION_FILE_VERSION 102
+#define COLLISION_FILE_VERSION 103
 	
 	struct CollisionHeader
 	{
 		uint32_t version;
+		uint32_t type;
 	};
 
 	namespace CollisionLoader
 	{		
-		btCompoundShape* LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size);
-		btCompoundShape* LoadCollisionFromFile(string& filename);
+		btCollisionShape* LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size);
+		btCollisionShape* LoadCollisionFromFile(string& filename);
 		
 		void ConvertCollisionToEngineFormat(string& filename);
 		bool IsSupported(string filename);
 
-		btCompoundShape* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
-		btCompoundShape* loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert = false);
+		btCollisionShape* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
+		btCollisionShape* loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert = false);
 
-		btCompoundShape* loadAIScene(string& filename, const aiScene* scene, bool convert, bool noInit);
+		btCollisionShape* loadAIScene(string& filename, const aiScene* scene, bool convert);
 
-		void saveCollision(string& filename, btCompoundShape* collision, uint32_t** indices, uint32_t* trisCount, Vector3** vertices, uint32_t* verticesCount);
+		void saveCollision(string& filename, btCollisionShape* collision);
 	};
 }

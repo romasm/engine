@@ -12,7 +12,7 @@ namespace EngineCore
 	{
 	public:
 		BaseMgr();
-		~BaseMgr();
+		void Close();
 		
 		inline static BaseMgr* Get(){return instance;}
 		
@@ -43,6 +43,11 @@ namespace EngineCore
 		void CheckForReload();
 
 		static const uint32_t nullres = MaxCount;
+
+		virtual void ResourceDeallocate(DataType*& resource)
+		{
+			_DELETE(resource);
+		};
 
 	protected:
 		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
@@ -76,7 +81,7 @@ namespace EngineCore
 
 		DArray<DataType*> deallocationQueue;
 	};
-
+	/*
 	// for VS2015 include this in BaseMgr
 	template<typename DataType>
 	typename std::enable_if< std::is_base_of<IUnknown, DataType>::value >::type
@@ -85,7 +90,7 @@ namespace EngineCore
 	template<typename DataType>
 	typename std::enable_if< !std::is_base_of<IUnknown, DataType>::value >::type
 		inline ResourceDeallocate(DataType*& resource) { _DELETE(resource); }
-
+	*/
 
 
 	template<typename DataType, uint32_t MaxCount>
@@ -117,7 +122,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	BaseMgr<DataType, MaxCount>::~BaseMgr()
+	void BaseMgr<DataType, MaxCount>::Close()
 	{
 		DefferedDeallocate();
 
@@ -232,6 +237,8 @@ namespace EngineCore
 		{
 			if(handle.resource != null_resource)
 			{
+				// TODO: thread safe move deallocation in background
+				// deallocationQueue.push_back(handle.resource); // not thread safe
 				ResourceDeallocate(handle.resource);
 				LOG("Resource droped %s", handle.name.c_str());
 			}

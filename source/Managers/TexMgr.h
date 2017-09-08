@@ -23,5 +23,10 @@ namespace EngineCore
 			resType = ResourceType::TEXTURE;
 		}
 		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<ID3D11ShaderResourceView>::Get();}
+
+		virtual void ResourceDeallocate(ID3D11ShaderResourceView*& resource)
+		{
+			_RELEASE(resource);
+		};
 	};
 }

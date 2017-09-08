@@ -111,22 +111,8 @@ void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
 	{
 		if( comp->collisionData != 0 )
 		{
-			btCompoundShape* shape = (btCompoundShape*)comp->collisionData;
-
-			// multilayer compound collisions is NOT supported
-			auto childrenCount = shape->getNumChildShapes();
-			auto childrenPtrs = shape->getChildList();
-
-			int32_t i = 0;
-			while( childrenCount > 0 && i < childrenCount)
-			{
-				auto child = (childrenPtrs + i)->m_childShape;
-				shape->removeChildShapeByIndex(i);
-				_DELETE(child);
-				i++;
-			}
-
-			_DELETE(shape);
+			auto shape = (btCollisionShape*)comp->collisionData;
+			CollisionMgr::Get()->ResourceDeallocate( shape );
 			comp->collisionData = 0;
 		}
 	}
@@ -399,26 +385,7 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 		t_data += collision_name_size * sizeof(char);
 
 		if( !collision_name.empty() )
-		{
-			auto worldID = world->GetID();
-
-			comp->collisionData = (uint64_t)CollisionMgr::Get()->GetResource(collision_name, false, 
-				[comp, e, worldID](uint32_t id, bool status) -> void
-			{
-				auto collisionPtr = CollisionMgr::GetResourcePtr(id);
-				if(!collisionPtr)
-					return;
-
-				auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
-				if(!worldPtr || !worldPtr->IsEntityAlive(e))
-				{
-					CollisionMgr::Get()->DeleteResource(id);
-					return;
-				}
-
-				comp->body->setCollisionShape(collisionPtr);
-			});
-		}
+			_SetCollisionConvex(e, comp, collision_name);
 	}
 	
 	UpdateState(e);
@@ -431,6 +398,8 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 void PhysicsSystem::UpdateState(Entity e)
 {
 	GET_COMPONENT(void());
+	// TODO: optimize? 
+	// dynamicsWorld->resetRigidBody(comp.body)
 	dynamicsWorld->removeRigidBody(comp.body);
 	dynamicsWorld->addRigidBody(comp.body);
 }
@@ -764,6 +733,40 @@ void PhysicsSystem::_AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Qua
 	}
 }
 
+void PhysicsSystem::_SetCollisionConvex(Entity e, PhysicsComponent* comp, string& name)
+{
+	auto worldID = world->GetID();
+	comp->collisionData = (uint64_t)CollisionMgr::Get()->GetResource(name, false, 
+		[e, worldID](uint32_t id, bool status) -> void
+	{
+		auto collisionPtr = CollisionMgr::GetResourcePtr(id);
+		if(!collisionPtr)
+			return;
+
+		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
+		if(!worldPtr || !worldPtr->IsEntityAlive(e))
+		{
+			CollisionMgr::Get()->DeleteResource(id);
+			return;
+		}
+
+		auto compPtr = worldPtr->GetPhysicsSystem()->GetComponent(e);
+		if(!compPtr)
+			CollisionMgr::Get()->DeleteResource(id);
+		else
+			compPtr->body->setCollisionShape(collisionPtr);
+	});
+}
+
+void PhysicsSystem::SetConvexHullsCollider(Entity e, string collisionName)
+{
+	GET_COMPONENT(void());
+	_ClearCollision(&comp);
+	
+	comp.collisionStorage = CollisionStorageType::RESOURCE;
+	_SetCollisionConvex(e, &comp, collisionName);
+}
+
 void PhysicsSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
@@ -826,6 +829,8 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("AddCylinderCollider", &PhysicsSystem::AddCylinderCollider)
 		.addFunction("AddCapsuleCollider", &PhysicsSystem::AddCapsuleCollider)
 
+		.addFunction("SetConvexHullsCollider", &PhysicsSystem::SetConvexHullsCollider)
+
 		.addFunction("ClearCollision", &PhysicsSystem::ClearCollision)
 		
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
@@ -839,11 +844,11 @@ void PhysicsSystem::RegLuaClass()
 // DEBUG DRAW
 
 PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
-	m_debugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints),
+	m_debugMode(btIDebugDraw::DBG_DrawWireframe),
 	m_dbgDrawer(dbgDrawer)
 {
-	m_colors.m_activeObject = btVector3(0, 1.0f, 0);
-	m_colors.m_deactivatedObject = btVector3(0.5f, 0.5f, 0);
+	m_colors.m_activeObject = btVector3(0.1f, 0.95f, 0.1f);
+	m_colors.m_deactivatedObject = btVector3(0.1f, 0.1f, 0.95f);
 }
 
 void PhysicsDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)

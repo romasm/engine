@@ -345,7 +345,7 @@ Vector3 TransformControls::CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 			Vector3 norm = dir.Cross( dir.Cross(dist) );
 			norm.Normalize();
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
@@ -358,7 +358,7 @@ Vector3 TransformControls::CalcMove(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_YZ:
 		{
 			Vector3 norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
@@ -424,7 +424,7 @@ Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 			Vector3 norm = dir.Cross(dir.Cross(dist));
 			norm.Normalize();
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
@@ -440,7 +440,7 @@ Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 			norm.Normalize();
 			Vector3 axis_proj = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
 			axis_proj.Normalize();
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
@@ -450,7 +450,7 @@ Vector4 TransformControls::CalcScale(Vector3 Ray, Vector3 PrevRay, Entity cam)
 		break;
 	case TransformControls::E_TRANSFORM_ALL:
 		{
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, XMVector3Normalize(-camComp->camLookDir));
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, XMVector3Normalize(-camComp->camLookDir));
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
 			Vector3 move_vect = point_to - point_from;
@@ -497,7 +497,7 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_Z:
 		{
 			Vector3 norm = XMVector3Transform(axis, XMMatrixRotationQuaternion(rot));
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
@@ -515,7 +515,7 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 	case TransformControls::E_TRANSFORM_ALL:
 		{
 			Vector3 norm = XMVector3Normalize(-camComp->camLookDir);
-			Vector3 plane = XMPlaneFromPointNormal(m_pos, norm);
+			Vector4 plane = XMPlaneFromPointNormal(m_pos, norm);
 			Vector3 point_from = XMPlaneIntersectLine(plane, camComp->camPos, PrevRay * camComp->far_clip);
 			Vector3 point_to = XMPlaneIntersectLine(plane, camComp->camPos, Ray * camComp->far_clip);
 			point_from = point_from - m_pos;

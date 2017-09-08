@@ -125,6 +125,8 @@ namespace EngineCore
 		void AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
 		void AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
 		void AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
+		
+		void SetConvexHullsCollider(Entity e, string collisionName);
 
 		void ClearCollision(Entity e);
 
@@ -158,6 +160,7 @@ namespace EngineCore
 		
 		void _DeleteComponent(PhysicsComponent* comp);
 		void _AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, btCollisionShape* shape);
+		void _SetCollisionConvex(Entity e, PhysicsComponent* comp, string& name);
 		void _ClearCollision(PhysicsComponent* comp);
 
 		ComponentRArray<PhysicsComponent> components;
