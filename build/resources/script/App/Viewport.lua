@@ -277,7 +277,7 @@ function Viewport:SpawnPhysics()
     pos = Vector3.Add(pos, Vector3.MulScalar(dir, 3))
     dir = Vector3.MulScalar(dir, 100000)
     
-    phymodel:SetMesh(PATH.ROOT .. "content/statics/bunny.FBX")
+    phymodel:SetMesh(PATH.ROOT .. "content/statics/multimesh01.FBX")
     
     phymodel:SetPosition(pos.x, pos.y, pos.z)
     phymodel:ApplyCentralImpulse(dir)

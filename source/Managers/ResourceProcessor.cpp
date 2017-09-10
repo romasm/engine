@@ -124,73 +124,74 @@ void ResourceProcessor::ThreadMain()
 		ResourceSlot loadingSlot;
 		while(loadingQueue->pop(loadingSlot))
 		{
-			loadingSlot.status = LoadingStatus::FAILED;
-
-			switch(loadingSlot.type)
+			if( loadingSlot.status != LoadingStatus::LOADED )
 			{
-			case ResourceType::TEXTURE:
+				switch(loadingSlot.type)
 				{
-					string& fileName = texMgr->GetName(loadingSlot.id);
-					uint32_t size = 0;
-					uint8_t* data = FileIO::ReadFileData(fileName, &size);
-					if(data)
+				case ResourceType::TEXTURE:
 					{
-						auto loadedData = TexLoader::LoadFromMemory(fileName, data, size);
-						_DELETE_ARRAY(data);
-
-						if(loadedData)
+						string& fileName = texMgr->GetName(loadingSlot.id);
+						uint32_t size = 0;
+						uint8_t* data = FileIO::ReadFileData(fileName, &size);
+						if(data)
 						{
-							texMgr->OnLoad(loadingSlot.id, loadedData);
-							loadingSlot.status = LOADED;
+							auto loadedData = TexLoader::LoadFromMemory(fileName, data, size);
+							_DELETE_ARRAY(data);
+
+							if(loadedData)
+							{
+								texMgr->OnLoad(loadingSlot.id, loadedData);
+								loadingSlot.status = LOADED;
+							}
 						}
 					}
-				}
-				break;
+					break;
 
-			case ResourceType::MESH:
-				{
-					string& fileName = meshMgr->GetName(loadingSlot.id);
-					uint32_t size = 0;
-					uint8_t* data = FileIO::ReadFileData(fileName, &size);
-					if(data)
+				case ResourceType::MESH:
 					{
-						auto loadedData = MeshLoader::LoadStaticMeshFromMemory(fileName, data, size);
-						_DELETE_ARRAY(data);
-
-						if(loadedData)
+						string& fileName = meshMgr->GetName(loadingSlot.id);
+						uint32_t size = 0;
+						uint8_t* data = FileIO::ReadFileData(fileName, &size);
+						if(data)
 						{
-							meshMgr->OnLoad(loadingSlot.id, loadedData);
-							loadingSlot.status = LOADED;
+							auto loadedData = MeshLoader::LoadStaticMeshFromMemory(fileName, data, size);
+							_DELETE_ARRAY(data);
+
+							if(loadedData)
+							{
+								meshMgr->OnLoad(loadingSlot.id, loadedData);
+								loadingSlot.status = LOADED;
+							}
 						}
 					}
-				}
-				break;
+					break;
 
-			case ResourceType::COLLISION:
-				{
-					string& fileName = collisionMgr->GetName(loadingSlot.id);
-					uint32_t size = 0;
-					uint8_t* data = FileIO::ReadFileData(fileName, &size);
-					if(data)
+				case ResourceType::COLLISION:
 					{
-						auto loadedData = CollisionLoader::LoadCollisionFromMemory(fileName, data, size);
-						_DELETE_ARRAY(data);
-
-						if(loadedData)
+						string& fileName = collisionMgr->GetName(loadingSlot.id);
+						uint32_t size = 0;
+						uint8_t* data = FileIO::ReadFileData(fileName, &size);
+						if(data)
 						{
-							collisionMgr->OnLoad(loadingSlot.id, loadedData);
-							loadingSlot.status = LOADED;
+							auto loadedData = CollisionLoader::LoadCollisionFromMemory(fileName, data, size);
+							_DELETE_ARRAY(data);
+
+							if(loadedData)
+							{
+								collisionMgr->OnLoad(loadingSlot.id, loadedData);
+								loadingSlot.status = LOADED;
+							}
 						}
 					}
-				}
-				break;
+					break;
 
-			case ResourceType::SHADER:
-				ERR("TODO: Move shader & shader code loading\\compiling in ResourceProcessor");
-				break;
+				case ResourceType::SHADER:
+					ERR("TODO: Move shader & shader code loading\\compiling in ResourceProcessor");
+					break;
 				
-			default:
-				continue;
+				default:
+					continue;
+				}
 			}
 
 			if(!postLoadingQueue->push(loadingSlot))
@@ -209,9 +210,13 @@ void ResourceProcessor::ThreadMain()
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
-bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback)
+bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone)
 {
-	if(!loadingQueue->push(ResourceSlot(id, type, callback)))
+	ResourceSlot slot(id, type, callback);
+	if(clone)
+		slot.status = LoadingStatus::LOADED;
+
+	if(!loadingQueue->push(slot))
 	{
 		WRN("Resource loading queue overflow!");
 		return false;

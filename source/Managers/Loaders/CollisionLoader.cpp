@@ -76,7 +76,7 @@ btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filen
 		return nullptr;
 	}
 
-	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
+	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_MakeLeftHanded;
 
 	const aiScene* scene = MeshLoader::meshImporter.ReadFileFromMemory( data, size, flags);
 
@@ -110,7 +110,7 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 		auto parent = node;
 		while( parent != root )
 		{
-			transform *= parent->mTransformation;
+			transform = parent->mTransformation * transform;
 			parent = parent->mParent;
 		}
 
@@ -141,7 +141,7 @@ btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* 
 
 	for(uint32_t i = 0; i < hullsCount; i++)
 	{		
-		if(mesh[i]->mPrimitiveTypes != aiPrimitiveType_TRIANGLE )
+		if( mesh[i]->mPrimitiveTypes == aiPrimitiveType_LINE || mesh[i]->mPrimitiveTypes == aiPrimitiveType_POINT )
 		{
 			ERR("Unsupported primitive type on %s", mesh[i]->mName.C_Str());
 			continue;

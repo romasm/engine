@@ -72,14 +72,13 @@ WorldMgr::~WorldMgr()
 
 void WorldMgr::regWorld(BaseWorld* world)
 {
-	world->SetID(nextID);
-	m_worldsMap.insert(make_pair(nextID, world));
+	m_worldsMap.insert(make_pair(world->GetID(), world));
 	nextID++;
 }
 
 World* WorldMgr::CreateWorld()
 {
-	World* world = new World();
+	World* world = new World(nextID);
 	if(!world->Init())
 		return nullptr;
 
@@ -89,7 +88,7 @@ World* WorldMgr::CreateWorld()
 
 SmallWorld* WorldMgr::CreateSmallWorld()
 {
-	SmallWorld* world = new SmallWorld();
+	SmallWorld* world = new SmallWorld(nextID);
 	if(!world->Init())
 	{
 		_DELETE(world);
@@ -102,7 +101,7 @@ SmallWorld* WorldMgr::CreateSmallWorld()
 
 World* WorldMgr::OpenWorld(string filename)
 {
-	World* world = new World();
+	World* world = new World(nextID);
 	if(!world->Init(filename))
 	{
 		_DELETE(world);

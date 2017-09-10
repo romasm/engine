@@ -36,13 +36,12 @@ namespace EngineCore
 				auto childrenCount = shape->getNumChildShapes();
 				auto childrenPtrs = shape->getChildList();
 
-				int32_t i = 0;
-				while( childrenCount > 0 && i < childrenCount)
+				while( childrenCount > 0 )
 				{
-					auto child = (childrenPtrs + i)->m_childShape;
-					shape->removeChildShapeByIndex(i);
+					auto child = childrenPtrs->m_childShape;
+					shape->removeChildShapeByIndex(0);
 					_DELETE(child);
-					i++;
+					childrenCount--;
 				}
 			}
 

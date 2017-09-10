@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "Common.h"
 
-#define LOADING_QUEUE_SIZE 4096
+#define LOADING_QUEUE_SIZE 16384
 
 #define SHADERS_UPDATE_PERIOD 2000.0f
 #define TEXTURES_UPDATE_PERIOD 3000.0f
@@ -46,8 +46,8 @@ namespace EngineCore
 		LoadingStatus status;
 		onLoadCallback callback;
 
-		ResourceSlot() : id(0), type(ResourceType::TEXTURE), callback(nullptr), status(LoadingStatus::NEW) {}
-		ResourceSlot(uint32_t i, ResourceType t, onLoadCallback func) : id(i), type(t), callback(func), status(LoadingStatus::NEW) {}
+		ResourceSlot() : id(0), type(ResourceType::TEXTURE), callback(nullptr), status(LoadingStatus::FAILED) {}
+		ResourceSlot(uint32_t i, ResourceType t, onLoadCallback func) : id(i), type(t), callback(func), status(LoadingStatus::FAILED) {}
 	};
 
 	class ResourceProcessor
@@ -59,7 +59,7 @@ namespace EngineCore
 		void Tick();
 
 		void ThreadMain();
-		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback);
+		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone = false);
 
 		void AddUpdateJobs();
 		void DeleteUpdateJobs();

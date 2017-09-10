@@ -97,7 +97,7 @@ end
 
 function Main:onTick(dt) 
     -- remove in consumer
-	--[[self.reload_time = self.reload_time + dt
+	self.reload_time = self.reload_time + dt
 
     -- LAG: one file check in a frame
     -- file check in c++, push files to reload queue, one per frame pop from queue in lua and reload (possible in c++?)
@@ -105,7 +105,7 @@ function Main:onTick(dt)
         loader.check_modif()
         self.reload_time = 0
     end
-    --]]
+    
     Profiler:Tick(dt)
     --------
 

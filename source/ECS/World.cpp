@@ -6,13 +6,13 @@
 
 using namespace EngineCore;
 
-BaseWorld::BaseWorld()
+BaseWorld::BaseWorld( uint32_t id )
 {
 	b_active = false;
 	m_mode = StateMode::NO_LIVE;
 	
 	world_name = "";
-	ID = 0;
+	ID = id;
 
 	m_scenes.reserve(16);
 
@@ -505,7 +505,7 @@ bool BaseWorld::saveWorld(string& filename)
 }
 
 // World ---------------------
-World::World() : BaseWorld()
+World::World( uint32_t id ) : BaseWorld( id )
 {
 	physCollisionConfiguration = new btDefaultCollisionConfiguration();
 	physCollisionDispatcher = new btCollisionDispatcher(physCollisionConfiguration);
@@ -722,7 +722,7 @@ void World::Close()
 }
 
 // World ---------------------
-SmallWorld::SmallWorld() : BaseWorld()
+SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 {
 	m_earlyVisibilitySystem = nullptr;
 	m_shadowSystem = nullptr;

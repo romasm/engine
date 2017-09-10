@@ -77,7 +77,7 @@ namespace EngineCore
 			LIVE,
 		};
 
-		BaseWorld();
+		BaseWorld( uint32_t id );
 
 		bool Init(string filename);
 		bool Init();
@@ -91,7 +91,6 @@ namespace EngineCore
 				
 		string GetWorldName() const {return world_name;}
 		UINT GetID() const {return ID;}
-		void SetID(UINT l_ID) {ID = l_ID;}
 
 		void AddScene(ScenePipeline* scene)
 		{
@@ -354,7 +353,7 @@ namespace EngineCore
 	class World: public BaseWorld
 	{
 	public:
-		World();
+		World( uint32_t id );
 		
 		void Snapshot(ScenePipeline* scene);
 		void Frame();
@@ -393,7 +392,7 @@ namespace EngineCore
 	class SmallWorld: public BaseWorld
 	{
 	public:
-		SmallWorld();
+		SmallWorld( uint32_t id );
 		
 		void Snapshot(ScenePipeline* scene);
 		void Frame();

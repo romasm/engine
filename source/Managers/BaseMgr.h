@@ -161,7 +161,12 @@ namespace EngineCore
 		if(res != nullres)
 		{
 			const LoadingStatus status = (resource_array[res].resource == null_resource) ? LoadingStatus::NEW : LoadingStatus::LOADED;
-			CallCallback(res, callback, status);
+
+			if( status == LoadingStatus::NEW )
+				ResourceProcessor::Get()->QueueLoad(res, resType, callback, true);
+			else
+				CallCallback(res, callback, status);
+
 			return res;
 		}
 
