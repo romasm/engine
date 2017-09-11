@@ -44,7 +44,7 @@ namespace EngineCore
 
 		static const uint32_t nullres = MaxCount;
 
-		virtual void ResourceDeallocate(DataType*& resource)
+		void ResourceDeallocate(DataType*& resource)
 		{
 			_DELETE(resource);
 		};
@@ -81,16 +81,6 @@ namespace EngineCore
 
 		DArray<DataType*> deallocationQueue;
 	};
-	/*
-	// for VS2015 include this in BaseMgr
-	template<typename DataType>
-	typename std::enable_if< std::is_base_of<IUnknown, DataType>::value >::type
-		inline ResourceDeallocate(DataType*& resource) { _RELEASE(resource); }
-
-	template<typename DataType>
-	typename std::enable_if< !std::is_base_of<IUnknown, DataType>::value >::type
-		inline ResourceDeallocate(DataType*& resource) { _DELETE(resource); }
-	*/
 
 
 	template<typename DataType, uint32_t MaxCount>

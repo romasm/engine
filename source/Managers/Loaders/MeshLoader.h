@@ -23,6 +23,11 @@ namespace EngineCore
 
 	struct MeshData
 	{
+#ifdef _EDITOR
+		uint32_t sourceDate;
+		ImportInfo importInfo;
+#endif
+
 		RArray<GPUMeshBuffer> vertexBuffers;
 		RArray<GPUMeshBuffer> indexBuffers;
 
@@ -45,7 +50,7 @@ namespace EngineCore
 			vertexFormat = MeshVertexFormat::LIT_VERTEX;
 		}
 	};
-
+	
 	struct MeshFileHeader
 	{
 		uint32_t version;
@@ -60,22 +65,21 @@ namespace EngineCore
 	namespace MeshLoader
 	{		
 		static Assimp::Importer meshImporter;
-
-
-		MeshData* LoadStaticMeshFromMemory(string& resName, uint8_t* data, uint32_t size);
-		MeshData* LoadStaticMeshFromFile(string& filename);
 		
-		void ConvertStaticMeshToEngineFormat(string& filename);
+		MeshData* LoadMesh(string& resName);
+				
+		void ConvertMeshToEngineFormat(string& filename, bool skeletal);
 		bool IsSupported(string filename);
 
 		void saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
 
-		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal);
+		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
 		MeshData* loadNoNativeMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal, bool onlyConvert = false);
 
 		MeshData* loadAIScene(string& filename, const aiScene* scene, MeshVertexFormat format, bool convert, bool noGPUInit);
 		
-		void loadVerticesLit(uint8_t* data, uint32_t count, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
+		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
+		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, int32_t& boneOffset, Vector3& posMin, Vector3& posMax);
 		
 		inline uint32_t GetVertexSize(MeshVertexFormat format)
 		{

@@ -8,39 +8,76 @@ using namespace EngineCore;
 
 bool MeshLoader::IsSupported(string filename)
 {
-	if(filename.find(EXT_STATIC) != string::npos)
+	if(filename.find(EXT_MESH) != string::npos)
 		return true;
 	string extension = filename.substr(filename.rfind('.'));
 	return meshImporter.IsExtensionSupported(extension);
 }
 
-MeshData* MeshLoader::LoadStaticMeshFromFile(string& filename)
+MeshData* MeshLoader::LoadMesh(string& resName)
 {
+	MeshData* newMesh = nullptr;
+	if(resName.find(EXT_MESH) == string::npos)
+		return nullptr;
+
 	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(filename, &size);
+	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(!data)
 		return nullptr;
-	
-	auto result = LoadStaticMeshFromMemory(filename, data, size);
-	_DELETE_ARRAY(data);
-	return result;
-}
 
-MeshData* MeshLoader::LoadStaticMeshFromMemory(string& resName, uint8_t* data, uint32_t size)
+	newMesh = loadEngineMeshFromMemory( resName, data, size );
+	_DELETE_ARRAY(data);
+
+#ifdef _EDITOR
+#ifdef _DEV
+	if(!newMesh)
+	{
+		string resourceName = resName.substr(0, resName.find(EXT_MESH));
+		string fbxMesh = resourceName + ".fbx";
+		if( FileIO::IsExist(fbxMesh) )
+		{
+			LOG("Trying to reimport mesh %s", fbxMesh.c_str());
+
+			// standard settings
+			ImportInfo info;
+			ZeroMemory(&info, sizeof(info));
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importMesh = true;
+			info.isSkinnedMesh = false;
+
+			if( ResourceProcessor::ImportResource(info) )
+			{
+				data = FileIO::ReadFileData(resName, &size);
+				if(data)
+				{
+					newMesh = loadEngineMeshFromMemory( resName, data, size );
+					_DELETE_ARRAY(data);
+				}
+			}			
+		}
+	}
+#endif
+#endif
+
+	return newMesh;
+}
+/*
+MeshData* MeshLoader::LoadMeshFromMemory(string& resName, uint8_t* data, uint32_t size, bool skeletal)
 {
 	MeshData* newMesh;
-	if(resName.find(EXT_STATIC) != string::npos)
+	if(resName.find(EXT_MESH) != string::npos)
 	{
-		newMesh = loadEngineMeshFromMemory( resName, data, size, false );
+		newMesh = loadEngineMeshFromMemory( resName, data, size, skeletal );
 
 #ifdef _EDITOR
 		if(!newMesh)
 		{
-			string fbxMesh = resName.substr(0, resName.find(EXT_STATIC)) + ".fbx";
+			string fbxMesh = resName.substr(0, resName.find(EXT_MESH)) + ".fbx";
 			if( FileIO::IsExist(fbxMesh) )
 			{
 				LOG("Trying to reimport mesh %s \n App restart may be needed!", fbxMesh.c_str());
-				ConvertStaticMeshToEngineFormat(fbxMesh);
+				ConvertMeshToEngineFormat(fbxMesh, skeletal);
 			}
 		}
 #endif
@@ -48,26 +85,26 @@ MeshData* MeshLoader::LoadStaticMeshFromMemory(string& resName, uint8_t* data, u
 	}
 	else
 	{
-		newMesh = loadNoNativeMeshFromMemory( resName, data, size, false );
+		newMesh = loadNoNativeMeshFromMemory( resName, data, size, skeletal );
 	}
 
 	return newMesh;
 }
-
-void MeshLoader::ConvertStaticMeshToEngineFormat(string& filename) 
+*/
+void MeshLoader::ConvertMeshToEngineFormat(string& filename, bool skeletal) 
 {
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(filename, &size);
 	if(!data)
 		return;
 
-	loadNoNativeMeshFromMemory(filename, data, size, false, true);
+	loadNoNativeMeshFromMemory(filename, data, size, skeletal, true);
 	_DELETE_ARRAY(data);
 }
 
 void MeshLoader::saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
 {
-	string stm_file = filename.substr(0, filename.rfind('.')) + EXT_STATIC;
+	string stm_file = filename.substr(0, filename.rfind('.')) + EXT_MESH;
 
 	MeshFileHeader header;
 	header.version = MESH_FILE_VERSION;
@@ -122,7 +159,7 @@ void MeshLoader::saveEngineMesh(string& filename, MeshData* mesh, uint32_t** ind
 	}
 }
 
-MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal)
+MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t **vertices;
 	uint32_t **indices;
@@ -137,19 +174,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 		ERR("Mesh %s has wrong version!", filename.c_str());
 		return nullptr;
 	}
-
-	MeshVertexFormat targetVertexFormat;
-	if( skeletal )
-		targetVertexFormat = MeshVertexFormat::LIT_SKINNED_VERTEX;
-	else
-		targetVertexFormat = MeshVertexFormat::LIT_VERTEX;
 	
-	if( targetVertexFormat != header.vertexFormat)
-	{
-		ERR("Mesh %s has wrong vertex format!", filename.c_str());
-		return nullptr;
-	}
-
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
 
 	vertices = new uint8_t*[header.materialCount];
@@ -274,6 +299,8 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 	Vector3 posMin = Vector3(9999999.0f,9999999.0f,9999999.0f);
 	Vector3 posMax = Vector3(-9999999.0f,-9999999.0f,-9999999.0f);
 
+	int32_t boneOffset = 0;
+
 	for(uint32_t i = 0; i < matCount; i++)
 	{
 		indices[i] = nullptr;
@@ -323,10 +350,10 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 		switch( format )
 		{
 		case MeshVertexFormat::LIT_VERTEX:
-			loadVerticesLit(vertices[i], vBuffer.size, mesh[i], posMin, posMax);
+			loadVerticesLit(vertices[i], vBuffer.size, vertexSize, mesh[i], posMin, posMax);
 			break;
-		case MeshVertexFormat::LIT_SKINNED_VERTEX:// TODO
-			ERR("TODO: skinned mesh format");
+		case MeshVertexFormat::LIT_SKINNED_VERTEX:
+			loadVerticesSkinnedLit(vertices[i], vBuffer.size, vertexSize, mesh[i], boneOffset, posMin, posMax);
 			break;
 		}			
 
@@ -369,9 +396,8 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 	return stmesh;
 }
 
-void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, aiMesh* mesh, Vector3& posMin, Vector3& posMax)
+void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax)
 {
-	const uint32_t vertexSize = GetVertexSize(MeshVertexFormat::LIT_VERTEX);
 	uint32_t offset = 0;
 
 	for(uint32_t j = 0; j < count; j++)
@@ -411,4 +437,102 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, aiMesh* mesh, Ve
 
 		offset += vertexSize;
 	}
+}
+
+void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, int32_t& boneOffset, Vector3& posMin, Vector3& posMax)
+{
+	struct vertexBone
+	{
+		int32_t boneId;
+		float boneWeight;
+	};
+	DArray<DArray<vertexBone>> boneIds;
+	boneIds.resize(count);
+
+	int32_t maxBoneCount = 0;
+
+	for(uint32_t j = 0; j < mesh->mNumBones; j++)
+	{
+		auto bone = mesh->mBones[j];
+		for(uint32_t k = 0; k < bone->mNumWeights; k++)
+		{
+			auto& weight = bone->mWeights[k];
+			if( weight.mWeight == 0.0f )
+				continue;
+
+			vertexBone& vBone = boneIds[weight.mVertexId].push_back();
+			vBone.boneId = boneOffset + j;
+			vBone.boneWeight = weight.mWeight;
+
+			maxBoneCount = max( maxBoneCount, (int32_t)boneIds[weight.mVertexId].size() );
+		}
+	}
+	
+	if( maxBoneCount > BONE_PER_VERTEX_MAXCOUNT )
+		WRN("Too many bones affected one vertex, max is %i", BONE_PER_VERTEX_MAXCOUNT );
+
+	uint32_t offset = 0;
+
+	for(uint32_t j = 0; j < count; j++)
+	{
+		LitSkinnedVertex* vertex = (LitSkinnedVertex*)(data + offset);
+
+		vertex->Pos = Vector3(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
+
+		posMin.x = min<float>(vertex->Pos.x, posMin.x);
+		posMin.y = min<float>(vertex->Pos.y, posMin.y);
+		posMin.z = min<float>(vertex->Pos.z, posMin.z);
+
+		posMax.x = max<float>(vertex->Pos.x, posMax.x);
+		posMax.y = max<float>(vertex->Pos.y, posMax.y);
+		posMax.z = max<float>(vertex->Pos.z, posMax.z);
+
+		if(mesh->mNormals)
+			vertex->Norm = Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
+		else
+			vertex->Norm = Vector3(0,0,0);
+
+		if(mesh->mTangents)
+		{
+			vertex->Tang = Vector3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z);
+			vertex->Binorm = Vector3(mesh->mBitangents[j].x, mesh->mBitangents[j].y, mesh->mBitangents[j].z);
+		}
+		else
+		{
+			vertex->Tang = Vector3(0,0,0);
+			vertex->Binorm = Vector3(0,0,0);
+		}
+
+		if(mesh->HasTextureCoords(0))
+			vertex->Tex = Vector2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y);
+		else
+			vertex->Tex = Vector2(0.5f, 0.5f);
+
+		for(int32_t k = 0; k < BONE_PER_VERTEX_MAXCOUNT; k++)
+		{
+			vertex->boneId[k] = -1;
+			vertex->boneWeight[k] = 0;
+		}
+
+		if( boneIds[j].empty() )
+		{
+			vertex->boneId[0] = 0;
+			vertex->boneWeight[0] = 1.0f;
+		}
+		else
+		{
+			for(int32_t k = 0; k < boneIds[j].size(); k++)
+			{
+				if( k >= BONE_PER_VERTEX_MAXCOUNT )
+					break;
+
+				vertex->boneId[k] = boneIds[j][k].boneId;
+				vertex->boneWeight[k] = boneIds[j][k].boneWeight;
+			}
+		}
+
+		offset += vertexSize;
+	}
+
+	boneOffset += mesh->mNumBones;
 }

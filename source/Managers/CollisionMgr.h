@@ -12,40 +12,17 @@ namespace EngineCore
 		RESOURCE,
 	};
 
-	class CollisionMgr : public BaseMgr<btCollisionShape, RESOURCE_MAX_COUNT>
+	class CollisionMgr : public BaseMgr<CollisionData, RESOURCE_MAX_COUNT>
 	{
 	public:
-		CollisionMgr() : BaseMgr<btCollisionShape, RESOURCE_MAX_COUNT>()
+		CollisionMgr() : BaseMgr<CollisionData, RESOURCE_MAX_COUNT>()
 		{
-			null_resource = new btBoxShape( btVector3(0.5f, 0.5f, 0.5f) );
+			null_resource = new CollisionData();
+			null_resource->shape = new btBoxShape( btVector3(0.5f, 0.5f, 0.5f) );
 			resType = ResourceType::COLLISION;	
 		}
 		
-		inline static CollisionMgr* Get(){return (CollisionMgr*)BaseMgr<btCollisionShape, RESOURCE_MAX_COUNT>::Get();}
+		inline static CollisionMgr* Get(){return (CollisionMgr*)BaseMgr<CollisionData, RESOURCE_MAX_COUNT>::Get();}
 
-		// multilayer compound collisions is NOT supported
-		virtual void ResourceDeallocate(btCollisionShape*& resource)
-		{
-			if(!resource)
-				return;
-
-			if( resource->getShapeType() == COMPOUND_SHAPE_PROXYTYPE )
-			{
-				btCompoundShape* shape = (btCompoundShape*)resource;
-
-				auto childrenCount = shape->getNumChildShapes();
-				auto childrenPtrs = shape->getChildList();
-
-				while( childrenCount > 0 )
-				{
-					auto child = childrenPtrs->m_childShape;
-					shape->removeChildShapeByIndex(0);
-					_DELETE(child);
-					childrenCount--;
-				}
-			}
-
-			_DELETE(resource);
-		}
 	};
 }

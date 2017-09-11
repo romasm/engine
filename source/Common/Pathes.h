@@ -5,14 +5,17 @@
 #define PATH_ROOT "../"
 
 #define EXT_MATERIAL ".mtb"
-#define EXT_STATIC ".stm"
-#define EXT_COLLISION ".clm"
+#define EXT_MESH ".msh"
+#define EXT_SKELETON ".skl"
+#define EXT_ANIMATION ".anm"
+#define EXT_COLLISION ".cls"
 #define EXT_TEXTURE ".dds"
 #define EXT_RESOURCE ".rsc"
 #define EXT_CONFIG ".cfg"
 #define EXT_SCRIPT ".lua"
 #define EXT_SCRIPT_COMPILED ".luac"
 #define EXT_FONT ".fnt"
+#define EXT_ASSET ".ast"
 
 #define EXT_SHADER_SOURCE ".hlsl"
 #define EXT_SHADER_BYTECODE ".bc"
@@ -43,7 +46,7 @@
 #define PATH_TEXTURE_NULL PATH_SYS_TEXTURES "null_tex" EXT_TEXTURE
 #define PATH_SHADER_NULL PATH_SHADERS "system/null_shader"
 
-#define PATH_STMESH_NULL PATH_SYS_MESHES "null_mesh" EXT_STATIC
+#define PATH_STMESH_NULL PATH_SYS_MESHES "null_mesh" EXT_MESH
 #define PATH_COLLISION_NULL PATH_SYS_MESHES "null_collision" EXT_COLLISION
 
 #define PATH_RU_LOCAL PATH_RSC "localization/ru" EXT_RESOURCE

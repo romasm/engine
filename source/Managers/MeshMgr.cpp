@@ -10,7 +10,7 @@ using namespace EngineCore;
 
 MeshMgr::MeshMgr() : BaseMgr<MeshData, RESOURCE_MAX_COUNT>()
 {
-	null_resource = MeshLoader::LoadStaticMeshFromFile(string(PATH_STMESH_NULL));
+	null_resource = MeshLoader::LoadMesh(string(PATH_STMESH_NULL));
 	resType = ResourceType::MESH;
 
 #ifdef _EDITOR

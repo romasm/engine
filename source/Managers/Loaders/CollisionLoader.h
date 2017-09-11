@@ -13,19 +13,38 @@ namespace EngineCore
 		uint32_t type;
 	};
 
+	struct CollisionData
+	{
+#ifdef _EDITOR
+		uint32_t sourceDate;
+		ImportInfo importInfo;
+#endif
+
+		btCollisionShape* data;
+
+		CollisionData() : data(nullptr) {}
+
+		// multilayer compound collisions is NOT supported
+		~CollisionData()
+		{
+			CollisionLoader::CollisionDeallocate(data);
+		}
+	};
+
 	namespace CollisionLoader
 	{		
-		btCollisionShape* LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size);
-		btCollisionShape* LoadCollisionFromFile(string& filename);
+		void CollisionDeallocate(btCollisionShape*& resource);
+
+		CollisionData* LoadCollision(string& resName);
 		
 		void ConvertCollisionToEngineFormat(string& filename);
 		bool IsSupported(string filename);
 
-		btCollisionShape* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
-		btCollisionShape* loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert = false);
+		CollisionData* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
+		CollisionData* loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert = false);
 
-		btCollisionShape* loadAIScene(string& filename, const aiScene* scene, bool convert);
+		CollisionData* loadAIScene(string& filename, const aiScene* scene, bool convert);
 
-		void saveCollision(string& filename, btCollisionShape* collision);
+		void saveCollision(string& filename, CollisionData* collision);
 	};
 }

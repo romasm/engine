@@ -7,6 +7,30 @@
 
 using namespace EngineCore;
 
+void CollisionLoader::CollisionDeallocate(btCollisionShape*& resource)
+{
+	if(!resource)
+		return;
+
+	if( resource->getShapeType() == COMPOUND_SHAPE_PROXYTYPE )
+	{
+		btCompoundShape* cShape = (btCompoundShape*)resource;
+
+		auto childrenCount = cShape->getNumChildShapes();
+		auto childrenPtrs = cShape->getChildList();
+
+		while( childrenCount > 0 )
+		{
+			auto child = childrenPtrs->m_childShape;
+			cShape->removeChildShapeByIndex(0);
+			_DELETE(child);
+			childrenCount--;
+		}
+	}
+
+	_DELETE(resource);
+};
+
 bool CollisionLoader::IsSupported(string filename)
 {
 	if(filename.find(EXT_COLLISION) != string::npos)
@@ -15,18 +39,54 @@ bool CollisionLoader::IsSupported(string filename)
 	return MeshLoader::meshImporter.IsExtensionSupported(extension);
 }
 
-btCollisionShape* CollisionLoader::LoadCollisionFromFile(string& filename)
+CollisionData* CollisionLoader::LoadCollision(string& resName)
 {
+	CollisionData* newCollision = nullptr;
+	if(resName.find(EXT_COLLISION) == string::npos)
+		return nullptr;
+
 	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(filename, &size);
+	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(!data)
 		return nullptr;
 
-	auto result = LoadCollisionFromMemory(filename, data, size);
+	newCollision = loadEngineCollisionFromMemory( resName, data, size );
 	_DELETE_ARRAY(data);
-	return result;
-}
 
+#ifdef _EDITOR
+#ifdef _DEV
+	if(!newCollision)
+	{
+		string resourceName = resName.substr(0, resName.find(EXT_COLLISION));
+		string fbxMesh = resourceName + ".fbx";
+		if( FileIO::IsExist(fbxMesh) )
+		{
+			LOG("Trying to reimport collision %s", fbxMesh.c_str());
+
+			// standard settings
+			ImportInfo info;
+			ZeroMemory(&info, sizeof(info));
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importCollision = true;
+
+			if( ResourceProcessor::ImportResource(info) )
+			{
+				data = FileIO::ReadFileData(resName, &size);
+				if(data)
+				{
+					newCollision = loadEngineCollisionFromMemory( resName, data, size );
+					_DELETE_ARRAY(data);
+				}
+			}
+		}
+	}
+#endif
+#endif
+
+	return newCollision;
+}
+/*
 btCollisionShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
 {
 	btCollisionShape* newCollision;
@@ -53,7 +113,7 @@ btCollisionShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint
 	}
 
 	return newCollision;
-}
+}*/
 
 void CollisionLoader::ConvertCollisionToEngineFormat(string& filename) 
 {
@@ -66,7 +126,7 @@ void CollisionLoader::ConvertCollisionToEngineFormat(string& filename)
 	_DELETE_ARRAY(data);
 }
 
-btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
+CollisionData* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
 {
 	string extension = filename.substr(filename.rfind('.'));
 
@@ -92,7 +152,7 @@ btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filen
 	if(onlyConvert)
 	{
 		LOG("Collision %s converted to engine format", filename.c_str());
-		CollisionMgr::Get()->ResourceDeallocate(collision);
+		CollisionLoader::CollisionDeallocate(collision);
 		return nullptr;
 	}
 
@@ -126,7 +186,7 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 }
 
 // TODO: only convex hulls for now
-btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
+CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
 {
 	btCollisionShape* collision = new btCompoundShape;
 	

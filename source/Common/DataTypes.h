@@ -121,6 +121,19 @@ struct LitVertex
 	Vector3 Binorm;
 };
 
+#define BONE_PER_VERTEX_MAXCOUNT 8
+
+struct LitSkinnedVertex
+{
+	Vector3 Pos;
+	Vector2 Tex;
+	Vector3 Norm;
+	Vector3 Tang;
+	Vector3 Binorm;
+	int32_t boneId[BONE_PER_VERTEX_MAXCOUNT];
+	float boneWeight[BONE_PER_VERTEX_MAXCOUNT];
+};
+
 // ------------------------------
 
 struct BBox

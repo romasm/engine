@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #define LOADING_QUEUE_SIZE 16384
+#define IMPORT_QUEUE_SIZE 1024
 
 #define SHADERS_UPDATE_PERIOD 2000.0f
 #define TEXTURES_UPDATE_PERIOD 3000.0f
@@ -36,7 +37,6 @@ namespace EngineCore
 		FAILED,
 	};
 
-	//typedef void (*onLoadCallback)(uint32_t, bool);
 	typedef function<void (uint32_t, bool)> onLoadCallback;
 
 	struct ResourceSlot
@@ -50,6 +50,35 @@ namespace EngineCore
 		ResourceSlot(uint32_t i, ResourceType t, onLoadCallback func) : id(i), type(t), callback(func), status(LoadingStatus::FAILED) {}
 	};
 
+	struct ImportInfo
+	{
+		string filePath;
+		string resourceName;
+
+		bool importMesh;
+		// TODO: extended mesh format
+		bool isSkinnedMesh;
+
+		bool importSkeleton;
+		bool importAnimation;
+		bool importCollision;
+
+		bool importTexture;
+		DXGI_FORMAT textureFormat;
+	};
+
+	typedef function<void (ImportInfo, bool)> onImportCallback;
+
+	struct ImportSlot
+	{
+		ImportInfo info;
+		LoadingStatus status;
+		onImportCallback callback;
+
+		ImportSlot() : callback(nullptr), status(LoadingStatus::FAILED) {}
+		ImportSlot(ImportInfo i, onImportCallback func) : info(i), callback(func), status(LoadingStatus::FAILED) {}
+	};
+
 	class ResourceProcessor
 	{
 	public:
@@ -61,6 +90,8 @@ namespace EngineCore
 		void ThreadMain();
 		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone = false);
 
+		bool QueueImport(ImportInfo info, onImportCallback callback, bool clone = false);
+
 		void AddUpdateJobs();
 		void DeleteUpdateJobs();
 
@@ -71,7 +102,12 @@ namespace EngineCore
 		inline static ResourceProcessor* Get(){return instance;}
 
 		static void RegLuaFunctions();
+
+		static bool ImportResource(const ImportInfo& info);
+
 	private:
+		bool loadResource(const ResourceSlot& loadingSlot);
+
 		static ResourceProcessor *instance;
 		
 		class ShaderCodeMgr* shaderCodeMgr;
@@ -85,7 +121,7 @@ namespace EngineCore
 
 		RQueueLockfree<ResourceSlot>* loadingQueue;
 		RQueueLockfree<ResourceSlot>* postLoadingQueue;
-
+		
 		thread* loader;
 		mutex m_loading;
 		mutex m_complete;
@@ -93,5 +129,10 @@ namespace EngineCore
 		condition_variable v_loadingComplete;
 		bool loadingComplete;
 		bool loaderRunning;
+
+#ifdef _EDITOR
+		RQueueLockfree<ImportSlot>* importQueue;
+		RQueueLockfree<ImportSlot>* postImportQueue;
+#endif
 	};
 }

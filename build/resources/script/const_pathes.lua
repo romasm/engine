@@ -1,13 +1,16 @@
 EXT = {
     MATERIAL = ".mtb",
-    MESH = ".stm",
-    COLLISION = ".clm",
+    MESH = ".msh",
+    SKELETON = ".skl",
+    ANIMATION = ".anm",
+    COLLISION = ".cls",
     TEXTURE = ".dds",
     RESOURCE = ".rsc",
     CONFIG = ".cfg",
     SCRIPT = ".lua",
     SCRIPT_COMPILED = ".luac",
     FONT = ".fnt",
+    ASSET = ".ast",
 
     SHADER_SOURCE = ".hlsl",
     SHADER_BYTECODE = ".bc",

@@ -41,9 +41,6 @@ void StaticMeshSystem::FixBBoxes()
 
 void StaticMeshSystem::RegToDraw()
 {
-	// temp
-	StmMatrixBuffer matrixBuffer;
-
 	for(auto& i: *components.data())
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
@@ -81,7 +78,7 @@ void StaticMeshSystem::RegToDraw()
 		if(!meshPtr)
 			continue;			
 
-		if(i.dirty || true) // TEMP FOR VCTGI
+		if(i.dirty)
 		{
 			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
 
@@ -95,9 +92,9 @@ void StaticMeshSystem::RegToDraw()
 
 			i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), worldMatrix);
 
-			matrixBuffer.world = XMMatrixTranspose(worldMatrix);
-			matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)&matrixBuffer, sizeof(StmMatrixBuffer));
+			i.matrixBuffer.world = XMMatrixTranspose(worldMatrix);
+			i.matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)&i.matrixBuffer, sizeof(StmMatrixBuffer));
 					
 			i.dirty = false;
 		}
@@ -133,7 +130,7 @@ void StaticMeshSystem::RegToDraw()
 					{
 						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexBuffers[mat_i], meshPtr->vertexBuffers[mat_i], 
-								meshPtr->vertexFormat, i.materials[mat_i], matrixBuffer, visComponent->worldBox);
+								meshPtr->vertexFormat, i.materials[mat_i], i.matrixBuffer, visComponent->worldBox);
 					}
 				}
 

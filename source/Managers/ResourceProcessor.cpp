@@ -26,6 +26,11 @@ ResourceProcessor::ResourceProcessor()
 		loadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 		postLoadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 
+#ifdef _EDITOR
+		importQueue = new RQueueLockfree<ImportSlot>(IMPORT_QUEUE_SIZE);
+		postImportQueue = new RQueueLockfree<ImportSlot>(IMPORT_QUEUE_SIZE);
+#endif
+
 		loaderRunning = true;
 		loadingComplete = true;
 		loader = new thread(&ResourceProcessor::ThreadMain, &(*this));
@@ -73,7 +78,12 @@ ResourceProcessor::~ResourceProcessor()
 
 	_DELETE(loadingQueue);
 	_DELETE(postLoadingQueue);
-	
+
+#ifdef _EDITOR
+	_DELETE(importQueue);
+	_DELETE(postImportQueue);
+#endif
+
 	instance = nullptr;
 }
 
@@ -82,6 +92,13 @@ void ResourceProcessor::Tick()
 #ifdef _EDITOR
 	if( meshMgr->IsBBoxesDirty() )
 		worldMgr->PostMeshesReload();
+
+	ImportSlot importSlot;
+	while(postImportQueue->pop(importSlot))
+	{
+		if(importSlot.callback)
+			importSlot.callback( importSlot.info, importSlot.status == LoadingStatus::LOADED );
+	}
 #endif
 
 	ResourceSlot loadedSlot;
@@ -120,78 +137,29 @@ void ResourceProcessor::ThreadMain()
 			l.unlock();
 		}
 
+#ifdef _EDITOR
+		ImportSlot importSlot;
+		while(importQueue->pop(importSlot))
+		{
+			if( importSlot.status != LoadingStatus::LOADED )
+			{
+				if( importResource(importSlot.info) )
+					importSlot.status = LoadingStatus::LOADED;
+			}
+
+			if(!postImportQueue->push(importSlot))
+				WRN("Resource post impoting queue overflow!");
+		}
+#endif
+
 		loadingComplete = false;
 		ResourceSlot loadingSlot;
 		while(loadingQueue->pop(loadingSlot))
 		{
 			if( loadingSlot.status != LoadingStatus::LOADED )
 			{
-				switch(loadingSlot.type)
-				{
-				case ResourceType::TEXTURE:
-					{
-						string& fileName = texMgr->GetName(loadingSlot.id);
-						uint32_t size = 0;
-						uint8_t* data = FileIO::ReadFileData(fileName, &size);
-						if(data)
-						{
-							auto loadedData = TexLoader::LoadFromMemory(fileName, data, size);
-							_DELETE_ARRAY(data);
-
-							if(loadedData)
-							{
-								texMgr->OnLoad(loadingSlot.id, loadedData);
-								loadingSlot.status = LOADED;
-							}
-						}
-					}
-					break;
-
-				case ResourceType::MESH:
-					{
-						string& fileName = meshMgr->GetName(loadingSlot.id);
-						uint32_t size = 0;
-						uint8_t* data = FileIO::ReadFileData(fileName, &size);
-						if(data)
-						{
-							auto loadedData = MeshLoader::LoadStaticMeshFromMemory(fileName, data, size);
-							_DELETE_ARRAY(data);
-
-							if(loadedData)
-							{
-								meshMgr->OnLoad(loadingSlot.id, loadedData);
-								loadingSlot.status = LOADED;
-							}
-						}
-					}
-					break;
-
-				case ResourceType::COLLISION:
-					{
-						string& fileName = collisionMgr->GetName(loadingSlot.id);
-						uint32_t size = 0;
-						uint8_t* data = FileIO::ReadFileData(fileName, &size);
-						if(data)
-						{
-							auto loadedData = CollisionLoader::LoadCollisionFromMemory(fileName, data, size);
-							_DELETE_ARRAY(data);
-
-							if(loadedData)
-							{
-								collisionMgr->OnLoad(loadingSlot.id, loadedData);
-								loadingSlot.status = LOADED;
-							}
-						}
-					}
-					break;
-
-				case ResourceType::SHADER:
-					ERR("TODO: Move shader & shader code loading\\compiling in ResourceProcessor");
-					break;
-				
-				default:
-					continue;
-				}
+				if( loadResource(loadingSlot) )
+					loadingSlot.status = LoadingStatus::LOADED;
 			}
 
 			if(!postLoadingQueue->push(loadingSlot))
@@ -210,6 +178,57 @@ void ResourceProcessor::ThreadMain()
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
+bool ResourceProcessor::ImportResource(const ImportInfo& info)
+{
+	// TODO
+	return true;
+}
+
+bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
+{
+	switch(loadingSlot.type)
+	{
+	case ResourceType::TEXTURE:
+		{
+			auto loadedData = TexLoader::LoadTexture(texMgr->GetName(loadingSlot.id));
+			if(loadedData)
+			{
+				texMgr->OnLoad(loadingSlot.id, loadedData);
+				return true;
+			}
+		}
+		break;
+
+	case ResourceType::MESH:
+		{
+			auto loadedData = MeshLoader::LoadMesh(meshMgr->GetName(loadingSlot.id));
+			if(loadedData)
+			{
+				meshMgr->OnLoad(loadingSlot.id, loadedData);
+				return true;
+			}
+		}
+		break;
+
+	case ResourceType::COLLISION:
+		{
+			auto loadedData = CollisionLoader::LoadCollision(collisionMgr->GetName(loadingSlot.id));
+			if(loadedData)
+			{
+				collisionMgr->OnLoad(loadingSlot.id, loadedData);
+				return true;
+			}
+		}
+		break;
+
+	case ResourceType::SHADER:
+		ERR("TODO: Move shader & shader code loading\\compiling in ResourceProcessor");
+		break;
+	}
+
+	return false;
+}
+
 bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone)
 {
 	ResourceSlot slot(id, type, callback);
@@ -222,6 +241,23 @@ bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback
 		return false;
 	}
 	v_loadingRequest.notify_one();
+	return true;
+}
+
+bool ResourceProcessor::QueueImport(ImportInfo info, onImportCallback callback, bool clone)
+{
+#ifdef _EDITOR
+	ImportSlot slot(info, callback);
+	if(clone)
+		slot.status = LoadingStatus::LOADED;
+
+	if(!importQueue->push(slot))
+	{
+		WRN("Resource importing queue overflow!");
+		return false;
+	}
+	v_loadingRequest.notify_one();
+#endif
 	return true;
 }
 
@@ -306,6 +342,7 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		break;
 	}
 }
+
 
 // LUA FUNCTIONS
 

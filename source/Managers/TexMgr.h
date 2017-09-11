@@ -14,19 +14,14 @@
 
 namespace EngineCore
 {
-	class TexMgr : public BaseMgr<ID3D11ShaderResourceView>
+	class TexMgr : public BaseMgr<TexData>
 	{
 	public:
-		TexMgr() : BaseMgr<ID3D11ShaderResourceView>()
+		TexMgr() : BaseMgr<TexData>()
 		{
-			null_resource = TexLoader::LoadFromFile(string(PATH_TEXTURE_NULL));
+			null_resource = TexLoader::LoadTexture(string(PATH_TEXTURE_NULL));
 			resType = ResourceType::TEXTURE;
 		}
-		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<ID3D11ShaderResourceView>::Get();}
-
-		virtual void ResourceDeallocate(ID3D11ShaderResourceView*& resource)
-		{
-			_RELEASE(resource);
-		};
+		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<TexData>::Get();}
 	};
 }

@@ -22,19 +22,63 @@ bool TexLoader::IsSupported(string filename)
 	return true;
 }
 
-ID3D11ShaderResourceView* TexLoader::LoadFromFile(string& filename)
+ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 {
+	ID3D11ShaderResourceView* newTex = nullptr;
+
+	if(resName.find(EXT_TEXTURE) == string::npos)
+		return nullptr;
+
 	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(filename, &size);
+	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(!data)
 		return nullptr;
-	
-	auto result = LoadFromMemory(filename, data, size);
+
+	HRESULT hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
 	_DELETE_ARRAY(data);
-	return result;
+
+	if(FAILED(hr))
+	{
+		ERR("Cant load DDS texture %s !", resName.c_str());
+
+#ifdef _EDITOR
+#ifdef _DEV
+		string resourceName = resName.substr(0, resName.find(EXT_TEXTURE));
+		string tgaTexture = resourceName + ".tga";
+		if( FileIO::IsExist(tgaTexture) )
+		{
+			LOG("Trying to reimport texture %s", tgaTexture.c_str());
+
+			// standard settings
+			ImportInfo info;
+			ZeroMemory(&info, sizeof(info));
+			info.filePath = tgaTexture;
+			info.resourceName = resourceName;
+			info.importTexture = true;
+			info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+
+			if( ResourceProcessor::ImportResource(info) )
+			{
+				data = FileIO::ReadFileData(resName, &size);
+				if(data)
+				{
+					CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
+					_DELETE_ARRAY(data);
+				}
+			}
+		}
+#endif
+#endif
+	}
+	else
+	{
+		LOG("Texture loaded %s", resName.c_str());
+	}
+
+	return newTex;
 }
 
-ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* data, uint32_t size)
+/*ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* data, uint32_t size)
 {
 	ID3D11ShaderResourceView* newTex = nullptr;
 
@@ -80,7 +124,7 @@ ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* da
 
 	LOG("Texture loaded %s", resName.c_str());
 	return newTex;
-}
+}*/
 
 bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 {
