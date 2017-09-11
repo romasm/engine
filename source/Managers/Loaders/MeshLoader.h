@@ -23,11 +23,6 @@ namespace EngineCore
 
 	struct MeshData
 	{
-#ifdef _EDITOR
-		uint32_t sourceDate;
-		ImportInfo importInfo;
-#endif
-
 		RArray<GPUMeshBuffer> vertexBuffers;
 		RArray<GPUMeshBuffer> indexBuffers;
 

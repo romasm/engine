@@ -7,30 +7,6 @@
 
 using namespace EngineCore;
 
-void CollisionLoader::CollisionDeallocate(btCollisionShape*& resource)
-{
-	if(!resource)
-		return;
-
-	if( resource->getShapeType() == COMPOUND_SHAPE_PROXYTYPE )
-	{
-		btCompoundShape* cShape = (btCompoundShape*)resource;
-
-		auto childrenCount = cShape->getNumChildShapes();
-		auto childrenPtrs = cShape->getChildList();
-
-		while( childrenCount > 0 )
-		{
-			auto child = childrenPtrs->m_childShape;
-			cShape->removeChildShapeByIndex(0);
-			_DELETE(child);
-			childrenCount--;
-		}
-	}
-
-	_DELETE(resource);
-};
-
 bool CollisionLoader::IsSupported(string filename)
 {
 	if(filename.find(EXT_COLLISION) != string::npos)
@@ -39,9 +15,9 @@ bool CollisionLoader::IsSupported(string filename)
 	return MeshLoader::meshImporter.IsExtensionSupported(extension);
 }
 
-CollisionData* CollisionLoader::LoadCollision(string& resName)
+btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 {
-	CollisionData* newCollision = nullptr;
+	btCollisionShape* newCollision = nullptr;
 	if(resName.find(EXT_COLLISION) == string::npos)
 		return nullptr;
 
@@ -126,7 +102,7 @@ void CollisionLoader::ConvertCollisionToEngineFormat(string& filename)
 	_DELETE_ARRAY(data);
 }
 
-CollisionData* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
+btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
 {
 	string extension = filename.substr(filename.rfind('.'));
 
@@ -186,7 +162,7 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 }
 
 // TODO: only convex hulls for now
-CollisionData* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
+btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
 {
 	btCollisionShape* collision = new btCompoundShape;
 	

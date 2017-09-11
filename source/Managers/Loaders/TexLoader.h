@@ -4,25 +4,9 @@
 
 namespace EngineCore
 {
-	struct TexData
-	{
-#ifdef _EDITOR
-		uint32_t sourceDate;
-		ImportInfo importInfo;
-#endif
-
-		ID3D11ShaderResourceView* data;
-
-		TexData() : data(nullptr) {}
-		~TexData()
-		{
-			_RELEASE(data);
-		}
-	};
-
 	namespace TexLoader
 	{		
-		TexData* LoadTexture(string& resName);
+		ID3D11ShaderResourceView* LoadTexture(string& resName);
 		
 		bool SaveTexture(string& filename, ID3D11ShaderResourceView* srv);
 

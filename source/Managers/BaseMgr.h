@@ -44,7 +44,7 @@ namespace EngineCore
 
 		static const uint32_t nullres = MaxCount;
 
-		void ResourceDeallocate(DataType*& resource)
+		virtual void ResourceDeallocate(DataType*& resource)
 		{
 			_DELETE(resource);
 		};
