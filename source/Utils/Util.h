@@ -8,6 +8,16 @@ using namespace EngineCore;
 
 // Строковые функции
 
+inline string RemoveExtension( const string& s )
+{
+	return s.substr(0, s.rfind('.'));
+}
+
+inline string GetExtension( const string& s )
+{
+	return s.substr(s.rfind('.'));
+}
+
 inline wstring StringToWstring( const string& s )
 {
 	int len;
@@ -16,7 +26,7 @@ inline wstring StringToWstring( const string& s )
     std::wstring r(len, L'\0');
     MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, &r[0], len);
     return r;
-};
+}
 
 inline string WstringToString( const wstring& s )
 {

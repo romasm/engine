@@ -143,7 +143,7 @@ void ResourceProcessor::ThreadMain()
 		{
 			if( importSlot.status != LoadingStatus::LOADED )
 			{
-				if( importResource(importSlot.info) )
+				if( ImportResource(importSlot.info) )
 					importSlot.status = LoadingStatus::LOADED;
 			}
 
@@ -178,22 +178,84 @@ void ResourceProcessor::ThreadMain()
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
-bool ResourceProcessor::ImportResource(const ImportInfo& info)
+bool ResourceProcessor::ImportResource(ImportInfo& info)
 {
-	// TODO
+	bool status = false;
+
+	if( (info.importBytes & IMP_BYTE_TEXTURE) > 0 )
+	{
+		string resFile = info.resourceName + EXT_TEXTURE;
+		status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile);
+
+		ImportInfo imp = info;
+		imp.importBytes = IMP_BYTE_TEXTURE;
+		SaveImportInfo(resFile, imp);
+	}
+	else if( (info.importBytes & (IMP_BYTE_MESH + IMP_BYTE_SKELETON + IMP_BYTE_COLLISION + IMP_BYTE_ANIMATION)) > 0 )
+	{
+		if( (info.importBytes & IMP_BYTE_MESH) > 0 )
+		{
+			string resFile = info.resourceName + EXT_MESH;
+			status = status || MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
+			
+			ImportInfo imp = info;
+			imp.importBytes = IMP_BYTE_MESH;
+			SaveImportInfo(resFile, imp);
+		}
+
+		if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
+		{
+			string resFile = info.resourceName + EXT_COLLISION;
+			status = status || CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
+
+			ImportInfo imp = info;
+			imp.importBytes = IMP_BYTE_COLLISION;
+			SaveImportInfo(resFile, imp);
+		}
+
+		// TODO
+	}
+	else
+	{
+		WRN("Nothing to import for %s", info.filePath.c_str());
+		return false;
+	}
+
+	return true;
+}
+
+bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
+{
+	string impFile = resFile + EXT_IMPORT;
+	ImportFile data;
+
+	data.version = IMPORT_FILE_VERSION;
+	data.info = info;
+	data.sourceDate = FileIO::GetDateModifRaw(info.filePath);
+
+	if( !FileIO::WriteFileData(impFile, (uint8_t*)&data, sizeof(ImportFile)) )
+	{
+		ERR("Cant write import file %s", impFile.c_str() );
+		return false;
+	}
 	return true;
 }
 
 bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 {
+	ImportInfo info;
+	uint32_t sourceDate;
+
 	switch(loadingSlot.type)
 	{
 	case ResourceType::TEXTURE:
 		{
-			auto loadedData = TexLoader::LoadTexture(texMgr->GetName(loadingSlot.id));
+			string& name = texMgr->GetName(loadingSlot.id);
+			auto loadedData = TexLoader::LoadTexture(name);
 			if(loadedData)
 			{
-				texMgr->OnLoad(loadingSlot.id, loadedData);
+				LoadImportInfo(name, info, sourceDate);
+				texMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
 				return true;
 			}
 		}
@@ -201,10 +263,12 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 
 	case ResourceType::MESH:
 		{
-			auto loadedData = MeshLoader::LoadMesh(meshMgr->GetName(loadingSlot.id));
+			string& name = meshMgr->GetName(loadingSlot.id);
+			auto loadedData = MeshLoader::LoadMesh(name);
 			if(loadedData)
 			{
-				meshMgr->OnLoad(loadingSlot.id, loadedData);
+				LoadImportInfo(name, info, sourceDate);
+				meshMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
 				return true;
 			}
 		}
@@ -212,10 +276,12 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 
 	case ResourceType::COLLISION:
 		{
-			auto loadedData = CollisionLoader::LoadCollision(collisionMgr->GetName(loadingSlot.id));
+			string& name = collisionMgr->GetName(loadingSlot.id);
+			auto loadedData = CollisionLoader::LoadCollision(name);
 			if(loadedData)
 			{
-				collisionMgr->OnLoad(loadingSlot.id, loadedData);
+				LoadImportInfo(name, info, sourceDate);
+				collisionMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
 				return true;
 			}
 		}
@@ -227,6 +293,30 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 	}
 
 	return false;
+}
+
+void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date)
+{
+#ifdef _EDITOR
+	ZeroMemory(&info, sizeof(info));
+
+	string impFile = resName + EXT_IMPORT;
+
+	uint32_t size = 0;
+	uint8_t* fdata = FileIO::ReadFileData(impFile, &size);
+	if(!fdata || ((ImportFile*)fdata)->version != IMPORT_FILE_VERSION )
+	{
+		date = FileIO::GetDateModifRaw(resName);
+		info.filePath = resName;
+		info.resourceName = RemoveExtension(resName);
+		return;
+	}
+		
+	date = ((ImportFile*)fdata)->sourceDate;
+	info = ((ImportFile*)fdata)->info;
+
+	_DELETE_ARRAY(fdata);
+#endif
 }
 
 bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone)

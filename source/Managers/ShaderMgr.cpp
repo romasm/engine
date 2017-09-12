@@ -7,6 +7,7 @@ using namespace EngineCore;
 ShaderMgr::ShaderMgr() : BaseMgr<BaseShader, SHADERS_MAX_COUNT>()
 {
 	resType = ResourceType::SHADER;
+	resExt = EXT_SHADER_TECHS;
 }
 
 uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback callback)
@@ -42,9 +43,13 @@ uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback 
 	return idx;
 }
 
-#ifdef _DEV
 void ShaderMgr::CheckForReload()
 {
+#ifdef _DEV
+	ImportInfo info;
+	ZeroMemory(&info, sizeof(info));
+	uint32_t sourceDate = 0;
+
 	auto it = resource_map.begin();
 	while(it != resource_map.end())
 	{
@@ -74,10 +79,10 @@ void ShaderMgr::CheckForReload()
 			continue;
 		}
 
-		OnLoad(it->second, newShader);
+		OnLoad(it->second, newShader, info, sourceDate);
 		it++;
 	}
 
 	DefferedDeallocate();
-}
 #endif
+}

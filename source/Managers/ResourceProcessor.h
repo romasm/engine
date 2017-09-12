@@ -30,6 +30,12 @@ namespace EngineCore
 		COMPUTE,
 	};
 
+#define IMP_BYTE_TEXTURE		0x1
+#define IMP_BYTE_MESH			0x2
+#define IMP_BYTE_COLLISION		0x4
+#define IMP_BYTE_SKELETON		0x8
+#define IMP_BYTE_ANIMATION		0x16
+
 	enum LoadingStatus
 	{
 		NEW = 0,
@@ -55,19 +61,21 @@ namespace EngineCore
 		string filePath;
 		string resourceName;
 
-		bool importMesh;
-		// TODO: extended mesh format
+		uint32_t importBytes;
+
 		bool isSkinnedMesh;
-
-		bool importSkeleton;
-		bool importAnimation;
-		bool importCollision;
-
-		bool importTexture;
 		DXGI_FORMAT textureFormat;
 	};
 
-	typedef function<void (ImportInfo, bool)> onImportCallback;
+#define IMPORT_FILE_VERSION 101
+	struct ImportFile
+	{
+		uint32_t version;
+		uint32_t sourceDate;
+		ImportInfo info;
+	};
+
+	typedef function<void (const ImportInfo&, bool)> onImportCallback;
 
 	struct ImportSlot
 	{
@@ -103,7 +111,9 @@ namespace EngineCore
 
 		static void RegLuaFunctions();
 
-		static bool ImportResource(const ImportInfo& info);
+		static bool ImportResource(ImportInfo& info);
+		static bool SaveImportInfo(string& resFile, ImportInfo& info);
+		static void LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date);
 
 	private:
 		bool loadResource(const ResourceSlot& loadingSlot);

@@ -15,10 +15,10 @@ namespace EngineCore
 	struct GPUMeshBuffer
 	{
 		// It's count of elements, NOT byte size
-		uint32_t size;
+		uint32_t count;
 		ID3D11Buffer* buffer;
 
-		GPUMeshBuffer() : size(0), buffer(nullptr) {}
+		GPUMeshBuffer() : count(0), buffer(nullptr) {}
 	};
 
 	struct MeshData
@@ -62,17 +62,13 @@ namespace EngineCore
 		static Assimp::Importer meshImporter;
 		
 		MeshData* LoadMesh(string& resName);
+		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
 				
-		void ConvertMeshToEngineFormat(string& filename, bool skeletal);
+		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
 		bool IsSupported(string filename);
 
-		void saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
-
-		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
-		MeshData* loadNoNativeMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal, bool onlyConvert = false);
-
-		MeshData* loadAIScene(string& filename, const aiScene* scene, MeshVertexFormat format, bool convert, bool noGPUInit);
-		
+		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
+		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, int32_t& boneOffset, Vector3& posMin, Vector3& posMax);
 		

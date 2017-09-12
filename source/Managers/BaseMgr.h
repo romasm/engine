@@ -38,7 +38,7 @@ namespace EngineCore
 
 		void OnPostLoadMainThread(uint32_t id, onLoadCallback func, LoadingStatus status);
 		void CallCallback(uint32_t id, onLoadCallback func, LoadingStatus status);
-		void OnLoad(uint32_t id, DataType* data);
+		void OnLoad(uint32_t id, DataType* data, ImportInfo& info, uint32_t& date);
 
 		void CheckForReload();
 
@@ -58,19 +58,29 @@ namespace EngineCore
 		DataType* null_resource;
 		string null_name;
 		ResourceType resType;
+		char* resExt;
 
 		struct ResourceHandle
 		{
 			DataType* resource;
 			uint32_t refcount;
-			uint32_t filedate;
 			string name;
+
+#ifdef _EDITOR
+			ReloadingType reloadStatus;
+			uint32_t filedate;
+			ImportInfo impInfo;
+#endif
 
 			ResourceHandle()
 			{
 				resource = nullptr;
 				refcount = 0;
+#ifdef _EDITOR
+				reloadStatus = ReloadingType::RELOAD_NONE;
 				filedate = 0;
+				ZeroMemory(&impInfo, sizeof(impInfo));
+#endif
 			}
 		};
 
@@ -141,8 +151,9 @@ namespace EngineCore
 	uint32_t BaseMgr<DataType, MaxCount>::GetResource(string& name, bool reload, onLoadCallback callback)
 	{
 		uint32_t res = nullres;
-		if(name.length() == 0)
+		if(name.length() == 0 || name.find(resExt) == string::npos )
 		{
+			ERR("Wrong resource name %s", name.c_str());
 			CallCallback(res, callback, LoadingStatus::FAILED);
 			return res;
 		}
@@ -187,18 +198,24 @@ namespace EngineCore
 
 		if(!FileIO::IsExist(name))
 		{
+#ifdef _EDITOR
 			WRN("File %s doesn\'t exist, creation expected in future.", name.data());
 			if(reload)
-				handle.filedate = ReloadingType::RELOAD_ALWAYS;
+				handle.reloadStatus = ReloadingType::RELOAD_ALWAYS;
 			else
-				handle.filedate = ReloadingType::RELOAD_ONCE;
+				handle.reloadStatus = ReloadingType::RELOAD_ONCE;
+			handle.filedate = 1;
+#endif
 		}
 		else
 		{
+#ifdef _EDITOR
 			if(reload)
-				handle.filedate = FileIO::GetDateModifRaw(name);
+				handle.reloadStatus = ReloadingType::RELOAD_ALWAYS;
 			else
-				handle.filedate = ReloadingType::RELOAD_NONE;
+				handle.reloadStatus = ReloadingType::RELOAD_NONE;
+			handle.filedate = 0;
+#endif
 			ResourceProcessor::Get()->QueueLoad(idx, resType, callback);
 		}
 
@@ -243,7 +260,12 @@ namespace EngineCore
 			}
 
 			handle.refcount = 0;
+
+#ifdef _EDITOR
 			handle.filedate = 0;
+			handle.reloadStatus = ReloadingType::RELOAD_NONE;
+			ZeroMemory(&handle.impInfo, sizeof(handle.impInfo));
+#endif
 
 			free_ids.push_back(id);
 
@@ -286,7 +308,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	void BaseMgr<DataType, MaxCount>::OnLoad(uint32_t id, DataType* data)
+	void BaseMgr<DataType, MaxCount>::OnLoad(uint32_t id, DataType* data, ImportInfo& info, uint32_t& date)
 	{
 		auto& handle = resource_array[id];
 
@@ -294,28 +316,40 @@ namespace EngineCore
 		handle.resource = data;
 		if(oldResource != null_resource)
 			deallocationQueue.push_back(oldResource);
+
+#ifdef _EDITOR
+		handle.impInfo = info;
+		if( handle.filedate == 0 )
+			handle.filedate = date;
+#endif
 	}
 
 	template<typename DataType, uint32_t MaxCount>
 	void BaseMgr<DataType, MaxCount>::CheckForReload()
 	{
+#ifdef _EDITOR
 		auto it = resource_map.begin();
 		while(it != resource_map.end())
 		{
 			auto& handle = resource_array[it->second];
 
-			if( handle.filedate == ReloadingType::RELOAD_NONE )
+			if( handle.reloadStatus == ReloadingType::RELOAD_NONE || handle.filedate == 0 )
 			{
 				it++;
 				continue;
 			}
-
-			if( handle.filedate == ReloadingType::RELOAD_ONCE )
-				handle.filedate = ReloadingType::RELOAD_NONE;
+			
+			if( handle.reloadStatus == ReloadingType::RELOAD_ONCE )
+				handle.reloadStatus = ReloadingType::RELOAD_NONE;
 			else
 			{
-				uint32_t last_date = FileIO::GetDateModifRaw(handle.name);
-				if( last_date == handle.filedate || last_date == 0 || handle.filedate == ReloadingType::RELOAD_NONE )
+				uint32_t last_date;
+				if( handle.impInfo.filePath.empty() )
+					last_date = FileIO::GetDateModifRaw(it->second);
+				else
+					last_date = FileIO::GetDateModifRaw(handle.impInfo.filePath);
+
+				if( last_date == handle.filedate || last_date == 0 )
 				{	
 					it++;
 					continue;
@@ -323,8 +357,25 @@ namespace EngineCore
 				handle.filedate = last_date;
 			}
 
-			ResourceProcessor::Get()->QueueLoad(it->second, resType, nullptr);
+			if( handle.impInfo.filePath.empty() || handle.impInfo.filePath == it->second )
+			{
+				ResourceProcessor::Get()->QueueLoad(it->second, resType, nullptr);
+			}
+			else
+			{
+				ResourceProcessor::Get()->QueueImport(handle.impInfo,
+					[resType, resExt](const ImportInfo& info, bool status) -> void
+				{
+					if(status)
+					{
+						string resPath = info.resourceName + resExt;
+						ResourceProcessor::Get()->QueueLoad(resPath, resType, nullptr);
+					}
+				}, false);
+			}
+
 			it++;
 		}
+#endif
 	}
 }

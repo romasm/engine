@@ -21,6 +21,7 @@ namespace EngineCore
 		{
 			null_resource = TexLoader::LoadTexture(string(PATH_TEXTURE_NULL));
 			resType = ResourceType::TEXTURE;
+			resExt = EXT_TEXTURE;
 		}
 		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<ID3D11ShaderResourceView>::Get();}
 

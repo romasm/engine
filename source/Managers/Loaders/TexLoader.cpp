@@ -49,14 +49,20 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 		{
 			LOG("Trying to reimport texture %s", tgaTexture.c_str());
 
-			// standard settings
+			uint32_t date;
 			ImportInfo info;
-			ZeroMemory(&info, sizeof(info));
-			info.filePath = tgaTexture;
-			info.resourceName = resourceName;
-			info.importTexture = true;
-			info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+			ResourceProcessor::LoadImportInfo(resName, info, date);
 
+			if( info.importBytes == 0 )
+			{
+				// standard settings
+				ZeroMemory(&info, sizeof(info));
+				info.filePath = tgaTexture;
+				info.resourceName = resourceName;
+				info.importBytes = IMP_BYTE_TEXTURE;
+				info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+			}			
+			
 			if( ResourceProcessor::ImportResource(info) )
 			{
 				data = FileIO::ReadFileData(resName, &size);

@@ -7,14 +7,6 @@
 
 using namespace EngineCore;
 
-bool CollisionLoader::IsSupported(string filename)
-{
-	if(filename.find(EXT_COLLISION) != string::npos)
-		return true;
-	string extension = filename.substr(filename.rfind('.'));
-	return MeshLoader::meshImporter.IsExtensionSupported(extension);
-}
-
 btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 {
 	btCollisionShape* newCollision = nullptr;
@@ -39,13 +31,19 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 		{
 			LOG("Trying to reimport collision %s", fbxMesh.c_str());
 
-			// standard settings
+			uint32_t date;
 			ImportInfo info;
-			ZeroMemory(&info, sizeof(info));
-			info.filePath = fbxMesh;
-			info.resourceName = resourceName;
-			info.importCollision = true;
+			ResourceProcessor::LoadImportInfo(resName, info, date);
 
+			if( info.importBytes == 0 )
+			{
+				// standard settings
+				ZeroMemory(&info, sizeof(info));
+				info.filePath = fbxMesh;
+				info.resourceName = resourceName;
+				info.importBytes = IMP_BYTE_COLLISION;
+			}			
+			
 			if( ResourceProcessor::ImportResource(info) )
 			{
 				data = FileIO::ReadFileData(resName, &size);
@@ -62,78 +60,106 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 
 	return newCollision;
 }
-/*
-btCollisionShape* CollisionLoader::LoadCollisionFromMemory(string& resName, uint8_t* data, uint32_t size)
+
+btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
-	btCollisionShape* newCollision;
-	if(resName.find(EXT_COLLISION) != string::npos)
+	btCollisionShape* collision = nullptr;
+
+	uint8_t* t_data = data;
+
+	CollisionHeader header(*(CollisionHeader*)t_data);
+	t_data += sizeof(CollisionHeader);
+
+	if( header.version != COLLISION_FILE_VERSION )
 	{
-		newCollision = loadEngineCollisionFromMemory( resName, data, size );
-
-#ifdef _EDITOR
-		if(!newCollision)
-		{
-			string fbxMesh = resName.substr(0, resName.find(EXT_COLLISION)) + ".fbx";
-			if( FileIO::IsExist(fbxMesh) )
-			{
-				LOG("Trying to reimport collision %s \n App restart may be needed!", fbxMesh.c_str());
-				ConvertCollisionToEngineFormat(fbxMesh);
-			}
-		}
-#endif
-
-	}
-	else
-	{
-		newCollision = loadNoNativeCollisionFromMemory( resName, data, size );
-	}
-
-	return newCollision;
-}*/
-
-void CollisionLoader::ConvertCollisionToEngineFormat(string& filename) 
-{
-	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(filename, &size);
-	if(!data)
-		return;
-
-	loadNoNativeCollisionFromMemory(filename, data, size, true);
-	_DELETE_ARRAY(data);
-}
-
-btCollisionShape* CollisionLoader::loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert)
-{
-	string extension = filename.substr(filename.rfind('.'));
-
-	if( !MeshLoader::meshImporter.IsExtensionSupported(extension) )
-	{
-		ERR("Extension %s is not supported for collisions", extension.data());
+		ERR("Collision %s has wrong version!", filename.c_str());
 		return nullptr;
 	}
 
+	switch( header.type )
+	{
+	case COMPOUND_SHAPE_PROXYTYPE:
+		{
+			uint32_t hullsCount = *(uint32_t*)t_data;
+			t_data += sizeof(uint32_t);
+
+			collision = new btCompoundShape();
+
+			for(uint32_t i = 0; i < hullsCount; i++)
+			{
+				Vector3 pos = *(Vector3*)t_data;
+				t_data += sizeof(Vector3);
+
+				Quaternion rot = *(Quaternion*)t_data;
+				t_data += sizeof(Quaternion);
+
+				uint32_t pointsCount = *(uint32_t*)t_data;
+				t_data += sizeof(uint32_t);
+
+				const int stride = sizeof(float) * 3;
+
+				float *points = (float*)t_data;
+				t_data += stride * pointsCount;
+
+				btTransform transform(rot, pos);
+				auto shape = new btConvexHullShape(points, pointsCount, stride);
+
+				((btCompoundShape*)collision)->addChildShape(transform, shape);
+			}
+		}
+		break;
+	default:
+		ERR("Unsupported collision type for %s", filename.c_str());
+		return nullptr;
+	}
+
+	LOG("Collision(.clm) loaded %s", filename.c_str());
+	return collision;
+}
+
+bool CollisionLoader::IsSupported(string filename)
+{
+	if(filename.find(EXT_COLLISION) != string::npos)
+		return true;
+	return MeshLoader::meshImporter.IsExtensionSupported(GetExtension(filename));
+}
+
+bool CollisionLoader::ConvertCollisionToEngineFormat(string& sourceFile, string& resFile) 
+{
+	if( !MeshLoader::meshImporter.IsExtensionSupported(GetExtension(sourceFile)) )
+	{
+		ERR("Extension is not supported for collision %s", sourceFile.data());
+		return false;
+	}
+
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
+	if(!data)
+		return false;
+	
 	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_MakeLeftHanded;
 
 	const aiScene* scene = MeshLoader::meshImporter.ReadFileFromMemory( data, size, flags);
-
 	if(!scene)
 	{
-		ERR("Import failed for collision %s", filename.c_str());
-		return nullptr;
+		ERR("Import failed for collision %s", sourceFile.c_str());
+		_DELETE_ARRAY(data);
+		return false;
 	}
 
-	btCollisionShape* collision = loadAIScene(filename, scene, onlyConvert);
+	btCollisionShape* collision = convertAIScene(sourceFile, resFile, scene);
 	MeshLoader::meshImporter.FreeScene();
 
-	if(onlyConvert)
-	{
-		LOG("Collision %s converted to engine format", filename.c_str());
-		CollisionLoader::CollisionDeallocate(collision);
-		return nullptr;
-	}
+	bool status = SaveCollision(resFile, collision);
+	CollisionMgr::Get()->ResourceDeallocate(collision);
 
-	LOG("Collision %s loaded", filename.c_str());
-	return collision;
+	if(status)
+		LOG("Collision %s converted to engine format", sourceFile.c_str());
+	else
+		ERR("Collision %s IS NOT converted to engine format", sourceFile.c_str());
+
+	_DELETE_ARRAY(data);
+	return status;
 }
 
 void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode* root, aiNode* node)
@@ -162,10 +188,9 @@ void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode*
 }
 
 // TODO: only convex hulls for now
-btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* scene, bool convert)
+btCollisionShape* CollisionLoader::convertAIScene(string& filename, string& resFile, const aiScene* scene)
 {
 	btCollisionShape* collision = new btCompoundShape;
-	
 	aiMesh** mesh = scene->mMeshes;
 
 	unordered_map<uint, aiMatrix4x4> meshTransforms;
@@ -222,17 +247,12 @@ btCollisionShape* CollisionLoader::loadAIScene(string& filename, const aiScene* 
 		_DELETE_ARRAY(vertices);
 	}
 
-	if(convert)
-		saveCollision(filename, collision);
-	
 	return collision;
 }
 
 // TODO: only convex hulls for now
-void CollisionLoader::saveCollision(string& filename, btCollisionShape* collision)
+bool CollisionLoader::SaveCollision(string& filename, btCollisionShape* collision)
 {
-	string clm_file = filename.substr(0, filename.rfind('.')) + EXT_COLLISION;
-
 	CollisionHeader header;
 	header.version = COLLISION_FILE_VERSION;
 	header.type = COMPOUND_SHAPE_PROXYTYPE;
@@ -291,64 +311,10 @@ void CollisionLoader::saveCollision(string& filename, btCollisionShape* collisio
 		_DELETE_ARRAY(points);
 	}
 
-	if(!FileIO::WriteFileData( clm_file, data.get(), file_size ))
+	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
 	{
-		ERR("Cant write collision file: %s", clm_file.c_str() );
+		ERR("Cant write collision file: %s", filename.c_str() );
+		return false;
 	}
-}
-
-btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
-{
-	btCollisionShape* collision = nullptr;
-
-	uint8_t* t_data = data;
-
-	CollisionHeader header(*(CollisionHeader*)t_data);
-	t_data += sizeof(CollisionHeader);
-
-	if( header.version != COLLISION_FILE_VERSION )
-	{
-		ERR("Collision %s has wrong version!", filename.c_str());
-		return nullptr;
-	}
-
-	switch( header.type )
-	{
-	case COMPOUND_SHAPE_PROXYTYPE:
-		{
-			uint32_t hullsCount = *(uint32_t*)t_data;
-			t_data += sizeof(uint32_t);
-
-			collision = new btCompoundShape();
-
-			for(uint32_t i = 0; i < hullsCount; i++)
-			{
-				Vector3 pos = *(Vector3*)t_data;
-				t_data += sizeof(Vector3);
-
-				Quaternion rot = *(Quaternion*)t_data;
-				t_data += sizeof(Quaternion);
-				
-				uint32_t pointsCount = *(uint32_t*)t_data;
-				t_data += sizeof(uint32_t);
-
-				const int stride = sizeof(float) * 3;
-
-				float *points = (float*)t_data;
-				t_data += stride * pointsCount;
-
-				btTransform transform(rot, pos);
-				auto shape = new btConvexHullShape(points, pointsCount, stride);
-
-				((btCompoundShape*)collision)->addChildShape(transform, shape);
-			}
-		}
-		break;
-	default:
-		ERR("Unsupported collision type for %s", filename.c_str());
-		return nullptr;
-	}
-
-	LOG("Collision(.clm) loaded %s", filename.c_str());
-	return collision;
+	return true;
 }

@@ -19,6 +19,7 @@ namespace EngineCore
 		{
 			null_resource = new btBoxShape( btVector3(0.5f, 0.5f, 0.5f) );
 			resType = ResourceType::COLLISION;	
+			resExt = EXT_COLLISION;
 		}
 		
 		inline static CollisionMgr* Get(){return (CollisionMgr*)BaseMgr<btCollisionShape, RESOURCE_MAX_COUNT>::Get();}

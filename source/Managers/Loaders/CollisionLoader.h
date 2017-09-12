@@ -16,15 +16,12 @@ namespace EngineCore
 	namespace CollisionLoader
 	{		
 		btCollisionShape* LoadCollision(string& resName);
-		
-		void ConvertCollisionToEngineFormat(string& filename);
-		bool IsSupported(string filename);
-
 		btCollisionShape* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
-		btCollisionShape* loadNoNativeCollisionFromMemory(string& filename, uint8_t* data, uint32_t size, bool onlyConvert = false);
+				
+		bool ConvertCollisionToEngineFormat(string& sourceFile, string& resFile);
+		bool IsSupported(string filename);
+		bool SaveCollision(string& filename, btCollisionShape* collision);
 
-		btCollisionShape* loadAIScene(string& filename, const aiScene* scene, bool convert);
-
-		void saveCollision(string& filename, btCollisionShape* collision);
+		btCollisionShape* convertAIScene(string& sourceFile, string& resFile, const aiScene* scene);
 	};
 }

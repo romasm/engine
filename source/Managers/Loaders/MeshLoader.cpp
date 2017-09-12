@@ -6,14 +6,6 @@
 
 using namespace EngineCore;
 
-bool MeshLoader::IsSupported(string filename)
-{
-	if(filename.find(EXT_MESH) != string::npos)
-		return true;
-	string extension = filename.substr(filename.rfind('.'));
-	return meshImporter.IsExtensionSupported(extension);
-}
-
 MeshData* MeshLoader::LoadMesh(string& resName)
 {
 	MeshData* newMesh = nullptr;
@@ -32,19 +24,25 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 #ifdef _DEV
 	if(!newMesh)
 	{
-		string resourceName = resName.substr(0, resName.find(EXT_MESH));
+		string resourceName = RemoveExtension(resName);
 		string fbxMesh = resourceName + ".fbx";
 		if( FileIO::IsExist(fbxMesh) )
 		{
 			LOG("Trying to reimport mesh %s", fbxMesh.c_str());
 
-			// standard settings
+			uint32_t date;
 			ImportInfo info;
-			ZeroMemory(&info, sizeof(info));
-			info.filePath = fbxMesh;
-			info.resourceName = resourceName;
-			info.importMesh = true;
-			info.isSkinnedMesh = false;
+			ResourceProcessor::LoadImportInfo(resName, info, date);
+
+			if( info.importBytes == 0 )
+			{
+				// standard settings
+				ZeroMemory(&info, sizeof(info));
+				info.filePath = fbxMesh;
+				info.resourceName = resourceName;
+				info.importBytes = IMP_BYTE_MESH;
+				info.isSkinnedMesh = false;
+			}			
 
 			if( ResourceProcessor::ImportResource(info) )
 			{
@@ -62,102 +60,6 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 
 	return newMesh;
 }
-/*
-MeshData* MeshLoader::LoadMeshFromMemory(string& resName, uint8_t* data, uint32_t size, bool skeletal)
-{
-	MeshData* newMesh;
-	if(resName.find(EXT_MESH) != string::npos)
-	{
-		newMesh = loadEngineMeshFromMemory( resName, data, size, skeletal );
-
-#ifdef _EDITOR
-		if(!newMesh)
-		{
-			string fbxMesh = resName.substr(0, resName.find(EXT_MESH)) + ".fbx";
-			if( FileIO::IsExist(fbxMesh) )
-			{
-				LOG("Trying to reimport mesh %s \n App restart may be needed!", fbxMesh.c_str());
-				ConvertMeshToEngineFormat(fbxMesh, skeletal);
-			}
-		}
-#endif
-
-	}
-	else
-	{
-		newMesh = loadNoNativeMeshFromMemory( resName, data, size, skeletal );
-	}
-
-	return newMesh;
-}
-*/
-void MeshLoader::ConvertMeshToEngineFormat(string& filename, bool skeletal) 
-{
-	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(filename, &size);
-	if(!data)
-		return;
-
-	loadNoNativeMeshFromMemory(filename, data, size, skeletal, true);
-	_DELETE_ARRAY(data);
-}
-
-void MeshLoader::saveEngineMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
-{
-	string stm_file = filename.substr(0, filename.rfind('.')) + EXT_MESH;
-
-	MeshFileHeader header;
-	header.version = MESH_FILE_VERSION;
-	header.materialCount = (uint32_t)mesh->vertexBuffers.size();
-	header.bboxCenter = VECTOR3_CAST(mesh->box.Center);
-	header.bboxExtents = VECTOR3_CAST(mesh->box.Extents);
-	header.vertexFormat = mesh->vertexFormat;
-
-	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
-
-	// calc file size
-	uint32_t file_size = sizeof(MeshFileHeader);
-	for(uint16_t i = 0; i < header.materialCount; i++)
-	{
-		file_size += sizeof(uint32_t) + sizeof(uint32_t);
-		file_size += mesh->vertexBuffers[i].size * vetrexSize;
-		file_size += mesh->indexBuffers[i].size * sizeof(uint32_t);
-	}
-
-	unique_ptr<uint8_t> data(new uint8_t[file_size]);
-	uint8_t* t_data = data.get();
-
-	*(MeshFileHeader*)t_data = header;
-	t_data += sizeof(MeshFileHeader);
-
-	for(uint32_t i = 0; i < header.materialCount; i++)
-	{
-		*(uint32_t*)t_data = mesh->vertexBuffers[i].size;
-		t_data += sizeof(uint32_t);
-
-		if(vertices[i])
-		{
-			uint32_t size = mesh->vertexBuffers[i].size * vetrexSize;
-			memcpy(t_data, vertices[i], size);
-			t_data += size;
-		}
-
-		*(uint32_t*)t_data = mesh->indexBuffers[i].size;
-		t_data += sizeof(uint32_t);
-
-		if(indices[i])
-		{
-			uint32_t size = mesh->indexBuffers[i].size * sizeof(uint32_t);
-			memcpy(t_data, indices[i], size);
-			t_data += size;
-		}
-	}
-
-	if(!FileIO::WriteFileData( stm_file, data.get(), file_size ))
-	{
-		ERR("Cant write mesh file: %s", stm_file.c_str() );
-	}
-}
 
 MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
@@ -174,7 +76,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 		ERR("Mesh %s has wrong version!", filename.c_str());
 		return nullptr;
 	}
-	
+
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
 
 	vertices = new uint8_t*[header.materialCount];
@@ -185,26 +87,26 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	mesh->indexBuffers.create(header.materialCount);
 	mesh->box = BoundingBox(header.bboxCenter, header.bboxExtents);
 	mesh->vertexFormat = header.vertexFormat;
-	
+
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
 		GPUMeshBuffer vBuffer;
-		vBuffer.size = *(uint32_t*)t_data; 
+		vBuffer.count = *(uint32_t*)t_data; 
 		t_data += sizeof(uint32_t);
 
-		const auto sizeVB = vBuffer.size * vetrexSize;
+		const auto sizeVB = vBuffer.count * vetrexSize;
 		vertices[i] = new uint8_t[sizeVB];
 		memcpy(vertices[i], t_data, sizeVB);
 		t_data += sizeVB;
 
 		mesh->vertexBuffers.push_back(vBuffer);
-		
+
 		GPUMeshBuffer iBuffer;
-		iBuffer.size = *(uint32_t*)t_data;
+		iBuffer.count = *(uint32_t*)t_data;
 		t_data += sizeof(uint32_t);
 
-		const auto sizeIB = iBuffer.size * sizeof(uint32_t);
-		indices[i] = new uint32_t[iBuffer.size];
+		const auto sizeIB = iBuffer.count * sizeof(uint32_t);
+		indices[i] = new uint32_t[iBuffer.count];
 		memcpy(indices[i], t_data, sizeIB);
 		t_data += sizeIB;
 
@@ -213,9 +115,9 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
-		mesh->vertexBuffers[i].buffer = Buffer::CreateVertexBuffer(Render::Device(), vetrexSize * mesh->vertexBuffers[i].size, false, vertices[i]);
-		mesh->indexBuffers[i].buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * mesh->indexBuffers[i].size, false, indices[i]);
-		
+		mesh->vertexBuffers[i].buffer = Buffer::CreateVertexBuffer(Render::Device(), vetrexSize * mesh->vertexBuffers[i].count, false, vertices[i]);
+		mesh->indexBuffers[i].buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * mesh->indexBuffers[i].count, false, indices[i]);
+
 		if (!mesh->vertexBuffers[i].buffer || !mesh->indexBuffers[i].buffer)
 		{
 			ERR("Cant init mesh vertex or index buffer for %s", filename.c_str());
@@ -236,19 +138,29 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	return mesh;
 }
 
-MeshData* MeshLoader::loadNoNativeMeshFromMemory(string& filename, uint8_t* data, uint32_t size, bool skeletal, bool onlyConvert)
+bool MeshLoader::IsSupported(string filename)
 {
-	string extension = filename.substr(filename.rfind('.'));
+	if(filename.find(EXT_MESH) != string::npos)
+		return true;
+	return meshImporter.IsExtensionSupported(GetExtension(filename));
+}
 
-	if( !meshImporter.IsExtensionSupported(extension) )
+bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned)
+{
+	if( !meshImporter.IsExtensionSupported(GetExtension(sourceFile)) )
 	{
-		ERR("Extension %s is not supported for meshes", extension.data());
-		return nullptr;
+		ERR("Extension is not supported for mesh", sourceFile.data());
+		return false;
 	}
 
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
+	if(!data)
+		return false;
+	
 	auto flags = aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded;
 	MeshVertexFormat format;
-	if( skeletal )
+	if( isSkinned )
 	{
 		format = MeshVertexFormat::LIT_SKINNED_VERTEX;
 	}
@@ -259,31 +171,85 @@ MeshData* MeshLoader::loadNoNativeMeshFromMemory(string& filename, uint8_t* data
 	}
 
 	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags);
-
 	if(!scene)
 	{
-		ERR("Import failed for mesh %s", filename.c_str());
-		return nullptr;
+		ERR("Import failed for mesh %s", sourceFile.c_str());
+		_DELETE_ARRAY(data);
+		return false;
 	}
 
-	MeshData* mesh = loadAIScene(filename, scene, format, onlyConvert, onlyConvert);
+	bool status = convertAIScene(sourceFile, scene, format);
 	meshImporter.FreeScene();
+	
+	if(status)
+		LOG("Mesh %s converted to engine format", sourceFile.c_str());
+	else
+		ERR("Mesh %s IS NOT converted to engine format", sourceFile.c_str());
 
-	if(onlyConvert)
-	{
-		LOG("Mesh %s converted to engine format", filename.c_str());
-		_DELETE(mesh);
-		return nullptr;
-	}
-
-	LOG("Mesh %s loaded", filename.c_str());
-	return mesh;
+	_DELETE_ARRAY(data);
+	return status;
 }
 
-MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVertexFormat format, bool convert, bool noGPUInit)
+bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
+{
+	MeshFileHeader header;
+	header.version = MESH_FILE_VERSION;
+	header.materialCount = (uint32_t)mesh->vertexBuffers.size();
+	header.bboxCenter = VECTOR3_CAST(mesh->box.Center);
+	header.bboxExtents = VECTOR3_CAST(mesh->box.Extents);
+	header.vertexFormat = mesh->vertexFormat;
+
+	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
+
+	// calc file size
+	uint32_t file_size = sizeof(MeshFileHeader);
+	for(uint16_t i = 0; i < header.materialCount; i++)
+	{
+		file_size += sizeof(uint32_t) + sizeof(uint32_t);
+		file_size += mesh->vertexBuffers[i].count * vetrexSize;
+		file_size += mesh->indexBuffers[i].count * sizeof(uint32_t);
+	}
+
+	unique_ptr<uint8_t> data(new uint8_t[file_size]);
+	uint8_t* t_data = data.get();
+
+	*(MeshFileHeader*)t_data = header;
+	t_data += sizeof(MeshFileHeader);
+
+	for(uint32_t i = 0; i < header.materialCount; i++)
+	{
+		*(uint32_t*)t_data = mesh->vertexBuffers[i].count;
+		t_data += sizeof(uint32_t);
+
+		if(vertices[i])
+		{
+			uint32_t size = mesh->vertexBuffers[i].count * vetrexSize;
+			memcpy(t_data, vertices[i], size);
+			t_data += size;
+		}
+
+		*(uint32_t*)t_data = mesh->indexBuffers[i].count;
+		t_data += sizeof(uint32_t);
+
+		if(indices[i])
+		{
+			uint32_t size = mesh->indexBuffers[i].count * sizeof(uint32_t);
+			memcpy(t_data, indices[i], size);
+			t_data += size;
+		}
+	}
+
+	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
+	{
+		ERR("Cant write mesh file: %s", filename.c_str() );
+		return false;
+	}
+	return true;
+}
+
+bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format)
 {
 	MeshData* stmesh = new MeshData;
-
 	aiMesh** mesh = scene->mMeshes;
 
 	const uint32_t vertexSize = GetVertexSize(format);
@@ -315,9 +281,9 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 		// INDICES
 		GPUMeshBuffer iBuffer;
 
-		iBuffer.size = mesh[i]->mNumFaces * 3;
+		iBuffer.count = mesh[i]->mNumFaces * 3;
 
-		indices[i] = new uint32_t[iBuffer.size];
+		indices[i] = new uint32_t[iBuffer.count];
 		uint32_t k = 0;
 		for(uint32_t j = 0; j < mesh[i]->mNumFaces; j++)
 		{
@@ -326,49 +292,25 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 			k += 3;
 		}
 
-		if( !noGPUInit )
-		{
-			iBuffer.buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * iBuffer.size, false, indices[i]);
-
-			if ( !iBuffer.buffer )
-			{
-				ERR("Cant init mesh index buffer for %s", mesh[i]->mName.C_Str());
-				continue;
-			}
-		}
-
 		stmesh->indexBuffers.push_back(iBuffer);
 
 		// VERTICES
 		GPUMeshBuffer vBuffer;
 
-		vBuffer.size = mesh[i]->mNumVertices;
+		vBuffer.count = mesh[i]->mNumVertices;
 
-		const uint32_t byteSize = vBuffer.size * vertexSize;
+		const uint32_t byteSize = vBuffer.count * vertexSize;
 		vertices[i] = new uint8_t[byteSize];
 
 		switch( format )
 		{
 		case MeshVertexFormat::LIT_VERTEX:
-			loadVerticesLit(vertices[i], vBuffer.size, vertexSize, mesh[i], posMin, posMax);
+			loadVerticesLit(vertices[i], vBuffer.count, vertexSize, mesh[i], posMin, posMax);
 			break;
 		case MeshVertexFormat::LIT_SKINNED_VERTEX:
-			loadVerticesSkinnedLit(vertices[i], vBuffer.size, vertexSize, mesh[i], boneOffset, posMin, posMax);
+			loadVerticesSkinnedLit(vertices[i], vBuffer.count, vertexSize, mesh[i], boneOffset, posMin, posMax);
 			break;
 		}			
-
-		if( !noGPUInit )
-		{
-			vBuffer.buffer = Buffer::CreateVertexBuffer(Render::Device(), byteSize, false, vertices[i]);
-
-			if( !vBuffer.buffer )
-			{
-				ERR("Cant init static mesh vertex buffer for %s", mesh[i]->mName.C_Str());
-				_RELEASE(stmesh->indexBuffers[stmesh->indexBuffers.size() - 1].buffer);
-				stmesh->indexBuffers.pop_back();
-				continue;
-			}
-		}
 
 		stmesh->vertexBuffers.push_back(vBuffer);
 	}
@@ -380,8 +322,7 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 	extents.z = std::max<float>(extents.z, 0);
 	stmesh->box = BoundingBox(center, extents);
 
-	if(convert)
-		saveEngineMesh(filename, stmesh, indices, vertices);
+	bool status = saveMesh(filename, stmesh, indices, vertices);
 
 	for(uint32_t i = 0; i < matCount; i++)
 	{
@@ -393,7 +334,8 @@ MeshData* MeshLoader::loadAIScene(string& filename, const aiScene* scene, MeshVe
 	_DELETE_ARRAY(indices);
 	_DELETE_ARRAY(vertices);
 
-	return stmesh;
+	_DELETE(stmesh);
+	return status;
 }
 
 void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax)

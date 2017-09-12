@@ -17,6 +17,8 @@
 #define EXT_FONT ".fnt"
 #define EXT_ASSET ".ast"
 
+#define EXT_IMPORT ".imp"
+
 #define EXT_SHADER_SOURCE ".hlsl"
 #define EXT_SHADER_BYTECODE ".bc"
 #define EXT_SHADER_TECHS ".tq"

@@ -11,7 +11,7 @@ namespace EngineCore
 	public:
 		MeshMgr();
 
-		void OnLoad(uint32_t id, MeshData* data);
+		void OnLoad(uint32_t id, MeshData* data, ImportInfo& info, uint32_t& date);
 
 	#ifdef _EDITOR
 		inline bool IsJustReloaded(uint32_t id) 
