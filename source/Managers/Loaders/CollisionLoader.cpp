@@ -38,7 +38,6 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 			if( info.importBytes == 0 )
 			{
 				// standard settings
-				ZeroMemory(&info, sizeof(info));
 				info.filePath = fbxMesh;
 				info.resourceName = resourceName;
 				info.importBytes = IMP_BYTE_COLLISION;

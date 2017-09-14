@@ -47,7 +47,6 @@ void ShaderMgr::CheckForReload()
 {
 #ifdef _DEV
 	ImportInfo info;
-	ZeroMemory(&info, sizeof(info));
 	uint32_t sourceDate = 0;
 
 	auto it = resource_map.begin();

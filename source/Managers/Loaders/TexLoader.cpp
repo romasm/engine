@@ -56,7 +56,6 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 			if( info.importBytes == 0 )
 			{
 				// standard settings
-				ZeroMemory(&info, sizeof(info));
 				info.filePath = tgaTexture;
 				info.resourceName = resourceName;
 				info.importBytes = IMP_BYTE_TEXTURE;

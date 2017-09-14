@@ -224,23 +224,6 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	return true;
 }
 
-bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
-{
-	string impFile = resFile + EXT_IMPORT;
-	ImportFile data;
-
-	data.version = IMPORT_FILE_VERSION;
-	data.info = info;
-	data.sourceDate = FileIO::GetDateModifRaw(info.filePath);
-
-	if( !FileIO::WriteFileData(impFile, (uint8_t*)&data, sizeof(ImportFile)) )
-	{
-		ERR("Cant write import file %s", impFile.c_str() );
-		return false;
-	}
-	return true;
-}
-
 bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 {
 	ImportInfo info;
@@ -295,25 +278,85 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 	return false;
 }
 
+bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
+{
+#ifdef _EDITOR
+	string impFile = resFile + EXT_IMPORT;
+	
+	uint32_t fileSize = sizeof(uint32_t) + sizeof(uint32_t);
+	fileSize += (uint32_t)info.filePath.size();
+	fileSize += (uint32_t)info.resourceName.size();
+	fileSize += ImportInfo::sizeNoString();
+
+	uint8_t* data = new uint8_t[fileSize];
+	uint8_t* t_data = data;
+
+	*(uint32_t*)t_data = IMPORT_FILE_VERSION;
+	t_data += sizeof(uint32_t);
+
+	*(uint32_t*)t_data = FileIO::GetDateModifRaw(info.filePath);
+	t_data += sizeof(uint32_t);
+
+	*(uint32_t*)t_data = (uint32_t)info.filePath.size();
+	t_data += sizeof(uint32_t);
+
+	memcpy(t_data, info.filePath.data(), info.filePath.size());
+	t_data += info.filePath.size();
+
+	*(uint32_t*)t_data = (uint32_t)info.resourceName.size();
+	t_data += sizeof(uint32_t);
+
+	memcpy(t_data, info.resourceName.data(), info.resourceName.size());
+	t_data += info.resourceName.size();
+
+	memcpy(t_data, &info.importBytes, ImportInfo::sizeNoString());
+	t_data += ImportInfo::sizeNoString();
+
+	bool status;
+	if( !(status = FileIO::WriteFileData(impFile, data, fileSize)) )
+	{
+		ERR("Cant write import file %s", impFile.c_str() );
+	}
+	_DELETE_ARRAY(data);
+	return status;
+#endif
+}
+
 void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date)
 {
 #ifdef _EDITOR
-	ZeroMemory(&info, sizeof(info));
-
 	string impFile = resName + EXT_IMPORT;
 
 	uint32_t size = 0;
 	uint8_t* fdata = FileIO::ReadFileData(impFile, &size);
-	if(!fdata || ((ImportFile*)fdata)->version != IMPORT_FILE_VERSION )
+	uint8_t* t_data = fdata;
+
+	if(!fdata || (*(uint32_t*)t_data) != IMPORT_FILE_VERSION )
 	{
 		date = FileIO::GetDateModifRaw(resName);
 		info.filePath = resName;
 		info.resourceName = RemoveExtension(resName);
-		return;
 	}
-		
-	date = ((ImportFile*)fdata)->sourceDate;
-	info = ((ImportFile*)fdata)->info;
+	else
+	{
+		t_data += sizeof(uint32_t);
+
+		date = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+
+		uint32_t stringSize = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		info.filePath = string((char*)t_data, stringSize);
+		t_data += sizeof(char) * stringSize;
+
+		stringSize = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		info.resourceName = string((char*)t_data, stringSize);
+		t_data += sizeof(char) * stringSize;
+
+		memcpy(&info.importBytes, t_data, ImportInfo::sizeNoString());
+		t_data += ImportInfo::sizeNoString();
+	}		
 
 	_DELETE_ARRAY(fdata);
 #endif

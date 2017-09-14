@@ -36,6 +36,8 @@ namespace EngineCore
 #define IMP_BYTE_SKELETON		0x8
 #define IMP_BYTE_ANIMATION		0x16
 
+#define IMPORT_FILE_VERSION 101
+
 	enum LoadingStatus
 	{
 		NEW = 0,
@@ -65,14 +67,18 @@ namespace EngineCore
 
 		bool isSkinnedMesh;
 		DXGI_FORMAT textureFormat;
-	};
 
-#define IMPORT_FILE_VERSION 101
-	struct ImportFile
-	{
-		uint32_t version;
-		uint32_t sourceDate;
-		ImportInfo info;
+		ImportInfo()
+		{
+			importBytes = 0;
+			isSkinnedMesh = false;
+			textureFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		};
+
+		static uint32_t sizeNoString()
+		{
+			return sizeof(uint32_t) + sizeof(bool) + sizeof(DXGI_FORMAT);
+		};
 	};
 
 	typedef function<void (const ImportInfo&, bool)> onImportCallback;
