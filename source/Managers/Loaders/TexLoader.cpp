@@ -6,27 +6,11 @@
 
 using namespace EngineCore;
 
-bool TexLoader::IsSupported(string filename)
-{
-	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos ||
-		filename.find(".tga") != string::npos || filename.find(".TGA") != string::npos)
-	{
-		return true;
-	}
-	else 
-	{
-		WICCodecs codec = WICCodec(filename);	
-		if(codec == 0)
-			return false;
-	}
-	return true;
-}
-
 ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 {
 	ID3D11ShaderResourceView* newTex = nullptr;
 
-	if(resName.find(EXT_TEXTURE) == string::npos)
+	if( resName.find(".dds") != string::npos || resName.find(".DDS") != string::npos )
 		return nullptr;
 
 	uint32_t size = 0;
@@ -43,7 +27,11 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 
 #ifdef _EDITOR
 #ifdef _DEV
-		string resourceName = resName.substr(0, resName.find(EXT_TEXTURE));
+		auto ext = resName.find(".dds");
+		if( ext == string::npos )
+			ext = resName.find(".DDS");
+
+		string resourceName = resName.substr(0, ext);
 		string tgaTexture = resourceName + ".tga";
 		if( FileIO::IsExist(tgaTexture) )
 		{
@@ -83,53 +71,102 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 	return newTex;
 }
 
-/*ID3D11ShaderResourceView* TexLoader::LoadFromMemory(string& resName, uint8_t* data, uint32_t size)
+bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile, bool getMips, uint32_t genMipsFilter)
 {
-	ID3D11ShaderResourceView* newTex = nullptr;
+	bool status = false;
 
-	if(resName.find(".dds") != string::npos || resName.find(".DDS") != string::npos)
+	if( !IsSupported(sourceFile) )
+		return status;
+
+	string resFileExt = resFile + EXT_TEXTURE;
+
+	if(sourceFile.find(".dds") != string::npos || sourceFile.find(".DDS") != string::npos)
 	{
-		HRESULT hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
-		if(FAILED(hr))
-		{
-			ERR("Cant load DDS texture %s !", resName.c_str());
-			return nullptr;
-		}
+		string sourceFileName = RemoveExtension(sourceFile);
+		if( sourceFileName == resFile )
+			status = true;
+		else
+			status = FileIO::Copy(sourceFile, resFileExt);
+
+		if(status)
+			LOG("Using *.dds as engine texture %s", resFile.c_str());
+		else
+			ERR("Texture %s IS NOT copied to engine texture", sourceFile.c_str());
+
+		return status;
 	}
-	else if(resName.find(".tga") != string::npos || resName.find(".TGA") != string::npos)
-	{
-		TexMetadata metaData;
-		ScratchImage image;
-		HRESULT hr = LoadFromTGAMemory(data, size, &metaData, image);
-		if(FAILED(hr))
-		{
-			ERR("Cant load TGA texture %s !", resName.c_str());
-			return nullptr;
-		}
 
-		ScratchImage imageMips;
-		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
+	if(!data)
+		return false;
+
+	TexMetadata metaData;
+	ScratchImage image;
+	ScratchImage imageMips;
+	HRESULT hr;
+	if(sourceFile.find(".tga") != string::npos || sourceFile.find(".TGA") != string::npos)
+	{
+		hr = LoadFromTGAMemory(data, size, &metaData, image);
+		if(FAILED(hr))
+			ERR("Cant load TGA texture %s !", sourceFile.c_str());
 	}
 	else
 	{
-		TexMetadata metaData;
-		ScratchImage image;
-		HRESULT hr = LoadFromWICMemory(data, size, WIC_FLAGS_IGNORE_SRGB, &metaData, image);
+		hr = LoadFromWICMemory(data, size, WIC_FLAGS_IGNORE_SRGB, &metaData, image);
 		if(FAILED(hr))
+			ERR("Cant load WIC texture %s !", sourceFile.c_str());
+	}
+
+	if(SUCCEEDED(hr))
+	{
+		if(getMips)
 		{
-			ERR("Cant load WIC texture %s !", resName.c_str());
-			return nullptr;
+			hr = GenerateMipMaps(*image.GetImage(0, 0, 0), genMipsFilter, 0, imageMips);
+			if(SUCCEEDED(hr))
+			{
+				hr = SaveToDDSFile( imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), 
+					DDS_FLAGS_NONE, StringToWstring(resFileExt).data() );
+			}
+			else
+			{
+				ERR("Cant generate mip-maps for texture %s !", sourceFile.c_str());
+			}
+		}
+		else
+		{
+			hr = SaveToDDSFile( image.GetImages(), image.GetImageCount(), image.GetMetadata(), 
+				DDS_FLAGS_NONE, StringToWstring(resFileExt).data() );
 		}
 
-		ScratchImage imageMips;
-		GenerateMipMaps(*image.GetImage(0, 0, 0), TEX_FILTER_DEFAULT, 0, imageMips);
-		CreateShaderResourceView(DEVICE, imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), &newTex);
-	}	
+		if(SUCCEEDED(hr))
+			status = true;
+	}
 
-	LOG("Texture loaded %s", resName.c_str());
-	return newTex;
-}*/
+	if(status)
+		LOG("Texture %s converted to engine format", sourceFile.c_str());
+	else
+		ERR("Texture %s IS NOT converted to engine format", sourceFile.c_str());
+
+	_DELETE_ARRAY(data);
+	return status;
+}
+
+bool TexLoader::IsSupported(string filename)
+{
+	if(filename.find(".dds") != string::npos || filename.find(".DDS") != string::npos ||
+		filename.find(".tga") != string::npos || filename.find(".TGA") != string::npos)
+	{
+		return true;
+	}
+	else 
+	{
+		WICCodecs codec = WICCodec(filename);	
+		if(codec == 0)
+			return false;
+	}
+	return true;
+}
 
 bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 {

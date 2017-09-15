@@ -185,7 +185,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_TEXTURE) > 0 )
 	{
 		string resFile = info.resourceName + EXT_TEXTURE;
-		status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile);
+		status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
 
 		ImportInfo imp = info;
 		imp.importBytes = IMP_BYTE_TEXTURE;

@@ -67,12 +67,16 @@ namespace EngineCore
 
 		bool isSkinnedMesh;
 		DXGI_FORMAT textureFormat;
+		bool genMips;
+		uint32_t genMipsFilter;
 
 		ImportInfo()
 		{
 			importBytes = 0;
 			isSkinnedMesh = false;
 			textureFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+			genMips = true;
+			genMipsFilter = TEX_FILTER_DEFAULT;
 		};
 
 		static uint32_t sizeNoString()
