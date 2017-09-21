@@ -118,7 +118,7 @@ btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filenam
 		return nullptr;
 	}
 
-	LOG("Collision(.clm) loaded %s", filename.c_str());
+	LOG("Collision loaded %s", filename.c_str());
 	return collision;
 }
 
@@ -168,7 +168,7 @@ bool CollisionLoader::ConvertCollisionToEngineFormat(string& sourceFile, string&
 	CollisionMgr::Get()->ResourceDeallocate(collision);
 
 	if(status)
-		LOG("Collision %s converted to engine format", sourceFile.c_str());
+		LOG_GOOD("Collision %s converted to engine format", sourceFile.c_str());
 	else
 		ERR("Collision %s IS NOT converted to engine format", sourceFile.c_str());
 

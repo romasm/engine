@@ -196,7 +196,7 @@ bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, 
 	meshImporter.FreeScene();
 	
 	if(status)
-		LOG("Mesh %s converted to engine format", sourceFile.c_str());
+		LOG_GOOD("Mesh %s converted to engine format", sourceFile.c_str());
 	else
 		ERR("Mesh %s IS NOT converted to engine format", sourceFile.c_str());
 

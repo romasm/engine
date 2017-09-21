@@ -79,36 +79,40 @@ void WorldMgr::regWorld(BaseWorld* world)
 World* WorldMgr::CreateWorld()
 {
 	World* world = new World(nextID);
-	if(!world->Init())
-		return nullptr;
-
 	regWorld(world);
+
+	if(!world->Init())
+	{
+		CloseWorldByID(world->GetID());
+		return nullptr;
+	}
 	return world;
 }
 
 SmallWorld* WorldMgr::CreateSmallWorld()
 {
 	SmallWorld* world = new SmallWorld(nextID);
+	regWorld(world);
+
 	if(!world->Init())
 	{
-		_DELETE(world);
+		CloseWorldByID(world->GetID());
 		return nullptr;
 	}
 
-	regWorld(world);
 	return world;
 }
 
 World* WorldMgr::OpenWorld(string filename)
 {
 	World* world = new World(nextID);
+	regWorld(world);
+
 	if(!world->Init(filename))
 	{
-		_DELETE(world);
+		CloseWorldByID(world->GetID());
 		return nullptr;
 	}
-
-	regWorld(world);
 	return world;
 }
 

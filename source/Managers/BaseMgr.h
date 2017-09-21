@@ -252,7 +252,7 @@ namespace EngineCore
 	{
 		if(id == nullres)
 			return;
-
+		
 		auto& handle = resource_array[id];
 
 		if(handle.refcount == 1)
@@ -329,7 +329,7 @@ namespace EngineCore
 
 #ifdef _EDITOR
 		handle.impInfo = info;
-		if( handle.filedate == 0 )
+		if( handle.filedate == 0 || handle.filedate == 1 )
 			handle.filedate = date;
 
 		if( handle.reloadStatus == ReloadingType::RELOAD_ONCE )

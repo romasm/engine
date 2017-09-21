@@ -10,13 +10,13 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 {
 	ID3D11ShaderResourceView* newTex = nullptr;
 
-	if( resName.find(".dds") != string::npos || resName.find(".DDS") != string::npos )
+	if( resName.find(".dds") == string::npos && resName.find(".DDS") == string::npos )
 		return nullptr;
 
 	HRESULT hr = -1;
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
-	if(!data)
+	if(data)
 	{
 		hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
 		_DELETE_ARRAY(data);
@@ -95,7 +95,7 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 			status = FileIO::Copy(sourceFile, resFile);
 
 		if(status)
-			LOG("Using *.dds as engine texture %s", resFile.c_str());
+			LOG_GOOD("Using *.dds as engine texture %s", resFile.c_str());
 		else
 			ERR("Texture %s IS NOT copied to engine texture", sourceFile.c_str());
 
@@ -150,7 +150,7 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 	}
 
 	if(status)
-		LOG("Texture %s converted to engine format", sourceFile.c_str());
+		LOG_GOOD("Texture %s converted to engine format", sourceFile.c_str());
 	else
 		ERR("Texture %s IS NOT converted to engine format", sourceFile.c_str());
 

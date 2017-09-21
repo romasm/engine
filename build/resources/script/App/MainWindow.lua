@@ -63,7 +63,7 @@ function MainWindow:Init()
     SceneBrowser:Init()
     Viewport:Init()
 
-    --Resource.ForceTextureReload() -- TODO: wait resource loading
+    --Resource.WaitLoadingComplete()
 
 	self.mainwin:Show(true)
 end

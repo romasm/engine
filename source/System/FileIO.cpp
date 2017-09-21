@@ -348,7 +348,7 @@ uint32_t FileIO::GetSize(string filename)
 	return buffer.st_size;
 }
 
-uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size)
+uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size, bool noWarning)
 {
 	ifstream stream;
 	uint32_t size;
@@ -357,7 +357,8 @@ uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size)
 	stream.open(filename, ifstream::in | ifstream::binary);
 	if(!stream.good())
 	{
-		ERR("Cant read file %s", filename.c_str());
+		if(!noWarning)
+			WRN("Cant read file %s", filename.c_str());
 		return nullptr;
 	}
 	

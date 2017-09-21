@@ -59,8 +59,8 @@ function EditorCamera:EditorPlane()
         self.world.transform:AddComponent(self.planeEnt)
 
         if self.world.staticMesh:AddComponent(self.planeEnt) then
-            self.world.staticMesh:SetMesh(self.planeEnt, PATH.EDITOR_MESHES.. "unit_plane.stm")
-            self.world.staticMesh:SetMaterial(self.planeEnt, 0, PATH.EDITOR_MESHES.. "unit_plane.mtb")
+            self.world.staticMesh:SetMesh(self.planeEnt, PATH.EDITOR_MESHES.. "unit_plane"..EXT.MESH)
+            self.world.staticMesh:SetMaterial(self.planeEnt, 0, PATH.EDITOR_MESHES.. "unit_plane"..EXT.MATERIAL)
             self.world.transform:SetScale(self.planeEnt, 100.0, 100.0, 100.0)
             return
         end

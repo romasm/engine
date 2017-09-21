@@ -331,7 +331,7 @@ void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32
 	string impFile = resName + EXT_IMPORT;
 
 	uint32_t size = 0;
-	uint8_t* fdata = FileIO::ReadFileData(impFile, &size);
+	uint8_t* fdata = FileIO::ReadFileData(impFile, &size, true);
 	uint8_t* t_data = fdata;
 
 	if(!fdata || (*(uint32_t*)t_data) != IMPORT_FILE_VERSION )

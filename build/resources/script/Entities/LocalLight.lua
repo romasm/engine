@@ -31,8 +31,8 @@ function EntityTypes.LocalLight:editor_init()
         self.world.visibility:AddComponent(editorEnt)
         
         if self.world.staticMesh:AddComponent(editorEnt) then
-            self.world.staticMesh:SetMesh(editorEnt, PATH.EDITOR_MESHES.. "pointlight.stm")
-            self.world.staticMesh:SetMaterial(editorEnt, 0, PATH.EDITOR_MESHES.. "pointlight.mtb")
+            self.world.staticMesh:SetMesh(editorEnt, PATH.EDITOR_MESHES.. "pointlight"..EXT.MESH)
+            self.world.staticMesh:SetMaterial(editorEnt, 0, PATH.EDITOR_MESHES.. "pointlight"..EXT.MATERIAL)
             self.transformSys:Attach(editorEnt, self.ent)
             return
         end

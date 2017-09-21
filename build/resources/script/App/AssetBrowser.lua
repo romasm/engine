@@ -397,12 +397,12 @@ function AssetBrowser:InitPreviewWorld()
     self.screenshotCamera:Deactivate(self.screenshotScene)
 
     self.screenshotSphere = EntityTypes.Mesh(self.previewWorld)
-    self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+    self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere"..EXT.MESH)
     self.screenshotSphere:Enable(false)
 
     self.screenshotAlphaPlane = EntityTypes.Mesh(self.previewWorld)
-    self.screenshotAlphaPlane:SetMesh("../resources/meshes/alpha_bg.stm")
-    self.screenshotAlphaPlane:SetMaterial("../resources/meshes/alpha_bg.mtb", 0)
+    self.screenshotAlphaPlane:SetMesh("../resources/meshes/alpha_bg"..EXT.MESH)
+    self.screenshotAlphaPlane:SetMaterial("../resources/meshes/alpha_bg"..EXT.MATERIAL, 0)
     self.screenshotAlphaPlane:SetPosition(0.0, 0.0, 5.2)--4.6)
     self.screenshotAlphaPlane:Enable(false)
 
@@ -422,7 +422,7 @@ function AssetBrowser:InitPreviewWorld()
     renderConfig.cameraConstExposure = 0.2
     
     self.previewSphere = EntityTypes.Mesh(self.previewWorld)
-    self.previewSphere:SetMesh("../resources/meshes/mat_sphere.stm")
+    self.previewSphere:SetMesh("../resources/meshes/mat_sphere"..EXT.MESH)
     self.previewSphere:SetPosition(100.0, 0.0, 0.0)
 
     self.previewWorld.active = false

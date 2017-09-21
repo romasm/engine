@@ -357,7 +357,7 @@ namespace EngineCore
 		
 		void Snapshot(ScenePipeline* scene);
 		void Frame();
-		void Close();
+		virtual void Close();
 		
 		bool SaveWorld(string filename)
 		{
@@ -396,7 +396,7 @@ namespace EngineCore
 		
 		void Snapshot(ScenePipeline* scene);
 		void Frame();
-		void Close();
+		virtual void Close();
 		
 		bool SaveWorld(string filename)
 		{

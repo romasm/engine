@@ -199,7 +199,7 @@ public:
 	static string GetDateCreate(string path);
 	static uint32_t GetSize(string filename);
 
-	static uint8_t* ReadFileData(string& filename, uint32_t *ret_size);
+	static uint8_t* ReadFileData(string& filename, uint32_t *ret_size, bool noWarning = false);
 	inline static uint8_t* ReadFileDataS(char* filename, uint32_t *ret_size){return ReadFileData(string(filename), ret_size);}
 	static bool WriteFileData(string& filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0);
 	inline static bool WriteFileDataS(char* filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0){return WriteFileData(string(filename), data, size, modif_date);}
