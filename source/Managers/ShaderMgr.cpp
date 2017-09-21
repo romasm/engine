@@ -7,7 +7,7 @@ using namespace EngineCore;
 ShaderMgr::ShaderMgr() : BaseMgr<BaseShader, SHADERS_MAX_COUNT>()
 {
 	resType = ResourceType::SHADER;
-	resExt = EXT_SHADER_TECHS;
+	resExt = nullptr;
 }
 
 uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback callback)

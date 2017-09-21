@@ -11,20 +11,20 @@
 
 namespace EngineCore
 {
-#define MESH_ARROW_X PATH_SYS_MESHES "editor/move_arrow_x" EXT_STATIC
-#define MESH_ARROW_Y PATH_SYS_MESHES "editor/move_arrow_y" EXT_STATIC
-#define MESH_ARROW_Z PATH_SYS_MESHES "editor/move_arrow_z" EXT_STATIC
-#define MESH_BOX_X PATH_SYS_MESHES "editor/scale_arrow_x" EXT_STATIC
-#define MESH_BOX_Y PATH_SYS_MESHES "editor/scale_arrow_y" EXT_STATIC
-#define MESH_BOX_Z PATH_SYS_MESHES "editor/scale_arrow_z" EXT_STATIC
-#define MESH_BOX_ALL PATH_SYS_MESHES "editor/scale_center" EXT_STATIC
-#define MESH_ROT_X PATH_SYS_MESHES "editor/rotate_x" EXT_STATIC
-#define MESH_ROT_Y PATH_SYS_MESHES "editor/rotate_y" EXT_STATIC
-#define MESH_ROT_Z PATH_SYS_MESHES "editor/rotate_z" EXT_STATIC
-#define MESH_ROT_ALL PATH_SYS_MESHES "editor/rotate_center" EXT_STATIC
-#define MESH_PLANE_XY PATH_SYS_MESHES "editor/move_square_xy" EXT_STATIC
-#define MESH_PLANE_XZ PATH_SYS_MESHES "editor/move_square_xz" EXT_STATIC
-#define MESH_PLANE_YZ PATH_SYS_MESHES "editor/move_square_yz" EXT_STATIC
+#define MESH_ARROW_X PATH_SYS_MESHES "editor/move_arrow_x" EXT_MESH
+#define MESH_ARROW_Y PATH_SYS_MESHES "editor/move_arrow_y" EXT_MESH
+#define MESH_ARROW_Z PATH_SYS_MESHES "editor/move_arrow_z" EXT_MESH
+#define MESH_BOX_X PATH_SYS_MESHES "editor/scale_arrow_x" EXT_MESH
+#define MESH_BOX_Y PATH_SYS_MESHES "editor/scale_arrow_y" EXT_MESH
+#define MESH_BOX_Z PATH_SYS_MESHES "editor/scale_arrow_z" EXT_MESH
+#define MESH_BOX_ALL PATH_SYS_MESHES "editor/scale_center" EXT_MESH
+#define MESH_ROT_X PATH_SYS_MESHES "editor/rotate_x" EXT_MESH
+#define MESH_ROT_Y PATH_SYS_MESHES "editor/rotate_y" EXT_MESH
+#define MESH_ROT_Z PATH_SYS_MESHES "editor/rotate_z" EXT_MESH
+#define MESH_ROT_ALL PATH_SYS_MESHES "editor/rotate_center" EXT_MESH
+#define MESH_PLANE_XY PATH_SYS_MESHES "editor/move_square_xy" EXT_MESH
+#define MESH_PLANE_XZ PATH_SYS_MESHES "editor/move_square_xz" EXT_MESH
+#define MESH_PLANE_YZ PATH_SYS_MESHES "editor/move_square_yz" EXT_MESH
 
 #define MATERIAL_ALL PATH_SYS_MESHES "editor/arrow_all" EXT_MATERIAL
 #define MATERIAL_X PATH_SYS_MESHES "editor/arrow_x" EXT_MATERIAL

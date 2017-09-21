@@ -14,44 +14,50 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
-	if(!data)
-		return nullptr;
-
-	newMesh = loadEngineMeshFromMemory( resName, data, size );
-	_DELETE_ARRAY(data);
+	if(data)
+	{
+		newMesh = loadEngineMeshFromMemory( resName, data, size );
+		_DELETE_ARRAY(data);
+	}
 
 #ifdef _EDITOR
 #ifdef _DEV
 	if(!newMesh)
 	{
-		string resourceName = RemoveExtension(resName);
-		string fbxMesh = resourceName + ".fbx";
-		if( FileIO::IsExist(fbxMesh) )
+		uint32_t date;
+		ImportInfo info;
+		ResourceProcessor::LoadImportInfo(resName, info, date);
+
+		if( info.importBytes == 0 )
 		{
-			LOG("Trying to reimport mesh %s", fbxMesh.c_str());
+			string resourceName = RemoveExtension(resName);
+			string fbxMesh = resourceName + ".fbx";
 
-			uint32_t date;
-			ImportInfo info;
-			ResourceProcessor::LoadImportInfo(resName, info, date);
-
-			if( info.importBytes == 0 )
+			if( !FileIO::IsExist(fbxMesh) )
 			{
-				// standard settings
-				info.filePath = fbxMesh;
-				info.resourceName = resourceName;
-				info.importBytes = IMP_BYTE_MESH;
-				info.isSkinnedMesh = false;
-			}			
-
-			if( ResourceProcessor::ImportResource(info) )
-			{
-				data = FileIO::ReadFileData(resName, &size);
-				if(data)
+				fbxMesh = resourceName + ".FBX";
+				if( !FileIO::IsExist(fbxMesh) )
 				{
-					newMesh = loadEngineMeshFromMemory( resName, data, size );
-					_DELETE_ARRAY(data);
+					//LOG("Reimport failed for %s", fbxMesh.c_str());
+					return nullptr;
 				}
-			}			
+			}
+
+			// standard settings
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importBytes = IMP_BYTE_MESH;
+			info.isSkinnedMesh = false;
+		}		
+
+		if( ResourceProcessor::ImportResource(info) )
+		{
+			data = FileIO::ReadFileData(resName, &size);
+			if(data)
+			{
+				newMesh = loadEngineMeshFromMemory( resName, data, size );
+				_DELETE_ARRAY(data);
+			}
 		}
 	}
 #endif
@@ -133,8 +139,15 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	_DELETE_ARRAY(vertices);
 	_DELETE_ARRAY(indices);
 
-	LOG("Mesh(.stm) loaded %s", filename.c_str());
+	LOG("Mesh loaded %s", filename.c_str());
 	return mesh;
+}
+
+bool MeshLoader::IsNative(string filename)
+{
+	if(filename.find(EXT_MESH) != string::npos)
+		return true;
+	return false;
 }
 
 bool MeshLoader::IsSupported(string filename)
@@ -146,7 +159,9 @@ bool MeshLoader::IsSupported(string filename)
 
 bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned)
 {
-	if( !meshImporter.IsExtensionSupported(GetExtension(sourceFile)) )
+	string ext = GetExtension(sourceFile);
+
+	if( !meshImporter.IsExtensionSupported(ext) )
 	{
 		ERR("Extension is not supported for mesh", sourceFile.data());
 		return false;
@@ -169,15 +184,15 @@ bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, 
 		flags |= aiProcess_PreTransformVertices;
 	}
 
-	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags);
+	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags, ext.data());
 	if(!scene)
 	{
-		ERR("Import failed for mesh %s", sourceFile.c_str());
+		ERR("Import failed for mesh %s with error:\n %s", sourceFile.c_str(), meshImporter.GetErrorString());
 		_DELETE_ARRAY(data);
 		return false;
 	}
 
-	bool status = convertAIScene(sourceFile, scene, format);
+	bool status = convertAIScene(resFile, scene, format);
 	meshImporter.FreeScene();
 	
 	if(status)

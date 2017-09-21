@@ -79,6 +79,8 @@ namespace EngineCore
 			genMipsFilter = TEX_FILTER_DEFAULT;
 		};
 
+		void parseFromLua(LuaRef params);
+
 		static uint32_t sizeNoString()
 		{
 			return sizeof(uint32_t) + sizeof(bool) + sizeof(DXGI_FORMAT);

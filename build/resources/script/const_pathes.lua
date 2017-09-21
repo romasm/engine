@@ -5,12 +5,16 @@ EXT = {
     ANIMATION = ".anm",
     COLLISION = ".cls",
     TEXTURE = ".dds",
-    RESOURCE = ".rsc",
-    CONFIG = ".cfg",
-    SCRIPT = ".lua",
-    SCRIPT_COMPILED = ".luac",
     FONT = ".fnt",
     ASSET = ".ast",
+
+    IMPORT = ".imp",
+        
+    CONFIG = ".cfg",
+    RESOURCE = ".rsc",
+    
+    SCRIPT = ".lua",
+    SCRIPT_COMPILED = ".luac",
 
     SHADER_SOURCE = ".hlsl",
     SHADER_BYTECODE = ".bc",

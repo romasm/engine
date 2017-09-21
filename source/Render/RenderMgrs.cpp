@@ -181,7 +181,7 @@ bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer
 			continue;
 
 		RenderMesh* mesh_new = new RenderMesh;
-		mesh_new->index_count = mesh->indexBuffers[i].size;
+		mesh_new->index_count = mesh->indexBuffers[i].count;
 		mesh_new->vertex_buffer = mesh->vertexBuffers[i].buffer;
 		mesh_new->index_buffer = mesh->indexBuffers[i].buffer;
 		mesh_new->constant_buffer = constant_buffer;

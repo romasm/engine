@@ -112,7 +112,7 @@ void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
 		if( comp->collisionData != 0 )
 		{
 			auto shape = (btCollisionShape*)comp->collisionData;
-			CollisionLoader::CollisionDeallocate( shape );
+			CollisionMgr::Get()->ResourceDeallocate( shape );
 			comp->collisionData = 0;
 		}
 	}

@@ -29,7 +29,7 @@
 #include "DebugDrawer.h"
 
 #define DEFAULT_ENV "default"
-#define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_STATIC
+#define ENV_MESH PATH_SYS_MESHES "sky_shpere" EXT_MESH
 
 #define TRANSFORM_BYTE		't'
 #define EARLYVIS_BYTE		'e'

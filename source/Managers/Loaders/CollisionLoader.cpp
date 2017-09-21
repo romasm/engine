@@ -16,41 +16,47 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(!data)
-		return nullptr;
-
-	newCollision = loadEngineCollisionFromMemory( resName, data, size );
-	_DELETE_ARRAY(data);
+	{
+		newCollision = loadEngineCollisionFromMemory( resName, data, size );
+		_DELETE_ARRAY(data);
+	}
 
 #ifdef _EDITOR
 #ifdef _DEV
 	if(!newCollision)
 	{
-		string resourceName = resName.substr(0, resName.find(EXT_COLLISION));
-		string fbxMesh = resourceName + ".fbx";
-		if( FileIO::IsExist(fbxMesh) )
+		uint32_t date;
+		ImportInfo info;
+		ResourceProcessor::LoadImportInfo(resName, info, date);
+
+		if( info.importBytes == 0 )
 		{
-			LOG("Trying to reimport collision %s", fbxMesh.c_str());
+			string resourceName = RemoveExtension(resName);
+			string fbxMesh = resourceName + ".fbx";
 
-			uint32_t date;
-			ImportInfo info;
-			ResourceProcessor::LoadImportInfo(resName, info, date);
-
-			if( info.importBytes == 0 )
+			if( !FileIO::IsExist(fbxMesh) )
 			{
-				// standard settings
-				info.filePath = fbxMesh;
-				info.resourceName = resourceName;
-				info.importBytes = IMP_BYTE_COLLISION;
-			}			
-			
-			if( ResourceProcessor::ImportResource(info) )
-			{
-				data = FileIO::ReadFileData(resName, &size);
-				if(data)
+				fbxMesh = resourceName + ".FBX";
+				if( !FileIO::IsExist(fbxMesh) )
 				{
-					newCollision = loadEngineCollisionFromMemory( resName, data, size );
-					_DELETE_ARRAY(data);
+					//LOG("Reimport failed for %s", fbxMesh.c_str());
+					return nullptr;
 				}
+			}
+
+			// standard settings
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importBytes = IMP_BYTE_COLLISION;
+		}		
+
+		if( ResourceProcessor::ImportResource(info) )
+		{
+			data = FileIO::ReadFileData(resName, &size);
+			if(data)
+			{
+				newCollision = loadEngineCollisionFromMemory( resName, data, size );
+				_DELETE_ARRAY(data);
 			}
 		}
 	}
@@ -116,6 +122,13 @@ btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filenam
 	return collision;
 }
 
+bool CollisionLoader::IsNative(string filename)
+{
+	if(filename.find(EXT_COLLISION) != string::npos)
+		return true;
+	return false;
+}
+
 bool CollisionLoader::IsSupported(string filename)
 {
 	if(filename.find(EXT_COLLISION) != string::npos)
@@ -125,7 +138,9 @@ bool CollisionLoader::IsSupported(string filename)
 
 bool CollisionLoader::ConvertCollisionToEngineFormat(string& sourceFile, string& resFile) 
 {
-	if( !MeshLoader::meshImporter.IsExtensionSupported(GetExtension(sourceFile)) )
+	string ext = GetExtension(sourceFile);
+
+	if( !MeshLoader::meshImporter.IsExtensionSupported(ext) )
 	{
 		ERR("Extension is not supported for collision %s", sourceFile.data());
 		return false;
@@ -138,10 +153,10 @@ bool CollisionLoader::ConvertCollisionToEngineFormat(string& sourceFile, string&
 	
 	auto flags = aiProcess_JoinIdenticalVertices | aiProcess_MakeLeftHanded;
 
-	const aiScene* scene = MeshLoader::meshImporter.ReadFileFromMemory( data, size, flags);
+	const aiScene* scene = MeshLoader::meshImporter.ReadFileFromMemory( data, size, flags, ext.data() );
 	if(!scene)
 	{
-		ERR("Import failed for collision %s", sourceFile.c_str());
+		ERR("Import failed for collision %s with error:\n %s", sourceFile.c_str(), MeshLoader::meshImporter.GetErrorString());
 		_DELETE_ARRAY(data);
 		return false;
 	}

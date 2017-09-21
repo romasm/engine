@@ -65,6 +65,7 @@ namespace EngineCore
 		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
 				
 		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
+		bool IsNative(string filename);
 		bool IsSupported(string filename);
 
 		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);

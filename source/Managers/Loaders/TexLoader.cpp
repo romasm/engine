@@ -13,13 +13,14 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 	if( resName.find(".dds") != string::npos || resName.find(".DDS") != string::npos )
 		return nullptr;
 
+	HRESULT hr = -1;
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(!data)
-		return nullptr;
-
-	HRESULT hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
-	_DELETE_ARRAY(data);
+	{
+		hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
+		_DELETE_ARRAY(data);
+	}
 
 	if(FAILED(hr))
 	{
@@ -27,39 +28,47 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 
 #ifdef _EDITOR
 #ifdef _DEV
-		auto ext = resName.find(".dds");
-		if( ext == string::npos )
-			ext = resName.find(".DDS");
+		
+		uint32_t date;
+		ImportInfo info;
+		ResourceProcessor::LoadImportInfo(resName, info, date);
 
-		string resourceName = resName.substr(0, ext);
-		string tgaTexture = resourceName + ".tga";
-		if( FileIO::IsExist(tgaTexture) )
+		if( info.importBytes == 0 )
 		{
-			LOG("Trying to reimport texture %s", tgaTexture.c_str());
+			auto ext = resName.find(".dds");
+			if( ext == string::npos )
+				ext = resName.find(".DDS");
 
-			uint32_t date;
-			ImportInfo info;
-			ResourceProcessor::LoadImportInfo(resName, info, date);
-
-			if( info.importBytes == 0 )
+			string resourceName = resName.substr(0, ext);
+			string tgaTexture = resourceName + ".tga";
+			if( !FileIO::IsExist(tgaTexture) )
 			{
-				// standard settings
-				info.filePath = tgaTexture;
-				info.resourceName = resourceName;
-				info.importBytes = IMP_BYTE_TEXTURE;
-				info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
-			}			
-			
-			if( ResourceProcessor::ImportResource(info) )
-			{
-				data = FileIO::ReadFileData(resName, &size);
-				if(data)
+				tgaTexture = resourceName + ".TGA";
+				if( !FileIO::IsExist(tgaTexture) )
 				{
-					CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
-					_DELETE_ARRAY(data);
+					//LOG("Reimport failed for %s", tgaTexture.c_str());
+					return nullptr;
 				}
 			}
+
+			// standard settings
+			info.filePath = tgaTexture;
+			info.resourceName = resourceName;
+			info.importBytes = IMP_BYTE_TEXTURE;
+			info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+		}			
+
+		if( ResourceProcessor::ImportResource(info) )
+		{
+			data = FileIO::ReadFileData(resName, &size);
+			if(data)
+			{
+				CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
+				LOG("Texture loaded %s", resName.c_str());
+				_DELETE_ARRAY(data);
+			}
 		}
+		
 #endif
 #endif
 	}
@@ -77,16 +86,13 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 
 	if( !IsSupported(sourceFile) )
 		return status;
-
-	string resFileExt = resFile + EXT_TEXTURE;
-
+	
 	if(sourceFile.find(".dds") != string::npos || sourceFile.find(".DDS") != string::npos)
 	{
-		string sourceFileName = RemoveExtension(sourceFile);
-		if( sourceFileName == resFile )
+		if( sourceFile == resFile )
 			status = true;
 		else
-			status = FileIO::Copy(sourceFile, resFileExt);
+			status = FileIO::Copy(sourceFile, resFile);
 
 		if(status)
 			LOG("Using *.dds as engine texture %s", resFile.c_str());
@@ -126,7 +132,7 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 			if(SUCCEEDED(hr))
 			{
 				hr = SaveToDDSFile( imageMips.GetImages(), imageMips.GetImageCount(), imageMips.GetMetadata(), 
-					DDS_FLAGS_NONE, StringToWstring(resFileExt).data() );
+					DDS_FLAGS_NONE, StringToWstring(resFile).data() );
 			}
 			else
 			{
@@ -136,7 +142,7 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 		else
 		{
 			hr = SaveToDDSFile( image.GetImages(), image.GetImageCount(), image.GetMetadata(), 
-				DDS_FLAGS_NONE, StringToWstring(resFileExt).data() );
+				DDS_FLAGS_NONE, StringToWstring(resFile).data() );
 		}
 
 		if(SUCCEEDED(hr))
@@ -150,6 +156,13 @@ bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile
 
 	_DELETE_ARRAY(data);
 	return status;
+}
+
+bool TexLoader::IsNative(string filename)
+{
+	if(filename.find(EXT_TEXTURE) != string::npos)
+		return true;
+	return false;
 }
 
 bool TexLoader::IsSupported(string filename)

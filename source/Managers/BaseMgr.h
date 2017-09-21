@@ -151,7 +151,13 @@ namespace EngineCore
 	uint32_t BaseMgr<DataType, MaxCount>::GetResource(string& name, bool reload, onLoadCallback callback)
 	{
 		uint32_t res = nullres;
-		if(name.length() == 0 || name.find(resExt) == string::npos )
+		if( name.length() == 0 )
+		{
+			CallCallback(res, callback, LoadingStatus::FAILED);
+			return res;
+		}
+
+		if( resExt != nullptr && name.find(resExt) == string::npos )
 		{
 			ERR("Wrong resource name %s", name.c_str());
 			CallCallback(res, callback, LoadingStatus::FAILED);
@@ -205,6 +211,10 @@ namespace EngineCore
 			else
 				handle.reloadStatus = ReloadingType::RELOAD_ONCE;
 			handle.filedate = 1;
+
+			ResourceProcessor::Get()->QueueLoad(idx, resType, callback);
+#else
+			ERR("File %s doesn\'t exist", name.data());
 #endif
 		}
 		else
@@ -321,6 +331,9 @@ namespace EngineCore
 		handle.impInfo = info;
 		if( handle.filedate == 0 )
 			handle.filedate = date;
+
+		if( handle.reloadStatus == ReloadingType::RELOAD_ONCE )
+			handle.reloadStatus = ReloadingType::RELOAD_NONE;
 #endif
 	}
 
@@ -339,13 +352,11 @@ namespace EngineCore
 				continue;
 			}
 			
-			if( handle.reloadStatus == ReloadingType::RELOAD_ONCE )
-				handle.reloadStatus = ReloadingType::RELOAD_NONE;
-			else
+			if( handle.reloadStatus != ReloadingType::RELOAD_ONCE )
 			{
 				uint32_t last_date;
 				if( handle.impInfo.filePath.empty() )
-					last_date = FileIO::GetDateModifRaw(it->second);
+					last_date = FileIO::GetDateModifRaw((string&)it->first);
 				else
 					last_date = FileIO::GetDateModifRaw(handle.impInfo.filePath);
 
@@ -357,20 +368,20 @@ namespace EngineCore
 				handle.filedate = last_date;
 			}
 
-			if( handle.impInfo.filePath.empty() || handle.impInfo.filePath == it->second )
+			if( handle.impInfo.filePath.empty() || handle.impInfo.filePath == it->first )
 			{
 				ResourceProcessor::Get()->QueueLoad(it->second, resType, nullptr);
 			}
 			else
 			{
+				auto rt = resType;
+				uint32_t resId = it->second;
+
 				ResourceProcessor::Get()->QueueImport(handle.impInfo,
-					[resType, resExt](const ImportInfo& info, bool status) -> void
+					[rt, resId](const ImportInfo& info, bool status) -> void
 				{
 					if(status)
-					{
-						string resPath = info.resourceName + resExt;
-						ResourceProcessor::Get()->QueueLoad(resPath, resType, nullptr);
-					}
+						ResourceProcessor::Get()->QueueLoad(resId, rt, nullptr);
 				}, false);
 			}
 

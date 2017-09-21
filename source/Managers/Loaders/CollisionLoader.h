@@ -19,6 +19,7 @@ namespace EngineCore
 		btCollisionShape* loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size);
 				
 		bool ConvertCollisionToEngineFormat(string& sourceFile, string& resFile);
+		bool IsNative(string filename);
 		bool IsSupported(string filename);
 		bool SaveCollision(string& filename, btCollisionShape* collision);
 

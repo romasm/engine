@@ -191,7 +191,10 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 		imp.importBytes = IMP_BYTE_TEXTURE;
 		SaveImportInfo(resFile, imp);
 	}
-	else if( (info.importBytes & (IMP_BYTE_MESH + IMP_BYTE_SKELETON + IMP_BYTE_COLLISION + IMP_BYTE_ANIMATION)) > 0 )
+	else if( (info.importBytes & IMP_BYTE_MESH) > 0 || 
+		(info.importBytes & IMP_BYTE_SKELETON) > 0 || 
+		(info.importBytes & IMP_BYTE_COLLISION) > 0 || 
+		(info.importBytes & IMP_BYTE_ANIMATION) > 0 )
 	{
 		if( (info.importBytes & IMP_BYTE_MESH) > 0 )
 		{
@@ -284,8 +287,8 @@ bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 	string impFile = resFile + EXT_IMPORT;
 	
 	uint32_t fileSize = sizeof(uint32_t) + sizeof(uint32_t);
-	fileSize += (uint32_t)info.filePath.size();
-	fileSize += (uint32_t)info.resourceName.size();
+	fileSize += sizeof(uint32_t) + (uint32_t)info.filePath.size();
+	fileSize += sizeof(uint32_t) + (uint32_t)info.resourceName.size();
 	fileSize += ImportInfo::sizeNoString();
 
 	uint8_t* data = new uint8_t[fileSize];
@@ -442,6 +445,7 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		meshMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::COLLISION:
+		collisionMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::SKELETON:
 		break;
@@ -476,9 +480,73 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 	}
 }
 
+void ImportInfo::parseFromLua(LuaRef params)
+{
+	if(!params.isTable())
+	{
+		ERR("Import params table is expected here");
+		return;
+	}
+
+	LuaRef filePath = params["filePath"];
+	this->filePath = filePath.type() == LUA_TSTRING ? filePath.cast<string>() : "";
+	LuaRef resourceName = params["resourceName"];
+	this->resourceName = resourceName.type() == LUA_TSTRING ? resourceName.cast<string>() : "";
+
+	LuaRef importTexture = params["importTexture"];
+	if( importTexture.type() == LUA_TBOOLEAN && params["importTexture"].cast<bool>() )
+		this->importBytes |= IMP_BYTE_TEXTURE;
+	LuaRef importMesh = params["importMesh"];
+	if( importMesh.type() == LUA_TBOOLEAN && params["importMesh"].cast<bool>() )
+		this->importBytes |= IMP_BYTE_MESH;
+	LuaRef importCollision = params["importCollision"];
+	if( importCollision.type() == LUA_TBOOLEAN && params["importCollision"].cast<bool>() )
+		this->importBytes |= IMP_BYTE_COLLISION;
+	LuaRef importSkeleton = params["importSkeleton"];
+	if( importSkeleton.type() == LUA_TBOOLEAN && params["importSkeleton"].cast<bool>() )
+		this->importBytes |= IMP_BYTE_SKELETON;
+	LuaRef importAnimation = params["importAnimation"];
+	if( importAnimation.type() == LUA_TBOOLEAN && params["importAnimation"].cast<bool>() )
+		this->importBytes |= IMP_BYTE_ANIMATION;
+
+	LuaRef isSkinnedMesh = params["isSkinnedMesh"];
+	this->isSkinnedMesh = isSkinnedMesh.type() == LUA_TBOOLEAN ? resourceName.cast<bool>() : false;
+	LuaRef textureFormat = params["textureFormat"];
+	this->textureFormat = textureFormat.type() == LUA_TNUMBER ? (DXGI_FORMAT)textureFormat.cast<int32_t>() : DXGI_FORMAT_R8G8B8A8_UNORM;
+	LuaRef genMips = params["genMips"];
+	this->genMips = genMips.type() == LUA_TBOOLEAN ? genMips.cast<bool>() : false;
+	LuaRef genMipsFilter = params["genMipsFilter"];
+	this->genMipsFilter = genMipsFilter.type() == LUA_TNUMBER ? (uint32_t)genMips.cast<int32_t>() : TEX_FILTER_DEFAULT;
+}
 
 // LUA FUNCTIONS
 
+bool ImportResourceLua(LuaRef params)
+{
+	ImportInfo info;
+	info.parseFromLua(params);
+	return ResourceProcessor::Get()->QueueImport(info, nullptr, false);
+}
+
+bool ImportResourceCallbackLua(LuaRef params, LuaRef func)
+{
+	ImportInfo info;
+	info.parseFromLua(params);
+
+	// TODO: potential memory leak
+	// This fixes wrong LuaRef capture by lambda
+	LuaRef* luaRef = new LuaRef(func);
+
+	return ResourceProcessor::Get()->QueueImport(info,
+		[luaRef](const ImportInfo& info, bool status) -> void
+	{
+		if(luaRef->isFunction())
+			(*luaRef)(info.resourceName, status);
+		_DELETE((LuaRef*)luaRef);
+	}, false);
+}
+
+/*
 uint32_t GetTextureLua(string path)
 {
 	return RELOADABLE_TEXTURE(path, CONFIG(bool, reload_resources));
@@ -502,12 +570,7 @@ uint32_t GetTextureCallbackLua(string path, LuaRef func)
 void DropTextureLua(string path)
 {
 	TEXTURE_NAME_DROP(path);
-}
-
-void ConvertMeshToEngineFormat(string file)
-{
-	MeshLoader::ConvertStaticMeshToEngineFormat(file);
-}
+}*/
 
 Material* GetMaterialLua(string name)
 {
@@ -532,17 +595,25 @@ void WaitLoadingCompleteLua()
 void ResourceProcessor::RegLuaFunctions()
 {
 	getGlobalNamespace(LSTATE)
-		.beginNamespace("Resource")
+	.beginNamespace("Resource")
 		.addFunction("PreloadResource", &PreloadResource)
 		.addFunction("WaitLoadingComplete", &WaitLoadingCompleteLua)
-		.addFunction("GetTexture", &GetTextureLua)
-		.addFunction("GetTextureCallback", &GetTextureCallbackLua)
-		.addFunction("DropTexture", &DropTextureLua)
+
+		.addFunction("ImportResource", &ImportResourceLua)
+		.addFunction("ImportResourceCallback", &ImportResourceCallbackLua)
+
+		//.addFunction("GetTexture", &GetTextureLua)
+		//.addFunction("GetTextureCallback", &GetTextureCallbackLua)
+		//.addFunction("DropTexture", &DropTextureLua)
+
 		.addFunction("GetMaterial", &GetMaterialLua)
 		.addFunction("DropMaterial", &DropMaterialLua)
+
 		.addFunction("IsMeshSupported", &MeshLoader::IsSupported)
 		.addFunction("IsTextureSupported", &TexLoader::IsSupported)
-
-		.addFunction("ConvertMeshToEngineFormat", &ConvertMeshToEngineFormat)
-		.endNamespace();
+		.addFunction("IsCollisionSupported", &CollisionLoader::IsSupported)
+		.addFunction("IsMeshNative", &MeshLoader::IsNative)
+		.addFunction("IsTextureNative", &TexLoader::IsNative)
+		.addFunction("IsCollisionNative", &CollisionLoader::IsNative)
+	.endNamespace();
 }
