@@ -1,4 +1,4 @@
-function Gui.TB_File()
+function Gui.TB_file()
 return GuiMenu({
     styles = {
         GuiStyles.menu_topbar,
@@ -6,7 +6,6 @@ return GuiMenu({
     
     id = "tb_file_menu",
     
-    width = 250,
     height = 153, 
 
     ----
@@ -60,14 +59,14 @@ return GuiMenu({
         top = 101,
         text = { str = "Close scene", },
     }),
-
+    
     ----
     
     GuiRect({
         styles = {GuiStyles.menu_dash_default,},
         top = 126,
     }),
-
+    
     ----
     GuiButton({
         styles = {GuiStyles.menu_button_default,},

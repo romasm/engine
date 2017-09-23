@@ -131,6 +131,9 @@
     <Compile Include="..\..\gui\Menus\Material.lua">
       <Link>Gui\Menus\Material.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\Menus\TB_Asset.lua">
+      <Link>Gui\Menus\TB_Asset.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\Menus\TB_File.lua">
       <Link>Gui\Menus\TB_File.lua</Link>
     </Compile>

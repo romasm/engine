@@ -1,4 +1,4 @@
-function Gui.TB_Sets()
+function Gui.TB_sets()
 return GuiMenu({
     styles = {
         GuiStyles.menu_topbar,
@@ -6,7 +6,6 @@ return GuiMenu({
     
     id = "tb_sets_menu",
     
-    width = 250,
     height = 78, 
 
     ----
@@ -44,7 +43,6 @@ return GuiMenu({
 
             id = "dev_sub_menu",
     
-            width = 250,
             height = 103, 
     
             offset = {x = 250, y = -25},

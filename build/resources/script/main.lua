@@ -91,21 +91,11 @@ function Main:Start()
     History:Init()
     Hotkeys:Init()
     SceneMgr:Init()
-    
-    self.reload_time = 0
 end
 
 function Main:onTick(dt) 
-    -- remove in consumer
-	self.reload_time = self.reload_time + dt
-
-    -- LAG: one file check in a frame
-    -- file check in c++, push files to reload queue, one per frame pop from queue in lua and reload (possible in c++?)
-    if self.reload_time > 2000 then
-        loader.check_modif()
-        self.reload_time = 0
-    end
-    
+    -------- remove in consumer
+    loader.check_modif()
     Profiler:Tick(dt)
     --------
 

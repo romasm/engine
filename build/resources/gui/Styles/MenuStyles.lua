@@ -90,6 +90,7 @@ GuiStyles.menu_topbar = {
 
     adapt_horz = false,
     adapt_vert = false,
+    width = 250,
 
     background = {
         color = 'null',

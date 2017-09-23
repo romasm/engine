@@ -78,17 +78,17 @@ return GuiRect({
             GuiStyles.topmenu_button,
         },
 
-        left = 12,
-        width = 62,
+        left = 10,
+        width = 64,
 
         text = {str = "File"},
         id = 'tb_file',
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:FileMenuPress(ev.entity) end,
-            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:FileMenuHover(ev.entity) end,
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:MenuPress(ev.entity, "file") end,
+            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:MenuHover(ev.entity, "file") end,
 
-            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:FileMenuClose(self) end,
+            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:MenuClose(self, "file") end,
             [GUI_EVENTS.MENU_CLICK] = function(self, ev) return MainWindow:FileMenuClick(self, ev) end, 
         },
     }),
@@ -98,20 +98,40 @@ return GuiRect({
             GuiStyles.topmenu_button,
         },
 
-        left = 85,
-        width = 102,
+        left = 84,
+        width = 64,
 
-        text = {str = "Configs"},
+        text = {str = "Asset"},
+        id = 'tb_asset',
+
+        events = {
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:MenuPress(ev.entity, "asset") end,
+            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:MenuHover(ev.entity, "asset") end,
+
+            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:MenuClose(self, "asset") end,
+            [GUI_EVENTS.MENU_CLICK] = function(self, ev) return MainWindow:AssetMenuClick(self, ev) end, 
+        },
+    }),
+
+    GuiButton({
+        styles = {
+            GuiStyles.topmenu_button,
+        },
+
+        left = 158,
+        width = 64,
+
+        text = {str = "Config"},
         id = 'tb_settings',
 
         events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:SetsMenuPress(ev.entity) end,
-            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:SetsMenuHover(ev.entity) end,
+            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:MenuPress(ev.entity, "sets") end,
+            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:MenuHover(ev.entity, "sets") end,
 
-            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:SetsMenuClose(self) end,
+            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:MenuClose(self, "sets") end,
             [GUI_EVENTS.MENU_CLICK] = function(self, ev) return MainWindow:SetsMenuClick(self, ev) end,
 
-            [GUI_EVENTS.MENU_SUB_OPEN] = function(self, ev) return MainWindow:SetsMenuSub(ev) end,
+            [GUI_EVENTS.MENU_SUB_OPEN] = function(self, ev) return MainWindow:MenuSubOpen(ev) end,
         },
     }),
 })

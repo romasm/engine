@@ -48,7 +48,11 @@ function MainWindow:Init()
     self.mainWinRoot = GuiRoot(CoreGui.GetRootByWindow(self.mainwin))
 
     -- topbar
+    self.menus = {}
+    self.menu_just_closed = nil
+
     loader.require("Menus.TB_File")
+    loader.require("Menus.TB_Asset")
     loader.require("Menus.TB_Sets")
     loader.require("TopBar", MainWindow.reloadTopBar)
     self.reloadTopBar()
@@ -106,175 +110,6 @@ function MainWindow:SetCaption(world_path)
     MainWindow.mainwin.caption_text = caption
 end
 
----- menu buttons
-function MainWindow:FileMenuPress(ent)
-    if self.menu_just_closed then
-        local fake_event = HEvent()
-        fake_event.event = GUI_EVENTS.MOUSE_DOWN
-        fake_event.key = KEYBOARD_CODES.KEY_LBUTTON
-        ent:Callback(fake_event)
-        return true
-    end
-
-    if self.menu_sets then
-		self.menu_sets:SendCloseEvent() 
-		self.menu_sets = nil
-	end
-	
-    self.menu_file = Gui.TB_File()
-    ent:GetInherited():AttachOverlay(self.menu_file)
-    local corners = ent:GetCorners()
-    self.menu_file:Open(corners.l, corners.b)
-
-    if not SceneMgr:IsWorld() then
-		self.menu_file:SetItemState("tb_save", false)
-        self.menu_file:SetItemState("tb_saveas", false)
-        self.menu_file:SetItemState("tb_close", false)
-    end
-	if not SceneMgr:IsUnsave() then
-		self.menu_file:SetItemState("tb_save", false)
-	end
-
-    return true
-end
-
-function MainWindow:FileMenuHover(ent)
-    if self.menu_sets then
-		MainWindow:FileMenuPress(ent)
-		ent:GetInherited():SetPressed(true)
-	end
-    return true
-end
-
-function MainWindow:FileMenuClose(btn)
-    self.menu_file = nil
-    self.menu_just_closed = true
-    return btn:SetPressed(false) 
-end
-
-function MainWindow:FileMenuClick(btn, ev)
-    self:FileMenuClose(btn)
-    
-    if ev.id == "tb_create" then
-        print("Creating scene")
-        if SceneMgr:CreateWorld() == 0 then
-            error("Unable to create scene!")
-        end
-
-    elseif ev.id == "tb_open" then
-        print("Opening scene")
-        local res = dlgOpenFile(self.mainwin:GetHWND(), "Open scene", self.filterOpen)
-        if res == "" then return true end
-        SceneMgr:LoadWorld(res)
-
-    elseif ev.id == "tb_save" then
-        print("Saving scene")
-        if SceneMgr.worlds[SceneMgr.current_world].path:len() == 0 then
-            local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
-            if res == "" then return true end
-            SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
-        else
-            SceneMgr:SaveWorld(SceneMgr.current_world)
-        end
-
-    elseif ev.id == "tb_saveas" then
-        print("Saving scene as")
-        local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
-        if res == "" then return true end
-        SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
-
-    elseif ev.id == "tb_close" then
-        print("Closing scene")
-        SceneMgr:CloseWorld(SceneMgr.current_world)
-
-    elseif ev.id == "tb_exit" then
-        print("Exiting app")
-        self:Exit()
-    end
-    return true
-end
-
-function MainWindow:SetsMenuPress(ent)
-    if self.menu_just_closed then
-        local fake_event = HEvent()
-        fake_event.event = GUI_EVENTS.MOUSE_DOWN
-        fake_event.key = KEYBOARD_CODES.KEY_LBUTTON
-        ent:Callback(fake_event)
-        return true
-    end
-
-    if self.menu_file then
-		self.menu_file:SendCloseEvent() 
-		self.menu_file = nil
-	end
-	
-    self.menu_sets = Gui.TB_Sets()
-    ent:GetInherited():AttachOverlay(self.menu_sets)
-    local corners = ent:GetCorners()
-    self.menu_sets:Open(corners.l, corners.b)
-
-    return true
-end
-
-function MainWindow:SetsMenuSub(ev)
-    if ev.id ~= "dev_sub_menu" then return true end 
-    
-    if not SceneMgr:IsWorld() then
-        local sub = ev.entity:GetInherited()
-		sub:SetItemState("tb_dev_skyrebake", false)
-        sub:SetItemState("tb_dev_convert", false)
-    end
-
-    return true
-end
-
-function MainWindow:SetsMenuHover(ent)
-    if self.menu_file then
-		MainWindow:SetsMenuPress(ent)
-		ent:GetInherited():SetPressed(true)
-	end
-    return true
-end
-
-function MainWindow:SetsMenuClose(btn)
-    self.menu_sets = nil
-    self.menu_just_closed = true
-    return btn:SetPressed(false) 
-end
-
-function MainWindow:SetsMenuClick(btn, ev)
-    self:SetsMenuClose(btn)
-    
-    if ev.id == "tb_config" then
-        print("Opening configuration")
-
-    elseif ev.id == "tb_colors" then
-        if MainWindow.colorsWindow == nil then
-            print("Opening color settings")
-            MainWindow.OpenColorsWindow()
-        end
-        
-    elseif ev.id == "tb_dev_skyrebake" then
-        print("Rebaking sky prob")
-        Viewport.lua_world.world:RebakeSky()
-
-    elseif ev.id == "tb_dev_convert" then
-        print("Converting meshes")
-        for i, ent in ipairs(Viewport.selection_set) do
-            local mesh = Viewport.lua_world.world.staticMesh:GetMesh(ent)
-            if mesh:len() ~= 0 then Resource.ConvertMeshToEngineFormat(mesh) end
-        end 
-        
-    elseif ev.id == "tb_dev_profiler" then
-        if not Profiler:IsInit() then
-            print("Profiler window opening")
-            Profiler:Init()
-        end
-
-    end
-    return true
-end
-
 function MainWindow.reloadColors()
     if MainWindow.colorsWindow == nil then return end
     MainWindow.colorsWindow:Close()
@@ -288,4 +123,146 @@ function MainWindow.OpenColorsWindow()
 
     MainWindow.colorsWindow = Gui.ColorsWindow(x, y)
     MainWindow.colorsWindow.entity:UpdatePosSize() 
+end
+
+---- menu buttons
+function MainWindow:MenuPress(ent, menu)
+    if self.menu_just_closed then
+        local fake_event = HEvent()
+        fake_event.event = GUI_EVENTS.MOUSE_DOWN
+        fake_event.key = KEYBOARD_CODES.KEY_LBUTTON
+        ent:Callback(fake_event)
+        return true
+    end
+
+    for k, m in pairs(self.menus) do
+		m:SendCloseEvent() 
+		self.menus[k] = nil
+    end
+	
+    self.menus[menu] = Gui["TB_"..menu]()
+    ent:GetInherited():AttachOverlay(self.menus[menu])
+    local corners = ent:GetCorners()
+    self.menus[menu]:Open(corners.l, corners.b)
+
+    if menu == "file" then
+        if not SceneMgr:IsWorld() then
+		    self.menus[menu]:SetItemState("tb_save", false)
+            self.menus[menu]:SetItemState("tb_saveas", false)
+            self.menus[menu]:SetItemState("tb_close", false)
+        end
+	    if not SceneMgr:IsUnsave() then
+		    self.menus[menu]:SetItemState("tb_save", false)
+	    end
+    elseif menu == "asset" then
+        
+    elseif menu == "sets" then
+        
+    end
+
+    return true
+end
+
+function MainWindow:MenuHover(ent, menu)
+    if next(self.menus) ~= nil then
+		self:MenuPress(ent, menu)
+		ent:GetInherited():SetPressed(true)
+	end
+    return true
+end
+
+function MainWindow:MenuClose(ent, menu)
+    self.menus[menu] = nil
+    self.menu_just_closed = true
+    return ent:SetPressed(false) 
+end
+
+function MainWindow:MenuSubOpen(ev)
+    if ev.id == "dev_sub_menu" then 
+        if not SceneMgr:IsWorld() then
+            local sub = ev.entity:GetInherited()
+		    sub:SetItemState("tb_dev_skyrebake", false)
+            sub:SetItemState("tb_dev_convert", false)
+        end
+    end
+
+    return true
+end
+
+function MainWindow:FileMenuClick(btn, ev)
+    self:MenuClose(btn, "file")
+    
+    if ev.id == "tb_create" then
+        if SceneMgr:CreateWorld() == 0 then
+            error("Unable to create scene!")
+        end
+
+    elseif ev.id == "tb_open" then
+        local res = dlgOpenFile(self.mainwin:GetHWND(), "Open scene", self.filterOpen)
+        if res == "" then return true end
+        SceneMgr:LoadWorld(res)
+
+    elseif ev.id == "tb_save" then
+        if SceneMgr.worlds[SceneMgr.current_world].path:len() == 0 then
+            local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
+            if res == "" then return true end
+            SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
+        else
+            SceneMgr:SaveWorld(SceneMgr.current_world)
+        end
+
+    elseif ev.id == "tb_saveas" then
+        local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
+        if res == "" then return true end
+        SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
+
+    elseif ev.id == "tb_close" then
+        SceneMgr:CloseWorld(SceneMgr.current_world)
+
+    elseif ev.id == "tb_exit" then
+        self:Exit()
+    end
+    return true
+end
+
+function MainWindow:AssetMenuClick(btn, ev)
+    self:MenuClose(btn, "asset")
+    
+    if ev.id == "tb_import_mesh" then
+        
+
+    elseif ev.id == "tb_import_tex" then
+        
+
+    end
+    return true
+end
+
+function MainWindow:SetsMenuClick(btn, ev)
+    self:MenuClose(btn, "sets")
+    
+    if ev.id == "tb_config" then
+        print("Opening configuration")
+
+    elseif ev.id == "tb_colors" then
+        if MainWindow.colorsWindow == nil then
+            MainWindow.OpenColorsWindow()
+        end
+        
+    elseif ev.id == "tb_dev_skyrebake" then
+        Viewport.lua_world.world:RebakeSky()
+
+    elseif ev.id == "tb_dev_convert" then
+        for i, ent in ipairs(Viewport.selection_set) do
+            local mesh = Viewport.lua_world.world.staticMesh:GetMesh(ent)
+            if mesh:len() ~= 0 then Resource.ConvertMeshToEngineFormat(mesh) end
+        end 
+        
+    elseif ev.id == "tb_dev_profiler" then
+        if not Profiler:IsInit() then
+            Profiler:Init()
+        end
+
+    end
+    return true
 end

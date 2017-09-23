@@ -1,5 +1,6 @@
 loader = {
     registered = {},
+    nextToCheck = nil,
 }
   
 function loader.print()
@@ -25,27 +26,34 @@ function loader.require(script, onreload)
         date = check_date,
         func = onreload
     }
+    loader.nextToCheck = nil
 end
    
-function loader:check_modif()
-    for script, params in pairs(loader.registered) do
-        local file, _ = string.gsub(script, '%.', '/')
+function loader:check_modif()    
+    local script, params = next(loader.registered, loader.nextToCheck)
+    if script == nil then 
+        loader.nextToCheck = nil
+        return 
+    else
+        loader.nextToCheck = script
+    end
 
-        local check_date = FileIO.GetFileDateModifRaw(script_env.path .. file .. script_env.src_ext)
-        if check_date == 0 then
-            check_date = FileIO.GetFileDateModifRaw(script_env.guipath .. file .. script_env.src_ext)
-        end
+    local file, _ = string.gsub(script, '%.', '/')
 
-        if check_date ~= params.date then
-            print("Script reloading: "..script)
-            package.loaded[script] = nil
+    local check_date = FileIO.GetFileDateModifRaw(script_env.path .. file .. script_env.src_ext)
+    if check_date == 0 then
+        check_date = FileIO.GetFileDateModifRaw(script_env.guipath .. file .. script_env.src_ext)
+    end
 
-            require(script)
-            loader.registered[script].date = check_date
+    if check_date ~= params.date then
+        print("Script reloading: "..script)
+        package.loaded[script] = nil
 
-            if loader.registered[script].func ~= nil then
-                loader.registered[script].func()
-            end
+        require(script)
+        loader.registered[script].date = check_date
+
+        if loader.registered[script].func ~= nil then
+            loader.registered[script].func()
         end
     end
 end
