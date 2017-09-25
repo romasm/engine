@@ -80,7 +80,7 @@ namespace EngineCore
 			case MeshVertexFormat::LIT_VERTEX:
 				return sizeof(LitVertex);
 			case MeshVertexFormat::LIT_SKINNED_VERTEX:
-				return 0;
+				return sizeof(LitSkinnedVertex);
 			}
 			return 0;
 		}

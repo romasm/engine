@@ -229,7 +229,7 @@ function MainWindow:AssetMenuClick(btn, ev)
     self:MenuClose(btn, "asset")
     
     if ev.id == "tb_import_mesh" then
-        
+        Importer:OpenMeshes(self.mainwin)
 
     elseif ev.id == "tb_import_tex" then
         

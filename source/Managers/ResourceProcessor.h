@@ -127,6 +127,8 @@ namespace EngineCore
 		static bool SaveImportInfo(string& resFile, ImportInfo& info);
 		static void LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date);
 
+		static bool CheckImportNeeded(ImportInfo& info, uint32_t date, string& resFile);
+
 	private:
 		bool loadResource(const ResourceSlot& loadingSlot);
 

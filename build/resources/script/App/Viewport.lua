@@ -797,16 +797,18 @@ function Viewport:onItemDroped(eventData)
             local meshName = CoreGui.DragDrop.GetItem(i)
             print("Drag&Drop: " .. meshName)
 
-            local entity = EntityTypes.StaticModel(self.lua_world.world) -- to history
-            if not entity:IsAlive() then return true end
+            local clbData = {}
+            clbData.entity = EntityTypes.StaticModel(self.lua_world.world) -- to history
+            if not clbData.entity:IsAlive() then return true end
 
-            if not entity:SetMesh(meshName) then
-                entity:Kill()
-                return true
-            end
+            Importer:ImportLoadMesh(meshName, 
+                function (resName, status, data)
+                    data.entity:SetMesh( resName..EXT.MESH )
+                end,
+                clbData)
 
-            self:PlaceEntity(entity.ent, eventData.coords)
-            table.insert(entities, entity.ent)
+            self:PlaceEntity(clbData.entity.ent, eventData.coords)
+            table.insert(entities, clbData.entity.ent)
         end
 
         self:RememberSelection()

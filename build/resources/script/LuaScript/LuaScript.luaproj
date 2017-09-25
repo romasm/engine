@@ -212,6 +212,9 @@
     <Compile Include="..\App\Hotkeys.lua">
       <Link>App\Hotkeys.lua</Link>
     </Compile>
+    <Compile Include="..\App\Importer.lua">
+      <Link>App\Importer.lua</Link>
+    </Compile>
     <Compile Include="..\App\MainWindow.lua">
       <Link>App\MainWindow.lua</Link>
     </Compile>

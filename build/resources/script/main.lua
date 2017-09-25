@@ -69,6 +69,7 @@ loader.require("App.Hotkeys")
 loader.require("App.SceneMgr")
 loader.require("App.Viewport")
 loader.require("App.Tools")
+loader.require("App.Importer")
 
 loader.require("App.Properties")
 loader.require("App.MaterialProps")
@@ -86,7 +87,8 @@ function Main:Start()
     Main:LoadLocalization()
 
     PreloadList:PreloadResources()
-
+    
+    Importer:Init()
     MainWindow:Init()
     History:Init()
     Hotkeys:Init()

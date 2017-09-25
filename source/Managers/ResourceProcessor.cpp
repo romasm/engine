@@ -182,14 +182,19 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 {
 	bool status = false;
 
+	uint32_t sourceDate = FileIO::GetDateModifRaw(info.filePath);
+
 	if( (info.importBytes & IMP_BYTE_TEXTURE) > 0 )
 	{
 		string resFile = info.resourceName + EXT_TEXTURE;
-		status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
+		if(CheckImportNeeded(info, sourceDate, resFile))
+		{
+			status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
 
-		ImportInfo imp = info;
-		imp.importBytes = IMP_BYTE_TEXTURE;
-		SaveImportInfo(resFile, imp);
+			ImportInfo imp = info;
+			imp.importBytes = IMP_BYTE_TEXTURE;
+			SaveImportInfo(resFile, imp);
+		}
 	}
 	else if( (info.importBytes & IMP_BYTE_MESH) > 0 || 
 		(info.importBytes & IMP_BYTE_SKELETON) > 0 || 
@@ -199,21 +204,27 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 		if( (info.importBytes & IMP_BYTE_MESH) > 0 )
 		{
 			string resFile = info.resourceName + EXT_MESH;
-			status = status || MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
-			
-			ImportInfo imp = info;
-			imp.importBytes = IMP_BYTE_MESH;
-			SaveImportInfo(resFile, imp);
+			if(CheckImportNeeded(info, sourceDate, resFile))
+			{
+				status = status || MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
+
+				ImportInfo imp = info;
+				imp.importBytes = IMP_BYTE_MESH;
+				SaveImportInfo(resFile, imp);
+			}
 		}
 
 		if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
 		{
 			string resFile = info.resourceName + EXT_COLLISION;
-			status = status || CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
+			if(CheckImportNeeded(info, sourceDate, resFile))
+			{
+				status = status || CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
 
-			ImportInfo imp = info;
-			imp.importBytes = IMP_BYTE_COLLISION;
-			SaveImportInfo(resFile, imp);
+				ImportInfo imp = info;
+				imp.importBytes = IMP_BYTE_COLLISION;
+				SaveImportInfo(resFile, imp);
+			}
 		}
 
 		// TODO
@@ -365,6 +376,37 @@ void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32
 #endif
 }
 
+bool ResourceProcessor::CheckImportNeeded(ImportInfo& info, uint32_t date, string& resFile)
+{
+#ifdef _EDITOR
+	ImportInfo oldInfo;
+	uint32_t oldDate;
+	LoadImportInfo(resFile, oldInfo, oldDate);
+
+	if(oldInfo.importBytes == 0)
+		return true;
+
+	if( oldInfo.filePath != info.filePath )
+		return true;
+
+	if( oldDate != date )
+		return true;
+
+	uint8_t* oldSettings = ((uint8_t*)&oldInfo.importBytes) + 4;
+	uint8_t* newSettings = ((uint8_t*)&info.importBytes) + 4;
+
+	for(uint32_t i = 0; i < ImportInfo::sizeNoString() - 4; i++)
+	{
+		if( *(oldSettings + i) != *(newSettings + i) )
+			return true;
+	}
+
+	LOG_GOOD("Importing %s has already done, skipped", resFile.data());
+
+#endif
+	return false;
+}
+
 bool ResourceProcessor::QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone)
 {
 	ResourceSlot slot(id, type, callback);
@@ -510,13 +552,13 @@ void ImportInfo::parseFromLua(LuaRef params)
 		this->importBytes |= IMP_BYTE_ANIMATION;
 
 	LuaRef isSkinnedMesh = params["isSkinnedMesh"];
-	this->isSkinnedMesh = isSkinnedMesh.type() == LUA_TBOOLEAN ? resourceName.cast<bool>() : false;
+	this->isSkinnedMesh = isSkinnedMesh.type() == LUA_TBOOLEAN ? isSkinnedMesh.cast<bool>() : false;
 	LuaRef textureFormat = params["textureFormat"];
 	this->textureFormat = textureFormat.type() == LUA_TNUMBER ? (DXGI_FORMAT)textureFormat.cast<int32_t>() : DXGI_FORMAT_R8G8B8A8_UNORM;
 	LuaRef genMips = params["genMips"];
 	this->genMips = genMips.type() == LUA_TBOOLEAN ? genMips.cast<bool>() : false;
 	LuaRef genMipsFilter = params["genMipsFilter"];
-	this->genMipsFilter = genMipsFilter.type() == LUA_TNUMBER ? (uint32_t)genMips.cast<int32_t>() : TEX_FILTER_DEFAULT;
+	this->genMipsFilter = genMipsFilter.type() == LUA_TNUMBER ? (uint32_t)genMipsFilter.cast<int32_t>() : TEX_FILTER_DEFAULT;
 }
 
 // LUA FUNCTIONS
@@ -528,7 +570,7 @@ bool ImportResourceLua(LuaRef params)
 	return ResourceProcessor::Get()->QueueImport(info, nullptr, false);
 }
 
-bool ImportResourceCallbackLua(LuaRef params, LuaRef func)
+bool ImportResourceCallbackLua(LuaRef params, LuaRef func, LuaRef data)
 {
 	ImportInfo info;
 	info.parseFromLua(params);
@@ -536,13 +578,15 @@ bool ImportResourceCallbackLua(LuaRef params, LuaRef func)
 	// TODO: potential memory leak
 	// This fixes wrong LuaRef capture by lambda
 	LuaRef* luaRef = new LuaRef(func);
+	LuaRef* luaRefData = new LuaRef(data);
 
 	return ResourceProcessor::Get()->QueueImport(info,
-		[luaRef](const ImportInfo& info, bool status) -> void
+		[luaRef, luaRefData](const ImportInfo& info, bool status) -> void
 	{
 		if(luaRef->isFunction())
-			(*luaRef)(info.resourceName, status);
+			(*luaRef)(info.resourceName, status, (*luaRefData));
 		_DELETE((LuaRef*)luaRef);
+		_DELETE((LuaRef*)luaRefData);
 	}, false);
 }
 
