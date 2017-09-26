@@ -285,6 +285,9 @@
     <ClInclude Include="ECS\DebugDrawer.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="System\VirtualFileSystem.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -459,6 +462,9 @@
     </ClCompile>
     <ClCompile Include="Managers\Loaders\CollisionLoader.cpp">
       <Filter>Managers\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="System\VirtualFileSystem.cpp">
+      <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

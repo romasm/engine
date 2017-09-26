@@ -7,6 +7,7 @@ EXT = {
     TEXTURE = ".dds",
     FONT = ".fnt",
     ASSET = ".ast",
+    PACKAGE = ".pkg",
 
     IMPORT = ".imp",
         

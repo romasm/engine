@@ -8,6 +8,34 @@ using namespace EngineCore;
 
 // Строковые функции
 
+inline uint64_t GetLastSlash( const string& s )
+{
+	auto slash = s.rfind('\\');
+	if(slash == string::npos)
+		slash = 0;
+	auto Rslash = s.rfind('/');
+	if(Rslash != string::npos)
+		slash = max<string::size_type>(slash, Rslash);
+	return slash;
+}
+
+inline string GetFilename( const string& s )
+{
+	auto slash = GetLastSlash(s);
+	string fileName;
+
+	if(slash != string::npos)
+	{
+		string targetDir = s.substr(0, slash);
+		fileName = s.substr(slash);			
+	}
+	else
+	{
+		fileName = s;
+	}
+	return fileName;
+}
+
 inline string RemoveExtension( const string& s )
 {
 	return s.substr(0, s.rfind('.'));

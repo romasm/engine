@@ -16,6 +16,7 @@
 #define EXT_SCRIPT_COMPILED ".luac"
 #define EXT_FONT ".fnt"
 #define EXT_ASSET ".ast"
+#define EXT_PACKAGE ".pkg"
 
 #define EXT_IMPORT ".imp"
 

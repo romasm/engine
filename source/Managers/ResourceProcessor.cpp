@@ -315,7 +315,7 @@ bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 	t_data += sizeof(uint32_t);
 
 	memcpy(t_data, info.filePath.data(), info.filePath.size());
-	t_data += info.filePath.size();
+	t_data += info.filePath.size() * sizeof(char);
 
 	*(uint32_t*)t_data = (uint32_t)info.resourceName.size();
 	t_data += sizeof(uint32_t);

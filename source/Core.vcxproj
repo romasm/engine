@@ -224,6 +224,7 @@
     <ClInclude Include="System\LocalTimer.h" />
     <ClInclude Include="System\LuaVM.h" />
     <ClInclude Include="System\Timer.h" />
+    <ClInclude Include="System\VirtualFileSystem.h" />
     <ClInclude Include="Utils\Generate_PBS_Env_LUT.h" />
     <ClInclude Include="Utils\Log.h" />
     <ClInclude Include="Utils\MathGeometry.h" />
@@ -295,6 +296,7 @@
     <ClCompile Include="System\LocalTimer.cpp" />
     <ClCompile Include="System\LuaVM.cpp" />
     <ClCompile Include="System\Timer.cpp" />
+    <ClCompile Include="System\VirtualFileSystem.cpp" />
     <ClCompile Include="Utils\Log.cpp" />
     <ClCompile Include="Utils\Profiler.cpp" />
     <ClCompile Include="Utils\TransformControls.cpp" />

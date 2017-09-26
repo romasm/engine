@@ -401,12 +401,7 @@ bool FileIO::CreateDir(string path)
 	auto res = _mkdir(path.data());
 	if( res == ENOENT )
 	{
-		auto slash = path.rfind('\\');
-		if(slash == string::npos)
-			slash = 0;
-		auto Rslash = path.rfind('/');
-		if(Rslash != string::npos)
-			slash = max<string::size_type>(slash, Rslash);
+		auto slash = GetLastSlash(path);
 		if(slash == string::npos)
 		{
 			WRN("Can't create directory %s", path.data());
@@ -462,12 +457,8 @@ bool FileIO::Rename(string oldPath, string newPath)
 		return false;
 	}
 
-	auto slash = newPath.rfind('\\');
-	if(slash == string::npos)
-		slash = 0;
-	auto Rslash = newPath.rfind('/');
-	if(Rslash != string::npos)
-		slash = max<string::size_type>(slash, Rslash);
+
+	auto slash = GetLastSlash(newPath);
 	if(slash != string::npos)
 	{
 		string upDir = newPath.substr(0, slash);
@@ -553,13 +544,7 @@ bool FileIO::CopyByExt(string fromPath, string toPath, string ext)
 			return false;
 		}
 
-		auto slash = toPath.rfind('\\');
-		if(slash == string::npos)
-			slash = 0;
-		auto Rslash = toPath.rfind('/');
-		if(Rslash != string::npos)
-			slash = max<string::size_type>(slash, Rslash);
-
+		auto slash = GetLastSlash(toPath);
 		string fileName;
 		if(slash != string::npos)
 		{
