@@ -20,12 +20,15 @@ public:
 
 	void WrapUp();
 
-	bool ReadFromDisk(string& path);
+	bool ReadFromDisk(string& path, bool fullLoad);
 	bool WriteToDisk();
 
-	bool AddFile(string& path, uint8_t* data, uint32_t size); // TODO
-	bool AddDir(string& path); // TODO
-	bool DeleteContent(string& path); // TODO
+	bool AddContent(string& path, uint8_t* data, uint32_t size);
+	bool DeleteContent(string& path);
+
+	uint8_t* GetFile(string& path, uint32_t* size);
+	bool IsExist(string& path);
+	uint32_t GetDateModifRaw(string& path);
 
 	bool IsEmpty() const {return packedSize == 0;};
 
@@ -49,6 +52,8 @@ private:
 		HNode() : content(nullptr) {}
 	};
 
+	HNode* GetNode(string& path);
+
 	void Clear();
 	void ClearNode(HNode* node);
 
@@ -70,37 +75,13 @@ private:
 	uint8_t* packedData;
 
 	bool unwrapped;
-	bool fullyLoaded;
+	bool onlyTableOfContent;
 
 public:
 
 	static void RegLuaFunctions()
 	{
-		getGlobalNamespace(LSTATE)
-			.beginNamespace("FileIO")
-				.addFunction("IsExist", &FileIO::IsExist_lua)
-				.addFunction("IsFile", &FileIO::IsFile)
-
-				.addFunction("CreateDir", &FileIO::CreateDir)
-				.addFunction("GetDirList", &FileIO::GetDirList)
-
-				.addFunction("Rename", &FileIO::Rename)
-				.addFunction("Copy", &FileIO::Copy)
-				.addFunction("CopyByExt", &FileIO::CopyByExt)
-				.addFunction("Delete", &FileIO::Delete)
-
-				.addFunction("GetFileDateModifRaw", &FileIO::GetDateModifRaw_lua)
-				.addFunction("GetFileDateModif", &FileIO::GetDateModif)
-				.addFunction("GetFileDateCreate", &FileIO::GetDateCreate)
-				.addFunction("GetFileSize", &FileIO::GetSize)
-
-				.beginClass<DirList>("DirList") // TODO: not safe, rework
-					.addFunction("getnext", &DirList::next)
-					.addFunction("reset", &DirList::reset)
-					.addFunction("size", &DirList::size)
-					.addFunction("destruct", &DirList::destruct)
-				.endClass()
-			.endNamespace();
+		
 	}
 };
 

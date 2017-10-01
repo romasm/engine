@@ -11,7 +11,7 @@ Package::Package()
 	packedSize = 0;
 	fileDataOffset = 0;
 	unwrapped = true;
-	fullyLoaded = false;
+	onlyTableOfContent = true;
 }
 
 Package::Package(string& path)
@@ -20,9 +20,9 @@ Package::Package(string& path)
 	packedSize = 0;
 	fileDataOffset = 0;
 	unwrapped = true;
-	fullyLoaded = false;
+	onlyTableOfContent = true;
 
-	ReadFromDisk(path);
+	ReadFromDisk(path, true);
 }
 
 Package::~Package()
@@ -99,7 +99,7 @@ void Package::WrapUp()
 	if(!unwrapped)
 		return;
 
-	if(!fullyLoaded)
+	if(onlyTableOfContent)
 	{
 		ERR("Only fully loaded packages can be modified");
 		return;
@@ -185,7 +185,7 @@ void Package::ReadNode(uint8_t** t_data, unordered_map<string, HNode>* content)
 	}
 }
 
-bool Package::ReadFromDisk(string& path)
+bool Package::ReadFromDisk(string& path, bool fullLoad) // TODO: only table read from file
 {
 	if( GetExtension(path) != EXT_PACKAGE )
 	{
@@ -215,18 +215,21 @@ bool Package::ReadFromDisk(string& path)
 	fileDataOffset = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 
-	packedSize = *(uint32_t*)t_data;
-	t_data += sizeof(uint32_t);
+	if(fullLoad)
+	{
+		packedSize = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
 
-	packedData = new uint8_t[packedSize];
-	memcpy(packedData, t_data, packedSize);
+		packedData = new uint8_t[packedSize];
+		memcpy(packedData, t_data, packedSize);
+	}
 
 	_DELETE_ARRAY(data);
 
 	pkgPath = path;
 	pkgName = RemoveExtension(GetFilename(path));
 	unwrapped = false;
-	fullyLoaded = true;
+	onlyTableOfContent = !fullLoad;
 
 	LOG_GOOD("Package %s loaded from disk", path.data());
 	return true;
@@ -341,4 +344,121 @@ bool Package::WriteToDisk()
 	}
 	_DELETE_ARRAY(data);
 	return status;
+}
+
+Package::HNode* Package::GetNode(string& path)
+{
+	string dir;
+	string subpath = path;
+	unordered_map<string, HNode>* content = &pkgMap;
+
+	while( DivideString(subpath, dir, subpath) )
+	{
+		auto node = content->find(dir);
+		if(node == content->end())
+			return nullptr;
+
+		content = node->second.content;
+		if(!content)
+			return nullptr;
+	};
+
+	auto node = content->find(dir);
+	if(node == content->end())
+		return nullptr;
+
+	return &node->second;
+}
+
+bool Package::AddContent(string& path, uint8_t* data, uint32_t size)
+{
+	string dir;
+	string subpath = path;
+	unordered_map<string, HNode>* content = &pkgMap;
+
+	__time32_t timer;
+	_time32(&timer);
+
+	while( DivideString(subpath, dir, subpath) )
+	{
+		auto node = content->find(dir);
+		if(node != content->end())
+			continue;
+
+		HNode newNode;
+		newNode.file.date = uint32_t(timer);
+		newNode.content = new unordered_map<string, HNode>;
+		content->insert(make_pair(dir, newNode));
+	};
+
+	auto node = content->find(dir);
+	if(node != content->end())
+	{
+		if(!data)
+			return true;
+
+		// TODO: overwrite deleted content
+		return false;
+	}
+
+	HNode newNode;
+	newNode.file.date = uint32_t(timer);
+	if(!data)
+	{
+		newNode.content = new unordered_map<string, HNode>;
+	}
+	else
+	{
+		newNode.file.size = size;
+		newNode.file.dataPointer = new uint8_t[size];
+		memcpy(newNode.file.dataPointer, data, size);
+	}
+	content->insert(make_pair(dir, newNode));
+
+	unwrapped = true;
+	return true;
+}
+
+bool Package::DeleteContent(string& path)
+{
+	auto node = GetNode(path);
+	if(!node)
+		return false;
+
+	node->file.date = 0;
+	unwrapped = true;
+}
+
+uint8_t* Package::GetFile(string& path, uint32_t* size)
+{
+	auto node = GetNode(path);
+	if(!node)
+		return nullptr;
+
+	*size = node->file.size;
+
+	if(node->file.dataPointer)
+		return node->file.dataPointer;
+
+	if(packedData)
+		return packedData + node->file.offset;
+
+	// TODO: read from disk
+	return nullptr;
+}
+
+bool Package::IsExist(string& path)
+{
+	auto node = GetNode(path);
+	if(!node)
+		return false;
+	return true;
+}
+
+uint32_t Package::GetDateModifRaw(string& path)
+{
+	auto node = GetNode(path);
+	if(!node)
+		return 0;
+	return node->file.date;
 }

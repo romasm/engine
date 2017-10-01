@@ -19,6 +19,23 @@ inline uint64_t GetLastSlash( const string& s )
 	return slash;
 }
 
+inline uint64_t GetFirstSlash( const string& s )
+{
+	return min<string::size_type>(s.find('\\'), s.find('/'));
+}
+
+inline bool DivideString( const string& s, string& first, string& second )
+{
+	auto slash = GetFirstSlash(s);
+	first = s.substr(0, slash);
+	if(slash != string::npos)
+	{
+		second = s.substr(slash);
+		return true;
+	}
+	return false;
+}
+
 inline string GetFilename( const string& s )
 {
 	auto slash = GetLastSlash(s);
