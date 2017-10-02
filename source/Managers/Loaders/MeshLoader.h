@@ -5,6 +5,7 @@
 namespace EngineCore
 {
 #define MESH_FILE_VERSION 101
+#define SKELET_FILE_VERSION 101
 
 	enum MeshVertexFormat 
 	{
@@ -57,21 +58,47 @@ namespace EngineCore
 		MeshVertexFormat vertexFormat;
 	};
 
+	struct SkeletFileHeader
+	{
+		uint32_t version;
+		uint32_t boneCount;
+	};
+
+	struct BoneData
+	{
+		int32_t parent;
+		Matrix localTransform;
+
+		BoneData() : parent(-1) {}
+	};
+
+	struct NodeInfo
+	{
+		aiMatrix4x4 transform;
+		string parent;
+	};
+
 	namespace MeshLoader
 	{		
 		static Assimp::Importer meshImporter;
 		
 		MeshData* LoadMesh(string& resName);
 		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
-				
+
+		bool ConvertSkeletToEngineFormat(string& sourceFile, string& resFile);
 		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
 		bool IsNative(string filename);
 		bool IsSupported(string filename);
 
 		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
+		bool saveSkelet(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
+
 		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
+		bool convertAISceneSkelet(string& filename, const aiScene* scene);
+
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
-		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, int32_t& boneOffset, Vector3& posMin, Vector3& posMax);
+		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 
+			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax);
 		
 		inline uint32_t GetVertexSize(MeshVertexFormat format)
 		{
@@ -83,6 +110,28 @@ namespace EngineCore
 				return sizeof(LitSkinnedVertex);
 			}
 			return 0;
+		}
+
+		inline bool IsSkinned(MeshVertexFormat format)
+		{
+			return format >= LIT_SKINNED_VERTEX;
+		}
+
+		inline Matrix aiMatrix4x4ToMatrix(aiMatrix4x4& mat)
+		{
+			aiVector3D scale;
+			aiVector3D pos;
+			aiQuaternion rot;
+			mat.Decompose(scale, rot, pos);
+
+			Matrix res;
+			res.CreateScale(scale.x, scale.y, scale.z);
+			Matrix rotM;
+			rotM.CreateFromQuaternion(Quaternion(rot.x, rot.y, rot.z, rot.w));
+			res = res * rotM;
+			res.Translation(Vector3(pos.x, pos.y, pos.z));
+
+			return res;
 		}
 	};
 }
