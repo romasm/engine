@@ -42,6 +42,7 @@ ResourceProcessor::ResourceProcessor()
 		texMgr = new TexMgr;
 		materialMgr = new MaterialMgr;
 		meshMgr = new MeshMgr;
+		skeletonMgr = new SkeletonMgr;
 		collisionMgr = new CollisionMgr;
 	}
 	else
@@ -70,6 +71,7 @@ ResourceProcessor::~ResourceProcessor()
 	_DELETE(worldMgr);
 	_DELETE(fontMgr);
 	_CLOSE(meshMgr);	
+	_CLOSE(skeletonMgr);	
 	_CLOSE(collisionMgr);		
 	_DELETE(materialMgr);
 	_CLOSE(shaderMgr);
@@ -112,6 +114,10 @@ void ResourceProcessor::Tick()
 
 		case ResourceType::MESH:
 			meshMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
+			break;
+
+		case ResourceType::SKELETON:
+			skeletonMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
 			break;
 
 		case ResourceType::COLLISION:
@@ -172,6 +178,7 @@ void ResourceProcessor::ThreadMain()
 		// Deallocate old data
 		texMgr->DefferedDeallocate();
 		meshMgr->DefferedDeallocate();
+		skeletonMgr->DefferedDeallocate();
 		collisionMgr->DefferedDeallocate();
 	}
 
@@ -219,7 +226,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 			string resFile = info.resourceName + EXT_SKELETON;
 			if(CheckImportNeeded(info, sourceDate, resFile))
 			{
-				status = status || MeshLoader::ConvertSkeletToEngineFormat(info.filePath, resFile);
+				status = status || MeshLoader::ConvertSkeletonToEngineFormat(info.filePath, resFile);
 
 				ImportInfo imp = info;
 				imp.importBytes = IMP_BYTE_SKELETON;
@@ -279,6 +286,19 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 			{
 				LoadImportInfo(name, info, sourceDate);
 				meshMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
+				return true;
+			}
+		}
+		break;
+
+	case ResourceType::SKELETON:
+		{
+			string& name = skeletonMgr->GetName(loadingSlot.id);
+			auto loadedData = MeshLoader::LoadSkeleton(name);
+			if(loadedData)
+			{
+				LoadImportInfo(name, info, sourceDate);
+				skeletonMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
 				return true;
 			}
 		}
@@ -503,6 +523,7 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		collisionMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::SKELETON:
+		skeletonMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::ANIMATION:
 		break;

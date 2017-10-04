@@ -5,7 +5,7 @@
 namespace EngineCore
 {
 #define MESH_FILE_VERSION 101
-#define SKELET_FILE_VERSION 101
+#define SKELETON_FILE_VERSION 101
 
 	enum MeshVertexFormat 
 	{
@@ -58,7 +58,14 @@ namespace EngineCore
 		MeshVertexFormat vertexFormat;
 	};
 
-	struct SkeletFileHeader
+	// TODO: load only cashed bones(sokets) for game
+	struct SkeletonData
+	{
+		RArray<BoneData> bData;
+		unordered_map<string, int32_t> bIDs;
+	};
+
+	struct SkeletonFileHeader
 	{
 		uint32_t version;
 		uint32_t boneCount;
@@ -85,16 +92,24 @@ namespace EngineCore
 		MeshData* LoadMesh(string& resName);
 		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
 
-		bool ConvertSkeletToEngineFormat(string& sourceFile, string& resFile);
+		// TODO: load only cashed bones(sokets) for game
+		SkeletonData* LoadSkeleton(string& resName);
+		SkeletonData* loadEngineSkeletonFromMemory(string& filename, uint8_t* data, uint32_t size);
+
+		bool ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile);
 		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
+
 		bool IsNative(string filename);
 		bool IsSupported(string filename);
 
+		bool IsNativeSkeleton(string filename);
+		bool IsSupportedSkeleton(string filename);
+
 		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
-		bool saveSkelet(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
+		bool saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
 
 		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
-		bool convertAISceneSkelet(string& filename, const aiScene* scene);
+		bool convertAISceneSkeleton(string& filename, const aiScene* scene);
 
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 

@@ -41,4 +41,16 @@ namespace EngineCore
 		bool something_reloaded;
 #endif
 	};
+
+	class SkeletonMgr : public BaseMgr<SkeletonData, RESOURCE_MAX_COUNT>
+	{
+	public:
+		SkeletonMgr() : BaseMgr<SkeletonData, RESOURCE_MAX_COUNT>()
+		{
+			null_resource = MeshLoader::LoadSkeleton(string(PATH_SKELETON_NULL));
+			resType = ResourceType::SKELETON;
+			resExt = EXT_SKELETON;
+		}
+		inline static SkeletonMgr* Get(){return (SkeletonMgr*)BaseMgr<SkeletonData, RESOURCE_MAX_COUNT>::Get();}
+	};
 }

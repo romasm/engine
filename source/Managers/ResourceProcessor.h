@@ -139,6 +139,7 @@ namespace EngineCore
 		class MaterialMgr* materialMgr;
 		class TexMgr* texMgr;
 		class MeshMgr* meshMgr;
+		class SkeletonMgr* skeletonMgr;
 		class CollisionMgr* collisionMgr;
 		class FontMgr* fontMgr;
 		class WorldMgr* worldMgr;

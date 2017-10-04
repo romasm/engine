@@ -66,6 +66,65 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 	return newMesh;
 }
 
+SkeletonData* MeshLoader::LoadSkeleton(string& resName)
+{
+	SkeletonData* newSkeleton = nullptr;
+	if(resName.find(EXT_SKELETON) == string::npos)
+		return nullptr;
+
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(resName, &size);
+	if(data)
+	{
+		newSkeleton = loadEngineSkeletonFromMemory( resName, data, size );
+		_DELETE_ARRAY(data);
+	}
+
+#ifdef _EDITOR
+#ifdef _DEV
+	if(!newSkeleton)
+	{
+		uint32_t date;
+		ImportInfo info;
+		ResourceProcessor::LoadImportInfo(resName, info, date);
+
+		if( info.importBytes == 0 )
+		{
+			string resourceName = RemoveExtension(resName);
+			string fbxMesh = resourceName + ".fbx";
+
+			if( !FileIO::IsExist(fbxMesh) )
+			{
+				fbxMesh = resourceName + ".FBX";
+				if( !FileIO::IsExist(fbxMesh) )
+				{
+					//LOG("Reimport failed for %s", fbxMesh.c_str());
+					return nullptr;
+				}
+			}
+
+			// standard settings
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importBytes = IMP_BYTE_SKELETON;
+		}		
+
+		if( ResourceProcessor::ImportResource(info) )
+		{
+			data = FileIO::ReadFileData(resName, &size);
+			if(data)
+			{
+				newSkeleton = loadEngineSkeletonFromMemory( resName, data, size );
+				_DELETE_ARRAY(data);
+			}
+		}
+	}
+#endif
+#endif
+
+	return newSkeleton;
+}
+
 MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t **vertices;
@@ -143,103 +202,6 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	return mesh;
 }
 
-bool MeshLoader::IsNative(string filename)
-{
-	if(filename.find(EXT_MESH) != string::npos)
-		return true;
-	return false;
-}
-
-bool MeshLoader::IsSupported(string filename)
-{
-	if(filename.find(EXT_MESH) != string::npos)
-		return true;
-	return meshImporter.IsExtensionSupported(GetExtension(filename));
-}
-
-bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned)
-{
-	string ext = GetExtension(sourceFile);
-
-	if( !meshImporter.IsExtensionSupported(ext) )
-	{
-		ERR("Extension is not supported for mesh", sourceFile.data());
-		return false;
-	}
-
-	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
-	if(!data)
-		return false;
-	
-	auto flags = aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded;
-	MeshVertexFormat format;
-	if( isSkinned )
-	{
-		format = MeshVertexFormat::LIT_SKINNED_VERTEX;
-	}
-	else
-	{
-		format = MeshVertexFormat::LIT_VERTEX;
-		flags |= aiProcess_PreTransformVertices;
-	}
-
-	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags, ext.data());
-	if(!scene)
-	{
-		ERR("Import failed for mesh %s with error:\n %s", sourceFile.c_str(), meshImporter.GetErrorString());
-		_DELETE_ARRAY(data);
-		return false;
-	}
-
-	bool status = convertAIScene(resFile, scene, format);
-	meshImporter.FreeScene();
-	
-	if(status)
-		LOG_GOOD("Mesh %s converted to engine format", sourceFile.c_str());
-	else
-		ERR("Mesh %s IS NOT converted to engine format", sourceFile.c_str());
-
-	_DELETE_ARRAY(data);
-	return status;
-}
-
-bool MeshLoader::ConvertSkeletToEngineFormat(string& sourceFile, string& resFile)
-{
-	string ext = GetExtension(sourceFile);
-
-	if( !meshImporter.IsExtensionSupported(ext) )
-	{
-		ERR("Extension is not supported for skelet", sourceFile.data());
-		return false;
-	}
-
-	uint32_t size = 0;
-	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
-	if(!data)
-		return false;
-
-	auto flags = aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded;
-	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags, ext.data());
-	if(!scene)
-	{
-		ERR("Import failed for skelet %s with error:\n %s", sourceFile.c_str(), meshImporter.GetErrorString());
-		_DELETE_ARRAY(data);
-		return false;
-	}
-
-	bool status = convertAISceneSkelet(resFile, scene);
-	meshImporter.FreeScene();
-
-	if(status)
-		LOG_GOOD("Skelet %s converted to engine format", sourceFile.c_str());
-	else
-		ERR("Skelet %s IS NOT converted to engine format", sourceFile.c_str());
-
-	_DELETE_ARRAY(data);
-	return status;
-}
-
 bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
 {
 	MeshFileHeader header;
@@ -297,23 +259,69 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 	return true;
 }
 
-bool MeshLoader::saveSkelet(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds)
+SkeletonData* MeshLoader::loadEngineSkeletonFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
-	SkeletFileHeader header;
+	uint8_t* t_data = data;
+
+	SkeletonFileHeader header(*(SkeletonFileHeader*)t_data);
+	t_data += sizeof(SkeletonFileHeader);
+
+	if( header.version != SKELETON_FILE_VERSION )
+	{
+		ERR("Skeleton %s has wrong version!", filename.c_str());
+		return nullptr;
+	}
+	
+	SkeletonData* skeleton = new SkeletonData;
+	skeleton->bData.create(header.boneCount);
+	skeleton->bData.resize(header.boneCount);
+	
+	uint32_t boneDataSize = header.boneCount * sizeof(BoneData);
+	memcpy(skeleton->bData.data(), t_data, boneDataSize);
+	t_data += boneDataSize;
+
+	uint32_t idsCount = *(uint32_t*)t_data;
+	t_data += sizeof(uint32_t);
+
+#ifdef _EDITOR // TODO: load only cashed bones(sokets) for game
+
+	skeleton->bIDs.reserve(idsCount);
+	for(uint32_t i = 0; i < idsCount; i++)
+	{
+		uint32_t stringSize = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		string boneName((char*)t_data, stringSize);
+		t_data += sizeof(char) * stringSize;
+
+		int32_t boneId = *(int32_t*)t_data;
+		t_data += sizeof(int32_t);
+
+		skeleton->bIDs.insert(make_pair(boneName, boneId));
+	}
+
+#endif
+
+	LOG("Skeleton loaded %s", filename.c_str());
+	return skeleton;
+}
+
+bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds)
+{
+	SkeletonFileHeader header;
 	header.version = MESH_FILE_VERSION;
 	header.boneCount = (uint32_t)boneData.size();
 
 	// calc file size
-	uint32_t file_size = sizeof(SkeletFileHeader);
+	uint32_t file_size = sizeof(SkeletonFileHeader);
 	file_size += sizeof(BoneData) * (uint32_t)boneData.size();
 	for(auto& it: boneIds)
 		file_size += sizeof(uint32_t) + sizeof(char) * it.first.size() + sizeof(int32_t);
-	
+
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
 	uint8_t* t_data = data.get();
 
-	*(SkeletFileHeader*)t_data = header;
-	t_data += sizeof(SkeletFileHeader);
+	*(SkeletonFileHeader*)t_data = header;
+	t_data += sizeof(SkeletonFileHeader);
 
 	memcpy(t_data, boneData.data(), boneData.size() * sizeof(BoneData));
 	t_data += sizeof(BoneData) * boneData.size();
@@ -339,6 +347,117 @@ bool MeshLoader::saveSkelet(string& filename, DArray<BoneData>& boneData, unorde
 		return false;
 	}
 	return true;
+}
+
+bool MeshLoader::IsNative(string filename)
+{
+	if(filename.find(EXT_MESH) != string::npos)
+		return true;
+	return false;
+}
+
+bool MeshLoader::IsSupported(string filename)
+{
+	if(filename.find(EXT_MESH) != string::npos)
+		return true;
+	return meshImporter.IsExtensionSupported(GetExtension(filename));
+}
+
+bool MeshLoader::IsNativeSkeleton(string filename)
+{
+	if(filename.find(EXT_SKELETON) != string::npos)
+		return true;
+	return false;
+}
+
+bool MeshLoader::IsSupportedSkeleton(string filename)
+{
+	if(filename.find(EXT_SKELETON) != string::npos)
+		return true;
+	return meshImporter.IsExtensionSupported(GetExtension(filename));
+}
+
+bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned)
+{
+	string ext = GetExtension(sourceFile);
+
+	if( !meshImporter.IsExtensionSupported(ext) )
+	{
+		ERR("Extension is not supported for mesh", sourceFile.data());
+		return false;
+	}
+
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
+	if(!data)
+		return false;
+	
+	auto flags = aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded;
+	MeshVertexFormat format;
+	if( isSkinned )
+	{
+		format = MeshVertexFormat::LIT_SKINNED_VERTEX;
+	}
+	else
+	{
+		format = MeshVertexFormat::LIT_VERTEX;
+		flags |= aiProcess_PreTransformVertices;
+	}
+
+	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags, ext.data());
+	if(!scene)
+	{
+		ERR("Import failed for mesh %s with error:\n %s", sourceFile.c_str(), meshImporter.GetErrorString());
+		_DELETE_ARRAY(data);
+		return false;
+	}
+
+	bool status = convertAIScene(resFile, scene, format);
+	meshImporter.FreeScene();
+	
+	if(status)
+		LOG_GOOD("Mesh %s converted to engine format", sourceFile.c_str());
+	else
+		ERR("Mesh %s IS NOT converted to engine format", sourceFile.c_str());
+
+	_DELETE_ARRAY(data);
+	return status;
+}
+
+bool MeshLoader::ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile)
+{
+	string ext = GetExtension(sourceFile);
+
+	if( !meshImporter.IsExtensionSupported(ext) )
+	{
+		ERR("Extension is not supported for skeleton", sourceFile.data());
+		return false;
+	}
+
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(sourceFile, &size);
+	if(!data)
+		return false;
+
+	auto flags = aiProcessPreset_TargetRealtime_Fast | aiProcess_ConvertToLeftHanded;
+	const aiScene* scene = meshImporter.ReadFileFromMemory( data, size, flags, ext.data());
+	if(!scene)
+	{
+		ERR("Import failed for skeleton %s with error:\n %s", sourceFile.c_str(), meshImporter.GetErrorString());
+		_DELETE_ARRAY(data);
+		return false;
+	}
+
+	bool status = convertAISceneSkeleton(resFile, scene);
+	meshImporter.FreeScene();
+
+	if(status)
+		LOG_GOOD("skeleton %s converted to engine format", sourceFile.c_str());
+	else
+		ERR("skeleton %s IS NOT converted to engine format", sourceFile.c_str());
+
+	_DELETE_ARRAY(data);
+	return status;
 }
 
 bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format)
@@ -456,7 +575,7 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 	}
 }
 
-bool MeshLoader::convertAISceneSkelet(string& filename, const aiScene* scene)
+bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 {
 	MeshData* stmesh = new MeshData;
 	aiMesh** mesh = scene->mMeshes;
@@ -511,7 +630,7 @@ bool MeshLoader::convertAISceneSkelet(string& filename, const aiScene* scene)
 		bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform) * bData.localTransform;
 	}
 
-	return saveSkelet(filename, boneData, boneIds);
+	return saveSkeleton(filename, boneData, boneIds);
 }
 
 void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax)
