@@ -455,9 +455,9 @@ bool MeshLoader::ConvertSkeletonToEngineFormat(string& sourceFile, string& resFi
 	meshImporter.FreeScene();
 
 	if(status)
-		LOG_GOOD("skeleton %s converted to engine format", sourceFile.c_str());
+		LOG_GOOD("Skeleton %s converted to engine format", sourceFile.c_str());
 	else
-		ERR("skeleton %s IS NOT converted to engine format", sourceFile.c_str());
+		ERR("Skeleton %s IS NOT converted to engine format", sourceFile.c_str());
 
 	_DELETE_ARRAY(data);
 	return status;
@@ -628,6 +628,12 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 				boneIds.insert(make_pair(boneName, boneId));
 			}
 		}
+	}
+
+	if( boneData.empty() )
+	{
+		ERR("No skinned geometry found in skeleton file %s, meshes must be skinned on bones", filename.data());
+		return false;
 	}
 
 	for(auto& it: boneIds)

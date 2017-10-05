@@ -170,6 +170,7 @@
     <ClInclude Include="ECS\SceneGraph.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
+    <ClInclude Include="ECS\SkeletonSystem.h" />
     <ClInclude Include="ECS\StaticMeshSystem.h" />
     <ClInclude Include="ECS\TransformSystem.h" />
     <ClInclude Include="ECS\TypeMgr.h" />
@@ -251,6 +252,7 @@
     <ClCompile Include="ECS\SceneGraph.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />
+    <ClCompile Include="ECS\SkeletonSystem.cpp" />
     <ClCompile Include="ECS\StaticMeshSystem.cpp" />
     <ClCompile Include="ECS\TransformSystem.cpp" />
     <ClCompile Include="ECS\TypeMgr.cpp" />

@@ -288,6 +288,9 @@
     <ClInclude Include="System\VirtualFileSystem.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\SkeletonSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -465,6 +468,9 @@
     </ClCompile>
     <ClCompile Include="System\VirtualFileSystem.cpp">
       <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\SkeletonSystem.cpp">
+      <Filter>ECS</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
