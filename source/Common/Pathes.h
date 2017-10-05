@@ -50,6 +50,7 @@
 #define PATH_SHADER_NULL PATH_SHADERS "system/null_shader"
 
 #define PATH_STMESH_NULL PATH_SYS_MESHES "null_mesh" EXT_MESH
+#define PATH_SKELETON_NULL PATH_SYS_MESHES "null_skeleton" EXT_SKELETON
 #define PATH_COLLISION_NULL PATH_SYS_MESHES "null_collision" EXT_COLLISION
 
 #define PATH_RU_LOCAL PATH_RSC "localization/ru" EXT_RESOURCE

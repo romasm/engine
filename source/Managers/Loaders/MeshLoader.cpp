@@ -313,9 +313,9 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 
 	// calc file size
 	uint32_t file_size = sizeof(SkeletonFileHeader);
-	file_size += sizeof(BoneData) * (uint32_t)boneData.size();
+	file_size += sizeof(BoneData) * (uint32_t)boneData.size() + sizeof(uint32_t);
 	for(auto& it: boneIds)
-		file_size += sizeof(uint32_t) + sizeof(char) * it.first.size() + sizeof(int32_t);
+		file_size += sizeof(uint32_t) + sizeof(char) * (uint32_t)it.first.size() + sizeof(int32_t);
 
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
 	uint8_t* t_data = data.get();
@@ -323,8 +323,11 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 	*(SkeletonFileHeader*)t_data = header;
 	t_data += sizeof(SkeletonFileHeader);
 
-	memcpy(t_data, boneData.data(), boneData.size() * sizeof(BoneData));
-	t_data += sizeof(BoneData) * boneData.size();
+	if(boneData.size())
+	{
+		memcpy(t_data, boneData.data(), boneData.size() * sizeof(BoneData));
+		t_data += sizeof(BoneData) * boneData.size();
+	}
 
 	*(uint32_t*)t_data = (uint32_t)boneIds.size();
 	t_data += sizeof(uint32_t);
@@ -556,7 +559,8 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 {
 	string nodeName(node->mName.data);
 	NodeInfo nInfo;
-	nInfo.parent = node->mParent->mName.data;
+	if(node->mParent) 
+		nInfo.parent = node->mParent->mName.data;
 
 	auto parent = node;
 	while( parent != root )
@@ -577,10 +581,14 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 
 bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 {
-	MeshData* stmesh = new MeshData;
 	aiMesh** mesh = scene->mMeshes;
 
 	const uint32_t matCount = scene->mNumMeshes;
+	if( matCount == 0 )
+	{
+		ERR("No valid meshes in skeleton file %s, meshes must be provided for skeleton importing", filename.data());
+		return false;
+	}
 
 	unordered_map<string, NodeInfo> nodeTransforms;
 	unordered_map<string, int32_t> boneIds;
@@ -602,14 +610,20 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 			auto bone = mesh[i]->mBones[j];
 			string boneName(bone->mName.data);
 
+			if(boneName.empty())
+			{
+				WRN("Unnamed bones in %s is not supported", filename.data());
+				continue;
+			}			
+
 			auto boneIt = boneIds.find(boneName);
 			if( boneIt == boneIds.end() )
 			{
-				int32_t boneId = boneData.size();
+				int32_t boneId = (int32_t)boneData.size();
 				BoneData bData;
 
 				bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
-
+								
 				boneData.push_back(bData);
 				boneIds.insert(make_pair(boneName, boneId));
 			}
@@ -626,6 +640,8 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 		auto parentBoneId = boneIds.find(node->second.parent);
 		if( parentBoneId != boneIds.end() )
 			bData.parent = parentBoneId->second;
+		else
+			bData.parent = -1;
 
 		bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform) * bData.localTransform;
 	}
@@ -698,7 +714,7 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		auto boneIt = boneIds.find(boneName);
 		if( boneIt == boneIds.end() )
 		{
-			boneId = boneData.size();
+			boneId = (int32_t)boneData.size();
 			BoneData bData;
 
 			bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);

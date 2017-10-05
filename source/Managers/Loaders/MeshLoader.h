@@ -58,6 +58,14 @@ namespace EngineCore
 		MeshVertexFormat vertexFormat;
 	};
 
+	struct BoneData
+	{
+		int32_t parent;
+		Matrix localTransform;
+
+		BoneData() : parent(-1) {}
+	};
+
 	// TODO: load only cashed bones(sokets) for game
 	struct SkeletonData
 	{
@@ -69,14 +77,6 @@ namespace EngineCore
 	{
 		uint32_t version;
 		uint32_t boneCount;
-	};
-
-	struct BoneData
-	{
-		int32_t parent;
-		Matrix localTransform;
-
-		BoneData() : parent(-1) {}
 	};
 
 	struct NodeInfo

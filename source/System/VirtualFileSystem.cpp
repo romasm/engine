@@ -427,6 +427,7 @@ bool Package::DeleteContent(string& path)
 
 	node->file.date = 0;
 	unwrapped = true;
+	return true;
 }
 
 uint8_t* Package::GetFile(string& path, uint32_t* size)
