@@ -25,7 +25,7 @@ workspace "Engine"
 			
 			-- third-party
 			"thirdparty/Dirent" ,
-			"thirdparty/Assimp/Inc" ,
+			"thirdparty/Assimp/include" ,
 			"thirdparty/Lua/LuaBridge" ,
 			"thirdparty/Lua/LuaJIT/src" ,
 			"thirdparty/DirectXTK/Inc" ,
@@ -34,7 +34,7 @@ workspace "Engine"
 		}
 		
 		libdirs {			
-			"thirdparty/Assimp/lib",
+			"thirdparty/Assimp/lib/Release",
 			"thirdparty/BulletPhysics/lib",
 		}
 		

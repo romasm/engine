@@ -81,7 +81,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
     </ClCompile>
@@ -89,7 +89,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -116,7 +116,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -128,7 +128,7 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\Inc;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers\Loaders;Managers;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -140,7 +140,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>assimp-vc110-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -170,7 +170,11 @@
     <ClInclude Include="ECS\SceneGraph.h" />
     <ClInclude Include="ECS\ScriptSystem.h" />
     <ClInclude Include="ECS\ShadowSystem.h" />
-    <ClInclude Include="ECS\SkeletonSystem.h" />
+    <ClInclude Include="ECS\SkeletonSystem.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="ECS\StaticMeshSystem.h" />
     <ClInclude Include="ECS\TransformSystem.h" />
     <ClInclude Include="ECS\TypeMgr.h" />
@@ -252,7 +256,11 @@
     <ClCompile Include="ECS\SceneGraph.cpp" />
     <ClCompile Include="ECS\ScriptSystem.cpp" />
     <ClCompile Include="ECS\ShadowSystem.cpp" />
-    <ClCompile Include="ECS\SkeletonSystem.cpp" />
+    <ClCompile Include="ECS\SkeletonSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ECS\StaticMeshSystem.cpp" />
     <ClCompile Include="ECS\TransformSystem.cpp" />
     <ClCompile Include="ECS\TypeMgr.cpp" />
