@@ -3,6 +3,7 @@
 #include "macros.h"
 #include "Log.h"
 #include "Render.h"
+#include "SceneGraph.h"
 
 using namespace EngineCore;
 
@@ -651,6 +652,65 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 
 		bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform) * bData.localTransform;
 	}
+
+	// sort bones	
+	struct BoneRemap 
+	{
+		uint32_t depth;
+		int32_t oldID;
+	};
+
+	DArray<BoneRemap> boneRemap;
+	boneRemap.reserve(boneData.size());
+	boneRemap.resize(boneData.size());
+	for(int32_t i = 0; i < (int32_t)boneRemap.size(); i++)
+	{
+		uint32_t depth = 0;
+		int32_t parent = boneData[i].parent;
+		while(parent >= 0)
+		{
+			parent = boneData[parent].parent;
+			depth++;
+			
+			if( depth >= MAX_HIERARCHY_DEPTH - 1 )
+			{
+				ERR("Skeleton hierarchy is too deep! Max is %i", MAX_HIERARCHY_DEPTH);
+				boneData[parent].parent = -1;
+				break;
+			}
+		}
+		
+		boneRemap[i].depth = depth;
+		boneRemap[i].oldID = i;
+	}
+	
+	sort(boneRemap.begin(), boneRemap.end(), 
+		[](const BoneRemap& a, const BoneRemap& b) -> bool { return a.depth < b.depth;});
+
+	DArray<int32_t> boneInvRemap;
+	boneInvRemap.reserve(boneData.size());
+	boneInvRemap.resize(boneData.size());
+	for(int32_t i = 0; i < (int32_t)boneRemap.size(); i++)
+		boneInvRemap[boneRemap[i].oldID] = i;
+
+	boneRemap.destroy();
+
+	DArray<BoneData> newBoneData;
+	newBoneData.reserve(boneData.size());
+	newBoneData.resize(boneData.size());
+	for(uint32_t i = 0; i < (uint32_t)boneData.size(); i++)
+		newBoneData[boneInvRemap[i]] = boneData[i];
+
+	for(auto& it: boneIds)
+		it.second = boneInvRemap[it.second];
+
+	for(uint32_t i = 0; i < (uint32_t)newBoneData.size(); i++)
+		newBoneData[i].parent = boneInvRemap[newBoneData[i].parent];
+	
+	boneInvRemap.destroy();
+
+	boneData.swap(newBoneData);
+	newBoneData.destroy();
 
 	return saveSkeleton(filename, boneData, boneIds);
 }

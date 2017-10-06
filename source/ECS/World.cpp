@@ -37,6 +37,7 @@ void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 		m_earlyVisibilitySystem->SetDirty(e);
 	
 	m_staticMeshSystem->SetDirty(e);
+	m_skeletonSystem->SetDirty(e);
 	m_cameraSystem->SetDirty(e);
 	m_envProbSystem->SetDirty(e);
 
@@ -116,6 +117,7 @@ void BaseWorld::Close()
 	_DELETE(m_collisionSystem);
 
 	_DELETE(m_staticMeshSystem);
+	_DELETE(m_skeletonSystem);
 	_DELETE(m_cameraSystem);
 	_DELETE(m_controllerSystem);
 	_DELETE(m_envProbSystem);
@@ -177,6 +179,7 @@ void BaseWorld::destroyEntity(Entity e)
 	m_physicsSystem->DeleteComponent(e);
 	m_collisionSystem->DeleteComponent(e);
 	m_staticMeshSystem->DeleteComponent(e);
+	m_skeletonSystem->DeleteComponent(e);
 	m_cameraSystem->DeleteComponent(e);
 	m_controllerSystem->DeleteComponent(e);
 	m_envProbSystem->DeleteComponent(e);
@@ -217,6 +220,7 @@ Entity BaseWorld::CopyEntity(Entity e)
 	m_scriptSystem->CopyComponent(e, newEnt);
 
 	m_staticMeshSystem->CopyComponent(e, newEnt);
+	m_skeletonSystem->CopyComponent(e, newEnt);
 
 	m_physicsSystem->CopyComponent(e, newEnt);
 	m_collisionSystem->CopyComponent(e, newEnt);
@@ -314,6 +318,8 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 			case VIS_BYTE: compSize = m_visibilitySystem->Deserialize(ent, t_data);
 				break;
 			case STATIC_BYTE: compSize = m_staticMeshSystem->Deserialize(ent, t_data);
+				break;
+			case SKELETON_BYTE: compSize = m_skeletonSystem->Deserialize(ent, t_data);
 				break;
 			case LIGHT_BYTE: compSize = m_lightSystem->Deserialize(ent, t_data);
 				break;
@@ -446,6 +452,8 @@ bool BaseWorld::saveWorld(string& filename)
 			components += VIS_BYTE;
 		if(m_staticMeshSystem->HasComponent(iterator))
 			components += STATIC_BYTE;
+		if(m_skeletonSystem->HasComponent(iterator))
+			components += SKELETON_BYTE;
 		if(m_lightSystem->HasComponent(iterator))
 			components += LIGHT_BYTE;
 		if(m_globalLightSystem->HasComponent(iterator))
@@ -477,6 +485,8 @@ bool BaseWorld::saveWorld(string& filename)
 			case VIS_BYTE: compSize = m_visibilitySystem->Serialize(iterator, buffer);
 				break;
 			case STATIC_BYTE: compSize = m_staticMeshSystem->Serialize(iterator, buffer);
+				break;
+			case SKELETON_BYTE: compSize = m_skeletonSystem->Serialize(iterator, buffer);
 				break;
 			case LIGHT_BYTE: compSize = m_lightSystem->Serialize(iterator, buffer);
 				break;
@@ -535,6 +545,7 @@ World::World( uint32_t id ) : BaseWorld( id )
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
+	m_skeletonSystem = new SkeletonSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, ENTITY_COUNT);
@@ -587,6 +598,7 @@ void World::Snapshot(ScenePipeline* scene)
 	m_visibilitySystem->CheckVisibility();
 
 	m_staticMeshSystem->RegToDraw();
+	m_skeletonSystem->RegToDraw();
 	
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
@@ -625,6 +637,8 @@ void World::Frame()
 	{
 		m_scriptSystem->Update(m_dt);
 	}
+
+	m_skeletonSystem->Animate();
 
 	m_sceneGraph->Update();
 	
@@ -668,6 +682,7 @@ void World::Frame()
 	PERF_CPU_BEGIN(_SCENE_DRAW);
 
 	m_staticMeshSystem->RegToDraw();
+	m_skeletonSystem->RegToDraw();
 	m_lineGeometrySystem->RegToDraw();
 
 #ifdef _DEV
@@ -754,6 +769,7 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
 	
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
+	m_skeletonSystem = new SkeletonSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, SMALL_ENTITY_COUNT);
@@ -781,6 +797,7 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 	m_visibilitySystem->CheckVisibility();
 
 	m_staticMeshSystem->RegToDraw();
+	m_skeletonSystem->RegToDraw();
 	
 	if(scene->StartFrame(&tempTimer))
 	{
@@ -818,6 +835,8 @@ void SmallWorld::Frame()
 		m_scriptSystem->Update(m_dt);
 	}
 
+	m_skeletonSystem->Animate();
+
 	m_sceneGraph->Update();
 
 	m_physicsSystem->UpdateTransformations();
@@ -837,6 +856,7 @@ void SmallWorld::Frame()
 	m_visibilitySystem->CheckVisibility();
 	
 	m_staticMeshSystem->RegToDraw();
+	m_skeletonSystem->RegToDraw();
 
 #ifdef _DEV
 	m_collisionSystem->DebugRegToDraw();

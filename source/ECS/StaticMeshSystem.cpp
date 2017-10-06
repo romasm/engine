@@ -291,23 +291,17 @@ bool StaticMeshSystem::SetShadow(Entity e, bool cast)
 
 bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 {
-	size_t idx = components.getArrayIdx(e.index());
-	if(idx == components.capacity())
-		return false;
-	auto comp = &components.getDataByArrayIdx(idx);
+	GET_COMPONENT(false)
 
-	return setMesh(comp, mesh, LuaRef(LSTATE));
+	return setMesh(&comp, mesh, LuaRef(LSTATE));
 }
 
 bool StaticMeshSystem::SetMeshAndCallback(Entity e, string mesh, LuaRef func)
 {
-	size_t idx = components.getArrayIdx(e.index());
-	if(idx == components.capacity())
-		return false;
-	auto comp = &components.getDataByArrayIdx(idx);
+	GET_COMPONENT(false)
 
 	LuaRef nullLuaPtr(LSTATE);
-	return setMesh(comp, mesh, func);
+	return setMesh(&comp, mesh, func);
 }
 
 bool StaticMeshSystem::SetMaterial(Entity e, int32_t i, string matname)

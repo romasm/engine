@@ -70,7 +70,7 @@ uint32_t SceneGraph::CopyNode(uint32_t srcNodeID, Entity dest)
 		return SCENEGRAPH_NULL_ID;
 
 	uint32_t& lookupDstID = lookup[resID];
-	localTransformation[lookupDstID] = worldTransformation[lookupSrcID]; // bacase node is root
+	localTransformation[lookupDstID] = worldTransformation[lookupSrcID]; // because node is root
 	worldTransformation[lookupDstID] = worldTransformation[lookupSrcID];
 	return resID;
 }
@@ -108,7 +108,7 @@ void SceneGraph::Update()
 			}
 			
 			if(hi_buffer.full())
-				ERR("Scene hierarchy is too deep! Unpredictable behavior expected!");
+				ERR("Scene hierarchy is too deep! Unpredictable behavior expected! Max is %i", MAX_HIERARCHY_DEPTH);
 			
 			int16_t hi = 0;
 			if(relt->parentID != SCENEGRAPH_NULL_ID)

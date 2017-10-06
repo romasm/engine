@@ -21,6 +21,7 @@
 #include "ScriptSystem.h"
 #include "PhysicsSystem.h"
 #include "CollisionSystem.h"
+#include "SkeletonSystem.h"
 
 #include "Frustum.h"
 #include "SceneGraph.h"
@@ -41,6 +42,7 @@
 #define SCRIPT_BYTE			'u'
 #define PHYSICS_BYTE		'f'
 #define COLLISION_BYTE		'C'
+#define SKELETON_BYTE		'k'
 
 #define SMALL_ENTITY_COUNT 128
 #define SMALL_SCENEGRAPH_SIZE SMALL_ENTITY_COUNT * 4
@@ -158,6 +160,7 @@ namespace EngineCore
 		inline ScriptSystem* GetScriptSystem() const {return m_scriptSystem;}
 		inline PhysicsSystem* GetPhysicsSystem() const {return m_physicsSystem;}
 		inline CollisionSystem* GetCollisionSystem() const {return m_collisionSystem;}
+		inline SkeletonSystem* GetSkeletonSystem() const {return m_skeletonSystem;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
 		inline NameMgr* GetNameMgr() const {return m_nameMgr;}
@@ -288,6 +291,7 @@ namespace EngineCore
 					.addProperty("script", &BaseWorld::GetScriptSystem)
 					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
 					.addProperty("collision", &BaseWorld::GetCollisionSystem)
+					.addProperty("skeleton", &BaseWorld::GetSkeletonSystem)
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
 					.addProperty("mode", &BaseWorld::GetMode, &BaseWorld::SetMode)
@@ -336,6 +340,7 @@ namespace EngineCore
 		ScriptSystem* m_scriptSystem;
 		PhysicsSystem* m_physicsSystem;
 		CollisionSystem* m_collisionSystem;
+		SkeletonSystem* m_skeletonSystem;
 
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;

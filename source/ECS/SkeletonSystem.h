@@ -2,6 +2,8 @@
 
 #include "ECS_defines.h"
 #include "Entity.h"
+#include "VisibilitySystem.h"
+#include "EarlyVisibilitySystem.h"
 #include "MeshMgr.h"
 
 namespace EngineCore
@@ -12,11 +14,18 @@ namespace EngineCore
 
 		bool dirty;
 
+		uint32_t skeletonID;
+		DArray<uint32_t> bones;
+
+		ID3D11Buffer* constantBuffer;
+		DArray<StmMatrixBuffer> matrixBuffer;
+
 		SkeletonComponent()
 		{
 			parent.setnull();
 			dirty = true;
-
+			skeletonID = SkeletonMgr::nullres;
+			constantBuffer = nullptr;
 		}
 	};
 
@@ -47,10 +56,14 @@ namespace EngineCore
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
 		
+		void Animate();
 		void RegToDraw();
 
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
+
+		bool SetSkeleton(Entity e, string mesh);
+		bool SetSkeletonAndCallback(Entity e, string mesh, LuaRef func);
 
 		inline bool _AddComponent(Entity e)
 		{
@@ -69,10 +82,27 @@ namespace EngineCore
 				.endClass();
 		}
 
+		bool updateSkeleton(SkeletonComponent& comp);
+
 	private:
+		bool setSkeleton(SkeletonComponent* comp, string& skeleton, LuaRef func);
+		inline void destroySkeleton(SkeletonComponent& comp)
+		{
+			for(int32_t i = comp.bones.size() - 1; i >= 0; i--)
+				sceneGraph->DeleteNode(comp.bones[i]);
+			SkeletonMgr::Get()->DeleteResource(comp.skeletonID);
+			comp.skeletonID = SkeletonMgr::nullres;
+			comp.bones.destroy();
+			comp.matrixBuffer.destroy();
+			_RELEASE(comp.constantBuffer);
+		};
+
 		ComponentRArray<SkeletonComponent> components;
 
+		SceneGraph* sceneGraph;
 		TransformSystem* transformSys;
+		VisibilitySystem* visibilitySys;
+		EarlyVisibilitySystem* earlyVisibilitySys;
 		BaseWorld* world;
 	};
 }
