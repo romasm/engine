@@ -61,43 +61,43 @@ void SkeletonSystem::Animate()
 	}
 }
 
-void SkeletonSystem::RegToDraw()
+void SkeletonSystem::UpdateBuffers()
 {
 	for(auto& i: *components.data())
 	{
-		VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
+		if( i.dirty || false/* animation */ )
+		{
+			VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
 
-		bitset<FRUSTUM_MAX_COUNT> bits;
-		if(visComponent)
-		{
-			bits = visComponent->inFrust;	
-			if(bits == 0)
-				continue;
-		}
-		else
-		{
-			if(earlyVisibilitySys)
+			bitset<FRUSTUM_MAX_COUNT> bits;
+			if(visComponent)
 			{
-				EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-
-				if(earlyVisibilityComponent)
+				bits = visComponent->inFrust;	
+				if(bits == 0)
+					continue;
+			}
+			else
+			{
+				if(earlyVisibilitySys)
 				{
-					bits = earlyVisibilityComponent->inFrust;	
-					if(bits == 0)
-						continue;
+					EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+
+					if(earlyVisibilityComponent)
+					{
+						bits = earlyVisibilityComponent->inFrust;	
+						if(bits == 0)
+							continue;
+					}
+					else
+						bits = 0;
 				}
 				else
 					bits = 0;
 			}
-			else
-				bits = 0;
-		}
 
-		if( bits == 0 )
-			continue;
+			if( bits == 0 )
+				continue;
 
-		if( i.dirty || false/* animation */ )
-		{
 			for( uint32_t j = 0; j < (uint32_t)i.bones.size(); j++)
 			{
 				const XMMATRIX* worldMatrix = sceneGraph->GetWorldTransformation(i.bones[j]);

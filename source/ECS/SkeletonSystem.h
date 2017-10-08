@@ -57,7 +57,7 @@ namespace EngineCore
 		uint32_t Deserialize(Entity e, uint8_t* data);
 		
 		void Animate();
-		void RegToDraw();
+		void UpdateBuffers();
 
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
@@ -88,7 +88,7 @@ namespace EngineCore
 		bool setSkeleton(SkeletonComponent* comp, string& skeleton, LuaRef func);
 		inline void destroySkeleton(SkeletonComponent& comp)
 		{
-			for(int32_t i = comp.bones.size() - 1; i >= 0; i--)
+			for(int32_t i = (int32_t)comp.bones.size() - 1; i >= 0; i--)
 				sceneGraph->DeleteNode(comp.bones[i]);
 			SkeletonMgr::Get()->DeleteResource(comp.skeletonID);
 			comp.skeletonID = SkeletonMgr::nullres;

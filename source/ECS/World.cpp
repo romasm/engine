@@ -597,8 +597,8 @@ void World::Snapshot(ScenePipeline* scene)
 
 	m_visibilitySystem->CheckVisibility();
 
+	m_skeletonSystem->UpdateBuffers();
 	m_staticMeshSystem->RegToDraw();
-	m_skeletonSystem->RegToDraw();
 	
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
@@ -681,8 +681,9 @@ void World::Frame()
 
 	PERF_CPU_BEGIN(_SCENE_DRAW);
 
+	m_skeletonSystem->UpdateBuffers();
 	m_staticMeshSystem->RegToDraw();
-	m_skeletonSystem->RegToDraw();
+
 	m_lineGeometrySystem->RegToDraw();
 
 #ifdef _DEV
@@ -796,8 +797,8 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 
 	m_visibilitySystem->CheckVisibility();
 
+	m_skeletonSystem->UpdateBuffers();
 	m_staticMeshSystem->RegToDraw();
-	m_skeletonSystem->RegToDraw();
 	
 	if(scene->StartFrame(&tempTimer))
 	{
@@ -854,9 +855,9 @@ void SmallWorld::Frame()
 	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
 
 	m_visibilitySystem->CheckVisibility();
-	
+
+	m_skeletonSystem->updateSkeleton();
 	m_staticMeshSystem->RegToDraw();
-	m_skeletonSystem->RegToDraw();
 
 #ifdef _DEV
 	m_collisionSystem->DebugRegToDraw();
