@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Log.h"
+#include "LuaVM.h"
 
 #include <io.h>
 #include <fcntl.h>
@@ -77,6 +78,11 @@ namespace EngineCore
 			}
 		}
 
+		bufferLog.resize(CONSOLE_BUFFER_SIZE);
+		ConsoleMsg nullMsg;
+		bufferLog.assign(nullMsg);
+		bufferUpdates = 0;
+		
 		// FILE ----------------
 		m_file = nullptr;
 		
@@ -130,6 +136,27 @@ namespace EngineCore
 			fprintf(m_file, "%s:%d|%s%s\n", timer, cl, levtext, text);
 			fflush(m_file);
 		}
+
+		if(bufferLog.capacity() != 0)
+		{
+			ConsoleMsg& msg = bufferLog.push_back();
+			msg.text = text;
+			msg.prefix = levtext;
+			bufferUpdates++;
+		}
+	}
+
+	void Log::RegLuaFunctions()
+	{
+		getGlobalNamespace(LSTATE)
+		.beginNamespace("Util")
+			.beginNamespace("Log")
+			.addFunction("Size", &Log::GetBufferSize)
+			.addFunction("Text", &Log::GetBufferText)
+			.addFunction("Prefix", &Log::GetBufferPrefix)
+			.addFunction("ResetUpdates", &Log::GetBufferUpdatesAndReset)
+			.endNamespace()
+		.endNamespace();
 	}
 
 #define LOG_BODY(prefix, infile) \

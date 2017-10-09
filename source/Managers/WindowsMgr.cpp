@@ -184,6 +184,8 @@ void WindowsMgr::DeleteWindow(HWND hwnd)
 	if(winId < 0)
 		return;
 
+	bool wasActive = app_windows[winId].IsActive();
+
 	app_windows[winId].Close();
 	app_windows[winId] = Window();
 
@@ -191,4 +193,6 @@ void WindowsMgr::DeleteWindow(HWND hwnd)
 
 	if( main_window == winId )
 		main_window = -1;
+	else if( wasActive )
+		app_windows[main_window].SetActive();
 }

@@ -104,7 +104,7 @@ bool ShadowRenderMgr::RegMesh(uint32_t index_count,
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
 			uint32_t vertex_size, Material* material, Vector3& center)
 {
-	if(!material)
+	if(!material || constant_buffer == nullptr)
 		return false;
 
 	bool has_tq = false;
@@ -154,7 +154,7 @@ bool ShadowRenderMgr::RegMesh(uint32_t index_count,
 bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center)
 {
 	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
-	if( matCount == 0 )
+	if( matCount == 0 || constant_buffer == nullptr )
 		return false;
 
 	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();

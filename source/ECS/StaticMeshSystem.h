@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "VisibilitySystem.h"
 #include "EarlyVisibilitySystem.h"
+#include "SkeletonSystem.h"
 #include "MeshMgr.h"
 #include "MaterialMgr.h"
 
@@ -127,10 +128,11 @@ namespace EngineCore
 		bool setMesh(StaticMeshComponent* comp, string& mesh, LuaRef func);
 
 		ComponentRArray<StaticMeshComponent> components;
-
+		
 		TransformSystem* transformSys;
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
+		SkeletonSystem* skeletonSystem;
 
 		FrustumMgr* frustumMgr;
 		BaseWorld* world;

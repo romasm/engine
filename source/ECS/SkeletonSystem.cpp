@@ -137,14 +137,14 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 		return false;
 	
 	// free old
-	for(int32_t i = comp.bones.size() - 1; i >= 0; i--)
+	for(int32_t i = (int32_t)comp.bones.size() - 1; i >= 0; i--)
 		sceneGraph->DeleteNode(comp.bones[i]);
 	comp.bones.destroy();
 	comp.matrixBuffer.destroy();
 	_RELEASE(comp.constantBuffer);
 
 	// init new
-	auto boneCount = skeletonPtr->bData.size();
+	int32_t boneCount = (int32_t)skeletonPtr->bData.size();
 	comp.bones.reserve(boneCount);
 	
 	for(int32_t i = 0; i < boneCount; i++)

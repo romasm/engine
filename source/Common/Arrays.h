@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Log.h"
-#include "Util.h"
 #include "macros.h"
 #include "DataTypes.h"
-
 #include <stdint.h>
 
 namespace EngineCore

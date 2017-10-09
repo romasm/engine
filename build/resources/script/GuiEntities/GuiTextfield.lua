@@ -855,3 +855,19 @@ end
 function GuiTextfield:IsChanged()
     return not self.no_change
 end
+
+function GuiTextfield:SetActive(active)
+    if active then 
+        self:ApplyLive()
+        self.state_live = true
+        self.oldstr = self.text.str
+        self.entity:SetHierarchyFocusOnMe(false)
+
+        UpdateCursorSelect(self)
+        UpdateScroll(self)
+        UpdateTextPos(self)
+    else
+        local prt = self.entity:GetParent()
+        prt:SetFocus(HEntity(), false)
+    end
+end

@@ -28,6 +28,7 @@ public:
 		jobSystem->RegThreadsForProfiler();
 	#endif
 
+		Log::RegLuaFunctions();
 		Profiler::RegLuaFunctions();
 		EngineSettings::RegLuaFunctions();
 

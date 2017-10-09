@@ -216,7 +216,7 @@ function Profiler:IsInit()
 end
 
 function Profiler:Close()
-    if self.IsInit() then 
+    if self:IsInit() then 
         self.profiler_win:Close()
         self:SysClose()
     end

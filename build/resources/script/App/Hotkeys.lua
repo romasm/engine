@@ -85,6 +85,14 @@ function Hotkeys:Process(eventData, root)
         Viewport:ToggleFullscreen()
         resEvent.event = GUI_EVENTS.NULL
         
+    elseif eventData.key == KEYBOARD_CODES.KEY_GR then 
+        if DevConsole:IsInit() then
+            DevConsole:Close()
+        else
+            DevConsole:Init()
+        end
+        resEvent.event = GUI_EVENTS.NULL
+
     end
 
     return resEvent

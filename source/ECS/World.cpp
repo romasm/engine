@@ -35,9 +35,9 @@ void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 
 	if(m_earlyVisibilitySystem)
 		m_earlyVisibilitySystem->SetDirty(e);
-	
-	m_staticMeshSystem->SetDirty(e);
+
 	m_skeletonSystem->SetDirty(e);
+	m_staticMeshSystem->SetDirty(e);
 	m_cameraSystem->SetDirty(e);
 	m_envProbSystem->SetDirty(e);
 
@@ -219,8 +219,8 @@ Entity BaseWorld::CopyEntity(Entity e)
 
 	m_scriptSystem->CopyComponent(e, newEnt);
 
-	m_staticMeshSystem->CopyComponent(e, newEnt);
 	m_skeletonSystem->CopyComponent(e, newEnt);
+	m_staticMeshSystem->CopyComponent(e, newEnt);
 
 	m_physicsSystem->CopyComponent(e, newEnt);
 	m_collisionSystem->CopyComponent(e, newEnt);
@@ -543,9 +543,9 @@ World::World( uint32_t id ) : BaseWorld( id )
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
 	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, ENTITY_COUNT);
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, ENTITY_COUNT);
-	
-	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
+
 	m_skeletonSystem = new SkeletonSystem(this, ENTITY_COUNT);
+	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, ENTITY_COUNT);
@@ -768,9 +768,9 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
 	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
-	
-	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
+
 	m_skeletonSystem = new SkeletonSystem(this, SMALL_ENTITY_COUNT);
+	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, SMALL_ENTITY_COUNT);
@@ -856,7 +856,7 @@ void SmallWorld::Frame()
 
 	m_visibilitySystem->CheckVisibility();
 
-	m_skeletonSystem->updateSkeleton();
+	m_skeletonSystem->UpdateBuffers();
 	m_staticMeshSystem->RegToDraw();
 
 #ifdef _DEV

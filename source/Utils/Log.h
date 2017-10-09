@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Pathes.h"
+#include "Arrays.h"
 
 namespace EngineCore
 {
-//------------------------------------------------------------------
+#define CONSOLE_BUFFER_SIZE 256
 
 #define GET_DATETIME \
 	char time[9];_strtime_s(time, 9);\
@@ -52,6 +53,18 @@ namespace EngineCore
 		void Lua(const char *message, ...);
 		void LuaError(const char *message, ...);
 
+		static int32_t GetBufferSize() {return (int32_t)instance->bufferLog.size();}
+		static string GetBufferText(int32_t i) {return instance->bufferLog[i].text;}
+		static string GetBufferPrefix(int32_t i) {return instance->bufferLog[i].prefix;}
+		static int32_t GetBufferUpdatesAndReset()
+		{
+			int32_t bu = instance->bufferUpdates;
+			instance->bufferUpdates = 0;
+			return bu;
+		}
+
+		static void RegLuaFunctions();
+
 	private:
 		static Log *instance;
 
@@ -59,6 +72,14 @@ namespace EngineCore
 
 		FILE *m_file;	
 		HANDLE consoleOutH;
+
+		struct ConsoleMsg
+		{
+			string text;
+			string prefix;
+		};
+		SDeque<ConsoleMsg, CONSOLE_BUFFER_SIZE> bufferLog;
+		int32_t bufferUpdates;
 	};
 
 //------------------------------------------------------------------

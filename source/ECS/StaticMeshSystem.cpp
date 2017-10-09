@@ -14,6 +14,7 @@ StaticMeshSystem::StaticMeshSystem(BaseWorld* w, uint32_t maxCount)
 	transformSys = w->GetTransformSystem();
 	visibilitySys = w->GetVisibilitySystem();
 	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
+	skeletonSystem = w->GetSkeletonSystem();
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
@@ -78,34 +79,51 @@ void StaticMeshSystem::RegToDraw()
 		if(!meshPtr)
 			continue;			
 
-		if(i.dirty)
-		{
-			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
-
-			XMVECTOR scale, pos, rot;
-			XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
-			XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
-			XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
-
-			XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
-			normalMatrix = normalMatrix * rotM;
-
-			i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), worldMatrix);
-
-			i.matrixBuffer.world = XMMatrixTranspose(worldMatrix);
-			i.matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)&i.matrixBuffer, sizeof(StmMatrixBuffer));
-					
-			i.dirty = false;
-		}
+		auto skeleton = skeletonSystem->GetComponent(i.get_entity());
+		ID3D11Buffer* matrixBuf = nullptr;
 		
+		if(!skeleton)
+		{
+			if(i.dirty)
+			{		
+				XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
+
+				XMVECTOR scale, pos, rot;
+				XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
+				XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
+				XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
+
+				XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
+				normalMatrix = normalMatrix * rotM;
+
+				i.center = XMVector3TransformCoord(XMLoadFloat3(&meshPtr->box.Center), worldMatrix);
+
+				i.matrixBuffer.world = XMMatrixTranspose(worldMatrix);
+				i.matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
+				Render::UpdateDynamicResource(i.constantBuffer, (void*)&i.matrixBuffer, sizeof(StmMatrixBuffer));
+
+				i.dirty = false;
+			}	
+
+			matrixBuf = i.constantBuffer;
+		}
+		else
+		{
+			if(i.dirty)
+			{
+				i.dirty = false;
+			}
+
+			matrixBuf = skeleton->constantBuffer;
+		}
+
 		if( bits == 0 )
 		{
 			for( auto& f: *(frustumMgr->m_frustums.data()) )
 			{
 				if( !f.rendermgr->IsShadow() )
 				{
-					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, i.constantBuffer, i.materials, i.center);
+					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
 				}
 			}
 			continue;
@@ -118,15 +136,15 @@ void StaticMeshSystem::RegToDraw()
 				if( f.rendermgr->IsShadow() )// todo
 				{
 					if(i.cast_shadow)
-						((ShadowRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, i.constantBuffer, i.materials, i.center);
+						((ShadowRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
 				}
 				else
 				{
 					if( !f.is_volume )
 					{
-						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, i.constantBuffer, i.materials, i.center);
+						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
 					}
-					else if(visComponent)		// voxelize
+					else if(visComponent && !skeleton)		// voxelize, temp skeleton mesh disabled
 					{
 						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexBuffers[mat_i], meshPtr->vertexBuffers[mat_i], 
@@ -145,8 +163,16 @@ StaticMeshComponent* StaticMeshSystem::AddComponent(Entity e)
 {
 	StaticMeshComponent* res = components.add(e.index());
 	res->parent = e;
-	// todo: static alloc???
-	res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
+
+	auto skeleton = skeletonSystem->GetComponent(e);
+	if(!skeleton)
+	{
+		res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
+	}
+	else
+	{
+		res->constantBuffer = nullptr;
+	}
 	
 	auto meshPtr = MeshMgr::GetResourcePtr(res->stmesh);
 	if(meshPtr)
@@ -361,6 +387,12 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 			return;
 		}
 		
+		if( MeshLoader::IsSkinned( meshPtr->vertexFormat ) )
+		{
+			if( !worldPtr->GetSkeletonSystem()->HasComponent(ent) )
+				ERR("Skinned mesh %s is setted to static geometry, skeleton must be setted first", MeshMgr::GetName(id));
+		}
+
 		comp->dirty = true;
 
 		const Entity e = comp->get_entity();

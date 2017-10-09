@@ -342,6 +342,8 @@ KEYBOARD_CODES = {
 
 		KEY_EXPONENT    = 0xDC, -- '^'
 
+		KEY_GR			= 0xC0, -- '~', '`'
+
 		KEY_ATTN        = 0xF6,
 		KEY_CRSEL       = 0xF7,
 		KEY_EXSEL       = 0xF8,

@@ -116,6 +116,11 @@ namespace EngineCore
 			SendMessage(m_hwnd, WM_CLOSE, 0, 0);
 		}
 
+		void SetActive()
+		{
+			SetActiveWindow(m_hwnd);
+		}
+
 		bool IsMaximized(){return m_maximized;}
 		bool IsMinimized(){return m_minimized;}
 
@@ -304,6 +309,7 @@ namespace EngineCore
 					.addFunction("Maximize", &Window::Maximize)
 					.addFunction("RestoreSize", &Window::RestoreSize)
 					.addFunction("UserClose", &Window::UserClose)
+					.addFunction("SetActive", &Window::SetActive)
 
 					.addFunction("IsMaximized", &Window::IsMaximized)
 					.addFunction("IsMinimized", &Window::IsMinimized)

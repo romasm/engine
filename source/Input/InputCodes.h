@@ -155,6 +155,8 @@ namespace EngineCore
 		KEY_MINUS       = 0xBD, // '-'
 		KEY_PERIOD      = 0xBE, // '.'
 
+		KEY_GR			= 0xC0, // '~', '`'
+
 		KEY_EXPONENT    = 0xDC, // '^'
 
 		KEY_ATTN        = 0xF6,

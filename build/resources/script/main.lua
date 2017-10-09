@@ -77,6 +77,7 @@ loader.require("App.AssetBrowser")
 loader.require("App.SceneBrowser")
 
 loader.require("App.Profiler")
+loader.require("App.DevConsole")
 
 loader.require("resource_preloader")
 
@@ -99,6 +100,7 @@ function Main:onTick(dt)
     -------- remove in consumer
     loader.check_modif()
     Profiler:Tick(dt)
+    DevConsole:Tick(dt)
     --------
 
     MainWindow:Tick(dt)

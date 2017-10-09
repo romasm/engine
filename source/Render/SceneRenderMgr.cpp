@@ -123,7 +123,7 @@ bool SceneRenderMgr::regToDraw(uint32_t index_count,
 			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
 			uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo)
 {
-	if(!material)
+	if(!material || constant_buffer == nullptr)
 		return false;
 	
 	bool has_tq = false;
@@ -176,7 +176,7 @@ bool SceneRenderMgr::regToDraw(uint32_t index_count,
 bool SceneRenderMgr::regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo)
 {
 	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
-	if( matCount == 0 )
+	if( matCount == 0 || constant_buffer == nullptr )
 		return false;
 
 	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
