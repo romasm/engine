@@ -116,3 +116,7 @@ function GuiString:SetString(str)
     self.entity:SetText(self.text, self.str)
     self:onMoveResize(false, true)
 end
+
+function GuiString:GetTextSize()
+    return self.entity:GetTextBounds(self.text)
+end

@@ -39,8 +39,6 @@ return GuiWindow({
         },
     },
 
-    left = 400,
-    top = 400,
     width = 700,
     height = 700,
 
@@ -63,16 +61,28 @@ return GuiWindow({
             return true
         end,
         [GUI_EVENTS.KEY_DOWN]  = function(self, ev)
-            if ev.key == KEYBOARD_CODES.KEY_UP then
+            local history = false
+            if ev.key == KEYBOARD_CODES.KEY_UP or ev.key == KEYBOARD_CODES.KEY_TAB then
                 DevConsole.currentCode = DevConsole.currentCode + 1
                 if DevConsole.currentCode > #DevConsole.prevCode then DevConsole.currentCode = 0 end
+                history = true
+            elseif ev.key == KEYBOARD_CODES.KEY_DOWN then
+                DevConsole.currentCode = DevConsole.currentCode - 1
+                if DevConsole.currentCode < 0 then DevConsole.currentCode = #DevConsole.prevCode end
+                history = true
+            end
+
+            if history == true then
                 if DevConsole.currentCode == 0 then
                     DevConsole.codebar:SetText("")
+                    DevConsole.luasign.enable = true
                 else
                     DevConsole.codebar:SetText(DevConsole.prevCode[#DevConsole.prevCode + 1 - DevConsole.currentCode])
+                    DevConsole.luasign.enable = false
                 end
                 return true
             end
+
             return false
             end,
     },
@@ -87,6 +97,7 @@ return GuiWindow({
         text = {
             length = 1024,
         },
+        hold_focus_onenter = true,
         bottom = 5,
         left = 5,
         right = 5,
@@ -100,10 +111,13 @@ return GuiWindow({
 
         events = {
             [GUI_EVENTS.TF_EDITING]  = function(self, ev)
-                if self:GetText():len() ~= 0 then 
-                    self.entity:GetChildById('lua_sign').enable = false
+                local str = self:GetText()
+                if str:len() ~= 0 then 
+                    DevConsole.luasign.enable = false
+                    -- HACK FOR HOTKEY WORK IN TEXTFIELD
+                    if str:sub(-1) == "`" then DevConsole:Close() end
                 else
-                    self.entity:GetChildById('lua_sign').enable = true
+                    DevConsole.luasign.enable = true
                 end
                 return true
                 end,
@@ -112,7 +126,8 @@ return GuiWindow({
                     DevConsole:Execute( self:GetText() )
                     self:SetText("")
                 end
-                self:SetActive(true)
+                DevConsole.luasign.enable = true
+                DevConsole.currentCode = 0
                 return true
                 end,
         },
@@ -140,8 +155,7 @@ return GuiWindow({
     GuiClientarea({
 
         GuiBody({
-            width_percent = true,
-            width = 100,
+            width = 0,
             height = 0,
 
             }),
@@ -176,16 +190,21 @@ function DevConsole:Init()
     self.stringsBegin = 1
     self.stringsSize = 0
 
-    self.prevCode = {}
+    if self.prevCode == nil then self.prevCode = {} end
     self.currentCode = 0
 
     self.window = self.CreateWindow()
     self.body = self.window:GetBody()
     self.codebar = self.window.entity:GetChildById('lua_field'):GetInherited()
     self.codebar:SetActive(true)
+    self.luasign = self.codebar.entity:GetChildById('lua_sign')
 
     self.window.sys_win:SetMinMaxBox(false)
-    --self.window.sys_win:SetAlpha(0.8)
+    self.window.sys_win:SetAlpha(0.8)
+
+    local left = MainWindow.mainwin:GetLeft()
+    local top = MainWindow.mainwin:GetTop()
+    self.window.sys_win:SetPos(left + 50, top + 50)
 
     self:Fill(Util.Log.Size())
 end
@@ -211,13 +230,13 @@ function DevConsole:Execute(code)
     -- TODO: deque
     if #self.prevCode > 1000 then self.prevCode = {} end
 
-    print(code)
+    print(">> ".. code)
 
     local func, errorMsg = loadstring(code)
     if func ~= nil then
         func()
     else
-        error(errorMsg)
+        error(">> ".. errorMsg)
     end
 end
 
@@ -225,6 +244,7 @@ function DevConsole:Fill(count)
     count = math.min(self.stringMaxCount, count)
 
     local newTop = -1
+    local maxWidth = 0
 
     local topOffset = self.body.entity.height
     local bufSize = Util.Log.Size()
@@ -249,6 +269,8 @@ function DevConsole:Fill(count)
             str = Util.Log.Text(i),
             top = topOffset,
         })
+
+        maxWidth = math.max( self.strings[stringPos]:GetTextSize().w, maxWidth )
         
         local prefix = Util.Log.Prefix(i)
         if prefix:find("ERROR") ~= nil then
@@ -276,8 +298,9 @@ function DevConsole:Fill(count)
     end
 
     self.body.entity.height = topOffset
-    self.window:SetScrollY(topOffset)
+    self.body.entity.width = math.max( self.body.entity.width, maxWidth + 10 )
     self.window.entity:UpdatePosSize()
+    self.window:SetScrollY(topOffset)
 end
 
 function DevConsole:Tick(dt)

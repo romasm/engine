@@ -169,6 +169,8 @@ function GuiWindow:init(props)
         self.scroll_x_sld.entity.right = self.border.width + ((self.scrollable.y and self.scrollY.width ~= nil) and self.scrollY.width or 0) + (self.scrollX.right ~= nil and self.scrollX.right or 0) + self.cleintarea_padding.r
         
         self.clientarea_rect.b = self.scroll_x_sld.entity.bottom + self.scrollX.height + (self.scrollX.top ~= nil and self.scrollX.top or 0)
+    else
+        self.clientarea_rect.b = self.cleintarea_padding.b
     end
 
     if self.scrollable.y then
@@ -182,6 +184,8 @@ function GuiWindow:init(props)
         self.scroll_y_sld.entity.top = math.max(self.header_size, self.border.width) + (self.scrollY.top ~= nil and self.scrollY.top or 0) + self.cleintarea_padding.t
         
         self.clientarea_rect.r = self.scroll_y_sld.entity.right + self.scrollY.width + (self.scrollY.left ~= nil and self.scrollY.left or 0)
+    else
+        self.clientarea_rect.r = self.cleintarea_padding.r
     end
 
     if self.resizeable.x or self.resizeable.y then
@@ -194,9 +198,7 @@ function GuiWindow:init(props)
     end
 
     self.clientarea_rect.l = self.clientarea_rect.l + self.cleintarea_padding.l
-    self.clientarea_rect.r = self.clientarea_rect.r + self.cleintarea_padding.r
     self.clientarea_rect.t = self.clientarea_rect.t + self.cleintarea_padding.t
-    self.clientarea_rect.b = self.clientarea_rect.b + self.cleintarea_padding.b
 
     local cl_ent = self.entity:GetChildById("clientarea")
     if cl_ent:is_null() then return end
@@ -406,7 +408,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
             if self.clientarea_rect.w >= self.body_ent.entity.width then
                 self.scroll_enabled.x = false
                 self.scroll_x_sld.entity.enable = false
-                self.clientarea_rect.b = self.clientarea_rect.b - self.scroll_x_sld.entity.top - self.scroll_x_sld.entity.height - self.scroll_x_sld.entity.bottom
+                self.clientarea_rect.b = self.cleintarea_padding.b
                 self.clientarea_ent.entity.bottom = self.clientarea_rect.b
             else
                 local sl_rect = self.scroll_x_sld.entity:GetRectAbsolute()
@@ -422,7 +424,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
                 local sl_rect = self.scroll_y_sld.entity:GetRectAbsolute()
                 self.scroll_x_sld.btn_slider.entity.width = sl_rect.w * self.clientarea_rect.w / self.body_ent.entity.width
                
-                self.clientarea_rect.b = self.clientarea_rect.b + self.scroll_x_sld.entity.top + self.scroll_x_sld.entity.height + self.scroll_x_sld.entity.bottom
+                self.clientarea_rect.b = self.scroll_x_sld.entity.top + self.scroll_x_sld.entity.height + self.scroll_x_sld.entity.bottom
                 self.clientarea_ent.entity.bottom = self.clientarea_rect.b
             end
         end
@@ -434,7 +436,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
             if self.clientarea_rect.h >= self.body_ent.entity.height then
                 self.scroll_enabled.y = false
                 self.scroll_y_sld.entity.enable = false
-                self.clientarea_rect.r = self.clientarea_rect.r - self.scroll_y_sld.entity.left - self.scroll_y_sld.entity.width - self.scroll_y_sld.entity.right
+                self.clientarea_rect.r = self.cleintarea_padding.r
                 self.clientarea_ent.entity.right = self.clientarea_rect.r
             else
                 local sl_rect = self.scroll_y_sld.entity:GetRectAbsolute()
@@ -450,7 +452,7 @@ function GuiWindow:onMoveResize(is_move, is_resize)
                 local sl_rect = self.scroll_y_sld.entity:GetRectAbsolute()
                 self.scroll_y_sld.btn_slider.entity.height = sl_rect.h * self.clientarea_rect.h / self.body_ent.entity.height
                
-                self.clientarea_rect.r = self.clientarea_rect.r + self.scroll_y_sld.entity.left + self.scroll_y_sld.entity.width + self.scroll_y_sld.entity.right
+                self.clientarea_rect.r = self.scroll_y_sld.entity.left + self.scroll_y_sld.entity.width + self.scroll_y_sld.entity.right
                 self.clientarea_ent.entity.right = self.clientarea_rect.r
             end
         end

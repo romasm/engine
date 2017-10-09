@@ -143,9 +143,9 @@ local function EditString(self, key, symbol)
     if key == KEYBOARD_CODES.KEY_BACK then
         if self.state_select then 
             DeleteSelection(self, true)
-            return 
+            return true 
         end
-        if self.current_letter <= 0 then return end
+        if self.current_letter <= 0 then return true end
 
         local textObj = self.entity:GetText(self.str)
         if self.current_letter == 1 then self.has_minus = false end
@@ -165,15 +165,16 @@ local function EditString(self, key, symbol)
         UpdateScroll(self)
         UpdateTextPos(self)
         UpdateCursorSelect(self)
-        
+        return true
+
     elseif key == KEYBOARD_CODES.KEY_DELETE then
         if self.state_select then 
             DeleteSelection(self, true)
-            return 
+            return true 
         end
 
         local textObj = self.entity:GetText(self.str)
-        if self.current_letter >= textObj.letter_count then return end
+        if self.current_letter >= textObj.letter_count then return true end
         
         if self.current_letter == 0 then self.has_minus = false end
         -- self.current_letter + 1(for lua)
@@ -186,6 +187,7 @@ local function EditString(self, key, symbol)
         UpdateScroll(self)
         UpdateTextPos(self)
         UpdateCursorSelect(self)
+        return true
 
     elseif self.data.d_type == GUI_TEXTFIELD.TEXT then
         if char >= 32 and char <= 255 and char ~= 127 then -- char == all non-special symbols
@@ -194,6 +196,7 @@ local function EditString(self, key, symbol)
             end
 
             InsertSymbol(self, symbol, 1)
+            return true
         end
     elseif self.data.d_type == GUI_TEXTFIELD.INT then
         if char >= 48 and char <= 57 or char == 45 then -- char == numbers and '-'
@@ -202,37 +205,40 @@ local function EditString(self, key, symbol)
             end
             
             if char == 45 then
-                if self.current_letter ~= 0 or self.has_minus then return end
+                if self.current_letter ~= 0 or self.has_minus then return true end
                 self.has_minus = true
             elseif self.has_minus and self.current_letter == 0 then
-                return 
+                return true 
             end
 
             InsertSymbol(self, symbol, 1)
+            return true
         end
 
     elseif self.data.d_type == GUI_TEXTFIELD.FLOAT then
         if char >= 48 and char <= 57 or char == 45 or char == 46 then -- char == numbers and '-'
             if self.state_select then
-                if not DeleteSelection(self, false, char == 46) then return end -- char == '.'
+                if not DeleteSelection(self, false, char == 46) then return true end -- char == '.'
             end
             
             if char == 45 then
-                if self.current_letter ~= 0 or self.has_minus then return end
+                if self.current_letter ~= 0 or self.has_minus then return true end
                 self.has_minus = true
             elseif self.has_minus and self.current_letter == 0 then
-                return 
+                return true
             end
 
             if char == 46 then
-                if self.has_point then return end
+                if self.has_point then return true end
                 self.has_point = true
             end
             
             InsertSymbol(self, symbol, 1)
+            return true
         end
 
     end
+    return false
 end
 
 local function Copy(self)
@@ -257,6 +263,8 @@ function GuiTextfield:init(props)
         
     self.allow_none = false
     self.dbclick_activation = false
+
+    self.hold_focus_onenter = false
 
     self.background = {
         color = Vector4(0.0, 0.0, 0.0, 1.0),
@@ -392,6 +400,7 @@ function GuiTextfield:ApplyProps(props)
     if props.show_tail ~= nil then self.show_tail = props.show_tail end
     if props.allow_none ~= nil then self.allow_none = props.allow_none end
     if props.dbclick_activation ~= nil then self.dbclick_activation = props.dbclick_activation end
+    if props.hold_focus_onenter ~= nil then self.hold_focus_onenter = props.hold_focus_onenter end
 
     if props.background ~= nil then
         if props.background.color ~= nil then 
@@ -674,11 +683,21 @@ function GuiTextfield:callback(eventData)
             UpdateCursorSelect(self)
             UpdateTextPos(self)
 
-        elseif eventData.key == KEYBOARD_CODES.KEY_RETURN or eventData.key == KEYBOARD_CODES.KEY_ESCAPE then
+        elseif eventData.key == KEYBOARD_CODES.KEY_ESCAPE then
             self.entity:SetHierarchyFocusOnMe(false)
             local prt = self.entity:GetParent()
             prt:SetFocus(HEntity(), false)
             res.event = GUI_EVENTS.NULL
+            
+        elseif eventData.key == KEYBOARD_CODES.KEY_RETURN then
+            if self.hold_focus_onenter then
+                res.event = GUI_EVENTS.TF_DEACTIVATE
+            else
+                self.entity:SetHierarchyFocusOnMe(false)
+                local prt = self.entity:GetParent()
+                prt:SetFocus(HEntity(), false)
+                res.event = GUI_EVENTS.NULL
+            end
 
         else
             if CoreGui.Keys.Ctrl() then
@@ -702,8 +721,9 @@ function GuiTextfield:callback(eventData)
                     res.event = GUI_EVENTS.TF_SELECTED
                 end
             else      
-                EditString(self, eventData.key, eventData.symbol)
-                res.event = GUI_EVENTS.TF_EDITING
+                if EditString(self, eventData.key, eventData.symbol) == true then
+                    res.event = GUI_EVENTS.TF_EDITING
+                end
             end
         end
         res.entity = self.entity
@@ -816,6 +836,14 @@ function GuiTextfield:SetText(text)
     self.text.str = text
     self.entity:SetText(self.str, self.text.str)
     UpdateTextPos(self)
+    if self.state_live then
+        local textObj = self.entity:GetText(self.str)
+        self.current_letter = textObj.letter_count
+        self.cursor_pos = textObj:GetLetterPos(self.current_letter)
+        self.select_letter = self.current_letter
+        self.select_pos = self.cursor_pos
+        UpdateCursorSelect(self)
+    end
     return true
 end
 
