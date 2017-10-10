@@ -190,6 +190,13 @@ namespace EngineCore
 		size_t	m_capacity;
 	};
 
+	template <typename T>
+	// dynamic array
+	class DArrayAligned : public DArray<T>
+	{
+		ALIGNED_ALLOCATION
+	};
+
 	// -------------------------------------------
 	template <typename T, size_t S>
 	// static array
@@ -308,6 +315,13 @@ namespace EngineCore
 	private:
 		size_t	m_size;
 		T	m_data[S];
+	};
+
+	template <typename T, size_t S>
+	// dynamic array
+	class SArrayAligned : public SArray<T, S>
+	{
+		ALIGNED_ALLOCATION
 	};
 
 	// -------------------------------------------
@@ -471,6 +485,13 @@ namespace EngineCore
 		size_t	m_size;
 		T*	m_data;
 		size_t	m_capacity;
+	};
+	
+	template <typename T>
+	// dynamic array
+	class RArrayAligned : public RArray<T>
+	{
+		ALIGNED_ALLOCATION
 	};
 
 	// -------------------------------------------

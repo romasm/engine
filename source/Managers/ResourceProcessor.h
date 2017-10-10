@@ -30,11 +30,11 @@ namespace EngineCore
 		COMPUTE,
 	};
 
-#define IMP_BYTE_TEXTURE		0x1
-#define IMP_BYTE_MESH			0x2
-#define IMP_BYTE_COLLISION		0x4
-#define IMP_BYTE_SKELETON		0x8
-#define IMP_BYTE_ANIMATION		0x16
+#define IMP_BYTE_TEXTURE		uint8_t(1<<0)
+#define IMP_BYTE_MESH			uint8_t(1<<1)
+#define IMP_BYTE_COLLISION		uint8_t(1<<2)
+#define IMP_BYTE_SKELETON		uint8_t(1<<3)
+#define IMP_BYTE_ANIMATION		uint8_t(1<<4)
 
 #define IMPORT_FILE_VERSION 101
 
@@ -63,7 +63,7 @@ namespace EngineCore
 		string filePath;
 		string resourceName;
 
-		uint32_t importBytes;
+		uint8_t importBytes;
 
 		bool isSkinnedMesh;
 		DXGI_FORMAT textureFormat;
@@ -80,10 +80,14 @@ namespace EngineCore
 		};
 
 		void parseFromLua(LuaRef params);
-
+		
 		static uint32_t sizeNoString()
 		{
-			return sizeof(uint32_t) + sizeof(bool) + sizeof(DXGI_FORMAT);
+			return sizeof(uint8_t) + 
+				sizeof(bool) + 
+				sizeof(DXGI_FORMAT) +
+				sizeof(bool) +
+				sizeof(uint32_t);
 		};
 	};
 

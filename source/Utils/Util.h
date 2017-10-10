@@ -111,6 +111,13 @@ inline std::string IntToString(int i)
 	return string(str);  
 }
 
+inline std::string UintToString(uint32_t i)
+{
+	char str[SRT_SIZE];
+	sprintf_s(str, "%u", i);
+	return string(str);  
+}
+
 inline std::string FloatToString(float f)
 {
 	char str[SRT_SIZE];
@@ -327,6 +334,11 @@ inline string ByteToString(uint8_t b)
 inline int CharToInt(char *str)
 {
 	return atoi(str);
+}
+
+inline uint32_t CharToUint(char *str)
+{
+	return (uint32_t)stol(str);
 }
 
 inline int WCharToInt(wchar_t *str)

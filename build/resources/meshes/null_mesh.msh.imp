@@ -1,0 +1,12 @@
+import
+{
+	filePath = '../resources/meshes/null_mesh.fbx'
+	version = '101'
+	isSkinnedMesh = 'true'
+	importBytes = '0b00000010'
+	fileDate = '1507237440'
+	resourceName = '../resources/meshes/null_mesh'
+	textureFormat = '28'
+	genMips = 'true'
+	genMipsFilter = '0'
+}

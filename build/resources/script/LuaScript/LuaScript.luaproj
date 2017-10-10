@@ -272,6 +272,9 @@
     <Compile Include="..\Entities\PhysicsModel.lua">
       <Link>Entities\PhysicsModel.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\SkinnedMesh.lua">
+      <Link>Entities\SkinnedMesh.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\StaticModel.lua">
       <Link>Entities\StaticModel.lua</Link>
     </Compile>

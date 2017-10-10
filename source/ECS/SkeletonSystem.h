@@ -18,7 +18,7 @@ namespace EngineCore
 		DArray<uint32_t> bones;
 
 		ID3D11Buffer* constantBuffer;
-		DArray<StmMatrixBuffer> matrixBuffer;
+		DArrayAligned<XMMATRIX> matrixBuffer;
 
 		SkeletonComponent()
 		{
@@ -78,7 +78,9 @@ namespace EngineCore
 					.addFunction("AddComponent", &SkeletonSystem::_AddComponent)
 					.addFunction("DeleteComponent", &SkeletonSystem::DeleteComponent)
 					.addFunction("HasComponent", &SkeletonSystem::HasComponent)
-					
+
+					.addFunction("SetSkeleton", &SkeletonSystem::SetSkeleton)
+					.addFunction("SetSkeletonAndCallback", &SkeletonSystem::SetSkeletonAndCallback)					
 				.endClass();
 		}
 

@@ -53,6 +53,7 @@ WorldMgr::WorldMgr()
 		PhysicsSystem::RegLuaClass();
 		CollisionSystem::RegLuaClass();
 		ControllerSystem::RegLuaClass();
+		SkeletonSystem::RegLuaClass();
 
 		TransformControls::RegLuaClass();
 

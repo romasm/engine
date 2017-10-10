@@ -110,12 +110,12 @@ void SkeletonSystem::UpdateBuffers()
 				XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
 				normalMatrix = normalMatrix * rotM;
 
-				auto& matrixBuf = i.matrixBuffer[j];
-				matrixBuf.world = XMMatrixTranspose(*worldMatrix);
-				matrixBuf.norm = XMMatrixTranspose(normalMatrix);
+				const auto matrixID = j * 2;
+				i.matrixBuffer[matrixID] = XMMatrixTranspose(*worldMatrix);
+				i.matrixBuffer[matrixID + 1] = XMMatrixTranspose(normalMatrix);
 			}
 
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)i.matrixBuffer.data(), sizeof(StmMatrixBuffer) * i.matrixBuffer.size());
+			Render::UpdateDynamicResource(i.constantBuffer, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
 
 			i.dirty = false;
 		}
@@ -175,9 +175,11 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 		sceneGraph->SetTransformation(nodeID, bone.localTransform);
 	}
 
-	comp.matrixBuffer.reserve(boneCount);
-	comp.matrixBuffer.resize(boneCount);
-	comp.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer) * boneCount, true);
+	auto matrixCount = boneCount * 2;
+
+	comp.matrixBuffer.reserve(matrixCount);
+	comp.matrixBuffer.resize(matrixCount);
+	comp.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX) * matrixCount, true);
 
 	comp.dirty = true;
 

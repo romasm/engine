@@ -116,6 +116,10 @@ return GuiWindow({
                     DevConsole.luasign.enable = false
                     -- HACK FOR HOTKEY WORK IN TEXTFIELD
                     if str:sub(-1) == "`" then DevConsole:Close() end
+
+                    if str:find("\n") ~= nil then
+                        self:SetText( str:gsub("\n", "; ") )
+                    end
                 else
                     DevConsole.luasign.enable = true
                 end

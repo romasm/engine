@@ -28,7 +28,7 @@ end
 function SceneBrowser:Init()
     print("SceneBrowser:Init") 
     
-    self.entTypes = {"Node", "Camera", "LocalLight", "GlobalLight", "TestEnt", "StaticModel", "PhysicsModel"}--, EDITOR_VARS.TYPE}
+    self.entTypes = {"Node", "Camera", "LocalLight", "GlobalLight", "TestEnt", "StaticModel", "PhysicsModel", "SkinnedMesh"}--, EDITOR_VARS.TYPE}
 
     self.filtredList = {}
     self.findstr = ""

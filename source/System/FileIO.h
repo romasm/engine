@@ -75,6 +75,8 @@ public:
 
 	~FileIO();
 
+	inline bool Empty() {return fileMap->empty();}
+
 	bool Save(){return SaveAs(fileName);}
 	bool SaveAs(string& file);
 	inline bool SaveAsS(char* file)
@@ -102,6 +104,10 @@ public:
 		int ReadInt(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
 			if(n == node->end())return 0; return CharToInt((char*)n->second.value.data());}
+
+		uint32_t ReadUint(string name, file_map* node)
+			{if(!node)return 0; auto n = node->find(name); 
+			if(n == node->end())return 0; return CharToUint((char*)n->second.value.data());}
 		
 		float ReadFloat(string name, file_map* node)
 			{if(!node)return 0; auto n = node->find(name); 
@@ -131,10 +137,16 @@ public:
 			{if(!node)return; auto n = node->find(name); 
 			if(n != node->end())n->second.value = value; else{FileNode newvalue;
 			(*node)[name] = newvalue; (*node)[name].value = value;}}
+
 		void WriteInt(string name, int value, file_map* node)
 			{if(!node)return; auto n = node->find(name);
 			if(n != node->end())n->second.value = IntToString(value); else{FileNode newvalue;
 			(*node)[name] = newvalue; (*node)[name].value = IntToString(value);}}
+
+		void WriteUint(string name, uint32_t value, file_map* node)
+			{if(!node)return; auto n = node->find(name);
+			if(n != node->end())n->second.value = UintToString(value); else{FileNode newvalue;
+			(*node)[name] = newvalue; (*node)[name].value = UintToString(value);}}
 		
 		void WriteFloat(string name, float value, file_map* node)
 			{if(!node)return; auto n = node->find(name);

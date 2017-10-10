@@ -1,3 +1,4 @@
+#define BONE_PER_VERTEX_MAXCOUNT 8
 
 struct PI_Pos
 {
@@ -40,6 +41,17 @@ struct VI_Mesh
 	float3 normal			: NORMAL;
 	float3 tangent			: TANGENT;
 	float3 binormal			: BINORMAL;
+};
+
+struct VI_Skinned_Mesh
+{
+    float3 position			: POSITION;
+    float2 tex				: TEXCOORD0;
+	float3 normal			: NORMAL;
+	float3 tangent			: TANGENT;
+	float3 binormal			: BINORMAL;
+	int boneID[BONE_PER_VERTEX_MAXCOUNT]	: TEXCOORD1;
+	float boneWeight[BONE_PER_VERTEX_MAXCOUNT]	: TEXCOORD9;
 };
 
 struct GI_Mesh

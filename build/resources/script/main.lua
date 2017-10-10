@@ -54,6 +54,7 @@ loader.require("Entities.GlobalLight", Core.UpdateLuaFuncs)
 loader.require("Entities.StaticModel", Core.UpdateLuaFuncs)
 loader.require("Entities.PhysicsModel", Core.UpdateLuaFuncs)
 loader.require("Entities.Camera", Core.UpdateLuaFuncs)
+loader.require("Entities.SkinnedMesh", Core.UpdateLuaFuncs)
 
 --test
 loader.require("Entities.TestEnt", Core.UpdateLuaFuncs)

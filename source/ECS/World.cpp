@@ -106,16 +106,6 @@ void BaseWorld::Close()
 		}
 	m_scenes.clear();
 	
-	_DELETE(m_frustumMgr);
-	_DELETE(m_sceneGraph);
-	_DELETE(m_entityMgr);
-	_DELETE(m_transformSystem);
-	_DELETE(m_visibilitySystem);
-	_DELETE(m_earlyVisibilitySystem);
-	_DELETE(m_scriptSystem);
-	_DELETE(m_physicsSystem);
-	_DELETE(m_collisionSystem);
-
 	_DELETE(m_staticMeshSystem);
 	_DELETE(m_skeletonSystem);
 	_DELETE(m_cameraSystem);
@@ -125,6 +115,16 @@ void BaseWorld::Close()
 	_DELETE(m_shadowSystem);
 	_DELETE(m_globalLightSystem);
 	_DELETE(m_lineGeometrySystem);
+
+	_DELETE(m_frustumMgr);
+	_DELETE(m_sceneGraph);
+	_DELETE(m_entityMgr);
+	_DELETE(m_transformSystem);
+	_DELETE(m_visibilitySystem);
+	_DELETE(m_earlyVisibilitySystem);
+	_DELETE(m_scriptSystem);
+	_DELETE(m_physicsSystem);
+	_DELETE(m_collisionSystem);
 
 	_DELETE(m_typeMgr);
 	_DELETE(m_nameMgr);

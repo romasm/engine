@@ -9,6 +9,11 @@ cbuffer matrixBuffer : register(b1)
 	matrix normalMatrix;
 };
 
+cbuffer skinnedMatrixBuffer : register(b1)
+{ 
+	matrix boneMatrix[256];
+};
+
 PI_Mesh OpaqueVS(VI_Mesh input)
 {
     PI_Mesh output = (PI_Mesh)0;
@@ -22,6 +27,38 @@ PI_Mesh OpaqueVS(VI_Mesh input)
     output.normal = normalize(mul(input.normal, nM));
     output.tangent = normalize(mul(input.tangent, nM));
     output.binormal = normalize(mul(input.binormal, nM));
+
+    return output;
+}
+
+PI_Mesh OpaqueSkinnedVS(VI_Skinned_Mesh input)
+{
+    PI_Mesh output = (PI_Mesh)0;
+
+	int bone = 0;
+	const float4 localPos = float4(input.position, 1);
+	[loop]
+	while(input.boneID[bone] >= 0)
+	{
+		const float weight = input.boneWeight[bone];
+		const int indexM = input.boneID[bone] * 2;
+
+		output.worldPos += mul(localPos, boneMatrix[indexM]) * weight;
+
+		const float3x3 nM = (float3x3)boneMatrix[indexM + 1];
+		output.normal += mul(input.normal, nM) * weight;
+		output.tangent += mul(input.tangent, nM) * weight;
+		output.binormal += mul(input.binormal, nM) * weight;
+
+		bone++;
+	}
+
+    output.position = mul(output.worldPos, g_viewProj);
+	output.tex = input.tex;
+	
+    output.normal = normalize(output.normal);
+    output.tangent = normalize(output.tangent);
+    output.binormal = normalize(output.binormal);	
 
     return output;
 }
@@ -51,6 +88,23 @@ float4 OpaqueShadowVS(VI_Mesh input) : SV_POSITION
 {
     float4 output;
     output = mul(float4(input.position, 1), worldMatrix);
+    output = mul(output, shadowVP);
+
+    return output;
+}
+
+float4 OpaqueSkinnedShadowVS(VI_Skinned_Mesh input) : SV_POSITION
+{
+    float4 output = 0;
+
+	int bone = 0;
+	const float4 localPos = float4(input.position, 1);
+	[loop]
+	while(input.boneID[bone] >= 0)
+	{
+		output += mul(localPos, boneMatrix[input.boneID[bone] * 2]) * input.boneWeight[bone];
+		bone++;
+	}
     output = mul(output, shadowVP);
 
     return output;

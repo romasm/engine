@@ -499,7 +499,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 			}
 			else if(bufName == "materialId")
 				HInput.matId_Register = (uint8_t)desc.BindPoint;
-			else if(bufName == "matrixBuffer")
+			else if(bufName == "matrixBuffer" || bufName == "skinnedMatrixBuffer")
 				HInput.matrixBuf_Register = (uint8_t)desc.BindPoint;
 			break;
 		case D3D_SIT_SAMPLER:

@@ -327,58 +327,37 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 
 bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 {
+	bool status = false;
 #ifdef _EDITOR
-	string impFile = resFile + EXT_IMPORT;
-	
-	uint32_t fileSize = sizeof(uint32_t) + sizeof(uint32_t);
-	fileSize += sizeof(uint32_t) + (uint32_t)info.filePath.size();
-	fileSize += sizeof(uint32_t) + (uint32_t)info.resourceName.size();
-	fileSize += ImportInfo::sizeNoString();
+	string impFileName = resFile + EXT_IMPORT;
+	FileIO impFile(impFileName, true);
 
-	uint8_t* data = new uint8_t[fileSize];
-	uint8_t* t_data = data;
+	auto node = impFile.CreateNode("import", impFile.Root());
 
-	*(uint32_t*)t_data = IMPORT_FILE_VERSION;
-	t_data += sizeof(uint32_t);
+	impFile.WriteInt("version", IMPORT_FILE_VERSION, node);
+	impFile.WriteUint("fileDate", FileIO::GetDateModifRaw(info.filePath), node);
+	impFile.WriteString("filePath", info.filePath, node);
+	impFile.WriteString("resourceName", info.resourceName, node);
+	impFile.WriteByte("importBytes", info.importBytes, node);
+	impFile.WriteBool("isSkinnedMesh", info.isSkinnedMesh, node);
+	impFile.WriteUint("textureFormat", info.textureFormat, node);
+	impFile.WriteBool("genMips", info.genMips, node);
+	impFile.WriteUint("genMipsFilter", info.genMipsFilter, node);
 
-	*(uint32_t*)t_data = FileIO::GetDateModifRaw(info.filePath);
-	t_data += sizeof(uint32_t);
-
-	*(uint32_t*)t_data = (uint32_t)info.filePath.size();
-	t_data += sizeof(uint32_t);
-
-	memcpy(t_data, info.filePath.data(), info.filePath.size());
-	t_data += info.filePath.size() * sizeof(char);
-
-	*(uint32_t*)t_data = (uint32_t)info.resourceName.size();
-	t_data += sizeof(uint32_t);
-
-	memcpy(t_data, info.resourceName.data(), info.resourceName.size());
-	t_data += info.resourceName.size();
-
-	memcpy(t_data, &info.importBytes, ImportInfo::sizeNoString());
-	t_data += ImportInfo::sizeNoString();
-
-	bool status;
-	if( !(status = FileIO::WriteFileData(impFile, data, fileSize)) )
-	{
-		ERR("Cant write import file %s", impFile.c_str() );
-	}
-	_DELETE_ARRAY(data);
-	return status;
+	if( !(status = impFile.Save()) )
+		ERR("Cant write import file %s", impFileName.c_str() );
 #endif
+	return status;
 }
 
 void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date)
 {
 #ifdef _EDITOR
-	string impFile = resName + EXT_IMPORT;
+	string impFileName = resName + EXT_IMPORT;
+	FileIO impFile(impFileName);
 
-	uint32_t size = 0;
-	uint8_t* fdata = FileIO::ReadFileData(impFile, &size, true);
-	uint8_t* t_data = fdata;
-
-	if(!fdata || (*(uint32_t*)t_data) != IMPORT_FILE_VERSION )
+	auto node = impFile.Node("import", impFile.Root());
+	if( impFile.ReadInt("version", node) != IMPORT_FILE_VERSION )
 	{
 		date = FileIO::GetDateModifRaw(resName);
 		info.filePath = resName;
@@ -386,26 +365,15 @@ void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32
 	}
 	else
 	{
-		t_data += sizeof(uint32_t);
-
-		date = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
-
-		uint32_t stringSize = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
-		info.filePath = string((char*)t_data, stringSize);
-		t_data += sizeof(char) * stringSize;
-
-		stringSize = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
-		info.resourceName = string((char*)t_data, stringSize);
-		t_data += sizeof(char) * stringSize;
-
-		memcpy(&info.importBytes, t_data, ImportInfo::sizeNoString());
-		t_data += ImportInfo::sizeNoString();
+		date = impFile.ReadUint("fileDate", node);
+		info.filePath = impFile.ReadString("filePath", node);
+		info.resourceName = impFile.ReadString("resourceName", node);
+		info.importBytes = impFile.ReadByte("importBytes", node);
+		info.isSkinnedMesh = impFile.ReadBool("isSkinnedMesh", node);
+		info.textureFormat = (DXGI_FORMAT)impFile.ReadUint("textureFormat", node);
+		info.genMips = impFile.ReadBool("genMips", node);
+		info.genMipsFilter = impFile.ReadUint("genMipsFilter", node);
 	}		
-
-	_DELETE_ARRAY(fdata);
 #endif
 }
 
