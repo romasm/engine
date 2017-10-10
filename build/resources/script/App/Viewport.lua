@@ -74,6 +74,7 @@ function Viewport:Init()
     self.gamemode = false
     self.fullscreen = false
     self.collisionDraw = false
+    self.sceneGraphDraw = false
 
     self.tc_action = false
 	self.tc_hover = false
@@ -147,6 +148,7 @@ function Viewport:SetWorld(WLD)
 
     self.overlay_gui.enable = true
     self.collisionDraw = false
+    self.sceneGraphDraw = false
 
     History:Clear()
     self.history_push = false
@@ -264,6 +266,13 @@ function Viewport:SetPhysicsDraw(draw)
     
     self.collisionDraw = draw
     self.lua_world.world.physics:SetDebugDraw(self.collisionDraw)
+end
+
+function Viewport:SetSceneGraphDraw(draw)
+    if not self.lua_world then return end
+    
+    self.sceneGraphDraw = draw
+    self.lua_world.world:SetSceneGraphDebugDraw(self.sceneGraphDraw)
 end
 
 -- TEMP

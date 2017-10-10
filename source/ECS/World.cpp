@@ -10,7 +10,8 @@ BaseWorld::BaseWorld( uint32_t id )
 {
 	b_active = false;
 	m_mode = StateMode::NO_LIVE;
-	
+	b_sceneGraphDbg = false;
+
 	world_name = "";
 	ID = id;
 
@@ -641,6 +642,8 @@ void World::Frame()
 	m_skeletonSystem->Animate();
 
 	m_sceneGraph->Update();
+	if(b_sceneGraphDbg)
+		m_sceneGraph->DebugDraw(&dbgDrawer);
 	
 	m_physicsSystem->UpdateTransformations();
 	if( m_mode == StateMode::LIVE )

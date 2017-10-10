@@ -188,6 +188,28 @@ void SceneGraph::Update()
 	}
 }
 
+void SceneGraph::DebugDraw(DebugDrawer* dbgDrawer)
+{
+	Vector3 color(0.1f, 1.0f, 0.1f);
+	for (uint32_t i = 0; i < dirty.size(); i++)
+	{
+		Relation& relt = relations[i];
+		if( relt.parentID != SCENEGRAPH_NULL_ID )
+		{
+			XMVECTOR scale, rot, pos;
+			XMMatrixDecompose(&scale, &rot, &pos, worldTransformation[i]);
+			Vector3 A(pos);
+			XMMatrixDecompose(&scale, &rot, &pos, worldTransformation[relt.parentID]);
+			Vector3 B(pos);
+			dbgDrawer->PushLine(A, B, color, color);
+		}
+		else
+		{
+			; // TODO: point draw
+		}
+	}
+}
+
 void SceneGraph::DeleteNode(uint32_t nodeID)
 {
 	uint32_t lookupID = lookup[nodeID];

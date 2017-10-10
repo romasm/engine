@@ -2,6 +2,7 @@
 
 #include "ECS_defines.h"
 #include "Entity.h"
+#include "DebugDrawer.h"
 
 #define MAX_HIERARCHY_DEPTH 256
 
@@ -84,6 +85,8 @@ namespace EngineCore
 				return;
 			UpdateNode(lookupID);
 		}
+
+		void DebugDraw(DebugDrawer* dbgDrawer);
 
 		bool IsDirty(uint32_t nodeID);
 		bool SetDirty(uint32_t nodeID);

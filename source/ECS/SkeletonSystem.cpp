@@ -160,7 +160,7 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 		}
 		else
 		{
-			if( bone.parent <= comp.bones.size() )
+			if( bone.parent >= comp.bones.size() )
 			{
 				ERR("Skeleton bones needs to be presorted in hierarchy order for %s", SkeletonMgr::GetName(comp.skeletonID));
 				parentNode = transformComp->nodeID;

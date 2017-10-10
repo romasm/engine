@@ -705,8 +705,11 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 		it.second = boneInvRemap[it.second];
 
 	for(uint32_t i = 0; i < (uint32_t)newBoneData.size(); i++)
-		newBoneData[i].parent = boneInvRemap[newBoneData[i].parent];
-	
+	{
+		if(newBoneData[i].parent >= 0)
+			newBoneData[i].parent = boneInvRemap[newBoneData[i].parent];
+	}
+
 	boneInvRemap.destroy();
 
 	boneData.swap(newBoneData);

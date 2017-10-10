@@ -397,5 +397,28 @@ return GuiRect({
             end,
         },
     }),
+
+    GuiCheck({
+        styles = {GuiStyles.rendercfg_check,},
+        top = 180,
+        left = 220,
+        text = { str = "Draw scene graph nodes" },
+        alt = "Visualisation of scene graph hierarchy",
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) 
+                Viewport:SetSceneGraphDraw(true)
+                return true
+            end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
+                Viewport:SetSceneGraphDraw(false)
+                return true
+            end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) 
+                self:SetCheck( Viewport.sceneGraphDraw )
+                return true
+            end,
+        },
+    }),
 })
 end

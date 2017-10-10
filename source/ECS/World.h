@@ -237,6 +237,11 @@ namespace EngineCore
 			m_controllerSystem->UpdateLuaFuncs();
 		}
 	#endif
+
+		void SetSceneGraphDebugDraw(bool draw)
+		{
+			b_sceneGraphDbg = draw;
+		}
 		
 		inline uint8_t* GetCopyBuffer() {return copyBuffer;}
 
@@ -295,6 +300,8 @@ namespace EngineCore
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
 					.addProperty("mode", &BaseWorld::GetMode, &BaseWorld::SetMode)
+
+					.addFunction("SetSceneGraphDebugDraw", &BaseWorld::SetSceneGraphDebugDraw)
 				.endClass();
 		}
 
@@ -308,6 +315,8 @@ namespace EngineCore
 
 		bool b_active;
 		StateMode m_mode;
+
+		bool b_sceneGraphDbg;
 
 		LocalTimer m_world_timer;
 		float m_dt;
