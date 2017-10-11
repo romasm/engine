@@ -565,20 +565,26 @@ bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVert
 	return status;
 }
 
-void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNode* root, aiNode* node)
+void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNode* root, aiNode* node, bool worldTransformation)
 {
 	string nodeName(node->mName.data);
 	NodeInfo nInfo;
 	if(node->mParent) 
 		nInfo.parent = node->mParent->mName.data;
 
-	nInfo.transform = node->mTransformation;
-	/*auto parent = node;
-	while( parent != root )
+	if(worldTransformation)
 	{
-		nInfo.transform = parent->mTransformation * nInfo.transform;
-		parent = parent->mParent;
-	}*/
+		auto parent = node;
+		while( parent != root )
+		{
+			nInfo.transform = parent->mTransformation * nInfo.transform;
+			parent = parent->mParent;
+		}
+	}
+	else
+	{
+		nInfo.transform = node->mTransformation;
+	}
 
 	nodeTransforms.insert(make_pair(nodeName, nInfo));
 
@@ -586,7 +592,7 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 	{
 		auto childNode = node->mChildren[j];
 
-		getSubNodesTransform(nodeTransforms, root, childNode);
+		getSubNodesTransform(nodeTransforms, root, childNode, worldTransformation);
 	}
 }
 
@@ -616,7 +622,7 @@ bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unorde
 
 	unordered_map<string, NodeInfo> nodeTransforms;
 	auto root = scene->mRootNode;
-	getSubNodesTransform(nodeTransforms, root, root);
+	getSubNodesTransform(nodeTransforms, root, root, boneInvWorldTransforms);
 
 	for(uint32_t i = 0; i < matCount; i++)
 	{
@@ -645,8 +651,6 @@ bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unorde
 
 				if(boneInvWorldTransforms)
 					bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
-				else
-					bData.localTransform = Matrix::Identity;
 
 				boneData.push_back(bData);
 				boneIds.insert(make_pair(boneName, boneId));
@@ -673,8 +677,15 @@ bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unorde
 		else
 			bData.parent = -1;
 
-		//if(!boneInvWorldTransforms)
-		bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform) * bData.localTransform;
+		if(boneInvWorldTransforms)
+		{
+			aiMatrix4x4ToMatrix(node->second.transform).Invert(bData.localTransform);
+			bData.localTransform *= bData.localTransform;
+		}
+		else
+		{
+			bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform);
+		}
 	}
 
 	// sort bones	

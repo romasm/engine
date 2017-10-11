@@ -308,14 +308,14 @@ bool SceneGraph::Attach(uint32_t child, uint32_t parent)
 	if( parentRelt.firstChildID != SCENEGRAPH_NULL_ID )
 	{
 		uint32_t otherChildID = parentRelt.firstChildID;
-		auto& otherChildComp = relations[otherChildID];
-		while( otherChildComp.nextID != SCENEGRAPH_NULL_ID )
+		Relation* otherChildComp = &relations[otherChildID];
+		while( otherChildComp->nextID != SCENEGRAPH_NULL_ID )
 		{
-			otherChildID = otherChildComp.nextID;
-			otherChildComp = relations[otherChildID];
+			otherChildID = otherChildComp->nextID;
+			otherChildComp = &relations[otherChildID];
 		}
 
-		otherChildComp.nextID = childLookupID;
+		otherChildComp->nextID = childLookupID;
 		childRelt.prevID = otherChildID;
 	}
 	else

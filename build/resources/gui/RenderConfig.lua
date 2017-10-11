@@ -402,6 +402,7 @@ return GuiRect({
         styles = {GuiStyles.rendercfg_check,},
         top = 180,
         left = 220,
+        width = 170,
         text = { str = "Draw scene graph nodes" },
         alt = "Visualisation of scene graph hierarchy",
 
