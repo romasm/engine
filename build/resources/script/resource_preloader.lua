@@ -45,7 +45,6 @@ PreloadList = {
     { PATH.SHADERS .."objects/editor/line_geometry", RESOURCE_TYPE.SHADER },
     { PATH.SHADERS .."objects/editor/line_geometry_sphere", RESOURCE_TYPE.SHADER },
     { PATH.SHADERS .."objects/opaque_main", RESOURCE_TYPE.SHADER },
-    { PATH.SHADERS .."objects/opaque_skinned", RESOURCE_TYPE.SHADER },
     { PATH.SHADERS .."objects/alphatest_main", RESOURCE_TYPE.SHADER },
     { PATH.SHADERS .."objects/transparent_medium", RESOURCE_TYPE.SHADER },
 

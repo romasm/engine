@@ -111,6 +111,9 @@ namespace EngineCore
 		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
 		bool convertAISceneSkeleton(string& filename, const aiScene* scene);
 
+		bool loadMeshSkeleton(string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, 
+			DArray<BoneData>& boneData, DArray<int32_t>& boneInvRemap, bool boneInvWorldTransforms);
+
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 
 			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax);

@@ -107,140 +107,57 @@ void SceneRenderMgr::cleanRenderArrayLights()
 		voxelRenderer->ClearPerFrame();
 }
 
-bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-							ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, IA_TOPOLOGY topo)
-{return regToDraw(index_count, vertex_buffer, index_buffer, constant_buffer, vertex_size, material, Vector3(current_cam->far_clip,0,0), topo);}
-bool SceneRenderMgr::RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-							 ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo)
-{return regToDraw(index_count, vertex_buffer, index_buffer, constant_buffer, vertex_size, material, center - cameraPosition, topo);}
+bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+							  uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo)
+{return RegMesh(indexCount, indexBuffer, vertexBuffer, vertexSize, isSkinned, gpuMatrixBuffer, material, Vector3(current_cam->far_clip,0,0), topo);}
 
-bool SceneRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, IA_TOPOLOGY topo)
-{return regToDraw(mesh, constant_buffer, material, Vector3(current_cam->far_clip,0,0), topo);}
-bool SceneRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo)
-{return regToDraw(mesh, constant_buffer, material, center - cameraPosition, topo);}
-
-bool SceneRenderMgr::regToDraw(uint32_t index_count, 
-			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo)
+bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo)
 {
-	if(!material || constant_buffer == nullptr)
+	if( !material || gpuMatrixBuffer == nullptr || indexCount == 0 )
 		return false;
 	
 	bool has_tq = false;
-	auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_DEFAULT, &has_tq);
-
+	const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (isSkinned ? 1 : 0));
+	auto queue = material->GetTechQueue(tech, &has_tq);
 	if(!has_tq)
 		return false;
-
-	RenderMesh* mesh_new = new RenderMesh;
-	mesh_new->index_count = index_count;
-	mesh_new->vertex_buffer = vertex_buffer;
-	mesh_new->index_buffer = index_buffer;
-	mesh_new->constant_buffer = constant_buffer;
-	mesh_new->vertex_size = vertex_size;
-	mesh_new->material = material;
-	mesh_new->topo = topo;
-
-	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
-	group_new->ID = meshgroup_count;
-	meshgroup_count++;
-	group_new->meshes = new RenderMesh*[1];
-	group_new->mesh_count = 1;
-	group_new->meshes[0] = mesh_new;
-	group_new->center = center;
-	mesh_new->group = group_new;
-
+	
+	RenderMesh* mesh_new = nullptr;
 	switch(queue)
 	{
 	case SC_TRANSPARENT:
 	case SC_ALPHA:
-		transparent_array.push_back(mesh_new);
+		mesh_new = transparent_array.push_back();
 		break;
 	case SC_OPAQUE:
-		opaque_array.push_back(mesh_new);
+		mesh_new = opaque_array.push_back();
 		break;
 	case SC_ALPHATEST:
-		alphatest_array.push_back(mesh_new);
+		mesh_new = alphatest_array.push_back();
 		break;
 	case GUI_3D:
-		hud_array.push_back(mesh_new);
+		mesh_new = hud_array.push_back();
 		break;
 	case GUI_3D_OVERLAY:
-		ovhud_array.push_back(mesh_new);
+		mesh_new = ovhud_array.push_back();
 		break;
-	}
-
-	return true;
-}
-
-bool SceneRenderMgr::regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo)
-{
-	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
-	if( matCount == 0 || constant_buffer == nullptr )
+	default:
 		return false;
-
-	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
-	group_new->ID = meshgroup_count;
-	meshgroup_count++;
-	group_new->meshes = new RenderMesh*[matCount];
-	group_new->center = center;
-	group_new->mesh_count = (uint32_t)matCount;
-
-	uint reged = 0;
-	for(uint16_t i = 0; i < matCount; i++)
-	{
-		if( !material[i] )
-			continue;
-
-		bool has_tq = false;
-		auto queue = material[i]->GetTechQueue(TECHNIQUES::TECHNIQUE_DEFAULT, &has_tq);
-
-		if(!has_tq)
-			continue;
-
-		RenderMesh* mesh_new = new RenderMesh;
-		mesh_new->index_count = mesh->indexBuffers[i].count;
-		mesh_new->vertex_buffer = mesh->vertexBuffers[i].buffer;
-		mesh_new->index_buffer = mesh->indexBuffers[i].buffer;
-		mesh_new->constant_buffer = constant_buffer;
-		mesh_new->vertex_size = MeshLoader::GetVertexSize(mesh->vertexFormat);
-		mesh_new->material = material[i];
-		mesh_new->topo = topo;
-
-		group_new->meshes[i] = mesh_new;
-		mesh_new->group = group_new;
-
-		reged++;
-		switch(queue)
-		{
-		case SC_TRANSPARENT:
-		case SC_ALPHA:
-			transparent_array.push_back(mesh_new);
-			break;
-		case SC_OPAQUE:
-			opaque_array.push_back(mesh_new);
-			break;
-		case SC_ALPHATEST:
-			alphatest_array.push_back(mesh_new);
-			break;
-		case GUI_3D:
-			hud_array.push_back(mesh_new);
-			break;
-		case GUI_3D_OVERLAY:
-			ovhud_array.push_back(mesh_new);
-			break;
-		}
 	}
 
-	if(!reged)
-	{
-		_DELETE(group_new);
-		meshgroup_count--;
-	}
-
+	mesh_new->indexCount = indexCount;
+	mesh_new->vertexBuffer = vertexBuffer;
+	mesh_new->indexBuffer = indexBuffer;
+	mesh_new->gpuMatrixBuffer = gpuMatrixBuffer;
+	mesh_new->isSkinned = isSkinned;
+	mesh_new->vertexSize = vertexSize;
+	mesh_new->material = material;
+	mesh_new->topo = topo;
+	mesh_new->distanceSq = (center - cameraPosition).LengthSquared();
+	
 	return true;
 }
-
 
 #define PIXEL_HALF 0.5f
 
@@ -674,14 +591,16 @@ void SceneRenderMgr::DrawHud()
 	
 	for(auto cur: hud_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
-		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
-		Render::SetTopology(cur->topo);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
 		
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -693,14 +612,16 @@ void SceneRenderMgr::DrawOvHud()
 	
 	for(auto cur: ovhud_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
-		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
-		Render::SetTopology(cur->topo);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
+
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -712,18 +633,20 @@ void SceneRenderMgr::DrawOpaque(ScenePipeline* scene)
 	
 	for(auto cur: opaque_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
 
 		if(scene->Materials_Count < MATERIALS_COUNT)
-			cur->material->AddToFrameBuffer(&scene->Materials[scene->Materials_Count], &scene->Materials_Count);
+			cur.material->AddToFrameBuffer(&scene->Materials[scene->Materials_Count], &scene->Materials_Count);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
-		Render::SetTopology(cur->topo);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -735,18 +658,20 @@ void SceneRenderMgr::DrawAlphatest(ScenePipeline* scene)
 
 	for(auto cur: alphatest_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
 		
 		if(scene->Materials_Count < MATERIALS_COUNT)
-			cur->material->AddToFrameBuffer(&scene->Materials[scene->Materials_Count], &scene->Materials_Count);
+			cur.material->AddToFrameBuffer(&scene->Materials[scene->Materials_Count], &scene->Materials_Count);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
-		Render::SetTopology(cur->topo);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -758,18 +683,20 @@ void SceneRenderMgr::PrepassTransparent(ScenePipeline* scene)
 
 	for(auto cur: transparent_array)
 	{
-		if(!cur->material->HasTechnique(TECHNIQUES::TECHNIQUE_PREPASS))
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_PREPASS + (cur.isSkinned ? 1 : 0));
+
+		if(!cur.material->HasTechnique(tech))
 			continue;
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_PREPASS);
-		Render::SetTopology(cur->topo);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -779,57 +706,16 @@ void SceneRenderMgr::DrawTransparent(ScenePipeline* scene)
 
 	for(auto cur: transparent_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_DEFAULT);
-		Render::SetTopology(cur->topo);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
+
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
-}
-
-void SceneRenderMgr::cleanRenderArrayHud()
-{
-	for(auto cur: hud_array)
-	{
-		if(!cur->index_count)
-			continue;
-		if(cur->group)
-		{
-			MeshGroup<RenderMesh>* temp_group = cur->group;
-
-			for(unsigned int i=0; i<temp_group->mesh_count; i++)
-			{
-				temp_group->meshes[i]->group = nullptr;
-			}
-			_DELETE_ARRAY(temp_group->meshes);
-			_DELETE(temp_group);
-		}
-		cur->index_count = 0;
-		_DELETE(cur);
-	}
-	hud_array.clear();
-
-	for(auto cur: ovhud_array)
-	{
-		if(!cur->index_count)
-			continue;
-		if(cur->group)
-		{
-			MeshGroup<RenderMesh>* temp_group = cur->group;
-
-			for(unsigned int i=0; i<temp_group->mesh_count; i++)
-			{
-				temp_group->meshes[i]->group = nullptr;
-			}
-			_DELETE_ARRAY(temp_group->meshes);
-			_DELETE(temp_group);
-		}
-		cur->index_count = 0;
-		_DELETE(cur);
-	}
-	ovhud_array.clear();
 }

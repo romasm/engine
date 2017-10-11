@@ -109,6 +109,9 @@ void TransformControls::RegToDraw()
 	if(!active || mode == E_PIVOT)
 		return;
 
+	// TODO: store
+	const auto vertexSize = MeshLoader::GetVertexSize(MeshMgr::GetResourcePtr(arrow_x)->vertexFormat);
+
 	uint frustCount = 0;
 	switch (mode)
 	{
@@ -159,20 +162,20 @@ void TransformControls::RegToDraw()
 			auto arrow_xy_mesh = MeshMgr::GetResourcePtr(plane_xy);
 			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
 			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
+			
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_x_mesh->indexBuffers[0].count, arrow_x_mesh->indexBuffers[0].buffer, arrow_x_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_x_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_y_mesh->indexBuffers[0].count, arrow_y_mesh->indexBuffers[0].buffer, arrow_y_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_y_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_z_mesh->indexBuffers[0].count, arrow_z_mesh->indexBuffers[0].buffer, arrow_z_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_z_mesh->box.Center), m_transformation)));
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_x_mesh->indexBuffers[0].count, arrow_x_mesh->vertexBuffers[0].buffer, arrow_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_x_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_y_mesh->indexBuffers[0].count, arrow_y_mesh->vertexBuffers[0].buffer, arrow_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_y_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_z_mesh->indexBuffers[0].count, arrow_z_mesh->vertexBuffers[0].buffer, arrow_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_z_mesh->box.Center), m_transformation)));
-
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].count, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].count, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].count, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].count, arrow_xy_mesh->indexBuffers[0].buffer, arrow_xy_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].count, arrow_xz_mesh->indexBuffers[0].buffer, arrow_xz_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].count, arrow_yz_mesh->indexBuffers[0].buffer, arrow_yz_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
 	
 			frustCount++;
 		}
@@ -216,14 +219,14 @@ void TransformControls::RegToDraw()
 			auto rot_z_mesh = MeshMgr::GetResourcePtr(rot_z);
 			auto rot_all_mesh = MeshMgr::GetResourcePtr(rot_all);
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_x_mesh->indexBuffers[0].count, rot_x_mesh->vertexBuffers[0].buffer, rot_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_x_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_y_mesh->indexBuffers[0].count, rot_y_mesh->vertexBuffers[0].buffer, rot_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_y_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_z_mesh->indexBuffers[0].count, rot_z_mesh->vertexBuffers[0].buffer, rot_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_rot_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_z_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_all_mesh->indexBuffers[0].count, rot_all_mesh->vertexBuffers[0].buffer, rot_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_all_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_x_mesh->indexBuffers[0].count, rot_x_mesh->indexBuffers[0].buffer, rot_x_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_rot_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_x_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_y_mesh->indexBuffers[0].count, rot_y_mesh->indexBuffers[0].buffer, rot_y_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_rot_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_y_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_z_mesh->indexBuffers[0].count, rot_z_mesh->indexBuffers[0].buffer, rot_z_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_rot_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_z_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(rot_all_mesh->indexBuffers[0].count, rot_all_mesh->indexBuffers[0].buffer, rot_all_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&rot_all_mesh->box.Center), m_transformation)));
 		
 			frustCount++;
 		}
@@ -279,21 +282,21 @@ void TransformControls::RegToDraw()
 			auto arrow_xz_mesh = MeshMgr::GetResourcePtr(plane_xz);
 			auto arrow_yz_mesh = MeshMgr::GetResourcePtr(plane_yz);
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_x_mesh->indexBuffers[0].count, box_x_mesh->vertexBuffers[0].buffer, box_x_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_x_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_y_mesh->indexBuffers[0].count, box_y_mesh->vertexBuffers[0].buffer, box_y_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_y_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_z_mesh->indexBuffers[0].count, box_z_mesh->vertexBuffers[0].buffer, box_z_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_z_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_x_mesh->indexBuffers[0].count, box_x_mesh->indexBuffers[0].buffer, box_x_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_x, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_x_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_y_mesh->indexBuffers[0].count, box_y_mesh->indexBuffers[0].buffer, box_y_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_y, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_y_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_z_mesh->indexBuffers[0].count, box_z_mesh->indexBuffers[0].buffer, box_z_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_axis_z, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_z_mesh->box.Center), m_transformation)));
 
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].count, arrow_xy_mesh->vertexBuffers[0].buffer, arrow_xy_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].count, arrow_xz_mesh->vertexBuffers[0].buffer, arrow_xz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].count, arrow_yz_mesh->vertexBuffers[0].buffer, arrow_yz_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
-			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_all_mesh->indexBuffers[0].count, box_all_mesh->vertexBuffers[0].buffer, box_all_mesh->indexBuffers[0].buffer, matricies[frustCount].constantBuffer, 
-				sizeof(LitVertex), mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_all_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xy_mesh->indexBuffers[0].count, arrow_xy_mesh->indexBuffers[0].buffer, arrow_xy_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_xy, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xy_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_xz_mesh->indexBuffers[0].count, arrow_xz_mesh->indexBuffers[0].buffer, arrow_xz_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_xz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_xz_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(arrow_yz_mesh->indexBuffers[0].count, arrow_yz_mesh->indexBuffers[0].buffer, arrow_yz_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_plane_yz, Vector3(XMVector3TransformCoord(XMLoadFloat3(&arrow_yz_mesh->box.Center), m_transformation)));
+			((SceneRenderMgr*)f->rendermgr)->RegMesh(box_all_mesh->indexBuffers[0].count, box_all_mesh->indexBuffers[0].buffer, box_all_mesh->vertexBuffers[0].buffer, vertexSize, false, matricies[frustCount].constantBuffer, 
+				mat_all, Vector3(XMVector3TransformCoord(XMLoadFloat3(&box_all_mesh->box.Center), m_transformation)));
 		
 			frustCount++;
 		}

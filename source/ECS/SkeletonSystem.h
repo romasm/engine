@@ -17,7 +17,7 @@ namespace EngineCore
 		uint32_t skeletonID;
 		DArray<uint32_t> bones;
 
-		ID3D11Buffer* constantBuffer;
+		StructBuf gpuMatrixBuffer;
 		DArrayAligned<XMMATRIX> matrixBuffer;
 
 		SkeletonComponent()
@@ -25,7 +25,6 @@ namespace EngineCore
 			parent.setnull();
 			dirty = true;
 			skeletonID = SkeletonMgr::nullres;
-			constantBuffer = nullptr;
 		}
 	};
 
@@ -96,7 +95,7 @@ namespace EngineCore
 			comp.skeletonID = SkeletonMgr::nullres;
 			comp.bones.destroy();
 			comp.matrixBuffer.destroy();
-			_RELEASE(comp.constantBuffer);
+			comp.gpuMatrixBuffer.Release();
 		};
 
 		ComponentRArray<SkeletonComponent> components;

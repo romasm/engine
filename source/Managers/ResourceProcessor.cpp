@@ -380,6 +380,9 @@ void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32
 bool ResourceProcessor::CheckImportNeeded(ImportInfo& info, uint32_t date, string& resFile)
 {
 #ifdef _EDITOR
+	if(!FileIO::IsExist(resFile))
+		return true;
+
 	ImportInfo oldInfo;
 	uint32_t oldDate;
 	LoadImportInfo(resFile, oldInfo, oldDate);

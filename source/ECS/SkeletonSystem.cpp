@@ -115,7 +115,7 @@ void SkeletonSystem::UpdateBuffers()
 				i.matrixBuffer[matrixID + 1] = XMMatrixTranspose(normalMatrix);
 			}
 
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
+			Render::UpdateDynamicResource(i.gpuMatrixBuffer.buf, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
 
 			i.dirty = false;
 		}
@@ -141,7 +141,7 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 		sceneGraph->DeleteNode(comp.bones[i]);
 	comp.bones.destroy();
 	comp.matrixBuffer.destroy();
-	_RELEASE(comp.constantBuffer);
+	comp.gpuMatrixBuffer.Release();
 
 	// init new
 	int32_t boneCount = (int32_t)skeletonPtr->bData.size();
@@ -179,7 +179,7 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 
 	comp.matrixBuffer.reserve(matrixCount);
 	comp.matrixBuffer.resize(matrixCount);
-	comp.constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX) * matrixCount, true);
+	comp.gpuMatrixBuffer = Buffer::CreateStructedBuffer(Render::Device(), matrixCount, sizeof(XMMATRIX), true);
 
 	comp.dirty = true;
 

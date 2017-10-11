@@ -18,6 +18,7 @@ Material::Material(string& name)
 		offsetFloat[i] = 0;
 		vectorsReg[i] = REGISTER_NULL;
 		matrixReg[i] = REGISTER_NULL;
+		matrixBoneReg[i] = REGISTER_NULL;
 		texReg[i] = REGISTER_NULL;
 	}
 	idBuf = nullptr;
@@ -106,9 +107,11 @@ bool Material::loadMat()
 	auto shaderPtr = (Shader*) ShaderMgr::Get()->GetResourcePtr(shaderID);
 	if(!shaderPtr)
 		return false;
-	uint16_t* codeIds = shaderPtr->GetCode();
+	uint16_t* codeIds = shaderPtr->GetCode(TECHNIQUES::TECHNIQUE_DEFAULT);
 	if(!codeIds)
 		return false;
+
+	uint16_t* codeSkinIds = shaderPtr->GetCode(TECHNIQUES::TECHNIQUE_SKIN_DEFAULT);
 
 	for(uint8_t i = 0; i < 5; i++)
 	{
@@ -119,9 +122,19 @@ bool Material::loadMat()
 		if(!Hcode.code)
 			return false;
 
+		// TODO: unique regs per tech
 		vectorsReg[i] = Hcode.input.matInfo_Register;
 		texReg[i] = Hcode.input.matTextures_StartRegister;
 		matrixReg[i] = Hcode.input.matrixBuf_Register;
+
+		if(codeSkinIds)
+		{
+			auto& HScode = ShaderCodeMgr::GetShaderCodeRef(codeSkinIds[i]);
+			if(!HScode.code)
+				return false;
+
+			matrixBoneReg[i] = HScode.input.matrixBoneBuf_Register;
+		}
 
 		if(i == SHADER_PS)
 			sceneReg = Hcode.input.matId_Register;
@@ -184,6 +197,7 @@ bool Material::createMat()
 		vectorsReg[i] = Hcode.input.matInfo_Register;
 		texReg[i] = Hcode.input.matTextures_StartRegister;
 		matrixReg[i] = Hcode.input.matrixBuf_Register;
+		matrixBoneReg[i] = Hcode.input.matrixBoneBuf_Register;
 
 		if(i == SHADER_PS)
 		{
@@ -304,6 +318,7 @@ bool Material::ñonvertMat(string& nameBin)
 			vectorsReg[i] = REGISTER_NULL;
 			texReg[i] = REGISTER_NULL;
 			matrixReg[i] = REGISTER_NULL;
+			matrixBoneReg[i] = REGISTER_NULL;
 			continue;
 		}
 
@@ -314,6 +329,7 @@ bool Material::ñonvertMat(string& nameBin)
 		vectorsReg[i] = Hcode.input.matInfo_Register;
 		texReg[i] = Hcode.input.matTextures_StartRegister;
 		matrixReg[i] = Hcode.input.matrixBuf_Register;
+		matrixBoneReg[i] = Hcode.input.matrixBoneBuf_Register;
 
 		if(i == SHADER_PS)
 			sceneReg = Hcode.input.matId_Register;
@@ -473,6 +489,7 @@ bool Material::SetShader(string shaderName)
 		vectorsReg[i] = Hcode.input.matInfo_Register;
 		texReg[i] = Hcode.input.matTextures_StartRegister;
 		matrixReg[i] = Hcode.input.matrixBuf_Register;
+		matrixBoneReg[i] = Hcode.input.matrixBoneBuf_Register;
 
 		if(i == SHADER_PS)
 			sceneReg = Hcode.input.matId_Register;
@@ -677,18 +694,36 @@ void Material::Set(TECHNIQUES tech)
 	shaderPtr->Set(tech);
 }
 
-void Material::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
+void Material::SetMatrixBuffer(void* matrixBuf, bool isSkinned)
 {
-	if(matrixReg[SHADER_VS] != REGISTER_NULL)
-		Render::Context()->VSSetConstantBuffers(matrixReg[SHADER_VS], 1, &matrixBuf);
-	if(matrixReg[SHADER_PS] != REGISTER_NULL)
-		Render::Context()->PSSetConstantBuffers(matrixReg[SHADER_PS], 1, &matrixBuf);
-	if(matrixReg[SHADER_HS] != REGISTER_NULL)
-		Render::Context()->HSSetConstantBuffers(matrixReg[SHADER_HS], 1, &matrixBuf);
-	if(matrixReg[SHADER_DS] != REGISTER_NULL)
-		Render::Context()->DSSetConstantBuffers(matrixReg[SHADER_DS], 1, &matrixBuf);
-	if(matrixReg[SHADER_GS] != REGISTER_NULL)
-		Render::Context()->GSSetConstantBuffers(matrixReg[SHADER_GS], 1, &matrixBuf);	
+	if(isSkinned)
+	{
+		ID3D11ShaderResourceView* srv = (ID3D11ShaderResourceView*)matrixBuf;
+		if(matrixBoneReg[SHADER_VS] != REGISTER_NULL)
+			Render::Context()->VSSetShaderResources(matrixBoneReg[SHADER_VS], 1, &srv);
+		if(matrixBoneReg[SHADER_PS] != REGISTER_NULL)
+			Render::Context()->PSSetShaderResources(matrixBoneReg[SHADER_PS], 1, &srv);
+		if(matrixBoneReg[SHADER_HS] != REGISTER_NULL)
+			Render::Context()->HSSetShaderResources(matrixBoneReg[SHADER_HS], 1, &srv);
+		if(matrixBoneReg[SHADER_DS] != REGISTER_NULL)
+			Render::Context()->DSSetShaderResources(matrixBoneReg[SHADER_DS], 1, &srv);
+		if(matrixBoneReg[SHADER_GS] != REGISTER_NULL)
+			Render::Context()->GSSetShaderResources(matrixBoneReg[SHADER_GS], 1, &srv);	
+	}
+	else
+	{
+		ID3D11Buffer* buf = (ID3D11Buffer*)matrixBuf;
+		if(matrixReg[SHADER_VS] != REGISTER_NULL)
+			Render::Context()->VSSetConstantBuffers(matrixReg[SHADER_VS], 1, &buf);
+		if(matrixReg[SHADER_PS] != REGISTER_NULL)
+			Render::Context()->PSSetConstantBuffers(matrixReg[SHADER_PS], 1, &buf);
+		if(matrixReg[SHADER_HS] != REGISTER_NULL)
+			Render::Context()->HSSetConstantBuffers(matrixReg[SHADER_HS], 1, &buf);
+		if(matrixReg[SHADER_DS] != REGISTER_NULL)
+			Render::Context()->DSSetConstantBuffers(matrixReg[SHADER_DS], 1, &buf);
+		if(matrixReg[SHADER_GS] != REGISTER_NULL)
+			Render::Context()->GSSetConstantBuffers(matrixReg[SHADER_GS], 1, &buf);	
+	}
 }
 
 void Material::SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType)

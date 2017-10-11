@@ -7,89 +7,16 @@ using namespace EngineCore;
 BaseRenderMgr::BaseRenderMgr()
 {
 	cameraPosition = Vector3::Zero;
-	meshgroup_count = 0;
 }
 
-bool BaseRenderMgr::CompareMeshes(RenderMesh* first, RenderMesh* second)
+bool BaseRenderMgr::CompareMeshes(RenderMesh& first, RenderMesh& second)
 {
-	return first->group->center.LengthSquared() <  second->group->center.LengthSquared();
+	return first.distanceSq <  second.distanceSq;
 }
 
-bool BaseRenderMgr::InvCompareMeshes(RenderMesh* first, RenderMesh* second)
+bool BaseRenderMgr::InvCompareMeshes(RenderMesh& first, RenderMesh& second)
 {
-	return first->group->center.LengthSquared() >  second->group->center.LengthSquared();
-}
-
-void BaseRenderMgr::cleanRenderArrayOpaque()
-{
-	for(auto cur: opaque_array)
-	{
-		if(!cur->index_count)
-			continue;
-
-		if(cur->group)
-		{
-			MeshGroup<RenderMesh>* temp_group = cur->group;
-
-			for(unsigned int i=0; i<temp_group->mesh_count; i++)
-			{
-				// CRASH on null mat assign!!!!!!
-				temp_group->meshes[i]->group = nullptr;
-			}
-			_DELETE_ARRAY(temp_group->meshes);
-			_DELETE(temp_group);
-		}
-		cur->index_count = 0;
-		_DELETE(cur);
-	}
-	opaque_array.clear();
-}
-
-void BaseRenderMgr::cleanRenderArrayAlphatest()
-{
-	for(auto cur: alphatest_array)
-	{
-		if(!cur->index_count)
-			continue;
-
-		if(cur->group)
-		{
-			MeshGroup<RenderMesh>* temp_group = cur->group;
-
-			for(unsigned int i=0; i<temp_group->mesh_count; i++)
-			{
-				temp_group->meshes[i]->group = nullptr;
-			}
-			_DELETE_ARRAY(temp_group->meshes);
-			_DELETE(temp_group);
-		}
-		cur->index_count = 0;
-		_DELETE(cur);
-	}
-	alphatest_array.clear();
-}
-
-void BaseRenderMgr::cleanRenderArrayTransparenty()
-{
-	for(auto cur: transparent_array)
-	{
-		if(!cur->index_count)
-			continue;
-		if(cur->group)
-		{
-			MeshGroup<RenderMesh>* temp_group = cur->group;
-
-			for(unsigned int i=0; i<temp_group->mesh_count; i++)
-			{
-				temp_group->meshes[i]->group = nullptr;
-			}
-			_DELETE_ARRAY(temp_group->meshes);
-			_DELETE(temp_group);
-		}
-		cur->index_count;
-		_DELETE(cur);
-	}
-	transparent_array.clear();
+	return first.distanceSq > second.distanceSq;
 }
 
 ShadowRenderMgr::ShadowRenderMgr() : BaseRenderMgr()
@@ -100,118 +27,52 @@ ShadowRenderMgr::ShadowRenderMgr() : BaseRenderMgr()
 	alphatest_array.create(OPAQUE_SHADOW_ALPHATEST_MAX);
 }
 
-bool ShadowRenderMgr::RegMesh(uint32_t index_count, 
-			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, Vector3& center)
+bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			 uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo)
+{return RegMesh(indexCount, indexBuffer, vertexBuffer, vertexSize, isSkinned, gpuMatrixBuffer, material, (Vector3&)Vector3::Zero, topo);}
+
+bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+							 uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo)
 {
-	if(!material || constant_buffer == nullptr)
+	if( !material || gpuMatrixBuffer == nullptr || topo != IA_TOPOLOGY::TRISLIST || indexCount == 0 )
 		return false;
 
 	bool has_tq = false;
-	auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_SHADOW, &has_tq);
-
+	const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (isSkinned ? 1 : 0));
+	auto queue = material->GetTechQueue(tech, &has_tq);
 	if(!has_tq)
 		return false;
-	if(queue == GUI_2D || queue == GUI_2D_FONT || queue == GUI_3D || queue == GUI_3D_OVERLAY)
+	if( queue == GUI_2D || queue == GUI_2D_FONT || queue == GUI_3D || queue == GUI_3D_OVERLAY )
 		return false;
-	if(!IsTranparentShadows() && (queue == SC_TRANSPARENT || queue == SC_ALPHA))
+	if( !IsTranparentShadows() && (queue == SC_TRANSPARENT || queue == SC_ALPHA) )
 		return false;
-	
-	RenderMesh* mesh_new = new RenderMesh;
-	mesh_new->index_count = index_count;
-	mesh_new->vertex_buffer = vertex_buffer;
-	mesh_new->index_buffer = index_buffer;
-	mesh_new->constant_buffer = constant_buffer;
-	mesh_new->vertex_size = vertex_size;
-	mesh_new->material = material;
 
-	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
-	group_new->ID = meshgroup_count;
-	meshgroup_count++;
-	group_new->meshes = new RenderMesh*[1];
-	group_new->mesh_count = 1;
-	group_new->meshes[0] = mesh_new;
-	group_new->center = Vector3::Zero;
-	mesh_new->group = group_new;
-
+	RenderMesh* mesh_new = nullptr;
 	switch(queue)
 	{
 	case SC_TRANSPARENT:
 	case SC_ALPHA:
-		transparent_array.push_back(mesh_new);
+		mesh_new = transparent_array.push_back();
 		break;
 	case SC_OPAQUE:
-		opaque_array.push_back(mesh_new);
+		mesh_new = opaque_array.push_back();
 		break;
 	case SC_ALPHATEST:
-		alphatest_array.push_back(mesh_new);
+		mesh_new = alphatest_array.push_back();
 		break;
-	}
-
-	return true;
-}
-
-bool ShadowRenderMgr::RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center)
-{
-	const size_t matCount = min<size_t>(mesh->vertexBuffers.size(), material.size());
-	if( matCount == 0 || constant_buffer == nullptr )
+	default:
 		return false;
-
-	MeshGroup<RenderMesh>* group_new = new MeshGroup<RenderMesh>();
-	group_new->ID = meshgroup_count;
-	meshgroup_count++;
-	group_new->meshes = new RenderMesh*[matCount];
-	group_new->center = center - cameraPosition;
-	group_new->mesh_count = (uint32_t)matCount;
-
-	uint16_t reged = 0;
-	for(uint16_t i = 0; i < matCount; i++)
-	{
-		if( !material[i] )
-			continue;
-
-		bool has_tq = false;
-		auto queue = material[i]->GetTechQueue(TECHNIQUES::TECHNIQUE_SHADOW, &has_tq);
-
-		if(!has_tq)
-			continue;
-		if(queue == GUI_2D || queue == GUI_2D_FONT || queue == GUI_3D || queue == GUI_3D_OVERLAY)
-			continue;
-		if(!IsTranparentShadows() && (queue == SC_TRANSPARENT || queue == SC_ALPHA))
-			continue;
-
-		RenderMesh* mesh_new = new RenderMesh;
-		mesh_new->index_count = mesh->indexBuffers[i].count;
-		mesh_new->vertex_buffer = mesh->vertexBuffers[i].buffer;
-		mesh_new->index_buffer = mesh->indexBuffers[i].buffer;
-		mesh_new->constant_buffer = constant_buffer;
-		mesh_new->vertex_size = MeshLoader::GetVertexSize(mesh->vertexFormat);
-		mesh_new->material = material[i];
-
-		group_new->meshes[i] = mesh_new;
-		mesh_new->group = group_new;
-
-		reged++;
-		switch(queue)
-		{
-		case SC_TRANSPARENT:
-		case SC_ALPHA:
-			transparent_array.push_back(mesh_new);
-			break;
-		case SC_OPAQUE:
-			opaque_array.push_back(mesh_new);
-			break;
-		case SC_ALPHATEST:
-			alphatest_array.push_back(mesh_new);
-			break;
-		}
 	}
 
-	if(!reged)
-	{
-		_DELETE(group_new);
-		meshgroup_count--;
-	}
+	mesh_new->indexCount = indexCount;
+	mesh_new->vertexBuffer = vertexBuffer;
+	mesh_new->indexBuffer = indexBuffer;
+	mesh_new->gpuMatrixBuffer = gpuMatrixBuffer;
+	mesh_new->isSkinned = isSkinned;
+	mesh_new->vertexSize = vertexSize;
+	mesh_new->material = material;
+	mesh_new->topo = topo;
+	mesh_new->distanceSq = (center - cameraPosition).LengthSquared();
 
 	return true;
 }
@@ -224,14 +85,15 @@ void ShadowRenderMgr::DrawOpaque()
 	
 	for(auto cur: opaque_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_SHADOW);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->Set(tech);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -243,14 +105,15 @@ void ShadowRenderMgr::DrawAlphatest()
 
 	for(auto cur: alphatest_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_SHADOW);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->Set(tech);
 
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }
 
@@ -262,15 +125,14 @@ void ShadowRenderMgr::DrawTransparent()
 
 	for(auto cur: transparent_array)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur->vertex_buffer), &(cur->vertex_size), &offset);
-		Render::Context()->IASetIndexBuffer(cur->index_buffer, DXGI_FORMAT_R32_UINT, 0);
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
 
-		cur->material->SetMatrixBuffer(cur->constant_buffer);
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		//cur->material->SendVectorToShader(Vector4(float(scene->Light_NoShadows_Count), float(scene->Light_Shadows_Count), 0, 0), 0, ID_PS);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->Set(tech);
 
-		cur->material->Set(TECHNIQUES::TECHNIQUE_SHADOW);
-
-		Render::Context()->DrawIndexed(cur->index_count, 0, 0);
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
 }

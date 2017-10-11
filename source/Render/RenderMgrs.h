@@ -14,52 +14,6 @@
 
 namespace EngineCore
 {
-	template <typename MeshClass=void> struct MeshGroup
-	{
-		unsigned int ID;
-		Vector3 center;
-		
-		bool checked;
-		bool visible;
-		
-		MeshClass** meshes;
-		unsigned int mesh_count;
-		
-		MeshGroup()
-		{
-			ID = 0;
-			meshes = nullptr;
-			center = Vector3::Zero;
-			checked = false;
-			visible = false;
-			mesh_count = 0;
-		}
-	};
-
-	struct RenderMesh
-	{
-		uint32_t index_count; 
-		ID3D11Buffer* vertex_buffer; 
-		ID3D11Buffer* index_buffer; 
-		ID3D11Buffer* constant_buffer;
-		uint32_t vertex_size;
-		Material* material;
-		IA_TOPOLOGY topo;
-
-		MeshGroup<RenderMesh>* group;
-
-		RenderMesh()
-		{
-			index_count = 0;
-			vertex_buffer = nullptr;
-			index_buffer = nullptr;
-			constant_buffer = nullptr;
-			vertex_size = 0;
-			material = nullptr;
-			group = nullptr;
-		}
-	};
-
 	struct distEP
 	{
 		ID3D11ShaderResourceView* specCube;
@@ -80,41 +34,56 @@ namespace EngineCore
 	class BaseRenderMgr
 	{
 	public:
+		struct RenderMesh
+		{
+			uint32_t indexCount; 
+			ID3D11Buffer* vertexBuffer; 
+			ID3D11Buffer* indexBuffer; 
+			void* gpuMatrixBuffer;
+			bool isSkinned;
+			uint32_t vertexSize;
+			Material* material;
+			IA_TOPOLOGY topo;
+			float distanceSq;
+
+			RenderMesh()
+			{
+				indexCount = 0;
+				vertexBuffer = nullptr;
+				indexBuffer = nullptr;
+				gpuMatrixBuffer = nullptr;
+				isSkinned = false;
+				vertexSize = 0;
+				material = nullptr;
+				topo = IA_TOPOLOGY::TRISLIST;
+				distanceSq = 0;
+			}
+		};
+
 		BaseRenderMgr();
 		~BaseRenderMgr()
 		{ClearAll();}
 
 		inline bool IsShadow() const {return b_shadow;}
 
-		static bool CompareMeshes(RenderMesh* first, RenderMesh* second);
-		static bool InvCompareMeshes(RenderMesh* first, RenderMesh* second);
-
-		void ZeroMeshgroups()
-		{
-			meshgroup_count = 0;
-		}
+		static bool CompareMeshes(RenderMesh& first, RenderMesh& second);
+		static bool InvCompareMeshes(RenderMesh& first, RenderMesh& second);
 
 		void ClearAll()
 		{
-			cleanRenderArrayOpaque();
-			cleanRenderArrayAlphatest();
-			cleanRenderArrayTransparenty();
+			opaque_array.clear();
+			alphatest_array.clear();
+			transparent_array.clear();
 		}
 
 	protected:
 		bool b_shadow;
 		
-		void cleanRenderArrayTransparenty();
-		void cleanRenderArrayAlphatest();
-		void cleanRenderArrayOpaque();
-
-		RArray<RenderMesh*> opaque_array;
-		RArray<RenderMesh*> alphatest_array;
-		RArray<RenderMesh*> transparent_array;
+		RArray<RenderMesh> opaque_array;
+		RArray<RenderMesh> alphatest_array;
+		RArray<RenderMesh> transparent_array;
 
 		Vector3 cameraPosition;
-		
-		unsigned int meshgroup_count;
 	};
 	
 #define OPAQUE_SHADOW_MAX 2048
@@ -128,10 +97,10 @@ namespace EngineCore
 		~ShadowRenderMgr()
 		{ClearAll();}
 
-		bool RegMesh(uint32_t index_count, 
-			ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, ID3D11Buffer* constant_buffer,
-			uint32_t vertex_size, Material* material, Vector3& center);
-		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center);
+		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
 		void UpdateCamera(Vector3& pos) {cameraPosition = pos;}
 		
@@ -165,13 +134,10 @@ namespace EngineCore
 		SceneRenderMgr(bool lightweight);
 		~SceneRenderMgr();
 
-		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMesh(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		
-		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMultiMesh(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 
 		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, UINT mipsCount, CXMMATRIX envRot)
 		{
@@ -211,8 +177,10 @@ namespace EngineCore
 		void ClearAll()
 		{
 			BaseRenderMgr::ClearAll();
-			cleanRenderArrayHud();
-			cleanRenderArrayEnvProbs();
+			ovhud_array.clear();
+			hud_array.clear();
+			skyEP = distEP();
+
 			cleanRenderArrayLights();
 		}
 
@@ -254,7 +222,7 @@ namespace EngineCore
 		{*size = casterPointTube_count; return casterPointTube_array;}
 		
 		// temp
-		inline RArray<RenderMesh*>& GetOpaqueArray() {return opaque_array;}
+		inline RArray<RenderMesh>& GetOpaqueArray() {return opaque_array;}
 
 		VoxelRenderer* voxelRenderer;
 		ShadowsRenderer* shadowsRenderer;
@@ -262,17 +230,10 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 
 	private:
-		bool regToDraw(uint32_t index_count, ID3D11Buffer* vertex_buffer, ID3D11Buffer* index_buffer, 
-			ID3D11Buffer* constant_buffer, uint32_t vertex_size, Material* material, Vector3& center, IA_TOPOLOGY topo);
-		bool regToDraw(MeshData* mesh, ID3D11Buffer* constant_buffer, DArray<Material*>& material, Vector3& center, IA_TOPOLOGY topo);
-
-		void cleanRenderArrayHud();
-		void cleanRenderArrayEnvProbs() {skyEP = distEP();}
-
 		void cleanRenderArrayLights();
 
-		RArray<RenderMesh*> hud_array;
-		RArray<RenderMesh*> ovhud_array;
+		RArray<RenderMesh> hud_array;
+		RArray<RenderMesh> ovhud_array;
 
 		distEP skyEP;
 

@@ -113,7 +113,6 @@ void CameraSystem::regCamera(CameraComponent& comp)
 	}
 
 	comp.render_mgr->UpdateCamera(&comp);
-	comp.render_mgr->ZeroMeshgroups();
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\

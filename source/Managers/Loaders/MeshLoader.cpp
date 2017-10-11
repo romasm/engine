@@ -466,6 +466,16 @@ bool MeshLoader::ConvertSkeletonToEngineFormat(string& sourceFile, string& resFi
 
 bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format)
 {
+	unordered_map<string, int32_t> boneIds;
+	DArray<BoneData> boneData;
+	DArray<int32_t> boneInvRemap;
+	if(IsSkinned(format))
+	{
+		if(!loadMeshSkeleton(filename, scene, boneIds, boneData, boneInvRemap, true))
+			return false;
+	}
+	boneInvRemap.destroy();
+
 	MeshData* stmesh = new MeshData;
 	aiMesh** mesh = scene->mMeshes;
 	
@@ -481,9 +491,6 @@ bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVert
 
 	Vector3 posMin = Vector3(9999999.0f,9999999.0f,9999999.0f);
 	Vector3 posMax = Vector3(-9999999.0f,-9999999.0f,-9999999.0f);
-
-	unordered_map<string, int32_t> boneIds;
-	DArray<BoneData> boneData;
 
 	for(uint32_t i = 0; i < matCount; i++)
 	{
@@ -532,6 +539,8 @@ bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVert
 
 		stmesh->vertexBuffers.push_back(vBuffer);
 	}
+	boneData.destroy();
+	boneIds.clear();
 
 	Vector3 center = Vector3(0.5f * (posMin.x + posMax.x), 0.5f * (posMin.y + posMax.y), 0.5f * (posMin.z + posMax.z));
 	Vector3 extents = Vector3(posMax.x - center.x, posMax.y - center.y, posMax.z - center.z);
@@ -563,12 +572,13 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 	if(node->mParent) 
 		nInfo.parent = node->mParent->mName.data;
 
-	auto parent = node;
+	nInfo.transform = node->mTransformation;
+	/*auto parent = node;
 	while( parent != root )
 	{
 		nInfo.transform = parent->mTransformation * nInfo.transform;
 		parent = parent->mParent;
-	}
+	}*/
 
 	nodeTransforms.insert(make_pair(nodeName, nInfo));
 
@@ -582,8 +592,21 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 
 bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 {
-	aiMesh** mesh = scene->mMeshes;
+	unordered_map<string, int32_t> boneIds;
+	DArray<BoneData> boneData;
+	DArray<int32_t> boneInvRemap;
+	if(!loadMeshSkeleton(filename, scene, boneIds, boneData, boneInvRemap, false))
+		return false;
 
+	boneInvRemap.destroy();
+
+	return saveSkeleton(filename, boneData, boneIds);
+}
+
+bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, 
+							  DArray<int32_t>& boneInvRemap, bool boneInvWorldTransforms)
+{
+	aiMesh** mesh = scene->mMeshes;
 	const uint32_t matCount = scene->mNumMeshes;
 	if( matCount == 0 )
 	{
@@ -592,9 +615,6 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 	}
 
 	unordered_map<string, NodeInfo> nodeTransforms;
-	unordered_map<string, int32_t> boneIds;
-	DArray<BoneData> boneData;
-
 	auto root = scene->mRootNode;
 	getSubNodesTransform(nodeTransforms, root, root);
 
@@ -623,8 +643,11 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 				int32_t boneId = (int32_t)boneData.size();
 				BoneData bData;
 
-				bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
-								
+				if(boneInvWorldTransforms)
+					bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
+				else
+					bData.localTransform = Matrix::Identity;
+
 				boneData.push_back(bData);
 				boneIds.insert(make_pair(boneName, boneId));
 			}
@@ -650,6 +673,7 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 		else
 			bData.parent = -1;
 
+		//if(!boneInvWorldTransforms)
 		bData.localTransform = aiMatrix4x4ToMatrix(node->second.transform) * bData.localTransform;
 	}
 
@@ -671,7 +695,7 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 		{
 			parent = boneData[parent].parent;
 			depth++;
-			
+
 			if( depth >= MAX_HIERARCHY_DEPTH - 1 )
 			{
 				ERR("Skeleton hierarchy is too deep! Max is %i", MAX_HIERARCHY_DEPTH);
@@ -679,15 +703,14 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 				break;
 			}
 		}
-		
+
 		boneRemap[i].depth = depth;
 		boneRemap[i].oldID = i;
 	}
-	
+
 	sort(boneRemap.begin(), boneRemap.end(), 
 		[](const BoneRemap& a, const BoneRemap& b) -> bool { return a.depth < b.depth;});
 
-	DArray<int32_t> boneInvRemap;
 	boneInvRemap.reserve(boneData.size());
 	boneInvRemap.resize(boneData.size());
 	for(int32_t i = 0; i < (int32_t)boneRemap.size(); i++)
@@ -709,13 +732,10 @@ bool MeshLoader::convertAISceneSkeleton(string& filename, const aiScene* scene)
 		if(newBoneData[i].parent >= 0)
 			newBoneData[i].parent = boneInvRemap[newBoneData[i].parent];
 	}
-
-	boneInvRemap.destroy();
-
+	
 	boneData.swap(newBoneData);
 	newBoneData.destroy();
-
-	return saveSkeleton(filename, boneData, boneIds);
+	return true;
 }
 
 void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax)
@@ -761,8 +781,8 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexS
 	}
 }
 
-void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh,
-										unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax)
+void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, unordered_map<string, int32_t>& boneIds, 
+										DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax)
 {
 	struct vertexBone
 	{
@@ -776,25 +796,15 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 
 	for(uint32_t j = 0; j < mesh->mNumBones; j++)
 	{
-		int32_t boneId;
+		int32_t boneId = 0;
 		auto bone = mesh->mBones[j];
 		string boneName(bone->mName.data);
 
 		auto boneIt = boneIds.find(boneName);
 		if( boneIt == boneIds.end() )
-		{
-			boneId = (int32_t)boneData.size();
-			BoneData bData;
-
-			bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
-
-			boneData.push_back(bData);
-			boneIds.insert(make_pair(boneName, boneId));
-		}
+			WRN("Unknown bone %s", boneName.data());
 		else
-		{
 			boneId = boneIt->second;
-		}
 		
 		for(uint32_t k = 0; k < bone->mNumWeights; k++)
 		{
@@ -856,10 +866,12 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 			vertex->boneWeight[k] = 0;
 		}
 
+		Matrix toLocalMatrix;
 		if( vertexBoneIds[j].empty() )
 		{
 			vertex->boneId[0] = 0;
 			vertex->boneWeight[0] = 1.0f;
+			toLocalMatrix = boneData[0].localTransform;
 		}
 		else
 		{
@@ -870,8 +882,15 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 
 				vertex->boneId[k] = vertexBoneIds[j][k].boneId;
 				vertex->boneWeight[k] = vertexBoneIds[j][k].boneWeight;
+				toLocalMatrix += vertex->boneWeight[k] * boneData[vertexBoneIds[j][k].boneId].localTransform;
 			}
 		}
+		
+		// post transform
+		vertex->Pos = Vector3::Transform(vertex->Pos, toLocalMatrix);
+		vertex->Norm = Vector3::TransformNormal(vertex->Norm, toLocalMatrix);
+		vertex->Tang = Vector3::TransformNormal(vertex->Tang, toLocalMatrix);
+		vertex->Binorm = Vector3::TransformNormal(vertex->Binorm, toLocalMatrix);
 
 		offset += vertexSize;
 	}

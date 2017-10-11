@@ -36,8 +36,6 @@ void ShadowSystem::Update()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		i.render_mgr->ZeroMeshgroups();
-
 		if(!i.dirty)
 			continue;
 		

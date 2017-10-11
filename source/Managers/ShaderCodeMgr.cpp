@@ -124,7 +124,7 @@ uint16_t ShaderCodeMgr::AddShaderToList(string& name, uint8_t type)
 		ERR("Shader code amount overflow!");
 		return SHADER_NULL;
 	}
-
+	
 	string bcFilename = name + EXT_SHADER_BYTECODE;
 	
 #ifdef _DEV
@@ -499,7 +499,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 			}
 			else if(bufName == "materialId")
 				HInput.matId_Register = (uint8_t)desc.BindPoint;
-			else if(bufName == "matrixBuffer" || bufName == "skinnedMatrixBuffer")
+			else if(bufName == "matrixBuffer")
 				HInput.matrixBuf_Register = (uint8_t)desc.BindPoint;
 			break;
 		case D3D_SIT_SAMPLER:
@@ -537,6 +537,16 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 				HInput.matTextureMap.insert(make_pair(desc.Name, HInput.matTextures_Count));
 				HInput.matTextures_Count++;
 			}
+			break;
+			case D3D_SIT_STRUCTURED:
+				if(bufName == "skinnedMatrixBuffer")
+				{
+					if(HInput.matTextures_Count != 0)
+						WRN("Skinned matrix buffer %s must be in the beginning", desc.Name);
+
+					HInput.matrixBoneBuf_Register = (uint8_t)desc.BindPoint;
+					continue;
+				}
 			break;
 		}
 	}

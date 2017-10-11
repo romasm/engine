@@ -34,6 +34,7 @@ namespace EngineCore
 		uint8_t matId_Register;
 
 		uint8_t matrixBuf_Register;
+		uint8_t matrixBoneBuf_Register;
 
 		DArray<sampler_ptr> samplers;
 
@@ -47,6 +48,7 @@ namespace EngineCore
 			matInfo_VectorCount = 0;
 			matId_Register = REGISTER_NULL;
 			matrixBuf_Register = REGISTER_NULL;
+			matrixBoneBuf_Register = REGISTER_NULL;
 			matTextures_StartRegister = REGISTER_NULL;
 			matTextures_Count = 0;
 		}

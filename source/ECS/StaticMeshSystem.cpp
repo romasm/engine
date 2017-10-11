@@ -80,9 +80,19 @@ void StaticMeshSystem::RegToDraw()
 			continue;			
 
 		auto skeleton = skeletonSystem->GetComponent(i.get_entity());
-		ID3D11Buffer* matrixBuf = nullptr;
-		
-		if(!skeleton)
+		void* matrixBuf = nullptr;
+		bool isSkinned = (skeleton != nullptr);
+
+		if(isSkinned)
+		{
+			if(i.dirty)
+			{
+				i.dirty = false;
+			}
+
+			matrixBuf = skeleton->gpuMatrixBuffer.srv;
+		}
+		else
 		{
 			if(i.dirty)
 			{		
@@ -107,15 +117,9 @@ void StaticMeshSystem::RegToDraw()
 
 			matrixBuf = i.constantBuffer;
 		}
-		else
-		{
-			if(i.dirty)
-			{
-				i.dirty = false;
-			}
 
-			matrixBuf = skeleton->constantBuffer;
-		}
+		// TODO: store
+		const uint32_t vertexSize = MeshLoader::GetVertexSize(meshPtr->vertexFormat);
 
 		if( bits == 0 )
 		{
@@ -123,7 +127,9 @@ void StaticMeshSystem::RegToDraw()
 			{
 				if( !f.rendermgr->IsShadow() )
 				{
-					((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
+					for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+						((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
+							meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i]);
 				}
 			}
 			continue;
@@ -136,13 +142,19 @@ void StaticMeshSystem::RegToDraw()
 				if( f.rendermgr->IsShadow() )// todo
 				{
 					if(i.cast_shadow)
-						((ShadowRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
+					{
+						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
+								meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
+					}
 				}
 				else
 				{
 					if( !f.is_volume )
 					{
-						((SceneRenderMgr*)f.rendermgr)->RegMultiMesh(meshPtr, matrixBuf, i.materials, i.center);
+						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
+							meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
 					}
 					else if(visComponent && !skeleton)		// voxelize, temp skeleton mesh disabled
 					{

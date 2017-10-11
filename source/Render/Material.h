@@ -79,7 +79,7 @@ namespace EngineCore
 			return sh->GetQueue(tech);
 		}
 		
-		void SetMatrixBuffer(ID3D11Buffer* matrixBuf);
+		void SetMatrixBuffer(void* matrixBuf, bool isSkinned);
 
 		void AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i);
 		
@@ -185,10 +185,12 @@ namespace EngineCore
 
 		uint32_t scene_id;
 
+		// TODO: refactoring unique regs per tech
 		uint8_t vectorsReg[5];
 		uint8_t sceneReg;
 		uint8_t texReg[5];
 		uint8_t matrixReg[5];
+		uint8_t matrixBoneReg[5];
 
 		bool b_dirty;
 	};

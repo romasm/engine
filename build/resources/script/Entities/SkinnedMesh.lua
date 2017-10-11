@@ -18,7 +18,8 @@ function EntityTypes.SkinnedMesh:init(world, ent)
         self:Kill()
     end
     self.staticMeshSys:SetMesh(self.ent, "../content/statics/test_char.msh")
-    self.staticMeshSys:SetMaterial(self.ent, 0, "../resources/materials/template_skinned.mtb")
+    self.staticMeshSys:SetMaterial(self.ent, 0, AssetBrowser.nullMat)
+    self.staticMeshSys:SetMaterial(self.ent, 1, AssetBrowser.nullMat)
     
     return true
 end

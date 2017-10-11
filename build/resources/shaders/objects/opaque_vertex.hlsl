@@ -9,10 +9,7 @@ cbuffer matrixBuffer : register(b1)
 	matrix normalMatrix;
 };
 
-cbuffer skinnedMatrixBuffer : register(b1)
-{ 
-	matrix boneMatrix[256];
-};
+StructuredBuffer<matrix> skinnedMatrixBuffer : register(t0);
 
 PI_Mesh OpaqueVS(VI_Mesh input)
 {
@@ -43,9 +40,9 @@ PI_Mesh OpaqueSkinnedVS(VI_Skinned_Mesh input)
 		const float weight = input.boneWeight[bone];
 		const int indexM = input.boneID[bone] * 2;
 
-		output.worldPos += mul(localPos, boneMatrix[indexM]) * weight;
+		output.worldPos += mul(localPos, skinnedMatrixBuffer[indexM]) * weight;
 
-		const float3x3 nM = (float3x3)boneMatrix[indexM + 1];
+		const float3x3 nM = (float3x3)skinnedMatrixBuffer[indexM + 1];
 		output.normal += mul(input.normal, nM) * weight;
 		output.tangent += mul(input.tangent, nM) * weight;
 		output.binormal += mul(input.binormal, nM) * weight;
@@ -102,7 +99,7 @@ float4 OpaqueSkinnedShadowVS(VI_Skinned_Mesh input) : SV_POSITION
 	[loop]
 	while(input.boneID[bone] >= 0)
 	{
-		output += mul(localPos, boneMatrix[input.boneID[bone] * 2]) * input.boneWeight[bone];
+		output += mul(localPos, skinnedMatrixBuffer[input.boneID[bone] * 2]) * input.boneWeight[bone];
 		bone++;
 	}
     output = mul(output, shadowVP);

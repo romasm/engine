@@ -357,8 +357,5 @@
     <FxCompile Include="objects\editor\debug_lines.hlsl">
       <Filter>objects\editor</Filter>
     </FxCompile>
-    <FxCompile Include="objects\opaque_skinned.hlsl">
-      <Filter>objects</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

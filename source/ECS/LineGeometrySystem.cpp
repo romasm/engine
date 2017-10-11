@@ -62,9 +62,9 @@ void LineGeometrySystem::RegToDraw()
 		
 		if(bits == 0)
 		{
-			for(auto f: frustumMgr->camDataArray)
-				((SceneRenderMgr*)f->rendermgr)->RegMesh(i.index_count, i.vertexBuffer, i.indexBuffer, i.constantBuffer, sizeof(LineGeometryVertex), i.material, 
-					IA_TOPOLOGY::LINELIST);
+			for(auto f: frustumMgr->camDataArray) // TEMP
+				((SceneRenderMgr*)f->rendermgr)->RegMesh(i.index_count, i.indexBuffer, i.vertexBuffer, sizeof(LineGeometryVertex), false, i.constantBuffer, 
+					i.material, IA_TOPOLOGY::LINELIST);
 			
 			continue;
 		}
@@ -73,8 +73,8 @@ void LineGeometrySystem::RegToDraw()
 		{
 			if((bits & f->bit) == f->bit)
 			{
-				((SceneRenderMgr*)f->rendermgr)->RegMesh(i.index_count, i.vertexBuffer, i.indexBuffer, i.constantBuffer, sizeof(LineGeometryVertex), i.material,
-					IA_TOPOLOGY::LINELIST);
+				((SceneRenderMgr*)f->rendermgr)->RegMesh(i.index_count, i.indexBuffer, i.vertexBuffer, sizeof(LineGeometryVertex), false, i.constantBuffer, 
+						i.material,	IA_TOPOLOGY::LINELIST);
 
 				bits &= ~f->bit;
 				if(bits == 0) break;

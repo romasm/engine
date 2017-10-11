@@ -433,7 +433,7 @@ void VoxelRenderer::VoxelizeScene()
 				&(currentInstancesGroup.meshData->vertex_size), &offset);
 			Render::Context()->IASetIndexBuffer(currentInstancesGroup.meshData->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-			currentInstancesGroup.meshData->material->SetMatrixBuffer(instanceMatrixBuffer);
+			currentInstancesGroup.meshData->material->SetMatrixBuffer(instanceMatrixBuffer, false); // TODO
 			currentInstancesGroup.meshData->material->Set(TECHNIQUES::TECHNIQUE_VOXEL);
 		
 			Render::Context()->DrawIndexedInstanced(currentInstancesGroup.meshData->index_count, currentInstancesGroup.instanceCount, 0, 0, 0);
