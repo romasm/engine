@@ -347,7 +347,7 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 
 	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
 	{
-		ERR("Cant write skelet file: %s", filename.c_str() );
+		ERR("Cant write skeleton file: %s", filename.c_str() );
 		return false;
 	}
 	return true;
@@ -355,7 +355,57 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 
 bool MeshLoader::saveAnimation(string& filename, DArray<Animation>& animations)
 {
+	AnimationFileHeader header;
+	header.version = MESH_FILE_VERSION;
 
+	WRN("TODO: Only 0-id animation is imported for now");
+
+	Animation& anim = animations[0];
+
+	// calc file size
+	uint32_t file_size = sizeof(AnimationFileHeader);
+	file_size += sizeof(uint32_t) + (uint32_t)anim.name.size();
+	file_size += sizeof(float) + sizeof(int32_t);
+	file_size += sizeof(uint32_t);
+	for(auto& it: anim.bones)
+		file_size += sizeof(uint32_t) + sizeof(XMMATRIX) * (uint32_t)it.keys.size();
+
+	unique_ptr<uint8_t> data(new uint8_t[file_size]);
+	uint8_t* t_data = data.get();
+
+	*(AnimationFileHeader*)t_data = header;
+	t_data += sizeof(AnimationFileHeader);
+
+	*(uint32_t*)t_data = (uint32_t)anim.name.size();
+	t_data += sizeof(uint32_t);
+
+	memcpy(t_data, anim.name.data(), anim.name.size());
+	t_data += (uint32_t)anim.name.size();
+
+	*(float*)t_data = anim.duration;
+	t_data += sizeof(float);
+
+	*(int32_t*)t_data = anim.keysCount;
+	t_data += sizeof(int32_t);
+
+	*(uint32_t*)t_data = (uint32_t)anim.bones.size();
+	t_data += sizeof(uint32_t);
+
+	for(auto& it: anim.bones)
+	{
+		*(uint32_t*)t_data = (uint32_t)it.keys.size();
+		t_data += sizeof(uint32_t);
+
+		const uint32_t keysSize = (uint32_t)it.keys.size() * sizeof(XMMATRIX);
+		memcpy(t_data, it.keys.data(), keysSize);
+		t_data += keysSize;
+	}
+
+	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
+	{
+		ERR("Cant write animation file: %s", filename.c_str() );
+		return false;
+	}
 	return true;
 }
 

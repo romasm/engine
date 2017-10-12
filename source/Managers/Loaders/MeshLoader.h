@@ -83,6 +83,11 @@ namespace EngineCore
 		uint32_t boneCount;
 	};
 
+	struct AnimationFileHeader
+	{
+		uint32_t version;
+	};
+
 	struct NodeInfo
 	{
 		aiMatrix4x4 transform;
@@ -91,7 +96,7 @@ namespace EngineCore
 
 	struct BoneAnimation
 	{
-		DArray<XMMATRIX> keys;
+		DArrayAligned<XMMATRIX> keys;
 	};
 
 	struct Animation
