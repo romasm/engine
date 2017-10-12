@@ -234,6 +234,19 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 			}
 		}
 
+		if( (info.importBytes & IMP_BYTE_ANIMATION) > 0 )
+		{
+			string resFile = info.resourceName + EXT_ANIMATION;
+			if(CheckImportNeeded(info, sourceDate, resFile))
+			{
+				status = status || MeshLoader::ConverAnimationToEngineFormat(info.filePath, resFile);
+
+				ImportInfo imp = info;
+				imp.importBytes = IMP_BYTE_ANIMATION;
+				SaveImportInfo(resFile, imp);
+			}
+		}
+
 		if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
 		{
 			string resFile = info.resourceName + EXT_COLLISION;
@@ -246,8 +259,6 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 				SaveImportInfo(resFile, imp);
 			}
 		}
-
-		// TODO
 	}
 	else
 	{

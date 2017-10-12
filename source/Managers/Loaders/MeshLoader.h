@@ -6,6 +6,10 @@ namespace EngineCore
 {
 #define MESH_FILE_VERSION 101
 #define SKELETON_FILE_VERSION 101
+#define ANIMATION_FILE_VERSION 101
+
+#define ANIMATION_BAKE_MAX_KPS 120 // keys per second
+#define ANIMATION_BAKE_MIN_KPS 10
 
 	enum MeshVertexFormat 
 	{
@@ -85,6 +89,19 @@ namespace EngineCore
 		string parent;
 	};
 
+	struct BoneAnimation
+	{
+		DArray<XMMATRIX> keys;
+	};
+
+	struct Animation
+	{
+		string name;
+		float duration;
+		int32_t keysCount;
+		DArray<BoneAnimation> bones;
+	};
+
 	namespace MeshLoader
 	{		
 		static Assimp::Importer meshImporter;
@@ -98,6 +115,7 @@ namespace EngineCore
 
 		bool ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile);
 		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
+		bool ConverAnimationToEngineFormat(string& sourceFile, string& resFile);
 
 		bool IsNative(string filename);
 		bool IsSupported(string filename);
@@ -105,11 +123,15 @@ namespace EngineCore
 		bool IsNativeSkeleton(string filename);
 		bool IsSupportedSkeleton(string filename);
 
+		bool IsNativeAnimation(string filename);
+		bool IsSupportedAnimation(string filename);
+
 		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
 		bool saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
+		bool saveAnimation(string& filename, DArray<Animation>& animations);
 
 		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
-		bool convertAISceneSkeleton(string& filename, const aiScene* scene);
+		bool convertAnimationAIScene(string& filename, const aiScene* scene);
 
 		bool loadMeshSkeleton(string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, 
 			DArray<BoneData>& boneData, DArray<int32_t>& boneInvRemap, bool boneInvWorldTransforms);
@@ -134,22 +156,30 @@ namespace EngineCore
 		{
 			return format >= LIT_SKINNED_VERTEX;
 		}
-
-		inline Matrix aiMatrix4x4ToMatrix(aiMatrix4x4& mat)
-		{
-			aiVector3D scale;
-			aiVector3D pos;
-			aiQuaternion rot;
-			mat.Decompose(scale, rot, pos);
-
-			Matrix res;
-			res.CreateScale(scale.x, scale.y, scale.z);
-			Matrix rotM;
-			rotM.CreateFromQuaternion(Quaternion(rot.x, rot.y, rot.z, rot.w));
-			res = res * rotM;
-			res.Translation(Vector3(pos.x, pos.y, pos.z));
-
-			return res;
-		}
 	};
+
+	inline Matrix aiMatrix4x4ToMatrix(aiMatrix4x4& mat)
+	{
+		aiVector3D scale;
+		aiVector3D pos;
+		aiQuaternion rot;
+		mat.Decompose(scale, rot, pos);
+
+		Matrix res = Matrix::CreateScale(scale.x, scale.y, scale.z);
+		Matrix rotM = Matrix::CreateFromQuaternion(Quaternion(rot.x, rot.y, rot.z, rot.w));
+		res = res * rotM;
+		res.Translation(Vector3(pos.x, pos.y, pos.z));
+
+		return res;
+	}
+
+	inline Vector3 aiVector3DToVector3(aiVector3D& v)
+	{
+		return Vector3(v.x, v.y, v.z);
+	}
+
+	inline Quaternion aiQuaternionToQuaternion(aiQuaternion& q)
+	{
+		return Quaternion(q.x, q.y, q.z, q.w);
+	}
 }
