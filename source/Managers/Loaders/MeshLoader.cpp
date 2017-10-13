@@ -126,6 +126,65 @@ SkeletonData* MeshLoader::LoadSkeleton(string& resName)
 	return newSkeleton;
 }
 
+AnimationData* MeshLoader::LoadAnimation(string& resName)
+{
+	AnimationData* newAnimation = nullptr;
+	if(resName.find(EXT_ANIMATION) == string::npos)
+		return nullptr;
+
+	uint32_t size = 0;
+	uint8_t* data = FileIO::ReadFileData(resName, &size);
+	if(data)
+	{
+		newAnimation = loadEngineAnimationFromMemory( resName, data, size );
+		_DELETE_ARRAY(data);
+	}
+
+#ifdef _EDITOR
+#ifdef _DEV
+	if(!newAnimation)
+	{
+		uint32_t date;
+		ImportInfo info;
+		ResourceProcessor::LoadImportInfo(resName, info, date);
+
+		if( info.importBytes == 0 )
+		{
+			string resourceName = RemoveExtension(resName);
+			string fbxMesh = resourceName + ".fbx";
+
+			if( !FileIO::IsExist(fbxMesh) )
+			{
+				fbxMesh = resourceName + ".FBX";
+				if( !FileIO::IsExist(fbxMesh) )
+				{
+					//LOG("Reimport failed for %s", fbxMesh.c_str());
+					return nullptr;
+				}
+			}
+
+			// standard settings
+			info.filePath = fbxMesh;
+			info.resourceName = resourceName;
+			info.importBytes = IMP_BYTE_ANIMATION;
+		}		
+
+		if( ResourceProcessor::ImportResource(info) )
+		{
+			data = FileIO::ReadFileData(resName, &size);
+			if(data)
+			{
+				newAnimation = loadEngineAnimationFromMemory( resName, data, size );
+				_DELETE_ARRAY(data);
+			}
+		}
+	}
+#endif
+#endif
+
+	return newAnimation;
+}
+
 MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t **vertices;
@@ -309,7 +368,7 @@ SkeletonData* MeshLoader::loadEngineSkeletonFromMemory(string& filename, uint8_t
 bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds)
 {
 	SkeletonFileHeader header;
-	header.version = MESH_FILE_VERSION;
+	header.version = SKELETON_FILE_VERSION;
 	header.boneCount = (uint32_t)boneData.size();
 
 	// calc file size
@@ -353,52 +412,87 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 	return true;
 }
 
-bool MeshLoader::saveAnimation(string& filename, DArray<Animation>& animations)
+AnimationData* MeshLoader::loadEngineAnimationFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
-	AnimationFileHeader header;
-	header.version = MESH_FILE_VERSION;
+	uint8_t* t_data = data;
 
+	AnimationFileHeader header(*(AnimationFileHeader*)t_data);
+	t_data += sizeof(AnimationFileHeader);
+
+	if( header.version != ANIMATION_FILE_VERSION )
+	{
+		ERR("Animation %s has wrong version!", filename.c_str());
+		return nullptr;
+	}
+
+	AnimationData* animation = new AnimationData;
+	animation->bones.resize(header.boneCount);
+
+	animation->duration = *(float*)t_data;
+	t_data += sizeof(float);
+
+	animation->keysCount = *(int32_t*)t_data;
+	t_data += sizeof(int32_t);
+
+	for(auto& it: animation->bones)
+	{
+		uint32_t keysCount = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+
+		if(keysCount > 0)
+		{
+			const uint32_t keysSize = keysCount * sizeof(BoneTransformation);
+			it.keys.resize(keysCount);
+			memcpy(it.keys.data(), t_data, keysSize);
+			t_data += keysSize;
+		}
+		else
+		{
+			memset(&it.keys, 0, sizeof(it.keys));
+		}
+	}
+	
+	LOG("Animation loaded %s", filename.c_str());
+	return animation;
+}
+
+bool MeshLoader::saveAnimation(string& filename, DArray<AnimationData>& animations)
+{
 	WRN("TODO: Only 0-id animation is imported for now");
+	AnimationData& anim = animations[0];
 
-	Animation& anim = animations[0];
-
+	AnimationFileHeader header;
+	header.version = ANIMATION_FILE_VERSION;
+	header.boneCount = (uint32_t)anim.bones.size();
+	
 	// calc file size
-	uint32_t file_size = sizeof(AnimationFileHeader);
-	file_size += sizeof(uint32_t) + (uint32_t)anim.name.size();
-	file_size += sizeof(float) + sizeof(int32_t);
-	file_size += sizeof(uint32_t);
+	uint32_t file_size = sizeof(AnimationFileHeader) + sizeof(float) + sizeof(int32_t);
 	for(auto& it: anim.bones)
-		file_size += sizeof(uint32_t) + sizeof(XMMATRIX) * (uint32_t)it.keys.size();
+		file_size += sizeof(uint32_t) + sizeof(BoneTransformation) * (uint32_t)it.keys.size();
 
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
 	uint8_t* t_data = data.get();
 
 	*(AnimationFileHeader*)t_data = header;
 	t_data += sizeof(AnimationFileHeader);
-
-	*(uint32_t*)t_data = (uint32_t)anim.name.size();
-	t_data += sizeof(uint32_t);
-
-	memcpy(t_data, anim.name.data(), anim.name.size());
-	t_data += (uint32_t)anim.name.size();
-
+	
 	*(float*)t_data = anim.duration;
 	t_data += sizeof(float);
 
 	*(int32_t*)t_data = anim.keysCount;
 	t_data += sizeof(int32_t);
-
-	*(uint32_t*)t_data = (uint32_t)anim.bones.size();
-	t_data += sizeof(uint32_t);
-
+	
 	for(auto& it: anim.bones)
 	{
 		*(uint32_t*)t_data = (uint32_t)it.keys.size();
 		t_data += sizeof(uint32_t);
 
-		const uint32_t keysSize = (uint32_t)it.keys.size() * sizeof(XMMATRIX);
-		memcpy(t_data, it.keys.data(), keysSize);
-		t_data += keysSize;
+		const uint32_t keysSize = (uint32_t)it.keys.size() * sizeof(BoneTransformation);
+		if(keysSize > 0)
+		{
+			memcpy(t_data, it.keys.data(), keysSize);
+			t_data += keysSize;
+		}
 	}
 
 	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
@@ -713,14 +807,18 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 	}
 }
 
-Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
+BoneTransformation getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 {
-	Vector3 position(0,0,0);
+	BoneTransformation result;
+	result.translation = Vector3::Zero;
+	result.rotation = Quaternion::Identity;
+	result.scale = Vector3::Zero;
+
 	if( boneAnim->mNumPositionKeys > 0 )
 	{
 		if( boneAnim->mNumPositionKeys == 1 )
 		{
-			position = aiVector3DToVector3(boneAnim->mPositionKeys[0].mValue);
+			result.translation = aiVector3DToVector3(boneAnim->mPositionKeys[0].mValue);
 		}
 		else
 		{
@@ -735,7 +833,7 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 
 			if( nextKey == boneAnim->mNumPositionKeys )
 			{
-				position = aiVector3DToVector3(boneAnim->mPositionKeys[prevKey].mValue);
+				result.translation = aiVector3DToVector3(boneAnim->mPositionKeys[prevKey].mValue);
 			}
 			else
 			{
@@ -744,18 +842,17 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 				if( delta != 0 )
 					lerpFactor = (timeInTicks - (float)boneAnim->mPositionKeys[prevKey].mTime) / delta;
 				
-				position = Vector3::Lerp(aiVector3DToVector3(boneAnim->mPositionKeys[prevKey].mValue), 
+				result.translation = Vector3::Lerp(aiVector3DToVector3(boneAnim->mPositionKeys[prevKey].mValue), 
 					aiVector3DToVector3(boneAnim->mPositionKeys[nextKey].mValue), lerpFactor);
 			}
 		}
 	}
 
-	Quaternion rotation = Quaternion::Identity;
 	if( boneAnim->mNumRotationKeys > 0 )
 	{
 		if( boneAnim->mNumRotationKeys == 1 )
 		{
-			rotation = aiQuaternionToQuaternion(boneAnim->mRotationKeys[0].mValue);
+			result.rotation = aiQuaternionToQuaternion(boneAnim->mRotationKeys[0].mValue);
 		}
 		else
 		{
@@ -770,7 +867,7 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 
 			if( nextKey == boneAnim->mNumRotationKeys )
 			{
-				rotation = aiQuaternionToQuaternion(boneAnim->mRotationKeys[prevKey].mValue);
+				result.rotation = aiQuaternionToQuaternion(boneAnim->mRotationKeys[prevKey].mValue);
 			}
 			else
 			{
@@ -782,17 +879,16 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 				aiQuaternion interpolated;
 				aiQuaternion::Interpolate(interpolated, boneAnim->mRotationKeys[prevKey].mValue,
 					boneAnim->mRotationKeys[nextKey].mValue, lerpFactor);
-				rotation = aiQuaternionToQuaternion(interpolated.Normalize());
+				result.rotation = aiQuaternionToQuaternion(interpolated.Normalize());
 			}
 		}
 	}
 
-	Vector3 scale(1,1,1);
 	if( boneAnim->mNumScalingKeys > 0 )
 	{
 		if( boneAnim->mNumScalingKeys == 1 )
 		{
-			scale = aiVector3DToVector3(boneAnim->mScalingKeys[0].mValue);
+			result.scale = aiVector3DToVector3(boneAnim->mScalingKeys[0].mValue);
 		}
 		else
 		{
@@ -807,7 +903,7 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 
 			if( nextKey == boneAnim->mNumScalingKeys )
 			{
-				scale = aiVector3DToVector3(boneAnim->mScalingKeys[prevKey].mValue);
+				result.scale = aiVector3DToVector3(boneAnim->mScalingKeys[prevKey].mValue);
 			}
 			else
 			{
@@ -816,18 +912,13 @@ Matrix getBoneTransformationForTime(aiNodeAnim* boneAnim, float timeInTicks)
 				if( delta != 0 )
 					lerpFactor = (timeInTicks - (float)boneAnim->mScalingKeys[prevKey].mTime) / delta;
 
-				scale = Vector3::Lerp(aiVector3DToVector3(boneAnim->mScalingKeys[prevKey].mValue), 
+				result.scale = Vector3::Lerp(aiVector3DToVector3(boneAnim->mScalingKeys[prevKey].mValue), 
 					aiVector3DToVector3(boneAnim->mScalingKeys[nextKey].mValue), lerpFactor);
 			}
 		}
 	}
 
-	Matrix res = Matrix::CreateScale(scale);
-	Matrix rotM = Matrix::CreateFromQuaternion(rotation);
-	res = res * rotM;
-	res.Translation(position);
-
-	return res;
+	return result;
 }
 
 bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
@@ -865,7 +956,7 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		}
 	}
 	
-	DArray<Animation> animationsArray;
+	DArray<AnimationData> animationsArray;
 	animationsArray.reserve(scene->mNumAnimations);
 	
 	for(uint32_t i = 0; i < scene->mNumAnimations; i++)
@@ -880,7 +971,6 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 			ticksPerSec = 25.0f;
 
 		finalAnimation.duration = (float)animation->mDuration / ticksPerSec;
-		finalAnimation.name = animation->mName.C_Str();
 
 		finalAnimation.bones.reserve(boneData.size());
 		finalAnimation.bones.resize(boneData.size());
@@ -922,12 +1012,14 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 			}
 		}
 
-		int32_t keysPerSecond = int32_t(animation->mTicksPerSecond / minDeltaTimeInTicks);
+		minDeltaTimeInTicks = max(minDeltaTimeInTicks, ticksPerSec / ANIMATION_BAKE_MAX_KPS);
+
+		int32_t keysPerSecond = int32_t(ticksPerSec / minDeltaTimeInTicks);
 		keysPerSecond = 10 * (int32_t(keysPerSecond / 10) + 1);
 		keysPerSecond = min(max(ANIMATION_BAKE_MIN_KPS, keysPerSecond), ANIMATION_BAKE_MAX_KPS);
 
 		// get transforms
-		finalAnimation.keysCount = int32_t(keysPerSecond * animationsArray[i].duration);
+		finalAnimation.keysCount = int32_t(keysPerSecond * finalAnimation.duration);
 		finalAnimation.keysCount = max(finalAnimation.keysCount, 1);
 
 		for(auto& it: boneKeys[i])
@@ -947,9 +1039,12 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 				else
 					currentTime = float(j) / float(finalAnimation.keysCount - 1);
 
-				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, ticksPerSec * currentTime);
+				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
 			}
 		}
+
+		// convertion to ms
+		finalAnimation.duration *= 1000.0f;
 	}
 
 	return saveAnimation(filename, animationsArray);

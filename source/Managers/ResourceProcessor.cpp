@@ -43,6 +43,7 @@ ResourceProcessor::ResourceProcessor()
 		materialMgr = new MaterialMgr;
 		meshMgr = new MeshMgr;
 		skeletonMgr = new SkeletonMgr;
+		animationMgr = new AnimationMgr;
 		collisionMgr = new CollisionMgr;
 	}
 	else
@@ -72,6 +73,7 @@ ResourceProcessor::~ResourceProcessor()
 	_DELETE(fontMgr);
 	_CLOSE(meshMgr);	
 	_CLOSE(skeletonMgr);	
+	_CLOSE(animationMgr);
 	_CLOSE(collisionMgr);		
 	_DELETE(materialMgr);
 	_CLOSE(shaderMgr);
@@ -118,6 +120,10 @@ void ResourceProcessor::Tick()
 
 		case ResourceType::SKELETON:
 			skeletonMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
+			break;
+
+		case ResourceType::ANIMATION:
+			animationMgr->OnPostLoadMainThread(loadedSlot.id, loadedSlot.callback, loadedSlot.status);
 			break;
 
 		case ResourceType::COLLISION:
@@ -179,6 +185,7 @@ void ResourceProcessor::ThreadMain()
 		texMgr->DefferedDeallocate();
 		meshMgr->DefferedDeallocate();
 		skeletonMgr->DefferedDeallocate();
+		animationMgr->DefferedDeallocate();
 		collisionMgr->DefferedDeallocate();
 	}
 
@@ -196,73 +203,89 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 		string resFile = info.resourceName + EXT_TEXTURE;
 		if(CheckImportNeeded(info, sourceDate, resFile))
 		{
-			status = status || TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
+			bool currentStatus = TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
+			status = status || currentStatus;
 
-			ImportInfo imp = info;
-			imp.importBytes = IMP_BYTE_TEXTURE;
-			SaveImportInfo(resFile, imp);
+			if(currentStatus)
+			{
+				ImportInfo imp = info;
+				imp.importBytes = IMP_BYTE_TEXTURE;
+				SaveImportInfo(resFile, imp);
+			}
 		}
 	}
-	else if( (info.importBytes & IMP_BYTE_MESH) > 0 || 
-		(info.importBytes & IMP_BYTE_SKELETON) > 0 || 
-		(info.importBytes & IMP_BYTE_COLLISION) > 0 || 
-		(info.importBytes & IMP_BYTE_ANIMATION) > 0 )
-	{
-		if( (info.importBytes & IMP_BYTE_MESH) > 0 )
-		{
-			string resFile = info.resourceName + EXT_MESH;
-			if(CheckImportNeeded(info, sourceDate, resFile))
-			{
-				status = status || MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
 
+	if( (info.importBytes & IMP_BYTE_MESH) > 0 )
+	{
+		string resFile = info.resourceName + EXT_MESH;
+		if(CheckImportNeeded(info, sourceDate, resFile))
+		{
+			bool currentStatus = MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
+			status = status || currentStatus;
+
+			if(currentStatus)
+			{
 				ImportInfo imp = info;
 				imp.importBytes = IMP_BYTE_MESH;
 				SaveImportInfo(resFile, imp);
 			}
 		}
+	}
 
-		if( (info.importBytes & IMP_BYTE_SKELETON) > 0 )
+	if( (info.importBytes & IMP_BYTE_SKELETON) > 0 )
+	{
+		string resFile = info.resourceName + EXT_SKELETON;
+		if(CheckImportNeeded(info, sourceDate, resFile))
 		{
-			string resFile = info.resourceName + EXT_SKELETON;
-			if(CheckImportNeeded(info, sourceDate, resFile))
-			{
-				status = status || MeshLoader::ConvertSkeletonToEngineFormat(info.filePath, resFile);
+			bool currentStatus = MeshLoader::ConvertSkeletonToEngineFormat(info.filePath, resFile);
+			status = status || currentStatus;
 
+			if(currentStatus)
+			{
 				ImportInfo imp = info;
 				imp.importBytes = IMP_BYTE_SKELETON;
 				SaveImportInfo(resFile, imp);
 			}
 		}
+	}
 
-		if( (info.importBytes & IMP_BYTE_ANIMATION) > 0 )
+	if( (info.importBytes & IMP_BYTE_ANIMATION) > 0 )
+	{
+		string resFile = info.resourceName + EXT_ANIMATION;
+		if(CheckImportNeeded(info, sourceDate, resFile))
 		{
-			string resFile = info.resourceName + EXT_ANIMATION;
-			if(CheckImportNeeded(info, sourceDate, resFile))
-			{
-				status = status || MeshLoader::ConverAnimationToEngineFormat(info.filePath, resFile);
+			bool currentStatus = MeshLoader::ConverAnimationToEngineFormat(info.filePath, resFile);
+			status = status || currentStatus;
 
+			if(currentStatus)
+			{
 				ImportInfo imp = info;
 				imp.importBytes = IMP_BYTE_ANIMATION;
 				SaveImportInfo(resFile, imp);
 			}
 		}
+	}
 
-		if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
+	if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
+	{
+		string resFile = info.resourceName + EXT_COLLISION;
+		if(CheckImportNeeded(info, sourceDate, resFile))
 		{
-			string resFile = info.resourceName + EXT_COLLISION;
-			if(CheckImportNeeded(info, sourceDate, resFile))
-			{
-				status = status || CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
+			bool currentStatus = CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
+			status = status || currentStatus;
 
+			if(currentStatus)
+			{
 				ImportInfo imp = info;
 				imp.importBytes = IMP_BYTE_COLLISION;
 				SaveImportInfo(resFile, imp);
 			}
 		}
 	}
-	else
+	
+	if(!status)
 	{
-		WRN("Nothing to import for %s", info.filePath.c_str());
+		WRN("Nothing was imported from %s", info.filePath.c_str());
 		return false;
 	}
 
@@ -315,6 +338,19 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 		}
 		break;
 
+	case ResourceType::ANIMATION:
+		{
+			string& name = animationMgr->GetName(loadingSlot.id);
+			auto loadedData = MeshLoader::LoadAnimation(name);
+			if(loadedData)
+			{
+				LoadImportInfo(name, info, sourceDate);
+				animationMgr->OnLoad(loadingSlot.id, loadedData, info, sourceDate);
+				return true;
+			}
+		}
+		break;
+
 	case ResourceType::COLLISION:
 		{
 			string& name = collisionMgr->GetName(loadingSlot.id);
@@ -336,6 +372,7 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 	return false;
 }
 
+// TODO: different res pathes
 bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 {
 	bool status = false;
@@ -343,48 +380,110 @@ bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 	string impFileName = resFile + EXT_IMPORT;
 	FileIO impFile(impFileName, true);
 
-	auto node = impFile.CreateNode("import", impFile.Root());
+	auto general = impFile.CreateNode("import", impFile.Root());
+	impFile.WriteInt("version", IMPORT_FILE_VERSION, general);
+	// TODO: make it human readable
+	impFile.WriteUint("fileDate", FileIO::GetDateModifRaw(info.filePath), general);
+	impFile.WriteString("filePath", info.filePath, general);
 
-	impFile.WriteInt("version", IMPORT_FILE_VERSION, node);
-	impFile.WriteUint("fileDate", FileIO::GetDateModifRaw(info.filePath), node);
-	impFile.WriteString("filePath", info.filePath, node);
-	impFile.WriteString("resourceName", info.resourceName, node);
-	impFile.WriteByte("importBytes", info.importBytes, node);
-	impFile.WriteBool("isSkinnedMesh", info.isSkinnedMesh, node);
-	impFile.WriteUint("textureFormat", info.textureFormat, node);
-	impFile.WriteBool("genMips", info.genMips, node);
-	impFile.WriteUint("genMipsFilter", info.genMipsFilter, node);
+	if(info.importBytes & IMP_BYTE_TEXTURE)
+	{
+		auto node = impFile.CreateNode("texture", impFile.Root());
+		impFile.WriteString("resourceName", info.resourceName, node);
+		impFile.WriteUint("textureFormat", info.textureFormat, node);
+		impFile.WriteBool("genMips", info.genMips, node);
+		impFile.WriteUint("genMipsFilter", info.genMipsFilter, node);
+	}
 
+	if(info.importBytes & IMP_BYTE_MESH)
+	{
+		auto node = impFile.CreateNode("mesh", impFile.Root());
+		impFile.WriteString("resourceName", info.resourceName, node);
+		impFile.WriteBool("isSkinnedMesh", info.isSkinnedMesh, node);
+	}
+
+	if(info.importBytes & IMP_BYTE_SKELETON)
+	{
+		auto node = impFile.CreateNode("skeleton", impFile.Root());
+		impFile.WriteString("resourceName", info.resourceName, node);
+	}
+
+	if(info.importBytes & IMP_BYTE_ANIMATION)
+	{
+		auto node = impFile.CreateNode("animation", impFile.Root());
+		impFile.WriteString("resourceName", info.resourceName, node);
+	}
+
+	if(info.importBytes & IMP_BYTE_COLLISION)
+	{
+		auto node = impFile.CreateNode("collision", impFile.Root());
+		impFile.WriteString("resourceName", info.resourceName, node);
+	}
+	
 	if( !(status = impFile.Save()) )
 		ERR("Cant write import file %s", impFileName.c_str() );
 #endif
 	return status;
 }
 
+// TODO: different res pathes
 void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date)
 {
 #ifdef _EDITOR
 	string impFileName = resName + EXT_IMPORT;
 	FileIO impFile(impFileName);
 
-	auto node = impFile.Node("import", impFile.Root());
-	if( impFile.ReadInt("version", node) != IMPORT_FILE_VERSION )
+	auto general = impFile.Node("import", impFile.Root());
+	if( impFile.ReadInt("version", general) != IMPORT_FILE_VERSION )
 	{
 		date = FileIO::GetDateModifRaw(resName);
 		info.filePath = resName;
 		info.resourceName = RemoveExtension(resName);
+		return;
 	}
-	else
+
+	date = impFile.ReadUint("fileDate", general);
+	info.filePath = impFile.ReadString("filePath", general);
+
+	auto textureNode = impFile.Node("texture", impFile.Root());
+	if(textureNode)
 	{
-		date = impFile.ReadUint("fileDate", node);
-		info.filePath = impFile.ReadString("filePath", node);
-		info.resourceName = impFile.ReadString("resourceName", node);
-		info.importBytes = impFile.ReadByte("importBytes", node);
-		info.isSkinnedMesh = impFile.ReadBool("isSkinnedMesh", node);
-		info.textureFormat = (DXGI_FORMAT)impFile.ReadUint("textureFormat", node);
-		info.genMips = impFile.ReadBool("genMips", node);
-		info.genMipsFilter = impFile.ReadUint("genMipsFilter", node);
-	}		
+		info.importBytes |= IMP_BYTE_TEXTURE;
+		info.resourceName = impFile.ReadString("resourceName", textureNode);
+		info.textureFormat = (DXGI_FORMAT)impFile.ReadUint("textureFormat", textureNode);
+		info.genMips = impFile.ReadBool("genMips", textureNode);
+		info.genMipsFilter = impFile.ReadUint("genMipsFilter", textureNode);
+	}
+
+	auto meshNode = impFile.Node("mesh", impFile.Root());
+	if(meshNode)
+	{
+		info.importBytes |= IMP_BYTE_MESH;
+		info.resourceName = impFile.ReadString("resourceName", meshNode);
+		info.isSkinnedMesh = impFile.ReadBool("isSkinnedMesh", meshNode);
+	}
+
+	auto skeletonNode = impFile.Node("skeleton", impFile.Root());
+	if(skeletonNode)
+	{
+		info.importBytes |= IMP_BYTE_SKELETON;
+		info.resourceName = impFile.ReadString("resourceName", skeletonNode);
+	}
+
+	auto animationNode = impFile.Node("animation", impFile.Root());
+	if(animationNode)
+	{
+		info.importBytes |= IMP_BYTE_ANIMATION;
+		info.resourceName = impFile.ReadString("resourceName", animationNode);
+	}
+
+	auto collisionNode = impFile.Node("collision", impFile.Root());
+	if(collisionNode)
+	{
+		info.importBytes |= IMP_BYTE_COLLISION;
+		info.resourceName = impFile.ReadString("resourceName", collisionNode);	
+	}	
+
 #endif
 }
 
@@ -508,6 +607,7 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		skeletonMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::ANIMATION:
+		animationMgr->GetResource(filename, reload);
 		break;
 	case EngineCore::SHADER:
 		shaderMgr->GetResource(filename, false);

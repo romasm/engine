@@ -312,6 +312,13 @@ bool FileIO::IsFile(string filename)
 	return (buffer.st_mode & S_IFDIR) == 0;
 }
 
+// TODO
+uint32_t FileIO::GetDateRawFromString(string& date)
+{
+	// TODO
+	return 0;
+}
+
 uint32_t FileIO::GetDateModifRaw(string& filename)
 {
 	struct _stat32 buffer;

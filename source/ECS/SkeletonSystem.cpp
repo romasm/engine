@@ -16,6 +16,8 @@ SkeletonSystem::SkeletonSystem(BaseWorld* w, uint32_t maxCount)
 
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
+
+	zeroOrigin = XMVectorSet(0,0,0,1.0f);
 }
 
 SkeletonSystem::~SkeletonSystem()
@@ -24,40 +26,73 @@ SkeletonSystem::~SkeletonSystem()
 		destroySkeleton(i);
 }
 
-void SkeletonSystem::Animate()
+void SkeletonSystem::Animate(float dt)
 {
 	for(auto& i: *components.data())
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		/*VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
+		// VISIBILITY?
 
-		bitset<FRUSTUM_MAX_COUNT> bits;
-		if(visComponent)
+		if(i.animations.empty())
+			continue;
+
+		// TEMP
+		AnimationSeq& animSeq = i.animations[0];
+		if(animSeq.blendFactor == 0)
+			continue;
+
+		auto animPtr = AnimationMgr::GetResourcePtr(animSeq.animationID);
+		if(!animPtr)
+			continue;
+
+		const int32_t keysCount = animPtr->keysCount - 1;
+		const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * keysCount;
+
+		setAnimationTransformations(i, animPtr, sampleKeyID, animSeq.blendFactor, keysCount);
+
+		animSeq.currentTime += dt;
+
+		// TEMP looped
+		while( animSeq.currentTime >= animPtr->duration )
+			animSeq.currentTime -= animPtr->duration;
+
+		i.dirty = true;
+	}
+}
+
+void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCount)
+{
+	const int32_t prevKey = int32_t(sampleKeyID);
+	const int32_t nextKey = prevKey + 1;
+	const float lerpFactor = sampleKeyID - (float)prevKey;
+
+	for(uint32_t i = 0; i < (uint32_t)comp.bones.size(); i++)
+	{
+		auto& keys = animData->bones[i].keys;
+		if(keys.size() == 0)
+			continue;
+		
+		XMMATRIX finalMatrix;
+		if( nextKey > keysCount )
 		{
-			bits = visComponent->inFrust;	
-			if(bits == 0)
-				continue;
+			BoneTransformation& transform = keys[prevKey];
+			finalMatrix = XMMatrixAffineTransformation(transform.scale, zeroOrigin, transform.rotation, transform.translation);
 		}
 		else
 		{
-			if(earlyVisibilitySys)
-			{
-				EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+			BoneTransformation& prevTransform = keys[prevKey];
+			BoneTransformation& nextTransform = keys[nextKey];
 
-				if(earlyVisibilityComponent)
-				{
-					bits = earlyVisibilityComponent->inFrust;	
-					if(bits == 0)
-						continue;
-				}
-				else
-					bits = 0;
-			}
-			else
-				bits = 0;
-		}*/
+			XMVECTOR scale = XMVectorLerp(prevTransform.scale, nextTransform.scale, lerpFactor);
+			XMVECTOR rot = XMQuaternionSlerp(prevTransform.rotation, nextTransform.rotation, lerpFactor);
+			XMVECTOR pos = XMVectorLerp(prevTransform.translation, nextTransform.translation, lerpFactor);
+			
+			finalMatrix = XMMatrixAffineTransformation(scale, zeroOrigin, rot, pos);
+		}
+		
+		sceneGraph->SetTransformation(comp.bones[i], finalMatrix);
 	}
 }
 
@@ -65,8 +100,9 @@ void SkeletonSystem::UpdateBuffers()
 {
 	for(auto& i: *components.data())
 	{
-		if( i.dirty || false/* animation */ )
+		if( i.dirty || false/* animation? */ )
 		{
+			// precashe visibility in Animate
 			VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
 
 			bitset<FRUSTUM_MAX_COUNT> bits;
@@ -340,5 +376,50 @@ bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaR
 	});
 
 	MeshMgr::Get()->DeleteResource(oldSkeleton);
+	return true;
+}
+
+// TEMP
+bool SkeletonSystem::SetAnimation(Entity e, string anim)
+{
+	GET_COMPONENT(false)
+	
+	auto worldID = world->GetID();
+	auto ent = comp.get_entity();
+	
+	AnimationSeq& animSeq = comp.animations.push_back();
+	animSeq.currentTime = 0;
+	animSeq.blendFactor = 0;
+
+	animSeq.animationID = AnimationMgr::Get()->GetResource( anim, CONFIG(bool, reload_resources), 
+
+		[ent, worldID](uint32_t id, bool status) -> void
+	{
+		auto animPtr = AnimationMgr::GetResourcePtr(id);
+		if(!animPtr)
+		{
+			return;
+		}
+
+		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
+		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
+		{
+			AnimationMgr::Get()->DeleteResource(id);
+			return;
+		}
+
+		auto skeletonSys = worldPtr->GetSkeletonSystem();
+		auto comp = skeletonSys->GetComponent(ent);
+		if(!comp)
+		{
+			AnimationMgr::Get()->DeleteResource(id);
+			return;
+		}
+
+		// TODO
+		comp->animations[comp->animations.size() - 1].blendFactor = 1.0f;
+		comp->dirty = true;
+	});
+
 	return true;
 }

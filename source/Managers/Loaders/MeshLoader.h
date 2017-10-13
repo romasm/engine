@@ -6,7 +6,7 @@ namespace EngineCore
 {
 #define MESH_FILE_VERSION 101
 #define SKELETON_FILE_VERSION 101
-#define ANIMATION_FILE_VERSION 101
+#define ANIMATION_FILE_VERSION 102
 
 #define ANIMATION_BAKE_MAX_KPS 120 // keys per second
 #define ANIMATION_BAKE_MIN_KPS 10
@@ -86,6 +86,7 @@ namespace EngineCore
 	struct AnimationFileHeader
 	{
 		uint32_t version;
+		uint32_t boneCount;
 	};
 
 	struct NodeInfo
@@ -94,14 +95,20 @@ namespace EngineCore
 		string parent;
 	};
 
-	struct BoneAnimation
+	struct BoneTransformation
 	{
-		DArrayAligned<XMMATRIX> keys;
+		XMVECTOR translation;
+		XMVECTOR rotation;
+		XMVECTOR scale;
 	};
 
-	struct Animation
+	struct BoneAnimation
 	{
-		string name;
+		DArrayAligned<BoneTransformation> keys;
+	};
+
+	struct AnimationData
+	{
 		float duration;
 		int32_t keysCount;
 		DArray<BoneAnimation> bones;
@@ -118,6 +125,9 @@ namespace EngineCore
 		SkeletonData* LoadSkeleton(string& resName);
 		SkeletonData* loadEngineSkeletonFromMemory(string& filename, uint8_t* data, uint32_t size);
 
+		AnimationData* LoadAnimation(string& resName);
+		AnimationData* loadEngineAnimationFromMemory(string& filename, uint8_t* data, uint32_t size);
+
 		bool ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile);
 		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
 		bool ConverAnimationToEngineFormat(string& sourceFile, string& resFile);
@@ -133,7 +143,7 @@ namespace EngineCore
 
 		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
 		bool saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
-		bool saveAnimation(string& filename, DArray<Animation>& animations);
+		bool saveAnimation(string& filename, DArray<AnimationData>& animations);
 
 		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
 		bool convertAnimationAIScene(string& filename, const aiScene* scene);

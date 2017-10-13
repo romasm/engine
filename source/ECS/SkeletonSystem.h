@@ -8,6 +8,16 @@
 
 namespace EngineCore
 {
+	struct AnimationSeq
+	{
+		uint32_t animationID;
+		float currentTime;
+		float blendFactor;
+
+		AnimationSeq() : animationID(AnimationMgr::nullres), 
+			blendFactor(0), currentTime(0) {}
+	};
+
 	struct SkeletonComponent
 	{
 		ENTITY_IN_COMPONENT
@@ -19,6 +29,8 @@ namespace EngineCore
 
 		StructBuf gpuMatrixBuffer;
 		DArrayAligned<XMMATRIX> matrixBuffer;
+
+		DArray<AnimationSeq> animations;
 
 		SkeletonComponent()
 		{
@@ -55,7 +67,7 @@ namespace EngineCore
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
 		
-		void Animate();
+		void Animate(float dt);
 		void UpdateBuffers();
 
 		bool IsDirty(Entity e);
@@ -63,6 +75,8 @@ namespace EngineCore
 
 		bool SetSkeleton(Entity e, string mesh);
 		bool SetSkeletonAndCallback(Entity e, string mesh, LuaRef func);
+		
+		bool SetAnimation(Entity e, string anim);
 
 		inline bool _AddComponent(Entity e)
 		{
@@ -79,7 +93,9 @@ namespace EngineCore
 					.addFunction("HasComponent", &SkeletonSystem::HasComponent)
 
 					.addFunction("SetSkeleton", &SkeletonSystem::SetSkeleton)
-					.addFunction("SetSkeletonAndCallback", &SkeletonSystem::SetSkeletonAndCallback)					
+					.addFunction("SetSkeletonAndCallback", &SkeletonSystem::SetSkeletonAndCallback)		
+
+					.addFunction("SetAnimation", &SkeletonSystem::SetAnimation)
 				.endClass();
 		}
 
@@ -97,6 +113,7 @@ namespace EngineCore
 			comp.matrixBuffer.destroy();
 			comp.gpuMatrixBuffer.Release();
 		};
+		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCount);
 
 		ComponentRArray<SkeletonComponent> components;
 
@@ -105,5 +122,7 @@ namespace EngineCore
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
 		BaseWorld* world;
+
+		XMVECTOR zeroOrigin;
 	};
 }

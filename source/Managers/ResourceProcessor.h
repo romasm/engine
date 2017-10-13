@@ -144,6 +144,7 @@ namespace EngineCore
 		class TexMgr* texMgr;
 		class MeshMgr* meshMgr;
 		class SkeletonMgr* skeletonMgr;
+		class AnimationMgr* animationMgr;
 		class CollisionMgr* collisionMgr;
 		class FontMgr* fontMgr;
 		class WorldMgr* worldMgr;

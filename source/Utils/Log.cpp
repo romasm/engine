@@ -169,30 +169,6 @@ namespace EngineCore
 		va_end(args); \
 		free(buffer);
 
-#define W_LOG_BODY(prefix, infile) \
-		va_list args; \
-		va_start(args, message); \
-		int len = _vscwprintf( message, args ) + 1; \
-		wchar_t *buffer = static_cast<wchar_t*>( malloc(len*sizeof(wchar_t)) ); \
-		vswprintf_s( buffer, len, message, args ); \
-		m_wprint(L#prefix L" ", buffer, infile); \
-		va_end(args); \
-		free(buffer);
-
-#define SQ_LOG_BODY(prefix, infile) \
-		int len = _vscprintf( message, args ) + 1; \
-		char *buffer = static_cast<char*>( malloc(len*sizeof(char)) ); \
-		vsprintf_s( buffer, len, message, args ); \
-		m_print(#prefix " ", buffer, infile); \
-		free(buffer);
-
-#define W_SQ_LOG_BODY(prefix, infile) \
-		int len = _vscwprintf( message, args ) + 1; \
-		wchar_t *buffer = static_cast<wchar_t*>( malloc(len*sizeof(wchar_t)) ); \
-		vswprintf_s( buffer, len, message, args ); \
-		m_wprint(L#prefix L" ", buffer, infile); \
-		free(buffer);
-
 	void Log::Print(const char *message, ...)
 	{
 		PRINT_COLOR
@@ -202,7 +178,7 @@ namespace EngineCore
 	void Log::PrintGood(const char *message, ...)
 	{
 		GOOD_COLOR
-		LOG_BODY(:, true)
+		LOG_BODY(SUCCESS:, true)
 	}
 
 	void Log::Debug(const char *message, ...)

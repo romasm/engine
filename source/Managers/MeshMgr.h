@@ -53,4 +53,16 @@ namespace EngineCore
 		}
 		inline static SkeletonMgr* Get(){return (SkeletonMgr*)BaseMgr<SkeletonData, RESOURCE_MAX_COUNT>::Get();}
 	};
+
+	class AnimationMgr : public BaseMgr<AnimationData, RESOURCE_MAX_COUNT>
+	{
+	public:
+		AnimationMgr() : BaseMgr<AnimationData, RESOURCE_MAX_COUNT>()
+		{
+			null_resource = MeshLoader::LoadAnimation(string(PATH_ANIMATION_NULL));
+			resType = ResourceType::ANIMATION;
+			resExt = EXT_ANIMATION;
+		}
+		inline static AnimationMgr* Get(){return (AnimationMgr*)BaseMgr<AnimationData, RESOURCE_MAX_COUNT>::Get();}
+	};
 }

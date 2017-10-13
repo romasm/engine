@@ -639,7 +639,7 @@ void World::Frame()
 		m_scriptSystem->Update(m_dt);
 	}
 
-	m_skeletonSystem->Animate();
+	m_skeletonSystem->Animate(m_dt);
 
 	m_sceneGraph->Update();
 	if(b_sceneGraphDbg)
@@ -839,7 +839,7 @@ void SmallWorld::Frame()
 		m_scriptSystem->Update(m_dt);
 	}
 
-	m_skeletonSystem->Animate();
+	m_skeletonSystem->Animate(m_dt);
 
 	m_sceneGraph->Update();
 

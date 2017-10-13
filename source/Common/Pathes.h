@@ -7,7 +7,7 @@
 #define EXT_MATERIAL ".mtb"
 #define EXT_MESH ".msh"
 #define EXT_SKELETON ".skl"
-#define EXT_ANIMATION ".anm"
+#define EXT_ANIMATION ".ani"
 #define EXT_COLLISION ".cls"
 #define EXT_TEXTURE ".dds"
 #define EXT_RESOURCE ".rsc"
@@ -51,6 +51,7 @@
 
 #define PATH_STMESH_NULL PATH_SYS_MESHES "null_mesh" EXT_MESH
 #define PATH_SKELETON_NULL PATH_SYS_MESHES "null_mesh" EXT_SKELETON
+#define PATH_ANIMATION_NULL PATH_SYS_MESHES "null_mesh" EXT_ANIMATION
 #define PATH_COLLISION_NULL PATH_SYS_MESHES "null_collision" EXT_COLLISION
 
 #define PATH_RU_LOCAL PATH_RSC "localization/ru" EXT_RESOURCE

@@ -184,6 +184,7 @@ end
 function DevConsole:Init()    
     self.err_color = Vector4(0.9, 0.2, 0.05, 1.0)
     self.wrn_color = Vector4(0.8, 0.7, 0.05, 1.0)
+    self.scs_color = Vector4(0.05, 0.8, 0.05, 1.0)
     self.lua_color = CoreGui.GetColor("act_03")
     self.dbg_color = CoreGui.GetColor("act_00")
 
@@ -285,6 +286,8 @@ function DevConsole:Fill(count)
             self.strings[stringPos].color = self.lua_color
         elseif prefix:find("DEBUG") ~= nil then
             self.strings[stringPos].color = self.dbg_color
+        elseif prefix:find("SUCCESS") ~= nil then
+            self.strings[stringPos].color = self.scs_color
         end
         self.strings[stringPos]:UpdateProps()
 

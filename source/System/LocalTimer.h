@@ -14,9 +14,10 @@ namespace EngineCore
 		inline float dt() const;
 
 		inline void SetScale(float scale)
-		{
-			m_scale = scale;
-		}
+		{m_scale = scale;}
+
+		inline float GetScale() const 
+		{return m_scale;}
 
 		void Frame();
 

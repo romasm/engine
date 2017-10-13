@@ -11,6 +11,7 @@ function EntityTypes.SkinnedMesh:init(world, ent)
     self.skeletonSys = self.world.skeleton
     self.skeletonSys:AddComponent(self.ent)
     self.skeletonSys:SetSkeleton(self.ent, "../content/statics/test_char.skl")
+    self.skeletonSys:SetAnimation(self.ent, "../content/statics/test_char.ani")
 
     self.staticMeshSys = self.world.staticMesh
     if not self.staticMeshSys:AddComponent(self.ent) then

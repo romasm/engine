@@ -204,6 +204,9 @@ namespace EngineCore
 		inline Entity GetFirstEntityByType(string type) {return m_typeMgr->GetFirstByType(type);}
 		inline Entity GetNextEntityByType() {return m_typeMgr->GetNextByType();}
 
+		float GetTimeScale() const {return m_world_timer.GetScale();}
+		void SetTimeScale(float scale) {m_world_timer.SetScale(scale);}
+
 		inline LuaRef WrapEntityForLua(Entity e)
 		{
 			LuaRef res = m_scriptSystem->GetLuaClassInstance(e);
@@ -300,6 +303,7 @@ namespace EngineCore
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
 					.addProperty("mode", &BaseWorld::GetMode, &BaseWorld::SetMode)
+					.addProperty("timeScale", &BaseWorld::GetTimeScale, &BaseWorld::SetTimeScale)
 
 					.addFunction("SetSceneGraphDebugDraw", &BaseWorld::SetSceneGraphDebugDraw)
 				.endClass();

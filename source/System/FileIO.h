@@ -204,6 +204,7 @@ public:
 	static bool CopyByExt(string fromDir, string toDir, string ext);
 	static bool Delete(string path);
 
+	static uint32_t GetDateRawFromString(string& date);
 	static uint32_t GetDateModifRaw(string& filename);
 	inline static uint32_t GetDateModifRawS(char* filename){return GetDateModifRaw(string(filename));}
 	inline static uint32_t GetDateModifRaw_lua(string filename){return GetDateModifRaw(filename);}
