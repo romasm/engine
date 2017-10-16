@@ -966,15 +966,6 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		return false;
 	boneInvRemap.destroy();
 	
-	// root bones
-	DArray<string> rootBones;
-	for(auto& it: boneIds)
-	{
-		if( boneData[it.second].parent >= 0 )
-			continue;
-		rootBones.push_back(it.first);
-	}
-	
 	// keys map
 	RArray<unordered_map<string, aiNodeAnim*>> boneKeys;
 	boneKeys.create(scene->mNumAnimations);
@@ -982,41 +973,19 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 	{
 		const aiAnimation* animation = scene->mAnimations[i];
 		auto keyMap = boneKeys.push_back();
-
-
+		
 		for(uint32_t j = 0; j < animation->mNumChannels; j++)
 		{
 			aiNodeAnim* boneAnim = animation->mChannels[j];
 			string boneName = animation->mChannels[j]->mNodeName.C_Str();
 			if( boneIds.find(boneName) == boneIds.end() )
-			{
-				// strange assimp behavior with fbx fix
-				auto fbxSufix = boneName.find(FBX_BROKEN_BONE_SUFIX);
-				if( fbxSufix != string::npos )
-				{
-					string originalBoneName = boneName.substr(fbxSufix);
-					if( rootBones.find(originalBoneName) == rootBones.end() )
-						continue;
-				}
-				else
-					continue;
-			}
+				continue;
 
 			keyMap->insert(make_pair(boneName, boneAnim));
 		}
 
 		if(keyMap->empty())
-		{
 			boneKeys.pop_back();
-		}
-		else
-		{
-			for(auto& rootBoneName: rootBones)
-			{
-				if( keyMap->find(rootBoneName) == keyMap->end() )
-					keyMap->insert(make_pair(rootBoneName, nullptr));
-			}
-		}
 	}
 	
 	DArray<AnimationData> animationsArray;
@@ -1090,44 +1059,12 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 
 		for(auto& it: boneKeys[i])
 		{
-			if(it.second)
-				if( it.second->mNumPositionKeys + it.second->mNumRotationKeys + it.second->mNumScalingKeys == 0 )
-					continue;
-
-			if( it.first.find(FBX_BROKEN_BONE_SUFIX) != string::npos )
+			if( it.second->mNumPositionKeys + it.second->mNumRotationKeys + it.second->mNumScalingKeys == 0 )
 				continue;
 
 			int32_t boneID = boneIds.find(it.first)->second;
 			finalAnimation.bones[boneID].keys.reserve(finalAnimation.keysCount);
 			finalAnimation.bones[boneID].keys.resize(finalAnimation.keysCount);
-
-			bool isRoot = (boneData[boneID].parent < 0);
-			aiNodeAnim *translation, *rotation, *prerotation, *scaling;
-			if(isRoot)
-			{
-				// strange assimp behavior with fbx fix
-				string Translation(it.first + FBX_BROKEN_BONE_SUFIX + "Translation");
-				string PreRotation(it.first + FBX_BROKEN_BONE_SUFIX + "PreRotation");
-				string Rotation(it.first + FBX_BROKEN_BONE_SUFIX + "Rotation");
-				string Scaling(it.first + FBX_BROKEN_BONE_SUFIX + "Scaling");
-
-				auto translationNode = boneKeys[i].find(Translation);
-				if( translationNode != boneKeys[i].end() )
-					translation = translationNode->second;
-				auto rotationNode = boneKeys[i].find(Rotation);
-				if( rotationNode != boneKeys[i].end() )
-					rotation = rotationNode->second;
-				auto prerotationNode = boneKeys[i].find(PreRotation);
-				if( prerotationNode != boneKeys[i].end() )
-					prerotation = prerotationNode->second;
-				auto scalingNode = boneKeys[i].find(Scaling);
-				if( scalingNode != boneKeys[i].end() )
-					scaling = scalingNode->second;
-			}
-			else
-			{
-				translation = rotation = prerotation = scaling = nullptr;
-			}
 
 			for(int32_t j = 0; j < finalAnimation.keysCount; j++)
 			{
@@ -1137,30 +1074,7 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 				else
 					currentTime = float(j) / float(finalAnimation.keysCount - 1);
 
-				if(isRoot)
-				{
-					// strange assimp behavior with fbx fix
-					Matrix boneTranslate, bonePreRotation, boneRotation, boneScale;
-					if(translation)
-						boneTranslate = BoneTransformationToMatrix(getBoneTransformationForTime(translation, (float)animation->mDuration * currentTime));
-					if(prerotation)
-						bonePreRotation = BoneTransformationToMatrix(getBoneTransformationForTime(prerotation, (float)animation->mDuration * currentTime));
-					if(rotation)
-						bonePreRotation = BoneTransformationToMatrix(getBoneTransformationForTime(rotation, (float)animation->mDuration * currentTime));
-					if(scaling)
-						boneScale = BoneTransformationToMatrix(getBoneTransformationForTime(scaling, (float)animation->mDuration * currentTime));
-				
-					Matrix originalMatrix = boneScale * boneRotation * bonePreRotation * boneTranslate;
-					if(it.second)
-					{
-						Matrix boneMatrix = BoneTransformationToMatrix(getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime));
-						originalMatrix = boneMatrix * originalMatrix;
-					}
-
-					finalAnimation.bones[boneID].keys[j] = MatrixToBoneTransformation(originalMatrix);
-				}
-				else
-					finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
+				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
 			}
 		}
 

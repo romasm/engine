@@ -214,6 +214,10 @@ namespace EngineCore
 
 	inline Matrix BoneTransformationToMatrix(BoneTransformation& transf)
 	{
-
+		Matrix res = Matrix::CreateScale(transf.scale);
+		Matrix rotM = Matrix::CreateFromQuaternion(transf.rotation);
+		res = res * rotM;
+		res.Translation(transf.translation);
+		return res;
 	}
 }

@@ -80,7 +80,7 @@ workspace "Engine"
 		
 		filter {}
 		
-		links { "assimp-vc110-mt", "lua51" }
+		links { "assimp-vc140-mt", "lua51" }
 		
 		files {
 			"source/Common/*.h", 

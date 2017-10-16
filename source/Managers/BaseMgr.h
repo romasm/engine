@@ -128,7 +128,8 @@ namespace EngineCore
 
 		for(uint32_t i=0; i<MaxCount; i++)
 		{
-			ResourceDeallocate(resource_array[i].resource);
+			if(resource_array[i].resource != null_resource)
+				ResourceDeallocate(resource_array[i].resource);
 			resource_array[i].name.erase();
 		}
 		ResourceDeallocate(null_resource);
@@ -142,7 +143,8 @@ namespace EngineCore
 	{
 		for(auto& data: deallocationQueue)
 		{
-			ResourceDeallocate(data);
+			if(data != null_resource)
+				ResourceDeallocate(data);
 		}
 		deallocationQueue.resize(0);
 	}
