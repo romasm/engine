@@ -176,7 +176,7 @@ bool CollisionLoader::ConvertCollisionToEngineFormat(string& sourceFile, string&
 	return status;
 }
 
-void getNodesTransform(unordered_map<uint, aiMatrix4x4>& meshTransforms, aiNode* root, aiNode* node)
+void getNodesTransform(unordered_map<uint32_t, aiMatrix4x4>& meshTransforms, aiNode* root, aiNode* node)
 {
 	for(uint32_t i = 0; i < node->mNumMeshes; i++)
 	{
@@ -207,7 +207,7 @@ btCollisionShape* CollisionLoader::convertAIScene(string& filename, string& resF
 	btCollisionShape* collision = new btCompoundShape;
 	aiMesh** mesh = scene->mMeshes;
 
-	unordered_map<uint, aiMatrix4x4> meshTransforms;
+	unordered_map<uint32_t, aiMatrix4x4> meshTransforms;
 
 	auto root = scene->mRootNode;
 	getNodesTransform(meshTransforms, root, root);

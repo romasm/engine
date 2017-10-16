@@ -334,9 +334,9 @@ void RenderTarget::GenerateMipmaps(ScenePipeline* scene)
 	}
 }
 
-void RenderTarget::SetRenderTarget(UINT rt_start, UINT rt_end)
+void RenderTarget::SetRenderTarget(uint32_t rt_start, uint32_t rt_end)
 {
-	UINT count = (rt_end == 0 ? RT_count : rt_end) - rt_start;
+	uint32_t count = (rt_end == 0 ? RT_count : rt_end) - rt_start;
 	Render::OMSetRenderTargets(count, &(m_RTV[rt_start]), m_DSV);
 	Render::RSSetViewports(1, &m_viewport);
 }

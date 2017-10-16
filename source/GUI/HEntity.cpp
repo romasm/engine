@@ -232,7 +232,7 @@ void HEntity::Update(float dt)
 		}
 
 	if(tick_func)
-		(*tick_func)(lua_class, dt);
+		LUA_CALL((*tick_func)(lua_class, dt),);
 }
 
 void HEntity::RegToDraw()
@@ -308,14 +308,14 @@ void HEntity::Close()
 	ZeroEntity();
 }
 
-HEvent HEntity::LocalCallback(HEvent e)
+HEvent HEntity::LocalCallback(HEvent ev)
 {
-	if( e.event_id == GuiEvents::GE_NULL )
-		return e;
+	if( ev.event_id == GuiEvents::GE_NULL )
+		return ev;
 
 	if(!callback_func)
-		return e;
-	return (*callback_func)(lua_class, e);
+		return ev;
+	LUA_CALL(return (*callback_func)(lua_class, ev), return ev);
 }
 
 void HEntity::LocalCallbackHierarchy(HEvent e)
@@ -1236,7 +1236,7 @@ void HEntity::ActivateLoop()
 	active_branch = true;
 
 	if(activate_func)
-		(*activate_func)(lua_class);
+		LUA_CALL((*activate_func)(lua_class),);
 
 	for(auto it: *unnamed_children)
 		GET_HENTITY(it->e)->ActivateLoop();
@@ -1250,7 +1250,7 @@ void HEntity::DeactivateLoop()
 	active_branch = false;
 
 	if(deactivate_func)
-		(*deactivate_func)(lua_class);
+		LUA_CALL((*deactivate_func)(lua_class),);
 
 	for(auto it: *unnamed_children)
 		GET_HENTITY(it->e)->DeactivateLoop();
@@ -1271,5 +1271,5 @@ void HEntity::ForceUpdateShaderData()
 	if(!lua_func.isFunction())
 		return;
 
-	lua_func(lua_class);
+	LUA_CALL(lua_func(lua_class),);
 }

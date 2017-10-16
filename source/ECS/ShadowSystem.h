@@ -79,13 +79,13 @@ namespace EngineCore
 			}
 			while(comp = GetNextComponent(comp));
 
-			uint removed = components.remove(e.index());
+			uint32_t removed = components.remove(e.index());
 			shadow_casters -= removed;
 		}
 		bool HasComponent(Entity e) const {return components.has(e.index());}
 		size_t ComponentsCount() {return components.dataSize();}
 
-		ShadowComponent* ShadowSystem::GetComponent(Entity e, uint num = 0)
+		ShadowComponent* ShadowSystem::GetComponent(Entity e, uint32_t num = 0)
 		{return components.getDataById(e.index(), num);}
 		ShadowComponent* ShadowSystem::GetNextComponent(ShadowComponent* comp)
 		{

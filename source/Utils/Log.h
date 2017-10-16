@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "Pathes.h"
 #include "Arrays.h"
 
@@ -54,8 +55,8 @@ namespace EngineCore
 		void LuaError(const char *message, ...);
 
 		static int32_t GetBufferSize() {return (int32_t)instance->bufferLog.size();}
-		static string GetBufferText(int32_t i) {return instance->bufferLog[i].text;}
-		static string GetBufferPrefix(int32_t i) {return instance->bufferLog[i].prefix;}
+		static std::string GetBufferText(int32_t i) {return instance->bufferLog[i].text;}
+		static std::string GetBufferPrefix(int32_t i) {return instance->bufferLog[i].prefix;}
 		static int32_t GetBufferUpdatesAndReset()
 		{
 			int32_t bu = instance->bufferUpdates;
@@ -75,8 +76,8 @@ namespace EngineCore
 
 		struct ConsoleMsg
 		{
-			string text;
-			string prefix;
+			std::string text;
+			std::string prefix;
 		};
 		SDeque<ConsoleMsg, CONSOLE_BUFFER_SIZE> bufferLog;
 		int32_t bufferUpdates;

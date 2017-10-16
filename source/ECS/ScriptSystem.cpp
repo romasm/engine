@@ -129,7 +129,7 @@ void ScriptSystem::Update(float dt)
 			continue;
 
 		if(!i.tickFunc.isNil())
-			i.tickFunc(i.classInstanceRef, dt);
+			LUA_CALL(i.tickFunc(i.classInstanceRef, dt),);
 	}
 }
 

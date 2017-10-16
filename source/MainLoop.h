@@ -82,13 +82,11 @@ public:
 			ERR("Require Main:Start() in %s", PATH_MAIN_SCRIPT);
 			return;
 		}
-		start_func((*main_table));
-		// Lua
+		
+		LUA_CALL(start_func((*main_table)), return);
 
 		m_timer.Frame();
-
 		fpslock = 1000.0f / CONFIG(int, fpslock);
-
 		init = true;
 	}
 
@@ -146,9 +144,11 @@ public:
 			// Lua
 			if(tick_func)
 			{
-				auto isExit = (*tick_func)((*main_table), m_timer.dt_ms);
-				if( !isExit.cast<bool>() )
-					return false;	
+				LUA_CALL(
+					auto isExit = (*tick_func)((*main_table), m_timer.dt_ms);
+					if( !isExit.cast<bool>() )
+						return false;	
+				,);
 			}
 			PERF_CPU_END(_LUA_TICK);
 			

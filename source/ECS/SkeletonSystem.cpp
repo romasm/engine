@@ -68,8 +68,13 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 	const int32_t nextKey = prevKey + 1;
 	const float lerpFactor = sampleKeyID - (float)prevKey;
 
+	const uint32_t animBonesSize = (uint32_t)animData->bones.size();
+
 	for(uint32_t i = 0; i < (uint32_t)comp.bones.size(); i++)
 	{
+		if( i >= animBonesSize )
+			break;
+
 		auto& keys = animData->bones[i].keys;
 		if(keys.size() == 0)
 			continue;
@@ -370,7 +375,7 @@ bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaR
 		skeletonSys->updateSkeleton(*comp);
 
 		if(luaRef->isFunction())
-			(*luaRef)(worldPtr, comp->get_entity(), id, status);
+			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
 
 		_DELETE((LuaRef*)luaRef);
 	});

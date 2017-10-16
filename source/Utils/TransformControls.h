@@ -105,11 +105,11 @@ namespace EngineCore
 		void SetFromEntity(Entity e)
 		{SetTransformation(transformSys->GetTransformW(e));}
 
-		void _SetMode(uint type) {mode = eModeType(type);}
+		void _SetMode(uint32_t type) {mode = eModeType(type);}
 		void SetMode(eModeType type) {mode = type;}
 		void SetCoordStyleLocal(bool local) {isLocal = local;}
 
-		inline uint _GetMode() const {return uint(mode);}
+		inline uint32_t _GetMode() const {return uint32_t(mode);}
 		inline eModeType GetMode() const {return mode;}
 		inline bool IsCoordStyleLocal() const {return isLocal;}
 
@@ -152,7 +152,7 @@ namespace EngineCore
 		}
 
 	private:
-		void calcSreenScaleMat(const Vector3& campos, uint id);
+		void calcSreenScaleMat(const Vector3& campos, uint32_t id);
 
 		uint32_t arrow_x;
 		uint32_t arrow_y;

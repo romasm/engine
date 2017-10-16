@@ -48,7 +48,7 @@ namespace EngineCore
 
 		ID3D11Buffer *vertexBuffer; 
 		ID3D11Buffer *indexBuffer;
-		UINT index_count;
+		uint32_t index_count;
 		ID3D11Buffer *constantBuffer;
 		Material *material;
 	};
@@ -108,7 +108,7 @@ namespace EngineCore
 		bool SetBox(Entity e, BoundingOrientedBox box);
 		bool SetBox(Entity e, BoundingFrustum box);
 
-		bool SetSpline(Entity e, Vector3* p, UINT size);
+		bool SetSpline(Entity e, Vector3* p, uint32_t size);
 
 		bool SetPoint(Entity e);
 		bool SetSphere(Entity e, float radius);

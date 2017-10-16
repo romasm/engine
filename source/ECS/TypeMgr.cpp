@@ -35,7 +35,7 @@ LuaRef TypeMgr::LuaConstructor(string& type, Entity ent)
 		return classTable;
 	}
 
-	return luaConstuctor(world, ent, classTable);
+	LUA_CALL(return luaConstuctor(world, ent, classTable), return classTable);
 }
 
 bool TypeMgr::RegType(string& type, LuaRef* constructor)

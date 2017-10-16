@@ -72,9 +72,9 @@ namespace EngineCore
 		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
 		static void SwapShadows(ShadowMap* first, ShadowMap* second, SArray<ShadowMap, SHADOWMAPS_COUNT>* arr);
 
-		bool RegShadowMap(uint id,  float size);
+		bool RegShadowMap(uint32_t id,  float size);
 
-		void RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
+		void RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
 		
 		inline ShadowMap& GetShadowAdress(uint64_t id) {return shadowmap_array[castersIdx[id]];}
 		inline ShadowMap& GetShadowAdressNext(ShadowMap& prev) {return shadowmap_array[prev.next];}

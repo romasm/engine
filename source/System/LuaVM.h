@@ -5,6 +5,7 @@
 namespace EngineCore
 {
 #define LSTATE LuaVM::Get()->GetState()
+#define LUA_CALL(call, err) try{call;} catch(LuaException e){err;}
 
 	class LuaVM
 	{

@@ -117,7 +117,8 @@ namespace EngineCore
 	namespace MeshLoader
 	{		
 		static Assimp::Importer meshImporter;
-		
+		void Configurate();
+
 		MeshData* LoadMesh(string& resName);
 		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
 
@@ -196,5 +197,23 @@ namespace EngineCore
 	inline Quaternion aiQuaternionToQuaternion(aiQuaternion& q)
 	{
 		return Quaternion(q.x, q.y, q.z, q.w);
+	}
+
+	inline BoneTransformation MatrixToBoneTransformation(Matrix& m)
+	{
+		Vector3 scale, pos;
+		Quaternion rot;
+		m.Decompose(scale, rot, pos);
+		
+		BoneTransformation transf;
+		transf.scale = scale;
+		transf.rotation = rot;
+		transf.translation = pos;
+		return transf;
+	}
+
+	inline Matrix BoneTransformationToMatrix(BoneTransformation& transf)
+	{
+
 	}
 }

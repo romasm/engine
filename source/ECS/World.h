@@ -92,7 +92,7 @@ namespace EngineCore
 		void SetDirtyFromSceneGraph(Entity e);
 				
 		string GetWorldName() const {return world_name;}
-		UINT GetID() const {return ID;}
+		uint32_t GetID() const {return ID;}
 
 		void AddScene(ScenePipeline* scene)
 		{
@@ -227,7 +227,7 @@ namespace EngineCore
 			{
 				LuaRef editorConstructor = luaEnt["editor_init"];
 				if(editorConstructor.isFunction())
-					editorConstructor(luaEnt);
+					LUA_CALL(editorConstructor(luaEnt),);
 			}
 		}
 	#endif
@@ -326,7 +326,7 @@ namespace EngineCore
 		float m_dt;
 
 		string world_name;
-		UINT ID;
+		uint32_t ID;
 
 		Entity skyEP;
 

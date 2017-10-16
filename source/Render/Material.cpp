@@ -629,7 +629,7 @@ void Material::ClearTextures()
 void Material::updateBuffers()
 {	
 	b_dirty = false;
-	for(uint i=0; i<5; i++)
+	for(uint32_t i=0; i<5; i++)
 		if(inputBuf[i] != nullptr)
 			Render::UpdateDynamicResource(inputBuf[i], (void*)dataVector[i].data(), sizeof(Vector4) * dataVector[i].size());
 }

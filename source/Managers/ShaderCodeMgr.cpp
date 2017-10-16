@@ -439,7 +439,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 	HInput.matTextures_StartRegister = 0;
 	HInput.matTextures_Count = 0;
 
-	for(UINT i = 0; i < shader_desc.BoundResources; i++)
+	for(uint32_t i = 0; i < shader_desc.BoundResources; i++)
 	{
 		D3D11_SHADER_INPUT_BIND_DESC desc;
 		HRESULT hr = reflector->GetResourceBindingDesc(i, &desc);
@@ -466,7 +466,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 				HInput.matInfo_FloatCount = 0;
 				HInput.matInfo_VectorCount = 0;
 
-				for(UINT j = 0; j < descBuf.Variables; j++)
+				for(uint32_t j = 0; j < descBuf.Variables; j++)
 				{
 					auto var = constBuf->GetVariableByIndex(j);
 					if(!var)

@@ -88,7 +88,7 @@ void EnvProbSystem::RegToScene()
 				data.NumMips = i.mips_count;
 				data.Radius = i.distance;
 				data.Fade = i.fade;
-				data.Type = UINT(i.type);
+				data.Type = uint32_t(i.type);
 				data.Offset = i.offset;
 				data.textureID = 0;			// TODO
 				

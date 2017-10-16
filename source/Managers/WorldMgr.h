@@ -17,10 +17,10 @@ namespace EngineCore
 		SmallWorld* CreateSmallWorld();
 
 		World* OpenWorld(string filename);
-		void CloseWorldByID(UINT id);
+		void CloseWorldByID(uint32_t id);
 		void CloseWorld(BaseWorld* wrld){CloseWorldByID(wrld->GetID());}
 
-		inline BaseWorld* GetWorld(UINT id) 
+		inline BaseWorld* GetWorld(uint32_t id) 
 		{
 			auto it = m_worldsMap.find(id);
 			if(it == m_worldsMap.end())
@@ -63,6 +63,6 @@ namespace EngineCore
 
 		static WorldMgr *m_instance;
 		std::map<UINT, BaseWorld*> m_worldsMap;
-		UINT nextID;
+		uint32_t nextID;
 	};
 }

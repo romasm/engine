@@ -104,7 +104,7 @@ namespace EngineCore
 
 	bool Render::m_createdevice()
 	{
-		UINT createDeviceFlags = 0;
+		uint32_t createDeviceFlags = 0;
 	#ifdef _DEBUG
 		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 	#endif
@@ -116,7 +116,7 @@ namespace EngineCore
 			D3D_FEATURE_LEVEL_10_1,
 			D3D_FEATURE_LEVEL_10_0,
 		};
-		UINT numFeatureLevels = ARRAYSIZE( featureLevels );
+		uint32_t numFeatureLevels = ARRAYSIZE( featureLevels );
 	
 		HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, 0, createDeviceFlags, 
 			featureLevels, numFeatureLevels, D3D11_SDK_VERSION, &m_pd3dDevice, nullptr, &m_pImmediateContext );

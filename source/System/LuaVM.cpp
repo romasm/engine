@@ -138,10 +138,10 @@ void LuaVM::HandleError()
     {
         int status = lua_getinfo(L, "Sln", &entry);
         
-		ERR("%s(%i)%s", entry.short_src, entry.currentline, entry.name ? entry.name : "?");
+		LUA_ERROR("%s(%i)%s", entry.short_src, entry.currentline, entry.name ? entry.name : "?");
 		depth++;
     }
-	ERR("%s", str.c_str());
+	LUA_ERROR("%s", str.c_str());
 }
 
 bool LuaVM::LoadScript(string& filename)

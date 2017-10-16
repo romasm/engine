@@ -268,7 +268,7 @@ namespace EngineCore
 
 		bool IsHover() const {return b_hover;}
 
-		LRESULT WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
+		LRESULT WndProc(HWND hwnd, uint32_t nMsg, WPARAM wParam, LPARAM lParam);
 		
 		void SetColorBg(Vector4* color) {m_desc.bg_color = color;}
 		void SetColorBorder(Vector4* color) {m_desc.border_color = color;}
@@ -422,5 +422,5 @@ namespace EngineCore
 		bool is_press_captured;
 	};
 
-	static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK StaticWndProc(HWND hwnd, uint32_t nMsg, WPARAM wParam, LPARAM lParam);
 }

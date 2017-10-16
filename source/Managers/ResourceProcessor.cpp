@@ -23,6 +23,8 @@ ResourceProcessor::ResourceProcessor()
 	{
 		instance = this;
 
+		MeshLoader::Configurate();
+
 		loadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 		postLoadingQueue = new RQueueLockfree<ResourceSlot>(LOADING_QUEUE_SIZE);
 
@@ -700,7 +702,7 @@ bool ImportResourceCallbackLua(LuaRef params, LuaRef func, LuaRef data)
 		[luaRef, luaRefData](const ImportInfo& info, bool status) -> void
 	{
 		if(luaRef->isFunction())
-			(*luaRef)(info.resourceName, status, (*luaRefData));
+			LUA_CALL((*luaRef)(info.resourceName, status, (*luaRefData)),);
 		_DELETE((LuaRef*)luaRef);
 		_DELETE((LuaRef*)luaRefData);
 	}, false);
@@ -722,7 +724,7 @@ uint32_t GetTextureCallbackLua(string path, LuaRef func)
 		[luaRef](uint32_t id, bool status) -> void
 	{
 		if(luaRef->isFunction())
-			(*luaRef)(id, status);
+			LUA_CALL((*luaRef)(id, status),);
 		_DELETE((LuaRef*)luaRef);
 	});
 }

@@ -51,7 +51,7 @@ namespace EngineCore
 		// update on props change
 		EnvParallaxType type;
 		float fade;		
-		UINT mips_count; // mipsNum - 1
+		uint32_t mips_count; // mipsNum - 1
 		Vector3 offset;
 
 		float near_clip, far_clip;

@@ -337,7 +337,7 @@ bool SceneRenderMgr::RegPointCaster(Vector4& color, Vector4& nonAreaColor, float
 
 	ShadowMap shm[6];
 	shm[0] = shadowsRenderer->GetShadowAdress(id);
-	for(uint i=0; i<5; i++)
+	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 
 	// to voxels
@@ -404,7 +404,7 @@ bool SceneRenderMgr::RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor,
 
 	ShadowMap shm[6];
 	shm[0] = shadowsRenderer->GetShadowAdress(id);
-	for(uint i=0; i<5; i++)
+	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 	
 	// to voxels
@@ -473,7 +473,7 @@ bool SceneRenderMgr::RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, f
 
 	ShadowMap shm[6];
 	shm[0] = shadowsRenderer->GetShadowAdress(id);
-	for(uint i=0; i<5; i++)
+	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 	
 	// to voxels

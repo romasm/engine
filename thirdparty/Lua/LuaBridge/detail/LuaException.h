@@ -93,7 +93,7 @@ public:
     if (code != LUABRIDGE_LUA_OK)
 	{
 	  auto e = LuaException (L, code);
-	  printf("LUA RUNTIME ERROR: %s\n", e.what());
+	  EngineCore::Log::Get()->LuaError("LUA RUNTIME ERROR: %s", e.what());
       Throw (e);
 	}
   }

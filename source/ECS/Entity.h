@@ -49,7 +49,7 @@ namespace EngineCore
 				return res;
 			}
 
-			UINT idx = free_id.front();
+			uint32_t idx = free_id.front();
 			free_id.pop_front();
 			res.set(idx, generation[idx]);
 
@@ -95,7 +95,7 @@ namespace EngineCore
 		void Destroy(Entity e)
 		{
 			if(!IsAlive(e)) return;
-			UINT idx = e.index();
+			uint32_t idx = e.index();
 			generation[idx]++;
 			if(generation[idx] >= MAX_ENTITY_GENERATION)
 				generation[idx] = 0;

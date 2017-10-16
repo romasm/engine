@@ -426,7 +426,7 @@ private:
       Stack <P1>::push (m_L, p1);
       LuaException::pcall (m_L, 1, 1);
       return LuaRef (m_L, FromStack ());
-    }
+	}
 
     template <class P1, class P2>
     LuaRef const operator() (P1 p1, P2 p2) const

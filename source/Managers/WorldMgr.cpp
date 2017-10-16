@@ -117,7 +117,7 @@ World* WorldMgr::OpenWorld(string filename)
 	return world;
 }
 
-void WorldMgr::CloseWorldByID(UINT id)
+void WorldMgr::CloseWorldByID(uint32_t id)
 {
 	auto i = m_worldsMap.find(id);
 	if(i == m_worldsMap.end())

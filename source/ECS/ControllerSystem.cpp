@@ -48,7 +48,7 @@ void ControllerSystem::RawInput(RawInputData& data)
 
 			auto func = i.second.funcMap->keyboardEvents[data.key];
 			if(func)
-				(*func)(i.second.classInstanceRef, data.key, data.pressed, 0, 0, 0);
+				LUA_CALL((*func)(i.second.classInstanceRef, data.key, data.pressed, 0, 0, 0),);
 		}
 		break;
 
@@ -105,7 +105,7 @@ void ControllerSystem::SendMouseEvent(MouseEvents me, bool pressed, int32_t d)
 
 		auto func = i.second.funcMap->mouseEvents[me];
 		if(func)
-			(*func)(i.second.classInstanceRef, key, pressed, d, d, d);
+			LUA_CALL((*func)(i.second.classInstanceRef, key, pressed, d, d, d),);
 	}
 }
 

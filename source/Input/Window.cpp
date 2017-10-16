@@ -278,7 +278,7 @@ namespace EngineCore
 		return true;
 	}
 
-	LRESULT Window::WndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam)
+	LRESULT Window::WndProc(HWND hwnd, uint32_t nMsg, WPARAM wParam, LPARAM lParam)
 	{
 		if(!Hud::Get())
 			return DefWindowProcW( hwnd, nMsg, wParam, lParam);
@@ -395,7 +395,7 @@ namespace EngineCore
 				BYTE lpKeyState[256];
 				wchar_t buffer;
 				GetKeyboardState(lpKeyState);
-				ToUnicode((UINT)wParam, HIWORD(lParam)&0xFF, lpKeyState, &buffer, 1, 0);
+				ToUnicode((uint32_t)wParam, HIWORD(lParam)&0xFF, lpKeyState, &buffer, 1, 0);
 
 				Hud::Get()->KeyPressed(KeyEvent(buffer, keyIndex), nMsg == WM_KEYDOWN, this);
 				return 0;
@@ -553,7 +553,7 @@ namespace EngineCore
 
 		case WM_INPUT:
 			{
-				UINT dwSize;
+				uint32_t dwSize;
 				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 
 				LPBYTE lpb = new BYTE[dwSize];
@@ -671,7 +671,7 @@ namespace EngineCore
 		Hud::Get()->UpdateEntities(this);
 	}
 	
-	LRESULT CALLBACK EngineCore::StaticWndProc(HWND hwnd, UINT nMsg, WPARAM wParam, LPARAM lParam)
+	LRESULT CALLBACK EngineCore::StaticWndProc(HWND hwnd, uint32_t nMsg, WPARAM wParam, LPARAM lParam)
 	{
 		if(WindowsMgr::Get()->IsJustCreated(hwnd) && nMsg != WM_NCCREATE)
 			return 0;

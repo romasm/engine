@@ -91,11 +91,6 @@ struct MLPOINT
 };
 
 // --------------------------------
-
-#define uint uint32_t // TODO: REMOVE
-#define uchar uint8_t
-
-// --------------------------------
 struct CollVertex
 {
 	XMVECTOR Pos;

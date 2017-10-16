@@ -1,7 +1,6 @@
 #pragma once
 
 #include "macros.h"
-#include "DataTypes.h"
 #include <stdint.h>
 
 namespace EngineCore
@@ -978,16 +977,16 @@ namespace EngineCore
 				size_t idx = m_lookup[i];
 				T* res = &m_data[idx];
 				T* prev = res;
-				uint num = 0;
+				uint32_t num = 0;
 				while(prev->next != (uint32_t)m_data.capacity())
 				{
 					idx = prev->next;
 					prev = &m_data[idx];
 					num++;
 				}
-				prev->next = (uint)m_data.size();
+				prev->next = (uint32_t)m_data.size();
 				res = m_data.push_back();
-				res->prev = (uint)idx;
+				res->prev = (uint32_t)idx;
 				res->next = (uint32_t)m_data.capacity();
 				res->num = num + 1;
 				return res;
@@ -1000,9 +999,9 @@ namespace EngineCore
 			(*res) = data;
 		}
 
-		inline uint remove(const size_t i)
+		inline uint32_t remove(const size_t i)
 		{
-			uint removed = 0;
+			uint32_t removed = 0;
 
 			if(i >= m_lookup.capacity()) return removed;
 			size_t rmv_id = m_lookup[i];
@@ -1019,9 +1018,9 @@ namespace EngineCore
 					if(alien_data->prev == (uint32_t)m_data.capacity())
 						m_lookup[alien_data->get_id()] = rmv_id;
 					else
-						m_data[alien_data->prev].next = (uint)rmv_id;
+						m_data[alien_data->prev].next = (uint32_t)rmv_id;
 					if(alien_data->next != (uint32_t)m_data.capacity())
-						m_data[alien_data->next].prev = (uint)rmv_id;
+						m_data[alien_data->next].prev = (uint32_t)rmv_id;
 				}
 
 				if(m_data[rmv_id].num == 0) m_lookup[i] = m_data.capacity();

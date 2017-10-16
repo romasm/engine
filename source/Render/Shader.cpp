@@ -431,27 +431,27 @@ void Shader::Set(TECHNIQUES tech)
 	Render::VSSetShader((ID3D11VertexShader*)shaderVS.code, nullptr, 0);
 	Render::IASetInputLayout(shaderVS.input.layout);
 	if(!shaderVS.input.samplers.empty())
-		Render::VSSetSamplers(0, (UINT)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
+		Render::VSSetSamplers(0, (uint32_t)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
 	
 	auto& shaderPS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_PS]);
 	Render::PSSetShader((ID3D11PixelShader*)shaderPS.code, nullptr, 0);
 	if(!shaderPS.input.samplers.empty())
-		Render::PSSetSamplers(0, (UINT)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
+		Render::PSSetSamplers(0, (uint32_t)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
 	
 	auto& shaderHS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_HS]);
 	Render::HSSetShader((ID3D11HullShader*)shaderHS.code, nullptr, 0);
 	if(!shaderHS.input.samplers.empty())
-		Render::HSSetSamplers(0, (UINT)shaderHS.input.samplers.size(), shaderHS.input.samplers.data());
+		Render::HSSetSamplers(0, (uint32_t)shaderHS.input.samplers.size(), shaderHS.input.samplers.data());
 
 	auto& shaderDS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_DS]);
 	Render::DSSetShader((ID3D11DomainShader*)shaderDS.code, nullptr, 0);
 	if(!shaderDS.input.samplers.empty())
-		Render::DSSetSamplers(0, (UINT)shaderDS.input.samplers.size(), shaderDS.input.samplers.data());
+		Render::DSSetSamplers(0, (uint32_t)shaderDS.input.samplers.size(), shaderDS.input.samplers.data());
 
 	auto& shaderGS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_GS]);
 	Render::GSSetShader((ID3D11GeometryShader*)shaderGS.code, nullptr, 0);
 	if(!shaderGS.input.samplers.empty())
-		Render::GSSetSamplers(0, (UINT)shaderGS.input.samplers.size(), shaderGS.input.samplers.data());
+		Render::GSSetSamplers(0, (uint32_t)shaderGS.input.samplers.size(), shaderGS.input.samplers.data());
 }
 
 //////////////////////////////////////////////
@@ -602,10 +602,10 @@ void SimpleShader::Set()
 	Render::VSSetShader((ID3D11VertexShader*)shaderVS.code, nullptr, 0);
 	Render::IASetInputLayout(shaderVS.input.layout);
 	if(!shaderVS.input.samplers.empty())
-		Render::VSSetSamplers(0, (UINT)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
+		Render::VSSetSamplers(0, (uint32_t)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
 	
 	auto& shaderPS = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_PS]);
 	Render::PSSetShader((ID3D11PixelShader*)shaderPS.code, nullptr, 0);
 	if(!shaderPS.input.samplers.empty())
-		Render::PSSetSamplers(0, (UINT)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
+		Render::PSSetSamplers(0, (uint32_t)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
 }

@@ -43,6 +43,9 @@
 #define LUABRIDGE_MINOR_VERSION 0
 #define LUABRIDGE_VERSION 200
 
+// Log system from engine
+#include "Log.h"
+
 namespace luabridge
 {
 

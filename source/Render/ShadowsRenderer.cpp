@@ -244,7 +244,7 @@ void ShadowsRenderer::ResolveShadowMaps()
 	PlaceShadowMaps();
 }
 
-bool ShadowsRenderer::RegShadowMap(uint id,  float size)
+bool ShadowsRenderer::RegShadowMap(uint32_t id,  float size)
 {
 	uint32_t subId = (uint32_t)shadowmap_array.size();
 	if(subId >= SHADOWMAPS_COUNT)
@@ -277,12 +277,12 @@ bool ShadowsRenderer::RegShadowMap(uint id,  float size)
 	return true;
 }
 
-void ShadowsRenderer::RenderShadow(uint id, uchar num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp)
+void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp)
 {
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
 	ShadowMap shm = shadowmap_array[castersIdx[id]];
-	for(uint i=0; i<num; i++)
+	for(uint32_t i=0; i<num; i++)
 		shm = shadowmap_array[shm.next];
 
 	Render::OMSetRenderTargets(0, nullptr, shadowsBufferDSV[std::min<uint8_t>(shm.dsv, SHADOWS_BUF_SIZE-1)]);

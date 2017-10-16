@@ -320,7 +320,7 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 			desc.MaxLOD = techSource.ReadFloat("MaxLOD", it.second.node);
 
 		desc.MinLOD = techSource.ReadFloat("MinLOD", it.second.node);
-		desc.MaxAnisotropy = UINT(techSource.ReadInt("MaxAnisotropy", it.second.node));
+		desc.MaxAnisotropy = uint32_t(techSource.ReadInt("MaxAnisotropy", it.second.node));
 
 		ID3D11SamplerState* sampler = nullptr;
 		if( FAILED( DEVICE->CreateSamplerState(&desc, &sampler) ) )

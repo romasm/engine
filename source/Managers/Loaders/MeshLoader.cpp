@@ -7,6 +7,11 @@
 
 using namespace EngineCore;
 
+void MeshLoader::Configurate()
+{
+	meshImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+};
+
 MeshData* MeshLoader::LoadMesh(string& resName)
 {
 	MeshData* newMesh = nullptr;
@@ -785,11 +790,33 @@ void getSubNodesTransform(unordered_map<string, NodeInfo>& nodeTransforms, aiNod
 
 	if(worldTransformation)
 	{
-		auto parent = node;
-		while( parent != root )
+		if( node == root )
 		{
-			nInfo.transform = parent->mTransformation * nInfo.transform;
-			parent = parent->mParent;
+			nInfo.transform = node->mTransformation;
+		}
+		else
+		{
+			auto parent = node;
+			while( parent != root && parent != nullptr )
+			{
+				/*aiVector3D scale, rotAxis, pos;
+				float rotAng;
+				parent->mTransformation.Decompose(scale, rotAxis, rotAng, pos);
+
+				aiMatrix4x4 parentTransformFix;
+				string parentName(parent->mName.data);
+				if( parentName.find("_$AssimpFbx$_PreRotation") != string::npos || parentName.find("_$AssimpFbx$_Rotation") != string::npos )
+					aiMatrix4x4::Rotation(rotAng, rotAxis, parentTransformFix);
+				else if( parentName.find("_$AssimpFbx$_Scaling") != string::npos )
+					aiMatrix4x4::Scaling(scale, parentTransformFix);
+				else if( parentName.find("_$AssimpFbx$_Translation") != string::npos )
+					aiMatrix4x4::Translation(pos, parentTransformFix);
+				else
+					parentTransformFix = parent->mTransformation;*/
+
+				nInfo.transform = parent->mTransformation * nInfo.transform;
+				parent = parent->mParent;
+			}
 		}
 	}
 	else
@@ -921,6 +948,8 @@ BoneTransformation getBoneTransformationForTime(aiNodeAnim* boneAnim, float time
 	return result;
 }
 
+#define FBX_BROKEN_BONE_SUFIX "_$AssimpFbx$_"
+
 bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 {
 	if(!scene->HasAnimations())
@@ -937,6 +966,15 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		return false;
 	boneInvRemap.destroy();
 	
+	// root bones
+	DArray<string> rootBones;
+	for(auto& it: boneIds)
+	{
+		if( boneData[it.second].parent >= 0 )
+			continue;
+		rootBones.push_back(it.first);
+	}
+	
 	// keys map
 	RArray<unordered_map<string, aiNodeAnim*>> boneKeys;
 	boneKeys.create(scene->mNumAnimations);
@@ -944,15 +982,40 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 	{
 		const aiAnimation* animation = scene->mAnimations[i];
 		auto keyMap = boneKeys.push_back();
-		
+
+
 		for(uint32_t j = 0; j < animation->mNumChannels; j++)
 		{
 			aiNodeAnim* boneAnim = animation->mChannels[j];
 			string boneName = animation->mChannels[j]->mNodeName.C_Str();
 			if( boneIds.find(boneName) == boneIds.end() )
-				continue;
+			{
+				// strange assimp behavior with fbx fix
+				auto fbxSufix = boneName.find(FBX_BROKEN_BONE_SUFIX);
+				if( fbxSufix != string::npos )
+				{
+					string originalBoneName = boneName.substr(fbxSufix);
+					if( rootBones.find(originalBoneName) == rootBones.end() )
+						continue;
+				}
+				else
+					continue;
+			}
 
 			keyMap->insert(make_pair(boneName, boneAnim));
+		}
+
+		if(keyMap->empty())
+		{
+			boneKeys.pop_back();
+		}
+		else
+		{
+			for(auto& rootBoneName: rootBones)
+			{
+				if( keyMap->find(rootBoneName) == keyMap->end() )
+					keyMap->insert(make_pair(rootBoneName, nullptr));
+			}
 		}
 	}
 	
@@ -980,6 +1043,9 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		float minDeltaTimeInTicks = numeric_limits<float>::max();
 		for(auto& it: boneKeys[i])
 		{
+			if(!it.second)
+				continue;
+
 			float lastTime;
 			if(it.second->mNumPositionKeys > 0)
 			{
@@ -1024,12 +1090,44 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 
 		for(auto& it: boneKeys[i])
 		{
-			if( it.second->mNumPositionKeys + it.second->mNumRotationKeys + it.second->mNumScalingKeys == 0 )
+			if(it.second)
+				if( it.second->mNumPositionKeys + it.second->mNumRotationKeys + it.second->mNumScalingKeys == 0 )
+					continue;
+
+			if( it.first.find(FBX_BROKEN_BONE_SUFIX) != string::npos )
 				continue;
 
 			int32_t boneID = boneIds.find(it.first)->second;
 			finalAnimation.bones[boneID].keys.reserve(finalAnimation.keysCount);
 			finalAnimation.bones[boneID].keys.resize(finalAnimation.keysCount);
+
+			bool isRoot = (boneData[boneID].parent < 0);
+			aiNodeAnim *translation, *rotation, *prerotation, *scaling;
+			if(isRoot)
+			{
+				// strange assimp behavior with fbx fix
+				string Translation(it.first + FBX_BROKEN_BONE_SUFIX + "Translation");
+				string PreRotation(it.first + FBX_BROKEN_BONE_SUFIX + "PreRotation");
+				string Rotation(it.first + FBX_BROKEN_BONE_SUFIX + "Rotation");
+				string Scaling(it.first + FBX_BROKEN_BONE_SUFIX + "Scaling");
+
+				auto translationNode = boneKeys[i].find(Translation);
+				if( translationNode != boneKeys[i].end() )
+					translation = translationNode->second;
+				auto rotationNode = boneKeys[i].find(Rotation);
+				if( rotationNode != boneKeys[i].end() )
+					rotation = rotationNode->second;
+				auto prerotationNode = boneKeys[i].find(PreRotation);
+				if( prerotationNode != boneKeys[i].end() )
+					prerotation = prerotationNode->second;
+				auto scalingNode = boneKeys[i].find(Scaling);
+				if( scalingNode != boneKeys[i].end() )
+					scaling = scalingNode->second;
+			}
+			else
+			{
+				translation = rotation = prerotation = scaling = nullptr;
+			}
 
 			for(int32_t j = 0; j < finalAnimation.keysCount; j++)
 			{
@@ -1039,12 +1137,41 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 				else
 					currentTime = float(j) / float(finalAnimation.keysCount - 1);
 
-				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
+				if(isRoot)
+				{
+					// strange assimp behavior with fbx fix
+					Matrix boneTranslate, bonePreRotation, boneRotation, boneScale;
+					if(translation)
+						boneTranslate = BoneTransformationToMatrix(getBoneTransformationForTime(translation, (float)animation->mDuration * currentTime));
+					if(prerotation)
+						bonePreRotation = BoneTransformationToMatrix(getBoneTransformationForTime(prerotation, (float)animation->mDuration * currentTime));
+					if(rotation)
+						bonePreRotation = BoneTransformationToMatrix(getBoneTransformationForTime(rotation, (float)animation->mDuration * currentTime));
+					if(scaling)
+						boneScale = BoneTransformationToMatrix(getBoneTransformationForTime(scaling, (float)animation->mDuration * currentTime));
+				
+					Matrix originalMatrix = boneScale * boneRotation * bonePreRotation * boneTranslate;
+					if(it.second)
+					{
+						Matrix boneMatrix = BoneTransformationToMatrix(getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime));
+						originalMatrix = boneMatrix * originalMatrix;
+					}
+
+					finalAnimation.bones[boneID].keys[j] = MatrixToBoneTransformation(originalMatrix);
+				}
+				else
+					finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
 			}
 		}
 
 		// convertion to ms
 		finalAnimation.duration *= 1000.0f;
+	}
+
+	if(animationsArray.empty())
+	{
+		ERR("No animations was converted for file %s", filename.data());
+		return false;
 	}
 
 	return saveAnimation(filename, animationsArray);
@@ -1090,8 +1217,8 @@ bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unorde
 				int32_t boneId = (int32_t)boneData.size();
 				BoneData bData;
 
-				if(boneInvWorldTransforms)
-					bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
+				//if(boneInvWorldTransforms)
+				//	bData.localTransform = aiMatrix4x4ToMatrix(bone->mOffsetMatrix);
 
 				boneData.push_back(bData);
 				boneIds.insert(make_pair(boneName, boneId));
@@ -1120,8 +1247,9 @@ bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unorde
 
 		if(boneInvWorldTransforms)
 		{
+			Matrix invTransform;
 			aiMatrix4x4ToMatrix(node->second.transform).Invert(bData.localTransform);
-			bData.localTransform *= bData.localTransform;
+			//bData.localTransform = invTransform * bData.localTransform;
 		}
 		else
 		{
@@ -1327,7 +1455,11 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		}
 		else
 		{
-			for(int32_t k = 0; k < vertexBoneIds[j].size(); k++)
+			vertex->boneId[0] = vertexBoneIds[j][0].boneId;
+			vertex->boneWeight[0] = vertexBoneIds[j][0].boneWeight;
+			toLocalMatrix = vertex->boneWeight[0] * boneData[vertexBoneIds[j][0].boneId].localTransform;
+
+			for(int32_t k = 1; k < vertexBoneIds[j].size(); k++)
 			{
 				if( k >= BONE_PER_VERTEX_MAXCOUNT )
 					break;
@@ -1339,10 +1471,18 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		}
 		
 		// post transform
+		XMVECTOR scale, pos, rot;
+		XMMatrixDecompose(&scale, &rot, &pos, toLocalMatrix);
+		XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
+		XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
+
+		XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
+		normalMatrix = normalMatrix * rotM;
+		
 		vertex->Pos = Vector3::Transform(vertex->Pos, toLocalMatrix);
-		vertex->Norm = Vector3::TransformNormal(vertex->Norm, toLocalMatrix);
-		vertex->Tang = Vector3::TransformNormal(vertex->Tang, toLocalMatrix);
-		vertex->Binorm = Vector3::TransformNormal(vertex->Binorm, toLocalMatrix);
+		vertex->Norm = Vector3::TransformNormal(vertex->Norm, normalMatrix);
+		vertex->Tang = Vector3::TransformNormal(vertex->Tang, normalMatrix);
+		vertex->Binorm = Vector3::TransformNormal(vertex->Binorm, normalMatrix);
 
 		offset += vertexSize;
 	}

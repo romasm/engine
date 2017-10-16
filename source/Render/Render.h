@@ -100,16 +100,16 @@ namespace EngineCore
 			Render::Unmap(resource, 0);
 		}
 
-		inline static void UpdateSubresource(ID3D11Resource* pDstResource, UINT DstSubresource, const D3D11_BOX* pDstBox, 
-			const void* pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch)
+		inline static void UpdateSubresource(ID3D11Resource* pDstResource, uint32_t DstSubresource, const D3D11_BOX* pDstBox, 
+			const void* pSrcData, uint32_t SrcRowPitch, uint32_t SrcDepthPitch)
 		{m_instance->m_pImmediateContext->UpdateSubresource(pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);}
 
-		inline static void ResolveSubresource(ID3D11Resource *pDstResource, UINT DstSubresource, ID3D11Resource *pSrcResource, UINT SrcSubresource, DXGI_FORMAT Format)
+		inline static void ResolveSubresource(ID3D11Resource *pDstResource, uint32_t DstSubresource, ID3D11Resource *pSrcResource, uint32_t SrcSubresource, DXGI_FORMAT Format)
 		{m_instance->m_pImmediateContext->ResolveSubresource(pDstResource, DstSubresource, pSrcResource, SrcSubresource, Format);}
 
-		inline static HRESULT Map(ID3D11Resource *pResource, UINT Subresource, D3D11_MAP MapType, UINT MapFlags, D3D11_MAPPED_SUBRESOURCE *pMappedResource)
+		inline static HRESULT Map(ID3D11Resource *pResource, uint32_t Subresource, D3D11_MAP MapType, uint32_t MapFlags, D3D11_MAPPED_SUBRESOURCE *pMappedResource)
 		{return m_instance->m_pImmediateContext->Map(pResource, Subresource, MapType, MapFlags, pMappedResource);}
-		inline static void Unmap(ID3D11Resource *pResource, UINT Subresource)
+		inline static void Unmap(ID3D11Resource *pResource, uint32_t Subresource)
 		{m_instance->m_pImmediateContext->Unmap(pResource, Subresource);}
 
 		// RTV
@@ -118,14 +118,14 @@ namespace EngineCore
 		m_instance->m_pImmediateContext->ClearUnorderedAccessViewFloat(pUnorderedAccessView, color);}
 
 		inline static void ClearUnorderedAccessViewUint(ID3D11UnorderedAccessView *pUnorderedAccessView, Vector4 ColorRGBA)
-		{const UINT color[4] = {UINT(ColorRGBA.x), UINT(ColorRGBA.y), UINT(ColorRGBA.z), UINT(ColorRGBA.w)};
+		{const uint32_t color[4] = {UINT(ColorRGBA.x), uint32_t(ColorRGBA.y), uint32_t(ColorRGBA.z), uint32_t(ColorRGBA.w)};
 		m_instance->m_pImmediateContext->ClearUnorderedAccessViewUint(pUnorderedAccessView, color);}
 
 		inline static void ClearRenderTargetView(ID3D11RenderTargetView *pRenderTargetView, Vector4 ColorRGBA)
 		{const float color[4] = {ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w};
 		m_instance->m_pImmediateContext->ClearRenderTargetView(pRenderTargetView, color);}
 
-		inline static void ClearDepthStencilView(ID3D11DepthStencilView *pDepthStencilView, UINT ClearFlags, FLOAT Depth, UINT8 Stencil)
+		inline static void ClearDepthStencilView(ID3D11DepthStencilView *pDepthStencilView, uint32_t ClearFlags, FLOAT Depth, UINT8 Stencil)
 		{m_instance->m_pImmediateContext->ClearDepthStencilView(pDepthStencilView, ClearFlags, Depth, Stencil);}
 
 		inline static void GenerateMips(ID3D11ShaderResourceView *pShaderResourceView)
@@ -153,19 +153,19 @@ namespace EngineCore
 		{return m_instance->m_pd3dDevice->CreateDepthStencilView(pResource, pDesc, ppDepthStencilView);}
 
 		// OM
-		inline static void OMSetRenderTargets(UINT NumViews, ID3D11RenderTargetView *const *ppRenderTargetViews, ID3D11DepthStencilView *pDepthStencilView)
+		inline static void OMSetRenderTargets(uint32_t NumViews, ID3D11RenderTargetView *const *ppRenderTargetViews, ID3D11DepthStencilView *pDepthStencilView)
 		{m_instance->m_pImmediateContext->OMSetRenderTargets(NumViews, ppRenderTargetViews, pDepthStencilView);}
 
 		static ID3D11RenderTargetView** rts_null;
 		inline static void OMUnsetRenderTargets()
 		{m_instance->m_pImmediateContext->OMSetRenderTargets(8, rts_null, nullptr);}
 	
-		inline static void OMSetRenderTargetsAndUnorderedAccessViews(UINT NumRTVs, 
+		inline static void OMSetRenderTargetsAndUnorderedAccessViews(uint32_t NumRTVs, 
 			ID3D11RenderTargetView *const *ppRenderTargetViews,
 			ID3D11DepthStencilView *pDepthStencilView,
-			UINT UAVStartSlot, UINT NumUAVs,
+			uint32_t UAVStartSlot, uint32_t NumUAVs,
 			ID3D11UnorderedAccessView *const *ppUnorderedAccessViews,
-			const UINT *pUAVInitialCounts)
+			const uint32_t *pUAVInitialCounts)
 		{m_instance->m_pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(NumRTVs, 
 			ppRenderTargetViews, pDepthStencilView, UAVStartSlot, NumUAVs, ppUnorderedAccessViews, pUAVInitialCounts);}
 
@@ -182,84 +182,84 @@ namespace EngineCore
 		{m_instance->m_pImmediateContext->IASetPrimitiveTopology((D3D_PRIMITIVE_TOPOLOGY)topo);}
 
 		// RS
-		inline static void RSSetViewports(UINT NumViewports, const D3D11_VIEWPORT *pViewports)
+		inline static void RSSetViewports(uint32_t NumViewports, const D3D11_VIEWPORT *pViewports)
 		{m_instance->m_pImmediateContext->RSSetViewports(NumViewports, pViewports);}
 		inline static void RSSetState(uint16_t id)
 		{m_instance->m_pImmediateContext->RSSetState(RenderStateMgr::GetRSStatePtr(id));}
 
 		// PS
-		inline static void PSSetShader(ID3D11PixelShader* pPixelShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void PSSetShader(ID3D11PixelShader* pPixelShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->PSSetShader(pPixelShader, ppClassInstances, NumClassInstances);}
-		inline static void PSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void PSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->PSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void PSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void PSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->PSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void PSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void PSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->PSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
-		inline static void PSSetShaderTexture(UINT slot, uint32_t texId)
+		inline static void PSSetShaderTexture(uint32_t slot, uint32_t texId)
 		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->PSSetShaderResources(slot, 1, &tex);}
 
 		// VS
-		inline static void VSSetShader(ID3D11VertexShader* pVertexShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void VSSetShader(ID3D11VertexShader* pVertexShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->VSSetShader(pVertexShader, ppClassInstances, NumClassInstances);}
-		inline static void VSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void VSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->VSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void VSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void VSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->VSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void VSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void VSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->VSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
-		inline static void VSSetShaderTexture(UINT slot, uint32_t texId)
+		inline static void VSSetShaderTexture(uint32_t slot, uint32_t texId)
 		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->VSSetShaderResources(slot, 1, &tex);}
 
 		// HS
-		inline static void HSSetShader(ID3D11HullShader* pHullShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void HSSetShader(ID3D11HullShader* pHullShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->HSSetShader(pHullShader, ppClassInstances, NumClassInstances);}
-		inline static void HSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void HSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->HSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void HSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void HSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->HSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void HSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void HSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->HSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
-		inline static void HSSetShaderTexture(UINT slot, uint32_t texId)
+		inline static void HSSetShaderTexture(uint32_t slot, uint32_t texId)
 		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->HSSetShaderResources(slot, 1, &tex);}
 
 		// DS
-		inline static void DSSetShader(ID3D11DomainShader* pDomainShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void DSSetShader(ID3D11DomainShader* pDomainShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->DSSetShader(pDomainShader, ppClassInstances, NumClassInstances);}
-		inline static void DSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void DSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->DSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void DSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void DSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->DSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void DSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void DSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->DSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
-		inline static void DSSetShaderTexture(UINT slot, uint32_t texId)
+		inline static void DSSetShaderTexture(uint32_t slot, uint32_t texId)
 		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->DSSetShaderResources(slot, 1, &tex);}
 
 		// GS
-		inline static void GSSetShader(ID3D11GeometryShader* pGeometryShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void GSSetShader(ID3D11GeometryShader* pGeometryShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->GSSetShader(pGeometryShader, ppClassInstances, NumClassInstances);}
-		inline static void GSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void GSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->GSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void GSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void GSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->GSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void GSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void GSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->GSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
-		inline static void GSSetShaderTexture(UINT slot, uint32_t texId)
+		inline static void GSSetShaderTexture(uint32_t slot, uint32_t texId)
 		{auto tex = TexMgr::GetResourcePtr(texId);
 			m_instance->m_pImmediateContext->GSSetShaderResources(slot, 1, &tex);}
 
 		//CS
-		inline static void CSSetShader(ID3D11ComputeShader* pComputeShader, ID3D11ClassInstance *const *ppClassInstances, UINT NumClassInstances)
+		inline static void CSSetShader(ID3D11ComputeShader* pComputeShader, ID3D11ClassInstance *const *ppClassInstances, uint32_t NumClassInstances)
 		{m_instance->m_pImmediateContext->CSSetShader(pComputeShader, ppClassInstances, NumClassInstances);}
-		inline static void CSSetSamplers(UINT StartSlot, UINT NumSamplers, ID3D11SamplerState *const *ppSamplers)
+		inline static void CSSetSamplers(uint32_t StartSlot, uint32_t NumSamplers, ID3D11SamplerState *const *ppSamplers)
 		{m_instance->m_pImmediateContext->CSSetSamplers(StartSlot, NumSamplers, ppSamplers);}
-		inline static void CSSetConstantBuffers(UINT StartSlot, UINT NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
+		inline static void CSSetConstantBuffers(uint32_t StartSlot, uint32_t NumBuffers, ID3D11Buffer *const *ppConstantBuffers)
 		{m_instance->m_pImmediateContext->CSSetConstantBuffers(StartSlot, NumBuffers, ppConstantBuffers);}
-		inline static void CSSetShaderResources(UINT StartSlot, UINT NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
+		inline static void CSSetShaderResources(uint32_t StartSlot, uint32_t NumViews, ID3D11ShaderResourceView *const *ppShaderResourceViews)
 		{m_instance->m_pImmediateContext->CSSetShaderResources(StartSlot, NumViews, ppShaderResourceViews);}
 		
 

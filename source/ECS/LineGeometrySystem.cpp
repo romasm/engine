@@ -191,7 +191,7 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 {
 	GET_COMPONENT(false)
 
-	const UINT vertex_count = 2;
+	const uint32_t vertex_count = 2;
 	LineGeometryVertex vertices[vertex_count];
 	vertices[0].pos = p1;
 	vertices[1].pos = p2;
@@ -206,7 +206,7 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 		DestroyGeometry(&comp, false);
 		comp.type = LG_LINE;
 
-		const UINT index_count = 2;
+		const uint32_t index_count = 2;
 		const unsigned long indices[index_count] = {0,1};
 
 		comp.material = MATERIAL_S(LG_MAT);
@@ -216,7 +216,7 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 }
 
 #define INIT_BOX_VRTX \
-	const UINT vertex_count = 8;\
+	const uint32_t vertex_count = 8;\
 	LineGeometryVertex vertices[vertex_count];\
 	Vector3 box_corners[8];\
 	box.GetCorners(box_corners);\
@@ -232,7 +232,7 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 #define INIT_BOX \
 	DestroyGeometry(&comp, false);\
 	comp.type = LG_BOX;\
-	const UINT index_count = 24;\
+	const uint32_t index_count = 24;\
 	const unsigned long indices[index_count] = {0,1,1,2,0,4,2,3,0,3,2,6,1,5,6,7,4,5,4,7,5,6,3,7};
 
 bool LineGeometrySystem::SetBox(Entity e, BoundingBox box)
@@ -292,17 +292,17 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingFrustum box)
 	}	
 }
 
-bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, UINT size)
+bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, uint32_t size)
 {
 	GET_COMPONENT(false)
 
-	const UINT vertex_count = size;
-	const UINT index_count = (vertex_count - 1) * 2;
+	const uint32_t vertex_count = size;
+	const uint32_t index_count = (vertex_count - 1) * 2;
 
-	const UINT max_vertex_count = LG_SPLINE_MAX / 2 + 1;
+	const uint32_t max_vertex_count = LG_SPLINE_MAX / 2 + 1;
 	LineGeometryVertex vertices[max_vertex_count];
 
-	for(UINT i=0; i<vertex_count; i++)
+	for(uint32_t i=0; i<vertex_count; i++)
 		vertices[i].pos = p[i];
 
 	if(comp.type == LG_SPLINE && comp.vertexBuffer)
@@ -319,7 +319,7 @@ bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, UINT size)
 		comp.material = MATERIAL_S(LG_MAT);
 
 		unsigned long indices[LG_SPLINE_MAX];
-		for(UINT i=0; i<LG_SPLINE_MAX; i+=2)
+		for(uint32_t i=0; i<LG_SPLINE_MAX; i+=2)
 		{
 			indices[i] = i / 2;
 			indices[i+1] = indices[i] + 1;
@@ -349,8 +349,8 @@ bool LineGeometrySystem::SetPoint(Entity e)
 	DestroyGeometry(&comp, false);
 	comp.type = LG_POINT;
 
-	const UINT vertex_count = 6;
-	const UINT index_count = 6;
+	const uint32_t vertex_count = 6;
+	const uint32_t index_count = 6;
 	
 	const unsigned long indices[index_count] = {0,1,2,3,4,5};
 
@@ -379,8 +379,8 @@ bool LineGeometrySystem::SetSphere(Entity e, float radius)
 	DestroyGeometry(&comp, false);
 	comp.type = LG_SPHERE;
 
-	const UINT vertex_count = LG_SPHERE_SUBD * 3;
-	const UINT index_count = vertex_count * 2;
+	const uint32_t vertex_count = LG_SPHERE_SUBD * 3;
+	const uint32_t index_count = vertex_count * 2;
 	
 	unsigned long indices[index_count];
 	LineGeometryVertex vertices[vertex_count];

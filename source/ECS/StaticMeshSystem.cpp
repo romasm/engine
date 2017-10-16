@@ -449,7 +449,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		}
 
 		if(luaRef->isFunction())
-			(*luaRef)(worldPtr, comp->get_entity(), id, status);
+			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
 
 		_DELETE((LuaRef*)luaRef);
 	});

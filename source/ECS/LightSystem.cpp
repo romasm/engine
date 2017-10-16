@@ -589,7 +589,7 @@ void LightSystem::initShadows(Entity e, LightComponent* comp)
 	case LIGHT_TYPE_SPHERE:
 	case LIGHT_TYPE_TUBE:
 		{
-			for(uint i=0; i<6; i++)
+			for(uint32_t i=0; i<6; i++)
 				shadowSystem->AddComponent(e);
 			shadowSystem->UpdateShadowmapData(e);
 		}
@@ -707,7 +707,7 @@ XMMATRIX LightSystem::GetProj(Entity e)
 	return XMMatrixIdentity();
 }
 
-XMMATRIX LightSystem::GetView(Entity e, uchar num, Vector3* pos)
+XMMATRIX LightSystem::GetView(Entity e, uint8_t num, Vector3* pos)
 {
 	GET_COMPONENT(XMMatrixIdentity())
 

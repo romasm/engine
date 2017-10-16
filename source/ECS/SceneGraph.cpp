@@ -44,7 +44,7 @@ uint32_t SceneGraph::AddNode(Entity e)
 		return SCENEGRAPH_NULL_ID;
 	}
 
-	UINT nodeID = free_id.front();
+	uint32_t nodeID = free_id.front();
 	free_id.pop_front();
 
 	lookup[nodeID] = (uint32_t)dirty.size();

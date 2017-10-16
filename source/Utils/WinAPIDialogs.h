@@ -74,7 +74,7 @@ namespace EngineCore
 		}
 		else
 		{
-			UINT f_num;
+			uint32_t f_num;
 			COMDLG_FILTERSPEC* rgSpec = filter.BuildFILTERSPEC(&f_num);
 			if(!rgSpec){
 				CoUninitialize();
@@ -127,7 +127,7 @@ namespace EngineCore
 		if(FAILED(CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&dialog)))) {
 			CoUninitialize(); return res; }
 		
-		UINT f_num;
+		uint32_t f_num;
 		COMDLG_FILTERSPEC* rgSpec = filter.BuildFILTERSPEC(&f_num);
 		if(!rgSpec) {
 			_RELEASE(dialog);
@@ -195,7 +195,7 @@ namespace EngineCore
 		if(FAILED(CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL, IID_IFileSaveDialog, reinterpret_cast<void**>(&dialog)))){
 			CoUninitialize(); return res;}
 				
-		UINT f_num;
+		uint32_t f_num;
 		COMDLG_FILTERSPEC* rgSpec = filter.BuildFILTERSPEC(&f_num);
 		if(!rgSpec) {
 			_RELEASE(dialog);

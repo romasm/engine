@@ -43,13 +43,13 @@ TransformControls::TransformControls(World* wrd)
 	mat_rot_y = MATERIAL_S(MATERIAL_ROT_Y);
 	mat_rot_z = MATERIAL_S(MATERIAL_ROT_Z);	
 
-	for(uint i=0; i<TC_MAX_CAMS; i++)
+	for(uint32_t i=0; i<TC_MAX_CAMS; i++)
 	{
 		matricies[i].constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
 		matricies[i].actualTransform = XMMatrixIdentity();
 	}
 
-	for(uint i=0; i<FRUSTUM_MAX_COUNT; i++)
+	for(uint32_t i=0; i<FRUSTUM_MAX_COUNT; i++)
 		frust_ids[i] = -1;
 
 	b_hover = E_TRANSFORM_NOPE;
@@ -88,11 +88,11 @@ TransformControls::~TransformControls()
 	MATERIAL_PTR_DROP(mat_rot_y);
 	MATERIAL_PTR_DROP(mat_rot_z);
 
-	for(uint i=0; i<TC_MAX_CAMS; i++)
+	for(uint32_t i=0; i<TC_MAX_CAMS; i++)
 		_RELEASE(matricies[i].constantBuffer);
 }
 
-void TransformControls::calcSreenScaleMat(const Vector3& campos, uint id)
+void TransformControls::calcSreenScaleMat(const Vector3& campos, uint32_t id)
 {
 	Vector3 v_dist = campos - m_pos;
 	matricies[id].scale = v_dist.Length() * m_scale;
@@ -112,7 +112,7 @@ void TransformControls::RegToDraw()
 	// TODO: store
 	const auto vertexSize = MeshLoader::GetVertexSize(MeshMgr::GetResourcePtr(arrow_x)->vertexFormat);
 
-	uint frustCount = 0;
+	uint32_t frustCount = 0;
 	switch (mode)
 	{
 	case TransformControls::E_MOVE:

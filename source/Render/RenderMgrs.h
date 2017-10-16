@@ -18,7 +18,7 @@ namespace EngineCore
 	{
 		ID3D11ShaderResourceView* specCube;
 		ID3D11ShaderResourceView* diffCube;
-		UINT mipsCount;
+		uint32_t mipsCount;
 		XMMATRIX matrix;
 		
 		ALIGNED_ALLOCATION
@@ -139,7 +139,7 @@ namespace EngineCore
 		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 
-		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, UINT mipsCount, CXMMATRIX envRot)
+		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, uint32_t mipsCount, CXMMATRIX envRot)
 		{
 			skyEP.specCube = specCube;
 			skyEP.diffCube = diffCube;

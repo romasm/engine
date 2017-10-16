@@ -27,7 +27,7 @@ public:
 
 	void Close();
 
-	void SetRenderTarget(UINT rt_start = 0, UINT rt_end = 0);
+	void SetRenderTarget(uint32_t rt_start = 0, uint32_t rt_end = 0);
 	void ClearRenderTargets(bool clearDS = true){ClearRenderTargets(0,0,0,0, clearDS);}
 	void ClearRenderTargets(float, float, float, float, bool clearDS = true);
 
@@ -89,10 +89,10 @@ private:
 	bool b_importedDS;
 
 	bool msaa;
-	UINT m_msaa_count;
-	UINT m_msaa_quality;
+	uint32_t m_msaa_count;
+	uint32_t m_msaa_quality;
 
-	UINT RT_count;
+	uint32_t RT_count;
 
 	string* mip_mat;
 	int mip_count;
