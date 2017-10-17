@@ -32,37 +32,57 @@ void SkeletonSystem::Animate(float dt)
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
+		
+		bool isAnimated = false;
+		i.boneBlendWeight.assign(0);
 
-		// VISIBILITY?
+		for(auto& animSeq: i.animations)
+		{
+			if(!animSeq.playing)
+				continue;
 
-		if(i.animations.empty())
-			continue;
+			if( animSeq.playbackSpeed != 0 || i.dirty == true )
+			{
+				auto animPtr = AnimationMgr::GetResourcePtr(animSeq.animationID);
+				if(!animPtr)
+					continue;
 
-		// TEMP
-		AnimationSeq& animSeq = i.animations[0];
-		if(animSeq.blendFactor == 0)
-			continue;
+				const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * animPtr->keysCountMinusOne;
+				setAnimationTransformations(i, animPtr, sampleKeyID, animSeq.blendFactor, animPtr->keysCountMinusOne);
 
-		auto animPtr = AnimationMgr::GetResourcePtr(animSeq.animationID);
-		if(!animPtr)
-			continue;
+				animSeq.currentTime += dt * animSeq.playbackSpeed;
 
-		const int32_t keysCount = animPtr->keysCount - 1;
-		const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * keysCount;
+				if(animSeq.looped)
+				{
+					while( animSeq.currentTime >= animPtr->duration )
+						animSeq.currentTime -= animPtr->duration;
+				}
+				else
+				{
+					if( animSeq.currentTime >= animPtr->duration )
+						animSeq.playing = false;
+				}
 
-		setAnimationTransformations(i, animPtr, sampleKeyID, animSeq.blendFactor, keysCount);
+				i.dirty = true;
+				isAnimated = true;
+			}
+		}	
 
-		animSeq.currentTime += dt;
+		if(isAnimated)
+		{
+			for(uint32_t j = 0; j < (uint32_t)i.boneBlendWeight.size(); j++)
+				sceneGraph->FixBoneTransformation(i.bones[j], i.boneBlendWeight[j]);
+		}
+		else if( !isAnimated && i.dirty )
+		{
+			// TODO: return skeleton pose
+		}
 
-		// TEMP looped
-		while( animSeq.currentTime >= animPtr->duration )
-			animSeq.currentTime -= animPtr->duration;
-
-		i.dirty = true;
+		// TODO: UPDATE VISIBILITY BBOX
 	}
 }
 
-void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCount)
+void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCountMinusOne)
 {
 	const int32_t prevKey = int32_t(sampleKeyID);
 	const int32_t nextKey = prevKey + 1;
@@ -80,7 +100,7 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 			continue;
 		
 		XMMATRIX finalMatrix;
-		if( nextKey > keysCount )
+		if( nextKey > keysCountMinusOne )
 		{
 			BoneTransformation& transform = keys[prevKey];
 			finalMatrix = XMMatrixAffineTransformation(transform.scale, zeroOrigin, transform.rotation, transform.translation);
@@ -96,8 +116,9 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 			
 			finalMatrix = XMMatrixAffineTransformation(scale, zeroOrigin, rot, pos);
 		}
-		
-		sceneGraph->SetTransformation(comp.bones[i], finalMatrix);
+
+		comp.boneBlendWeight[i] += blendFactor;
+		sceneGraph->AppendTransformation(comp.bones[i], finalMatrix * blendFactor);
 	}
 }
 
@@ -107,7 +128,6 @@ void SkeletonSystem::UpdateBuffers()
 	{
 		if( i.dirty || false/* animation? */ )
 		{
-			// precashe visibility in Animate
 			VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
 
 			bitset<FRUSTUM_MAX_COUNT> bits;

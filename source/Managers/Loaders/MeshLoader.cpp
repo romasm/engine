@@ -436,7 +436,7 @@ AnimationData* MeshLoader::loadEngineAnimationFromMemory(string& filename, uint8
 	animation->duration = *(float*)t_data;
 	t_data += sizeof(float);
 
-	animation->keysCount = *(int32_t*)t_data;
+	animation->keysCountMinusOne = *(int32_t*)t_data;
 	t_data += sizeof(int32_t);
 
 	for(auto& it: animation->bones)
@@ -484,7 +484,7 @@ bool MeshLoader::saveAnimation(string& filename, DArray<AnimationData>& animatio
 	*(float*)t_data = anim.duration;
 	t_data += sizeof(float);
 
-	*(int32_t*)t_data = anim.keysCount;
+	*(int32_t*)t_data = anim.keysCountMinusOne;
 	t_data += sizeof(int32_t);
 	
 	for(auto& it: anim.bones)
@@ -1054,8 +1054,10 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		keysPerSecond = min(max(ANIMATION_BAKE_MIN_KPS, keysPerSecond), ANIMATION_BAKE_MAX_KPS);
 
 		// get transforms
-		finalAnimation.keysCount = int32_t(keysPerSecond * finalAnimation.duration);
-		finalAnimation.keysCount = max(finalAnimation.keysCount, 1);
+		finalAnimation.keysCountMinusOne = int32_t(keysPerSecond * finalAnimation.duration) - 1;
+		finalAnimation.keysCountMinusOne = max(finalAnimation.keysCountMinusOne, 0);
+
+		auto keysBufferSize = finalAnimation.keysCountMinusOne + 1;
 
 		for(auto& it: boneKeys[i])
 		{
@@ -1063,16 +1065,16 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 				continue;
 
 			int32_t boneID = boneIds.find(it.first)->second;
-			finalAnimation.bones[boneID].keys.reserve(finalAnimation.keysCount);
-			finalAnimation.bones[boneID].keys.resize(finalAnimation.keysCount);
+			finalAnimation.bones[boneID].keys.reserve(keysBufferSize);
+			finalAnimation.bones[boneID].keys.resize(keysBufferSize);
 
-			for(int32_t j = 0; j < finalAnimation.keysCount; j++)
+			for(int32_t j = 0; j < keysBufferSize; j++)
 			{
 				float currentTime;
-				if(finalAnimation.keysCount == 1)
+				if(keysBufferSize == 1)
 					currentTime = (float)animation->mDuration;
 				else
-					currentTime = float(j) / float(finalAnimation.keysCount - 1);
+					currentTime = float(j) / float(finalAnimation.keysCountMinusOne);
 
 				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
 			}

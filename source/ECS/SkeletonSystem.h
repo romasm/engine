@@ -13,9 +13,12 @@ namespace EngineCore
 		uint32_t animationID;
 		float currentTime;
 		float blendFactor;
+		float playbackSpeed;
+		bool looped;
+		bool playing;
 
-		AnimationSeq() : animationID(AnimationMgr::nullres), 
-			blendFactor(0), currentTime(0) {}
+		AnimationSeq() : animationID(AnimationMgr::nullres), looped(false), playing(false),
+			blendFactor(0), currentTime(0), playbackSpeed(1.0f) {}
 	};
 
 	struct SkeletonComponent
@@ -26,11 +29,11 @@ namespace EngineCore
 
 		uint32_t skeletonID;
 		DArray<uint32_t> bones;
+		DArray<AnimationSeq> animations;
 
 		StructBuf gpuMatrixBuffer;
 		DArrayAligned<XMMATRIX> matrixBuffer;
-
-		DArray<AnimationSeq> animations;
+		DArray<float> boneBlendWeight;
 
 		SkeletonComponent()
 		{
@@ -113,7 +116,7 @@ namespace EngineCore
 			comp.matrixBuffer.destroy();
 			comp.gpuMatrixBuffer.Release();
 		};
-		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCount);
+		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCountMinusOne);
 
 		ComponentRArray<SkeletonComponent> components;
 

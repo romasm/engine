@@ -110,7 +110,7 @@ namespace EngineCore
 	struct AnimationData
 	{
 		float duration;
-		int32_t keysCount;
+		int32_t keysCountMinusOne;
 		DArray<BoneAnimation> bones;
 	};
 
