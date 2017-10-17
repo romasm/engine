@@ -18,7 +18,7 @@ namespace EngineCore
 		bool playing;
 
 		AnimationSeq() : animationID(AnimationMgr::nullres), looped(false), playing(false),
-			blendFactor(0), currentTime(0), playbackSpeed(1.0f) {}
+			blendFactor(1.0f), currentTime(0), playbackSpeed(1.0f) {}
 	};
 
 	struct SkeletonComponent

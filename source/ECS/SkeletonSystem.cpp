@@ -38,7 +38,7 @@ void SkeletonSystem::Animate(float dt)
 
 		for(auto& animSeq: i.animations)
 		{
-			if(!animSeq.playing)
+			if( !animSeq.playing || animSeq.blendFactor == 0 )
 				continue;
 
 			if( animSeq.playbackSpeed != 0 || i.dirty == true )
@@ -47,20 +47,27 @@ void SkeletonSystem::Animate(float dt)
 				if(!animPtr)
 					continue;
 
-				const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * animPtr->keysCountMinusOne;
-				setAnimationTransformations(i, animPtr, sampleKeyID, animSeq.blendFactor, animPtr->keysCountMinusOne);
-
-				animSeq.currentTime += dt * animSeq.playbackSpeed;
-
-				if(animSeq.looped)
+				if( animPtr->duration > 0 )
 				{
-					while( animSeq.currentTime >= animPtr->duration )
-						animSeq.currentTime -= animPtr->duration;
+					const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * animPtr->keysCountMinusOne;
+					setAnimationTransformations(i, animPtr, sampleKeyID, animSeq.blendFactor, animPtr->keysCountMinusOne);
+
+					animSeq.currentTime += dt * animSeq.playbackSpeed;
+
+					if(animSeq.looped)
+					{
+						while( animSeq.currentTime >= animPtr->duration )
+							animSeq.currentTime -= animPtr->duration;
+					}
+					else
+					{
+						if( animSeq.currentTime >= animPtr->duration )
+							animSeq.playing = false;
+					}
 				}
 				else
 				{
-					if( animSeq.currentTime >= animPtr->duration )
-						animSeq.playing = false;
+					setAnimationTransformations(i, animPtr, 0, animSeq.blendFactor, animPtr->keysCountMinusOne);
 				}
 
 				i.dirty = true;
@@ -71,7 +78,7 @@ void SkeletonSystem::Animate(float dt)
 		if(isAnimated)
 		{
 			for(uint32_t j = 0; j < (uint32_t)i.boneBlendWeight.size(); j++)
-				sceneGraph->FixBoneTransformation(i.bones[j], i.boneBlendWeight[j]);
+				sceneGraph->FixTransformation(i.bones[j], i.boneBlendWeight[j]);
 		}
 		else if( !isAnimated && i.dirty )
 		{
