@@ -8,6 +8,8 @@
 
 namespace EngineCore
 {
+#define BONE_TRANSFORM_ACC_SIZE 1024
+
 	struct AnimationSeq
 	{
 		uint32_t animationID;
@@ -33,7 +35,6 @@ namespace EngineCore
 
 		StructBuf gpuMatrixBuffer;
 		DArrayAligned<XMMATRIX> matrixBuffer;
-		DArray<float> boneBlendWeight;
 
 		SkeletonComponent()
 		{
@@ -116,9 +117,16 @@ namespace EngineCore
 			comp.matrixBuffer.destroy();
 			comp.gpuMatrixBuffer.Release();
 		};
-		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCountMinusOne);
+		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCountMinusOne, bool looped);
 
 		ComponentRArray<SkeletonComponent> components;
+		
+		struct BoneAcc
+		{
+			XMMATRIX transform;
+			float totalWeight;
+		};
+		DArrayAligned<BoneAcc> transformAcc;
 
 		SceneGraph* sceneGraph;
 		TransformSystem* transformSys;
