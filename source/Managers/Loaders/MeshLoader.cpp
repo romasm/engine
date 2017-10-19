@@ -56,7 +56,7 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 			info.isSkinnedMesh = false;
 		}		
 
-		if( ResourceProcessor::ImportResource(info) )
+		if( ResourceProcessor::ImportResource(info, true) )
 		{
 			data = FileIO::ReadFileData(resName, &size);
 			if(data)
@@ -115,7 +115,7 @@ SkeletonData* MeshLoader::LoadSkeleton(string& resName)
 			info.importBytes = IMP_BYTE_SKELETON;
 		}		
 
-		if( ResourceProcessor::ImportResource(info) )
+		if( ResourceProcessor::ImportResource(info, true) )
 		{
 			data = FileIO::ReadFileData(resName, &size);
 			if(data)
@@ -174,7 +174,7 @@ AnimationData* MeshLoader::LoadAnimation(string& resName)
 			info.importBytes = IMP_BYTE_ANIMATION;
 		}		
 
-		if( ResourceProcessor::ImportResource(info) )
+		if( ResourceProcessor::ImportResource(info, true) )
 		{
 			data = FileIO::ReadFileData(resName, &size);
 			if(data)
@@ -214,7 +214,9 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	MeshData* mesh = new MeshData;
 	mesh->vertexBuffers.create(header.materialCount);
 	mesh->indexBuffers.create(header.materialCount);
-	mesh->box = BoundingBox(header.bboxCenter, header.bboxExtents);
+	mesh->box.Center = header.bbox.center;
+	mesh->box.Extents = header.bbox.extents;
+	mesh->maxVertexOffset = header.maxVertexOffset;
 	mesh->vertexFormat = header.vertexFormat;
 
 	for(uint32_t i = 0; i < header.materialCount; i++)
@@ -272,8 +274,9 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 	MeshFileHeader header;
 	header.version = MESH_FILE_VERSION;
 	header.materialCount = (uint32_t)mesh->vertexBuffers.size();
-	header.bboxCenter = VECTOR3_CAST(mesh->box.Center);
-	header.bboxExtents = VECTOR3_CAST(mesh->box.Extents);
+	header.bbox.center = mesh->box.Center;
+	header.bbox.extents = mesh->box.Extents;
+	header.maxVertexOffset = mesh->maxVertexOffset;
 	header.vertexFormat = mesh->vertexFormat;
 
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
@@ -439,6 +442,15 @@ AnimationData* MeshLoader::loadEngineAnimationFromMemory(string& filename, uint8
 	animation->keysCountMinusOne = *(int32_t*)t_data;
 	t_data += sizeof(int32_t);
 
+	const uint32_t totalKeysCount = (uint32_t)animation->keysCountMinusOne + 1;
+	animation->bboxes.resize(totalKeysCount);
+	if(totalKeysCount > 0)
+	{
+		const uint32_t bboxSize = totalKeysCount * sizeof(MeshBBox);
+		memcpy(animation->bboxes.data(), t_data, bboxSize);
+		t_data += bboxSize;
+	}
+
 	for(auto& it: animation->bones)
 	{
 		uint32_t keysCount = *(uint32_t*)t_data;
@@ -472,6 +484,9 @@ bool MeshLoader::saveAnimation(string& filename, DArray<AnimationData>& animatio
 	
 	// calc file size
 	uint32_t file_size = sizeof(AnimationFileHeader) + sizeof(float) + sizeof(int32_t);
+
+	const uint32_t bboxSize = (uint32_t)anim.bboxes.size() * sizeof(MeshBBox);
+	file_size += bboxSize;
 	for(auto& it: anim.bones)
 		file_size += sizeof(uint32_t) + sizeof(BoneTransformation) * (uint32_t)it.keys.size();
 
@@ -487,6 +502,18 @@ bool MeshLoader::saveAnimation(string& filename, DArray<AnimationData>& animatio
 	*(int32_t*)t_data = anim.keysCountMinusOne;
 	t_data += sizeof(int32_t);
 	
+	if( anim.bboxes.size() != anim.keysCountMinusOne + 1 )
+	{
+		ERR("Bounding boxes corruption for animation %s", filename.data());
+		return false;
+	}
+
+	if(bboxSize > 0)
+	{
+		memcpy(t_data, anim.bboxes.data(), bboxSize);
+		t_data += bboxSize;
+	}
+
 	for(auto& it: anim.bones)
 	{
 		*(uint32_t*)t_data = (uint32_t)it.keys.size();
@@ -701,6 +728,7 @@ bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVert
 	stmesh->indexBuffers.create(matCount);
 	stmesh->vertexBuffers.create(matCount);
 	stmesh->vertexFormat = format;
+	stmesh->maxVertexOffset = 0;
 	
 	uint32_t** indices = new uint32_t*[matCount];
 	uint8_t** vertices = new uint8_t*[matCount];
@@ -749,7 +777,7 @@ bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVert
 			loadVerticesLit(vertices[i], vBuffer.count, vertexSize, mesh[i], posMin, posMax);
 			break;
 		case MeshVertexFormat::LIT_SKINNED_VERTEX:
-			loadVerticesSkinnedLit(vertices[i], vBuffer.count, vertexSize, mesh[i], boneIds, boneData, posMin, posMax);
+			loadVerticesSkinnedLit(vertices[i], vBuffer.count, vertexSize, mesh[i], boneIds, boneData, posMin, posMax, stmesh->maxVertexOffset);
 			break;
 		}			
 
@@ -1004,7 +1032,6 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 
 		finalAnimation.duration = (float)animation->mDuration / ticksPerSec;
 
-		finalAnimation.bones.reserve(boneData.size());
 		finalAnimation.bones.resize(boneData.size());
 		memset(finalAnimation.bones.data(), 0, sizeof(BoneAnimation) * boneData.size());
 
@@ -1058,14 +1085,13 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 		finalAnimation.keysCountMinusOne = max(finalAnimation.keysCountMinusOne, 0);
 
 		auto keysBufferSize = finalAnimation.keysCountMinusOne + 1;
-
+		
 		for(auto& it: boneKeys[i])
 		{
 			if( it.second->mNumPositionKeys + it.second->mNumRotationKeys + it.second->mNumScalingKeys == 0 )
 				continue;
 
 			int32_t boneID = boneIds.find(it.first)->second;
-			finalAnimation.bones[boneID].keys.reserve(keysBufferSize);
 			finalAnimation.bones[boneID].keys.resize(keysBufferSize);
 
 			for(int32_t j = 0; j < keysBufferSize; j++)
@@ -1078,6 +1104,53 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 
 				finalAnimation.bones[boneID].keys[j] = getBoneTransformationForTime(it.second, (float)animation->mDuration * currentTime);
 			}
+		}
+
+		// TODO: bbox with actual vertex offset??? 
+		// bboxes 
+		finalAnimation.bboxes.resize(keysBufferSize);
+		for(int32_t j = 0; j < keysBufferSize; j++)
+		{
+			Vector3 posMin = Vector3(9999999.0f);
+			Vector3 posMax = Vector3(-9999999.0f);
+
+			for(int32_t k = 0; k < finalAnimation.bones.size(); k++)
+			{
+				auto& boneAnim = finalAnimation.bones[k];
+
+				Vector3 pos(boneAnim.keys[j].translation);
+				int32_t parent = boneData[k].parent;
+				while( parent >= 0 )
+				{
+					auto& parentBoneAnim = finalAnimation.bones[parent];
+					Vector3 pPos, pScale;
+					Quaternion pRot;
+					if(parentBoneAnim.keys.empty())
+					{
+						boneData[parent].localTransform.Decompose(pScale, pRot, pPos);
+					}
+					else
+					{
+						pPos = parentBoneAnim.keys[j].translation;
+						pRot = parentBoneAnim.keys[j].rotation;
+						pScale = parentBoneAnim.keys[j].scale;
+					}
+
+					pos *= pScale;
+					pos = Vector3::Transform(pos, pRot);
+					pos += pPos;
+
+					parent = boneData[parent].parent;
+				}
+
+				posMin = Vector3::Min(pos, posMin);
+				posMax = Vector3::Max(pos, posMax);
+			}
+			
+			MeshBBox& bbox = finalAnimation.bboxes[j];
+			bbox.center = 0.5f * (posMin + posMax);
+			bbox.extents = posMax - bbox.center;
+			bbox.extents = Vector3::Max(bbox.extents, Vector3::Zero);
 		}
 
 		// convertion to ms
@@ -1255,7 +1328,7 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexS
 		if(mesh->mNormals)
 			vertex->Norm = Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
 		else
-			vertex->Norm = Vector3(0,0,0);
+			vertex->Norm = Vector3::Zero;
 
 		if(mesh->mTangents)
 		{
@@ -1264,8 +1337,8 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexS
 		}
 		else
 		{
-			vertex->Tang = Vector3(0,0,0);
-			vertex->Binorm = Vector3(0,0,0);
+			vertex->Tang = Vector3::Zero;
+			vertex->Binorm = Vector3::Zero;
 		}
 
 		if(mesh->HasTextureCoords(0))
@@ -1278,7 +1351,7 @@ void MeshLoader::loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexS
 }
 
 void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, unordered_map<string, int32_t>& boneIds, 
-										DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax)
+										DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax, float& vertexOffset)
 {
 	struct vertexBone
 	{
@@ -1338,7 +1411,7 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		if(mesh->mNormals)
 			vertex->Norm = Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
 		else
-			vertex->Norm = Vector3(0,0,0);
+			vertex->Norm = Vector3::Zero;
 
 		if(mesh->mTangents)
 		{
@@ -1347,8 +1420,8 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		}
 		else
 		{
-			vertex->Tang = Vector3(0,0,0);
-			vertex->Binorm = Vector3(0,0,0);
+			vertex->Tang = Vector3::Zero;
+			vertex->Binorm = Vector3::Zero;
 		}
 
 		if(mesh->HasTextureCoords(0))
@@ -1399,6 +1472,8 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		vertex->Norm = Vector3::TransformNormal(vertex->Norm, normalMatrix);
 		vertex->Tang = Vector3::TransformNormal(vertex->Tang, normalMatrix);
 		vertex->Binorm = Vector3::TransformNormal(vertex->Binorm, normalMatrix);
+
+		vertexOffset = max(vertexOffset, vertex->Pos.Length());
 
 		offset += vertexSize;
 	}

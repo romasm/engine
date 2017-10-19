@@ -547,6 +547,8 @@ World::World( uint32_t id ) : BaseWorld( id )
 
 	m_skeletonSystem = new SkeletonSystem(this, ENTITY_COUNT);
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
+	m_skeletonSystem->SetStaticMeshSys(m_staticMeshSystem);
+
 	m_cameraSystem = new CameraSystem(this, ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, ENTITY_COUNT);
@@ -774,6 +776,8 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 
 	m_skeletonSystem = new SkeletonSystem(this, SMALL_ENTITY_COUNT);
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
+	m_skeletonSystem->SetStaticMeshSys(m_staticMeshSystem);
+
 	m_cameraSystem = new CameraSystem(this, SMALL_ENTITY_COUNT);
 	m_controllerSystem = new ControllerSystem(this);
 	m_envProbSystem = new EnvProbSystem(this, SMALL_ENTITY_COUNT);

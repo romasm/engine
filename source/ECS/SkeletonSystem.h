@@ -53,6 +53,8 @@ namespace EngineCore
 		SkeletonSystem(BaseWorld* w, uint32_t maxCount);
 		~SkeletonSystem();
 
+		void SetStaticMeshSys(class StaticMeshSystem* sys);
+
 		SkeletonComponent* AddComponent(Entity e);
 
 		void CopyComponent(Entity src, Entity dest);
@@ -117,14 +119,16 @@ namespace EngineCore
 			comp.matrixBuffer.destroy();
 			comp.gpuMatrixBuffer.Release();
 		};
-		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, float sampleKeyID, float blendFactor, int32_t keysCountMinusOne, bool looped);
-
+		void setAnimationTransformations(SkeletonComponent& comp, AnimationData* animData, BoundingBox& bbox, float& totalBlend,
+			float sampleKeyID, float blendFactor, int32_t keysCountMinusOne, bool looped);
+		
 		ComponentRArray<SkeletonComponent> components;
 		
 		struct BoneAcc
 		{
 			XMMATRIX transform;
-			float totalWeight;
+			Vector3 position;
+			float totalBlendWeight;
 		};
 		DArrayAligned<BoneAcc> transformAcc;
 
@@ -132,6 +136,7 @@ namespace EngineCore
 		TransformSystem* transformSys;
 		VisibilitySystem* visibilitySys;
 		EarlyVisibilitySystem* earlyVisibilitySys;
+		class StaticMeshSystem* staticMeshSys;
 		BaseWorld* world;
 
 		XMVECTOR zeroOrigin;

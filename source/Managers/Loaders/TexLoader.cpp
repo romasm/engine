@@ -58,7 +58,7 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 			info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
 		}			
 
-		if( ResourceProcessor::ImportResource(info) )
+		if( ResourceProcessor::ImportResource(info, true) )
 		{
 			data = FileIO::ReadFileData(resName, &size);
 			if(data)

@@ -4,9 +4,9 @@
 
 namespace EngineCore
 {
-#define MESH_FILE_VERSION 101
+#define MESH_FILE_VERSION 103
 #define SKELETON_FILE_VERSION 101
-#define ANIMATION_FILE_VERSION 102
+#define ANIMATION_FILE_VERSION 103
 
 #define ANIMATION_BAKE_MAX_KPS 120 // keys per second
 #define ANIMATION_BAKE_MIN_KPS 10
@@ -26,6 +26,12 @@ namespace EngineCore
 		GPUMeshBuffer() : count(0), buffer(nullptr) {}
 	};
 
+	struct MeshBBox
+	{
+		Vector3 center;
+		Vector3 extents;
+	};
+
 	struct MeshData
 	{
 		RArray<GPUMeshBuffer> vertexBuffers;
@@ -33,6 +39,7 @@ namespace EngineCore
 
 		BoundingBox box;
 		MeshVertexFormat vertexFormat;
+		float maxVertexOffset;
 
 		MeshData() : vertexFormat(MeshVertexFormat::LIT_VERTEX) {}
 
@@ -46,8 +53,10 @@ namespace EngineCore
 			vertexBuffers.destroy();
 			indexBuffers.destroy();
 			
-			box = BoundingBox();
+			box.Center = Vector3::Zero;
+			box.Extents = Vector3::Zero;
 			vertexFormat = MeshVertexFormat::LIT_VERTEX;
+			maxVertexOffset = 0;
 		}
 	};
 	
@@ -56,9 +65,8 @@ namespace EngineCore
 		uint32_t version;
 
 		uint32_t materialCount;
-		Vector3 bboxCenter;
-		Vector3 bboxExtents;
-
+		MeshBBox bbox;
+		float maxVertexOffset;
 		MeshVertexFormat vertexFormat;
 	};
 
@@ -104,14 +112,15 @@ namespace EngineCore
 
 	struct BoneAnimation
 	{
-		DArrayAligned<BoneTransformation> keys;
+		DArrayAligned<BoneTransformation> keys; // transform per keyframe
 	};
 
 	struct AnimationData
 	{
 		float duration;
 		int32_t keysCountMinusOne;
-		DArray<BoneAnimation> bones;
+		DArray<BoneAnimation> bones; // tracks per bone
+		DArray<MeshBBox> bboxes; // box per keyframe
 	};
 
 	namespace MeshLoader
@@ -154,7 +163,7 @@ namespace EngineCore
 
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 
-			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax);
+			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax, float& vertexOffset);
 		
 		inline uint32_t GetVertexSize(MeshVertexFormat format)
 		{

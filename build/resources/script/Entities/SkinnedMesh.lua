@@ -14,10 +14,7 @@ function EntityTypes.SkinnedMesh:init(world, ent)
     self.skeletonSys:SetAnimation(self.ent, "../content/statics/test_char.ani")
 
     self.staticMeshSys = self.world.staticMesh
-    if not self.staticMeshSys:AddComponent(self.ent) then
-        error("Cant init EntityTypes.SkinnedMesh")
-        self:Kill()
-    end
+    self.staticMeshSys:AddComponent(self.ent)
     self.staticMeshSys:SetMesh(self.ent, "../content/statics/test_char.msh")
     self.staticMeshSys:SetMaterial(self.ent, 0, AssetBrowser.nullMat)
     self.staticMeshSys:SetMaterial(self.ent, 1, AssetBrowser.nullMat)

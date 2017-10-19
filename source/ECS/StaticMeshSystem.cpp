@@ -120,6 +120,7 @@ void StaticMeshSystem::RegToDraw()
 
 		// TODO: store
 		const uint32_t vertexSize = MeshLoader::GetVertexSize(meshPtr->vertexFormat);
+		const int32_t partCount = (int32_t)min(meshPtr->indexBuffers.size(), i.materials.size());
 
 		if( bits == 0 )
 		{
@@ -127,7 +128,7 @@ void StaticMeshSystem::RegToDraw()
 			{
 				if( !f.rendermgr->IsShadow() )
 				{
-					for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+					for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
 						((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
 							meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i]);
 				}
@@ -143,7 +144,7 @@ void StaticMeshSystem::RegToDraw()
 				{
 					if(i.cast_shadow)
 					{
-						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+						for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
 								meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
 					}
@@ -152,13 +153,13 @@ void StaticMeshSystem::RegToDraw()
 				{
 					if( !f.is_volume )
 					{
-						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+						for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
 							meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
 					}
 					else if(visComponent && !skeleton)		// voxelize, temp skeleton mesh disabled
 					{
-						for(int32_t mat_i = 0; mat_i < i.materials.size(); mat_i++)
+						for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
 							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexBuffers[mat_i], meshPtr->vertexBuffers[mat_i], 
 								meshPtr->vertexFormat, i.materials[mat_i], i.matrixBuffer, visComponent->worldBox);
 					}

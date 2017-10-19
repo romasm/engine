@@ -38,7 +38,8 @@ struct Plane;
 // 2D vector
 struct Vector2 : public XMFLOAT2
 {
-    Vector2() : XMFLOAT2(0.f, 0.f) {}
+	Vector2() : XMFLOAT2(0.f, 0.f) {}
+	Vector2(XMFLOAT2 v) : XMFLOAT2(v.x, v.y) {}
     explicit Vector2(float x) : XMFLOAT2( x, x ) {}
     Vector2(float _x, float _y) : XMFLOAT2(_x, _y) {}
     explicit Vector2(_In_reads_(2) const float *pArray) : XMFLOAT2(pArray) {}
@@ -142,7 +143,8 @@ Vector2 operator* (float S, const Vector2& V);
 // 3D vector
 struct Vector3 : public XMFLOAT3
 {
-    Vector3() : XMFLOAT3(0.f, 0.f, 0.f) {}
+	Vector3() : XMFLOAT3(0.f, 0.f, 0.f) {}
+	Vector3(XMFLOAT3 v) : XMFLOAT3(v.x, v.y, v.z) {}
     explicit Vector3(float x) : XMFLOAT3( x, x, x ) {}
     Vector3(float _x, float _y, float _z) : XMFLOAT3(_x, _y, _z) {}
     explicit Vector3(_In_reads_(3) const float *pArray) : XMFLOAT3(pArray) {}
@@ -260,7 +262,8 @@ Vector3 operator* (float S, const Vector3& V);
 // 4D vector
 struct Vector4 : public XMFLOAT4
 {
-    Vector4() : XMFLOAT4(0.f, 0.f, 0.f, 0.f) {}
+	Vector4() : XMFLOAT4(0.f, 0.f, 0.f, 0.f) {}
+	Vector4(XMFLOAT4 v) : XMFLOAT4(v.x, v.y, v.z, v.w) {}
     explicit Vector4(float x) : XMFLOAT4( x, x, x, x ) {}
     Vector4(float _x, float _y, float _z, float _w) : XMFLOAT4(_x, _y, _z, _w) {}
     explicit Vector4(_In_reads_(4) const float *pArray) : XMFLOAT4(pArray) {}

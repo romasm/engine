@@ -50,7 +50,7 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 			info.importBytes = IMP_BYTE_COLLISION;
 		}		
 
-		if( ResourceProcessor::ImportResource(info) )
+		if( ResourceProcessor::ImportResource(info, true) )
 		{
 			data = FileIO::ReadFileData(resName, &size);
 			if(data)

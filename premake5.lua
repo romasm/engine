@@ -46,6 +46,7 @@ workspace "Engine"
 		filter "configurations:Debug"
 			defines { "_EDITOR", "WIN64", "_DEV", "_DEBUG;" }
 			flags{ "FatalWarnings" }
+			disablewarnings { "4099" }
 			symbols "On"
 			optimize "Off"
 			targetname "core_d"		
@@ -58,6 +59,7 @@ workspace "Engine"
 		filter "configurations:Development"
 			defines { "_EDITOR", "WIN64", "_DEV", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
+			disablewarnings { "4099" }
 			symbols "On"
 			optimize "Speed"
 			targetname "core_dev"	
@@ -70,6 +72,7 @@ workspace "Engine"
 		filter "configurations:Release"
 			defines { "_EDITOR", "WIN64", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
+			disablewarnings { "4099" }
 			optimize "Speed"
 			targetname "core"	
 			libdirs {			

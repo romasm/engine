@@ -127,7 +127,7 @@ namespace EngineCore
 
 		static void RegLuaFunctions();
 
-		static bool ImportResource(ImportInfo& info);
+		static bool ImportResource(ImportInfo& info, bool force = false);
 		static bool SaveImportInfo(string& resFile, ImportInfo& info);
 		static void LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date);
 

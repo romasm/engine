@@ -221,9 +221,6 @@ namespace EngineCore
 		inline TubeCasterBuffer* GetPointCasterTubeDataPtr(size_t* size) 
 		{*size = casterPointTube_count; return casterPointTube_array;}
 		
-		// temp
-		inline RArray<RenderMesh>& GetOpaqueArray() {return opaque_array;}
-
 		VoxelRenderer* voxelRenderer;
 		ShadowsRenderer* shadowsRenderer;
 

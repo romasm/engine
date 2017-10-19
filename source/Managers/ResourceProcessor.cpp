@@ -194,7 +194,7 @@ void ResourceProcessor::ThreadMain()
 	DBG_SHORT("End loading tread %u ", JobSystem::GetThreadID());
 }
 
-bool ResourceProcessor::ImportResource(ImportInfo& info)
+bool ResourceProcessor::ImportResource(ImportInfo& info, bool force)
 {
 	bool status = false;
 
@@ -203,7 +203,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_TEXTURE) > 0 )
 	{
 		string resFile = info.resourceName + EXT_TEXTURE;
-		if(CheckImportNeeded(info, sourceDate, resFile))
+		if( force || CheckImportNeeded(info, sourceDate, resFile) )
 		{
 			bool currentStatus = TexLoader::ConvertTextureToEngineFormat(info.filePath, resFile, info.genMips, info.genMipsFilter);
 			status = status || currentStatus;
@@ -220,7 +220,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_MESH) > 0 )
 	{
 		string resFile = info.resourceName + EXT_MESH;
-		if(CheckImportNeeded(info, sourceDate, resFile))
+		if( force || CheckImportNeeded(info, sourceDate, resFile) )
 		{
 			bool currentStatus = MeshLoader::ConvertMeshToEngineFormat(info.filePath, resFile, info.isSkinnedMesh);
 			status = status || currentStatus;
@@ -237,7 +237,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_SKELETON) > 0 )
 	{
 		string resFile = info.resourceName + EXT_SKELETON;
-		if(CheckImportNeeded(info, sourceDate, resFile))
+		if( force || CheckImportNeeded(info, sourceDate, resFile) )
 		{
 			bool currentStatus = MeshLoader::ConvertSkeletonToEngineFormat(info.filePath, resFile);
 			status = status || currentStatus;
@@ -254,7 +254,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_ANIMATION) > 0 )
 	{
 		string resFile = info.resourceName + EXT_ANIMATION;
-		if(CheckImportNeeded(info, sourceDate, resFile))
+		if( force || CheckImportNeeded(info, sourceDate, resFile) )
 		{
 			bool currentStatus = MeshLoader::ConverAnimationToEngineFormat(info.filePath, resFile);
 			status = status || currentStatus;
@@ -271,7 +271,7 @@ bool ResourceProcessor::ImportResource(ImportInfo& info)
 	if( (info.importBytes & IMP_BYTE_COLLISION) > 0 )
 	{
 		string resFile = info.resourceName + EXT_COLLISION;
-		if(CheckImportNeeded(info, sourceDate, resFile))
+		if( force || CheckImportNeeded(info, sourceDate, resFile) )
 		{
 			bool currentStatus = CollisionLoader::ConvertCollisionToEngineFormat(info.filePath, resFile);
 			status = status || currentStatus;
