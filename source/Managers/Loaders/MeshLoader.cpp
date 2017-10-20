@@ -1435,18 +1435,19 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 			vertex->boneWeight[k] = 0;
 		}
 
-		Matrix toLocalMatrix;
+		BoneTransformation toLocalTransform;
 		if( vertexBoneIds[j].empty() )
 		{
 			vertex->boneId[0] = 0;
 			vertex->boneWeight[0] = 1.0f;
-			toLocalMatrix = boneData[0].localTransform;
+			toLocalTransform = MatrixToBoneTransformation(boneData[0].localTransform);
 		}
 		else
 		{
 			vertex->boneId[0] = vertexBoneIds[j][0].boneId;
 			vertex->boneWeight[0] = vertexBoneIds[j][0].boneWeight;
-			toLocalMatrix = vertex->boneWeight[0] * boneData[vertexBoneIds[j][0].boneId].localTransform;
+			toLocalTransform = MatrixToBoneTransformation(boneData[vertexBoneIds[j][0].boneId].localTransform);
+			float totalWeight = vertex->boneWeight[0];
 
 			for(int32_t k = 1; k < vertexBoneIds[j].size(); k++)
 			{
@@ -1455,18 +1456,18 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 
 				vertex->boneId[k] = vertexBoneIds[j][k].boneId;
 				vertex->boneWeight[k] = vertexBoneIds[j][k].boneWeight;
-				toLocalMatrix += vertex->boneWeight[k] * boneData[vertexBoneIds[j][k].boneId].localTransform;
+
+				const float lerpFactor = vertex->boneWeight[k] / ( vertex->boneWeight[k] + totalWeight );
+				BoneTransformation transform = MatrixToBoneTransformation(boneData[vertexBoneIds[j][k].boneId].localTransform);
+				BoneTransformation::Lerp(toLocalTransform, transform, lerpFactor, toLocalTransform);
+				totalWeight += vertex->boneWeight[k];
 			}
 		}
 		
 		// post transform
-		XMVECTOR scale, pos, rot;
-		XMMatrixDecompose(&scale, &rot, &pos, toLocalMatrix);
-		XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
-		XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
-
-		XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
-		normalMatrix = normalMatrix * rotM;
+		XMMATRIX toLocalMatrix = BoneTransformationToMatrix(toLocalTransform);
+		toLocalTransform.scale = XMVectorDivide(XMVectorSet(1.0f, 1.0f, 1.0f, 1.0f), toLocalTransform.scale);
+		XMMATRIX normalMatrix = BoneTransformationToMatrix(toLocalTransform);
 		
 		vertex->Pos = Vector3::Transform(vertex->Pos, toLocalMatrix);
 		vertex->Norm = Vector3::TransformNormal(vertex->Norm, normalMatrix);

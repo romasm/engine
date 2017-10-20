@@ -108,6 +108,20 @@ namespace EngineCore
 		XMVECTOR translation;
 		XMVECTOR rotation;
 		XMVECTOR scale;
+		
+		inline static void Lerp(BoneTransformation& t1, BoneTransformation& t2, float alpha, BoneTransformation& res)
+		{
+			res.scale = XMVectorLerp(t1.scale, t2.scale, alpha);
+			res.rotation = XMQuaternionSlerp(t1.rotation, t2.rotation, alpha);
+			res.translation = XMVectorLerp(t1.translation, t2.translation, alpha);
+		}
+
+		inline void SetZero()
+		{
+			translation = XMVectorZero();
+			rotation = XMVectorSet(0.0f,0.0f,0.0f,1.0f);
+			scale = XMVectorSet(1.0f,1.0f,1.0f,1.0f);
+		}
 	};
 
 	struct BoneAnimation

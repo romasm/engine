@@ -108,9 +108,8 @@ void SkeletonSystem::Animate(float dt)
 				XMMATRIX boneFinalTransform;
 				if( transformAcc[j].totalBlendWeight != 0 )
 				{
-					boneFinalTransform = transformAcc[j].transform;
-					if( transformAcc[j].totalBlendWeight != 1.0f )
-						boneFinalTransform /= transformAcc[j].totalBlendWeight;
+					const BoneTransformation& bTrfm = transformAcc[j].transform;
+					boneFinalTransform = XMMatrixAffineTransformation(bTrfm.scale, zeroOrigin, bTrfm.rotation, bTrfm.translation);
 				}
 				else
 				{
@@ -127,9 +126,6 @@ void SkeletonSystem::Animate(float dt)
 				bbox.Center.x /= totalBlend;
 				bbox.Center.y /= totalBlend;
 				bbox.Center.z /= totalBlend;
-				bbox.Extents.x /= totalBlend;
-				bbox.Extents.y /= totalBlend;
-				bbox.Extents.z /= totalBlend;
 			}
 
 			bbox.Extents.x += maxVertexOffset;
@@ -150,7 +146,7 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 		nextKey = 0;
 	const float lerpFactor = sampleKeyID - (float)prevKey;
 
-	// Bbox calc
+	// TODO: Bbox realtime calculation
 	Vector3 finalCenter;
 	Vector3 finalExtents;
 	if( nextKey > keysCountMinusOne )
@@ -168,14 +164,13 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 	}
 
 	finalCenter *= blendFactor;
-	finalExtents *= blendFactor;
 
 	bbox.Center.x += finalCenter.x;
 	bbox.Center.y += finalCenter.y;
 	bbox.Center.z += finalCenter.z;
-	bbox.Extents.x += finalExtents.x;
-	bbox.Extents.y += finalExtents.y;
-	bbox.Extents.z += finalExtents.z;
+	bbox.Extents.x = max(bbox.Extents.x, finalExtents.x);
+	bbox.Extents.y = max(bbox.Extents.y, finalExtents.y);
+	bbox.Extents.z = max(bbox.Extents.z, finalExtents.z);
 	totalBlend += blendFactor;
 	// Bbox calc
 
@@ -191,7 +186,7 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 		{
 			acc = &transformAcc.push_back();
 			acc->totalBlendWeight = 0;
-			acc->transform *= 0;
+			acc->transform.SetZero();
 		}
 		else
 		{
@@ -202,26 +197,28 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 		if(keys.size() == 0)
 			continue;
 		
-		XMMATRIX finalMatrix;
+		BoneTransformation finalTransform;
 		if( nextKey > keysCountMinusOne )
 		{
-			BoneTransformation& transform = keys[prevKey];
-			finalMatrix = XMMatrixAffineTransformation(transform.scale, zeroOrigin, transform.rotation, transform.translation);
+			finalTransform = keys[prevKey];
 		}
 		else
 		{
 			BoneTransformation& prevTransform = keys[prevKey];
 			BoneTransformation& nextTransform = keys[nextKey];
-
-			XMVECTOR scale = XMVectorLerp(prevTransform.scale, nextTransform.scale, lerpFactor);
-			XMVECTOR rot = XMQuaternionSlerp(prevTransform.rotation, nextTransform.rotation, lerpFactor);
-			XMVECTOR pos = XMVectorLerp(prevTransform.translation, nextTransform.translation, lerpFactor);
-			
-			finalMatrix = XMMatrixAffineTransformation(scale, zeroOrigin, rot, pos);
+			BoneTransformation::Lerp(prevTransform, nextTransform, lerpFactor, finalTransform);
 		}
 
+		if( acc->totalBlendWeight == 0 )
+		{
+			acc->transform = finalTransform;
+		}
+		else
+		{
+			const float lerpFactor = blendFactor / ( acc->totalBlendWeight + blendFactor );
+			BoneTransformation::Lerp(acc->transform, finalTransform, lerpFactor, acc->transform);
+		}
 		acc->totalBlendWeight += blendFactor;
-		acc->transform += finalMatrix * blendFactor; // TODO: this dont work!
 	}
 }
 
@@ -617,6 +614,7 @@ bool SkeletonSystem::ClearAnimations(Entity e)
 {
 	GET_COMPONENT(false)
 	_clearAnimations(comp);
+	_setIdle(comp);
 	comp.dirty = true;
 	return true;
 }

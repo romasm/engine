@@ -28,12 +28,14 @@ function EntityTypes.SkinnedMesh:Test()
     self.skeletonSys:AddAnimationBlended(self.ent, "../content/statics/test_char.ani")
     self.skeletonSys:SetAnimationBlend(self.ent, 0, 1.0)
     self.skeletonSys:SetAnimationSpeed(self.ent, 0, 1.0)
-    --self.skeletonSys:SetAnimationTime(self.ent, 0, 0.0)
+    self.skeletonSys:SetAnimationTime(self.ent, 0, 0.0)
     self.skeletonSys:SetAnimationPlaying(self.ent, 0, true)
-
+    self.skeletonSys:SetAnimationLooping(self.ent, 0, true)
+    --[[
     self.skeletonSys:AddAnimationBlended(self.ent, "../content/statics/test_char.ani")
-    self.skeletonSys:SetAnimationBlend(self.ent, 1, 0.0)
+    self.skeletonSys:SetAnimationBlend(self.ent, 1, 0.5)
     self.skeletonSys:SetAnimationSpeed(self.ent, 1, 0.0)
-    self.skeletonSys:SetAnimationTime(self.ent, 1, 1000.0)
+    self.skeletonSys:SetAnimationTime(self.ent, 1, 10000.0)
     self.skeletonSys:SetAnimationPlaying(self.ent, 1, true)
+    --]]
 end

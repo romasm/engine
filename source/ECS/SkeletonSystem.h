@@ -150,6 +150,8 @@ namespace EngineCore
 		bool _setSkeleton(SkeletonComponent* comp, string& skeleton, LuaRef func);
 		inline void destroySkeleton(SkeletonComponent& comp)
 		{
+			_clearAnimations(comp);
+			comp.animations.destroy();
 			for(int32_t i = (int32_t)comp.bones.size() - 1; i >= 0; i--)
 				sceneGraph->DeleteNode(comp.bones[i]);
 			SkeletonMgr::Get()->DeleteResource(comp.skeletonID);
@@ -164,10 +166,12 @@ namespace EngineCore
 		inline void _clearAnimations(SkeletonComponent& comp)
 		{
 			for(auto& it: comp.animations)
+			{
 				AnimationMgr::Get()->DeleteResource(it.animationID);
+				it = AnimationSeq();
+			}
 			comp.animations.clear();
 			comp.animated = false;
-			_setIdle(comp);
 		}
 		int32_t _addAnimation(SkeletonComponent* comp, string& anim, LuaRef func);
 
@@ -177,7 +181,7 @@ namespace EngineCore
 		
 		struct BoneAcc
 		{
-			XMMATRIX transform;
+			BoneTransformation transform;
 			Vector3 position;
 			float totalBlendWeight;
 		};
