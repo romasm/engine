@@ -205,7 +205,7 @@ function DevConsole:Init()
     self.luasign = self.codebar.entity:GetChildById('lua_sign')
 
     self.window.sys_win:SetMinMaxBox(false)
-    self.window.sys_win:SetAlpha(0.8)
+    --self.window.sys_win:SetAlpha(0.8)
 
     local left = MainWindow.mainwin:GetLeft()
     local top = MainWindow.mainwin:GetTop()

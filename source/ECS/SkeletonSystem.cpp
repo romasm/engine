@@ -43,7 +43,10 @@ void SkeletonSystem::Animate(float dt)
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-		
+
+		if(!i.animated)
+			continue;
+
 		transformAcc.resize(0);
 		transformAcc.reserve(i.bones.size());
 
@@ -56,7 +59,7 @@ void SkeletonSystem::Animate(float dt)
 			if( !animSeq.playing || animSeq.blendFactor == 0 )
 				continue;
 
-			if( animSeq.playbackSpeed != 0 || i.dirty == true )
+			if( animSeq.speed != 0 || i.dirty == true )
 			{
 				auto animPtr = AnimationMgr::GetResourcePtr(animSeq.animationID);
 				if(!animPtr)
@@ -64,39 +67,41 @@ void SkeletonSystem::Animate(float dt)
 
 				if( animPtr->duration > 0 )
 				{
-					const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * animPtr->keysCountMinusOne;
-					setAnimationTransformations(i, animPtr, bbox, totalBlend, sampleKeyID, animSeq.blendFactor, animPtr->keysCountMinusOne, animSeq.looped);
-
-					animSeq.currentTime += dt * animSeq.playbackSpeed;
-
 					if(animSeq.looped)
 					{
-						while( animSeq.currentTime >= animPtr->duration )
+						while( animSeq.currentTime > animPtr->duration )
 							animSeq.currentTime -= animPtr->duration;
 					}
 					else
 					{
-						if( animSeq.currentTime >= animPtr->duration )
+						if( animSeq.currentTime > animPtr->duration )
+						{
 							animSeq.playing = false;
+							animSeq.currentTime = animPtr->duration;
+						}
 					}
+
+					const float sampleKeyID = (animSeq.currentTime / animPtr->duration) * animPtr->keysCountMinusOne;
+					setAnimationTransformations(i, animPtr, bbox, totalBlend, sampleKeyID, animSeq.blendFactor, animPtr->keysCountMinusOne, animSeq.looped);
+
+					animSeq.currentTime += dt * animSeq.speed;	
 				}
 				else
 				{
 					setAnimationTransformations(i, animPtr, bbox, totalBlend, 0, animSeq.blendFactor, animPtr->keysCountMinusOne, false);
+					animSeq.playing = false;
 				}
 
 				i.dirty = true;
 			}
 		}	
-
-		auto skeletonPtr = SkeletonMgr::GetResourcePtr(i.skeletonID);
-		if(!skeletonPtr)
-			continue;
-		
+				
 		if(!transformAcc.empty())
 		{
 			if( transformAcc.size() != i.bones.size() )
 				WRN("Wrong transformations for skeleton %s during animation", SkeletonMgr::GetName(i.skeletonID).data());
+
+			auto skeletonPtr = SkeletonMgr::GetResourcePtr(i.skeletonID);
 
 			for(uint32_t j = 0; j < (uint32_t)transformAcc.size(); j++)
 			{
@@ -132,14 +137,6 @@ void SkeletonSystem::Animate(float dt)
 			bbox.Extents.z += maxVertexOffset;
 
 			visibilitySys->SetBBox(i.get_entity(), bbox);
-		}
-		else if( i.dirty )
-		{
-			for(uint32_t j = 0; j < (uint32_t)i.bones.size(); j++)
-				sceneGraph->SetTransformation(i.bones[j], skeletonPtr->bData[j].localTransform);
-
-			Entity ent = i.get_entity();
-			visibilitySys->SetBBox( ent, MeshMgr::GetResourcePtr(staticMeshSys->GetMeshID(ent))->box );
 		}
 	}
 }
@@ -196,6 +193,10 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 			acc->totalBlendWeight = 0;
 			acc->transform *= 0;
 		}
+		else
+		{
+			acc = &transformAcc[i];
+		}
 
 		auto& keys = animData->bones[i].keys;
 		if(keys.size() == 0)
@@ -220,8 +221,22 @@ void SkeletonSystem::setAnimationTransformations(SkeletonComponent& comp, Animat
 		}
 
 		acc->totalBlendWeight += blendFactor;
-		acc->transform += finalMatrix * blendFactor;
+		acc->transform += finalMatrix * blendFactor; // TODO: this dont work!
 	}
+}
+
+void SkeletonSystem::_setIdle(SkeletonComponent& comp)
+{
+	if(comp.animated)
+		return;
+
+	auto skeletonPtr = SkeletonMgr::GetResourcePtr(comp.skeletonID);
+
+	for(uint32_t j = 0; j < (uint32_t)comp.bones.size(); j++)
+		sceneGraph->SetTransformation(comp.bones[j], skeletonPtr->bData[j].localTransform);
+
+	Entity ent = comp.get_entity();
+	visibilitySys->SetBBox( ent, MeshMgr::GetResourcePtr(staticMeshSys->GetMeshID(ent))->box );
 }
 
 void SkeletonSystem::UpdateBuffers()
@@ -345,6 +360,7 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 	comp.gpuMatrixBuffer = Buffer::CreateStructedBuffer(Render::Device(), matrixCount, sizeof(XMMATRIX), true);
 
 	comp.dirty = true;
+	_setIdle(comp);
 
 	return true;
 }
@@ -355,7 +371,7 @@ SkeletonComponent* SkeletonSystem::AddComponent(Entity e)
 	res->parent = e;
 
 	updateSkeleton(*res);
-
+	_setIdle(*res);
 	return res;
 }
 
@@ -428,7 +444,7 @@ uint32_t SkeletonSystem::Deserialize(Entity e, uint8_t* data)
 
 	auto comp = AddComponent(e);
 	if(comp)
-		setSkeleton(comp, skeleton_name, LuaRef(LSTATE));
+		_setSkeleton(comp, skeleton_name, LuaRef(LSTATE));
 
 	return size + sizeof(uint32_t);
 }
@@ -443,19 +459,16 @@ void SkeletonSystem::DeleteComponent(Entity e)
 bool SkeletonSystem::SetSkeleton(Entity e, string mesh)
 {
 	GET_COMPONENT(false)
-
-	return setSkeleton(&comp, mesh, LuaRef(LSTATE));
+	return _setSkeleton(&comp, mesh, LuaRef(LSTATE));
 }
 
 bool SkeletonSystem::SetSkeletonAndCallback(Entity e, string mesh, LuaRef func)
 {
 	GET_COMPONENT(false)
-
-	LuaRef nullLuaPtr(LSTATE);
-	return setSkeleton(&comp, mesh, func);
+	return _setSkeleton(&comp, mesh, func);
 }
 
-bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaRef func)
+bool SkeletonSystem::_setSkeleton(SkeletonComponent* comp, string& skeleton, LuaRef func)
 {
 	auto oldSkeleton = comp->skeletonID;
 
@@ -471,7 +484,7 @@ bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaR
 		[ent, worldID, luaRef](uint32_t id, bool status) -> void
 	{
 		auto skeletonPtr = SkeletonMgr::GetResourcePtr(id);
-		if(!skeletonPtr)
+		if( !skeletonPtr )
 		{
 			_DELETE((LuaRef*)luaRef);
 			return;
@@ -493,6 +506,9 @@ bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaR
 			_DELETE((LuaRef*)luaRef);
 			return;
 		}
+
+		if( id != comp->skeletonID )
+			comp->skeletonID = id;
 
 		skeletonSys->updateSkeleton(*comp);
 
@@ -506,24 +522,27 @@ bool SkeletonSystem::setSkeleton(SkeletonComponent* comp, string& skeleton, LuaR
 	return true;
 }
 
-// TEMP
-bool SkeletonSystem::SetAnimation(Entity e, string anim)
+int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, LuaRef func)
 {
-	GET_COMPONENT(false)
-	
 	auto worldID = world->GetID();
-	auto ent = comp.get_entity();
-	
-	comp.animations.push_back(AnimationSeq());
-	AnimationSeq& animSeq = comp.animations[comp.animations.size() - 1];
+	auto ent = comp->get_entity();
+
+	// TODO: potential memory leak if callback never will be called
+	// This fixes wrong LuaRef capture by lambda
+	LuaRef* luaRef = new LuaRef(func);
+
+	comp->animations.push_back(AnimationSeq());
+	int32_t animID = (int32_t)comp->animations.size() - 1;
+	AnimationSeq& animSeq = comp->animations[animID];
 
 	animSeq.animationID = AnimationMgr::Get()->GetResource( anim, CONFIG(bool, reload_resources), 
 
-		[ent, worldID](uint32_t id, bool status) -> void
+		[ent, worldID, animID, luaRef](uint32_t id, bool status) -> void
 	{
 		auto animPtr = AnimationMgr::GetResourcePtr(id);
 		if(!animPtr)
 		{
+			_DELETE((LuaRef*)luaRef);
 			return;
 		}
 
@@ -531,6 +550,7 @@ bool SkeletonSystem::SetAnimation(Entity e, string anim)
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
 		{
 			AnimationMgr::Get()->DeleteResource(id);
+			_DELETE((LuaRef*)luaRef);
 			return;
 		}
 
@@ -539,14 +559,172 @@ bool SkeletonSystem::SetAnimation(Entity e, string anim)
 		if(!comp)
 		{
 			AnimationMgr::Get()->DeleteResource(id);
+			_DELETE((LuaRef*)luaRef);
 			return;
 		}
 
-		// TODO
-		comp->animations[comp->animations.size() - 1].playing = true;
-		comp->animations[comp->animations.size() - 1].looped = true;
+		if( animID >= comp->animations.size() )
+		{
+			WRN("Cant set single animation %s because animations of component were modified");
+			AnimationMgr::Get()->DeleteResource(id);
+			_DELETE((LuaRef*)luaRef);
+			return;
+		}
+
 		comp->dirty = true;
+		comp->animated = true;
+
+		if(luaRef->isFunction())
+			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
+
+		_DELETE((LuaRef*)luaRef);
 	});
 
+	return animID;
+}
+
+bool SkeletonSystem::SetAnimationSingle(Entity e, string anim)
+{
+	GET_COMPONENT(false)
+	_clearAnimations(comp);
+	_addAnimation(&comp, anim, LuaRef(LSTATE));
+	comp.animations[0].blendFactor = 1.0f;
 	return true;
+}
+
+bool SkeletonSystem::SetAnimationSingleAndCallback(Entity e, string anim, LuaRef func)
+{
+	GET_COMPONENT(false)
+	_clearAnimations(comp);
+	_addAnimation(&comp, anim, func);
+	comp.animations[0].blendFactor = 1.0f;
+	return true;
+}
+
+int32_t SkeletonSystem::AddAnimationBlended(Entity e, string anim)
+{
+	GET_COMPONENT(false)
+	return _addAnimation(&comp, anim, LuaRef(LSTATE));
+}
+
+int32_t SkeletonSystem::AddAnimationBlendedAndCallback(Entity e, string anim, LuaRef func)
+{
+	GET_COMPONENT(false)
+	return _addAnimation(&comp, anim, func);
+}
+
+bool SkeletonSystem::ClearAnimations(Entity e)
+{
+	GET_COMPONENT(false)
+	_clearAnimations(comp);
+	comp.dirty = true;
+	return true;
+}
+
+int32_t SkeletonSystem::GetAnimationsCount(Entity e)
+{
+	GET_COMPONENT(0)
+	return (int32_t)comp.animations.size();
+}
+
+bool SkeletonSystem::SetAnimationBlend(Entity e, int32_t animID, float blendWeight)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	comp.animations[animID].blendFactor = blendWeight;
+/*
+#ifdef _DEV
+	float totalWeight = 0;
+	for(auto& it: comp.animations)
+		totalWeight += it.blendFactor;
+	if( abs(totalWeight - 1.0f) > 0.001f )
+		WRN("Animations blending weights != 1.0");
+#endif*/
+	return true;
+}
+
+bool SkeletonSystem::SetAnimationSpeed(Entity e, int32_t animID, float speed)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	comp.animations[animID].speed = speed;
+	return true;
+}
+
+bool SkeletonSystem::SetAnimationTime(Entity e, int32_t animID, float time)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	comp.animations[animID].currentTime = time;
+	comp.dirty = true;
+	return true;
+}
+
+bool SkeletonSystem::SetAnimationLooping(Entity e, int32_t animID, bool looped)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	comp.animations[animID].looped = looped;
+	return true;
+}
+
+bool SkeletonSystem::SetAnimationPlaying(Entity e, int32_t animID, bool playing)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	comp.animations[animID].playing = playing;
+	return true;
+}
+
+float SkeletonSystem::GetAnimationBlend(Entity e, int32_t animID)
+{
+	GET_COMPONENT(-1.0f)
+	if( animID >= comp.animations.size() )
+		return -1.0f;
+	return comp.animations[animID].blendFactor;
+}
+
+float SkeletonSystem::GetAnimationSpeed(Entity e, int32_t animID)
+{
+	GET_COMPONENT(0)
+	if( animID >= comp.animations.size() )
+		return 0;
+	return comp.animations[animID].speed;
+}
+
+float SkeletonSystem::GetAnimationTime(Entity e, int32_t animID)
+{
+	GET_COMPONENT(-1.0f)
+	if( animID >= comp.animations.size() )
+		return -1.0f;
+	return comp.animations[animID].currentTime;
+}
+
+bool SkeletonSystem::GetAnimationLooping(Entity e, int32_t animID)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	return comp.animations[animID].looped;
+}
+
+bool SkeletonSystem::GetAnimationPlaying(Entity e, int32_t animID)
+{
+	GET_COMPONENT(false)
+	if( animID >= comp.animations.size() )
+		return false;
+	return comp.animations[animID].playing;
+}
+
+float SkeletonSystem::GetAnimationDuration(Entity e, int32_t animID)
+{
+	GET_COMPONENT(0)
+	if( animID >= comp.animations.size() )
+		return false;
+	return AnimationMgr::GetResourcePtr(comp.animations[animID].animationID)->duration;
 }

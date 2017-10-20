@@ -196,25 +196,12 @@ StaticMeshComponent* StaticMeshSystem::AddComponent(Entity e)
 
 void StaticMeshSystem::CopyComponent(Entity src, Entity dest)
 {
-	auto comp = GetComponent(src);
-	if(!comp) 
+	auto copyBuffer = world->GetCopyBuffer();
+
+	if( !Serialize(src, copyBuffer) )
 		return;
 
-	auto newComp = AddComponent(dest);
-
-	newComp->stmesh = MeshMgr::Get()->GetResource(MeshMgr::GetName(comp->stmesh));
-
-	auto meshPtr = MeshMgr::GetResourcePtr(newComp->stmesh);
-
-	newComp->dirty = true;
-	visibilitySys->SetBBox(dest, meshPtr->box);
-	
-	auto matCount = meshPtr->vertexBuffers.size();
-	newComp->materials.reserve(matCount);
-	for(int i=0; i < matCount; i++)
-		newComp->materials.push_back(MATERIAL(comp->materials[i]->GetName()));
-
-	newComp->cast_shadow = comp->cast_shadow;
+	Deserialize(dest, copyBuffer);
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
@@ -331,15 +318,12 @@ bool StaticMeshSystem::SetShadow(Entity e, bool cast)
 bool StaticMeshSystem::SetMesh(Entity e, string mesh)
 {
 	GET_COMPONENT(false)
-
 	return setMesh(&comp, mesh, LuaRef(LSTATE));
 }
 
 bool StaticMeshSystem::SetMeshAndCallback(Entity e, string mesh, LuaRef func)
 {
 	GET_COMPONENT(false)
-
-	LuaRef nullLuaPtr(LSTATE);
 	return setMesh(&comp, mesh, func);
 }
 
