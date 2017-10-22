@@ -145,7 +145,7 @@ void StaticMeshSystem::RegToDraw()
 					if(i.cast_shadow)
 					{
 						for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
-							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
+							((ShadowRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
 								meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
 					}
 				}
@@ -261,6 +261,10 @@ uint32_t StaticMeshSystem::Serialize(Entity e, uint8_t* data)
 		size += mat_name_size;
 	}
 
+	*(bool*)t_data = (bool)comp.cast_shadow;
+	t_data += sizeof(bool);
+	size += sizeof(bool);
+
 	*size_slot = size - sizeof(uint32_t);
 
 	return size;
@@ -294,10 +298,16 @@ uint32_t StaticMeshSystem::Deserialize(Entity e, uint8_t* data)
 		t_data += name_size * sizeof(char);
 		it = name;
 	}
+	
+	bool castShadows = *(bool*)t_data;
+	t_data += sizeof(bool);
 
 	auto comp = AddComponent(e);
 	if(comp)
+	{
 		setMeshMats(comp, mesh_name, mat_names);
+		comp->cast_shadow = castShadows;
+	}
 
 	return size + sizeof(uint32_t);
 }

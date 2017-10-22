@@ -421,6 +421,45 @@ uint32_t SkeletonSystem::Serialize(Entity e, uint8_t* data)
 	t_data += skeleton_name_size * sizeof(char);
 	size += skeleton_name_size * sizeof(char);
 	
+	uint32_t animCount = (uint32_t)comp.animations.size();
+
+	*(uint32_t*)t_data = animCount;
+	t_data += sizeof(uint32_t);
+	size += sizeof(uint32_t);
+	for(uint32_t i = 0; i < animCount; i++)
+	{
+		string anim_name = AnimationMgr::GetName(comp.animations[i].animationID);
+		uint32_t anim_name_size = (uint32_t)anim_name.size();
+
+		*(uint32_t*)t_data = anim_name_size;
+		t_data += sizeof(uint32_t);
+		size += sizeof(uint32_t);
+
+		memcpy_s(t_data, anim_name_size, anim_name.data(), anim_name_size);
+		t_data += anim_name_size * sizeof(char);
+		size += anim_name_size * sizeof(char);
+
+		*(float*)t_data = comp.animations[i].currentTime;
+		t_data += sizeof(float);
+		size += sizeof(float);
+
+		*(float*)t_data = comp.animations[i].blendFactor;
+		t_data += sizeof(float);
+		size += sizeof(float);
+
+		*(float*)t_data = comp.animations[i].speed;
+		t_data += sizeof(float);
+		size += sizeof(float);
+
+		*(bool*)t_data = comp.animations[i].looped;
+		t_data += sizeof(bool);
+		size += sizeof(bool);
+
+		*(bool*)t_data = comp.animations[i].playing;
+		t_data += sizeof(bool);
+		size += sizeof(bool);
+	}
+
 	*size_slot = size - sizeof(uint32_t);
 
 	return size;
@@ -441,7 +480,37 @@ uint32_t SkeletonSystem::Deserialize(Entity e, uint8_t* data)
 
 	auto comp = AddComponent(e);
 	if(comp)
+	{
 		_setSkeleton(comp, skeleton_name, LuaRef(LSTATE));
+
+		uint32_t animCount = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+
+		for(uint32_t i = 0; i < animCount; i++)
+		{
+			uint32_t anim_name_size = *(uint32_t*)t_data;
+			t_data += sizeof(uint32_t);
+			string anim_name((char*)t_data, anim_name_size);
+			t_data += anim_name_size * sizeof(char);
+
+			int32_t animID = _addAnimation(comp, anim_name, LuaRef(LSTATE));
+			
+			comp->animations[animID].currentTime = *(float*)t_data;
+			t_data += sizeof(float);
+
+			comp->animations[animID].blendFactor = *(float*)t_data;
+			t_data += sizeof(float);
+
+			comp->animations[animID].speed = *(float*)t_data;
+			t_data += sizeof(float);
+
+			comp->animations[animID].looped = *(bool*)t_data;
+			t_data += sizeof(bool);
+
+			comp->animations[animID].playing = *(bool*)t_data;
+			t_data += sizeof(bool);
+		}
+	}
 
 	return size + sizeof(uint32_t);
 }

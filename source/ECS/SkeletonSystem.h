@@ -31,9 +31,9 @@ namespace EngineCore
 		bool animated;
 
 		uint32_t skeletonID;
-		DArray<uint32_t> bones;
 		DArray<AnimationSeq> animations;
 
+		DArray<uint32_t> bones;
 		StructBuf gpuMatrixBuffer;
 		DArrayAligned<XMMATRIX> matrixBuffer;
 
