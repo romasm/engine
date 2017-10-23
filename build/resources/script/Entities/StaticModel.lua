@@ -5,12 +5,25 @@ function EntityTypes.StaticModel:init(world, ent)
     
     self.world:SetEntityType(self.ent, "StaticModel")
     
+    self.physicsSys = self.world.physics
+    self.physicsSys:AddComponent(self.ent)
+    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.STATIC)
+
     return true
 end
 
 -- temp 
 function EntityTypes.StaticModel:SetMesh(mesh)
-    if not self:base(EntityTypes.StaticModel).SetMeshAndCallback(self, mesh, EntityTypes.StaticModel.OnLoad) then return false end
+    if not self:base(EntityTypes.StaticModel).SetMesh(self, mesh) then return false end
+
+    local clsMesh = mesh:gsub(EXT.MESH, EXT.COLLISION)
+
+    self.physicsSys:ClearCollision(self.ent)
+    self.physicsSys:SetConvexHullsCollider(self.ent, clsMesh)
+    self.physicsSys:SetRestitution(self.ent, 0.1)
+    self.physicsSys:SetFriction(self.ent, 0.8)
+    self.physicsSys:UpdateState(self.ent)
+
     return true
 end
 

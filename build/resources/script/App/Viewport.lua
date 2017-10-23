@@ -276,15 +276,15 @@ function Viewport:SetSceneGraphDraw(draw)
 end
 
 -- TEMP
-function Viewport:SpawnPhysics()
-    if not self.lua_world then return end
+function Viewport:SpawnPhysics(cam)
+    if not self.lua_world or not cam then return end
     
     local phymodel = EntityTypes.PhysicsModel(self.lua_world.world)
     
-    local pos = EditorCamera:GetPosition()
-    local dir = EditorCamera:GetDirection()
-    pos = Vector3.Add(pos, Vector3.MulScalar(dir, 3))
-    dir = Vector3.MulScalar(dir, 100000)
+    local pos = cam:GetPositionW()
+    local dir = cam:GetLookDir()
+    pos = Vector3.Add(pos, Vector3.MulScalar(dir, 2.5))
+    dir = Vector3.MulScalar(dir, 50000)
     
     phymodel:SetMesh(PATH.ROOT .. "content/statics/multimesh01.FBX")
     
@@ -306,7 +306,7 @@ function Viewport:ToggleGamemode()
         EditorCamera.camera:Activate(self.lua_world.scenepl)
 
         self.drawhud = true
-        self.lua_world.scenepl:GetConfig().editorGuiEnable = true
+        --self.lua_world.scenepl:GetConfig().editorGuiEnable = true
         
         self:SetMouseVis(true)
         
@@ -327,7 +327,7 @@ function Viewport:ToggleGamemode()
         player:Activate()
 
         self.drawhud = false
-        self.lua_world.scenepl:GetConfig().editorGuiEnable = false
+        --self.lua_world.scenepl:GetConfig().editorGuiEnable = false
 
         self:SetFreelook(false)
         self:SetMouseVis(false)
@@ -527,7 +527,7 @@ function Viewport:onKeyDown(eventData)
         
         --TEMP
         if eventData.key == KEYBOARD_CODES.KEY_T then
-            self:SpawnPhysics()
+            self:SpawnPhysics(EditorCamera.camera)
         end
 
         return true
@@ -789,7 +789,7 @@ end
 
 function Viewport:onItemDroped(eventData)
     if not self.allowDrop then return true end
-
+    
     local itemCount = CoreGui.DragDrop.GetCount()
     if itemCount == 0 then return true end
 
@@ -809,7 +809,7 @@ function Viewport:onItemDroped(eventData)
             local clbData = {}
             clbData.entity = EntityTypes.StaticModel(self.lua_world.world) -- to history
             if not clbData.entity:IsAlive() then return true end
-
+            print("zdjfghdfh")
             Importer:ImportLoadMesh(meshName, 
                 function (resName, status, data)
                     data.entity:SetMesh( resName..EXT.MESH )

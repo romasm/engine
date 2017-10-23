@@ -15,7 +15,7 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
-	if(!data)
+	if(data)
 	{
 		newCollision = loadEngineCollisionFromMemory( resName, data, size );
 		_DELETE_ARRAY(data);

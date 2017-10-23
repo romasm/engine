@@ -144,8 +144,9 @@ void BaseWorld::DestroyEntityHierarchically(Entity e)
 	Entity child = m_transformSystem->GetChildFirst(e);
 	while(!child.isnull()) 
 	{
+		Entity next = m_transformSystem->GetChildNext(child);
 		DestroyEntityHierarchically(child);
-		child = m_transformSystem->GetChildNext(child);
+		child = next;
 	}	
 
 	return destroyEntity(e);
@@ -158,9 +159,10 @@ void BaseWorld::DestroyEntity(Entity e)
 	string editorType(EDITOR_TYPE);
 	while(!child.isnull()) 
 	{
+		Entity next = m_transformSystem->GetChildNext(child);
 		if(m_typeMgr->IsThisType(child, editorType))
 			DestroyEntity(child);
-		child = m_transformSystem->GetChildNext(child);
+		child = next;
 	}	
 #endif
 

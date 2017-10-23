@@ -397,7 +397,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if( MeshLoader::IsSkinned( meshPtr->vertexFormat ) )
 		{
 			if( !worldPtr->GetSkeletonSystem()->HasComponent(ent) )
-				WRN("Skinned mesh %s is setted to static geometry, skeleton must be setted first", MeshMgr::GetName(id));
+				WRN("Skinned mesh %s is setted to static geometry, skeleton must be setted first", MeshMgr::GetName(id).data());
 		}
 
 		comp->dirty = true;

@@ -21,23 +21,38 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.world.controller:AddComponent(self.ent, "FirstPerson")
             
     -- collision
-    self.physicsSys:AddComponent(self.ent)    
-    self.world.collision:AddComponent(self.ent)    
-    self.world.collision:AddCapsuleCollider(self.ent, Vector3.Zero, Quaternion.Identity, 75.0, 0.3, 1.2)
-
-    self.physicsSys:SetNonRotatable(self.ent, true)
-    self.physicsSys:SetUnsleepable(self.ent, true)
-    self.physicsSys:SetBounciness(self.ent, 0.0)
-    self.physicsSys:SetFriction(self.ent, 2.0)
-    --self.physicsSys:SetVelocityDamping(self.ent, 0.9)
-
-    self.physicsSys:SetActive(self.ent, true)
+    self.physicsSys:AddComponent(self.ent) 
+    local capsuleHeight = self.p_player_height - self.p_player_radius * 2
+    self.physicsSys:AddCapsuleCollider(self.ent, Vector3.Zero, Quaternion.Identity, self.p_player_radius, capsuleHeight)
+    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
+    self.physicsSys:SetAngularFactor(self.ent, Vector3(0, 0, 0))
+    self.physicsSys:SetMass(self.ent, 80)
+    self.physicsSys:SetRestitution(self.ent, 0.0)
+    self.physicsSys:SetFriction(self.ent, 1.0)
+    self.physicsSys:SetEnable(self.ent, true, true)
+    self.physicsSys:UpdateState(self.ent)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)
     self.camera:SetPosition(0.0, 0.8, 0.0)
     self.camera:SetFov(1.3)
     self.camera:Attach(self)
+    
+    -- light attach
+    self.light = EntityTypes.LocalLight(self.world)
+    self.light:SetPosition(0.3, -0.3, 0.1)
+    self.light:SetRotation(-1.57, 0, 0)
+    self.light:Attach(self.camera)
+
+    self.light.lightSys:SetType(self.light.ent, 3)
+    self.light.lightSys:SetCastShadows(self.light.ent, true)
+
+    self.light:SetCone(30, 60)
+
+    self.light.lightSys:UpdateLightProps(self.light.ent)
+    self.light.lightSys:UpdateShadows(self.light.ent)
+        
+    self.light:Enable(false)
 
     return true
 end
@@ -45,15 +60,26 @@ end
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
     self.p_jump_accel = 25000.0
+
     self.p_move_accel = 200.0
-    self.p_move_max_speed = 1.8
+    self.p_move_max_speed = 2.0
+    self.p_move_in_jump_max_speed = 0.5
+    self.p_move_in_jump_accel = 30.0
+    self.p_run_max_speed = 4.0
+    self.p_run_accel = 400.0
+
     self.p_rot_sence = 0.002
+
+    self.p_player_radius = 0.3
+    self.p_player_height = 1.8
 
     -- lifetime only exist vars
     self.forward = 0
     self.backward = 0
     self.right = 0
     self.left = 0
+    self.running = false
+    self.inAir = false
 
     self.dYaw = 0
     self.dPitch = 0
@@ -67,13 +93,49 @@ function EntityTypes.TestPlayer:Deactivate()
     self.world.controller:SetActive(self.ent, false)
 end
 
+function EntityTypes.TestPlayer:InAir()
+    local rayStart = self:GetPositionW()
+    rayStart = Vector3.Add(rayStart, Vector3(0, -(self.p_player_height / 2 - 0.1), 0))
+    local rayEnd = Vector3.Add(rayStart, Vector3(0, -0.11, 0))
+
+    local rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    local result = rayTest.hit
+
+    local sideOffset = self.p_player_radius * 0.7
+    local tempOffset = - 2 * sideOffset
+
+    rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, 0))
+    rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, 0))
+    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    result = result or rayTest.hit
+
+    rayStart = Vector3.Add(rayStart, Vector3(tempOffset, 0, 0))
+    rayEnd = Vector3.Add(rayEnd, Vector3(tempOffset, 0, 0))
+    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    result = result or rayTest.hit
+
+    rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, sideOffset))
+    rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, sideOffset))
+    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    result = result or rayTest.hit
+
+    rayStart = Vector3.Add(rayStart, Vector3(0, 0, tempOffset))
+    rayEnd = Vector3.Add(rayEnd, Vector3(0, 0, tempOffset))
+    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    result = result or rayTest.hit
+
+    return not result
+end
+
 -- tick
-function EntityTypes.TestPlayer:onTick(dt)        
+function EntityTypes.TestPlayer:onTick(dt) 
+    self.inAir = self:InAir()
+
     if self.forward + self.backward + self.left + self.right > 0 then
         local forwardDir = self.camera:GetLookDir()
         forwardDir.y = 0
         forwardDir:Normalize()
-
+        
         local rightDir = self.camera:GetLookTangent()
         rightDir.y = 0
         rightDir:Normalize()
@@ -91,12 +153,27 @@ function EntityTypes.TestPlayer:onTick(dt)
         unitDir = Vector3.Add(unitDir, rightDir)
         unitDir:Normalize()
 
-        local velocity = self.physicsSys:GetVelocity(self.ent)
+        local velocity = self.physicsSys:GetLinearVelocity(self.ent)
         local speedOnMoveDir = velocity:Dot(unitDir)
 
-        if speedOnMoveDir < self.p_move_max_speed then
-            local moveDir = Vector3.MulScalar(unitDir, self.p_move_accel * dt)
-            self.physicsSys:ApplyForceToCenterOfMass(self.ent, moveDir)
+        local maxSpeed = 0
+        local accel = 0
+        if self.inAir then
+            maxSpeed = self.p_move_in_jump_max_speed
+            accel = self.p_move_in_jump_accel
+        else
+            if self.running == true then 
+                maxSpeed = self.p_run_max_speed
+                accel = self.p_run_accel
+            else 
+                maxSpeed = self.p_move_max_speed 
+                accel = self.p_move_accel
+            end
+        end
+
+        if speedOnMoveDir < maxSpeed then
+            local moveDir = Vector3.MulScalar(unitDir, accel * dt)
+            self.physicsSys:ApplyCentralForce(self.ent, moveDir)
         end
     end
     
@@ -113,12 +190,30 @@ end
 
 -- Controls
 function EntityTypes.TestPlayer:onAction(key, pressed, x, y, z)
-    print("Controller input!!!")
+    
+end
+
+function EntityTypes.TestPlayer:onLight(key, pressed, x, y, z)
+    if pressed == true then self.light:Enable(not self.light:IsEnabled()) end
+end
+
+function EntityTypes.TestPlayer:onRun(key, pressed, x, y, z)
+    if pressed == true then
+        self.running = true
+    else
+        self.running = false
+    end
+end
+
+function EntityTypes.TestPlayer:onFire(key, pressed, x, y, z)
+    if pressed == true then
+        Viewport:SpawnPhysics(self.camera)
+    end
 end
 
 function EntityTypes.TestPlayer:onJump(key, pressed, x, y, z)
     if pressed == false then return end
-    self.physicsSys:ApplyForceToCenterOfMass(self.ent, Vector3(0, self.p_jump_accel, 0))
+    if not self.inAir then self.physicsSys:ApplyCentralForce(self.ent, Vector3(0, self.p_jump_accel, 0)) end
 end
 
 function EntityTypes.TestPlayer:onMoveForward(key, pressed, x, y, z)

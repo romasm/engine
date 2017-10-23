@@ -80,6 +80,7 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	info.m_angularSleepingThreshold = SLEEP_THRESHOLD_ANGULAR;
 
 	res->body = new btRigidBody(info);
+	res->body->setUserIndex(IntFromEntity(e));
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 
 	dynamicsWorld->addRigidBody(res->body);
@@ -186,8 +187,14 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 
 	if( comp.collisionStorage == CollisionStorageType::LOCAL )
 	{
-		auto childrenCount = ((btCompoundShape*)comp.collisionData)->getNumChildShapes();
-		auto childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
+		uint32_t childrenCount = 0;
+		btCompoundShapeChild* childrenPtrs = nullptr;
+
+		if( comp.collisionData != 0 )
+		{
+			childrenCount = ((btCompoundShape*)comp.collisionData)->getNumChildShapes();
+			childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
+		}
 
 		*(uint32_t*)t_data = childrenCount;
 		t_data += sizeof(uint32_t);
@@ -677,6 +684,22 @@ void PhysicsSystem::ClearForces(Entity e)
 	comp.body->clearForces();
 }
 
+RayCastResult PhysicsSystem::RayCast(Vector3& start, Vector3& end)
+{
+	btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+	dynamicsWorld->rayTest(start, end, rayCallback);
+
+	RayCastResult result;
+	result.hit = rayCallback.hasHit();
+	if(result.hit)
+	{
+		result.position = rayCallback.m_hitPointWorld;
+		result.normal = rayCallback.m_hitNormalWorld;
+		result.entity = EntityFromInt(rayCallback.m_collisionObject->getUserIndex());
+	}
+	return result;
+}
+
 // COLLIDERS
 
 void PhysicsSystem::AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents)
@@ -770,6 +793,13 @@ void PhysicsSystem::SetConvexHullsCollider(Entity e, string collisionName)
 void PhysicsSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
+		.beginClass<RayCastResult>("RayCastResult")
+		.addData("position", &RayCastResult::position)
+		.addData("normal", &RayCastResult::normal)
+		.addData("hit", &RayCastResult::hit)
+		.addData("entity", &RayCastResult::entity)
+		.endClass()
+
 		.beginClass<PhysicsSystem>("PhysicsSystem")
 		.addFunction("UpdateState", &PhysicsSystem::UpdateState)
 
@@ -832,6 +862,8 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("SetConvexHullsCollider", &PhysicsSystem::SetConvexHullsCollider)
 
 		.addFunction("ClearCollision", &PhysicsSystem::ClearCollision)
+
+		.addFunction("RayCast", &PhysicsSystem::RayCast)
 		
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)

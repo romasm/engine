@@ -7,6 +7,9 @@ function EntityTypes.PhysicsModel:init(world, ent)
     
     self.physicsSys = self.world.physics
     self.physicsSys:AddComponent(self.ent)
+    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.STATIC)
+    self.physicsSys:SetRestitution(self.ent, 0.1)
+    self.physicsSys:SetFriction(self.ent, 0.8)
     self.physicsSys:SetMass(self.ent, 100.0)
     self.physicsSys:UpdateState(self.ent)
 

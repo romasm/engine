@@ -12,6 +12,16 @@
 
 namespace EngineCore
 {
+	struct RayCastResult
+	{
+		Vector3 position;
+		Vector3 normal;
+		bool hit;
+		Entity entity;
+
+		RayCastResult() : hit(false) { entity.setnull(); }
+	};
+
 	struct PhysicsComponent
 	{
 		ENTITY_IN_COMPONENT
@@ -73,7 +83,7 @@ namespace EngineCore
 		bool IsActive(Entity e);
 		bool IsEnable(Entity e);
 		void SetEnable(Entity e, bool enable, bool nonSleeping);
-
+		
 		void SetType(Entity e, int32_t type);
 		int32_t GetType(Entity e);
 
@@ -129,6 +139,8 @@ namespace EngineCore
 		void SetConvexHullsCollider(Entity e, string collisionName);
 
 		void ClearCollision(Entity e);
+
+		RayCastResult RayCast(Vector3& start, Vector3& end);
 
 		void SetDebugDraw(bool draw)
 		{
