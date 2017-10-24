@@ -405,7 +405,7 @@ inline bool isInRect(RECT child, RECT parent)
 		return true;
 }
 
-inline btTransform ToTransform(const XMMATRIX& mat)
+inline btTransform ToBtTransform(const XMMATRIX& mat)
 {
 	XMVECTOR scale, rot, pos;
 	XMMatrixDecompose(&scale, &rot, &pos, mat);

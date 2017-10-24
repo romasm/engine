@@ -7,13 +7,12 @@ PhysicsSystem::PhysicsSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
+	collisionSystem = world->GetCollisionSystem();
 
 	dynamicsWorld = dynamicsW;
 	
 	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
-	
-	debugDraw = false;
 }
 
 PhysicsSystem::~PhysicsSystem()
@@ -33,7 +32,7 @@ void PhysicsSystem::UpdateTransformations()
 
 		Entity e = i.get_entity();
 		
-		btTransform transform = ToTransform( transformSystem->GetTransformW(e) );
+		btTransform transform = ToBtTransform( transformSystem->GetTransformW(e) );
 		//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
 		i.body->proceedToTransform( transform );
 		
@@ -72,8 +71,6 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	PhysicsComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
-	res->collisionData = 0;
-	res->collisionStorage = LOCAL;
 	
 	btRigidBody::btRigidBodyConstructionInfo info(0, nullptr, CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 	info.m_linearSleepingThreshold = SLEEP_THRESHOLD_LINEAR;
@@ -102,29 +99,6 @@ void PhysicsSystem::_DeleteComponent(PhysicsComponent* comp)
 {
 	dynamicsWorld->removeRigidBody(comp->body);
 	_DELETE(comp->body);
-
-	_ClearCollision(comp);
-}
-
-void PhysicsSystem::_ClearCollision(PhysicsComponent* comp)
-{
-	if( comp->collisionStorage == CollisionStorageType::LOCAL )
-	{
-		if( comp->collisionData != 0 )
-		{
-			auto shape = (btCollisionShape*)comp->collisionData;
-			CollisionMgr::Get()->ResourceDeallocate( shape );
-			comp->collisionData = 0;
-		}
-	}
-	else
-	{
-		CollisionMgr::Get()->DeleteResource((uint32_t)comp->collisionData);
-		comp->collisionData = (uint64_t)CollisionMgr::nullres;
-	}
-
-	if(comp->body)
-		comp->body->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 }
 
 void PhysicsSystem::CopyComponent(Entity src, Entity dest)
@@ -181,104 +155,6 @@ uint32_t PhysicsSystem::Serialize(Entity e, uint8_t* data)
 
 	*(PhysicsData*)t_data = pdata;
 	t_data += sizeof(PhysicsData);
-	
-	*(CollisionStorageType*)t_data = comp.collisionStorage;
-	t_data += sizeof(CollisionStorageType);
-
-	if( comp.collisionStorage == CollisionStorageType::LOCAL )
-	{
-		uint32_t childrenCount = 0;
-		btCompoundShapeChild* childrenPtrs = nullptr;
-
-		if( comp.collisionData != 0 )
-		{
-			childrenCount = ((btCompoundShape*)comp.collisionData)->getNumChildShapes();
-			childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
-		}
-
-		*(uint32_t*)t_data = childrenCount;
-		t_data += sizeof(uint32_t);
-
-		while( childrenCount > 0 )
-		{
-			*(int32_t*)t_data = childrenPtrs->m_childShapeType;
-			t_data += sizeof(int32_t);
-
-			*(Vector3*)t_data = childrenPtrs->m_transform.getOrigin();
-			t_data += sizeof(Vector3);
-
-			*(Quaternion*)t_data = childrenPtrs->m_transform.getRotation();
-			t_data += sizeof(Quaternion);
-
-			switch (childrenPtrs->m_childShapeType)
-			{
-			case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE:
-				{
-					btBoxShape* shape = (btBoxShape*)childrenPtrs->m_childShape;
-
-					*(Vector3*)t_data = shape->getHalfExtentsWithMargin();
-					t_data += sizeof(Vector3);
-				}
-				break;
-			case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE:
-				{
-					btSphereShape* shape = (btSphereShape*)childrenPtrs->m_childShape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-				}
-				break;
-			case BroadphaseNativeTypes::CONE_SHAPE_PROXYTYPE:
-				{
-					btConeShape* shape = (btConeShape*)childrenPtrs->m_childShape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-					*(float*)t_data = (float)shape->getHeight();
-					t_data += sizeof(float);
-				}
-				break;
-			case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE:
-				{
-					btCylinderShape* shape = (btCylinderShape*)childrenPtrs->m_childShape;
-
-					*(Vector3*)t_data = shape->getHalfExtentsWithMargin();
-					t_data += sizeof(Vector3);
-				}
-				break;
-			case BroadphaseNativeTypes::CAPSULE_SHAPE_PROXYTYPE:
-				{
-					btCapsuleShape* shape = (btCapsuleShape*)childrenPtrs->m_childShape;
-
-					*(float*)t_data = (float)shape->getRadius();
-					t_data += sizeof(float);
-					*(float*)t_data = (float)shape->getHalfHeight() * 2.0f;
-					t_data += sizeof(float);
-				}
-				break;
-			default:
-				ERR("Wrong type of collision shape: %i", childrenPtrs->m_childShapeType);
-				break;
-			}
-
-			childrenPtrs++;
-			childrenCount--;
-		}
-	}
-	else
-	{
-		string collision_name = CollisionMgr::GetName((uint32_t)comp.collisionData);
-		uint32_t collision_name_size = (uint32_t)collision_name.size();
-
-		*(uint32_t*)t_data = collision_name_size;
-		t_data += sizeof(uint32_t);
-
-		if( collision_name_size != 0 )
-		{
-			memcpy_s(t_data, collision_name_size, collision_name.data(), collision_name_size);
-			t_data += collision_name_size * sizeof(char);
-		}
-	}
 
 	return (uint32_t)(t_data - data);
 }
@@ -308,93 +184,8 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	comp->body->setMassProps(pdata.mass, pdata.localInertia);
 	comp->body->setCollisionFlags(pdata.flags);
 	comp->body->forceActivationState(pdata.state);
-	
-	comp->collisionStorage = *(CollisionStorageType*)t_data;
-	t_data += sizeof(CollisionStorageType);
 
-	if( comp->collisionStorage == CollisionStorageType::LOCAL )
-	{
-		auto childrenCount = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
-
-		btCompoundShape* shape = new btCompoundShape(true, childrenCount);
-		comp->collisionData = (uint64_t)shape;
-
-		while( childrenCount > 0 )
-		{
-			int32_t type = *(int32_t*)t_data;
-			t_data += sizeof(int32_t);
-
-			Vector3 pos = *(Vector3*)t_data;
-			t_data += sizeof(Vector3);
-
-			Quaternion rot = *(Quaternion*)t_data;
-			t_data += sizeof(Quaternion);
-
-			btTransform transform(rot, pos);
-
-			switch (type)
-			{
-			case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE:
-				{
-					shape->addChildShape(transform, new btBoxShape(*(Vector3*)t_data));
-					t_data += sizeof(Vector3);
-				}
-				break;
-			case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE:
-				{
-					shape->addChildShape(transform, new btSphereShape(*(float*)t_data));
-					t_data += sizeof(float);
-				}
-				break;
-			case BroadphaseNativeTypes::CONE_SHAPE_PROXYTYPE:
-				{
-					auto radius = *(float*)t_data;
-					t_data += sizeof(float);
-					auto height = *(float*)t_data;
-					t_data += sizeof(float);
-
-					shape->addChildShape(transform, new btConeShape(radius, height));
-				}
-				break;
-			case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE:
-				{
-					shape->addChildShape(transform, new btCylinderShape(*(Vector3*)t_data));
-					t_data += sizeof(Vector3);
-				}
-				break;
-			case BroadphaseNativeTypes::CAPSULE_SHAPE_PROXYTYPE:
-				{
-					auto radius = *(float*)t_data;
-					t_data += sizeof(float);
-					auto height = *(float*)t_data;
-					t_data += sizeof(float);
-
-					shape->addChildShape(transform, new btCapsuleShape(radius, height));
-				}
-				break;
-			default:
-				ERR("Wrong type of collision shape: %i", type);
-				break;
-			}
-			
-			childrenCount--;
-		}
-
-		comp->body->setCollisionShape(shape);
-	}
-	else
-	{
-		uint32_t collision_name_size = *(uint32_t*)t_data;
-		t_data += sizeof(uint32_t);
-
-		string collision_name((char*)t_data, collision_name_size);
-		t_data += collision_name_size * sizeof(char);
-
-		if( !collision_name.empty() )
-			_SetCollisionConvex(e, comp, collision_name);
-	}
-	
+	UpdateCollision(e);
 	UpdateState(e);
 
 	return (uint32_t)(t_data - data);
@@ -409,6 +200,15 @@ void PhysicsSystem::UpdateState(Entity e)
 	// dynamicsWorld->resetRigidBody(comp.body)
 	dynamicsWorld->removeRigidBody(comp.body);
 	dynamicsWorld->addRigidBody(comp.body);
+}
+
+void PhysicsSystem::UpdateCollision(Entity e)
+{
+	GET_COMPONENT(void());
+	auto collision = collisionSystem->GetCollision(e);
+	if(!collision)
+		WRN("Collision component must be set before Physics component");
+	comp.body->setCollisionShape(collision);
 }
 
 bool PhysicsSystem::IsActive(Entity e)
@@ -684,124 +484,12 @@ void PhysicsSystem::ClearForces(Entity e)
 	comp.body->clearForces();
 }
 
-RayCastResult PhysicsSystem::RayCast(Vector3& start, Vector3& end)
-{
-	btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
-	dynamicsWorld->rayTest(start, end, rayCallback);
-
-	RayCastResult result;
-	result.hit = rayCallback.hasHit();
-	if(result.hit)
-	{
-		result.position = rayCallback.m_hitPointWorld;
-		result.normal = rayCallback.m_hitNormalWorld;
-		result.entity = EntityFromInt(rayCallback.m_collisionObject->getUserIndex());
-	}
-	return result;
-}
-
-// COLLIDERS
-
-void PhysicsSystem::AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents)
-{
-	GET_COMPONENT(void());
-	_AddCollisionShape(comp, pos, rot, new btBoxShape(halfExtents));
-}
-
-void PhysicsSystem::AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius)
-{
-	GET_COMPONENT(void());
-	_AddCollisionShape(comp, pos, rot, new btSphereShape(radius));
-}
-
-void PhysicsSystem::AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height)
-{
-	GET_COMPONENT(void());
-	_AddCollisionShape(comp, pos, rot, new btConeShape(radius, height));
-}
-
-void PhysicsSystem::AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height)
-{
-	GET_COMPONENT(void());
-	_AddCollisionShape(comp, pos, rot, new btCylinderShape( btVector3( radius, 0.5f * height, radius) ));
-}
-
-void PhysicsSystem::AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height)
-{
-	GET_COMPONENT(void());
-	_AddCollisionShape(comp, pos, rot, new btCapsuleShape(radius, height));
-}
-
-void PhysicsSystem::ClearCollision(Entity e)
-{
-	GET_COMPONENT(void());
-	_ClearCollision(&comp);
-}
-
-void PhysicsSystem::_AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, btCollisionShape* shape)
-{
-	if( comp.collisionStorage != LOCAL )
-	{
-		WRN("Shape collision can\'t be added to mesh collision");
-	}
-	else
-	{
-		if(!comp.collisionData)
-			comp.collisionData = (uint64_t)(new btCompoundShape());
-
-		btCompoundShape* compound = (btCompoundShape*)comp.collisionData;
-		compound->addChildShape(btTransform(rot, pos), shape);
-
-		comp.body->setCollisionShape(compound);
-	}
-}
-
-void PhysicsSystem::_SetCollisionConvex(Entity e, PhysicsComponent* comp, string& name)
-{
-	auto worldID = world->GetID();
-	comp->collisionData = (uint64_t)CollisionMgr::Get()->GetResource(name, false, 
-		[e, worldID](uint32_t id, bool status) -> void
-	{
-		auto collisionPtr = CollisionMgr::GetResourcePtr(id);
-		if(!collisionPtr)
-			return;
-
-		auto worldPtr = WorldMgr::Get()->GetWorld(worldID);
-		if(!worldPtr || !worldPtr->IsEntityAlive(e))
-		{
-			CollisionMgr::Get()->DeleteResource(id);
-			return;
-		}
-
-		auto compPtr = worldPtr->GetPhysicsSystem()->GetComponent(e);
-		if(!compPtr)
-			CollisionMgr::Get()->DeleteResource(id);
-		else
-			compPtr->body->setCollisionShape(collisionPtr);
-	});
-}
-
-void PhysicsSystem::SetConvexHullsCollider(Entity e, string collisionName)
-{
-	GET_COMPONENT(void());
-	_ClearCollision(&comp);
-	
-	comp.collisionStorage = CollisionStorageType::RESOURCE;
-	_SetCollisionConvex(e, &comp, collisionName);
-}
-
 void PhysicsSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
-		.beginClass<RayCastResult>("RayCastResult")
-		.addData("position", &RayCastResult::position)
-		.addData("normal", &RayCastResult::normal)
-		.addData("hit", &RayCastResult::hit)
-		.addData("entity", &RayCastResult::entity)
-		.endClass()
-
 		.beginClass<PhysicsSystem>("PhysicsSystem")
 		.addFunction("UpdateState", &PhysicsSystem::UpdateState)
+		.addFunction("UpdateCollision", &PhysicsSystem::UpdateCollision)
 
 		.addFunction("IsActive", &PhysicsSystem::IsActive)
 		.addFunction("IsEnable", &PhysicsSystem::IsEnable)
@@ -852,42 +540,9 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("GetTotalForce", &PhysicsSystem::GetTotalForce)
 		.addFunction("GetTotalTorque", &PhysicsSystem::GetTotalTorque)
 		.addFunction("ClearForces", &PhysicsSystem::ClearForces)
-
-		.addFunction("AddBoxCollider", &PhysicsSystem::AddBoxCollider)
-		.addFunction("AddSphereCollider", &PhysicsSystem::AddSphereCollider)
-		.addFunction("AddConeCollider", &PhysicsSystem::AddConeCollider)
-		.addFunction("AddCylinderCollider", &PhysicsSystem::AddCylinderCollider)
-		.addFunction("AddCapsuleCollider", &PhysicsSystem::AddCapsuleCollider)
-
-		.addFunction("SetConvexHullsCollider", &PhysicsSystem::SetConvexHullsCollider)
-
-		.addFunction("ClearCollision", &PhysicsSystem::ClearCollision)
-
-		.addFunction("RayCast", &PhysicsSystem::RayCast)
-		
+				
 		.addFunction("AddComponent", &PhysicsSystem::_AddComponent)
 		.addFunction("DeleteComponent", &PhysicsSystem::DeleteComponent)
 		.addFunction("HasComponent", &PhysicsSystem::HasComponent)
-
-		.addFunction("SetDebugDraw", &PhysicsSystem::SetDebugDraw)
 		.endClass();
-}
-
-// DEBUG DRAW
-
-PhysicsDebugDrawer::PhysicsDebugDrawer(DebugDrawer* dbgDrawer) :
-	m_debugMode(btIDebugDraw::DBG_DrawWireframe),
-	m_dbgDrawer(dbgDrawer)
-{
-	m_colors.m_activeObject = btVector3(0.1f, 0.95f, 0.1f);
-	m_colors.m_deactivatedObject = btVector3(0.1f, 0.1f, 0.95f);
-}
-
-void PhysicsDebugDrawer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)
-{
-	Vector3 A(from);
-	Vector3 B(to);
-	Vector3 colorA(fromColor);
-	Vector3 colorB(toColor);
-	m_dbgDrawer->PushLine(A, B, colorA, colorB);
 }

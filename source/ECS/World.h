@@ -20,6 +20,7 @@
 #include "TypeMgr.h"
 #include "ScriptSystem.h"
 #include "PhysicsSystem.h"
+#include "TriggerSystem.h"
 #include "CollisionSystem.h"
 #include "SkeletonSystem.h"
 
@@ -36,13 +37,14 @@
 #define EARLYVIS_BYTE		'e'
 #define VIS_BYTE			'v'
 #define STATIC_BYTE			's'
+#define SKELETON_BYTE		'k'
 #define LIGHT_BYTE			'l'
 #define GLIGHT_BYTE			'g'
 #define CAMERA_BYTE			'c'
 #define SCRIPT_BYTE			'u'
-#define PHYSICS_BYTE		'f'
 #define COLLISION_BYTE		'C'
-#define SKELETON_BYTE		'k'
+#define PHYSICS_BYTE		'f'
+#define TRIGGER_BYTE		'T'
 
 #define SMALL_ENTITY_COUNT 128
 #define SMALL_SCENEGRAPH_SIZE SMALL_ENTITY_COUNT * 4
@@ -158,8 +160,9 @@ namespace EngineCore
 		inline ShadowSystem* GetShadowSystem() const {return m_shadowSystem;}
 		inline GlobalLightSystem* GetGlobalLightSystem() const {return m_globalLightSystem;}
 		inline ScriptSystem* GetScriptSystem() const {return m_scriptSystem;}
-		inline PhysicsSystem* GetPhysicsSystem() const {return m_physicsSystem;}
 		inline CollisionSystem* GetCollisionSystem() const {return m_collisionSystem;}
+		inline PhysicsSystem* GetPhysicsSystem() const {return m_physicsSystem;}
+		inline TriggerSystem* GetTriggerSystem() const {return m_triggerSystem;}
 		inline SkeletonSystem* GetSkeletonSystem() const {return m_skeletonSystem;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
@@ -297,8 +300,9 @@ namespace EngineCore
 					.addProperty("lineGeometry", &BaseWorld::GetLineGeometrySystem)
 					.addProperty("controller", &BaseWorld::GetControllerSystem)
 					.addProperty("script", &BaseWorld::GetScriptSystem)
-					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
 					.addProperty("collision", &BaseWorld::GetCollisionSystem)
+					.addProperty("physics", &BaseWorld::GetPhysicsSystem)
+					.addProperty("trigger", &BaseWorld::GetTriggerSystem)
 					.addProperty("skeleton", &BaseWorld::GetSkeletonSystem)
 
 					.addProperty("active", &BaseWorld::IsActive, &BaseWorld::SetActive)
@@ -351,8 +355,9 @@ namespace EngineCore
 		ShadowSystem* m_shadowSystem;
 		GlobalLightSystem* m_globalLightSystem;
 		ScriptSystem* m_scriptSystem;
-		PhysicsSystem* m_physicsSystem;
 		CollisionSystem* m_collisionSystem;
+		PhysicsSystem* m_physicsSystem;
+		TriggerSystem* m_triggerSystem;
 		SkeletonSystem* m_skeletonSystem;
 
 		TypeMgr* m_typeMgr;
@@ -404,7 +409,7 @@ namespace EngineCore
 		TransformControls* m_transformControls;
 		DebugDrawer dbgDrawer;
 
-		PhysicsDebugDrawer* physDebugDrawer;
+		CollisionDebugDrawer* physDebugDrawer;
 	};
 
 	class SmallWorld: public BaseWorld

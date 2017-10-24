@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "TransformSystem.h"
 #include "CollisionMgr.h"
+#include "CollisionSystem.h"
 
 #define MAX_PHYSICS_STEP_PER_FRAME 10
 
@@ -12,32 +13,18 @@
 
 namespace EngineCore
 {
-	struct RayCastResult
-	{
-		Vector3 position;
-		Vector3 normal;
-		bool hit;
-		Entity entity;
-
-		RayCastResult() : hit(false) { entity.setnull(); }
-	};
-
 	struct PhysicsComponent
 	{
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
+
 		btRigidBody* body;
-
-		uint64_t collisionData;		
-		CollisionStorageType collisionStorage;
-
+		
 		PhysicsComponent()
 		{
 			dirty = false;
 			body = nullptr;
-			collisionData = 0;
-			collisionStorage = LOCAL;
 		}
 	};
 
@@ -66,13 +53,8 @@ namespace EngineCore
 		void SimulateAndUpdateSceneGraph(float dt);
 		void UpdateTransformations();
 
-		void DebugDraw()
-		{
-			if(debugDraw)
-				dynamicsWorld->debugDrawWorld();
-		}
-
 		void UpdateState(Entity e);
+		void UpdateCollision(Entity e);
 
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
@@ -130,23 +112,6 @@ namespace EngineCore
 		Vector3 GetTotalTorque(Entity e);
 		void ClearForces(Entity e);
 
-		void AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
-		void AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius);
-		void AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
-		void AddCylinderCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
-		void AddCapsuleCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);
-		
-		void SetConvexHullsCollider(Entity e, string collisionName);
-
-		void ClearCollision(Entity e);
-
-		RayCastResult RayCast(Vector3& start, Vector3& end);
-
-		void SetDebugDraw(bool draw)
-		{
-			debugDraw = draw;
-		}
-
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass();
@@ -171,58 +136,13 @@ namespace EngineCore
 		};
 		
 		void _DeleteComponent(PhysicsComponent* comp);
-		void _AddCollisionShape(PhysicsComponent& comp, Vector3& pos, Quaternion& rot, btCollisionShape* shape);
-		void _SetCollisionConvex(Entity e, PhysicsComponent* comp, string& name);
-		void _ClearCollision(PhysicsComponent* comp);
 
 		ComponentRArray<PhysicsComponent> components;
 		
 		BaseWorld* world;
 		TransformSystem* transformSystem;
+		CollisionSystem* collisionSystem;
 
 		btDiscreteDynamicsWorld* dynamicsWorld;
-
-		bool debugDraw;
-	};
-
-	class DebugDrawer;
-
-	class PhysicsDebugDrawer : public btIDebugDraw
-	{
-	public:
-		PhysicsDebugDrawer(DebugDrawer* dbgDrawer);
-		
-		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor);
-
-		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
-		{
-			drawLine(from, to, color, color);
-		}
-
-		virtual void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
-		{
-			drawLine(PointOnB, PointOnB + normalOnB * distance, color);
-			btVector3 ncolor(0, 0, 0);
-			drawLine(PointOnB, PointOnB + normalOnB * 0.01f, ncolor);
-		}
-
-		virtual void reportErrorWarning(const char* warningString)
-		{
-			WRN("[BulletPhysics] %s", warningString);
-		}
-
-		virtual void draw3dText(const btVector3& location,const char* textString)
-		{
-		}
-
-		virtual DefaultColors getDefaultColors() const {return m_colors;}
-
-		virtual int	getDebugMode() const {return m_debugMode;}
-		virtual void setDebugMode(int debugMode) {m_debugMode = debugMode;}
-
-	private:
-		int m_debugMode;
-		DebugDrawer* m_dbgDrawer;
-		DefaultColors m_colors;
 	};
 }

@@ -29,8 +29,9 @@ void BaseWorld::SetDirty(Entity e)
 
 void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 {
-	m_physicsSystem->SetDirty(e);
 	m_collisionSystem->SetDirty(e);
+	m_physicsSystem->SetDirty(e);
+	m_triggerSystem->SetDirty(e);
 
 	m_visibilitySystem->SetDirty(e);
 
@@ -125,6 +126,7 @@ void BaseWorld::Close()
 	_DELETE(m_earlyVisibilitySystem);
 	_DELETE(m_scriptSystem);
 	_DELETE(m_physicsSystem);
+	_DELETE(m_triggerSystem);
 	_DELETE(m_collisionSystem);
 
 	_DELETE(m_typeMgr);
@@ -180,6 +182,7 @@ void BaseWorld::destroyEntity(Entity e)
 
 	m_scriptSystem->DeleteComponent(e);
 	m_physicsSystem->DeleteComponent(e);
+	m_triggerSystem->DeleteComponent(e);
 	m_collisionSystem->DeleteComponent(e);
 	m_staticMeshSystem->DeleteComponent(e);
 	m_skeletonSystem->DeleteComponent(e);
@@ -225,8 +228,9 @@ Entity BaseWorld::CopyEntity(Entity e)
 	m_skeletonSystem->CopyComponent(e, newEnt);
 	m_staticMeshSystem->CopyComponent(e, newEnt);
 
-	m_physicsSystem->CopyComponent(e, newEnt);
 	m_collisionSystem->CopyComponent(e, newEnt);
+	m_physicsSystem->CopyComponent(e, newEnt);
+	m_triggerSystem->CopyComponent(e, newEnt);
 
 	m_cameraSystem->CopyComponent(e, newEnt);
 	//m_envProbSystem->CopyComponent(e, newEnt);
@@ -332,9 +336,11 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 				break;
 			case SCRIPT_BYTE: compSize = m_scriptSystem->Deserialize(ent, t_data);
 				break;
+			case COLLISION_BYTE: compSize = m_collisionSystem->Deserialize(ent, t_data);
+				break;
 			case PHYSICS_BYTE: compSize = m_physicsSystem->Deserialize(ent, t_data);
 				break;
-			case COLLISION_BYTE: compSize = m_collisionSystem->Deserialize(ent, t_data);
+			case TRIGGER_BYTE: compSize = m_triggerSystem->Deserialize(ent, t_data);
 				break;
 			}
 			t_data += compSize;
@@ -465,10 +471,12 @@ bool BaseWorld::saveWorld(string& filename)
 			components += CAMERA_BYTE;
 		if(m_scriptSystem->HasComponent(iterator))
 			components += SCRIPT_BYTE;
-		if(m_physicsSystem->HasComponent(iterator))
-			components += PHYSICS_BYTE;
 		if(m_collisionSystem->HasComponent(iterator))
 			components += COLLISION_BYTE;
+		if(m_physicsSystem->HasComponent(iterator))
+			components += PHYSICS_BYTE;
+		if(m_triggerSystem->HasComponent(iterator))
+			components += TRIGGER_BYTE;
 
 		uint32_t comp_count = (uint32_t)components.size();
 		file.write( (char*)&comp_count, sizeof(uint32_t) );
@@ -499,9 +507,11 @@ bool BaseWorld::saveWorld(string& filename)
 				break;
 			case SCRIPT_BYTE: compSize = m_scriptSystem->Serialize(iterator, buffer);
 				break;
+			case COLLISION_BYTE: compSize = m_collisionSystem->Serialize(iterator, buffer);
+				break;
 			case PHYSICS_BYTE: compSize = m_physicsSystem->Serialize(iterator, buffer);
 				break;
-			case COLLISION_BYTE: compSize = m_collisionSystem->Serialize(iterator, buffer);
+			case TRIGGER_BYTE: compSize = m_triggerSystem->Serialize(iterator, buffer);
 				break;
 			}
 
@@ -529,7 +539,7 @@ World::World( uint32_t id ) : BaseWorld( id )
 	Vector3 defaultGravity(0, -10.0f, 0); // TODO
 	physDynamicsWorld->setGravity(defaultGravity);
 	
-	physDebugDrawer = new PhysicsDebugDrawer(&dbgDrawer);
+	physDebugDrawer = new CollisionDebugDrawer(&dbgDrawer);
 	physDynamicsWorld->setDebugDrawer(physDebugDrawer);
 
 	m_frustumMgr = new FrustumMgr;
@@ -544,8 +554,9 @@ World::World( uint32_t id ) : BaseWorld( id )
 	m_visibilitySystem = new VisibilitySystem(this, ENTITY_COUNT);
 	m_earlyVisibilitySystem = new EarlyVisibilitySystem(this, ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, ENTITY_COUNT);
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, ENTITY_COUNT);
+	m_triggerSystem = new TriggerSystem(this, physDynamicsWorld, ENTITY_COUNT);
 
 	m_skeletonSystem = new SkeletonSystem(this, ENTITY_COUNT);
 	m_staticMeshSystem = new StaticMeshSystem(this, ENTITY_COUNT);
@@ -648,13 +659,15 @@ void World::Frame()
 	m_sceneGraph->Update();
 	if(b_sceneGraphDbg)
 		m_sceneGraph->DebugDraw(&dbgDrawer);
-	
+
+	m_collisionSystem->UpdateTransformations();
+
 	m_physicsSystem->UpdateTransformations();
 	if( m_mode == StateMode::LIVE )
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
 	m_physicsSystem->DebugDraw();	
 
-	m_collisionSystem->UpdateTransformations();
+	m_triggerSystem->UpdateTransformations();
 
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
@@ -694,7 +707,7 @@ void World::Frame()
 	m_lineGeometrySystem->RegToDraw();
 
 #ifdef _DEV
-	m_collisionSystem->DebugRegToDraw();
+	m_triggerSystem->DebugRegToDraw();
 #endif
 	
 	PERF_GPU_TIMESTAMP(_SCENE_SHADOWS);
@@ -773,8 +786,9 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 	m_transformSystem = new TransformSystem(this, SMALL_ENTITY_COUNT);
 	m_visibilitySystem = new VisibilitySystem(this, SMALL_ENTITY_COUNT);
 	m_scriptSystem = new ScriptSystem(this, SMALL_ENTITY_COUNT);
-	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
 	m_collisionSystem = new CollisionSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
+	m_physicsSystem = new PhysicsSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
+	m_triggerSystem = new TriggerSystem(this, physDynamicsWorld, SMALL_ENTITY_COUNT);
 
 	m_skeletonSystem = new SkeletonSystem(this, SMALL_ENTITY_COUNT);
 	m_staticMeshSystem = new StaticMeshSystem(this, SMALL_ENTITY_COUNT);
@@ -849,6 +863,8 @@ void SmallWorld::Frame()
 
 	m_sceneGraph->Update();
 
+	m_collisionSystem->UpdateTransformations();
+
 	m_physicsSystem->UpdateTransformations();
 
 	if( m_mode == StateMode::LIVE )
@@ -856,7 +872,7 @@ void SmallWorld::Frame()
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
 	}
 
-	m_collisionSystem->UpdateTransformations();
+	m_triggerSystem->UpdateTransformations();
 	
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegToDraw();
@@ -869,7 +885,7 @@ void SmallWorld::Frame()
 	m_staticMeshSystem->RegToDraw();
 
 #ifdef _DEV
-	m_collisionSystem->DebugRegToDraw();
+	m_triggerSystem->DebugRegToDraw();
 #endif
 
 	for(auto& it: m_scenes)

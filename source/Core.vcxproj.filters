@@ -261,9 +261,6 @@
     <ClInclude Include="Utils\MathVector.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="ECS\CollisionSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
     <ClInclude Include="Managers\Loaders\TexLoader.h">
       <Filter>Managers\Loaders</Filter>
     </ClInclude>
@@ -289,6 +286,12 @@
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="ECS\SkeletonSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\TriggerSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\CollisionSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
   </ItemGroup>
@@ -451,9 +454,6 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="ECS\CollisionSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
     <ClCompile Include="Managers\Loaders\TexLoader.cpp">
       <Filter>Managers\Loaders</Filter>
     </ClCompile>
@@ -470,6 +470,12 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="ECS\SkeletonSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\TriggerSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\CollisionSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
   </ItemGroup>

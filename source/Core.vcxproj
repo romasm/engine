@@ -160,6 +160,7 @@
     <ClInclude Include="Config\GlobalColor.h" />
     <ClInclude Include="ECS\CameraSystem.h" />
     <ClInclude Include="ECS\CollisionSystem.h" />
+    <ClInclude Include="ECS\TriggerSystem.h" />
     <ClInclude Include="ECS\ControllerSystem.h" />
     <ClInclude Include="ECS\DebugDrawer.h" />
     <ClInclude Include="ECS\ECS_defines.h" />
@@ -249,6 +250,7 @@
     <ClCompile Include="Config\GlobalColor.cpp" />
     <ClCompile Include="ECS\CameraSystem.cpp" />
     <ClCompile Include="ECS\CollisionSystem.cpp" />
+    <ClCompile Include="ECS\TriggerSystem.cpp" />
     <ClCompile Include="ECS\ControllerSystem.cpp" />
     <ClCompile Include="ECS\EarlyVisibilitySystem.cpp" />
     <ClCompile Include="ECS\EnvProbSystem.cpp" />
