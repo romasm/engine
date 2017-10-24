@@ -50,6 +50,7 @@ WorldMgr::WorldMgr()
 		LightSystem::RegLuaClass();
 		GlobalLightSystem::RegLuaClass();
 		LineGeometrySystem::RegLuaClass();
+		CollisionSystem::RegLuaClass();
 		PhysicsSystem::RegLuaClass();
 		TriggerSystem::RegLuaClass();
 		ControllerSystem::RegLuaClass();

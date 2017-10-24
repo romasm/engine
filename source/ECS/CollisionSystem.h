@@ -5,11 +5,6 @@
 #include "TransformSystem.h"
 #include "CollisionMgr.h"
 
-#define MAX_PHYSICS_STEP_PER_FRAME 10
-
-#define SLEEP_THRESHOLD_LINEAR 0.6f
-#define SLEEP_THRESHOLD_ANGULAR 0.5f
-
 namespace EngineCore
 {
 	struct RayCastResult
@@ -22,16 +17,27 @@ namespace EngineCore
 		RayCastResult() : hit(false) { entity.setnull(); }
 	};
 	
-	/*enum CollisionFilterGroups
+	enum CollisionGroups
 	{
-		DefaultFilter = 1,
-		StaticFilter = 2,
-		KinematicFilter = 4,
-		DebrisFilter = 8,
-		SensorTrigger = 16,
-		CharacterFilter = 32,
-		AllFilter = -1 //all bits sets: DefaultFilter | StaticFilter | KinematicFilter | DebrisFilter | SensorTrigger
-	};*/
+		None = 0,
+		Default = 1,
+		Static = 2,
+		Kinematic = 4,
+		Debris = 8,
+		Trigger = 16,
+		Character = 32,
+		Gamelogic = 64,
+
+		Special0 = 128,
+		Special1 = 256,
+		Special2 = 512,
+		Special3 = 1024,
+		Special4 = 2048,
+		Special5 = 4096,
+
+		Physics = Default | Static | Kinematic | Debris | Character,
+		All = -1 //all bits sets
+	};
 
 	struct CollisionComponent
 	{
@@ -53,8 +59,8 @@ namespace EngineCore
 			object = nullptr;
 			collisionData = 0;
 			collisionStorage = LOCAL;
-			collisionGroup = 1;
-			collisionMask = -1;
+			collisionGroup = CollisionGroups::None;
+			collisionMask = CollisionGroups::None;
 		}
 	};
 
@@ -100,7 +106,13 @@ namespace EngineCore
 
 		bool IsEnable(Entity e);
 		void SetEnable(Entity e, bool enable);
-		
+
+		int32_t GetCollisionGroup(Entity e);
+		void SetCollisionGroup(Entity e, int32_t group);
+		bool HasCollisionMask(Entity e, int32_t group);
+		void AddCollisionMask(Entity e, int32_t group);
+		void RemoveCollisionMask(Entity e, int32_t group);
+
 		void AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
 		void AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius);
 		void AddConeCollider(Entity e, Vector3& pos, Quaternion& rot, float radius, float height);

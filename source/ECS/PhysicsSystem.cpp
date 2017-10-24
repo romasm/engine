@@ -72,15 +72,36 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	res->parent = e;
 	res->dirty = true;
 	
-	btRigidBody::btRigidBodyConstructionInfo info(0, nullptr, CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
+	int32_t collisionGroup = CollisionGroups::Default;
+	int32_t collisionMask = CollisionGroups::Physics;
+
+	btCollisionShape* collision = CollisionMgr::GetResourcePtr(CollisionMgr::nullres);
+	auto collisionComp = collisionSystem->GetComponent(e);
+	if(collisionComp)
+	{
+		if(collisionComp->collisionData)
+			collision = collisionSystem->GetCollision(e);
+
+		if( collisionComp->collisionGroup != 0 )
+			collisionGroup = collisionComp->collisionGroup;
+		else
+			collisionComp->collisionGroup = collisionGroup;
+
+		if( collisionComp->collisionMask != 0 )
+			collisionMask = collisionComp->collisionMask;
+		else
+			collisionComp->collisionMask = collisionMask;
+	}
+
+	btRigidBody::btRigidBodyConstructionInfo info(0, nullptr, collision);
 	info.m_linearSleepingThreshold = SLEEP_THRESHOLD_LINEAR;
 	info.m_angularSleepingThreshold = SLEEP_THRESHOLD_ANGULAR;
 
 	res->body = new btRigidBody(info);
 	res->body->setUserIndex(IntFromEntity(e));
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-
-	dynamicsWorld->addRigidBody(res->body);
+	
+	dynamicsWorld->addRigidBody(res->body, collisionGroup, collisionMask);
 
 	return res;
 }
@@ -185,7 +206,6 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 	comp->body->setCollisionFlags(pdata.flags);
 	comp->body->forceActivationState(pdata.state);
 
-	UpdateCollision(e);
 	UpdateState(e);
 
 	return (uint32_t)(t_data - data);
@@ -199,16 +219,22 @@ void PhysicsSystem::UpdateState(Entity e)
 	// TODO: optimize? 
 	// dynamicsWorld->resetRigidBody(comp.body)
 	dynamicsWorld->removeRigidBody(comp.body);
-	dynamicsWorld->addRigidBody(comp.body);
-}
+	
+	int32_t collisionGroup = CollisionGroups::Default;
+	int32_t collisionMask = CollisionGroups::Physics;
 
-void PhysicsSystem::UpdateCollision(Entity e)
-{
-	GET_COMPONENT(void());
 	auto collision = collisionSystem->GetCollision(e);
 	if(!collision)
 		WRN("Collision component must be set before Physics component");
-	comp.body->setCollisionShape(collision);
+	else
+	{
+		comp.body->setCollisionShape(collision);
+		auto collisionComp = collisionSystem->GetComponent(e);
+		collisionGroup = collisionComp->collisionGroup;
+		collisionMask = collisionComp->collisionMask;
+	}
+
+	dynamicsWorld->addRigidBody(comp.body, collisionGroup, collisionMask);
 }
 
 bool PhysicsSystem::IsActive(Entity e)
@@ -230,24 +256,44 @@ void PhysicsSystem::SetEnable(Entity e, bool enable, bool nonSleeping)
 	comp.body->forceActivationState(state);
 }
 
+// Overwrite collision group and mask
 void PhysicsSystem::SetType(Entity e, int32_t type)
 {
 	GET_COMPONENT(void());
 	auto flags = comp.body->getCollisionFlags();
 
+	auto collisionComp = collisionSystem->GetComponent(e);
+	if(!collisionComp)
+	{
+		WRN("Collision component must be set before Physics component");
+		return;
+	}
+	
 	switch (type)
 	{
 	case 0:
 		flags |= btCollisionObject::CF_STATIC_OBJECT;
 		flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
+		collisionComp->collisionMask &= ~CollisionGroups::Static;
+		collisionComp->collisionMask &= ~CollisionGroups::Kinematic;
+		if( collisionComp->collisionGroup == CollisionGroups::Kinematic || collisionComp->collisionGroup == CollisionGroups::Default )
+			collisionComp->collisionGroup = CollisionGroups::Static;
 		break;
 	case 1:
 		flags |= btCollisionObject::CF_KINEMATIC_OBJECT;
 		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
+		collisionComp->collisionMask &= ~CollisionGroups::Static;
+		collisionComp->collisionMask &= ~CollisionGroups::Kinematic;
+		if( collisionComp->collisionGroup == CollisionGroups::Static || collisionComp->collisionGroup == CollisionGroups::Default )
+			collisionComp->collisionGroup = CollisionGroups::Kinematic;
 		break;
 	case 2:
 		flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
 		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
+		collisionComp->collisionMask |= CollisionGroups::Static;
+		collisionComp->collisionMask |= CollisionGroups::Kinematic;
+		if( collisionComp->collisionGroup == CollisionGroups::Static || collisionComp->collisionGroup == CollisionGroups::Kinematic )
+			collisionComp->collisionGroup = CollisionGroups::Default;
 		break;
 	default:
 		WRN("Wrong physics body type");
@@ -489,7 +535,6 @@ void PhysicsSystem::RegLuaClass()
 	getGlobalNamespace(LSTATE)
 		.beginClass<PhysicsSystem>("PhysicsSystem")
 		.addFunction("UpdateState", &PhysicsSystem::UpdateState)
-		.addFunction("UpdateCollision", &PhysicsSystem::UpdateCollision)
 
 		.addFunction("IsActive", &PhysicsSystem::IsActive)
 		.addFunction("IsEnable", &PhysicsSystem::IsEnable)

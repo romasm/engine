@@ -6,7 +6,7 @@ TriggerSystem::TriggerSystem(BaseWorld* w, btDiscreteDynamicsWorld* collisionW, 
 {	
 	world = w;
 	transformSystem = world->GetTransformSystem();
-	physicsSystem = world->GetPhysicsSystem();
+	collisionSystem = world->GetCollisionSystem();
 
 	collisionWorld = collisionW;
 

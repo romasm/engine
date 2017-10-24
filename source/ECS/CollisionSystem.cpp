@@ -61,7 +61,10 @@ CollisionComponent* CollisionSystem::AddComponent(Entity e, bool dummy)
 		res->object->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 		res->object->setCollisionFlags(res->object->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
-		dynamicsWorld->addCollisionObject(res->object);
+		res->collisionGroup = CollisionGroups::Gamelogic;
+		res->collisionMask = CollisionGroups::Trigger;
+
+		dynamicsWorld->addCollisionObject(res->object, res->collisionGroup, res->collisionMask);
 	}	
 
 	return res;
@@ -148,7 +151,13 @@ uint32_t CollisionSystem::Serialize(Entity e, uint8_t* data)
 	
 	*(bool*)t_data = (comp.object != nullptr);
 	t_data += sizeof(bool);
-	
+
+	*(int32_t*)t_data = comp.collisionGroup;
+	t_data += sizeof(int32_t);
+
+	*(int32_t*)t_data = comp.collisionMask;
+	t_data += sizeof(int32_t);
+
 	*(CollisionStorageType*)t_data = comp.collisionStorage;
 	t_data += sizeof(CollisionStorageType);
 
@@ -263,6 +272,12 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 	auto comp = AddComponent(e, isDummy);
 	if(!comp)
 		return 0;
+
+	comp->collisionGroup = *(int32_t*)t_data;
+	t_data += sizeof(int32_t);
+
+	comp->collisionMask = *(int32_t*)t_data;
+	t_data += sizeof(int32_t);
 	
 	comp->collisionStorage = *(CollisionStorageType*)t_data;
 	t_data += sizeof(CollisionStorageType);
@@ -367,6 +382,36 @@ void CollisionSystem::SetEnable(Entity e, bool enable)
 {
 	GET_COMPONENT(void());
 	// TODO
+}
+
+int32_t CollisionSystem::GetCollisionGroup(Entity e)
+{
+	GET_COMPONENT(false);
+	return comp.collisionGroup;
+}
+
+void CollisionSystem::SetCollisionGroup(Entity e, int32_t group)
+{
+	GET_COMPONENT(void());
+	comp.collisionGroup = group;
+}
+
+bool CollisionSystem::HasCollisionMask(Entity e, int32_t group)
+{
+	GET_COMPONENT(false);
+	return ((comp.collisionGroup & group) != 0);
+}
+
+void CollisionSystem::AddCollisionMask(Entity e, int32_t group)
+{
+	GET_COMPONENT(void());
+	comp.collisionGroup |= group;
+}
+
+void CollisionSystem::RemoveCollisionMask(Entity e, int32_t group)
+{
+	GET_COMPONENT(void());
+	comp.collisionGroup &= ~group;
 }
 
 RayCastResult CollisionSystem::RayCast(Vector3& start, Vector3& end)
@@ -506,6 +551,12 @@ void CollisionSystem::RegLuaClass()
 		.addFunction("IsDummy", &CollisionSystem::IsDummy)
 		.addFunction("IsEnable", &CollisionSystem::IsEnable)
 		.addFunction("SetEnable", &CollisionSystem::SetEnable)
+
+		.addFunction("GetCollisionGroup", &CollisionSystem::GetCollisionGroup)
+		.addFunction("SetCollisionGroup", &CollisionSystem::SetCollisionGroup)
+		.addFunction("HasCollisionMask", &CollisionSystem::HasCollisionMask)
+		.addFunction("AddCollisionMask", &CollisionSystem::AddCollisionMask)
+		.addFunction("RemoveCollisionMask", &CollisionSystem::RemoveCollisionMask)
 
 		.addFunction("AddBoxCollider", &CollisionSystem::AddBoxCollider)
 		.addFunction("AddSphereCollider", &CollisionSystem::AddSphereCollider)

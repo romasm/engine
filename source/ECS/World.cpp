@@ -665,7 +665,7 @@ void World::Frame()
 	m_physicsSystem->UpdateTransformations();
 	if( m_mode == StateMode::LIVE )
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
-	m_physicsSystem->DebugDraw();	
+	m_collisionSystem->DebugDraw();	
 
 	m_triggerSystem->UpdateTransformations();
 

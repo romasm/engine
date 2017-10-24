@@ -21,9 +21,12 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.world.controller:AddComponent(self.ent, "FirstPerson")
             
     -- collision
-    self.physicsSys:AddComponent(self.ent) 
+    self.collisionSys = self.world.collision
+    self.collisionSys:AddComponent(self.ent, false)
     local capsuleHeight = self.p_player_height - self.p_player_radius * 2
-    self.physicsSys:AddCapsuleCollider(self.ent, Vector3.Zero, Quaternion.Identity, self.p_player_radius, capsuleHeight)
+    self.collisionSys:AddCapsuleCollider(self.ent, Vector3.Zero, Quaternion.Identity, self.p_player_radius, capsuleHeight)
+    
+    self.physicsSys:AddComponent(self.ent) 
     self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
     self.physicsSys:SetAngularFactor(self.ent, Vector3(0, 0, 0))
     self.physicsSys:SetMass(self.ent, 80)
@@ -98,7 +101,7 @@ function EntityTypes.TestPlayer:InAir()
     rayStart = Vector3.Add(rayStart, Vector3(0, -(self.p_player_height / 2 - 0.1), 0))
     local rayEnd = Vector3.Add(rayStart, Vector3(0, -0.11, 0))
 
-    local rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    local rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
     local result = rayTest.hit
 
     local sideOffset = self.p_player_radius * 0.7
@@ -106,22 +109,22 @@ function EntityTypes.TestPlayer:InAir()
 
     rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, 0))
     rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, 0))
-    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
     result = result or rayTest.hit
 
     rayStart = Vector3.Add(rayStart, Vector3(tempOffset, 0, 0))
     rayEnd = Vector3.Add(rayEnd, Vector3(tempOffset, 0, 0))
-    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
     result = result or rayTest.hit
 
     rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, sideOffset))
     rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, sideOffset))
-    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
     result = result or rayTest.hit
 
     rayStart = Vector3.Add(rayStart, Vector3(0, 0, tempOffset))
     rayEnd = Vector3.Add(rayEnd, Vector3(0, 0, tempOffset))
-    rayTest = self.physicsSys:RayCast(rayStart, rayEnd)
+    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
     result = result or rayTest.hit
 
     return not result
@@ -130,7 +133,7 @@ end
 -- tick
 function EntityTypes.TestPlayer:onTick(dt) 
     self.inAir = self:InAir()
-
+    
     if self.forward + self.backward + self.left + self.right > 0 then
         local forwardDir = self.camera:GetLookDir()
         forwardDir.y = 0

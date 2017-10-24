@@ -5,9 +5,12 @@ function EntityTypes.PhysicsModel:init(world, ent)
     
     self.world:SetEntityType(self.ent, "PhysicsModel")
     
+    self.collisionSys = self.world.collision
+    self.collisionSys:AddComponent(self.ent, false)
+
     self.physicsSys = self.world.physics
     self.physicsSys:AddComponent(self.ent)
-    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.STATIC)
+    self.physicsSys:SetType(self.ent, PHYSICS_TYPES.DYNAMIC)
     self.physicsSys:SetRestitution(self.ent, 0.1)
     self.physicsSys:SetFriction(self.ent, 0.8)
     self.physicsSys:SetMass(self.ent, 100.0)
@@ -24,8 +27,10 @@ end
 function EntityTypes.PhysicsModel:SetMesh(mesh)
     if not self:base(EntityTypes.PhysicsModel).SetMeshAndCallback(self, mesh, EntityTypes.PhysicsModel.OnLoad) then return false end
     
-    self.physicsSys:ClearCollision(self.ent)
-    self.physicsSys:SetConvexHullsCollider(self.ent, mesh)
+    self.collisionSys:ClearCollision(self.ent)
+    self.collisionSys:SetConvexHullsCollider(self.ent, mesh)
+
+    self.physicsSys:UpdateState(self.ent)
     
     return true
 end

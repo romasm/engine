@@ -81,7 +81,7 @@ namespace EngineCore
 				
 		BaseWorld* world;
 		TransformSystem* transformSystem;
-		PhysicsSystem* physicsSystem;
+		CollisionSystem* collisionSystem;
 
 		btDiscreteDynamicsWorld* collisionWorld;
 

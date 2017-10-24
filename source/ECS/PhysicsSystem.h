@@ -54,7 +54,6 @@ namespace EngineCore
 		void UpdateTransformations();
 
 		void UpdateState(Entity e);
-		void UpdateCollision(Entity e);
 
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
