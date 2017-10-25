@@ -9,18 +9,33 @@
 
 namespace EngineCore
 {
+	enum TriggerFilterType
+	{
+		FilterNone = 0,
+		FilterByType = 1,
+		FilterByName = 2,
+		FilterByNamePart = 3,
+	};
+
 	struct TriggerComponent
 	{
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
-		
+		bool active;
+
 		btGhostObject* object;
+		TriggerFilterType filter; 
+		string filterString; 
 		
+		unordered_map<Entity, btCollisionObject*> overlappingMap;
+
 		TriggerComponent()
 		{
 			dirty = false;
+			active = false;
 			object = nullptr;
+			filter = TriggerFilterType::FilterNone;
 		}
 	};
 
@@ -29,7 +44,7 @@ namespace EngineCore
 	class TriggerSystem
 	{
 	public:
-		TriggerSystem(BaseWorld* w, btDiscreteDynamicsWorld* collisionWorld, uint32_t maxCount);
+		TriggerSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, uint32_t maxCount);
 		~TriggerSystem();
 
 		TriggerComponent* AddComponent(Entity e);
@@ -46,36 +61,31 @@ namespace EngineCore
 			return &components.getDataByArrayIdx(idx);
 		}
 		
+		void CheckOverlaps();
 		void UpdateTransformations();
-
-	#ifdef _DEV
-		void DebugRegToDraw();
-	#endif
-
+		
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
 				
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
+		int32_t GetFilterType(Entity e);
+		void SetFilterType(Entity e, int32_t type);
+
+		string GetFilterString(Entity e);
+		void SetFilterString(Entity e, string str);
+
 		bool IsActive(Entity e);
 		void SetActive(Entity e, bool active);
 		
 		inline void _AddComponent(Entity e) {AddComponent(e);}
-
-		void SetDebugDraw(bool draw)
-		{
-			b_debugDraw = draw;
-		}
-
+		
 		static void RegLuaClass();
 
 	private:
 
-		inline void _DeleteComponent(TriggerComponent* comp)
-		{
-			// TODO
-		}
+		void _DeleteComponent(TriggerComponent* comp);
 
 		ComponentRArray<TriggerComponent> components;
 				
@@ -83,8 +93,6 @@ namespace EngineCore
 		TransformSystem* transformSystem;
 		CollisionSystem* collisionSystem;
 
-		btDiscreteDynamicsWorld* collisionWorld;
-
-		bool b_debugDraw;
+		btDiscreteDynamicsWorld* dynamicsWorld;
 	};
 }

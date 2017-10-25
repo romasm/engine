@@ -651,6 +651,7 @@ void World::Frame()
 
 	if( m_mode == StateMode::LIVE )
 	{
+		m_triggerSystem->CheckOverlaps();
 		m_scriptSystem->Update(m_dt);
 	}
 
@@ -659,15 +660,15 @@ void World::Frame()
 	m_sceneGraph->Update();
 	if(b_sceneGraphDbg)
 		m_sceneGraph->DebugDraw(&dbgDrawer);
-
-	m_collisionSystem->UpdateTransformations();
-
+	
 	m_physicsSystem->UpdateTransformations();
 	if( m_mode == StateMode::LIVE )
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
-	m_collisionSystem->DebugDraw();	
 
+	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();
+
+	m_collisionSystem->DebugDraw();	
 
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
@@ -706,10 +707,6 @@ void World::Frame()
 
 	m_lineGeometrySystem->RegToDraw();
 
-#ifdef _DEV
-	m_triggerSystem->DebugRegToDraw();
-#endif
-	
 	PERF_GPU_TIMESTAMP(_SCENE_SHADOWS);
 	m_shadowSystem->RenderShadows();
 	m_globalLightSystem->RenderShadows();
@@ -856,6 +853,7 @@ void SmallWorld::Frame()
 
 	if( m_mode == StateMode::LIVE )
 	{
+		m_triggerSystem->CheckOverlaps();
 		m_scriptSystem->Update(m_dt);
 	}
 
@@ -863,15 +861,11 @@ void SmallWorld::Frame()
 
 	m_sceneGraph->Update();
 
-	m_collisionSystem->UpdateTransformations();
-
 	m_physicsSystem->UpdateTransformations();
-
 	if( m_mode == StateMode::LIVE )
-	{
 		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
-	}
-
+	
+	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();
 	
 	m_frustumMgr->Clear();
@@ -883,10 +877,6 @@ void SmallWorld::Frame()
 
 	m_skeletonSystem->UpdateBuffers();
 	m_staticMeshSystem->RegToDraw();
-
-#ifdef _DEV
-	m_triggerSystem->DebugRegToDraw();
-#endif
 
 	for(auto& it: m_scenes)
 	{
