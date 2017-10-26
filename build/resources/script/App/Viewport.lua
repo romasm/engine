@@ -324,6 +324,7 @@ function Viewport:ToggleGamemode()
         player.camera:SetRotation(cameraRot.x, cameraRot.y, 0)
 
         player.camera:Activate(self.lua_world.scenepl)
+        
         player:Activate()
 
         self.drawhud = false

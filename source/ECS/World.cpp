@@ -18,6 +18,7 @@ BaseWorld::BaseWorld( uint32_t id )
 	m_scenes.reserve(16);
 
 	m_dt = 0;
+	frameID = 0;
 
 	copyBuffer = new uint8_t[COPY_BUFFER_SIZE];
 }
@@ -136,6 +137,7 @@ void BaseWorld::Close()
 	_DELETE(physConstraintSolver);
 	_DELETE(physBroadphase);
 	_DELETE(physCollisionDispatcher);
+	_DELETE(physGhostCallback);
 	_DELETE(physCollisionConfiguration);
 
 	_DELETE_ARRAY(copyBuffer);
@@ -542,6 +544,9 @@ World::World( uint32_t id ) : BaseWorld( id )
 	physDebugDrawer = new CollisionDebugDrawer(&dbgDrawer);
 	physDynamicsWorld->setDebugDrawer(physDebugDrawer);
 
+	physGhostCallback = new btGhostPairCallback();
+	physDynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(physGhostCallback);
+	
 	m_frustumMgr = new FrustumMgr;
 	
 	m_sceneGraph = new SceneGraph(SCENEGRAPH_SIZE, this);
@@ -646,14 +651,12 @@ void World::Frame()
 
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
+	frameID++;
 	
 	// start update
 
 	if( m_mode == StateMode::LIVE )
-	{
-		m_triggerSystem->CheckOverlaps();
 		m_scriptSystem->Update(m_dt);
-	}
 
 	m_skeletonSystem->Animate(m_dt);
 
@@ -667,6 +670,9 @@ void World::Frame()
 
 	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();
+
+	if( m_mode == StateMode::LIVE )
+		m_triggerSystem->CheckOverlaps(m_dt, frameID);
 
 	m_collisionSystem->DebugDraw();	
 
@@ -769,8 +775,11 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 	physConstraintSolver = new btSequentialImpulseConstraintSolver();
 	physDynamicsWorld = new btDiscreteDynamicsWorld(physCollisionDispatcher, physBroadphase, physConstraintSolver, physCollisionConfiguration);
 
-	Vector3 defaultGravity(0, -9.81f, 0); // TODO
+	Vector3 defaultGravity(0, -10.0f, 0); // TODO
 	physDynamicsWorld->setGravity(defaultGravity);
+
+	physGhostCallback = new btGhostPairCallback();
+	physDynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(physGhostCallback);
 
 	m_frustumMgr = new FrustumMgr;
 	
@@ -848,14 +857,12 @@ void SmallWorld::Frame()
 
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
+	frameID++;
 	
 	// start update
 
 	if( m_mode == StateMode::LIVE )
-	{
-		m_triggerSystem->CheckOverlaps();
 		m_scriptSystem->Update(m_dt);
-	}
 
 	m_skeletonSystem->Animate(m_dt);
 
@@ -868,6 +875,9 @@ void SmallWorld::Frame()
 	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();
 	
+	if( m_mode == StateMode::LIVE )
+		m_triggerSystem->CheckOverlaps(m_dt, frameID);
+
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegToDraw();
 	

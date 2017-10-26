@@ -57,7 +57,7 @@ CollisionComponent* CollisionSystem::AddComponent(Entity e, bool dummy)
 	if(dummy)
 	{
 		res->object = new btCollisionObject();
-		res->object->setUserIndex(IntFromEntity(e));
+		res->object->setUserIndex(e);
 		res->object->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
 		res->object->setCollisionFlags(res->object->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
@@ -425,7 +425,7 @@ RayCastResult CollisionSystem::RayCast(Vector3& start, Vector3& end)
 	{
 		result.position = rayCallback.m_hitPointWorld;
 		result.normal = rayCallback.m_hitNormalWorld;
-		result.entity = EntityFromInt(rayCallback.m_collisionObject->getUserIndex());
+		result.entity = rayCallback.m_collisionObject->getUserIndex();
 	}
 	return result;
 }

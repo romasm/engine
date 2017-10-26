@@ -5,6 +5,8 @@
 #include "TransformSystem.h"
 #include "CollisionSystem.h"
 #include "CollisionMgr.h"
+#include "TypeMgr.h"
+
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 
 namespace EngineCore
@@ -13,8 +15,20 @@ namespace EngineCore
 	{
 		FilterNone = 0,
 		FilterByType = 1,
-		FilterByName = 2,
-		FilterByNamePart = 3,
+		FilterByTypeInv = 2,
+		FilterByName = 3,
+		FilterByNameInv = 4,
+		FilterByNamePart = 5,
+		FilterByNamePartInv = 6,
+	};
+
+	struct OverlappedEntity
+	{
+		float time;
+		uint32_t frameID; 
+
+		OverlappedEntity() : time(0.0f), frameID(0) {}
+		OverlappedEntity(float t, uint32_t f) : time(t), frameID(f) {}
 	};
 
 	struct TriggerComponent
@@ -27,8 +41,13 @@ namespace EngineCore
 		btGhostObject* object;
 		TriggerFilterType filter; 
 		string filterString; 
+		float reactionDelay;
 		
-		unordered_map<Entity, btCollisionObject*> overlappingMap;
+		unordered_map<uint32_t, OverlappedEntity> overlappingMap;
+
+		LuaRef* startTouch;
+		LuaRef* endTouch;
+		LuaRef* endTouchAll;
 
 		TriggerComponent()
 		{
@@ -36,6 +55,10 @@ namespace EngineCore
 			active = false;
 			object = nullptr;
 			filter = TriggerFilterType::FilterNone;
+			startTouch = nullptr;
+			endTouch = nullptr;
+			endTouchAll = nullptr;
+			reactionDelay = 0;
 		}
 	};
 
@@ -61,8 +84,10 @@ namespace EngineCore
 			return &components.getDataByArrayIdx(idx);
 		}
 		
-		void CheckOverlaps();
+		void CheckOverlaps(float dt, uint32_t frameID);
 		void UpdateTransformations();
+
+		void UpdateState(Entity e);
 		
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
@@ -78,13 +103,23 @@ namespace EngineCore
 
 		bool IsActive(Entity e);
 		void SetActive(Entity e, bool active);
-		
+
+		float GetDelay(Entity e);
+		void SetDelay(Entity e, float d);
+
+		void SetFuncStartTouch(Entity e, LuaRef func);
+		void SetFuncEndTouch(Entity e, LuaRef func);
+		void SetFuncEndTouchAll(Entity e, LuaRef func);
+
+		float GetTouchingTime(Entity e, Entity touching);
+		inline bool IsTouching(Entity e, Entity touching) {return GetTouchingTime(e, touching) != 0;}
+
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 		
 		static void RegLuaClass();
 
 	private:
-
+		bool FilterEntity(TriggerComponent& comp, Entity ent);
 		void _DeleteComponent(TriggerComponent* comp);
 
 		ComponentRArray<TriggerComponent> components;
@@ -92,6 +127,8 @@ namespace EngineCore
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 		CollisionSystem* collisionSystem;
+		TypeMgr* typeMgr;
+		NameMgr* nameMgr;
 
 		btDiscreteDynamicsWorld* dynamicsWorld;
 	};

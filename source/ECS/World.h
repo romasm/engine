@@ -368,9 +368,12 @@ namespace EngineCore
 		btCollisionDispatcher* physCollisionDispatcher;
 		btBroadphaseInterface* physBroadphase;
 		btSequentialImpulseConstraintSolver* physConstraintSolver;
+		btGhostPairCallback* physGhostCallback;
 		btDiscreteDynamicsWorld* physDynamicsWorld;
 
 		uint8_t* copyBuffer;
+
+		uint32_t frameID;
 	};
 	
 	class World: public BaseWorld

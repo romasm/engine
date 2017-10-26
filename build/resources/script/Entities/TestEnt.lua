@@ -15,11 +15,25 @@ function EntityTypes.TestEnt:init(world, ent)
     -- script add after params defined
     self.world.script:AddComponent(self.ent, self)
 
-    -- temp
-    self.world.visibility:AddComponent(self.ent)
-    self.world.staticMesh:AddComponent(self.ent)
+    -- collision
+    self.world.collision:AddComponent(self.ent, false)
+    self.world.collision:AddBoxCollider(self.ent, Vector3.Zero, Quaternion.Identity, Vector3(2, 2, 2))
+
+    self.world.trigger:AddComponent(self.ent)
+    self.world.trigger:SetFilterType(self.ent, 1)
+    self.world.trigger:SetFilterString(self.ent, "TestPlayer")
+
+    self.world.trigger:SetFuncStartTouch(self.ent, function(trigger, ent, time) EntityTypes.TestEnt.testTrigger(true) end )
+    self.world.trigger:SetFuncEndTouch(self.ent, function(trigger, ent, time) EntityTypes.TestEnt.testTrigger(false) end )
+
+    self.world.trigger:UpdateState(self.ent)
 
     return true
+end
+
+function EntityTypes.TestEnt.testTrigger(state)
+    local light = Viewport.lua_world.world:GetLuaEntity(Viewport.lua_world.world:GetEntityByName("trig_light"))
+    light:Enable(state)
 end
 
 function EntityTypes.TestEnt:initVars()
@@ -27,11 +41,11 @@ function EntityTypes.TestEnt:initVars()
     self.p_rot_speed = 1.0
 
     -- lifetime only exist vars
-    self.current_rot = 0
+    self.current_time = 0
 end
-
+--[[
 function EntityTypes.TestEnt:onTick(dt)
-    local rot = self:GetRotationL()
-    self.current_rot = rot.y + self.p_rot_speed * 0.001 * dt
-    self:SetRotation(rot.x, self.current_rot, rot.z)
+    self.current_time = self.current_time + 0.001 * dt
+    self:SetPosition(math.sin(self.current_time) * 5.0, 0, 0)
 end
+--]]

@@ -98,7 +98,7 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 	info.m_angularSleepingThreshold = SLEEP_THRESHOLD_ANGULAR;
 
 	res->body = new btRigidBody(info);
-	res->body->setUserIndex(IntFromEntity(e));
+	res->body->setUserIndex(e);
 	res->body->setCollisionFlags( res->body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
 	
 	dynamicsWorld->addRigidBody(res->body, collisionGroup, collisionMask);

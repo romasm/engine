@@ -35,7 +35,7 @@ namespace EngineCore
 		Special4 = 2048,
 		Special5 = 4096,
 
-		Physics = Default | Static | Kinematic | Debris | Character,
+		Physics = Default | Static | Kinematic | Debris | Character | Trigger,
 		All = -1 //all bits sets
 	};
 

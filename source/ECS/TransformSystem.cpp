@@ -178,7 +178,7 @@ uint32_t TransformSystem::Deserialize(Entity e, uint8_t* data)
 	if(!attachments_map)
 		ERR("Attachments map uninitialized, need PreLoad call first!");
 	else
-		attachments_map->insert(make_pair(UintFromEntity(e), parentName));
+		attachments_map->insert(make_pair((uint32_t)e, parentName));
 
 	return size;
 }
@@ -203,7 +203,7 @@ bool TransformSystem::PostLoadParentsResolve()
 		if(parent.isnull())
 			ERR("Parent entity %s does not exist!", it.second.c_str());
 		else
-			Attach(EntityFromUint(it.first), parent);
+			Attach(it.first, parent);
 	}
 
 	attachments_map->clear();

@@ -7,6 +7,8 @@ TriggerSystem::TriggerSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 	world = w;
 	transformSystem = world->GetTransformSystem();
 	collisionSystem = world->GetCollisionSystem();
+	typeMgr = world->GetTypeMgr();
+	nameMgr = world->GetNameMgr();
 
 	dynamicsWorld = dynamicsW;
 
@@ -22,49 +24,106 @@ TriggerSystem::~TriggerSystem()
 	}
 }
 
-void TriggerSystem::CheckOverlaps()
+void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 {
 	for(auto& i: *components.data())
 	{
 		if(!i.active)
 			continue;
 
-		int32_t overlapsCount =  i.object->getNumOverlappingObjects();
+		Entity trigEnt = i.get_entity();
+
+		int32_t overlapsCount = i.object->getNumOverlappingObjects();
 		if( overlapsCount == 0 )
 		{
 			if( i.overlappingMap.empty() )
 				continue;
 
+			bool endTouchAll = false;
 			for(auto& it: i.overlappingMap)
 			{
-				if(i.endTouch)
-					LUA_CALL((*i.endTouch)(it.first),);
+				if( i.reactionDelay <= it.second.time )
+				{
+					if( i.endTouch )
+						LUA_CALL((*i.endTouch)(trigEnt, Entity(it.first), it.second.time),);
+					endTouchAll = true;
+				}
 			}
 
-			if(i.endTouchAll)
-				LUA_CALL((*i.endTouchAll)(it.first),);
+			if( i.endTouchAll && endTouchAll )
+				LUA_CALL((*i.endTouchAll)(trigEnt),);
 
 			i.overlappingMap.clear();
 		}
 		else
 		{
-			for(uint32_t j = 0; j < overlapsCount; j++)
+			for(int32_t j = 0; j < overlapsCount; j++)
 			{
 				auto overlappedObj = i.object->getOverlappingObject(j);
-				Entity ent = EntityFromInt(overlappedObj->getUserIndex());
+				Entity ent = overlappedObj->getUserIndex();
 				
-				// TODO: apply filter to ent
+				if(!FilterEntity(i, ent))
+					continue;
 
 				auto it = i.overlappingMap.find(ent);				
 				if( it == i.overlappingMap.end() )
 				{
-					i.overlappingMap.insert(make_pair(ent, overlappedObj));
-					if(i.startTouch)
-						LUA_CALL((*i.startTouch)(it.first),);
+					i.overlappingMap.insert(make_pair(ent, OverlappedEntity(dt, frameID)));
+					if( i.startTouch && i.reactionDelay <= dt )
+						LUA_CALL((*i.startTouch)(trigEnt, ent, dt),);
+				}
+				else
+				{
+					const float newTime = it->second.time + dt;
+					if( i.startTouch && i.reactionDelay > it->second.time && i.reactionDelay <= newTime )
+						LUA_CALL((*i.startTouch)(trigEnt, ent, newTime),);
+
+					it->second.time = newTime;
+					it->second.frameID = frameID;
+				}
+			}
+
+			auto overlapIt = i.overlappingMap.begin();
+			while(overlapIt != i.overlappingMap.end())
+			{
+				if( overlapIt->second.frameID != frameID )
+				{
+					if( i.endTouch && i.reactionDelay <= overlapIt->second.time )
+						LUA_CALL((*i.endTouch)(trigEnt, Entity(overlapIt->first), overlapIt->second.time),);
+					overlapIt = i.overlappingMap.erase(overlapIt);
+				}
+				else
+				{
+					++overlapIt;
 				}
 			}
 		}
 	}
+}
+
+bool TriggerSystem::FilterEntity(TriggerComponent& comp, Entity ent)
+{
+	switch(comp.filter)
+	{
+	case TriggerFilterType::FilterNone:
+		return true;
+
+	case TriggerFilterType::FilterByType:
+		return (typeMgr->GetType(ent) == comp.filterString);
+	case TriggerFilterType::FilterByTypeInv:
+		return (typeMgr->GetType(ent) != comp.filterString);
+
+	case TriggerFilterType::FilterByName:
+		return (nameMgr->GetName(ent) == comp.filterString);
+	case TriggerFilterType::FilterByNameInv:
+		return (nameMgr->GetName(ent) != comp.filterString);
+
+	case TriggerFilterType::FilterByNamePart:
+		return (nameMgr->GetName(ent).find(comp.filterString) != string::npos);
+	case TriggerFilterType::FilterByNamePartInv:
+		return (nameMgr->GetName(ent).find(comp.filterString) == string::npos);
+	}
+	return false;
 }
 
 void TriggerSystem::UpdateTransformations()
@@ -97,9 +156,13 @@ TriggerComponent* TriggerSystem::AddComponent(Entity e)
 	res->active = true;
 	res->filter = TriggerFilterType::FilterNone;
 	res->filterString = "";
+	res->reactionDelay = 0;
+
+	res->overlappingMap.reserve(10);
 
 	int32_t collisionGroup = CollisionGroups::Trigger;
-	int32_t collisionMask = CollisionGroups::All;
+	int32_t collisionMask = CollisionGroups::All & ~CollisionGroups::Static;
+	collisionMask &= ~CollisionGroups::Debris;
 
 	btCollisionShape* collision = CollisionMgr::GetResourcePtr(CollisionMgr::nullres);
 	auto collisionComp = collisionSystem->GetComponent(e);
@@ -120,12 +183,12 @@ TriggerComponent* TriggerSystem::AddComponent(Entity e)
 	}
 
 	res->object = new btGhostObject();
-	res->object->setUserIndex(IntFromEntity(e));
-	res->object->setCollisionShape(CollisionMgr::GetResourcePtr(CollisionMgr::nullres));
+	res->object->setUserIndex(e);
+	res->object->setCollisionShape(collision);
 	res->object->setCollisionFlags(res->object->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 	
 	dynamicsWorld->addCollisionObject(res->object, collisionGroup, collisionMask);
-
+	
 	return res;
 }
 
@@ -144,6 +207,9 @@ void TriggerSystem::_DeleteComponent(TriggerComponent* comp)
 	dynamicsWorld->removeCollisionObject(comp->object);
 	_DELETE(comp->object);
 	comp->overlappingMap.clear();
+	_DELETE(comp->startTouch);
+	_DELETE(comp->endTouch);
+	_DELETE(comp->endTouchAll);
 }
 
 void TriggerSystem::CopyComponent(Entity src, Entity dest)
@@ -172,6 +238,32 @@ bool TriggerSystem::SetDirty(Entity e)
 	comp.dirty = true;
 	return true;
 }
+
+void TriggerSystem::UpdateState(Entity e)
+{
+	GET_COMPONENT(void());
+	// TODO: optimize? 
+	// dynamicsWorld->resetRigidBody(comp.body)
+	dynamicsWorld->removeCollisionObject(comp.object);
+	
+	int32_t collisionGroup = CollisionGroups::Trigger;
+	int32_t collisionMask = CollisionGroups::All & ~CollisionGroups::Static;
+	collisionMask &= ~CollisionGroups::Debris;
+
+	auto collision = collisionSystem->GetCollision(e);
+	if(!collision)
+		WRN("Collision component must be set before Trigger component");
+	else
+	{
+		comp.object->setCollisionShape(collision);
+		auto collisionComp = collisionSystem->GetComponent(e);
+		collisionGroup = collisionComp->collisionGroup;
+		collisionMask = collisionComp->collisionMask;
+	}
+
+	dynamicsWorld->addCollisionObject(comp.object, collisionGroup, collisionMask);
+}
+
 
 uint32_t TriggerSystem::Serialize(Entity e, uint8_t* data)
 {
@@ -228,6 +320,31 @@ void TriggerSystem::SetActive(Entity e, bool active)
 	}
 }
 
+void TriggerSystem::SetFuncStartTouch(Entity e, LuaRef func)
+{
+	GET_COMPONENT(void());
+	_DELETE(comp.startTouch);
+	if(func.isFunction())
+		comp.startTouch = new LuaRef(func);
+}
+
+void TriggerSystem::SetFuncEndTouch(Entity e, LuaRef func)
+{
+	GET_COMPONENT(void());
+	_DELETE(comp.endTouch);
+	if(func.isFunction())
+		comp.endTouch = new LuaRef(func);
+}
+
+void TriggerSystem::SetFuncEndTouchAll(Entity e, LuaRef func)
+{
+	GET_COMPONENT(void());
+	_DELETE(comp.endTouchAll);
+	if(func.isFunction())
+		comp.endTouchAll = new LuaRef(func);
+}
+
+
 int32_t TriggerSystem::GetFilterType(Entity e)
 {
 	GET_COMPONENT(0);
@@ -252,13 +369,51 @@ void TriggerSystem::SetFilterString(Entity e, string str)
 	comp.filterString = str;
 }
 
+float TriggerSystem::GetTouchingTime(Entity e, Entity touching)
+{
+	GET_COMPONENT(0.0f);
+	auto it = comp.overlappingMap.find(touching);
+	if( it == comp.overlappingMap.end() )
+		return 0.0f;
+	return it->second.time;
+}
+
+float TriggerSystem::GetDelay(Entity e)
+{
+	GET_COMPONENT(0.0f);
+	return comp.reactionDelay;
+}
+
+void TriggerSystem::SetDelay(Entity e, float d)
+{
+	GET_COMPONENT(void());
+	comp.reactionDelay = d;
+}
+
 void TriggerSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
 		.beginClass<TriggerSystem>("TriggerSystem")
 		.addFunction("IsActive", &TriggerSystem::IsActive)
 		.addFunction("SetActive", &TriggerSystem::SetActive)
-		
+
+		.addFunction("UpdateState", &TriggerSystem::UpdateState)
+
+		.addFunction("GetDelay", &TriggerSystem::GetDelay)
+		.addFunction("SetDelay", &TriggerSystem::SetDelay)
+
+		.addFunction("GetFilterType", &TriggerSystem::GetFilterType)
+		.addFunction("SetFilterType", &TriggerSystem::SetFilterType)
+		.addFunction("GetFilterString", &TriggerSystem::GetFilterString)
+		.addFunction("SetFilterString", &TriggerSystem::SetFilterString)
+
+		.addFunction("SetFuncStartTouch", &TriggerSystem::SetFuncStartTouch)
+		.addFunction("SetFuncEndTouch", &TriggerSystem::SetFuncEndTouch)
+		.addFunction("SetFuncEndTouchAll", &TriggerSystem::SetFuncEndTouchAll)
+
+		.addFunction("GetTouchingTime", &TriggerSystem::GetTouchingTime)
+		.addFunction("IsTouching", &TriggerSystem::IsTouching)
+
 		.addFunction("AddComponent", &TriggerSystem::_AddComponent)
 		.addFunction("DeleteComponent", &TriggerSystem::DeleteComponent)
 		.addFunction("HasComponent", &TriggerSystem::HasComponent)
