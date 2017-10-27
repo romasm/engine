@@ -9,8 +9,6 @@ package.path = script_env.path..'?'..script_env.cpl_ext..';'..
     script_env.path..'?'..script_env.src_ext..';'..
     script_env.guipath..'?'..script_env.src_ext..';'
 
-require "class"
-require "script_loader"
 require "const_pathes"
 
 Gui = {}

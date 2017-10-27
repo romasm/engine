@@ -6,6 +6,12 @@
 
 namespace EngineCore
 {
+#define SCRIPT_USER_DATA_PREFIX "p_"
+
+#define SCRIPT_FUNC_TICK SCRIPT_USER_DATA_PREFIX "onTick"
+#define SCRIPT_FUNC_SPAWN SCRIPT_USER_DATA_PREFIX "onSpawn"
+#define SCRIPT_FUNC_KILL SCRIPT_USER_DATA_PREFIX "onKill"
+
 	struct luaVar
 	{
 		uint8_t type;
@@ -21,12 +27,15 @@ namespace EngineCore
 		
 		LuaRef classInstanceRef;
 		LuaRef tickFunc;
+		LuaRef spawnFunc;
+		LuaRef killFunc;
+
+		uint32_t frameID; 
 
 		RArray<luaVar> varArray;
 
 		ScriptComponent() : 
-			classInstanceRef(LSTATE),
-			tickFunc(LSTATE)
+			classInstanceRef(LSTATE), tickFunc(LSTATE), spawnFunc(LSTATE), killFunc(LSTATE)
 		{
 			parent.setnull();
 		}
@@ -53,6 +62,8 @@ namespace EngineCore
 				return;
 			comp->classInstanceRef = LuaRef(LSTATE);
 			comp->tickFunc = LuaRef(LSTATE);
+			comp->spawnFunc = LuaRef(LSTATE);
+			comp->killFunc = LuaRef(LSTATE);
 			comp->varArray.destroy();
 			components.remove(e.index());
 		}
@@ -80,10 +91,17 @@ namespace EngineCore
 			return comp->classInstanceRef;
 		}
 
-		void Update(float dt);
+		void Update(float dt, uint32_t frameID);
+
+		void SendKill(Entity e);
+		void UpdateScript(Entity e);
 
 		LuaRef GetLuaFunction(Entity e, string& funcName);
-		LuaRef GetLuaFunction(ScriptComponent& comp, string& funcName);
+		LuaRef GetLuaFunction(ScriptComponent& comp, const char* funcName);
+		inline LuaRef GetLuaFunction(ScriptComponent& comp, string& funcName)
+		{
+			return GetLuaFunction(comp, funcName.data());
+		}
 
 	#ifdef _DEV
 		void UpdateLuaFuncs();
@@ -102,6 +120,7 @@ namespace EngineCore
 				.endClass();
 		}
 	private:
+		void _UpdateScript(ScriptComponent* comp);
 		void initLuaData(ScriptComponent& comp);
 
 		ComponentRArray<ScriptComponent> components;

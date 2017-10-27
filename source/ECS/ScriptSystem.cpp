@@ -17,6 +17,7 @@ ScriptComponent* ScriptSystem::AddComponent(Entity e, string& className)
 {
 	ScriptComponent* res = components.add(e.index());
 	res->parent = e;
+	res->frameID = 0;
 		
 	res->classInstanceRef = typeMgr->LuaConstructor(className, e);
 	if(!res->classInstanceRef.isTable())
@@ -26,7 +27,7 @@ ScriptComponent* ScriptSystem::AddComponent(Entity e, string& className)
 		return nullptr;
 	}
 	
-	initLuaData(*res);
+	_UpdateScript(res);
 
 	return res;
 }
@@ -35,7 +36,8 @@ ScriptComponent* ScriptSystem::AddComponent(Entity e, LuaRef& classInstanceRef)
 {
 	ScriptComponent* res = components.add(e.index());
 	res->parent = e;
-	
+	res->frameID = 0;
+
 	if(!classInstanceRef.isTable())
 	{
 		string className = typeMgr->GetType(e);
@@ -46,12 +48,12 @@ ScriptComponent* ScriptSystem::AddComponent(Entity e, LuaRef& classInstanceRef)
 	
 	res->classInstanceRef = classInstanceRef;
 
-	initLuaData(*res);
+	_UpdateScript(res);
 
 	return res;
 }
 
-void ScriptSystem::CopyComponent(Entity src, Entity dest)
+void ScriptSystem::CopyComponent(Entity src, Entity dest) // TODO unify
 {
 	auto comp = GetComponent(src);
 	if(!comp)
@@ -67,13 +69,6 @@ void ScriptSystem::CopyComponent(Entity src, Entity dest)
 	auto newComp = AddComponent(dest, className);
 	if(!newComp)
 		return;
-
-	if(newComp->varArray.size() != comp->varArray.size())
-	{
-		ERR("Cant init lua params array for copied entity, wrong lua construction code in %s !", className.c_str());
-		DeleteComponent(dest);
-		return;
-	}
 	
 	for(uint32_t i = 0; i < comp->varArray.size(); i++)
 	{
@@ -89,25 +84,66 @@ void ScriptSystem::CopyComponent(Entity src, Entity dest)
 		case LUA_TSTRING:
 			newComp->classInstanceRef[varName] = comp->classInstanceRef[varName].cast<string>();
 			break;
+		case LUA_TFUNCTION:
+			// link on same function, correct?
+			newComp->classInstanceRef[varName] = comp->classInstanceRef[varName];
+			break;
 		}
+	}
+
+	_UpdateScript(comp);
+}
+
+void ScriptSystem::SendKill(Entity e)
+{
+	auto comp = GetComponent(e);
+	if(!comp)
+		return;
+
+	if( comp->frameID > 0 && !comp->killFunc.isNil() )
+		LUA_CALL(comp->killFunc(comp->classInstanceRef),);
+}
+
+void ScriptSystem::Update(float dt, uint32_t frameID)
+{
+	for(auto& i: *components.data())
+	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
+		if(i.frameID == 0)
+		{
+			if(!i.spawnFunc.isNil())
+				LUA_CALL(i.spawnFunc(i.classInstanceRef),);
+		}
+
+		if(!i.tickFunc.isNil())
+			LUA_CALL(i.tickFunc(i.classInstanceRef, dt),);
+
+		i.frameID = frameID;
 	}
 }
 
-void ScriptSystem::initLuaData(ScriptComponent& comp)
+void ScriptSystem::UpdateScript(Entity e)
 {
-	comp.tickFunc = comp.classInstanceRef["onTick"];
-	if(!comp.tickFunc.isFunction())
-		comp.tickFunc = LuaRef(LSTATE);
+	auto comp = GetComponent(e);
+	if(!comp)
+		return;
 
+	_UpdateScript(comp);
+}
+
+void ScriptSystem::_UpdateScript(ScriptComponent* comp)
+{
 	DArray<luaVar> vars;
 
-	Iterator lua_data(comp.classInstanceRef);
+	Iterator lua_data(comp->classInstanceRef);
 	while(!lua_data.isNil())
 	{
 		if(lua_data.key().isString())
 		{
 			string varName = lua_data.key().cast<string>();
-			if( varName.find("p_") != string::npos )
+			if( varName.find(SCRIPT_USER_DATA_PREFIX) != string::npos )
 				vars.push_back(luaVar(varName, lua_data.value().type()));
 		}
 		++lua_data;
@@ -116,21 +152,14 @@ void ScriptSystem::initLuaData(ScriptComponent& comp)
 	if(vars.empty())
 		return;
 
-	comp.varArray.create(vars.size());
+	comp->varArray.destroy();
+	comp->varArray.create(vars.size());
 	for(auto& it: vars)
-		comp.varArray.push_back(it);
-}
+		comp->varArray.push_back(it);
 
-void ScriptSystem::Update(float dt)
-{
-	for(auto& i: *components.data())
-	{
-		if( !world->IsEntityNeedProcess(i.get_entity()) )
-			continue;
-
-		if(!i.tickFunc.isNil())
-			LUA_CALL(i.tickFunc(i.classInstanceRef, dt),);
-	}
+	comp->tickFunc = GetLuaFunction(*comp, SCRIPT_FUNC_TICK);
+	comp->spawnFunc = GetLuaFunction(*comp, SCRIPT_FUNC_SPAWN);
+	comp->killFunc = GetLuaFunction(*comp, SCRIPT_FUNC_KILL);
 }
 
 LuaRef ScriptSystem::GetLuaFunction(Entity e, string& funcName)
@@ -142,9 +171,9 @@ LuaRef ScriptSystem::GetLuaFunction(Entity e, string& funcName)
 	return GetLuaFunction(*comp, funcName);
 }
 
-LuaRef ScriptSystem::GetLuaFunction(ScriptComponent& comp, string& funcName)
+LuaRef ScriptSystem::GetLuaFunction(ScriptComponent& comp, const char* funcName)
 {
-	LuaRef luaFunc = comp.classInstanceRef[funcName.c_str()];
+	LuaRef luaFunc = comp.classInstanceRef[funcName];
 	if(!luaFunc.isFunction())
 		return LuaRef(LSTATE);
 
@@ -157,7 +186,11 @@ void ScriptSystem::UpdateLuaFuncs()
 	for(auto& i: *components.data())
 	{
 		if(!i.tickFunc.isNil())
-			i.tickFunc = i.classInstanceRef["onTick"];
+			i.tickFunc = i.classInstanceRef[SCRIPT_FUNC_TICK];
+		if(!i.spawnFunc.isNil())
+			i.spawnFunc = i.classInstanceRef[SCRIPT_FUNC_SPAWN];
+		if(!i.killFunc.isNil())
+			i.killFunc = i.classInstanceRef[SCRIPT_FUNC_KILL];
 	}
 }
 #endif
@@ -209,14 +242,13 @@ uint32_t ScriptSystem::Serialize(Entity e, uint8_t* data)
 		case LUA_TSTRING:
 			{
 				string var_str = comp->classInstanceRef[it.name].cast<string>();
-				uint32_t var_str_size = (uint32_t)var_str.size();
-				*(uint32_t*)t_data = var_str_size;
-				t_data += sizeof(uint32_t);
-				size += sizeof(uint32_t);
-				
-				memcpy_s(t_data, var_str_size, var_str.data(), var_str_size);
-				t_data += var_str_size * sizeof(char);
-				size += var_str_size * sizeof(char);
+				StringSerialize(var_str, &t_data, &size);
+			}
+			break;
+		case LUA_TFUNCTION:
+			{
+				string funcBytecode = LuaVM::FunctionSerialize(comp->classInstanceRef[it.name]);
+				StringSerialize(funcBytecode, &t_data, &size);
 			}
 			break;
 		}
@@ -242,9 +274,6 @@ uint32_t ScriptSystem::Deserialize(Entity e, uint8_t* data)
 	if(!comp)
 		return 0;
 
-	if(comp->varArray.size() != vars_count)
-		WRN("Lua vars count is wrong in data struct for class %s", className.c_str());
-
 	for(uint32_t i = 0; i < vars_count; i++)
 	{
 		uint32_t name_size = *(uint32_t*)t_data;
@@ -255,15 +284,6 @@ uint32_t ScriptSystem::Deserialize(Entity e, uint8_t* data)
 
 		uint8_t type = *(uint8_t*)t_data;
 		t_data += sizeof(uint8_t);
-
-		auto var_type = comp->classInstanceRef[name].type();
-		if( var_type == LUA_TNIL )
-		{
-			ERR("Lua var %s cant be found in class %s", name.c_str(), className.c_str());
-			return size;
-		}
-		if( var_type != type )
-			WRN("Lua var %s type is wrong in data struct for class %s", name.c_str(), className.c_str());
 
 		switch (type)
 		{
@@ -276,18 +296,15 @@ uint32_t ScriptSystem::Deserialize(Entity e, uint8_t* data)
 			t_data += sizeof(float);
 			break;
 		case LUA_TSTRING:
-			{
-				uint32_t var_str_size = *(uint32_t*)t_data;
-				t_data += sizeof(uint32_t);
-
-				string var_str((char*)t_data, var_str_size);
-				t_data += var_str_size * sizeof(char);
-
-				comp->classInstanceRef[name] = var_str;
-			}
+			comp->classInstanceRef[name] = StringDeserialize(&t_data);
+			break;
+		case LUA_TFUNCTION:
+			comp->classInstanceRef[name] = LuaVM::FunctionDeserialize(StringDeserialize(&t_data));
 			break;
 		}
 	}
+
+	_UpdateScript(comp);
 
 	return size;
 }

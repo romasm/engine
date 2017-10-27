@@ -4,6 +4,9 @@
 
 namespace EngineCore
 {
+#define LUA_SCRIPT_CLASS PATH_SCRIPTS "class"
+#define LUA_SCRIPT_LOADER PATH_SCRIPTS "script_loader"
+
 #define LSTATE LuaVM::Get()->GetState()
 #define LUA_CALL(call, err) try{call;} catch(LuaException e){err;}
 
@@ -14,6 +17,10 @@ namespace EngineCore
 		~LuaVM();
 
 		bool LoadScript(string& filename);
+		void InitFunctions();
+
+		static string FunctionSerialize(LuaRef func);
+		static LuaRef FunctionDeserialize(string& func);
 
 		lua_State* GetState(){return L;}
 
@@ -29,6 +36,8 @@ namespace EngineCore
 		void HandleError();
 
 		lua_State *L;
+		LuaRef* functionSerialize;
+		LuaRef* functionDeserialize;
 	};
 
 	class luaStringList

@@ -76,6 +76,8 @@ function EntityTypes.TestPlayer:initVars()
     self.p_player_radius = 0.3
     self.p_player_height = 1.8
 
+    self.p_onTick = function(self, dt) EntityTypes.TestPlayer.onTick(self, dt) end
+
     -- lifetime only exist vars
     self.forward = 0
     self.backward = 0

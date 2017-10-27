@@ -5,12 +5,17 @@
 #include "TransformSystem.h"
 #include "CollisionSystem.h"
 #include "CollisionMgr.h"
+#include "ScriptSystem.h"
 #include "TypeMgr.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 
 namespace EngineCore
 {
+#define TRIGGER_FUNC_START SCRIPT_USER_DATA_PREFIX "onStartTouch"
+#define TRIGGER_FUNC_END SCRIPT_USER_DATA_PREFIX "onEndTouch"
+#define TRIGGER_FUNC_ENDALL SCRIPT_USER_DATA_PREFIX "onEndTouchAll"
+
 	enum TriggerFilterType
 	{
 		FilterNone = 0,
@@ -36,28 +41,25 @@ namespace EngineCore
 		ENTITY_IN_COMPONENT
 		
 		bool dirty;
-		bool active;
 
-		btGhostObject* object;
+		bool active;
 		TriggerFilterType filter; 
 		string filterString; 
 		float reactionDelay;
-		
+
+		btGhostObject* object;
 		unordered_map<uint32_t, OverlappedEntity> overlappingMap;
 
-		LuaRef* startTouch;
-		LuaRef* endTouch;
-		LuaRef* endTouchAll;
+		LuaRef startTouch;
+		LuaRef endTouch;
+		LuaRef endTouchAll;
 
-		TriggerComponent()
+		TriggerComponent() : startTouch(LSTATE), endTouch(LSTATE), endTouchAll(LSTATE)
 		{
 			dirty = false;
 			active = false;
 			object = nullptr;
 			filter = TriggerFilterType::FilterNone;
-			startTouch = nullptr;
-			endTouch = nullptr;
-			endTouchAll = nullptr;
 			reactionDelay = 0;
 		}
 	};
@@ -88,6 +90,11 @@ namespace EngineCore
 		void UpdateTransformations();
 
 		void UpdateState(Entity e);
+		void UpdateCallbacks(Entity e);
+
+	#ifdef _DEV
+		void UpdateLuaFuncs();
+	#endif
 		
 		uint32_t Serialize(Entity e, uint8_t* data);
 		uint32_t Deserialize(Entity e, uint8_t* data);
@@ -106,11 +113,7 @@ namespace EngineCore
 
 		float GetDelay(Entity e);
 		void SetDelay(Entity e, float d);
-
-		void SetFuncStartTouch(Entity e, LuaRef func);
-		void SetFuncEndTouch(Entity e, LuaRef func);
-		void SetFuncEndTouchAll(Entity e, LuaRef func);
-
+		
 		float GetTouchingTime(Entity e, Entity touching);
 		inline bool IsTouching(Entity e, Entity touching) {return GetTouchingTime(e, touching) != 0;}
 
@@ -119,6 +122,7 @@ namespace EngineCore
 		static void RegLuaClass();
 
 	private:
+		void _UpdateCallbacks(TriggerComponent* comp, ScriptComponent* script);
 		bool FilterEntity(TriggerComponent& comp, Entity ent);
 		void _DeleteComponent(TriggerComponent* comp);
 
@@ -127,6 +131,7 @@ namespace EngineCore
 		BaseWorld* world;
 		TransformSystem* transformSystem;
 		CollisionSystem* collisionSystem;
+		ScriptSystem* scriptSystem;
 		TypeMgr* typeMgr;
 		NameMgr* nameMgr;
 

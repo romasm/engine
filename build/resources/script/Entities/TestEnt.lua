@@ -23,9 +23,6 @@ function EntityTypes.TestEnt:init(world, ent)
     self.world.trigger:SetFilterType(self.ent, 1)
     self.world.trigger:SetFilterString(self.ent, "TestPlayer")
 
-    self.world.trigger:SetFuncStartTouch(self.ent, function(trigger, ent, time) EntityTypes.TestEnt.testTrigger(true) end )
-    self.world.trigger:SetFuncEndTouch(self.ent, function(trigger, ent, time) EntityTypes.TestEnt.testTrigger(false) end )
-
     self.world.trigger:UpdateState(self.ent)
 
     return true
@@ -39,13 +36,13 @@ end
 function EntityTypes.TestEnt:initVars()
     -- params (ref in c++) "p_" - is a key
     self.p_rot_speed = 1.0
+    self.p_onStartTouch = function(self, activator, time) print("StartTouch") end
 
     -- lifetime only exist vars
     self.current_time = 0
 end
---[[
+
 function EntityTypes.TestEnt:onTick(dt)
     self.current_time = self.current_time + 0.001 * dt
     self:SetPosition(math.sin(self.current_time) * 5.0, 0, 0)
 end
---]]

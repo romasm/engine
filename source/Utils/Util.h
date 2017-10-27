@@ -8,6 +8,29 @@ using namespace EngineCore;
 
 // Строковые функции
 
+inline void StringSerialize(string& str, uint8_t** dataPtr, uint32_t* size)
+{
+	uint32_t str_size = (uint32_t)str.size();
+	*(uint32_t*)(*dataPtr) = str_size;
+	(*dataPtr) += sizeof(uint32_t);
+	(*size) += sizeof(uint32_t);
+
+	memcpy_s((*dataPtr), str_size, str.data(), str_size);
+	(*dataPtr) += str_size * sizeof(char);
+	(*size) += str_size * sizeof(char);
+}
+
+inline string StringDeserialize(uint8_t** dataPtr)
+{
+	uint32_t str_size = *(uint32_t*)(*dataPtr);
+	(*dataPtr) += sizeof(uint32_t);
+
+	string var_str((char*)(*dataPtr), str_size);
+	(*dataPtr) += str_size * sizeof(char);
+
+	return var_str;
+}
+
 inline uint64_t GetLastSlash( const string& s )
 {
 	auto slash = s.rfind('\\');

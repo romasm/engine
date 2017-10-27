@@ -175,6 +175,8 @@ void BaseWorld::DestroyEntity(Entity e)
 
 void BaseWorld::destroyEntity(Entity e)
 {
+	m_scriptSystem->SendKill(e);
+
 	// immidiate
 	m_transformSystem->DeleteComponent(e);
 	m_visibilitySystem->DeleteComponent(e);
@@ -182,10 +184,10 @@ void BaseWorld::destroyEntity(Entity e)
 	if(m_earlyVisibilitySystem)
 		m_earlyVisibilitySystem->DeleteComponent(e);
 
-	m_scriptSystem->DeleteComponent(e);
 	m_physicsSystem->DeleteComponent(e);
 	m_triggerSystem->DeleteComponent(e);
 	m_collisionSystem->DeleteComponent(e);
+	m_scriptSystem->DeleteComponent(e);
 	m_staticMeshSystem->DeleteComponent(e);
 	m_skeletonSystem->DeleteComponent(e);
 	m_cameraSystem->DeleteComponent(e);
@@ -652,11 +654,13 @@ void World::Frame()
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
 	frameID++;
+	if( frameID == numeric_limits<uint32_t>::max() )
+		frameID = 1;
 	
 	// start update
 
 	if( m_mode == StateMode::LIVE )
-		m_scriptSystem->Update(m_dt);
+		m_scriptSystem->Update(m_dt, frameID);
 
 	m_skeletonSystem->Animate(m_dt);
 
@@ -858,11 +862,13 @@ void SmallWorld::Frame()
 	m_world_timer.Frame();
 	m_dt = m_world_timer.dt();
 	frameID++;
+	if( frameID == numeric_limits<uint32_t>::max() )
+		frameID = 1;
 	
 	// start update
 
 	if( m_mode == StateMode::LIVE )
-		m_scriptSystem->Update(m_dt);
+		m_scriptSystem->Update(m_dt, frameID);
 
 	m_skeletonSystem->Animate(m_dt);
 

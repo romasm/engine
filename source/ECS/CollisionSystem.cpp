@@ -271,7 +271,7 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 
 	auto comp = AddComponent(e, isDummy);
 	if(!comp)
-		return 0;
+		return 0; // TODO must return size
 
 	comp->collisionGroup = *(int32_t*)t_data;
 	t_data += sizeof(int32_t);

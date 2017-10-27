@@ -57,3 +57,17 @@ function loader:check_modif()
         end
     end
 end
+
+function loader.functionSerialize(func)
+    return string.dump(func)
+end
+
+function loader.functionDeserialize(code)
+    local func, errorMsg = load(code, "")
+    if func ~= nil then
+        return func
+    else
+        error(errorMsg)
+        return nil
+    end
+end

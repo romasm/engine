@@ -59,6 +59,14 @@ public:
 		}
 
 		// Lua
+		if(!LuaVM::Get()->LoadScript(string(LUA_SCRIPT_LOADER)) || !LuaVM::Get()->LoadScript(string(LUA_SCRIPT_CLASS)))
+		{
+			ERR("Unable to initialize Lua classes or Lua loader");
+			return;
+		}
+
+		LuaVM::Get()->InitFunctions();
+
 		if(!LuaVM::Get()->LoadScript(luaScript))
 		{
 			ERR("Unable to initialize Lua Main");

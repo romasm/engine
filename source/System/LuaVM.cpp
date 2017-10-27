@@ -10,22 +10,34 @@ using namespace EngineCore;
 
 LuaVM* LuaVM::m_instance = nullptr;
 
+template<typename F, typename T>
+static T* castTypeLuaPtr(F* p)
+{
+	return static_cast<T*>(p);
+}
+#define ADD_LUACAST_PTR(from, to) .addFunction(#from"_to_"#to, &castTypeLuaPtr<##from, ##to>)
+
+template<typename F, typename T>
+static T castTypeLua(F p)
+{
+	return static_cast<T>(p);
+}
+#define ADD_LUACAST(from, to) .addFunction(#from"_to_"#to, &castTypeLua<##from, ##to>)
+
 LuaVM::LuaVM()
 {	
 	if (!m_instance)
 	{
 		m_instance = this;
-		L = nullptr;
-		Init();
-	}
-	/*else
-		ERR(LuaVM уже был создан);*/
-}
+		
+		functionSerialize = nullptr;
+		functionDeserialize = nullptr;
 
-LuaVM::~LuaVM()
-{
-	m_instance = nullptr;
-	Close();
+		L = luaL_newstate();
+		luaL_openlibs(L);
+	}
+	else
+		ERR("Only one instance of LuaVM is allowed!");
 }
 
 static int printfunc(lua_State* L)
@@ -54,29 +66,32 @@ static int errorfunc(lua_State* L) // todo
 	return 0;
 }
 
-template<typename F, typename T>
-static T* castTypeLuaPtr(F* p)
+void LuaVM::InitFunctions()
 {
-	return static_cast<T*>(p);
-}
-#define ADD_LUACAST_PTR(from, to) .addFunction(#from"_to_"#to, &castTypeLuaPtr<##from, ##to>)
+	LuaRef luaLoader = getGlobal(L, "loader");
+	if(!luaLoader.isTable())
+	{
+		ERR("Lua loader is missing");
+	}
+	else
+	{
+		LuaRef funcSerialize = luaLoader["functionSerialize"];
+		if( funcSerialize.isFunction() )
+			functionSerialize = new LuaRef(funcSerialize);
+		else
+			ERR("Lua functionSerialize is missing");
 
-template<typename F, typename T>
-static T castTypeLua(F p)
-{
-	return static_cast<T>(p);
-}
-#define ADD_LUACAST(from, to) .addFunction(#from"_to_"#to, &castTypeLua<##from, ##to>)
-
-bool LuaVM::Init()
-{
-	L = luaL_newstate();
-    luaL_openlibs(L);
+		LuaRef funcDeserialize = luaLoader["functionDeserialize"];
+		if( funcDeserialize.isFunction() )
+			functionDeserialize = new LuaRef(funcDeserialize);
+		else
+			ERR("Lua functionDeserialize is missing");
+	}
 
 	getGlobalNamespace(L)
 		.addFunction("print", &printfunc)
 		.addFunction("error", &errorfunc)
-		
+
 		.beginNamespace("cast")
 		ADD_LUACAST(LONG, int)
 		.endNamespace();
@@ -90,8 +105,27 @@ bool LuaVM::Init()
 	Text::RegLuaClass();
 	Material::RegLuaClass();
 	SimpleShaderInst::RegLuaClass();
+}
 
-	return true;
+LuaVM::~LuaVM()
+{
+	_DELETE(functionSerialize);
+	m_instance = nullptr;
+	//lua_gc(L, LUA_GCCOLLECT, 0);
+}
+
+string LuaVM::FunctionSerialize(LuaRef func)
+{
+	if(!LuaVM::Get()->functionSerialize)
+		return "";
+	return (*LuaVM::Get()->functionSerialize)(func).cast<string>();
+}
+
+LuaRef LuaVM::FunctionDeserialize(string& func)
+{
+	if(!LuaVM::Get()->functionDeserialize)
+		return LuaRef(LuaVM::Get()->L);
+	return (*LuaVM::Get()->functionDeserialize)(func);
 }
 
 void LuaVM::RegLuaToolClass()
@@ -120,11 +154,6 @@ void LuaVM::RegLuaToolClass()
 		.endClass();
 }
 
-void LuaVM::Close()
-{
-	//lua_gc(L, LUA_GCCOLLECT, 0);
-}
-
 void LuaVM::HandleError()
 {
     std::string str = lua_tostring(L, lua_gettop(L));
@@ -146,20 +175,19 @@ void LuaVM::HandleError()
 
 bool LuaVM::LoadScript(string& filename)
 {  
-	string sourceFile = filename + EXT_SCRIPT;
-	string comlipedFile = filename + EXT_SCRIPT_COMPILED;
-	if( FileIO::IsExist(comlipedFile) )
-		sourceFile = comlipedFile;
+	string scriptFile = filename + EXT_SCRIPT_COMPILED;
+	if( !FileIO::IsExist(scriptFile) )
+		scriptFile = filename + EXT_SCRIPT;
 
-	LOG("Loading script %s", sourceFile.data());
-	int error = luaL_dofile(L, sourceFile.data());
+	int error = luaL_dofile(L, scriptFile.data());
     if(error)
 	{
+		ERR("Script %s isn\'t loaded", scriptFile.data());
         HandleError();
     }
 	else
 	{
-		LOG("Script %s is loaded", sourceFile.data());
+		LOG("Script %s is loaded", scriptFile.data());
         return true;
     }
 	

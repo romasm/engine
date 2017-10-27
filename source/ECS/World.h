@@ -222,6 +222,12 @@ namespace EngineCore
 			return res;
 		}
 
+		void UpdateScript(Entity e)
+		{
+			m_scriptSystem->UpdateScript(e);
+			m_triggerSystem->UpdateCallbacks(e);
+		}
+
 	#ifdef _EDITOR
 		inline void ConstructEditorGui(Entity e)
 		{
@@ -241,6 +247,7 @@ namespace EngineCore
 			m_typeMgr->UpdateLuaFuncs();
 			m_scriptSystem->UpdateLuaFuncs();
 			m_controllerSystem->UpdateLuaFuncs();
+			m_triggerSystem->UpdateLuaFuncs();
 		}
 	#endif
 
@@ -284,6 +291,7 @@ namespace EngineCore
 					.addFunction("IsEntityEnable", &BaseWorld::IsEntityEnable)
 
 					.addFunction("GetLuaEntity", &BaseWorld::WrapEntityForLua)
+					.addFunction("UpdateScript", &BaseWorld::UpdateScript)
 
 				#ifdef _EDITOR
 					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)

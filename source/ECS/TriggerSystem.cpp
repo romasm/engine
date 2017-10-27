@@ -7,6 +7,7 @@ TriggerSystem::TriggerSystem(BaseWorld* w, btDiscreteDynamicsWorld* dynamicsW, u
 	world = w;
 	transformSystem = world->GetTransformSystem();
 	collisionSystem = world->GetCollisionSystem();
+	scriptSystem = world->GetScriptSystem();
 	typeMgr = world->GetTypeMgr();
 	nameMgr = world->GetNameMgr();
 
@@ -28,10 +29,16 @@ void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.active)
 			continue;
 
-		Entity trigEnt = i.get_entity();
+		const Entity e = i.get_entity();
+		auto scriptComp = scriptSystem->GetComponent(e);
+		if(!scriptComp)
+			continue;
 
 		int32_t overlapsCount = i.object->getNumOverlappingObjects();
 		if( overlapsCount == 0 )
@@ -44,14 +51,14 @@ void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 			{
 				if( i.reactionDelay <= it.second.time )
 				{
-					if( i.endTouch )
-						LUA_CALL((*i.endTouch)(trigEnt, Entity(it.first), it.second.time),);
+					if( i.endTouch.isFunction() )
+						LUA_CALL(i.endTouch(scriptComp->classInstanceRef, Entity(it.first), it.second.time),);
 					endTouchAll = true;
 				}
 			}
 
-			if( i.endTouchAll && endTouchAll )
-				LUA_CALL((*i.endTouchAll)(trigEnt),);
+			if( i.endTouchAll.isFunction() && endTouchAll )
+				LUA_CALL(i.endTouchAll(scriptComp->classInstanceRef),);
 
 			i.overlappingMap.clear();
 		}
@@ -69,14 +76,14 @@ void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 				if( it == i.overlappingMap.end() )
 				{
 					i.overlappingMap.insert(make_pair(ent, OverlappedEntity(dt, frameID)));
-					if( i.startTouch && i.reactionDelay <= dt )
-						LUA_CALL((*i.startTouch)(trigEnt, ent, dt),);
+					if( i.startTouch.isFunction() && i.reactionDelay <= dt )
+						LUA_CALL(i.startTouch(scriptComp->classInstanceRef, ent, dt),);
 				}
 				else
 				{
 					const float newTime = it->second.time + dt;
-					if( i.startTouch && i.reactionDelay > it->second.time && i.reactionDelay <= newTime )
-						LUA_CALL((*i.startTouch)(trigEnt, ent, newTime),);
+					if( i.startTouch.isFunction() && i.reactionDelay > it->second.time && i.reactionDelay <= newTime )
+						LUA_CALL(i.startTouch(scriptComp->classInstanceRef, ent, newTime),);
 
 					it->second.time = newTime;
 					it->second.frameID = frameID;
@@ -88,8 +95,8 @@ void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 			{
 				if( overlapIt->second.frameID != frameID )
 				{
-					if( i.endTouch && i.reactionDelay <= overlapIt->second.time )
-						LUA_CALL((*i.endTouch)(trigEnt, Entity(overlapIt->first), overlapIt->second.time),);
+					if( i.endTouch.isFunction() && i.reactionDelay <= overlapIt->second.time )
+						LUA_CALL(i.endTouch(scriptComp->classInstanceRef, Entity(overlapIt->first), overlapIt->second.time),);
 					overlapIt = i.overlappingMap.erase(overlapIt);
 				}
 				else
@@ -130,6 +137,9 @@ void TriggerSystem::UpdateTransformations()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.dirty)
 			continue;
 
@@ -188,7 +198,13 @@ TriggerComponent* TriggerSystem::AddComponent(Entity e)
 	res->object->setCollisionFlags(res->object->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 	
 	dynamicsWorld->addCollisionObject(res->object, collisionGroup, collisionMask);
-	
+
+	auto scriptComp = scriptSystem->GetComponent(e);
+	if(!scriptComp)
+		ERR("Can\'t update trigger callbacks, script component needed!");
+	else
+		_UpdateCallbacks(res, scriptComp);
+
 	return res;
 }
 
@@ -207,9 +223,9 @@ void TriggerSystem::_DeleteComponent(TriggerComponent* comp)
 	dynamicsWorld->removeCollisionObject(comp->object);
 	_DELETE(comp->object);
 	comp->overlappingMap.clear();
-	_DELETE(comp->startTouch);
-	_DELETE(comp->endTouch);
-	_DELETE(comp->endTouchAll);
+	comp->startTouch = LuaRef(LSTATE);
+	comp->endTouch = LuaRef(LSTATE);
+	comp->endTouchAll = LuaRef(LSTATE);
 }
 
 void TriggerSystem::CopyComponent(Entity src, Entity dest)
@@ -221,6 +237,25 @@ void TriggerSystem::CopyComponent(Entity src, Entity dest)
 
 	Deserialize(dest, copyBuffer);
 }
+
+#ifdef _DEV
+void TriggerSystem::UpdateLuaFuncs()
+{
+	for(auto& comp: *components.data())
+	{
+		Entity e = comp.get_entity();
+
+		auto scriptComp = scriptSystem->GetComponent(e);
+		if(!scriptComp)
+		{
+			ERR("Can\'t update trigger callbacks, script component needed!");
+			continue;
+		}
+
+		_UpdateCallbacks(&comp, scriptComp);
+	}
+}
+#endif
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
 	if(idx == components.capacity())	return res;\
@@ -264,6 +299,34 @@ void TriggerSystem::UpdateState(Entity e)
 	dynamicsWorld->addCollisionObject(comp.object, collisionGroup, collisionMask);
 }
 
+void TriggerSystem::UpdateCallbacks(Entity e)
+{
+	GET_COMPONENT(void());
+
+	auto scriptComp = scriptSystem->GetComponent(e);
+	if(!scriptComp)
+	{
+		ERR("Can\'t update trigger callbacks, script component needed!");
+		return;
+	}
+
+	_UpdateCallbacks(&comp, scriptComp);
+}
+
+void TriggerSystem::_UpdateCallbacks(TriggerComponent* comp, ScriptComponent* script)
+{
+	LuaRef func0 = scriptSystem->GetLuaFunction(*script, TRIGGER_FUNC_START);
+	if(func0.isFunction())
+		comp->startTouch = func0;
+
+	LuaRef func1 = scriptSystem->GetLuaFunction(*script, TRIGGER_FUNC_END);
+	if(func1.isFunction())
+		comp->endTouch = func1;
+
+	LuaRef func2 = scriptSystem->GetLuaFunction(*script, TRIGGER_FUNC_ENDALL);
+	if(func2.isFunction())
+		comp->endTouchAll = func2;
+}
 
 uint32_t TriggerSystem::Serialize(Entity e, uint8_t* data)
 {
@@ -271,8 +334,18 @@ uint32_t TriggerSystem::Serialize(Entity e, uint8_t* data)
 	
 	uint8_t* t_data = data;
 
-	//TODO
+	*(bool*)t_data = comp.active;
+	t_data += sizeof(bool);
 
+	*(int32_t*)t_data = (int32_t)comp.filter;
+	t_data += sizeof(int32_t);
+
+	uint32_t dummySize = 0;
+	StringSerialize(comp.filterString, &t_data, &dummySize);
+
+	*(float*)t_data = (float)comp.filter;
+	t_data += sizeof(float);
+	
 	return (uint32_t)(t_data - data);
 }
 
@@ -280,11 +353,20 @@ uint32_t TriggerSystem::Deserialize(Entity e, uint8_t* data)
 {
 	auto comp = AddComponent(e);
 	if(!comp)
-		return 0;
+		return 0; // TODO must return size
 		
 	uint8_t* t_data = data;
 
-	//TODO
+	SetActive(comp->get_entity(), *(bool*)t_data);
+	t_data += sizeof(bool);
+
+	comp->filter = TriggerFilterType(*(int32_t*)t_data);
+	t_data += sizeof(int32_t);
+
+	comp->filterString = StringDeserialize(&t_data);
+
+	comp->reactionDelay = *(float*)t_data;
+	t_data += sizeof(float);
 
 	return (uint32_t)(t_data - data);
 }
@@ -319,31 +401,6 @@ void TriggerSystem::SetActive(Entity e, bool active)
 		}
 	}
 }
-
-void TriggerSystem::SetFuncStartTouch(Entity e, LuaRef func)
-{
-	GET_COMPONENT(void());
-	_DELETE(comp.startTouch);
-	if(func.isFunction())
-		comp.startTouch = new LuaRef(func);
-}
-
-void TriggerSystem::SetFuncEndTouch(Entity e, LuaRef func)
-{
-	GET_COMPONENT(void());
-	_DELETE(comp.endTouch);
-	if(func.isFunction())
-		comp.endTouch = new LuaRef(func);
-}
-
-void TriggerSystem::SetFuncEndTouchAll(Entity e, LuaRef func)
-{
-	GET_COMPONENT(void());
-	_DELETE(comp.endTouchAll);
-	if(func.isFunction())
-		comp.endTouchAll = new LuaRef(func);
-}
-
 
 int32_t TriggerSystem::GetFilterType(Entity e)
 {
@@ -406,11 +463,7 @@ void TriggerSystem::RegLuaClass()
 		.addFunction("SetFilterType", &TriggerSystem::SetFilterType)
 		.addFunction("GetFilterString", &TriggerSystem::GetFilterString)
 		.addFunction("SetFilterString", &TriggerSystem::SetFilterString)
-
-		.addFunction("SetFuncStartTouch", &TriggerSystem::SetFuncStartTouch)
-		.addFunction("SetFuncEndTouch", &TriggerSystem::SetFuncEndTouch)
-		.addFunction("SetFuncEndTouchAll", &TriggerSystem::SetFuncEndTouchAll)
-
+		
 		.addFunction("GetTouchingTime", &TriggerSystem::GetTouchingTime)
 		.addFunction("IsTouching", &TriggerSystem::IsTouching)
 
