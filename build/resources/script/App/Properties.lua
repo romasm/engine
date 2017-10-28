@@ -11,7 +11,7 @@ loader.require("ComponentsGui.Light", Properties.reloadComponents)
 loader.require("ComponentsGui.GlobalLight", Properties.reloadComponents)
 loader.require("ComponentsGui.StaticMesh", Properties.reloadComponents)
 
-loader.require("ComponentsGui.TestEnt", Properties.reloadComponents)
+loader.require("ComponentsGui.Script", Properties.reloadComponents)
 
 function Properties.reload()
     if Properties.window then
@@ -93,6 +93,7 @@ function Properties:Update()
 
     local has_script = true
     local ent_type = nil
+    local lua_entity = nil
     
     for i, ent in ipairs(Viewport.selection_set) do
         has_transform = has_transform and Viewport.lua_world.world.transform:HasComponent(ent)
@@ -102,7 +103,7 @@ function Properties:Update()
         has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent)
         
         if has_script then
-            local lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)
+            lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)
             if lua_entity == nil then 
                 has_script = false
             else
@@ -135,15 +136,33 @@ function Properties:Update()
         self.stmesh_gr = Gui.StaticMeshComp()
         self.body:AddGroup(self.stmesh_gr)
     end
-
+    
     if has_script and ent_type ~= nil then
-        local gui_constructor = Gui[ent_type.."Comp"]
-        if gui_constructor ~= nil then
-            self.script_gr = gui_constructor()
-            self.body:AddGroup(self.script_gr)
+        local varsCount = Viewport.lua_world.world.script:GetLuaVarsCount(lua_entity.ent)
+        local varsNames = {}
+        for i = 0, varsCount - 1 do
+            varsNames[#varsNames + 1] = Viewport.lua_world.world.script:GetLuaVarName(lua_entity.ent, i)
         end
-    end
+        
+        self.script_gr = Gui.ScriptComp()
+        
+        local topOffset = 33
+        for j = 1, #varsNames do
+            local varType = type(lua_entity[varsNames[j]])
+            local varValue = lua_entity[varsNames[j]]
 
+            local varGuiFunc = Gui["ScriptVar_"..varType]
+            if varGuiFunc ~= nil then
+                local varGui = varGuiFunc(varsNames[j], topOffset)
+                topOffset = topOffset + varGui.entity.height + 10
+                self.script_gr.entity:AttachChild(varGui.entity)   
+            end         
+        end
+
+        self.script_gr.entity.height = topOffset + 10
+        self.body:AddGroup(self.script_gr)
+    end
+    
     self:UpdateData(true)
     self.none_msg.enable = false
 end

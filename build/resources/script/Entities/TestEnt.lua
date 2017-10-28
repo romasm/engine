@@ -35,14 +35,14 @@ end
 
 function EntityTypes.TestEnt:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_rot_speed = 1.0
     self.p_onStartTouch = function(self, activator, time) print("StartTouch") end
 
     -- lifetime only exist vars
     self.current_time = 0
 end
-
+--[[
 function EntityTypes.TestEnt:onTick(dt)
     self.current_time = self.current_time + 0.001 * dt
     self:SetPosition(math.sin(self.current_time) * 5.0, 0, 0)
 end
+--]]

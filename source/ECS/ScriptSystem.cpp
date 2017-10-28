@@ -180,6 +180,24 @@ LuaRef ScriptSystem::GetLuaFunction(ScriptComponent& comp, const char* funcName)
 	return luaFunc;
 }
 
+int32_t ScriptSystem::GetLuaVarsCount(Entity e)
+{
+	auto comp = GetComponent(e);
+	if(!comp)
+		return 0;
+	return (int32_t)comp->varArray.size();
+}
+
+string ScriptSystem::GetLuaVarName(Entity e, int32_t i)
+{
+	auto comp = GetComponent(e);
+	if(!comp)
+		return "";
+	if( i >= comp->varArray.size() )
+		return "";
+	return comp->varArray[i].name;
+}
+
 #ifdef _DEV
 void ScriptSystem::UpdateLuaFuncs()
 {

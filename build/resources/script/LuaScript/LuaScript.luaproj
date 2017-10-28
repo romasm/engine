@@ -44,17 +44,14 @@
     <Compile Include="..\..\gui\ComponentsGui\LightCallback.lua">
       <Link>Gui\ComponentsGui\LightCallback.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\Script.lua">
+      <Link>Gui\ComponentsGui\Script.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\StaticMesh.lua">
       <Link>Gui\ComponentsGui\StaticMesh.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\ComponentsGui\StaticMeshCallback.lua">
       <Link>Gui\ComponentsGui\StaticMeshCallback.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\ComponentsGui\TestEnt.lua">
-      <Link>Gui\ComponentsGui\TestEnt.lua</Link>
-    </Compile>
-    <Compile Include="..\..\gui\ComponentsGui\TestEntCallback.lua">
-      <Link>Gui\ComponentsGui\TestEntCallback.lua</Link>
     </Compile>
     <Compile Include="..\..\gui\ComponentsGui\Transform.lua">
       <Link>Gui\ComponentsGui\Transform.lua</Link>

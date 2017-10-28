@@ -237,7 +237,7 @@ function DevConsole:Execute(code)
 
     print(">> ".. code)
 
-    local func, errorMsg = load(code, "")
+    local func, errorMsg = load(code, "ConsoleCode")
     if func ~= nil then
         func()
     else

@@ -103,6 +103,9 @@ namespace EngineCore
 			return GetLuaFunction(comp, funcName.data());
 		}
 
+		int32_t GetLuaVarsCount(Entity e);
+		string GetLuaVarName(Entity e, int32_t i);
+
 	#ifdef _DEV
 		void UpdateLuaFuncs();
 	#endif
@@ -117,6 +120,8 @@ namespace EngineCore
 					.addFunction("DeleteComponent", &ScriptSystem::DeleteComponent)
 					.addFunction("HasComponent", &ScriptSystem::HasComponent)
 					.addFunction("GetLuaEntity", &ScriptSystem::GetLuaClassInstance)
+					.addFunction("GetLuaVarsCount", &ScriptSystem::GetLuaVarsCount)
+					.addFunction("GetLuaVarName", &ScriptSystem::GetLuaVarName)
 				.endClass();
 		}
 	private:
