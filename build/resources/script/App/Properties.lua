@@ -143,6 +143,8 @@ function Properties:Update()
         for i = 0, varsCount - 1 do
             varsNames[#varsNames + 1] = Viewport.lua_world.world.script:GetLuaVarName(lua_entity.ent, i)
         end
+
+        -- TODO: sort vars
         
         self.script_gr = Gui.ScriptComp()
         

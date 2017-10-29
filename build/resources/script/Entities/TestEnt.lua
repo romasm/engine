@@ -35,7 +35,9 @@ end
 
 function EntityTypes.TestEnt:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_onStartTouch = function(self, activator, time) print("StartTouch") end
+    self.p_onStartTouch = function(self, activator, time) end
+    self.p_onEndTouch = function(self, activator, time) end
+    self.p_onEndTouchAll = function(self) end
 
     -- lifetime only exist vars
     self.current_time = 0

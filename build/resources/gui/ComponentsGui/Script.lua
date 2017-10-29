@@ -210,7 +210,7 @@ local res = GuiDumb({
 
     GuiString({
         styles = {GuiStyles.string_props_01,},
-        str = "Function [".. varName:sub(3) .."]",
+        str = "Function [ ".. varName:sub(3) .." ]",
         left = 10,
         top = 0,
     }),
@@ -229,6 +229,8 @@ local res = GuiDumb({
         left = 10,
         width = 265,
         height = 20,
+
+        alt = "Complete Lua function: function( attr... ) ... end",
 
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 

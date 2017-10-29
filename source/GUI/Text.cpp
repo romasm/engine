@@ -50,7 +50,10 @@ bool Text::Init(string &font, wstring &text, string& shaderName, bool statictext
 		maxLength = (uint16_t)text.size();
 
 	if(needSymPos)
+	{
 		symbolsPos = new int16_t[maxLength+1];
+		ZeroMemory(symbolsPos, sizeof(int16_t) * (maxLength + 1));
+	}
 
 	if( !initBuffers(text) )
 		return false;
@@ -180,7 +183,7 @@ bool Text::updateMatrix()
 
 int16_t Text::GetSymPos(uint16_t s) const 
 {
-	if(!symbolsPos) return 0;
+	if(!symbolsPos || symbolsCount == 0 ) return 0;
 	if(s > symbolsCount) return std::max<int16_t>(0, symbolsPos[symbolsCount]);
 	return std::max<int16_t>(0, symbolsPos[s]);
 }

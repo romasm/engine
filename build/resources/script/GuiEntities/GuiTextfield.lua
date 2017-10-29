@@ -520,7 +520,6 @@ function GuiTextfield:callback(eventData)
                         self.cursor_pos = textObj:GetLetterPos(self.current_letter)
                         shift_selected = true
                         self.state_select = true
-                        UpdateCursorSelect(self)
                         res.event = GUI_EVENTS.TF_SELECTED
                     end
                 end
@@ -533,7 +532,6 @@ function GuiTextfield:callback(eventData)
                 self.cursor_pos = textObj:GetLetterPos(self.current_letter)
                 self.select_letter = self.current_letter
                 self.select_pos = self.cursor_pos
-                UpdateCursorSelect(self)
 
                 if self.selectable then
                     self.entity:SetHierarchyFocusOnMe(true)
@@ -546,6 +544,7 @@ function GuiTextfield:callback(eventData)
             end
 
             res.entity = self.entity
+            UpdateCursorSelect(self)
             UpdateTextPos(self)
 
         elseif eventData.key == KEYBOARD_CODES.KEY_RBUTTON then
