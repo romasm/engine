@@ -201,6 +201,7 @@
     <ClInclude Include="Managers\BaseMgr.h" />
     <ClInclude Include="Managers\CollisionMgr.h" />
     <ClInclude Include="Managers\FontMgr.h" />
+    <ClInclude Include="Managers\FunctionCodeMgr.h" />
     <ClInclude Include="Managers\Loaders\CollisionLoader.h" />
     <ClInclude Include="Managers\Loaders\MeshLoader.h" />
     <ClInclude Include="Managers\Loaders\TexLoader.h" />

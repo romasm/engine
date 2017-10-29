@@ -159,7 +159,9 @@ function Properties:Update()
             end         
         end
 
-        self.script_gr.entity.height = topOffset + 10
+        local groupH = topOffset + 10
+        self.script_gr.entity.height = groupH
+        self.script_gr.opened_h = groupH
         self.body:AddGroup(self.script_gr)
     end
     

@@ -359,6 +359,10 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 
 	m_transformSystem->PostLoadParentsResolve();
 
+#ifdef _EDITOR
+	codeMgr.LoadFromFile(filename);
+#endif
+
 	return true;
 }
 
@@ -528,6 +532,11 @@ bool BaseWorld::saveWorld(string& filename)
 	_DELETE_ARRAY(buffer);
 	
 	file.close();
+
+#ifdef _EDITOR
+	codeMgr.DumpToFile(filename);
+#endif
+
 	return true;
 }
 

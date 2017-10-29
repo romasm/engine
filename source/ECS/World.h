@@ -27,6 +27,7 @@
 #include "Frustum.h"
 #include "SceneGraph.h"
 
+#include "FunctionCodeMgr.h"
 #include "TransformControls.h"
 #include "DebugDrawer.h"
 
@@ -188,11 +189,6 @@ namespace EngineCore
 
 		inline bool IsEntityNeedProcess(Entity e) {return m_entityMgr->IsNeedProcess(e);}
 
-	#ifdef _EDITOR
-		inline void SetEntityEditorVisible(Entity e, bool visible) {m_entityMgr->SetEditorVisible(e, visible);}
-		inline bool IsEntityEditorVisible(Entity e) {return m_entityMgr->IsEditorVisible(e);}
-	#endif
-
 		inline bool IsEntityAlive(Entity e) {return m_entityMgr->IsAlive(e);}
 		void DestroyEntity(Entity e);
 		void DestroyEntityHierarchically(Entity e);
@@ -228,7 +224,10 @@ namespace EngineCore
 			m_triggerSystem->UpdateCallbacks(e);
 		}
 
-	#ifdef _EDITOR
+#ifdef _EDITOR
+		inline void SetEntityEditorVisible(Entity e, bool visible) {m_entityMgr->SetEditorVisible(e, visible);}
+		inline bool IsEntityEditorVisible(Entity e) {return m_entityMgr->IsEditorVisible(e);}
+
 		inline void ConstructEditorGui(Entity e)
 		{
 			LuaRef luaEnt = WrapEntityForLua(e);
@@ -239,9 +238,13 @@ namespace EngineCore
 					LUA_CALL(editorConstructor(luaEnt),);
 			}
 		}
-	#endif
 
-	#ifdef _DEV
+		inline void AddCode(string func, string code) { codeMgr.Add(func, code); }
+		inline void RemoveCode(string func)	{ codeMgr.Remove(func); }
+		inline string GetCode(string func) { return codeMgr.Get(func); }
+#endif
+
+#ifdef _DEV
 		void UpdateLuaFuncs()
 		{
 			m_typeMgr->UpdateLuaFuncs();
@@ -249,7 +252,7 @@ namespace EngineCore
 			m_controllerSystem->UpdateLuaFuncs();
 			m_triggerSystem->UpdateLuaFuncs();
 		}
-	#endif
+#endif
 
 		void SetSceneGraphDebugDraw(bool draw)
 		{
@@ -296,6 +299,10 @@ namespace EngineCore
 				#ifdef _EDITOR
 					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)
 					.addFunction("IsEntityEditorVisible", &BaseWorld::IsEntityEditorVisible)
+
+					.addFunction("AddCode", &BaseWorld::AddCode)
+					.addFunction("RemoveCode", &BaseWorld::RemoveCode)
+					.addFunction("GetCode", &BaseWorld::GetCode)
 				#endif
 
 					.addProperty("transform", &BaseWorld::GetTransformSystem)
@@ -370,6 +377,10 @@ namespace EngineCore
 
 		TypeMgr* m_typeMgr;
 		NameMgr* m_nameMgr;
+
+#ifdef _EDITOR
+		FunctionCodeMgr codeMgr;
+#endif
 
 		// physics world
 		btDefaultCollisionConfiguration* physCollisionConfiguration;

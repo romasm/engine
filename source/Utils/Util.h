@@ -8,7 +8,7 @@ using namespace EngineCore;
 
 // Строковые функции
 
-inline void StringSerialize(string& str, uint8_t** dataPtr, uint32_t* size)
+inline void StringSerialize(const string& str, uint8_t** dataPtr, uint32_t* size)
 {
 	uint32_t str_size = (uint32_t)str.size();
 	*(uint32_t*)(*dataPtr) = str_size;

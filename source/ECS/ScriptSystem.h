@@ -7,6 +7,7 @@
 namespace EngineCore
 {
 #define SCRIPT_USER_DATA_PREFIX "p_"
+#define SCRIPT_USER_DATA_EDITOR_PREFIX "editor_"
 
 #define SCRIPT_FUNC_TICK SCRIPT_USER_DATA_PREFIX "onTick"
 #define SCRIPT_FUNC_SPAWN SCRIPT_USER_DATA_PREFIX "onSpawn"

@@ -143,8 +143,14 @@ void ScriptSystem::_UpdateScript(ScriptComponent* comp)
 		if(lua_data.key().isString())
 		{
 			string varName = lua_data.key().cast<string>();
-			if( varName.find(SCRIPT_USER_DATA_PREFIX) != string::npos )
+			if( varName.find(SCRIPT_USER_DATA_PREFIX) != string::npos 
+#ifdef _EDITOR
+				|| varName.find(SCRIPT_USER_DATA_EDITOR_PREFIX) != string::npos 
+#endif
+				)
+			{
 				vars.push_back(luaVar(varName, lua_data.value().type()));
+			}
 		}
 		++lua_data;
 	}

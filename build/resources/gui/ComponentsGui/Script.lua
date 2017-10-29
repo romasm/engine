@@ -23,6 +23,8 @@ return GuiGroup({
 
     width = 100,
     width_percent = true,
+
+    height = 33,
 })
 end
 
@@ -35,6 +37,7 @@ function Gui.ScriptSetBoolean(self, ev)
             lua_entity[varName] = value
         end
     end
+    return true
 end
 
 function Gui.ScriptVar_boolean(varName, topOffset)
@@ -62,6 +65,7 @@ local res = GuiCheck({
                 end
             end
             self:SetCheck(value)
+            return true
         end,
     },
 })
@@ -77,6 +81,7 @@ function Gui.ScriptSetNumber(self, ev)
             lua_entity[varName] = value
         end
     end
+    return true
 end
 
 function Gui.ScriptVar_number(varName, topOffset)
@@ -128,6 +133,7 @@ local res = GuiDumb({
                     end
                 end
                 self:SetValue(value)
+                return true
             end,
         },
     }),
@@ -172,9 +178,10 @@ local res = GuiDumb({
                         lua_entity[varName] = value
                     end
                 end 
+                return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev)
-                local value = 0
+                local value = ""
                 for i, ent in ipairs(Viewport.selection_set) do
                     local lua_entity = EntityTypes.wrap(Viewport.lua_world.world, ent)
                     if lua_entity[varName] ~= nil then
@@ -185,6 +192,7 @@ local res = GuiDumb({
                     end
                 end
                 self:SetText(value)
+                return true
             end,
         },
     }),
@@ -198,13 +206,13 @@ local res = GuiDumb({
     width = 100,
     width_percent = true,
     top = topOffset,
-    height = 20,
+    height = 40,
 
     GuiString({
         styles = {GuiStyles.string_props_01,},
-        str = varName:sub(3),
+        str = "Function [".. varName:sub(3) .."]",
         left = 10,
-        top = 2,
+        top = 0,
     }),
 
     GuiTextfield({
@@ -217,32 +225,60 @@ local res = GuiDumb({
             length = 1024,
         },
 
-        top = 0,
-        left = 120,
-        width = 155,
+        top = 20,
+        left = 10,
+        width = 265,
         height = 20,
 
         events = {
             [GUI_EVENTS.TF_DEACTIVATE]  = function(self, ev) 
                 local code = self:GetText()
-                local func, errorMsg = load("return function(self, activator, time)"..code.." end", "EditorCode")
+                if code == "" then return true end
+
+                local func, errorMsg = load("return "..code, "EditorCode")
                 if func == nil then
                     error(errorMsg)
-                    return
+                    return true
                 end
 
+                local actualFunc = func()
+                if type(actualFunc) ~= "function" then
+                    error("\'".. code .."\' must be a complete Lua function" )
+                    return true
+                end
+
+                local funcDump = string.dump(actualFunc)
+                
                 for i, ent in ipairs(Viewport.selection_set) do
                     local lua_entity = EntityTypes.wrap(Viewport.lua_world.world, ent)
                     local varName = self.entity:GetID()
                     if lua_entity[varName] ~= nil then
-                        lua_entity[varName] = func()
+                        local oldFuncDump = string.dump(lua_entity[varName])
+                        Viewport.lua_world.world:RemoveCode(oldFuncDump)
+
+                        lua_entity[varName] = actualFunc
+                        Viewport.lua_world.world:AddCode(funcDump, code)
                     end
                     Viewport.lua_world.world:UpdateScript(lua_entity.ent)
                 end 
+                return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev)
-                -- TODO: load function code somehow (store code in luaEntity.p_code_FUNCNAME)
-                self:SetText()
+                local dump = ""
+                for i, ent in ipairs(Viewport.selection_set) do
+                    local lua_entity = EntityTypes.wrap(Viewport.lua_world.world, ent)
+                    if lua_entity[varName] ~= nil then
+                        local funcDump = string.dump(lua_entity[varName])
+                        if i > 1 and dump ~= funcDump then
+                            self:SetText(nil)
+                            return true
+                        else dump = funcDump end
+                    end
+                end
+
+                local code = Viewport.lua_world.world:GetCode(dump)
+                self:SetText(code)
+                return true
             end,
         },
     }),
