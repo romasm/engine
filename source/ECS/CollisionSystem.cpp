@@ -30,7 +30,7 @@ void CollisionSystem::UpdateTransformations()
 	{
 		if(!i.dirty)
 			continue;
-
+		
 		if(i.object)
 		{
 			Entity e = i.get_entity();
@@ -370,20 +370,38 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 }
 
 // PARAMS
-
-bool CollisionSystem::IsEnable(Entity e)
+/*
+bool CollisionSystem::IsActive(Entity e)
 {
 	GET_COMPONENT(false);
-	// TODO
-	return true;
+
+	return comp.active;
 }
 
-void CollisionSystem::SetEnable(Entity e, bool enable)
+void CollisionSystem::SetActive(Entity e, bool active)
 {
 	GET_COMPONENT(void());
-	// TODO
+	if(active)
+	{
+		if(!comp.active)
+		{
+			auto collComp = collisionSystem->GetComponent(e);
+			if(collComp)
+				return;
+			comp.active = true;
+			dynamicsWorld->addCollisionObject(comp.object, collComp->collisionGroup, collComp->collisionMask);
+		}
+	}
+	else
+	{
+		if(comp.active)
+		{
+			comp.active = false;
+			dynamicsWorld->removeCollisionObject(comp.object);
+		}
+	}
 }
-
+*/
 int32_t CollisionSystem::GetCollisionGroup(Entity e)
 {
 	GET_COMPONENT(false);
@@ -549,8 +567,8 @@ void CollisionSystem::RegLuaClass()
 		.beginClass<CollisionSystem>("CollisionSystem")
 
 		.addFunction("IsDummy", &CollisionSystem::IsDummy)
-		.addFunction("IsEnable", &CollisionSystem::IsEnable)
-		.addFunction("SetEnable", &CollisionSystem::SetEnable)
+		//.addFunction("IsActive", &CollisionSystem::IsActive)
+		//.addFunction("SetActive", &CollisionSystem::SetActive)
 
 		.addFunction("GetCollisionGroup", &CollisionSystem::GetCollisionGroup)
 		.addFunction("SetCollisionGroup", &CollisionSystem::SetCollisionGroup)

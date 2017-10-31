@@ -12,6 +12,7 @@ loader.require("ComponentsGui.GlobalLight", Properties.reloadComponents)
 loader.require("ComponentsGui.StaticMesh", Properties.reloadComponents)
 
 loader.require("ComponentsGui.Script", Properties.reloadComponents)
+loader.require("ComponentsGui.Collision", Properties.reloadComponents)
 
 function Properties.reload()
     if Properties.window then
