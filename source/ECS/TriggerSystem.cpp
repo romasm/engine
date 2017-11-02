@@ -171,7 +171,7 @@ TriggerComponent* TriggerSystem::AddComponent(Entity e)
 	res->overlappingMap.reserve(10);
 
 	int32_t collisionGroup = CollisionGroups::Trigger;
-	int32_t collisionMask = CollisionGroups::All & ~CollisionGroups::Static;
+	int32_t collisionMask = CollisionGroups::AllNoSpecial & ~CollisionGroups::Static;
 	collisionMask &= ~CollisionGroups::Debris;
 
 	btCollisionShape* collision = CollisionMgr::GetResourcePtr(CollisionMgr::nullres);
@@ -282,7 +282,7 @@ void TriggerSystem::UpdateState(Entity e)
 	dynamicsWorld->removeCollisionObject(comp.object);
 	
 	int32_t collisionGroup = CollisionGroups::Trigger;
-	int32_t collisionMask = CollisionGroups::All & ~CollisionGroups::Static;
+	int32_t collisionMask = CollisionGroups::AllNoSpecial & ~CollisionGroups::Static;
 	collisionMask &= ~CollisionGroups::Debris;
 
 	auto collision = collisionSystem->GetCollision(e);

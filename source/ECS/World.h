@@ -224,6 +224,13 @@ namespace EngineCore
 			m_triggerSystem->UpdateCallbacks(e);
 		}
 
+		void UpdateCollision(Entity e)
+		{
+			m_collisionSystem->UpdateState(e);
+			m_triggerSystem->UpdateState(e);
+			m_physicsSystem->UpdateState(e);
+		}
+
 #ifdef _EDITOR
 		inline void SetEntityEditorVisible(Entity e, bool visible) {m_entityMgr->SetEditorVisible(e, visible);}
 		inline bool IsEntityEditorVisible(Entity e) {return m_entityMgr->IsEditorVisible(e);}
@@ -295,6 +302,7 @@ namespace EngineCore
 
 					.addFunction("GetLuaEntity", &BaseWorld::WrapEntityForLua)
 					.addFunction("UpdateScript", &BaseWorld::UpdateScript)
+					.addFunction("UpdateCollision", &BaseWorld::UpdateCollision)
 
 				#ifdef _EDITOR
 					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)

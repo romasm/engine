@@ -1,18 +1,20 @@
-function Gui.AddCollisionGroup(self, group)
+function Gui.AddCollisionMask(self, group)
     for i, ent in ipairs(Viewport.selection_set) do
         Viewport.lua_world.world.collision:AddCollisionMask(ent, group)
+        Viewport.lua_world.world:UpdateCollision(ent)
     end
     return true
 end
 
-function Gui.RemCollisionGroup(self, group)
+function Gui.RemCollisionMask(self, group)
     for i, ent in ipairs(Viewport.selection_set) do
         Viewport.lua_world.world.collision:RemoveCollisionMask(ent, group)
+        Viewport.lua_world.world:UpdateCollision(ent)
     end
     return true
 end
 
-function Gui.HasCollisionGroup(self, group)
+function Gui.HasCollisionMask(self, group)
     local hasGroup = false
     for i, ent in ipairs(Viewport.selection_set) do
         local cast = Viewport.lua_world.world.collision:HasCollisionMask(ent, group)
@@ -24,6 +26,20 @@ function Gui.HasCollisionGroup(self, group)
     self:SetCheck(hasGroup)
     return true
 end
+
+GuiStyles.coll_check1 = {
+    styles = {GuiStyles.props_check,},
+    left = 10,
+    width = 100,
+    height = 18,
+}
+
+GuiStyles.coll_check2 = {
+    styles = {GuiStyles.props_check,},
+    left = 150,
+    width = 100,
+    height = 18,
+}
 
 function Gui.CollisionComp()
 return GuiGroup({
@@ -53,7 +69,7 @@ return GuiGroup({
     width = 100,
     width_percent = true,
 
-    height = 265,
+    height = 242,
 
     -- color
     GuiString({
@@ -92,23 +108,30 @@ return GuiGroup({
             [GUI_EVENTS.COMBO_SELECT] = function(self, ev)
                 local selected = self:GetSelected()
                 if selected < 0 then return true end
-                selected = math.pow(2, selected - 1)                
+
+                if selected == 1 then selected = 0 
+                else selected = math.pow(2, selected - 2) end
+
                 for i, ent in ipairs(Viewport.selection_set) do 
                     Viewport.lua_world.world.collision:SetCollisionGroup(ent, selected)
+                    Viewport.lua_world.world:UpdateCollision(ent)
                 end
                 return true
             end,
             [GUI_EVENTS.UPDATE] = function(self, ev)
-                    local val = 0
+                    local value = 0
                     local undef = false
                     for i, ent in ipairs(Viewport.selection_set) do
-                        local group = Viewport.lua_world.world.light:GetCollisionGroup(ent)
-                        if i > 1 and val ~= group then 
+                        local group = Viewport.lua_world.world.collision:GetCollisionGroup(ent)
+                        if i > 1 and value ~= group then 
                             self:SetSelected(0)
                             return true
-                        else val = group end
+                        else value = group end
                     end
-                    self:SetSelected(val)
+                    
+                    if value ~= 0 then value = math.floor( math.log10(value) / math.log10(2) + 0.5 ) + 1 end
+
+                    self:SetSelected( value + 1 )
                 return true 
             end,
         },
@@ -124,107 +147,158 @@ return GuiGroup({
         -- TODO: help hover btn "Collision mask (with what collision groups checking should be performed)",
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 85,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 83,
         text = { str = "Default" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Default) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Default) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Default) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Default) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Default) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Default) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 110,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 104,
         text = { str = "Static" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Static) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Static) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Static) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Static) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Static) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Static) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 135,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 126,
         text = { str = "Kinematic" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Kinematic) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Kinematic) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Kinematic) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Kinematic) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Kinematic) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Kinematic) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 160,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 148,
         text = { str = "Debris" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Debris) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Debris) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Debris) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Debris) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Debris) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Debris) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 185,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 170,
         text = { str = "Trigger" },
         
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Trigger) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Trigger) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Trigger) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Trigger) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Trigger) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Trigger) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 210,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 192,
         text = { str = "Character" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Character) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Character) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Character) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Character) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Character) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Character) end,
         }
     }),
 
     GuiCheck({
-        styles = {GuiStyles.props_check,},
-        left = 10,
-        top = 235,
-        width = 60,
-        height = 18,
+        styles = {GuiStyles.coll_check1,},
+        top = 214,
         text = { str = "Gamelogic" },
 
         events = {
-            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionGroup(self, COLLISION_GROUPS.Gamelogic) end,
-            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionGroup(self, COLLISION_GROUPS.Gamelogic) end,
-            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionGroup(self, COLLISION_GROUPS.Gamelogic) end,
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Gamelogic) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Gamelogic) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Gamelogic) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 83,
+        text = { str = "User0" },
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special0) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special0) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special0) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 104,
+        text = { str = "User1" },
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special1) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special1) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special1) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 126,
+        text = { str = "User2" },
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special2) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special2) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special2) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 148,
+        text = { str = "User3" },
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special3) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special3) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special3) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 170,
+        text = { str = "User4" },
+        
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special4) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special4) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special4) end,
+        }
+    }),
+
+    GuiCheck({
+        styles = {GuiStyles.coll_check2,},
+        top = 192,
+        text = { str = "User5" },
+
+        events = {
+            [GUI_EVENTS.CB_CHECKED] = function(self, ev) return Gui.AddCollisionMask(self, COLLISION_GROUPS.Special5) end,
+            [GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return Gui.RemCollisionMask(self, COLLISION_GROUPS.Special5) end,
+            [GUI_EVENTS.UPDATE] = function(self, ev) return Gui.HasCollisionMask(self, COLLISION_GROUPS.Special5) end,
         }
     }),
 })

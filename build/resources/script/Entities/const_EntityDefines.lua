@@ -10,8 +10,7 @@ PHYSICS_TYPES = {
     DYNAMIC = 2,
 }
 
-COLLISION_GROUPS
-{
+COLLISION_GROUPS = {
 	None = 0,
 	Default = 1,
 	Static = 2,
@@ -28,6 +27,7 @@ COLLISION_GROUPS
 	Special4 = 2048,
 	Special5 = 4096,
 
-	Physics = Default + Static + Kinematic + Debris + Character + Trigger,
-	All = -1
+	Physics = 63,--Default | Static | Kinematic | Debris | Character | Trigger,
+	All = -1,
+    AllNoSpecial = 127,--All & ~(Special0 | Special1 | Special2 | Special3 | Special4 | Special5),
 }

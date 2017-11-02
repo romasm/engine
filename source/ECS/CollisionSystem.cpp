@@ -143,6 +143,19 @@ bool CollisionSystem::SetDirty(Entity e)
 	return true;
 }
 
+void CollisionSystem::UpdateState(Entity e)
+{
+	GET_COMPONENT(void());
+
+	if(!comp.object)
+		return;
+
+	// TODO: optimize? 
+	// dynamicsWorld->resetRigidBody(comp.body)
+	dynamicsWorld->removeCollisionObject(comp.object);
+	dynamicsWorld->addCollisionObject(comp.object, comp.collisionGroup, comp.collisionMask);
+}
+
 uint32_t CollisionSystem::Serialize(Entity e, uint8_t* data)
 {
 	GET_COMPONENT(0)
@@ -417,19 +430,19 @@ void CollisionSystem::SetCollisionGroup(Entity e, int32_t group)
 bool CollisionSystem::HasCollisionMask(Entity e, int32_t group)
 {
 	GET_COMPONENT(false);
-	return ((comp.collisionGroup & group) != 0);
+	return ((comp.collisionMask & group) != 0);
 }
 
 void CollisionSystem::AddCollisionMask(Entity e, int32_t group)
 {
 	GET_COMPONENT(void());
-	comp.collisionGroup |= group;
+	comp.collisionMask |= group;
 }
 
 void CollisionSystem::RemoveCollisionMask(Entity e, int32_t group)
 {
 	GET_COMPONENT(void());
-	comp.collisionGroup &= ~group;
+	comp.collisionMask &= ~group;
 }
 
 RayCastResult CollisionSystem::RayCast(Vector3& start, Vector3& end)
@@ -575,6 +588,8 @@ void CollisionSystem::RegLuaClass()
 		.addFunction("HasCollisionMask", &CollisionSystem::HasCollisionMask)
 		.addFunction("AddCollisionMask", &CollisionSystem::AddCollisionMask)
 		.addFunction("RemoveCollisionMask", &CollisionSystem::RemoveCollisionMask)
+
+		.addFunction("UpdateState", &CollisionSystem::UpdateState)
 
 		.addFunction("AddBoxCollider", &CollisionSystem::AddBoxCollider)
 		.addFunction("AddSphereCollider", &CollisionSystem::AddSphereCollider)

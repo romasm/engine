@@ -68,6 +68,7 @@ COMPONENTS = {
     GLIGHT = 3,
     STATIC = 4,
     SCRIPT = 5,
+    COLLISION = 6,
 }
 
 WORLDMODES = {

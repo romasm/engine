@@ -36,7 +36,8 @@ namespace EngineCore
 		Special5 = 4096,
 
 		Physics = Default | Static | Kinematic | Debris | Character | Trigger,
-		All = -1 //all bits sets
+		All = -1, //all bits sets
+		AllNoSpecial = All & ~(Special0 | Special1 | Special2 | Special3 | Special4 | Special5),
 	};
 
 	struct CollisionComponent
@@ -89,6 +90,8 @@ namespace EngineCore
 		btCollisionShape* GetCollision(Entity e);
 
 		void UpdateTransformations();
+
+		void UpdateState(Entity e);
 
 		void DebugDraw()
 		{

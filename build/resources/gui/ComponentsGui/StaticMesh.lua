@@ -49,7 +49,7 @@ return GuiGroup({
         height = 21,
 
         text = {
-            str = "Model",
+            str = "Mesh",
             offset = { x = 22, y = 1 },
             center = { x = false, y = false },
         },
@@ -63,7 +63,7 @@ return GuiGroup({
     -- mesh
     GuiString({
         styles = {GuiStyles.string_props_03,},
-        str = "Filepath",
+        str = "Resource",
         left = 10,
         top = 33,
     }), 

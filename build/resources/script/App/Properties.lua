@@ -10,7 +10,6 @@ loader.require("ComponentsGui.Transform", Properties.reloadComponents)
 loader.require("ComponentsGui.Light", Properties.reloadComponents)
 loader.require("ComponentsGui.GlobalLight", Properties.reloadComponents)
 loader.require("ComponentsGui.StaticMesh", Properties.reloadComponents)
-
 loader.require("ComponentsGui.Script", Properties.reloadComponents)
 loader.require("ComponentsGui.Collision", Properties.reloadComponents)
 
@@ -47,6 +46,7 @@ function Properties:Init()
     self.update_Glight_need = false
     self.update_stmesh_need = false
     self.update_script_need = false
+    self.update_collision_need = false
 end
 
 function Properties:Tick(dt)
@@ -65,12 +65,14 @@ function Properties:Tick(dt)
         if self.update_Glight_need and Properties.Glight_gr then Properties.Glight_gr.entity:SendEvent(ev) end 
         if self.update_stmesh_need and Properties.stmesh_gr then Properties.stmesh_gr.entity:SendEvent(ev) end                         
         if self.update_script_need and Properties.script_gr then Properties.script_gr.entity:SendEvent(ev) end                         
+        if self.update_collision_need and Properties.collision_gr then Properties.collision_gr.entity:SendEvent(ev) end                         
 
         self.update_transf_need = false
         self.update_light_need = false
         self.update_Glight_need = false
         self.update_stmesh_need = false
         self.update_script_need = false
+        self.update_collision_need = false
     end
 end
 
@@ -81,6 +83,7 @@ function Properties:Update()
     self.Glight_gr = nil
     self.stmesh_gr = nil
     self.script_gr = nil
+    self.collision_gr = nil
     
     if not Viewport.selection_set or #Viewport.selection_set == 0 or not Viewport.lua_world then
         self.none_msg.enable = true
@@ -91,8 +94,9 @@ function Properties:Update()
     local has_stmesh = true
     local has_light = true
     local has_globallight = true
-
     local has_script = true
+    local has_collision = true
+
     local ent_type = nil
     local lua_entity = nil
     
@@ -102,6 +106,7 @@ function Properties:Update()
         has_light = has_light and Viewport.lua_world.world.light:HasComponent(ent)
         has_globallight = has_globallight and Viewport.lua_world.world.globalLight:HasComponent(ent)
         has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent)
+        has_collision = has_collision and Viewport.lua_world.world.collision:HasComponent(ent)
         
         if has_script then
             lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)
@@ -138,6 +143,11 @@ function Properties:Update()
         self.body:AddGroup(self.stmesh_gr)
     end
     
+    if has_collision then
+        self.collision_gr = Gui.CollisionComp()
+        self.body:AddGroup(self.collision_gr)
+    end
+
     if has_script and ent_type ~= nil then
         local varsCount = Viewport.lua_world.world.script:GetLuaVarsCount(lua_entity.ent)
         local varsNames = {}
@@ -179,12 +189,14 @@ function Properties:UpdateData(force, comp)
         self.update_Glight_need = self.Glight_gr ~= nil
         self.update_stmesh_need = self.stmesh_gr ~= nil
         self.update_script_need = self.script_gr ~= nil
+        self.update_collision_need = self.collision_gr ~= nil
         if comp ~= nil then
             if comp ~= COMPONENTS.TRANSFORM then self.update_transf_need = false end
             if comp ~= COMPONENTS.LIGHT then self.update_light_need = false end
             if comp ~= COMPONENTS.GLIGHT then self.update_Glight_need = false end
             if comp ~= COMPONENTS.STATIC then self.update_stmesh_need = false end
             if comp ~= COMPONENTS.SCRIPT then self.update_script_need = false end
+            if comp ~= COMPONENTS.COLLISION then self.update_collision_need = false end
         end
         return
     end
@@ -198,6 +210,7 @@ function Properties:UpdateData(force, comp)
         if self.Glight_gr then self.Glight_gr.entity:SendEvent(ev) end
         if self.stmesh_gr then self.stmesh_gr.entity:SendEvent(ev) end
         if self.script_gr then self.script_gr.entity:SendEvent(ev) end
+        if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
     else
         if comp == COMPONENTS.TRANSFORM then 
             if self.transf_gr then  self.transf_gr.entity:SendEvent(ev) end
@@ -209,6 +222,8 @@ function Properties:UpdateData(force, comp)
             if self.stmesh_gr then self.stmesh_gr.entity:SendEvent(ev) end
         elseif comp == COMPONENTS.SCRIPT then 
             if self.script_gr then self.script_gr.entity:SendEvent(ev) end
+        elseif comp == COMPONENTS.COLLISION then 
+            if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
         end
     end
 
@@ -218,4 +233,5 @@ function Properties:UpdateData(force, comp)
     self.update_Glight_need = false
     self.update_stmesh_need = false
     self.update_script_need = false
+    self.update_collision_need = false
 end

@@ -276,6 +276,7 @@ void PhysicsSystem::SetType(Entity e, int32_t type)
 		flags &= ~btCollisionObject::CF_KINEMATIC_OBJECT;
 		collisionComp->collisionMask &= ~CollisionGroups::Static;
 		collisionComp->collisionMask &= ~CollisionGroups::Kinematic;
+		collisionComp->collisionMask &= ~CollisionGroups::Trigger;
 		if( collisionComp->collisionGroup == CollisionGroups::Kinematic || collisionComp->collisionGroup == CollisionGroups::Default )
 			collisionComp->collisionGroup = CollisionGroups::Static;
 		break;
@@ -284,6 +285,8 @@ void PhysicsSystem::SetType(Entity e, int32_t type)
 		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
 		collisionComp->collisionMask &= ~CollisionGroups::Static;
 		collisionComp->collisionMask &= ~CollisionGroups::Kinematic;
+		if( collisionComp->collisionGroup == CollisionGroups::Static )
+			collisionComp->collisionMask |= CollisionGroups::Trigger;
 		if( collisionComp->collisionGroup == CollisionGroups::Static || collisionComp->collisionGroup == CollisionGroups::Default )
 			collisionComp->collisionGroup = CollisionGroups::Kinematic;
 		break;
@@ -292,6 +295,8 @@ void PhysicsSystem::SetType(Entity e, int32_t type)
 		flags &= ~btCollisionObject::CF_STATIC_OBJECT;
 		collisionComp->collisionMask |= CollisionGroups::Static;
 		collisionComp->collisionMask |= CollisionGroups::Kinematic;
+		if( collisionComp->collisionGroup == CollisionGroups::Static )
+			collisionComp->collisionMask |= CollisionGroups::Trigger;
 		if( collisionComp->collisionGroup == CollisionGroups::Static || collisionComp->collisionGroup == CollisionGroups::Kinematic )
 			collisionComp->collisionGroup = CollisionGroups::Default;
 		break;
