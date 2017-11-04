@@ -87,7 +87,7 @@ return GuiGroup({
         width = 155,
         height = 21,
         list = {
-            "None",
+            "NoCollide",
             "Default",
             "Static",
             "Kinematic",
@@ -109,7 +109,7 @@ return GuiGroup({
                 local selected = self:GetSelected()
                 if selected < 0 then return true end
 
-                if selected == 1 then selected = 0 
+                if selected == 1 then selected = COLLISION_GROUPS.NoCollide 
                 else selected = math.pow(2, selected - 2) end
 
                 for i, ent in ipairs(Viewport.selection_set) do 
@@ -129,9 +129,12 @@ return GuiGroup({
                         else value = group end
                     end
                     
-                    if value ~= 0 then value = math.floor( math.log10(value) / math.log10(2) + 0.5 ) + 1 end
+                    if value ~= 0 then
+                        if value ~= COLLISION_GROUPS.NoCollide then value = math.floor( math.log10(value) / math.log10(2) + 0.5 ) + 2 
+                        else value = 1 end
+                    end
 
-                    self:SetSelected( value + 1 )
+                    self:SetSelected( value )
                 return true 
             end,
         },

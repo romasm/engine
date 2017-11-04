@@ -35,6 +35,8 @@ namespace EngineCore
 		Special4 = 2048,
 		Special5 = 4096,
 
+		NoCollide = 65536, 
+
 		Physics = Default | Static | Kinematic | Debris | Character | Trigger,
 		All = -1, //all bits sets
 		AllNoSpecial = All & ~(Special0 | Special1 | Special2 | Special3 | Special4 | Special5),
