@@ -75,6 +75,7 @@ function Viewport:Init()
     self.fullscreen = false
     self.collisionDraw = false
     self.sceneGraphDraw = false
+    self.renderActive = true
 
     self.tc_action = false
 	self.tc_hover = false
@@ -99,8 +100,16 @@ function Viewport:Init()
     self.vp_menu = nil
 end
 
-function Viewport:Tick(dt)
+function Viewport:Tick(dt, isActive)
     if not self.lua_world then return end
+
+    if self.renderActive ~= isActive then
+        local renderCfg = self.lua_world.scenepl:GetConfig()
+        renderCfg.active = isActive
+        self.renderActive = isActive
+    end
+
+    if self.renderActive == false then return end
 
     EditorCamera:Tick(dt)
 
@@ -810,7 +819,7 @@ function Viewport:onItemDroped(eventData)
             local clbData = {}
             clbData.entity = EntityTypes.StaticModel(self.lua_world.world) -- to history
             if not clbData.entity:IsAlive() then return true end
-            print("zdjfghdfh")
+            
             Importer:ImportLoadMesh(meshName, 
                 function (resName, status, data)
                     data.entity:SetMesh( resName..EXT.MESH )

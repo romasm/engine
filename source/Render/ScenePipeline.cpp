@@ -559,10 +559,10 @@ bool ScenePipeline::InitRts()
 	return true;
 }
 
-void ScenePipeline::ApplyConfig()
+bool ScenePipeline::ApplyConfig()
 {
 	if(!renderConfig._dirty)
-		return;
+		return renderConfig.active;
 
 	if(!renderConfig.editorGuiEnable)
 		rt_3DHud->ClearRenderTargets(false);
@@ -581,6 +581,7 @@ void ScenePipeline::ApplyConfig()
 		rt_Bloom->ClearRenderTargets();
 
 	renderConfig._dirty = false;
+	return renderConfig.active;
 }
 
 bool ScenePipeline::StartFrame(LocalTimer* timer)
@@ -588,7 +589,8 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	if(!camera.sys)
 		return false;
 
-	ApplyConfig();
+	if(!ApplyConfig())
+		return false;
 
 	sharedconst.time = timer->GetTime();
 	sharedconst.dt = timer->dt();

@@ -595,6 +595,9 @@ World::World( uint32_t id ) : BaseWorld( id )
 
 void World::Snapshot(ScenePipeline* scene)
 {
+	if(!scene->IsActive())
+		return;
+
 #ifdef _DEV
 	bool profiler_state = Profiler::Get()->IsRunning();
 	if(profiler_state)
@@ -687,6 +690,17 @@ void World::Frame()
 	if( m_mode == StateMode::LIVE )
 		m_triggerSystem->CheckOverlaps(m_dt, frameID);
 
+	bool somethingActive = false;
+	for(auto& it: m_scenes)
+		somethingActive = somethingActive || it->IsActive();
+
+	if(!somethingActive)
+	{
+		dbgDrawer.Drop();
+		PERF_CPU_END(_SCENE_UPDATE);
+		return;
+	}
+
 	m_collisionSystem->DebugDraw();	
 
 	m_lightSystem->Update();
@@ -713,7 +727,7 @@ void World::Frame()
 
 	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
 	m_lightSystem->RegToScene();
-	m_globalLightSystem->RegToScene();
+	m_globalLightSystem->RegToScene(); // TODO: now all RegToScene fill render queues endless if no scenes
 
 	m_visibilitySystem->CheckVisibility();
 
@@ -760,6 +774,8 @@ void World::Frame()
 			it->EndFrame();
 		}
 	}
+
+	dbgDrawer.Drop();
 
 	PERF_CPU_END(_SCENE_DRAW);
 }
@@ -820,6 +836,9 @@ SmallWorld::SmallWorld( uint32_t id ) : BaseWorld(id)
 
 void SmallWorld::Snapshot(ScenePipeline* scene)
 {
+	if(!scene->IsActive())
+		return;
+
 #ifdef _DEV
 	bool profiler_state = Profiler::Get()->IsRunning();
 	if(profiler_state)
@@ -893,32 +912,39 @@ void SmallWorld::Frame()
 	if( m_mode == StateMode::LIVE )
 		m_triggerSystem->CheckOverlaps(m_dt, frameID);
 
-	m_frustumMgr->Clear();
-	m_cameraSystem->RegToDraw();
-	
-	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
-
-	m_visibilitySystem->CheckVisibility();
-
-	m_skeletonSystem->UpdateBuffers();
-	m_staticMeshSystem->RegToDraw();
-
+	bool somethingActive = false;
 	for(auto& it: m_scenes)
+		somethingActive = somethingActive || it->IsActive();
+
+	if(somethingActive)
 	{
-		if(it->StartFrame(&m_world_timer))
+		m_frustumMgr->Clear();
+		m_cameraSystem->RegToDraw();
+	
+		m_envProbSystem->RegToScene(); // replace system with one-envmap solution
+
+		m_visibilitySystem->CheckVisibility();
+
+		m_skeletonSystem->UpdateBuffers();
+		m_staticMeshSystem->RegToDraw();
+
+		for(auto& it: m_scenes)
 		{
-			it->OpaqueForwardStage();
+			if(it->StartFrame(&m_world_timer))
+			{
+				it->OpaqueForwardStage();
 
-			it->OpaqueDefferedStage();
+				it->OpaqueDefferedStage();
 			
-			it->TransparentForwardStage();
+				it->TransparentForwardStage();
 
-			it->UIStage();
-			it->UIOverlayStage();
+				it->UIStage();
+				it->UIOverlayStage();
 			
-			it->HDRtoLDRStage();
+				it->HDRtoLDRStage();
 
-			it->EndFrame();
+				it->EndFrame();
+			}
 		}
 	}
 

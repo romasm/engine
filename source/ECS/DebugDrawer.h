@@ -58,6 +58,12 @@ namespace EngineCore
 			dbgLines.resize(0);
 		}
 
+		void Drop()
+		{
+			lineCount = 0;
+			dbgLines.resize(0);
+		}
+
 		void Render()
 		{
 			if( lineCount == 0 )
@@ -70,8 +76,6 @@ namespace EngineCore
 			lineMat->Set();
 			Render::SetTopology(IA_TOPOLOGY::LINELIST);
 			Render::Context()->Draw(lineCount * 2, 0);
-
-			lineCount = 0;
 		}
 
 	private:

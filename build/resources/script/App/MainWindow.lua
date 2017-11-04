@@ -78,7 +78,7 @@ function MainWindow:Tick(dt)
     Properties:Tick(dt)
     MaterialProps:Tick(dt)
 
-    Viewport:Tick(dt)
+    Viewport:Tick(dt, self.mainwin:IsActive())
 end
 
 function MainWindow:Exit()

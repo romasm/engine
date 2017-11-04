@@ -67,6 +67,7 @@ namespace EngineCore
 		float ambientLightDiffuse;
 		float ambientLightSpecular;
 		bool editorGuiEnable;
+		bool active;
 
 		bool _dirty;
 
@@ -83,6 +84,7 @@ namespace EngineCore
 			ambientLightDiffuse = 1.0f;
 			ambientLightSpecular = 1.0f;
 			editorGuiEnable = true;
+			active = true;
 
 			_dirty = true;
 		}
@@ -102,6 +104,7 @@ namespace EngineCore
 		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightDiffuse)
 		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightSpecular)
 		RC_ADD_LUA_PROPERTY_FUNC(bool, editorGuiEnable)
+		RC_ADD_LUA_PROPERTY_FUNC(bool, active)
 
 		static void RegLuaClass()
 		{
@@ -118,6 +121,7 @@ namespace EngineCore
 				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightDiffuse)
 				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightSpecular)
 				RC_ADD_LUA_PROPERTY_DEF(bool, editorGuiEnable)
+				RC_ADD_LUA_PROPERTY_DEF(bool, active)
 				.endClass();
 		}
 	};
@@ -272,7 +276,8 @@ namespace EngineCore
 		bool SaveScreenshot(string path, uint32_t targetX, uint32_t targetY);
 
 		RenderConfig* GetConfig() {return &renderConfig;}
-		void ApplyConfig();
+		bool ApplyConfig();
+		bool IsActive() const {return renderConfig.active;}
 
 		static void RegLuaClass()
 		{
@@ -372,7 +377,7 @@ namespace EngineCore
 
 		StructBuf m_EnvProbBuffer;
 		StructBuf m_MaterialBuffer;
-
+		
 		ALIGNED_ALLOCATION
 
 	protected:
