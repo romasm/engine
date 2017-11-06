@@ -629,7 +629,8 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 	const float lightAmountFake = exp(-gbuffer.thickness);
 
 	LightComponents directLight = (LightComponents)0;
-	
+
+#ifndef TEMP_FAST_COMPILE 
 	[loop] // spot
 	for(int i_spt=0; i_spt < g_lightCount.spot_count; i_spt++)
 	{
@@ -745,7 +746,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.Append(lightResult);
 	}
-
+#endif// TEMP_FAST_COMPILE 
 	[loop] // caster point
 	for(int ic_p=0; ic_p < g_lightCount.caster_point_count; ic_p++)
 	{
@@ -766,7 +767,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount.x);
 	}
-	
+#ifndef TEMP_FAST_COMPILE 
 	[loop] // sphere
 	for(int i_sph=0; i_sph < g_lightCount.sphere_count; i_sph++)
 	{
@@ -848,7 +849,96 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.Append(lightResult);
 	}
-	
+#endif// TEMP_FAST_COMPILE 
 	return directLight;
 }
 #endif
+
+float3 ProcessLightsVoxel(sampler samp, Texture2DArray <float> shadowsAtlas, float shadowBias, 
+						float3 albedo, float3 normal, float3 emissive, float3 wpos,
+						StructuredBuffer<SpotVoxelBuffer> spotLightInjectBuffer, int spotCount, 
+						StructuredBuffer<PointVoxelBuffer> pointLightInjectBuffer, int pointCount,
+						StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer, int dirCount)
+{
+	const float4 shadowWpos = float4(wpos + normal * shadowBias, 1.0f);
+	
+	float3 emittance = 0;
+
+	[loop]
+	for(int spotID = 0; spotID < spotCount; spotID++)
+	{
+		const SpotVoxelBuffer spotLightData = spotLightInjectBuffer[spotID];
+	
+		const float3 unnormL = spotLightData.PosRange.xyz - wpos;
+		
+		const float DoUL = dot(spotLightData.DirConeY.xyz, -unnormL);
+		if(DoUL <= 0)
+			continue;
+		 
+		float illuminance = getDistanceAtt( unnormL, spotLightData.PosRange.w );
+		if(illuminance <= 0) 
+			continue;
+		
+		const float3 L = normalize(unnormL);
+			 
+		const float NoL = saturate(dot(normal, L));
+		if(NoL == 0.0f)
+			continue;
+
+		const float3 virtUnnormL = spotLightData.Virtpos.xyz - wpos;
+		const float3 virtL = normalize(virtUnnormL);
+
+		illuminance *= getAngleAtt(virtL, -spotLightData.DirConeY.xyz, spotLightData.ColorConeX.w, spotLightData.DirConeY.w);
+		if(illuminance <= 0)
+			continue; 
+
+		const float light_blocked = GetVoxelSpotShadow(samp, shadowsAtlas, shadowWpos, spotLightData);
+		const float3 colorIlluminance = light_blocked * illuminance * spotLightData.ColorConeX.rgb;
+		
+		emittance += colorIlluminance * NoL;
+	}
+
+	[loop]
+	for(int pointID=0; pointID < pointCount; pointID++)
+	{
+		const PointVoxelBuffer pointLightData = pointLightInjectBuffer[pointID];
+	
+		const float3 unnormL = pointLightData.PosRange.xyz - wpos;
+		
+		const float illuminance = getDistanceAtt( unnormL, pointLightData.PosRange.w );
+		if(illuminance == 0)
+			continue;
+		
+		const float3 L = normalize(unnormL);
+		const float NoL = saturate(dot(normal, L));
+			
+		if(NoL == 0.0f)
+			continue;
+		
+		const float light_blocked = GetVoxelPointShadow(samp, shadowsAtlas, shadowWpos, pointLightData);
+		const float3 colorIlluminance = light_blocked * illuminance * pointLightData.ColorShadowmapProj.rgb;
+			
+		emittance += colorIlluminance * NoL;
+	}
+
+	[loop]
+	for(int dirID = 0; dirID < dirCount; dirID++)
+	{
+		const DirVoxelBuffer dirLightData = dirLightInjectBuffer[dirID];
+		
+		const float3 L = -dirLightData.Dir.xyz;
+
+		const float NoL = saturate(dot(normal, L));
+		if(NoL == 0.0f)
+			continue;
+
+		const float light_blocked = GetVoxelDirShadow(samp, shadowsAtlas, shadowWpos, dirLightData);
+		const float3 colorIlluminance = light_blocked * dirLightData.Color.rgb;
+		
+		emittance += colorIlluminance * NoL;
+	}
+
+	emittance = emittance * Diffuse_Lambert(albedo) + emissive;
+
+	return emittance;
+}

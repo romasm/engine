@@ -607,6 +607,7 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	sharedconst.invViewProjection = XMMatrixInverse(nullptr, sharedconst.viewProjection);
 
 	sharedconst.g_far = current_camera->far_clip;
+	sharedconst.g_near = current_camera->near_clip;
 	sharedconst.g_farMinusNear = current_camera->far_clip - current_camera->near_clip;
 	sharedconst.g_nearMulFar = current_camera->far_clip * current_camera->near_clip;
 

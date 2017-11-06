@@ -129,10 +129,10 @@ namespace EngineCore
 		inline void RegisterDirCaster(DirVoxelBuffer& data)
 		{dirVoxel_array.push_back(data);}
 		
-		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelSceneSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelSceneColor0SRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelSceneColor1SRV;}
-		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelSceneNormalSRV;}
+		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelEmittanceSRV;}
+		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelEmittanceSRV;}
+		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelEmittanceSRV;}
+		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelEmittanceSRV;}
 
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
 
@@ -181,22 +181,7 @@ namespace EngineCore
 
 		ID3D11Texture2D* voxelizationDumb;
 		ID3D11RenderTargetView* voxelizationDumbRTV;
-
-		ID3D11Texture3D* voxelScene;
-		ID3D11UnorderedAccessView* voxelSceneUAV;
-		ID3D11ShaderResourceView* voxelSceneSRV;
-
-		ID3D11Texture3D* voxelSceneColor0;
-		ID3D11UnorderedAccessView* voxelSceneColor0UAV;
-		ID3D11ShaderResourceView* voxelSceneColor0SRV;
-		ID3D11Texture3D* voxelSceneColor1;
-		ID3D11UnorderedAccessView* voxelSceneColor1UAV;
-		ID3D11ShaderResourceView* voxelSceneColor1SRV;
-
-		ID3D11Texture3D* voxelSceneNormal;
-		ID3D11UnorderedAccessView* voxelSceneNormalUAV;
-		ID3D11ShaderResourceView* voxelSceneNormalSRV;
-		
+				
 		ID3D11Texture3D* voxelEmittance;
 		ID3D11UnorderedAccessView* voxelEmittanceUAV;
 		ID3D11ShaderResourceView* voxelEmittanceSRV;

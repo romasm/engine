@@ -1,16 +1,27 @@
 #include "../common/math.hlsl"
 #include "../common/shared.hlsl"
 #include "../common/structs.hlsl"
+
+#include "../common/common_helpers.hlsl"
+#include "../common/light_structs.hlsl"
+#include "../common/shadow_helpers.hlsl"
+#include "../system/direct_brdf.hlsl"   
+#include "../common/light_helpers.hlsl"
+
 #include "../common/voxel_helpers.hlsl"
  
 #include "pixel_input.hlsl"
 
 SamplerState samplerTrilinearWrap : register(s0);
+SamplerState samplerPointClamp : register(s1);
 
-RWTexture3D <uint> opacityVolume : register(u1);  
-RWTexture3D <uint> colorVolume0 : register(u2);  
-RWTexture3D <uint> colorVolume1 : register(u3);  
-RWTexture3D <uint> normalVolume : register(u4);  
+RWTexture3D <uint> emittanceVolume : register(u1);  
+
+Texture2DArray <float> shadowsAtlas : register(t9);   
+
+StructuredBuffer<SpotVoxelBuffer> spotLightInjectBuffer : register(t10); 
+StructuredBuffer<PointVoxelBuffer> pointLightInjectBuffer : register(t11); 
+StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer : register(t12); 
   
 cbuffer matrixBuffer : register(b3)
 {
@@ -35,63 +46,73 @@ cbuffer levelData : register(b6)
 	float _padding02;
 };
 
-// pixel
-float VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint subsampleIndex : SV_SampleIndex, 
-						   uint subsampleCoverage : SV_Coverage, uint instID : SV_InstanceID) : SV_TARGET
+cbuffer lightCountBuffer : register(b7)
 {
-	uint cover = (1 << subsampleIndex) & subsampleCoverage;
+	uint spotCount;
+	uint pointCount;
+	uint dirCount;
+	uint _padding;
+};
+
+#define MAX_WAITING_CYCLES 10
+void InterlockedFloatAdd(uint3 coords, float value)
+{
+	uint comp;
+	uint orig = emittanceVolume[coords];
+	int iter = 0;
+	[allow_uav_condition]
+	do
+	{
+		comp = orig;
+		const float newValue = asfloat(orig) + value;
+		InterlockedCompareExchange(emittanceVolume[coords], comp, asuint(newValue), orig);
+		iter++;
+	}
+	while(orig != comp && iter < MAX_WAITING_CYCLES);
+}
+
+// pixel
+void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint subsampleIndex : SV_SampleIndex, 
+						   uint subsampleCoverage : SV_Coverage, uint instID : SV_InstanceID)
+{
+	const uint cover = (1 << subsampleIndex) & subsampleCoverage;
 	if( cover == 0 )
 		discard;
 
 	// material data
-	bool opaque = AlphatestCalculate(samplerTrilinearWrap, input.tex);
+	const bool opaque = AlphatestCalculate(samplerTrilinearWrap, input.tex);
 	if(!opaque)
 		discard;
 
 	float3 albedo = AlbedoCalculate(samplerTrilinearWrap, input.tex);
-
-	float3 normal = NormalCalculate(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal, matrixPerInstance[instID].normalMatrix );
-	
-	float3 emissive = EmissiveCalculate(samplerTrilinearWrap, input.tex);
-
-	float3 specular = ReflectivityCalculate(samplerTrilinearWrap, input.tex, albedo);
+	const float3 normal = NormalCalculate(samplerTrilinearWrap, input.tex, input.normal, input.tangent, input.binormal, matrixPerInstance[instID].normalMatrix );
+	const float3 emissive = EmissiveCalculate(samplerTrilinearWrap, input.tex);
+	const float3 specular = ReflectivityCalculate(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
 		
-	// emittance prepare
-	float emissiveLum = length(emissive);
-	emissive /= emissiveLum;
-	float4 emittance = emissiveLum > 0.00001 ? float4(emissive, emissiveLum) : float4(albedo, 0.0);
-	emittance = float4(saturate(emittance.x) * 255, saturate(emittance.y) * 255, 
-		saturate(emittance.z) * 255, saturate(emittance.w / 100.0f) * 255);
-	uint2 emitValue = uint2( (uint(emittance.x) << 16) + uint(emittance.y), (uint(emittance.z) << 16) + uint(emittance.w) );
-
-	// normal prepare
-	normal = normalize(normal);
-	normal = (normal + 1.0f) * 0.5f;
-
-	uint3 voxelNormal;
-	voxelNormal.x = normal.x * 255;
-	voxelNormal.y = normal.y * 255;
-	voxelNormal.z = normal.z * 255;
-
+	// lighting 
+	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;
+	const float3 emittance = ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
+		spotLightInjectBuffer, (int)spotCount, pointLightInjectBuffer, (int)pointCount, dirLightInjectBuffer, (int)dirCount);
+	
 	// coords 
 	uint3 uavCoords = uint3(input.voxelCoords.xyz);
 	uavCoords.y += volumeData[0].volumeRes * 2 * input.planeId;
 	uavCoords.xy += volumeData[currentLevel].levelOffset;
-
 	if(!front)
 		uavCoords.y += volumeData[0].volumeRes;
 	
 	// write
-	InterlockedAdd( opacityVolume[uavCoords], (voxelNormal.z << 16) + 1 );
-	
-	InterlockedAdd( colorVolume0[uavCoords], emitValue.x );
-	InterlockedAdd( colorVolume1[uavCoords], emitValue.y );
-
-	InterlockedAdd( normalVolume[uavCoords], (voxelNormal.x << 16) + voxelNormal.y );
+	uavCoords.x *= 4;
+	InterlockedFloatAdd(uavCoords, emittance.r);
+	uavCoords.x += 1;
+	InterlockedFloatAdd(uavCoords, emittance.g);
+	uavCoords.x += 1;
+	InterlockedFloatAdd(uavCoords, emittance.b);
+	uavCoords.x += 1;
+	InterlockedFloatAdd(uavCoords, 1.0);
 
 	discard;
-	return 0.0;
 }
 
 // geometry
@@ -108,9 +129,10 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 	[unroll]
 	for ( int i = 0; i < 3; i++ )
 	{ 
-		output.voxelCoords.xyz = (input[i].position.xyz - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
+		output.worldPosition = input[i].position.xyz;
+		output.voxelCoords.xyz = (output.worldPosition - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
 		output.voxelCoords.w = 1.0f;
-		output.position = mul(float4(input[i].position, 1.0f), volumeVP[currentLevel][instanceId]);
+		output.position = mul(float4(output.worldPosition, 1.0f), volumeVP[currentLevel][instanceId]);
 		
 		output.tex = input[i].tex;
 		output.normal = input[i].normal; 

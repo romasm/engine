@@ -131,7 +131,7 @@ float2 GetVoxelOpacity(float2 uv, uint level)
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(emittance.w, collidePosPS.z / collidePosPS.w);
+	return float2(saturate(emittance.w * VOXEL_SUBSAMPLES_COUNT_RCP), collidePosPS.z / collidePosPS.w);
 }
     
 float4 GetVoxelEmittance(float2 uv, uint level)
@@ -142,6 +142,11 @@ float4 GetVoxelEmittance(float2 uv, uint level)
 		return 0;
 	    
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
+
+	[flatten]
+	if(emittance.w > 0)
+	emittance.rgb /= emittance.w;
+
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	   
 	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
@@ -258,31 +263,30 @@ PO_LDR HDRLDR(PI_PosTex input)
 		tonemapped = ssr.rgb * ssr.a;
 	}
 	
-	if(voxelVis > 0)
+	if(voxelVis > 0)      
 	{
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
+		float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 		
-		if(voxelVis == 1)
-		{
-			float voxelDepth = 0;
-			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
-			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
-				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a == 0) * VOXEL_ALPHA);
+		if(voxelVis == 1)              
+		{     
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
+			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
-		else if(voxelVis == 2)
+		else if(voxelVis == 2)      
 		{ 
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
-		} 
+		}  
 		else if(voxelVis == 3) 
 		{       
 			float voxelDepth = 0;
 			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
 			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
 				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
-		}  
+		}   
 		else if(voxelVis == 4) 
 		{
 			float4 voxelNormal = GetVoxelNormal(input.tex);
@@ -291,7 +295,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 		} 
 		else if(voxelVis == 5)
 		{
-			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);
+			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);      
 			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
 				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
 		}
@@ -301,7 +305,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
 				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
 		} 
-	}           
+	}            
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);

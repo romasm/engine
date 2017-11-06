@@ -13,18 +13,6 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 
 	voxelizationDumb = nullptr;
 	voxelizationDumbRTV = nullptr;
-	voxelScene = nullptr;
-	voxelSceneUAV = nullptr;
-	voxelSceneSRV = nullptr;
-	voxelSceneColor0 = nullptr;
-	voxelSceneColor0UAV = nullptr;
-	voxelSceneColor0SRV = nullptr;
-	voxelSceneColor1 = nullptr;
-	voxelSceneColor1UAV = nullptr;
-	voxelSceneColor1SRV = nullptr;
-	voxelSceneNormal = nullptr;
-	voxelSceneNormalUAV = nullptr;
-	voxelSceneNormalSRV = nullptr;
 	voxelEmittance = nullptr;
 	voxelEmittanceUAV = nullptr;
 	voxelEmittanceSRV = nullptr;
@@ -78,18 +66,6 @@ VoxelRenderer::~VoxelRenderer()
 
 	_RELEASE(voxelizationDumbRTV);
 	_RELEASE(voxelizationDumb);
-	_RELEASE(voxelSceneUAV);
-	_RELEASE(voxelSceneSRV);
-	_RELEASE(voxelScene);
-	_RELEASE(voxelSceneColor0UAV);
-	_RELEASE(voxelSceneColor0SRV);
-	_RELEASE(voxelSceneColor0);
-	_RELEASE(voxelSceneColor1UAV);
-	_RELEASE(voxelSceneColor1SRV);
-	_RELEASE(voxelSceneColor1);
-	_RELEASE(voxelSceneNormalUAV);
-	_RELEASE(voxelSceneNormalSRV);
-	_RELEASE(voxelSceneNormal);
 	_RELEASE(voxelEmittanceUAV);
 	_RELEASE(voxelEmittanceSRV);
 	_RELEASE(voxelEmittance);
@@ -228,78 +204,43 @@ bool VoxelRenderer::initVoxelBuffers()
 	if( FAILED(Render::CreateRenderTargetView(voxelizationDumb, &dumbRTVDesc, &voxelizationDumbRTV)) )
 		return false;
 
-	// visibility
+	// emittance
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
 	volumeDesc.Width = volumeResolution * clipmapCount + volumeResolution / 2;	// x - level
 	volumeDesc.Height = volumeResolution * 6;					// y - face
 	volumeDesc.Depth = volumeResolution;
 	volumeDesc.MipLevels = 1;
-	volumeDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
 	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 	volumeDesc.CPUAccessFlags = 0;
 	volumeDesc.MiscFlags = 0;
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelScene)) )
+	volumeDesc.Format = DXGI_FORMAT_R32G32B32A32_TYPELESS;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelEmittance)) )
 		return false;
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
 	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
 	volumeUAVDesc.Texture3D.WSize = volumeResolution;
-	if( FAILED(Render::CreateUnorderedAccessView(voxelScene, &volumeUAVDesc, &voxelSceneUAV)) )
+	volumeUAVDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelEmittance, &volumeUAVDesc, &voxelEmittanceUAV)) )
 		return false;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
 	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.Format = DXGI_FORMAT_R32_UINT;
 	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
-	if( FAILED(Render::CreateShaderResourceView(voxelScene, &volumeSRVDesc, &voxelSceneSRV)) )
-		return false;
-
-	// color
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelSceneColor0)) )
-		return false;
-	if( FAILED(Render::CreateUnorderedAccessView(voxelSceneColor0, &volumeUAVDesc, &voxelSceneColor0UAV)) )
-		return false;
-	if( FAILED(Render::CreateShaderResourceView(voxelSceneColor0, &volumeSRVDesc, &voxelSceneColor0SRV)) )
-		return false;
-
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelSceneColor1)) )
-		return false;
-	if( FAILED(Render::CreateUnorderedAccessView(voxelSceneColor1, &volumeUAVDesc, &voxelSceneColor1UAV)) )
-		return false;
-	if( FAILED(Render::CreateShaderResourceView(voxelSceneColor1, &volumeSRVDesc, &voxelSceneColor1SRV)) )
-		return false;
-
-	// normal
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelSceneNormal)) )
-		return false;
-	if( FAILED(Render::CreateUnorderedAccessView(voxelSceneNormal, &volumeUAVDesc, &voxelSceneNormalUAV)) )
-		return false;
-	if( FAILED(Render::CreateShaderResourceView(voxelSceneNormal, &volumeSRVDesc, &voxelSceneNormalSRV)) )
-		return false;
-	
-	// emittance
-	volumeDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelEmittance)) )
-		return false;
-
-	volumeUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	if( FAILED(Render::CreateUnorderedAccessView(voxelEmittance, &volumeUAVDesc, &voxelEmittanceUAV)) )
-		return false;
-
-	volumeSRVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	volumeSRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	if( FAILED(Render::CreateShaderResourceView(voxelEmittance, &volumeSRVDesc, &voxelEmittanceSRV)) )
 		return false;
 
 	// downsample
 	uint32_t downsampleRes = volumeResolution / 2 + 1;
 
+	volumeDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	volumeDesc.Width = downsampleRes;
 	volumeDesc.Height = downsampleRes * 6;
 	volumeDesc.Depth = downsampleRes;
@@ -307,6 +248,7 @@ bool VoxelRenderer::initVoxelBuffers()
 		return false;
 
 	volumeUAVDesc.Texture3D.WSize = downsampleRes;
+	volumeUAVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	if( FAILED(Render::CreateUnorderedAccessView(voxelDownsampleTemp, &volumeUAVDesc, &voxelDownsampleTempUAV)) )
 		return false;
 
@@ -349,6 +291,14 @@ bool VoxelRenderer::initVoxelBuffers()
 
 void VoxelRenderer::updateBuffers()
 {
+	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
+	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
+	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(DirVoxelBuffer));
+
+	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
+		(uint32_t)dirVoxel_array.size(), 0};
+	Render::UpdateDynamicResource(volumeLightInfo, lightCount, sizeof(uint32_t) * 4);
+
 	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
 	
 	Vector3 camDirs[3];
@@ -389,19 +339,10 @@ void VoxelRenderer::updateBuffers()
 void VoxelRenderer::VoxelizeScene()
 {
 	prepareMeshData();
+
+	Render::ClearUnorderedAccessViewUint(voxelEmittanceUAV, Vector4(0,0,0,0));
 	
-	Render::ClearUnorderedAccessViewUint(voxelSceneUAV, Vector4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneColor0UAV, Vector4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneColor1UAV, Vector4(0,0,0,0));
-	Render::ClearUnorderedAccessViewUint(voxelSceneNormalUAV, Vector4(0,0,0,0));
-
-	ID3D11UnorderedAccessView* uavs[4];
-	uavs[0] = voxelSceneUAV;
-	uavs[1] = voxelSceneColor0UAV;
-	uavs[2] = voxelSceneColor1UAV;
-	uavs[3] = voxelSceneNormalUAV;
-
-	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 4, uavs, nullptr);
+	Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &voxelizationDumbRTV, nullptr, 1, 1, &voxelEmittanceUAV, nullptr);
 
 	Render::RSSetViewports(1, &viewport);
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
@@ -417,6 +358,15 @@ void VoxelRenderer::VoxelizeScene()
 	Render::PSSetConstantBuffers(6, 1, &levelBuffer);
 	Render::GSSetConstantBuffers(6, 1, &levelBuffer);
 
+	Render::PSSetConstantBuffers(7, 1, &volumeLightInfo);
+
+	auto shadowsBufferSRV = render_mgr->shadowsRenderer->GetShadowBuffer();
+	Render::PSSetShaderResources(9, 1, &shadowsBufferSRV);
+
+	Render::PSSetShaderResources(10, 1, &spotLightInjectBuffer.srv);
+	Render::PSSetShaderResources(11, 1, &pointLightInjectBuffer.srv);
+	Render::CSSetShaderResources(12, 1, &dirLightInjectBuffer.srv);
+	
 	// draw
 	const unsigned int offset = 0;
 	for(uint8_t level = 0; level < clipmapCount; level++)
@@ -493,7 +443,7 @@ void VoxelRenderer::prepareMeshData()
 
 void VoxelRenderer::ProcessEmittance()
 {
-	PERF_GPU_TIMESTAMP(_LIGHTINJECT);
+	/*PERF_GPU_TIMESTAMP(_LIGHTINJECT);
 
 	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, Vector4(0,0,0,0));
 
@@ -524,7 +474,7 @@ void VoxelRenderer::ProcessEmittance()
 
 	voxelInjectLight->Dispatch(injectGroupsCount[0], injectGroupsCount[1], injectGroupsCount[2]);
 	voxelInjectLight->UnbindUAV();
-		
+	*/
 	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
@@ -540,7 +490,7 @@ void VoxelRenderer::ProcessEmittance()
 	threadCount[0] = currentRes / 8;
 	threadCount[1] = threadCount[0] * 6;
 	threadCount[2] = currentRes / 4;
-	for(uint16_t level = 1; level < clipmapCount; level++)
+	/*for(uint16_t level = 1; level < clipmapCount; level++)
 	{
 		Render::ClearUnorderedAccessViewFloat(voxelDownsampleTempUAV, Vector4(0,0,0,0));
 
@@ -583,7 +533,7 @@ void VoxelRenderer::ProcessEmittance()
 		voxelDownsampleMove[3]->UnbindUAV();
 		Render::CSSetShaderResources(0, 1, &null_srv);
 	}
-
+	*/
 	volumeDownsample.isShifted.x = 0;
 	volumeDownsample.isShifted.y = 0;
 	volumeDownsample.isShifted.z = 0;
@@ -637,19 +587,22 @@ void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, M
 
 	for(uint8_t level = 0; level < clipmapCount; level++)
 	{
+		if(meshesToRender[level].full())
+			continue;
+
 		// discard if in lower level
 		if( level < clipmapCount - 1 )
 		{
-			if( level > 0)
+			/*if( level > 0)
 			{
 				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT || volumesConfig[level - 1].volumeBox.Contains(bbox) == CONTAINS )
 					continue;
 			}
 			else
-			{
+			{*/
 				if(	volumesConfig[level].volumeBox.Contains(bbox) == DISJOINT )
 					continue;
-			}
+			//}
 		}
 		else
 		{
@@ -657,12 +610,9 @@ void VoxelRenderer::RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, M
 				continue;
 		}
 
-		float meshSize = max<float>(max<float>(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 2;
+		float meshSize = max<float>(max<float>(bbox.Extents.x, bbox.Extents.y), bbox.Extents.z) * 4.0f;
 		if( meshSize < volumesConfig[level].voxelSize )
 			continue;
-		
-		if(meshesToRender[level].full())
-			return;
 
 		bool has_tq = false;
 		auto queue = material->GetTechQueue(TECHNIQUES::TECHNIQUE_VOXEL, &has_tq);

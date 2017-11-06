@@ -69,11 +69,11 @@ inline void DownsampleEmittance(uint3 currentID)
 
 	voxelID += (uint3)isShifted;
 
-	float3 emittanceWeight[4] = {
-		float3(0,0,0),
-		float3(0,0,0),
-		float3(0,0,0),
-		float3(0,0,0)
+	float4 emittanceWeight[4] = {
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0)
 	};
 	float opacity[4] = {0,0,0,0};
 	[unroll]
@@ -82,12 +82,12 @@ inline void DownsampleEmittance(uint3 currentID)
 		float4 sampleEO = emittanceVolume.Load(int4(voxelID + voxelOffset[negative][i], 0));
 		uint opacityID = perFaceOpacity[face][i];
 
-		emittanceWeight[ opacityID ] = lerp( sampleEO.rgb, emittanceWeight[ opacityID ], opacity[ opacityID ] );
-		opacity[ opacityID ] += sampleEO.a;
+		emittanceWeight[ opacityID ] = lerp( sampleEO, emittanceWeight[ opacityID ], opacity[ opacityID ]);
+		opacity[ opacityID ] += saturate(sampleEO.a * VOXEL_SUBSAMPLES_COUNT_RCP);
 	}
 
 	float finalOpacity = 0;
-	float3 finalEmittance = 0;
+	float4 finalEmittance = 0;
 	[unroll]
 	for(int j = 0; j < 4; j++)
 	{
@@ -100,9 +100,8 @@ inline void DownsampleEmittance(uint3 currentID)
 		return;
 
 	finalEmittance /= finalOpacity;
-	finalOpacity *= 0.25f;
 	
-	downsampleVolumeRW[currentID] = float4(finalEmittance, finalOpacity);
+	downsampleVolumeRW[currentID] = finalEmittance;
 }
 
 #define DOWNSAMPLE(x, y, z) [numthreads( x, y, z )] \

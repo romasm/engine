@@ -64,22 +64,25 @@ StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t26);
 StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t27); 
 StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29);     
 
 StructuredBuffer<int> g_lightIDs : register(t30); 
 
 cbuffer configBuffer : register(b1)
 {
-	ConfigParams configs;   
+	ConfigParams configs;    
 };
   
 cbuffer lightsCount : register(b2)  
 { 
-	LightsCount g_lightCount;
-};  
+	LightsCount g_lightCount; 
+};               
  
+// TEMP      
+#define TEMP_FAST_COMPILE    
+
 #include "../common/shadow_helpers.hlsl"
-#include "../system/direct_brdf.hlsl"  
+#include "../system/direct_brdf.hlsl"   
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
@@ -122,22 +125,22 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	ViewVector = ViewVector / linDepth;
 	
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);
-
-	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
+	 
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR); 
 	   
 	// DIRECT LIGHT
-	LightComponents directLight = 
+	LightComponents directLight =  
 		ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	
+	 
 	// IBL
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
-	// VCTGI   
-	LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, 
-		specularBrdf, diffuseBrdf, SO);
-
+	// VCTGI    
+	LightComponentsWeight vctLight = (LightComponentsWeight)0;//CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, 
+		//specularBrdf, diffuseBrdf, SO); 
+	 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);

@@ -166,7 +166,7 @@ namespace EngineCore
 			Vector3 g_CamFrust2;
 			float g_farMinusNear;
 			Vector3 g_CamFrust3;
-			float padding4;
+			float g_near;
 		};
 
 		struct DefferedConfigData
