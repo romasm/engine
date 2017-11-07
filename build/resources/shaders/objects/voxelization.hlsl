@@ -71,6 +71,24 @@ void InterlockedFloatAdd(uint3 coords, float value)
 	while(orig != comp && iter < MAX_WAITING_CYCLES);
 }
 
+void WriteVoxel(float3 emittance, int3 coords, bool front, int planeId)
+{
+	coords.y += volumeData[0].volumeRes * 2 * planeId;
+	coords.xy += volumeData[currentLevel].levelOffset;
+	if(!front)
+		coords.y += volumeData[0].volumeRes;
+	
+	coords.x *= 4;
+
+	InterlockedFloatAdd(coords, emittance.r);
+	coords.x += 1;
+	InterlockedFloatAdd(coords, emittance.g);
+	coords.x += 1;
+	InterlockedFloatAdd(coords, emittance.b);
+	coords.x += 1;
+	InterlockedFloatAdd(coords, 1.0);
+}
+
 // pixel
 void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint subsampleIndex : SV_SampleIndex, 
 						   uint subsampleCoverage : SV_Coverage, uint instID : SV_InstanceID)
@@ -94,26 +112,34 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;
 	const float3 emittance = ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
 		spotLightInjectBuffer, (int)spotCount, pointLightInjectBuffer, (int)pointCount, dirLightInjectBuffer, (int)dirCount);
-	
-	// coords 
-	uint3 uavCoords = uint3(input.voxelCoords.xyz);
-	uavCoords.y += volumeData[0].volumeRes * 2 * input.planeId;
-	uavCoords.xy += volumeData[currentLevel].levelOffset;
-	if(!front)
-		uavCoords.y += volumeData[0].volumeRes;
-	
-	// write
-	uavCoords.x *= 4;
-	InterlockedFloatAdd(uavCoords, emittance.r);
-	uavCoords.x += 1;
-	InterlockedFloatAdd(uavCoords, emittance.g);
-	uavCoords.x += 1;
-	InterlockedFloatAdd(uavCoords, emittance.b);
-	uavCoords.x += 1;
-	InterlockedFloatAdd(uavCoords, 1.0);
+		
+	// output
+	int3 uavCoords = int3(input.voxelCoords.xyz);
+
+	float3 shiftedCoords = input.voxelCoords.xyz;
+	if(input.planeId == 0)
+		shiftedCoords.x += front ? input.trisRadiusSq : -input.trisRadiusSq;
+	else if(input.planeId == 1)
+		shiftedCoords.y += front ? input.trisRadiusSq : -input.trisRadiusSq;
+	else if(input.planeId == 2)
+		shiftedCoords.z += front ? input.trisRadiusSq : -input.trisRadiusSq;
+
+	int3 uavShiftedCoords = int3(shiftedCoords);
+
+	[branch]
+	if( any(uavShiftedCoords - uavCoords) && uavShiftedCoords.x >= 0 && uavShiftedCoords.x < (int)volumeData[currentLevel].volumeRes &&
+		uavShiftedCoords.y >= 0 && uavShiftedCoords.y < (int)volumeData[currentLevel].volumeRes &&
+		uavShiftedCoords.z >= 0 && uavShiftedCoords.z < (int)volumeData[currentLevel].volumeRes )
+	{
+		WriteVoxel(emittance, uavShiftedCoords, front, input.planeId);
+	}
+
+	WriteVoxel(emittance, uavCoords, front, input.planeId);
 
 	discard;
 }
+
+#define RCP3 1.0 / 3.0
 
 // geometry
 [instance(3)] 
@@ -125,6 +151,9 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 
 	output.planeId = instanceId; 
 	//output.level = currentLevel;
+
+	const float3 trisRadiusVect = input[0].position.xyz - (input[0].position.xyz + input[1].position.xyz + input[2].position.xyz) * RCP3;
+	output.trisRadiusSq = min(length(trisRadiusVect) * volumeData[currentLevel].voxelSizeRcp, 1.0);
 
 	[unroll]
 	for ( int i = 0; i < 3; i++ )

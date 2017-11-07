@@ -112,7 +112,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	const float apertureDouble = 2.0f * aperture;
 
 	// TODO: ???
-	float3 coneStart = origin;// + surfaceNormal * volumeData[0].voxelSize;
+	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelSize;
 
 	uint startLevel;
 	//float startLevelFade = 1.0;
@@ -187,11 +187,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 				coords.y += faces[faceID];
 
 				float4 sample = volumeEmittance.SampleLevel(volumeSampler, coords, 0);
-				[flatten]
-				if(sample.a > 0)
-					sample.rgb /= sample.a;
-				sample.a = saturate(sample.a * VOXEL_SUBSAMPLES_COUNT_RCP);
-				
+								
 				voxelSample[voxelLevel] += sample * dirWeight[faceID];
 			}
 		}
@@ -202,6 +198,11 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 		float4 finalColor = lerp(voxelSample[1], voxelSample[0], levelLerp);
 		
+		[flatten]
+		if(finalColor.a > 0)
+			finalColor.rgb /= finalColor.a;
+		finalColor.a = saturate(finalColor.a * VOXEL_SUBSAMPLES_COUNT_RCP);
+
 		coneColor.rgb += (1.0f - coneColor.a) * finalColor.rgb * finalColor.a; // todo: correct accumulation
 		coneColor.a += finalColor.a;
         
@@ -213,7 +214,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
 	//coneColor = lerp(coneColor, float4(startLevelFade,startLevelFade,startLevelFade,1.0), 0.9999);
 
-	return float4(coneColor.rgb, 1.0);
+	//return float4(coneColor.rgb, 1.0);
+	return coneColor;
 }
 
 #define RAY_TRACE_DISTANCE 350.0f

@@ -82,7 +82,8 @@ struct PI_Mesh_Voxel
 	sample float3 binormal			: BINORMAL;
 	sample float4 voxelCoords		: POSITION;
 	sample float3 worldPosition		: TEXCOORD1;
-	nointerpolation uint planeId	: TEXCOORD2;
+	nointerpolation int planeId	: TEXCOORD2;
+	nointerpolation float trisRadiusSq	: TEXCOORD3;
 	//nointerpolation uint level		: TEXCOORD3;
 };
 

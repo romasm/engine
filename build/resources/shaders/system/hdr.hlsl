@@ -275,10 +275,8 @@ PO_LDR HDRLDR(PI_PosTex input)
 		}  
 		else if(voxelVis == 2)      
 		{ 
-			float voxelDepth = 0;
-			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
-			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
-				tonemapped = lerp(tonemapped, voxelColor.rgb, float(voxelColor.a != 0) * VOXEL_ALPHA);
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
+			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
 		else if(voxelVis == 3) 
 		{       
