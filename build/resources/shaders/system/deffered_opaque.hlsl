@@ -123,10 +123,10 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float3 ViewVector = g_CamPos - gbuffer.wpos;    
 	const float linDepth = length(ViewVector);
 	ViewVector = ViewVector / linDepth;
-	
+	 
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
 	 
-	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR); 
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);  
 	    
 	// DIRECT LIGHT
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);

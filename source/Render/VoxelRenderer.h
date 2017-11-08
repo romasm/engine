@@ -129,11 +129,6 @@ namespace EngineCore
 		inline void RegisterDirCaster(DirVoxelBuffer& data)
 		{dirVoxel_array.push_back(data);}
 		
-		inline ID3D11ShaderResourceView* GetVoxelSRV() const {return voxelEmittanceSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor0SRV() const {return voxelEmittanceSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelColor1SRV() const {return voxelEmittanceSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelNormalSRV() const {return voxelEmittanceSRV;}
-
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
 
 		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}

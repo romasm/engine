@@ -509,11 +509,7 @@ bool ScenePipeline::InitRts()
 
 	if(!isLightweight)
 	{
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelSRV(), 14);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor0SRV(), 15);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelColor1SRV(), 16);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelNormalSRV(), 17);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 18);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 14);
 	}
 
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);

@@ -327,7 +327,7 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData volumeTraceData, uint minLevel, Texture3D <float4> voxelEmittance)
 {
 	uint currentLevel = minLevel;
-		
+	
 	float3 epcilon = RAY_TRACE_EPCILON;
 	float3 step;
 	step.x = ray.x >= 0 ? 1 : -1;
@@ -394,9 +394,9 @@ float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeDat
 		const float3 currentRay = voxelSnap - origin;
 		const float3 delta = currentRay / ray;
 		currentLength = min(delta.x, min(delta.y, delta.z));
-
+		
 		i++;
-	}	
+	}		
 	return totalColor;	
 }
 

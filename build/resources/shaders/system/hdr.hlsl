@@ -27,12 +27,8 @@ Texture2D <float> gb_ao : register(t10);
 Texture2D <float> dynamicAO : register(t11); 
 Texture2D <float2> gb_depth : register(t12);
 // debug
-Texture2D <float4> ssrTex : register(t13);
-Texture3D <uint> voxelTex : register(t14);
-Texture3D <uint> voxelColor0Tex : register(t15);
-Texture3D <uint> voxelColor1Tex : register(t16);
-Texture3D <uint> voxelNormalTex : register(t17);
-Texture3D <float4> voxelEmittanceTex : register(t18);
+Texture2D <float4> ssrTex : register(t13); 
+Texture3D <float4> voxelEmittanceTex : register(t14); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -127,7 +123,7 @@ float2 GetVoxelOpacity(float2 uv, uint level)
 	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, level, voxelEmittanceTex, collidePosWS);
 	if( sampleCoords.w < 0.0f )
 		return 0;
-	 
+	  
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
@@ -150,40 +146,7 @@ float4 GetVoxelEmittance(float2 uv, uint level)
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	   
 	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
-}      
-          
-float4 GetVoxelColor(float2 uv, out float depth)
-{
-	depth = 0;
-	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, 0, voxelEmittanceTex, collidePosWS);	 
-	if( sampleCoords.w < 0.0f )
-		return 0;
-	            
-	uint count = DecodeVoxelOpacity(voxelTex.Load(sampleCoords));
-	 
-	uint color0 = voxelColor0Tex.Load(sampleCoords);
-	uint color1 = voxelColor1Tex.Load(sampleCoords);
-	float4 color = DecodeVoxelColor(color0, color1, count);
-		  
-	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
-	depth = collidePosPS.z / collidePosPS.w;
-	
-	return color;
-}  
- 
-float4 GetVoxelNormal(float2 uv)
-{
-	float3 collidePosWS = 0;
-	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, 0, voxelEmittanceTex, collidePosWS);
-	if( sampleCoords.w < 0.0f )
-		return 0;
-
-	float3 normal = DecodeVoxelNormal(voxelNormalTex.Load(sampleCoords), voxelTex.Load(sampleCoords));
-	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
-
-	return float4(normal, collidePosPS.z / collidePosPS.w);
-}
+}       
 
 PO_LDR HDRLDR(PI_PosTex input)
 {
@@ -263,13 +226,13 @@ PO_LDR HDRLDR(PI_PosTex input)
 		tonemapped = ssr.rgb * ssr.a;
 	}
 	
-	if(voxelVis > 0)      
-	{
+	if(voxelVis > 0)       
+	{ 
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
-		float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 		
 		if(voxelVis == 1)              
-		{     
+		{      
+			float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
@@ -277,27 +240,14 @@ PO_LDR HDRLDR(PI_PosTex input)
 		{ 
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
-		}  
-		else if(voxelVis == 3) 
-		{       
-			float voxelDepth = 0;
-			float4 voxelColor = GetVoxelColor(input.tex, voxelDepth);
-			if(sceneDepth >= voxelDepth && voxelDepth != 0) 
-				tonemapped = lerp(tonemapped, voxelColor.a / 100.0f, float(voxelColor.a != 0) * VOXEL_ALPHA);
-		}   
-		else if(voxelVis == 4) 
-		{
-			float4 voxelNormal = GetVoxelNormal(input.tex);
-			if(sceneDepth >= voxelNormal.a && voxelNormal.a != 0) 
-				tonemapped = lerp(tonemapped, (voxelNormal.rgb + 1.0f) * 0.5f, VOXEL_ALPHA);
-		} 
-		else if(voxelVis == 5)
+		}
+		else if(voxelVis == 3)
 		{
 			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);      
 			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
 				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
 		}
-		else if(voxelVis == 6)
+		else if(voxelVis == 4)
 		{
 			float4 voxelEmittance = GetVoxelEmittance(input.tex, voxelCascade);
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
