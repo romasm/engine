@@ -31,7 +31,8 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.physicsSys:SetAngularFactor(self.ent, Vector3(0, 0, 0))
     self.physicsSys:SetMass(self.ent, 80)
     self.physicsSys:SetRestitution(self.ent, 0.0)
-    self.physicsSys:SetFriction(self.ent, 1.0)
+    self.physicsSys:SetFriction(self.ent, 0.0)
+    self.physicsSys:SetLinearDamping(self.ent, 0.0)
     self.physicsSys:SetEnable(self.ent, true, true)
     self.physicsSys:UpdateState(self.ent)
 
@@ -62,14 +63,14 @@ end
 
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_jump_accel = 25000.0
+    self.p_jump_accel = 2000.0
 
-    self.p_move_accel = 200.0
+    self.p_move_accel = 2000.0
     self.p_move_max_speed = 2.0
-    self.p_move_in_jump_max_speed = 0.5
+    self.p_move_in_jump_max_speed = 1.5
     self.p_move_in_jump_accel = 30.0
     self.p_run_max_speed = 4.0
-    self.p_run_accel = 400.0
+    self.p_run_accel = 4000.0
 
     self.p_rot_sence = 0.002
 
@@ -84,6 +85,7 @@ function EntityTypes.TestPlayer:initVars()
     self.right = 0
     self.left = 0
     self.running = false
+    self.jumping = false
     self.inAir = false
 
     self.dYaw = 0
@@ -135,7 +137,19 @@ end
 -- tick
 function EntityTypes.TestPlayer:onTick(dt) 
     self.inAir = self:InAir()
-    
+
+    if self.inAir == true then
+        self.physicsSys:SetLinearDamping(self.ent, 0.0)
+    else
+        self.physicsSys:SetLinearDamping(self.ent, 1.0)
+    end
+
+    if self.jumping == true then 
+        self.physicsSys:SetLinearDamping(self.ent, 0.0)
+        self.physicsSys:ApplyCentralForce(self.ent, Vector3(0, self.p_jump_accel * dt, 0)) 
+        self.jumping = false
+    end
+        
     if self.forward + self.backward + self.left + self.right > 0 then
         local forwardDir = self.camera:GetLookDir()
         forwardDir.y = 0
@@ -218,7 +232,7 @@ end
 
 function EntityTypes.TestPlayer:onJump(key, pressed, x, y, z)
     if pressed == false then return end
-    if not self.inAir then self.physicsSys:ApplyCentralForce(self.ent, Vector3(0, self.p_jump_accel, 0)) end
+    if not self.inAir then self.jumping = true end
 end
 
 function EntityTypes.TestPlayer:onMoveForward(key, pressed, x, y, z)
