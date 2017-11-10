@@ -567,6 +567,34 @@ void CollisionSystem::SetConvexHullsCollider(Entity e, string collisionName)
 	_SetCollisionConvex(e, &comp, collisionName);
 }
 
+void CollisionSystem::PostScaleCollision(Entity e)
+{
+	GET_COMPONENT(void());
+
+	if(!transformSystem->HasComponent(e))
+		return;
+
+	if( comp.collisionStorage == CollisionStorageType::LOCAL )
+	{
+		if( comp.collisionData == 0 )
+			return;
+
+		auto shape = (btCollisionShape*)comp.collisionData;
+		Vector3 scale = transformSystem->GetScaleL(e);
+		swap(scale.z, scale.y);
+		shape->setLocalScaling( scale );
+	}
+	else
+	{
+		auto oldRes = (uint32_t)comp.collisionData;
+		auto& oldName = CollisionMgr::GetName(oldRes);
+		string newName = CollisionMgr::SetScaleToResourceId(oldName, transformSystem->GetScaleL(e));
+		
+		_SetCollisionConvex(e, &comp, newName);
+		CollisionMgr::Get()->DeleteResource(oldRes);
+	}
+}
+
 void CollisionSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
@@ -600,6 +628,8 @@ void CollisionSystem::RegLuaClass()
 		.addFunction("SetConvexHullsCollider", &CollisionSystem::SetConvexHullsCollider)
 
 		.addFunction("ClearCollision", &CollisionSystem::ClearCollision)
+
+		.addFunction("PostScale", &CollisionSystem::PostScaleCollision)
 
 		.addFunction("RayCast", &CollisionSystem::RayCast)
 		

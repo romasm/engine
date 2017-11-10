@@ -49,7 +49,6 @@ namespace EngineCore
 			_DELETE(resource);
 		};
 
-	protected:
 		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
 		uint32_t FindResourceInList(string& name);
 

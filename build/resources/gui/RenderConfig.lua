@@ -178,31 +178,21 @@ return GuiRect({
         GuiCheck({
             styles = {GuiStyles.rendercfg_check,},
             top = 28,
-            text = { str = "Color" },
+            text = { str = "Light (scene depth)" },
         }),
         GuiCheck({
             styles = {GuiStyles.rendercfg_check,},
             top = 51,
-            text = { str = "Emissive" },
+            text = { str = "Light" },
         }),
         GuiCheck({
             styles = {GuiStyles.rendercfg_check,},
             top = 74,
-            text = { str = "Intensity" },
-        }),
-        GuiCheck({
-            styles = {GuiStyles.rendercfg_check,},
-            top = 97,
-            text = { str = "Normal" },
-        }),
-        GuiCheck({
-            styles = {GuiStyles.rendercfg_check,},
-            top = 120,
             text = { str = "Opacity" },
         }),
         GuiCheck({
             styles = {GuiStyles.rendercfg_check,},
-            top = 143,
+            top = 97,
             text = { str = "Emittance" },
         }),
     }),
@@ -216,7 +206,7 @@ return GuiRect({
         color = 'act_02',
         str = "First cascade:",
         static = true,
-        top = 493,
+        top = 447,
         left = 20,
     }),
 
@@ -227,7 +217,7 @@ return GuiRect({
         left = 20,
         width = 170,
         height = 20,
-        top = 516,
+        top = 470,
         data = {
             min = 0,
             max = 11,
@@ -375,9 +365,23 @@ return GuiRect({
         },
     }),
 
+    -- DEBUG INFO
+    GuiString({
+        styles = {
+            GuiStyles.ghost,
+            GuiStyles.string_autosize,
+            GuiStyles.string_18,
+        },
+        color = 'act_02',
+        str = "Debug info",
+        static = true,
+        top = 137,
+        left = 210,
+    }),
+
     GuiCheck({
         styles = {GuiStyles.rendercfg_check,},
-        top = 157,
+        top = 162,
         left = 220,
         text = { str = "Draw collision hulls" },
         alt = "Visualisation of collision convex hulls",
@@ -400,7 +404,7 @@ return GuiRect({
 
     GuiCheck({
         styles = {GuiStyles.rendercfg_check,},
-        top = 180,
+        top = 185,
         left = 220,
         width = 170,
         text = { str = "Draw scene graph nodes" },

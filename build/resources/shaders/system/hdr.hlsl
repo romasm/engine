@@ -258,7 +258,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
-	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || (debugMode >= 10 && debugMode != 14))
+	if(debugMode == 0 || debugMode == 1 || debugMode == 2 || (debugMode >= 10))
 		res.srgb.rgb = saturate(LinearToSRGB(tonemapped));
 	else
 		res.srgb.rgb = saturate(tonemapped);

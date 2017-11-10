@@ -128,6 +128,8 @@ namespace EngineCore
 
 		void ClearCollision(Entity e);
 
+		void PostScaleCollision(Entity e);
+
 		RayCastResult RayCast(Vector3& start, Vector3& end);
 
 		void SetDebugDraw(bool draw)

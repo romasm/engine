@@ -518,6 +518,10 @@ function Viewport:onMouseUp(eventData)
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
+        if self.tc_action == true and self.lua_world.world.transformControls.mode == TRANSFORM_MODE.SCALE then
+            self:PostScaleSelection()
+        end
+
         self.window.entity:SetHierarchyFocusOnMe(false)
 		self.tc_action = false
         self.selection_mode = SELECTION_MODE.NONE
@@ -897,6 +901,13 @@ function Viewport:SetScalesToSelection(scales)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
     self:PlaceArrows()
+end
+
+function Viewport:PostScaleSelection()
+    for i, ent in ipairs(self.selection_set) do
+        self.lua_world.world.collision:PostScale(ent)
+        --self.lua_world.world.physics:UpdateState(ent)
+    end
 end
 
 function Viewport:SwitchHud()

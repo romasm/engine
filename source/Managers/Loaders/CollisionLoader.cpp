@@ -66,6 +66,39 @@ btCollisionShape* CollisionLoader::LoadCollision(string& resName)
 	return newCollision;
 }
 
+btCollisionShape* CollisionLoader::copyCollision(btCollisionShape* original)
+{
+	btCollisionShape* collision = nullptr;
+
+	auto type = original->getShapeType();
+
+	switch( type )
+	{
+	case COMPOUND_SHAPE_PROXYTYPE:
+		{
+			const auto originalCopmound = ((btCompoundShape*)original);
+			int32_t hullsCount = originalCopmound->getNumChildShapes();
+
+			collision = new btCompoundShape();
+
+			for(int32_t i = 0; i < hullsCount; i++)
+			{
+				auto shape = originalCopmound->getChildShape(i);
+				auto& transform = originalCopmound->getChildTransform(i);
+
+				if( shape->getShapeType() != CONVEX_HULL_SHAPE_PROXYTYPE )
+					continue;
+
+				auto newShape = new btConvexHullShape(*(btConvexHullShape*)shape);
+				((btCompoundShape*)collision)->addChildShape(transform, newShape);
+			}
+		}
+		break;
+	}
+
+	return collision;
+}
+
 btCollisionShape* CollisionLoader::loadEngineCollisionFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
 	btCollisionShape* collision = nullptr;
