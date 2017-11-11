@@ -47,7 +47,14 @@ btConvexHullShape ::btConvexHullShape (const btScalar* points,int numPoints,int 
 
 void btConvexHullShape::setLocalScaling(const btVector3& scaling)
 {
-	m_localScaling = scaling;
+	const btScalar margin = getMargin();
+	const btVector3 marginVect(margin, margin, margin);
+	const btVector3 gap = margin * scaling - marginVect; 
+	btVector3 bboxSize = (m_localAabbMax - m_localAabbMin - 2.0f * marginVect) / m_localScaling;
+	bboxSize.setMax(btVector3(0.001f, 0.001f, 0.001f));
+
+	m_localScaling = (bboxSize * scaling + 2.0f * gap) / bboxSize;
+
 	recalcLocalAabb();
 }
 

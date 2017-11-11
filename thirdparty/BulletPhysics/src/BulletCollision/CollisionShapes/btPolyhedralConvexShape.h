@@ -73,6 +73,7 @@ public:
 class btPolyhedralConvexAabbCachingShape : public btPolyhedralConvexShape
 {
 
+public:
 	btVector3	m_localAabbMin;
 	btVector3	m_localAabbMax;
 	bool		m_isLocalAabbValid;
