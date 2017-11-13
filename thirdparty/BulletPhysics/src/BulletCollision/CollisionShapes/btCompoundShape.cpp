@@ -287,7 +287,17 @@ void btCompoundShape::setLocalScaling(const btVector3& scaling)
 //		childScale = childScale * (childTrans.getBasis() * scaling);
 		childScale = childScale * scaling / m_localScaling;
 		m_children[i].m_childShape->setLocalScaling(childScale);
-		childTrans.setOrigin((childTrans.getOrigin()) * scaling / m_localScaling);
+
+		if( m_children[i].m_childShape->getShapeType() == CONVEX_HULL_SHAPE_PROXYTYPE )
+		{
+			// TODO
+			childTrans.setOrigin((childTrans.getOrigin()) * scaling / m_localScaling);
+		}
+		else
+		{
+			childTrans.setOrigin((childTrans.getOrigin()) * scaling / m_localScaling);
+		}
+
 		updateChildTransform(i, childTrans,false);
 	}
 	
