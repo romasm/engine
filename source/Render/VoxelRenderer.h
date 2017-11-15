@@ -130,6 +130,7 @@ namespace EngineCore
 		{dirVoxel_array.push_back(data);}
 		
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
+		inline ID3D11ShaderResourceView* GetVoxelLightSRV() const {return voxelLight0SRV;}
 
 		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
 		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
@@ -180,6 +181,14 @@ namespace EngineCore
 		ID3D11Texture3D* voxelEmittance;
 		ID3D11UnorderedAccessView* voxelEmittanceUAV;
 		ID3D11ShaderResourceView* voxelEmittanceSRV;
+
+		ID3D11Texture3D* voxelLight0;
+		ID3D11UnorderedAccessView* voxelLight0UAV;
+		ID3D11ShaderResourceView* voxelLight0SRV;
+
+		ID3D11Texture3D* voxelLight1;
+		ID3D11UnorderedAccessView* voxelLight1UAV;
+		ID3D11ShaderResourceView* voxelLight1SRV;
 
 		ID3D11Texture3D* voxelDownsampleTemp;
 		ID3D11UnorderedAccessView* voxelDownsampleTempUAV;

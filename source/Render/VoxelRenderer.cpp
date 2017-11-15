@@ -16,6 +16,12 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 	voxelEmittance = nullptr;
 	voxelEmittanceUAV = nullptr;
 	voxelEmittanceSRV = nullptr;
+	voxelLight0 = nullptr;
+	voxelLight0UAV = nullptr;
+	voxelLight0SRV = nullptr;
+	voxelLight1 = nullptr;
+	voxelLight1UAV = nullptr;
+	voxelLight1SRV = nullptr;
 	voxelDownsampleTemp = nullptr;
 	voxelDownsampleTempUAV = nullptr;
 	voxelDownsampleTempSRV = nullptr;
@@ -69,6 +75,12 @@ VoxelRenderer::~VoxelRenderer()
 	_RELEASE(voxelEmittanceUAV);
 	_RELEASE(voxelEmittanceSRV);
 	_RELEASE(voxelEmittance);
+	_RELEASE(voxelLight0UAV);
+	_RELEASE(voxelLight0SRV);
+	_RELEASE(voxelLight0);
+	_RELEASE(voxelLight1UAV);
+	_RELEASE(voxelLight1SRV);
+	_RELEASE(voxelLight1);
 	_RELEASE(voxelDownsampleTempUAV);
 	_RELEASE(voxelDownsampleTempSRV);
 	_RELEASE(voxelDownsampleTemp);
@@ -235,6 +247,26 @@ bool VoxelRenderer::initVoxelBuffers()
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
 	volumeSRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	if( FAILED(Render::CreateShaderResourceView(voxelEmittance, &volumeSRVDesc, &voxelEmittanceSRV)) )
+		return false;
+
+	volumeDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelLight0)) )
+		return false;
+	volumeUAVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelLight0, &volumeUAVDesc, &voxelLight0UAV)) )
+		return false;
+	volumeSRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateShaderResourceView(voxelLight0, &volumeSRVDesc, &voxelLight0SRV)) )
+		return false;
+
+	volumeDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelLight1)) )
+		return false;
+	volumeUAVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateUnorderedAccessView(voxelLight1, &volumeUAVDesc, &voxelLight1UAV)) )
+		return false;
+	volumeSRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	if( FAILED(Render::CreateShaderResourceView(voxelLight1, &volumeSRVDesc, &voxelLight1SRV)) )
 		return false;
 
 	// downsample

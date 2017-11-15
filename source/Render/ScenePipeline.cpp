@@ -509,7 +509,7 @@ bool ScenePipeline::InitRts()
 
 	if(!isLightweight)
 	{
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 14);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 14);
 	}
 
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);
@@ -761,7 +761,7 @@ void ScenePipeline::TransparentForwardStage()
 	if(!isLightweight)
 	{
 		srvs[3] = render_mgr->shadowsRenderer->GetShadowBuffer();
-		srvs[4] = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
+		srvs[4] = render_mgr->voxelRenderer->GetVoxelLightSRV();
 	}
 		
 	Render::PSSetShaderResources(0, srvs_size, srvs);
@@ -1020,10 +1020,10 @@ void ScenePipeline::OpaqueDefferedStage()
 	if(!isLightweight)
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		auto volumeEmittance = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
+		auto volumeLight = render_mgr->voxelRenderer->GetVoxelLightSRV();
 
 		Render::CSSetShaderResources(15, 1, &shadowBuffer);
-		Render::CSSetShaderResources(16, 1, &volumeEmittance);
+		Render::CSSetShaderResources(16, 1, &volumeLight);
 
 		LoadLights(17, true);
 
