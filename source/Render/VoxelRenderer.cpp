@@ -10,6 +10,8 @@ using namespace EngineCore;
 VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 {
 	render_mgr = rndm;
+	
+	firstFrame = true;
 
 	voxelizationDumb = nullptr;
 	voxelizationDumbRTV = nullptr;
@@ -27,14 +29,15 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 	voxelDownsampleTempSRV = nullptr;
 	
 	volumeMatBuffer = nullptr;
-	volumeDataBuffer = nullptr;
+	volumeData0Buffer = nullptr;
+	volumeData1Buffer = nullptr;
 	volumeTraceDataBuffer = nullptr;
 	levelBuffer = nullptr;
 
 	volumeLightInfo = nullptr;
 	volumeDownsampleBuffer = nullptr;
 
-	voxelInjectLight = nullptr;
+	voxelPropagateLight = nullptr;
 	
 	for(auto i = 0; i < 4; i++)
 	{
@@ -86,14 +89,15 @@ VoxelRenderer::~VoxelRenderer()
 	_RELEASE(voxelDownsampleTemp);
 	
 	_RELEASE(volumeMatBuffer);
-	_RELEASE(volumeDataBuffer);
+	_RELEASE(volumeData0Buffer);
+	_RELEASE(volumeData1Buffer);
 	_RELEASE(volumeTraceDataBuffer);
 	_RELEASE(levelBuffer);
 
 	_RELEASE(volumeLightInfo);
 	_RELEASE(volumeDownsampleBuffer);
 
-	_DELETE(voxelInjectLight);
+	_DELETE(voxelPropagateLight);
 
 	for(auto i = 0; i < 4; i++)
 	{
@@ -131,7 +135,7 @@ void VoxelRenderer::calcVolumesConfigs()
 
 	injectGroupsCount[2] = volumeResolution / 4;
 	injectGroupsCount[0] = injectGroupsCount[2] * VCT_CLIPMAP_COUNT;
-	injectGroupsCount[1] = injectGroupsCount[2] * 6;
+	injectGroupsCount[1] = injectGroupsCount[2];
 
 	volumesConfig.destroy();
 	volumesConfig.create(levelsCount);
@@ -287,7 +291,9 @@ bool VoxelRenderer::initVoxelBuffers()
 	if( FAILED(Render::CreateShaderResourceView(voxelDownsampleTemp, &volumeSRVDesc, &voxelDownsampleTempSRV)) )
 		return false;
 
-	volumeDataBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_MAX_COUNT, true);
+	volumeData0Buffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_MAX_COUNT, true);
+	volumeData1Buffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_MAX_COUNT, true);
+
 	volumeMatBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeMatrix), true);
 	levelBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
 
@@ -298,7 +304,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, POINT_VOXEL_FRAME_MAX, sizeof(PointVoxelBuffer), true);
 	dirLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, LIGHT_DIR_FRAME_MAX, sizeof(DirVoxelBuffer), true);
 
-	voxelInjectLight = new Compute( COMPUTE_VOXEL_INJECT_LIGHT );
+	voxelPropagateLight = new Compute( COMPUTE_VOXEL_INJECT_LIGHT );
 
 	voxelDownsample[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
 	voxelDownsampleMove[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
@@ -323,6 +329,13 @@ bool VoxelRenderer::initVoxelBuffers()
 
 void VoxelRenderer::updateBuffers()
 {
+	// store previous volume
+	swap(voxelLight0, voxelLight1);
+	swap(voxelLight0SRV, voxelLight1SRV);
+	swap(voxelLight0UAV, voxelLight1UAV);
+
+	swap(volumeData0Buffer, volumeData1Buffer);
+
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
 	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(DirVoxelBuffer));
@@ -330,9 +343,14 @@ void VoxelRenderer::updateBuffers()
 	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
 		(uint32_t)dirVoxel_array.size(), 0};
 	Render::UpdateDynamicResource(volumeLightInfo, lightCount, sizeof(uint32_t) * 4);
-
-	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
 	
+	Render::UpdateDynamicResource(volumeData1Buffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
+	if(firstFrame)
+	{
+		Render::UpdateDynamicResource(volumeData0Buffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
+		firstFrame = false;
+	}
+
 	Vector3 camDirs[3];
 	camDirs[0] = Vector3(1.0f, 0.0f, 0.0f);
 	camDirs[1] = Vector3(0.0f, 1.0f, 0.0f);
@@ -384,8 +402,8 @@ void VoxelRenderer::VoxelizeScene()
 	Render::PSSetConstantBuffers(4, 1, &volumeMatBuffer);
 	Render::GSSetConstantBuffers(4, 1, &volumeMatBuffer);
 
-	Render::PSSetConstantBuffers(5, 1, &volumeDataBuffer);
-	Render::GSSetConstantBuffers(5, 1, &volumeDataBuffer);
+	Render::PSSetConstantBuffers(5, 1, &volumeData1Buffer);
+	Render::GSSetConstantBuffers(5, 1, &volumeData1Buffer);
 	
 	Render::PSSetConstantBuffers(6, 1, &levelBuffer);
 	Render::GSSetConstantBuffers(6, 1, &levelBuffer);
@@ -475,38 +493,22 @@ void VoxelRenderer::prepareMeshData()
 
 void VoxelRenderer::ProcessEmittance()
 {
-	/*PERF_GPU_TIMESTAMP(_LIGHTINJECT);
+	PERF_GPU_TIMESTAMP(_PROPAGATE);
 
-	Render::ClearUnorderedAccessViewFloat(voxelEmittanceUAV, Vector4(0,0,0,0));
 
-	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
-	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
-	Render::UpdateDynamicResource(dirLightInjectBuffer.buf, dirVoxel_array.data(), dirVoxel_array.size() * sizeof(DirVoxelBuffer));
+	Render::ClearUnorderedAccessViewFloat(voxelLight1UAV, Vector4(0,0,0,0));
 
-	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
-		(uint32_t)dirVoxel_array.size(), 0};
-	Render::UpdateDynamicResource(volumeLightInfo, lightCount, sizeof(uint32_t) * 4);
+	voxelPropagateLight->BindUAV(voxelLight1UAV);
 
-	voxelInjectLight->BindUAV(voxelEmittanceUAV);
+	Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
+	Render::CSSetShaderResources(1, 1, &voxelLight0SRV);
+	
+	Render::CSSetConstantBuffers(0, 1, &volumeData0Buffer);
+	Render::CSSetConstantBuffers(1, 1, &volumeData1Buffer);
 
-	auto shadowsBufferSRV = render_mgr->shadowsRenderer->GetShadowBuffer();
-	Render::CSSetShaderResources(0, 1, &shadowsBufferSRV);
-
-	Render::CSSetShaderResources(1, 1, &voxelSceneSRV);
-	Render::CSSetShaderResources(2, 1, &voxelSceneColor0SRV);
-	Render::CSSetShaderResources(3, 1, &voxelSceneColor1SRV);
-	Render::CSSetShaderResources(4, 1, &voxelSceneNormalSRV);
-
-	Render::CSSetShaderResources(5, 1, &spotLightInjectBuffer.srv);
-	Render::CSSetShaderResources(6, 1, &pointLightInjectBuffer.srv);
-	Render::CSSetShaderResources(7, 1, &dirLightInjectBuffer.srv);
-
-	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
-	Render::CSSetConstantBuffers(1, 1, &volumeLightInfo);
-
-	voxelInjectLight->Dispatch(injectGroupsCount[0], injectGroupsCount[1], injectGroupsCount[2]);
-	voxelInjectLight->UnbindUAV();
-	*/
+	voxelPropagateLight->Dispatch(injectGroupsCount[0], injectGroupsCount[1], injectGroupsCount[2]);
+	voxelPropagateLight->UnbindUAV();
+	
 	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
@@ -515,7 +517,7 @@ void VoxelRenderer::ProcessEmittance()
 	uint32_t currentRes = volumeResolution / 2;
 	ID3D11ShaderResourceView* null_srv = nullptr;
 	
-	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
+	Render::CSSetConstantBuffers(0, 1, &volumeData1Buffer);
 	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
 	
 	uint32_t threadCount[3];

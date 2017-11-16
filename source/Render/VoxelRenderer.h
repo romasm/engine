@@ -6,6 +6,7 @@
 #include "MeshLoader.h"
 
 #define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject", "InjectLightToVolume"
+#define COMPUTE_VOXEL_PROPAGATE_LIGHT PATH_SHADERS "system/voxel_light_propagate", "PropagateLight"
 #define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample", "DownsampleEmittance"
 #define COMPUTE_VOXEL_DOWNSAMPLE_MOVE PATH_SHADERS "system/voxel_downsample", "DownsampleMove"
 
@@ -130,9 +131,9 @@ namespace EngineCore
 		{dirVoxel_array.push_back(data);}
 		
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelLightSRV() const {return voxelLight0SRV;}
+		inline ID3D11ShaderResourceView* GetVoxelLightSRV() const {return voxelLight1SRV;}
 
-		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
+		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeData1Buffer;}
 		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
 
 		void RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
@@ -171,7 +172,7 @@ namespace EngineCore
 		StructBuf pointLightInjectBuffer;
 		StructBuf dirLightInjectBuffer;
 
-		Compute* voxelInjectLight;
+		Compute* voxelPropagateLight;
 		Compute* voxelDownsample[4];
 		Compute* voxelDownsampleMove[4];
 
@@ -195,7 +196,8 @@ namespace EngineCore
 		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
 		
 		ID3D11Buffer* volumeMatBuffer;
-		ID3D11Buffer* volumeDataBuffer;
+		ID3D11Buffer* volumeData0Buffer;
+		ID3D11Buffer* volumeData1Buffer;
 		ID3D11Buffer* volumeTraceDataBuffer;
 		ID3D11Buffer* levelBuffer;
 
@@ -228,6 +230,8 @@ namespace EngineCore
 		uint16_t injectGroupsCount[3];
 
 		SceneRenderMgr* render_mgr;
+
+		bool firstFrame;
 	};
 
 }
