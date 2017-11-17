@@ -22,13 +22,23 @@ Texture3D <float4> sourceLightVolume : register(t1);
 
 cbuffer volumeBuffer0 : register(b0)
 {
-	VolumeData sourceData[VCT_CLIPMAP_COUNT_MAX];
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
-cbuffer volumeBuffer1 : register(b1)
-{
-	VolumeData targetData[VCT_CLIPMAP_COUNT_MAX];
+cbuffer volumeBuffer1 : register(b4)
+{ 
+	VolumeTraceData volumeTraceData;
 };
+
+/*
+Faces:
+0 - X+
+1 - X-
+2 - Y+
+3 - Y-
+4 - Z+
+5 - Z-
+*/
 
 static const int4 cornerOffset[8] = 
 {
@@ -72,7 +82,18 @@ static const int4 sideOffset[12] =
 
 static const int sideFaceIDs[12][2] = 
 {
-	{1,3},// TODO
+	{3,5},
+	{3,4},
+	{2,5},
+	{2,4},
+	{0,5},
+	{0,4},
+	{1,5},
+	{1,4},
+	{0,3},
+	{0,2},
+	{1,3},
+	{1,2}
 };
 
 static const int4 dirOffset[6] = 
@@ -88,10 +109,42 @@ static const int4 dirOffset[6] =
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM * CACHE_DIM * CACHE_DIM * VOXEL_FACES_COUNT];
 
+bool validateCoords(inout int4 coords, inout uint sampleLevel, uint Xoffset)
+{
+	int4 checkCoords = coords;
+	checkCoords.x -= Xoffset;
+
+	[branch]
+	if( checkCoords.x < 0 || checkCoords.y < 0 || checkCoords.z < 0 ||
+		checkCoords.x >= volumeData[0].volumeRes || checkCoords.y >= volumeData[0].volumeRes || checkCoords.z >= volumeData[0].volumeRes )
+	{
+		float3 upLevelCoords = checkCoords * 0.5 + volumeData[sampleLevel].volumeOffset;
+
+		sampleLevel++;
+		if( sampleLevel > volumeTraceData.maxLevel )
+			return false;
+
+		upLevelCoords.x += volumeData[0].volumeRes * sampleLevel;
+		upLevelCoords.x = upLevelCoords.x > 0 ? ceil(upLevelCoords.x) : floor(upLevelCoords.x);  
+		upLevelCoords.y = upLevelCoords.y > 0 ? ceil(upLevelCoords.y) : floor(upLevelCoords.y);  
+		upLevelCoords.z = upLevelCoords.z > 0 ? ceil(upLevelCoords.z) : floor(upLevelCoords.z);  
+
+		coords.xyz = int3(upLevelCoords);
+	}
+	return true;
+}
+
+float4 sampleSource(int4 coords, uint level)
+{
+	coords.xyz += volumeData[level].prevFrameOffset;
+	return sourceLightVolume.Load(coords);
+}
+
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, GROUP_THREAD_COUNT )]
 void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 {
-	uint level = voxelID.x / volumeData[0].volumeRes;
+	const uint level = voxelID.x / volumeData[0].volumeRes;
+	const uint Xoffset = volumeData[0].volumeRes * level;
 
 	uint3 voxelIDinLevel = voxelID;
 	voxelIDinLevel.x = voxelIDinLevel.x % volumeData[0].volumeRes;
@@ -109,18 +162,21 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	[unroll]
 	for(int k0 = 0; k0 < 8; k0++)
 	{
-		const int4 cornerCoords = coords + cornerOffset[k0];
+		uint sampleLevel = level;
+		int4 cornerCoords = coords + cornerOffset[k0];
+		
+		[branch]
+		if(!validateCoords(cornerCoords, sampleLevel, Xoffset))
+			continue;
+
 		float4 corner = 0;
 		[unroll]
 		for(int f0 = 0; f0 < 3; f0++)
 		{
 			int4 cornerCoordsFace = cornerCoords;
 			cornerCoordsFace.y += volumeData[0].volumeRes *	cornerFaceIDs[k0][f0];
-
-			// TODO: prev frame & out of bounds correction 
-			corner += sourceLightVolume.Load(cornerCoordsFace);
+			corner += sampleSource(cornerCoordsFace, sampleLevel);
 		}
-
 		corner = (corner * ONE_DIV_THREE) * (volumeData[level].voxelDiagRcp * volumeData[level].voxelDiagRcp) * COS_45;
 
 		[unroll]
@@ -132,18 +188,21 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	[unroll]
 	for(int k1 = 0; k1 < 12; k1++)
 	{
-		const int4 sideCoords = coords + sideOffset[k1];
+		uint sampleLevel = level;
+		int4 sideCoords = coords + sideOffset[k1];
+				
+		[branch]
+		if(!validateCoords(sideCoords, sampleLevel, Xoffset))
+			continue;
+
 		float4 side = 0;
 		[unroll]
 		for(int f1 = 0; f1 < 2; f1++)
 		{
 			int4 sideCoordsFace = sideCoords;
 			sideCoordsFace.y += volumeData[0].volumeRes * sideFaceIDs[k1][f1];
-
-			// TODO: prev frame & out of bounds correction 
-			side += sourceLightVolume.Load(sideCoordsFace);
+			side += sampleSource(sideCoordsFace);
 		}
-
 		side = (side * 0.5) * (volumeData[level].voxelSizeRcp * volumeData[level].voxelSizeRcp * 0.5) * COS_45;
 
 		[unroll]
@@ -155,13 +214,16 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	[unroll]
 	for(int k2 = 0; k2 < 6; k2++)
 	{
-		const int4 dirCoords = coords + dirOffset[k2];
+		uint sampleLevel = level;
+		int4 dirCoords = coords + dirOffset[k2];
+				
+		[branch]
+		if(!validateCoords(dirCoords, sampleLevel, Xoffset))
+			continue;
+
 		dirCoords.y += volumeData[0].volumeRes * k2;
-
-		// TODO: prev frame & out of bounds correction 
-		float4 dir = sourceLightVolume.Load(dirCoords);
-		dir = dir * (volumeData[level].voxelSizeRcp * volumeData[level].voxelSizeRcp);
-
+		float4 dir = sampleSource(dirCoords) * (volumeData[level].voxelSizeRcp * volumeData[level].voxelSizeRcp);
+		
 		lightSelf[k2] += dir;
 	}
 	

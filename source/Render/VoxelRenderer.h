@@ -52,6 +52,10 @@ namespace EngineCore
 
 		Vector2 levelOffsetTex;
 		float _padding0;
+
+		int32_t prevFrameOffsetX;
+		int32_t prevFrameOffsetY;
+		int32_t prevFrameOffsetZ;
 		float _padding1;
 	};
 
@@ -133,7 +137,7 @@ namespace EngineCore
 		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
 		inline ID3D11ShaderResourceView* GetVoxelLightSRV() const {return voxelLight1SRV;}
 
-		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeData1Buffer;}
+		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
 		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
 
 		void RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
@@ -196,8 +200,7 @@ namespace EngineCore
 		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
 		
 		ID3D11Buffer* volumeMatBuffer;
-		ID3D11Buffer* volumeData0Buffer;
-		ID3D11Buffer* volumeData1Buffer;
+		ID3D11Buffer* volumeDataBuffer;
 		ID3D11Buffer* volumeTraceDataBuffer;
 		ID3D11Buffer* levelBuffer;
 
@@ -230,8 +233,6 @@ namespace EngineCore
 		uint16_t injectGroupsCount[3];
 
 		SceneRenderMgr* render_mgr;
-
-		bool firstFrame;
 	};
 
 }
