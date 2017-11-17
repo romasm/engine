@@ -300,7 +300,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, POINT_VOXEL_FRAME_MAX, sizeof(PointVoxelBuffer), true);
 	dirLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, LIGHT_DIR_FRAME_MAX, sizeof(DirVoxelBuffer), true);
 
-	voxelPropagateLight = new Compute( COMPUTE_VOXEL_INJECT_LIGHT );
+	voxelPropagateLight = new Compute( COMPUTE_VOXEL_PROPAGATE_LIGHT );
 
 	voxelDownsample[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
 	voxelDownsampleMove[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
@@ -679,9 +679,9 @@ void VoxelRenderer::CalcVolumeBox(Vector3& camPos, Vector3& camDir)
 		Vector3 cornerPrevOffset = prevCorner - volumesConfig[i].corner;
 		cornerPrevOffset /= volumesConfig[i].voxelSize;
 
-		volumeData[i].prevFrameOffsetX = (int32_t)floorf(cornerPrevOffset.x + 0.5f);
-		volumeData[i].prevFrameOffsetY = (int32_t)floorf(cornerPrevOffset.y + 0.5f);
-		volumeData[i].prevFrameOffsetZ = (int32_t)floorf(cornerPrevOffset.z + 0.5f);
+		volumeData[i].prevFrameOffset.x = floorf(cornerPrevOffset.x + 0.5f);
+		volumeData[i].prevFrameOffset.y = floorf(cornerPrevOffset.y + 0.5f);
+		volumeData[i].prevFrameOffset.z = floorf(cornerPrevOffset.z + 0.5f);
 
 		Vector3 volumeOffset;
 		if( i > 0 )

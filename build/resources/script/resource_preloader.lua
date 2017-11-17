@@ -83,7 +83,7 @@ PreloadList = {
     { PATH.SHADERS .."gui/viewport_2darr", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."gui/viewport_cube", RESOURCE_TYPE.GUI_SHADER },
 
-    { PATH.SHADERS .."system/voxel_light_inject@InjectLightToVolume", RESOURCE_TYPE.COMPUTE },
+    { PATH.SHADERS .."system/voxel_light_propagate@PropagateLight", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/voxel_downsample@DownsampleEmittance1", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/voxel_downsample@DownsampleEmittance2", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/voxel_downsample@DownsampleEmittance4", RESOURCE_TYPE.COMPUTE },

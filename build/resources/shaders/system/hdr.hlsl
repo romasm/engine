@@ -28,7 +28,8 @@ Texture2D <float> dynamicAO : register(t11);
 Texture2D <float2> gb_depth : register(t12);
 // debug
 Texture2D <float4> ssrTex : register(t13); 
-Texture3D <float4> voxelEmittanceTex : register(t14); 
+Texture3D <float4> voxelLightTex : register(t14); 
+Texture3D <float4> voxelEmittanceTex : register(t15); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -233,12 +234,12 @@ PO_LDR HDRLDR(PI_PosTex input)
 		if(voxelVis == 1)              
 		{      
 			float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
-			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
 		else if(voxelVis == 2)      
 		{ 
-			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelEmittanceTex);
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}
 		else if(voxelVis == 3)

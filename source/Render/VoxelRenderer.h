@@ -5,7 +5,6 @@
 #include "LightBuffers.h"
 #include "MeshLoader.h"
 
-#define COMPUTE_VOXEL_INJECT_LIGHT PATH_SHADERS "system/voxel_light_inject", "InjectLightToVolume"
 #define COMPUTE_VOXEL_PROPAGATE_LIGHT PATH_SHADERS "system/voxel_light_propagate", "PropagateLight"
 #define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample", "DownsampleEmittance"
 #define COMPUTE_VOXEL_DOWNSAMPLE_MOVE PATH_SHADERS "system/voxel_downsample", "DownsampleMove"
@@ -52,11 +51,10 @@ namespace EngineCore
 
 		Vector2 levelOffsetTex;
 		float _padding0;
-
-		int32_t prevFrameOffsetX;
-		int32_t prevFrameOffsetY;
-		int32_t prevFrameOffsetZ;
 		float _padding1;
+
+		Vector3 prevFrameOffset;
+		float _padding2;
 	};
 
 	struct VolumeTraceData

@@ -508,8 +508,9 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
 
 	if(!isLightweight)
-	{
+	{ 
 		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 14);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
 	}
 
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);

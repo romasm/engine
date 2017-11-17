@@ -160,9 +160,10 @@ struct VolumeData
 
 	float2 levelOffsetTex;
 	float _padding0;
-
-	int3 prevFrameOffset;
 	float _padding1;
+
+	float3 prevFrameOffset;
+	float _padding2;
 };
 
 struct VolumeTraceData
