@@ -326,7 +326,8 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	return int4(prevVoxel, 0);	
 }
 
-float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData volumeTraceData, uint minLevel, Texture3D <float4> voxelEmittance)
+float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
+						  VolumeTraceData volumeTraceData, uint minLevel, Texture3D <float4> voxelEmittance, float valueScale)
 {
 	uint currentLevel = minLevel;
 	
@@ -392,7 +393,7 @@ float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeDat
 
 		const float4 sample = voxelEmittance.Load(voxelCoords);
 		totalColor.rgb += (1 - totalColor.a) * sample.rgb;
-		totalColor.a = saturate(totalColor.a + sample.a);
+		totalColor.a = saturate(totalColor.a + sample.a * valueScale);
 		[branch]
 		if( totalColor.a == 1.0 )
 			break;
@@ -466,6 +467,72 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 	// TODO
 	result.scattering = 0;
 	result.scatteringW = 0;
+
+	return result;
+}
+
+LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVolume, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData vTraceData, 
+								  in GBufferData gbuffer, in DataForLightCompute mData, in float3 specularBrdf, in float3 diffuseBrdf, in float SO)
+{
+	LightComponentsWeight result = (LightComponentsWeight)0;
+
+	// diffuse
+	uint level = 0;
+	float3 coordsLevel;
+	[unroll]
+	for(level = 0; level <= vTraceData.maxLevel; level++)
+	{
+		const float3 diffPos = gbuffer.wpos + gbuffer.normal * vData[level].voxelDiag;
+		coordsLevel = (diffPos - vData[level].cornerOffset) * vData[level].worldSizeRcp;
+		[flatten]
+		if( !any(coordsLevel - saturate(coordsLevel)) )
+			break;
+	}
+
+	[flatten]
+	if(level <= vTraceData.maxLevel)
+	{
+		coordsLevel.xy *= float2(vTraceData.xVolumeSizeRcp, VOXEL_FACE_COUNT_RCP);
+		coordsLevel.xy += vData[level].levelOffsetTex;
+				
+		float dirWeight[3];
+		dirWeight[0] = gbuffer.normal.x * gbuffer.normal.x;
+		dirWeight[1] = gbuffer.normal.y * gbuffer.normal.y;
+		dirWeight[2] = gbuffer.normal.z * gbuffer.normal.z;
+
+		float faces[3];
+		faces[0] = (gbuffer.normal.x >= 0) ? 0 : 1;
+		faces[1] = (gbuffer.normal.y >= 0) ? 2 : 3;
+		faces[2] = (gbuffer.normal.z >= 0) ? 4 : 5;
+		faces[0] *= VOXEL_FACE_COUNT_RCP;
+		faces[1] *= VOXEL_FACE_COUNT_RCP;
+		faces[2] *= VOXEL_FACE_COUNT_RCP;
+		
+		float4 diffuse = 0;
+		[unroll]
+		for(int f = 0; f < 3; f++)
+		{
+			float3 faceCoords = coordsLevel;
+			faceCoords.y += faces[f];
+			diffuse += lightVolume.SampleLevel(samp, faceCoords, 0) * dirWeight[f];
+		}
+
+		result.diffuse = diffuse.rgb * diffuseBrdf * gbuffer.ao;
+		result.diffuseW = 1.0;//diffuse.a;
+	}
+
+	// specular
+	/*float3 coneReflDirection = normalize(mData.reflect);
+
+	float apertureSpecular = tan( clamp( PIDIV2 * mData.avgR, 0.0174533f, PI) );
+	float4 specular = VoxelConeTrace(gbuffer.wpos, coneReflDirection, apertureSpecular, gbuffer.normal, vData, vTraceData, Emittance, samp);
+	 */
+	//result.specular = specular.rgb * specularBrdf * SO;
+	//result.specularW = specular.a;
+		
+	// TODO
+	//result.scattering = 0;
+	//result.scatteringW = 0;
 
 	return result;
 }

@@ -643,7 +643,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.Append(lightResult);
 	}
-	
+#endif// TEMP_FAST_COMPILE 
 	[loop] // caster spot
 	for(int ic_spt=0; ic_spt < g_lightCount.caster_spot_count; ic_spt++)
 	{
@@ -663,7 +663,7 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		
 		directLight.AppendShadowed(lightResult, lightAmount.x);
 	}
-	
+#ifndef TEMP_FAST_COMPILE 
 	[loop] // disk
 	for(int i_disk=0; i_disk < g_lightCount.disk_count; i_disk++)
 	{

@@ -46,7 +46,7 @@ TextureCube g_envprobsDistBlurred : register(t14);
 
 Texture2DArray <float> shadows: register(t15); 
 
-Texture3D <float4> volumeEmittance : register(t16); 
+Texture3D <float4> volumeLight : register(t16); 
    
 StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
 StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
@@ -71,14 +71,14 @@ StructuredBuffer<int> g_lightIDs : register(t30);
 cbuffer configBuffer : register(b1)
 {
 	ConfigParams configs;    
-};
+}; 
   
 cbuffer lightsCount : register(b2)  
 { 
 	LightsCount g_lightCount; 
 };               
  
-// TEMP      
+// TEMP       
 #define TEMP_FAST_COMPILE    
 
 #include "../common/shadow_helpers.hlsl"
@@ -130,14 +130,15 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	    
 	// DIRECT LIGHT
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	 
+	     
 	// IBL
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
-	// VCTGI    
-	LightComponentsWeight vctLight = (LightComponentsWeight)0;//CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
+	// VCTGI     
+	//LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
+	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);

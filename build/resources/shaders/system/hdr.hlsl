@@ -230,17 +230,19 @@ PO_LDR HDRLDR(PI_PosTex input)
 	if(voxelVis > 0)       
 	{ 
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
+		float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 		
 		if(voxelVis == 1)               
 		{      
-			float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
-			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
-			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
+				volumeTraceData, voxelCascade, voxelLightTex, 0.01);
+			tonemapped = lerp(0, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
 		else if(voxelVis == 2)        
-		{ 
-			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
-			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
+		{  
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
+				volumeTraceData, voxelCascade, voxelLightTex, 0.01);
+			tonemapped = lerp(0, 1, light.a * VOXEL_ALPHA); 
 		}
 		else if(voxelVis == 3) 
 		{ 
@@ -268,5 +270,5 @@ PO_LDR HDRLDR(PI_PosTex input)
 	res.lin.rgb = saturate(tonemapped);
 	res.lin.a = 1;
 	
-	return res;
+	return res; 
 }
