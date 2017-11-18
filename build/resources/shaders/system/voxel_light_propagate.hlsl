@@ -49,18 +49,18 @@ static const int4 dirOffset[6] =
 	int4(0, 0, 1, 0),
 	int4(0, 0, -1, 0)
 };
-static const int dirFaceIDs[6][5] = 
+static const int dirFaceIDs[6][4] = 
 {
-	{0,2,3,4,5},
-	{1,2,3,4,5},
-	{2,0,1,4,5},
-	{3,0,1,4,5},
-	{4,0,1,2,3},
-	{5,0,1,2,3}
+	{2,3,4,5},
+	{2,3,4,5},
+	{0,1,4,5},
+	{0,1,4,5},
+	{0,1,2,3},
+	{0,1,2,3}
 };
-static const float faceWeight[5] = {0.3, 0.175, 0.175, 0.175, 0.175};
 static const int faceInv[6] = {1,0,3,2,5,4};
 
+static const float sideWeightMax = 0.175;
 static const float lightFalloff = 1.0;
  
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
@@ -135,29 +135,41 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	const float lightFalloffLevel = pow(lightFalloff, pow(2.0, level));
 
 	[unroll]
-	for(int k2 = 0; k2 < 6; k2++)
+	for(int k = 0; k < 6; k++)
 	{
 		uint sampleLevel = level;
-		int4 dirCoords = coords + dirOffset[k2];
+		int4 dirCoords = coords + dirOffset[k];
 		[flatten]
 		if(!validateCoords(dirCoords, sampleLevel))
 			continue;
 		dirCoords.x += volumeData[0].volumeRes * sampleLevel;
 
 		// light sample
+		float sideWeight = 0;
 		float4 light = 0;
 		[unroll]
-		for(int f0 = 0; f0 < 5; f0++)
+		for(int f = 0; f < 4; f++)
 		{
-			const uint faceID = dirFaceIDs[k2][f0];
+			const uint faceID = dirFaceIDs[k][f];
 			int4 faceCoords = dirCoords;
 			faceCoords.y += volumeData[0].volumeRes * faceID;
 
 			const float occluding = 1 - lightSelf[faceInv[faceID]].a;
-			light += sourceLightVolume.Load(faceCoords) * faceWeight[f0] * occluding;
+
+			const float4 sample = sourceLightVolume.Load(faceCoords);
+			const float weight = sideWeightMax * sample.a;
+
+			sideWeight += weight;
+			light += sample * weight * occluding;
 		}
 		
-		lightIn[k2] = light * lightFalloffLevel;
+		const uint frontFaceID = k;
+		dirCoords.y += volumeData[0].volumeRes * frontFaceID;
+		const float frontOccluding = 1 - lightSelf[faceInv[frontFaceID]].a;
+		const float frontWeight = 1 - sideWeight;
+		light += sourceLightVolume.Load(dirCoords) * frontWeight * frontOccluding;
+
+		lightIn[k] = light * lightFalloffLevel;
 	}
 
 	// write light
