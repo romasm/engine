@@ -5,10 +5,10 @@
 #define VOXEL_FACES_COUNT 6
 
 #define VOXEL_SUBSAMPLES_COUNT 8
-#define VOXEL_SUBSAMPLES_COUNT_RCP 1.0f / VOXEL_SUBSAMPLES_COUNT
+#define VOXEL_SUBSAMPLES_COUNT_RCP (1.0f / VOXEL_SUBSAMPLES_COUNT)
 
 #define COLOR_RANGE 255.0f 
-#define COLOR_RANGE_RCP 1.0f / COLOR_RANGE
+#define COLOR_RANGE_RCP (1.0f / COLOR_RANGE)
 
 float4 DecodeVoxelColor(uint a, uint b, uint count)
 {
@@ -42,10 +42,10 @@ float3 DecodeVoxelNormal(uint n, uint o)
 
 float4 DecodeVoxelData(float4 data)
 {
-	[flatten]
+	[flatten] 
 	if(data.a > 0)
 		data.rgb /= data.a;
-	data.a = saturate(data.a * VOXEL_SUBSAMPLES_COUNT_RCP);
+	data.a = saturate(data.a);
 	return data;
 
 }
@@ -389,7 +389,13 @@ float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeDat
 		else faceID = ray.z < 0 ? 5 : 4;
 
 		voxelCoords.y += volumeData[0].volumeRes * faceID;
-		totalColor += (1 - totalColor.a) * DecodeVoxelData(voxelEmittance.Load(voxelCoords));
+
+		const float4 sample = voxelEmittance.Load(voxelCoords);
+		totalColor.rgb += (1 - totalColor.a) * sample.rgb;
+		totalColor.a = saturate(totalColor.a + sample.a);
+		[branch]
+		if( totalColor.a == 1.0 )
+			break;
 
 		voxelSnap += step * volumeData[currentLevel].voxelSize;
 		

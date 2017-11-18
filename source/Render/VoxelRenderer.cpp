@@ -483,8 +483,7 @@ void VoxelRenderer::prepareMeshData()
 void VoxelRenderer::ProcessEmittance()
 {
 	PERF_GPU_TIMESTAMP(_PROPAGATE);
-
-
+	
 	Render::ClearUnorderedAccessViewFloat(voxelLight1UAV, Vector4(0,0,0,0));
 
 	voxelPropagateLight->BindUAV(voxelLight1UAV);

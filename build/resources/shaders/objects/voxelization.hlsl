@@ -86,7 +86,7 @@ void WriteVoxel(float3 emittance, int3 coords, bool front, int planeId)
 	coords.x += 1;
 	InterlockedFloatAdd(coords, emittance.b);
 	coords.x += 1;
-	InterlockedFloatAdd(coords, 1.0);
+	InterlockedFloatAdd(coords, VOXEL_SUBSAMPLES_COUNT_RCP);
 }
 
 // pixel
@@ -108,12 +108,12 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	const float3 specular = ReflectivityCalculate(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
 		
-	// lighting 
+	// lighting  
 	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;
-	const float3 emittance = ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
+	const float3 emittance = VOXEL_SUBSAMPLES_COUNT_RCP * ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
 		spotLightInjectBuffer, (int)spotCount, pointLightInjectBuffer, (int)pointCount, dirLightInjectBuffer, (int)dirCount);
 		
-	// output
+	// output 
 	int3 uavCoords = int3(input.voxelCoords.xyz);
 
 	float3 shiftedCoords = input.voxelCoords.xyz;

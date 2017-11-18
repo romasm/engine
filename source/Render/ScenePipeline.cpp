@@ -1119,6 +1119,9 @@ void ScenePipeline::HDRtoLDRStage()
 
 		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
 		Render::PSSetConstantBuffers(3, 1, &volumeBuffer); 
+
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 14);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
 	}
 
 	sp_HDRtoLDR->Draw();

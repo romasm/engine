@@ -128,9 +128,9 @@ float2 GetVoxelOpacity(float2 uv, uint level)
 	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 
-	return float2(saturate(emittance.w * VOXEL_SUBSAMPLES_COUNT_RCP), collidePosPS.z / collidePosPS.w);
+	return float2(saturate(emittance.w), collidePosPS.z / collidePosPS.w);
 }
-    
+     
 float4 GetVoxelEmittance(float2 uv, uint level)
 { 
 	float3 collidePosWS = 0;
@@ -142,7 +142,7 @@ float4 GetVoxelEmittance(float2 uv, uint level)
 
 	[flatten]
 	if(emittance.w > 0)
-	emittance.rgb /= emittance.w;
+		emittance.rgb /= emittance.w;
 
 	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
 	   
@@ -231,24 +231,24 @@ PO_LDR HDRLDR(PI_PosTex input)
 	{ 
 		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
 		
-		if(voxelVis == 1)              
+		if(voxelVis == 1)               
 		{      
 			float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
-		else if(voxelVis == 2)      
+		else if(voxelVis == 2)        
 		{ 
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), 999999.9, volumeData, volumeTraceData, voxelCascade, voxelLightTex);
 			tonemapped = lerp(tonemapped, light.rgb, light.a * VOXEL_ALPHA); 
 		}
-		else if(voxelVis == 3)
-		{
+		else if(voxelVis == 3) 
+		{ 
 			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);      
 			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
 				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
 		}
-		else if(voxelVis == 4)
+		else if(voxelVis == 4) 
 		{
 			float4 voxelEmittance = GetVoxelEmittance(input.tex, voxelCascade);
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 

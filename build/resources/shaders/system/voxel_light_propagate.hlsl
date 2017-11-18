@@ -106,21 +106,21 @@ static const int4 dirOffset[6] =
 	int4(0, 0, -1, 0)
 };
 
+static const int faceInv[6] = {1,0,3,2,5,4};
+
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM * CACHE_DIM * CACHE_DIM * VOXEL_FACES_COUNT];
 
-bool validateCoords(inout int4 coords, inout uint sampleLevel, uint Xoffset)
+bool validateCoords(inout int4 coords, inout uint sampleLevel)
 {
-	int4 checkCoords = coords;
-	checkCoords.x -= Xoffset; 
+	coords.xyz -= int3(volumeData[sampleLevel].prevFrameOffset);
 
 	bool res = true;
-
 	[branch]
-	if( checkCoords.x < 0 || checkCoords.y < 0 || checkCoords.z < 0 ||
-		checkCoords.x >= (int)volumeData[0].volumeRes || checkCoords.y >= (int)volumeData[0].volumeRes || checkCoords.z >= (int)volumeData[0].volumeRes )
+	if( coords.x < 0 || coords.y < 0 || coords.z < 0 ||
+		coords.x >= (int)volumeData[0].volumeRes || coords.y >= (int)volumeData[0].volumeRes || coords.z >= (int)volumeData[0].volumeRes )
 	{
-		float3 upLevelCoords = checkCoords.xyz * 0.5 + volumeData[sampleLevel].volumeOffset;
+		float3 upLevelCoords = coords.xyz * 0.5 + volumeData[sampleLevel].volumeOffset;
 
 		sampleLevel++;
 		[branch]
@@ -129,8 +129,7 @@ bool validateCoords(inout int4 coords, inout uint sampleLevel, uint Xoffset)
 			res = false;
 		}
 		else
-		{
-			upLevelCoords.x += volumeData[0].volumeRes * sampleLevel;
+		{ 
 			upLevelCoords.x = upLevelCoords.x > 0 ? ceil(upLevelCoords.x) : floor(upLevelCoords.x);  
 			upLevelCoords.y = upLevelCoords.y > 0 ? ceil(upLevelCoords.y) : floor(upLevelCoords.y);  
 			upLevelCoords.z = upLevelCoords.z > 0 ? ceil(upLevelCoords.z) : floor(upLevelCoords.z);  
@@ -143,7 +142,7 @@ bool validateCoords(inout int4 coords, inout uint sampleLevel, uint Xoffset)
 
 float4 sampleSource(int4 coords, uint level)
 {
-	coords.xyz += int3(volumeData[level].prevFrameOffset);
+	coords.xyz -= int3(volumeData[level].prevFrameOffset);
 	return sourceLightVolume.Load(coords);
 }
 
@@ -151,15 +150,9 @@ float4 sampleSource(int4 coords, uint level)
 void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 {
 	const uint level = voxelID.x / volumeData[0].volumeRes;
-	const uint Xoffset = volumeData[0].volumeRes * level;
 
-	uint3 voxelIDinLevel = voxelID;
-	voxelIDinLevel.x = voxelIDinLevel.x % volumeData[0].volumeRes;
-
-	float3 wpos = (float3(voxelIDinLevel) + 0.5f) * volumeData[level].voxelSize;
-	wpos += volumeData[level].cornerOffset;
-		
 	int4 coords = int4(voxelID, 0);
+	coords.x -= volumeData[0].volumeRes * level;
 
 	float4 lightSelf[VOXEL_FACES_COUNT] = 
 	{
@@ -170,8 +163,27 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		float4(0,0,0,0),
 		float4(0,0,0,0)
 	};
+	 
+	// overwrite light with fresh emittance
+	int4 selfCoords = int4(voxelID, 0);
+	[unroll] 
+	for(int i = 0; i < VOXEL_FACES_COUNT; i++)
+	{
+		lightSelf[i] = DecodeVoxelData(emittanceVolume.Load(selfCoords));
+		selfCoords.y += volumeData[0].volumeRes;
+	}
 
 	// accumulate light from neighbors
+	float4 lightIn[VOXEL_FACES_COUNT] = 
+	{
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0)
+	};
+
 	/*
 	// corners
 	[unroll]
@@ -196,7 +208,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 
 		[unroll]
 		for(int l0 = 0; l0 < 3; l0++)
-			lightSelf[cornerFaceIDs[k0][l0]] += corner;
+			lightIn[cornerFaceIDs[k0][l0]] += corner;
 	}
 
 	// sides
@@ -222,7 +234,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 
 		[unroll]
 		for(int l1 = 0; l1 < 2; l1++)
-			lightSelf[sideFaceIDs[k1][l1]] += side;
+			lightIn[sideFaceIDs[k1][l1]] += side;
 	}
 	*/
 	// dirs
@@ -231,27 +243,19 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	{
 		uint sampleLevel = level;
 		int4 dirCoords = coords + dirOffset[k2];
-				
 		[branch]
-		if(!validateCoords(dirCoords, sampleLevel, Xoffset))
+		if(!validateCoords(dirCoords, sampleLevel))
 			continue;
-
+		dirCoords.x += volumeData[0].volumeRes * sampleLevel;
 		dirCoords.y += volumeData[0].volumeRes * k2;
-		float4 dir = sampleSource(dirCoords, sampleLevel) * (volumeData[level].voxelSizeRcp * volumeData[level].voxelSizeRcp);
-		
-		lightSelf[k2] += dir;
-	}
-	
-	// overwrite light with fresh emittance
-	int4 selfCoords = coords;
-	[unroll]
-	for(int i = 0; i < VOXEL_FACES_COUNT; i++)
-	{
-		selfCoords.y += volumeData[0].volumeRes;
-		const float4 emittance = emittanceVolume.Load(selfCoords);
-		[branch]
-		if(any(emittance))
-			lightSelf[i] = emittance*0.01;
+
+		// on CPU
+		float extingtion = 10.0;
+		float invSqLaw = 1.0 / (volumeData[level].voxelSize * volumeData[level].voxelSize * extingtion * extingtion);
+		//float invSqLaw = (volumeData[level].voxelSizeRcp * volumeData[level].voxelSizeRcp);
+		const float4 light = sourceLightVolume.Load(dirCoords) * invSqLaw;
+		const float occluding = 1 - lightSelf[faceInv[k2]].a;
+		lightIn[k2] += light * occluding;
 	}
 
 	// write light
@@ -259,7 +263,10 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	[unroll]
 	for(int t = 0; t < VOXEL_FACES_COUNT; t++)
 	{
+		if(any(lightSelf[t]))
+			targetLightVolume[targetCoords] = lightSelf[t];
+		else
+			targetLightVolume[targetCoords] = lightIn[t];
 		targetCoords.y += volumeData[0].volumeRes;
-		targetLightVolume[targetCoords] = lightSelf[t];
 	}
 }
