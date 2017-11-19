@@ -927,7 +927,7 @@ float3 ProcessLightsVoxel(sampler samp, Texture2DArray <float> shadowsAtlas, flo
 		const DirVoxelBuffer dirLightData = dirLightInjectBuffer[dirID];
 		
 		const float3 L = -dirLightData.Dir.xyz;
-
+		
 		const float NoL = saturate(dot(normal, L));
 		if(NoL == 0.0f)
 			continue;

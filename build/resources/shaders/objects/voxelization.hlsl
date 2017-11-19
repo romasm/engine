@@ -12,16 +12,23 @@
  
 #include "pixel_input.hlsl"
 
+static const float bounceFalloff = 0.5;
+static const float skyFalloff = 0.2;
+
 SamplerState samplerTrilinearWrap : register(s0);
 SamplerState samplerPointClamp : register(s1);
+SamplerState samplerBilinearVolumeClamp : register(s2);
+SamplerState samplerBilinearWrap : register(s3);
 
 RWTexture3D <uint> emittanceVolume : register(u1);  
 
 Texture2DArray <float> shadowsAtlas : register(t9);   
+Texture3D <float4> lightVolume : register(t10);   
+TextureCube envDistDiffuse : register(t11); 
 
-StructuredBuffer<SpotVoxelBuffer> spotLightInjectBuffer : register(t10); 
-StructuredBuffer<PointVoxelBuffer> pointLightInjectBuffer : register(t11); 
-StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer : register(t12); 
+StructuredBuffer<SpotVoxelBuffer> spotLightInjectBuffer : register(t12); 
+StructuredBuffer<PointVoxelBuffer> pointLightInjectBuffer : register(t13); 
+StructuredBuffer<DirVoxelBuffer> dirLightInjectBuffer : register(t14); 
   
 cbuffer matrixBuffer : register(b3)
 {
@@ -38,7 +45,7 @@ cbuffer volumeBuffer : register(b5)
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
  
-cbuffer levelData : register(b6)
+cbuffer levelData : register(b6) 
 {
 	uint currentLevel;
 	float _padding00;
@@ -46,7 +53,17 @@ cbuffer levelData : register(b6)
 	float _padding02;
 };
 
-cbuffer lightCountBuffer : register(b7)
+cbuffer volumeTraceBuffer : register(b7)
+{   
+	VolumeTraceData volumeTraceData;
+};  
+
+cbuffer volumeBufferPrev : register(b8)
+{ 
+	VolumeData volumePrevData[VCT_CLIPMAP_COUNT_MAX];
+}; 
+
+cbuffer lightCountBuffer : register(b9) 
 {
 	uint spotCount;
 	uint pointCount;
@@ -107,12 +124,22 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	const float3 emissive = EmissiveCalculate(samplerTrilinearWrap, input.tex);
 	const float3 specular = ReflectivityCalculate(samplerTrilinearWrap, input.tex, albedo);
 	albedo = max(albedo, specular);
-		
-	// lighting  
+	 
+	// rebouncing
+	const float3 diffuseBrdf = GetIndirectBrdfVoxel(albedo);
+	float4 indirectLight = GetIndirectVoxel(samplerBilinearVolumeClamp, lightVolume, volumePrevData, volumeTraceData, input.worldPosition, normal, diffuseBrdf);
+	
+	// distant light
+	const float3 distLight = CalcutaleDistantProbVoxel(samplerBilinearWrap, envDistDiffuse, normal, diffuseBrdf);
+	indirectLight.rgb = lerp(distLight * skyFalloff, indirectLight.rgb, saturate(indirectLight.a + 9999999));
+
+	// analytical lighting  
 	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;
-	const float3 emittance = VOXEL_SUBSAMPLES_COUNT_RCP * ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
+	const float3 directLight = VOXEL_SUBSAMPLES_COUNT_RCP * ProcessLightsVoxel(samplerPointClamp, shadowsAtlas, shadowBias, albedo, normal, emissive, input.worldPosition, 
 		spotLightInjectBuffer, (int)spotCount, pointLightInjectBuffer, (int)pointCount, dirLightInjectBuffer, (int)dirCount);
 		
+	const float3 emittance = directLight + indirectLight.rgb * bounceFalloff;
+
 	// output 
 	int3 uavCoords = int3(input.voxelCoords.xyz);
 

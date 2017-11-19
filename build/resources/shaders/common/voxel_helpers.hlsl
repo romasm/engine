@@ -393,9 +393,9 @@ float4 GetVoxelLightOnRay(float3 origin, float3 ray, float viewLength, VolumeDat
 
 		const float4 sample = voxelEmittance.Load(voxelCoords);
 		totalColor.rgb += (1 - totalColor.a) * sample.rgb;
-		totalColor.a = saturate(totalColor.a + sample.a * valueScale);
+		totalColor.a = saturate(totalColor.a + /*sample.a * */valueScale);
 		[branch]
-		if( totalColor.a == 1.0 )
+		if( totalColor.a >= 0.5 )
 			break;
 
 		voxelSnap += step * volumeData[currentLevel].voxelSize;
@@ -535,4 +535,70 @@ LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVol
 	//result.scatteringW = 0;
 
 	return result;
+}
+
+float4 GetIndirectVoxel(sampler samp, Texture3D <float4> lightVolume, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData vTraceData, 
+								  float3 wpos, float3 normal, float3 diffuseBrdf)
+{
+	float4 result = 0;
+
+	uint level = 0;
+	float3 coordsLevel;
+	[unroll]
+	for(level = 0; level <= vTraceData.maxLevel; level++)
+	{
+		const float3 diffPos = wpos + normal * vData[level].voxelDiag;
+		coordsLevel = (diffPos - vData[level].cornerOffset) * vData[level].worldSizeRcp;
+		[flatten]
+		if( !any(coordsLevel - saturate(coordsLevel)) )
+			break;
+	}
+
+	[flatten]
+	if(level <= vTraceData.maxLevel)
+	{
+		coordsLevel.xy *= float2(vTraceData.xVolumeSizeRcp, VOXEL_FACE_COUNT_RCP);
+		coordsLevel.xy += vData[level].levelOffsetTex;
+				
+		float dirWeight[3];
+		dirWeight[0] = normal.x * normal.x;
+		dirWeight[1] = normal.y * normal.y;
+		dirWeight[2] = normal.z * normal.z;
+
+		float faces[3];
+		faces[0] = (normal.x >= 0) ? 0 : 1;
+		faces[1] = (normal.y >= 0) ? 2 : 3;
+		faces[2] = (normal.z >= 0) ? 4 : 5;
+		faces[0] *= VOXEL_FACE_COUNT_RCP;
+		faces[1] *= VOXEL_FACE_COUNT_RCP;
+		faces[2] *= VOXEL_FACE_COUNT_RCP;
+		
+		float4 diffuse = 0;
+		[unroll]
+		for(int f = 0; f < 3; f++)
+		{
+			float3 faceCoords = coordsLevel;
+			faceCoords.y += faces[f];
+			diffuse += lightVolume.SampleLevel(samp, faceCoords, 0) * dirWeight[f];
+		}
+
+		result.rgb = diffuse.rgb * diffuseBrdf;
+		result.a = diffuse.a;
+	}
+
+	return result;
+}
+
+// TEMP
+float3 GetIndirectBrdfVoxel(float3 albedo)
+{
+	// for NoV = 1, R = 0.5 diffuse brdf ~= 0.82
+	return albedo * INV_PI;// * 0.82;
+}
+
+float3 CalcutaleDistantProbVoxel(sampler cubeSampler, TextureCube cubemap, float3 normal, float3 diffuseBrdf)
+{
+	float3 diffuse = cubemap.SampleLevel(cubeSampler, normal, 0).rgb;
+	diffuse *= diffuseBrdf; 
+	return diffuse;
 }

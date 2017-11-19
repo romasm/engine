@@ -79,7 +79,7 @@ cbuffer lightsCount : register(b2)
 };               
  
 // TEMP       
-#define TEMP_FAST_COMPILE    
+//#define TEMP_FAST_COMPILE    
 
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
@@ -137,7 +137,6 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
 	// VCTGI     
-	//LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	 
 	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);

@@ -61,7 +61,7 @@ static const int dirFaceIDs[6][4] =
 static const int faceInv[6] = {1,0,3,2,5,4};
 
 static const float sideWeightMax = 0.175;
-static const float lightFalloff = 1.0;
+static const float lightFalloff = 0.999;
  
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM][CACHE_DIM][CACHE_DIM][VOXEL_FACES_COUNT];
@@ -166,6 +166,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		const uint frontFaceID = k;
 		dirCoords.y += volumeData[0].volumeRes * frontFaceID;
 		const float frontOccluding = 1 - lightSelf[faceInv[frontFaceID]].a;
+		// TODO: weight balance based on visibility
 		const float frontWeight = 1 - sideWeight;
 		light += sourceLightVolume.Load(dirCoords) * frontWeight * frontOccluding;
 

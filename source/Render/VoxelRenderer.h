@@ -199,6 +199,7 @@ namespace EngineCore
 		
 		ID3D11Buffer* volumeMatBuffer;
 		ID3D11Buffer* volumeDataBuffer;
+		ID3D11Buffer* volumeDataPrevBuffer;
 		ID3D11Buffer* volumeTraceDataBuffer;
 		ID3D11Buffer* levelBuffer;
 

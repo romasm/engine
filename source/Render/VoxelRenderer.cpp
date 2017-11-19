@@ -28,6 +28,7 @@ VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 	
 	volumeMatBuffer = nullptr;
 	volumeDataBuffer = nullptr;
+	volumeDataPrevBuffer = nullptr;
 	volumeTraceDataBuffer = nullptr;
 	levelBuffer = nullptr;
 
@@ -87,6 +88,7 @@ VoxelRenderer::~VoxelRenderer()
 	
 	_RELEASE(volumeMatBuffer);
 	_RELEASE(volumeDataBuffer);
+	_RELEASE(volumeDataPrevBuffer);
 	_RELEASE(volumeTraceDataBuffer);
 	_RELEASE(levelBuffer);
 
@@ -289,6 +291,7 @@ bool VoxelRenderer::initVoxelBuffers()
 		return false;
 
 	volumeDataBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_MAX_COUNT, true);
+	volumeDataPrevBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeData) * VCT_MAX_COUNT, true);
 
 	volumeMatBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeMatrix), true);
 	levelBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
@@ -320,6 +323,9 @@ bool VoxelRenderer::initVoxelBuffers()
 	volumeTraceData.clipmapCount = clipmapCount;
 	Render::UpdateDynamicResource(volumeTraceDataBuffer, &volumeTraceData, sizeof(VolumeTraceData));
 
+	// first update to prevent uninit data
+	updateBuffers();
+
 	return true;
 }
 
@@ -329,6 +335,7 @@ void VoxelRenderer::updateBuffers()
 	swap(voxelLight0, voxelLight1);
 	swap(voxelLight0SRV, voxelLight1SRV);
 	swap(voxelLight0UAV, voxelLight1UAV);
+	swap(volumeDataPrevBuffer, volumeDataBuffer);
 	
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
@@ -397,14 +404,21 @@ void VoxelRenderer::VoxelizeScene()
 	Render::PSSetConstantBuffers(6, 1, &levelBuffer);
 	Render::GSSetConstantBuffers(6, 1, &levelBuffer);
 
-	Render::PSSetConstantBuffers(7, 1, &volumeLightInfo);
+	Render::PSSetConstantBuffers(7, 1, &volumeTraceDataBuffer);
+	Render::PSSetConstantBuffers(8, 1, &volumeDataPrevBuffer);
+
+	Render::PSSetConstantBuffers(9, 1, &volumeLightInfo);
 
 	auto shadowsBufferSRV = render_mgr->shadowsRenderer->GetShadowBuffer();
 	Render::PSSetShaderResources(9, 1, &shadowsBufferSRV);
+	Render::PSSetShaderResources(10, 1, &voxelLight0SRV);
 
-	Render::PSSetShaderResources(10, 1, &spotLightInjectBuffer.srv);
-	Render::PSSetShaderResources(11, 1, &pointLightInjectBuffer.srv);
-	Render::CSSetShaderResources(12, 1, &dirLightInjectBuffer.srv);
+	auto diffCubeSRV = render_mgr->GetDistEnvProb().diffCube;
+	Render::PSSetShaderResources(11, 1, &diffCubeSRV);
+
+	Render::PSSetShaderResources(12, 1, &spotLightInjectBuffer.srv);
+	Render::PSSetShaderResources(13, 1, &pointLightInjectBuffer.srv);
+	Render::PSSetShaderResources(14, 1, &dirLightInjectBuffer.srv);
 	
 	// draw
 	const unsigned int offset = 0;

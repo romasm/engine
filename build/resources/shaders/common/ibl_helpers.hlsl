@@ -71,11 +71,12 @@ float3 distantProbDiffuse(sampler cubemapSampler, TextureCube cubemap, float3 N,
 	return cubemap.SampleLevel( cubemapSampler, dominantN, 0 ).rgb;
 }
 
+// rework
 LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSampler, sampler cubeBlurredSampler, 
 							   float NoV, float R, float3 V, GBufferData gbuffer, float SO,
 							   out float3 specularBrdf, out float3 diffuseBrdf)
 {
-	float3 envBrdf = g_envbrdfLUT.SampleLevel(lutSampler, float2(NoV, R), 0).xyz;
+	const float3 envBrdf = g_envbrdfLUT.SampleLevel(samplerBilinearClamp, float2(NoV, R), 0).xyz;
 	
 	float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
 	specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
@@ -96,4 +97,11 @@ LightComponents CalcutaleDistantProbLight(sampler lutSampler, sampler cubeSample
 	result.scattering = 0;// TODO
 
 	return result;
+}
+
+void GetIndirectBrdf(float NoV, float R, float3 albedo, float3 reflectivity, out float3 specularBrdf, out float3 diffuseBrdf)
+{
+	const float3 envBrdf = g_envbrdfLUT.SampleLevel(samplerBilinearClamp, float2(NoV, R), 0).xyz;
+	specularBrdf = reflectivity * envBrdf.x + saturate(50.0 * reflectivity.g) * envBrdf.y;
+	diffuseBrdf = albedo * envBrdf.z;
 }

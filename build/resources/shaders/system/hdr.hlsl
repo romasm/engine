@@ -235,10 +235,10 @@ PO_LDR HDRLDR(PI_PosTex input)
 		if(voxelVis == 1)               
 		{      
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
-				volumeTraceData, voxelCascade, voxelLightTex, 0.01);
+				volumeTraceData, voxelCascade, voxelLightTex, 0.0001);
 			tonemapped = lerp(0, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
-		else if(voxelVis == 2)        
+		else if(voxelVis == 2)         
 		{  
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
 				volumeTraceData, voxelCascade, voxelLightTex, 0.01);
@@ -255,7 +255,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 			float4 voxelEmittance = GetVoxelEmittance(input.tex, voxelCascade);
 			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
 				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
-		} 
+		}  
 	}            
 
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
