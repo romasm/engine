@@ -30,7 +30,7 @@ namespace EngineCore
 			auto status = LoadingStatus::LOADED;
 			if( !scaledCollision )
 			{
-				ERR("Cant rescale collision %s", GetName(newgId));
+				ERR("Cant rescale collision %s", GetName(newgId).data());
 				status = LoadingStatus::FAILED;
 			}
 			else
@@ -82,16 +82,7 @@ namespace EngineCore
 
 				string pureName = name.substr(0, scaleStrN);
 
-				auto origRes = FindResourceInList(pureName);
-				if(origRes != nullres)
-				{
-					RescaleCollision(origRes, idx, callback);
-				}
-				else
-				{
-					GetResource(pureName, reload, 
-						[idx, callback](uint32_t id, bool status) -> void { RescaleCollision(id, idx, callback); });
-				}
+				GetResource(pureName, reload, [idx, callback](uint32_t id, bool status) -> void { RescaleCollision(id, idx, callback); });
 				return idx;
 			}
 			else

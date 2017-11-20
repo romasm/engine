@@ -283,15 +283,15 @@ void btCompoundShape::setLocalScaling(const btVector3& scaling)
 	for(int i = 0; i < m_children.size(); i++)
 	{
 		btTransform childTrans = getChildTransform(i);
-		btVector3 childScale = m_children[i].m_childShape->getLocalScaling();
+		btVector3 oldChildScale = m_children[i].m_childShape->getLocalScaling();
 //		childScale = childScale * (childTrans.getBasis() * scaling);
-		childScale = childScale * scaling / m_localScaling;
-		m_children[i].m_childShape->setLocalScaling(childScale);
+		btVector3 newChildScale = oldChildScale * scaling / m_localScaling;
+		m_children[i].m_childShape->setLocalScaling(newChildScale);
 
 		if( m_children[i].m_childShape->getShapeType() == CONVEX_HULL_SHAPE_PROXYTYPE )
 		{
 			// TODO
-			childTrans.setOrigin((childTrans.getOrigin()) * scaling / m_localScaling);
+			childTrans.setOrigin((childTrans.getOrigin()) * newChildScale / oldChildScale);
 		}
 		else
 		{

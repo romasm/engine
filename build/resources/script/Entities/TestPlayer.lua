@@ -102,11 +102,12 @@ function EntityTypes.TestPlayer:Deactivate()
     self.world.controller:SetActive(self.ent, false)
 end
 
+-- TODO: check normals of ground
 function EntityTypes.TestPlayer:InAir()
     local rayStart0 = Vector3.Add(self:GetPositionW(), Vector3(0, -(self.p_player_height * 0.5 - self.p_player_radius), 0))
     local rayEnd0 = Vector3.Add(rayStart0, Vector3(0, -(self.p_player_radius + self.p_ground_sence), 0))
 
-    local rayTest = self.collisionSys:RayCast(rayStart0, rayEnd0, COLLISION_GROUPS.Character, COLLISION_GROUPS.PhysicsRayCast)
+    local rayTest = self.collisionSys:RayCast(rayStart0, rayEnd0, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
     local result = rayTest.hit
     
     local sideOffset = self.p_player_radius * 0.7
@@ -114,25 +115,25 @@ function EntityTypes.TestPlayer:InAir()
     local offset1 = Vector3(sideOffset, 0, 0)
     local rayStart1 = Vector3.Add(rayStart0, offset1)
     local rayEnd1 = Vector3.Add(rayEnd0, offset1)
-    rayTest = self.collisionSys:RayCast(rayStart1, rayEnd1, COLLISION_GROUPS.Character, COLLISION_GROUPS.PhysicsRayCast)
+    rayTest = self.collisionSys:RayCast(rayStart1, rayEnd1, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
     result = result or rayTest.hit
 
     local offset2 = Vector3(-sideOffset, 0, 0)
     local rayStart2 = Vector3.Add(rayStart0, offset2)
     local rayEnd2 = Vector3.Add(rayEnd0, offset2)
-    rayTest = self.collisionSys:RayCast(rayStart2, rayEnd2, COLLISION_GROUPS.Character, COLLISION_GROUPS.PhysicsRayCast)
+    rayTest = self.collisionSys:RayCast(rayStart2, rayEnd2, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
     result = result or rayTest.hit
     
     local offset3 = Vector3(0, 0, sideOffset)
     local rayStart3 = Vector3.Add(rayStart0, offset3)
     local rayEnd3 = Vector3.Add(rayEnd0, offset3)
-    rayTest = self.collisionSys:RayCast(rayStart3, rayEnd3, COLLISION_GROUPS.Character, COLLISION_GROUPS.PhysicsRayCast)
+    rayTest = self.collisionSys:RayCast(rayStart3, rayEnd3, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
     result = result or rayTest.hit
     
     local offset4 = Vector3(0, 0, -sideOffset)
     local rayStart4 = Vector3.Add(rayStart0, offset4)
     local rayEnd4 = Vector3.Add(rayEnd0, offset4)
-    rayTest = self.collisionSys:RayCast(rayStart4, rayEnd4, COLLISION_GROUPS.Character, COLLISION_GROUPS.PhysicsRayCast)
+    rayTest = self.collisionSys:RayCast(rayStart4, rayEnd4, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
     result = result or rayTest.hit
     
     return not result
