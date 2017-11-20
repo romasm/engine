@@ -114,9 +114,9 @@ namespace EngineCore
 
 		int32_t GetCollisionGroup(Entity e);
 		void SetCollisionGroup(Entity e, int32_t group);
-		bool HasCollisionMask(Entity e, int32_t group);
-		void AddCollisionMask(Entity e, int32_t group);
-		void RemoveCollisionMask(Entity e, int32_t group);
+		bool HasCollisionMask(Entity e, int32_t mask);
+		void AddCollisionMask(Entity e, int32_t mask);
+		void RemoveCollisionMask(Entity e, int32_t mask);
 
 		void AddBoxCollider(Entity e, Vector3& pos, Quaternion& rot, Vector3& halfExtents);
 		void AddSphereCollider(Entity e, Vector3& pos, Quaternion& rot, float radius);
@@ -130,7 +130,7 @@ namespace EngineCore
 
 		void PostScaleCollision(Entity e);
 
-		RayCastResult RayCast(Vector3& start, Vector3& end);
+		RayCastResult RayCast(Vector3& start, Vector3& end, int32_t group, int32_t mask);
 
 		void SetDebugDraw(bool draw)
 		{

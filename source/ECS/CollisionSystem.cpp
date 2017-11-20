@@ -445,9 +445,12 @@ void CollisionSystem::RemoveCollisionMask(Entity e, int32_t group)
 	comp.collisionMask &= ~group;
 }
 
-RayCastResult CollisionSystem::RayCast(Vector3& start, Vector3& end)
+RayCastResult CollisionSystem::RayCast(Vector3& start, Vector3& end, int32_t group, int32_t mask)
 {
 	btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+	rayCallback.m_collisionFilterGroup = group;
+	rayCallback.m_collisionFilterMask = mask;
+
 	dynamicsWorld->rayTest(start, end, rayCallback);
 
 	RayCastResult result;

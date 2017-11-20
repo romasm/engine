@@ -30,6 +30,7 @@ COLLISION_GROUPS = {
 	NoCollide = 65536,
 
 	Physics = 63,--Default | Static | Kinematic | Debris | Character | Trigger,
+	PhysicsRayCast = 7,--Default | Static | Kinematic,
 	All = -1,
     AllNoSpecial = 127,--All & ~(Special0 | Special1 | Special2 | Special3 | Special4 | Special5),
 }
