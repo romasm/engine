@@ -672,18 +672,19 @@ void World::Frame()
 	// start update
 
 	if( m_mode == StateMode::LIVE )
+	{
 		m_scriptSystem->Update(m_dt, frameID);
+		m_skeletonSystem->Animate(m_dt);
+	}
 
-	m_skeletonSystem->Animate(m_dt);
+	m_physicsSystem->UpdateTransformations();
+	if( m_mode == StateMode::LIVE )
+		m_physicsSystem->SimulateAndUpdate(m_dt);
 
 	m_sceneGraph->Update();
 	if(b_sceneGraphDbg)
 		m_sceneGraph->DebugDraw(&dbgDrawer);
 	
-	m_physicsSystem->UpdateTransformations();
-	if( m_mode == StateMode::LIVE )
-		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
-
 	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();
 
@@ -896,15 +897,16 @@ void SmallWorld::Frame()
 	// start update
 
 	if( m_mode == StateMode::LIVE )
+	{
 		m_scriptSystem->Update(m_dt, frameID);
-
-	m_skeletonSystem->Animate(m_dt);
-
-	m_sceneGraph->Update();
+		m_skeletonSystem->Animate(m_dt);
+	}
 
 	m_physicsSystem->UpdateTransformations();
 	if( m_mode == StateMode::LIVE )
-		m_physicsSystem->SimulateAndUpdateSceneGraph(m_dt);
+		m_physicsSystem->SimulateAndUpdate(m_dt);
+
+	m_sceneGraph->Update();
 	
 	m_collisionSystem->UpdateTransformations();
 	m_triggerSystem->UpdateTransformations();

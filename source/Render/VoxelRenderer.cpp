@@ -7,6 +7,8 @@
 
 using namespace EngineCore;
 
+#define NO_VOXEL_GI
+
 VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 {
 	render_mgr = rndm;
@@ -384,6 +386,10 @@ void VoxelRenderer::updateBuffers()
 
 void VoxelRenderer::VoxelizeScene()
 {
+#ifdef NO_VOXEL_GI
+	return;
+#endif
+
 	prepareMeshData();
 
 	Render::ClearUnorderedAccessViewUint(voxelEmittanceUAV, Vector4(0,0,0,0));
@@ -496,6 +502,11 @@ void VoxelRenderer::prepareMeshData()
 
 void VoxelRenderer::ProcessEmittance()
 {
+#ifdef NO_VOXEL_GI
+	Render::ClearUnorderedAccessViewFloat(voxelLight1UAV, Vector4(0,0,0,0));
+	return; 
+#endif
+
 	PERF_GPU_TIMESTAMP(_PROPAGATE);
 	
 	Render::ClearUnorderedAccessViewFloat(voxelLight1UAV, Vector4(0,0,0,0));

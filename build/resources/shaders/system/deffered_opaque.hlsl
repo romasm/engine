@@ -42,7 +42,7 @@ TextureCube g_envprobsDist : register(t13);
 TextureCube g_envprobsDistBlurred : register(t14); 
 
 #include "../common/ibl_helpers.hlsl"
-
+ 
 
 Texture2DArray <float> shadows: register(t15); 
 
@@ -139,7 +139,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	// VCTGI     
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	 
-	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
+	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, saturate(vctLight.diffuseW - 99999.9));
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
 	

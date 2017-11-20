@@ -31,8 +31,8 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.physicsSys:SetAngularFactor(self.ent, Vector3(0, 0, 0))
     self.physicsSys:SetMass(self.ent, 80)
     self.physicsSys:SetRestitution(self.ent, 0.0)
-    self.physicsSys:SetFriction(self.ent, 0.0)
-    self.physicsSys:SetLinearDamping(self.ent, 0.0)
+    self.physicsSys:SetFriction(self.ent, 0.3)
+    self.physicsSys:SetLinearDamping(self.ent, self.p_air_dumping)
     self.physicsSys:SetEnable(self.ent, true, true)
     self.physicsSys:UpdateState(self.ent)
 
@@ -63,14 +63,14 @@ end
 
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_jump_accel = 2000.0
+    self.p_jump_accel = 1300.0
 
-    self.p_move_accel = 2000.0
-    self.p_move_max_speed = 2.0
-    self.p_move_in_jump_max_speed = 1.5
-    self.p_move_in_jump_accel = 30.0
-    self.p_run_max_speed = 4.0
-    self.p_run_accel = 4000.0
+    self.p_move_accel = 500.0
+    self.p_move_in_jump_accel = 18.0
+    self.p_run_accel = 1000.0
+
+    self.p_floor_dumping = 1.0
+    self.p_air_dumping = 0.25
 
     self.p_rot_sence = 0.002
 
@@ -101,53 +101,58 @@ function EntityTypes.TestPlayer:Deactivate()
 end
 
 function EntityTypes.TestPlayer:InAir()
-    local rayStart = self:GetPositionW()
-    rayStart = Vector3.Add(rayStart, Vector3(0, -(self.p_player_height / 2 - 0.1), 0))
-    local rayEnd = Vector3.Add(rayStart, Vector3(0, -0.11, 0))
+    local rayStart0 = self:GetPositionW()
+    rayStart0 = Vector3.Add(rayStart0, Vector3(0, -(self.p_player_height * 0.5 + 0.01), 0))
+    local rayEnd0 = Vector3.Add(rayStart0, Vector3(0, -0.05, 0))
 
-    local rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
+    local rayTest = self.collisionSys:RayCast(rayStart0, rayEnd0)
     local result = rayTest.hit
-
+    --[[
     local sideOffset = self.p_player_radius * 0.7
-    local tempOffset = - 2 * sideOffset
-
-    rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, 0))
-    rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, 0))
-    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
+    
+    local offset1 = Vector3(sideOffset, 0, 0)
+    local rayStart1 = Vector3.Add(rayStart0, offset1)
+    local rayEnd1 = Vector3.Add(rayEnd0, offset1)
+    rayTest = self.collisionSys:RayCast(rayStart1, rayEnd1)
     result = result or rayTest.hit
 
-    rayStart = Vector3.Add(rayStart, Vector3(tempOffset, 0, 0))
-    rayEnd = Vector3.Add(rayEnd, Vector3(tempOffset, 0, 0))
-    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
+    local offset2 = Vector3(-sideOffset, 0, 0)
+    local rayStart2 = Vector3.Add(rayStart0, offset2)
+    local rayEnd2 = Vector3.Add(rayEnd0, offset2)
+    rayTest = self.collisionSys:RayCast(rayStart2, rayEnd2)
     result = result or rayTest.hit
-
-    rayStart = Vector3.Add(rayStart, Vector3(sideOffset, 0, sideOffset))
-    rayEnd = Vector3.Add(rayEnd, Vector3(sideOffset, 0, sideOffset))
-    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
+    
+    local offset3 = Vector3(0, 0, sideOffset)
+    local rayStart3 = Vector3.Add(rayStart0, offset3)
+    local rayEnd3 = Vector3.Add(rayEnd0, offset3)
+    rayTest = self.collisionSys:RayCast(rayStart3, rayEnd3)
     result = result or rayTest.hit
-
-    rayStart = Vector3.Add(rayStart, Vector3(0, 0, tempOffset))
-    rayEnd = Vector3.Add(rayEnd, Vector3(0, 0, tempOffset))
-    rayTest = self.collisionSys:RayCast(rayStart, rayEnd)
+    
+    local offset4 = Vector3(0, 0, -sideOffset)
+    local rayStart4 = Vector3.Add(rayStart0, offset4)
+    local rayEnd4 = Vector3.Add(rayEnd0, offset4)
+    rayTest = self.collisionSys:RayCast(rayStart4, rayEnd4)
     result = result or rayTest.hit
-
+    --]]
     return not result
 end
 
 -- tick
 function EntityTypes.TestPlayer:onTick(dt) 
     self.inAir = self:InAir()
-
-    if self.inAir == true then
-        self.physicsSys:SetLinearDamping(self.ent, 0.0)
-    else
-        self.physicsSys:SetLinearDamping(self.ent, 1.0)
-    end
-
+    
     if self.jumping == true then 
-        self.physicsSys:SetLinearDamping(self.ent, 0.0)
+        print("jump")
         self.physicsSys:ApplyCentralForce(self.ent, Vector3(0, self.p_jump_accel * dt, 0)) 
         self.jumping = false
+        self.inAir = true
+    end
+
+    if self.inAir == true then
+        self.physicsSys:SetLinearDamping(self.ent, self.p_air_dumping)
+        print("air")
+    else
+        self.physicsSys:SetLinearDamping(self.ent, self.p_floor_dumping)
     end
         
     if self.forward + self.backward + self.left + self.right > 0 then
@@ -172,28 +177,19 @@ function EntityTypes.TestPlayer:onTick(dt)
         unitDir = Vector3.Add(unitDir, rightDir)
         unitDir:Normalize()
 
-        local velocity = self.physicsSys:GetLinearVelocity(self.ent)
-        local speedOnMoveDir = velocity:Dot(unitDir)
-
-        local maxSpeed = 0
         local accel = 0
         if self.inAir then
-            maxSpeed = self.p_move_in_jump_max_speed
             accel = self.p_move_in_jump_accel
         else
             if self.running == true then 
-                maxSpeed = self.p_run_max_speed
                 accel = self.p_run_accel
             else 
-                maxSpeed = self.p_move_max_speed 
                 accel = self.p_move_accel
             end
         end
 
-        if speedOnMoveDir < maxSpeed then
-            local moveDir = Vector3.MulScalar(unitDir, accel * dt)
-            self.physicsSys:ApplyCentralForce(self.ent, moveDir)
-        end
+        local moveDir = Vector3.MulScalar(unitDir, accel * dt)
+        self.physicsSys:ApplyCentralForce(self.ent, moveDir)
     end
     
     if self.dPitch ~= 0 or self.dYaw ~= 0 then

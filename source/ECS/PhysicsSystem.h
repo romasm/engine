@@ -50,7 +50,7 @@ namespace EngineCore
 			return &components.getDataByArrayIdx(idx);
 		}
 		
-		void SimulateAndUpdateSceneGraph(float dt);
+		void SimulateAndUpdate(float dt);
 		void UpdateTransformations();
 
 		void UpdateState(Entity e);
@@ -135,6 +135,7 @@ namespace EngineCore
 		};
 		
 		void _DeleteComponent(PhysicsComponent* comp);
+		void updateSingleTransformation(PhysicsComponent& comp);
 
 		ComponentRArray<PhysicsComponent> components;
 		

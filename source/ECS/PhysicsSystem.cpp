@@ -23,27 +23,32 @@ PhysicsSystem::~PhysicsSystem()
 	}
 }
 
+void PhysicsSystem::updateSingleTransformation(PhysicsComponent& comp)
+{
+	Entity e = comp.get_entity();
+
+	// TODO: parented entities?
+	btTransform transform = ToBtTransform( transformSystem->GetTransformL(e) );
+	//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
+	comp.body->proceedToTransform( transform );
+
+	if( comp.body->wantsSleeping() )
+		comp.body->activate( true );
+
+	comp.dirty = false;
+}
+
 void PhysicsSystem::UpdateTransformations()
 {
 	for(auto& i: *components.data())
 	{
 		if(!i.dirty)
 			continue;
-
-		Entity e = i.get_entity();
-		
-		btTransform transform = ToBtTransform( transformSystem->GetTransformW(e) );
-		//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
-		i.body->proceedToTransform( transform );
-		
-		if( i.body->wantsSleeping() )
-			i.body->activate( true );
-
-		i.dirty = false;
+		updateSingleTransformation(i);		
 	}
 }
 
-void PhysicsSystem::SimulateAndUpdateSceneGraph(float dt)
+void PhysicsSystem::SimulateAndUpdate(float dt)
 {
 	dynamicsWorld->stepSimulation( dt * 0.001f, MAX_PHYSICS_STEP_PER_FRAME );
 
