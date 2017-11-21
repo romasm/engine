@@ -43,9 +43,6 @@ void ControllerSystem::RawInput(RawInputData& data)
 			if( !world->IsEntityNeedProcess(i.second.get_entity()) )
 				continue;
 
-			if(!i.second.active)
-				continue;
-
 			auto func = i.second.funcMap->keyboardEvents[data.key];
 			if(func)
 				LUA_CALL((*func)(i.second.classInstanceRef, data.key, data.pressed, 0, 0, 0),);
@@ -100,9 +97,6 @@ void ControllerSystem::SendMouseEvent(MouseEvents me, bool pressed, int32_t d)
 		if( !world->IsEntityNeedProcess(i.second.get_entity()) )
 			continue;
 
-		if(!i.second.active)
-			continue;
-
 		auto func = i.second.funcMap->mouseEvents[me];
 		if(func)
 			LUA_CALL((*func)(i.second.classInstanceRef, key, pressed, d, d, d),);
@@ -122,7 +116,6 @@ void ControllerSystem::AddComponent(Entity e, string keyMapName)
 	cntr.classInstanceRef = scriptComp->classInstanceRef;
 	cntr.keyMapName = keyMapName;
 	cntr.funcMap = new FuncMap;
-	cntr.active = false;
 	cntr.parent = e;
 
 	if( !AttachLuaFuncs(e, cntr, *scriptComp) )
@@ -137,19 +130,6 @@ void ControllerSystem::AddComponent(Entity e, string keyMapName)
 #define GET_COMPONENT(res) auto& it = components.find(e.index());\
 	if(it == components.end())	return res;\
 	auto& comp = it->second;
-
-bool ControllerSystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.active;
-}
-
-bool ControllerSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(false)
-	comp.active = active;
-	return true;
-}
 
 #ifdef _DEV
 void ControllerSystem::UpdateLuaFuncs()

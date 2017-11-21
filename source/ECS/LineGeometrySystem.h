@@ -42,8 +42,6 @@ namespace EngineCore
 
 		bool dirty;
 
-		bool active;
-
 		LineGeometryTypes type;
 
 		ID3D11Buffer *vertexBuffer; 
@@ -69,7 +67,6 @@ namespace EngineCore
 		{
 			LineGeometryComponent* res = components.add(e.index());
 			res->dirty = true;
-			res->active = true;
 			res->constantBuffer = nullptr;
 			res->vertexBuffer = nullptr;
 			res->indexBuffer = nullptr;
@@ -97,9 +94,6 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		bool IsActive(Entity e);
-		bool SetActive(Entity e, bool active);
-
 		bool SetFromVis(Entity e, bool forceEVS = false);
 
 		bool SetLine(Entity e, Vector3 p1, Vector3 p2);
@@ -123,9 +117,6 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<LineGeometrySystem>("LineGeometrySystem")
-					.addFunction("IsActive", &LineGeometrySystem::IsActive)
-					.addFunction("SetActive", &LineGeometrySystem::SetActive)
-
 					.addFunction("SetFromVis", &LineGeometrySystem::SetFromVis)
 					.addFunction("SetSphere", &LineGeometrySystem::SetSphere)
 					.addFunction("SetPoint", &LineGeometrySystem::SetPoint)

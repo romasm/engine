@@ -41,9 +41,11 @@ namespace EngineCore
 		operator int32_t() const { return *((int32_t*)(&id)); }
 
 		friend bool operator==(const Entity& a, const Entity& b);
+		friend bool operator!=(const Entity& a, const Entity& b);
 	};
 
 	static bool operator==(const Entity& a, const Entity& b) { return a.id == b.id; }
+	static bool operator!=(const Entity& a, const Entity& b) { return a.id != b.id; }
 
 	static bool EntIsEq(Entity a, Entity b) { return a == b; }
 	

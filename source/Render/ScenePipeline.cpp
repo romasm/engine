@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ScenePipeline.h"
 #include "Render.h"
+#include "World.h"
 #include "Utils\Profiler.h"
 
 using namespace EngineCore;
@@ -87,8 +88,12 @@ ScenePipeline::~ScenePipeline()
 
 void ScenePipeline::Close()
 {
-	if(camera.sys)
-		camera.sys->Deactivate(camera.e, this);
+	CameraLink tempCam(camera.sys, camera.e);
+	if(tempCam.sys)
+	{
+		tempCam.sys->world->SetEntityEnable(tempCam.e, false);
+		tempCam.sys->AssignScene(tempCam.e, nullptr);
+	}
 
 	CloseRts();
 	CloseAvgRt();

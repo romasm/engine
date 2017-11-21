@@ -113,10 +113,13 @@ void	btCollisionWorld::addCollisionObject(btCollisionObject* collisionObject, in
 
 	btAssert(collisionObject);
 
+	// check if it already exist in some world
+	if( collisionObject->getWorldArrayIndex() != -1 )
+		return;  
+
 	//check that the object isn't already added
 	btAssert( m_collisionObjects.findLinearSearch(collisionObject)  == m_collisionObjects.size());
-    btAssert(collisionObject->getWorldArrayIndex() == -1);  // do not add the same object to more than one collision world
-
+	
     collisionObject->setWorldArrayIndex(m_collisionObjects.size());
 	m_collisionObjects.push_back(collisionObject);
 

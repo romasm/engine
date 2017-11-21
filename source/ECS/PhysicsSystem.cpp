@@ -69,7 +69,7 @@ PhysicsComponent* PhysicsSystem::AddComponent(Entity e)
 {
 	if(HasComponent(e))
 		return &components.getDataById(e.index());
-
+	
 	if( !transformSystem->GetParent(e).isnull() )
 		return nullptr;
 
@@ -248,17 +248,34 @@ bool PhysicsSystem::IsActive(Entity e)
 	return comp.body->isActive();
 }
 
-bool PhysicsSystem::IsEnable(Entity e)
+bool PhysicsSystem::IsEnableSimulation(Entity e)
 {
 	GET_COMPONENT(false);
 	return comp.body->getActivationState() != DISABLE_SIMULATION;
 }
 
-void PhysicsSystem::SetEnable(Entity e, bool enable, bool nonSleeping)
+void PhysicsSystem::SetEnableSimulation(Entity e, bool enable, bool nonSleeping)
 {
 	GET_COMPONENT(void());
 	int32_t state = enable ? (nonSleeping ? DISABLE_DEACTIVATION : ACTIVE_TAG) : DISABLE_SIMULATION;
 	comp.body->forceActivationState(state);
+}
+
+void PhysicsSystem::SetEnable(Entity e, bool enable)
+{
+	GET_COMPONENT(void());
+
+	if(enable)
+	{
+		auto clsComp = collisionSystem->GetComponent(e);
+		if(!clsComp)
+			return;
+		dynamicsWorld->addRigidBody(comp.body, clsComp->collisionGroup, clsComp->collisionMask);
+	}
+	else
+	{
+		dynamicsWorld->removeRigidBody(comp.body);
+	}
 }
 
 // Overwrite collision group and mask
@@ -507,7 +524,7 @@ void PhysicsSystem::ApplyImpulse(Entity e, Vector3& point, Vector3& impulse)
 void PhysicsSystem::ApplyCentralImpulse(Entity e, Vector3& impulse)
 {
 	GET_COMPONENT(void());
-	comp.body->applyCentralForce(impulse);
+	comp.body->applyCentralImpulse(impulse);
 }
 
 void PhysicsSystem::ApplyTorque(Entity e, Vector3& torque)
@@ -547,8 +564,8 @@ void PhysicsSystem::RegLuaClass()
 		.addFunction("UpdateState", &PhysicsSystem::UpdateState)
 
 		.addFunction("IsActive", &PhysicsSystem::IsActive)
-		.addFunction("IsEnable", &PhysicsSystem::IsEnable)
-		.addFunction("SetEnable", &PhysicsSystem::SetEnable)
+		.addFunction("IsEnable", &PhysicsSystem::IsEnableSimulation)
+		.addFunction("SetEnable", &PhysicsSystem::SetEnableSimulation)
 
 		.addFunction("SetType", &PhysicsSystem::SetType)
 		.addFunction("GetType", &PhysicsSystem::GetType)

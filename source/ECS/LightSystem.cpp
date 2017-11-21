@@ -33,7 +33,7 @@ void LightSystem::RegShadowMaps()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		if(!i.active || !i.cast_shadows)
+		if(!i.cast_shadows)
 			continue;
 		
 		switch (i.type)
@@ -86,10 +86,7 @@ void LightSystem::RegToScene()
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-
-		if(!i.active)
-			continue;
-		
+				
 		switch (i.type)
 		{
 		case LIGHT_TYPE_SPOT:
@@ -231,7 +228,7 @@ void LightSystem::Update()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		if(!i.active || !i.dirty)
+		if(!i.dirty)
 			continue;
 
 		switch (i.type)
@@ -313,9 +310,6 @@ uint32_t LightSystem::Serialize(Entity e, uint8_t* data)
 	auto t_data = data;
 	uint32_t size = 0;
 
-	*(bool*)t_data = comp.active;
-	t_data += sizeof(bool);
-	size += sizeof(bool);
 	*(Vector3*)t_data = comp.color;
 	t_data += sizeof(Vector3);
 	size += sizeof(Vector3);
@@ -350,9 +344,6 @@ uint32_t LightSystem::Deserialize(Entity e, uint8_t* data)
 	uint32_t size = 0;
 
 	LightComponent comp;
-	comp.active = *(bool*)t_data;
-	t_data += sizeof(bool);
-	size += sizeof(bool);
 	comp.color = *(Vector3*)t_data;
 	t_data += sizeof(Vector3);
 	size += sizeof(Vector3);
@@ -384,19 +375,6 @@ uint32_t LightSystem::Deserialize(Entity e, uint8_t* data)
 	AddComponent(e, comp);
 
 	return size;
-}
-
-bool LightSystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.active;
-}
-
-bool LightSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(false)
-	comp.active = active;
-	return true;
 }
 
 bool LightSystem::SetType(Entity e, uint8_t type)

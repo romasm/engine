@@ -77,7 +77,6 @@ namespace EngineCore
 
 	public:
 		bool dirty;
-		bool active;
 		
 		Vector3 color;
 		float brightness;
@@ -100,7 +99,6 @@ namespace EngineCore
 			dirty = true;
 			parent.setnull();
 			area = 0;
-			active = true;
 			color = Vector3(1.0f,1.0f,1.0f);
 			brightness = 1.0f;
 		}
@@ -147,7 +145,6 @@ namespace EngineCore
 			if(!comp) return;
 
 			GlobalLightComponent nComp;
-			nComp.active = comp->active;
 			nComp.area = comp->area;
 			nComp.area_data = comp->area_data;
 			nComp.brightness = comp->brightness;
@@ -188,9 +185,6 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		bool IsActive(Entity e);
-		bool SetActive(Entity e, bool active);
-
 		void AddCascadesForCamera(CameraComponent* camera);
 		void SwitchCascadesForCamera(CameraComponent* camOld, CameraComponent* camNew);
 		void DeleteCascadesForCamera(CameraComponent* camera);
@@ -211,9 +205,6 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<GlobalLightSystem>("GlobalLightSystem")
-					.addFunction("IsActive", &GlobalLightSystem::IsActive)
-					.addFunction("SetActive", &GlobalLightSystem::SetActive)
-
 					.addFunction("SetColor", &GlobalLightSystem::SetColor)
 					.addFunction("GetColor", &GlobalLightSystem::GetColor)
 					.addFunction("SetBrightness", &GlobalLightSystem::SetBrightness)

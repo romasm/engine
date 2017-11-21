@@ -56,18 +56,18 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.light.lightSys:UpdateLightProps(self.light.ent)
     self.light.lightSys:UpdateShadows(self.light.ent)
         
-    self.light:Enable(false)
+    self.light:Disable()
 
     return true
 end
 
 function EntityTypes.TestPlayer:initVars()
     -- params (ref in c++) "p_" - is a key
-    self.p_jump_accel = 26000.0
+    self.p_jump_impulse = 450.0
 
-    self.p_move_accel = 100.0
-    self.p_move_in_jump_accel = 18.0
-    self.p_run_accel = 200.0
+    self.p_move_accel = 2000.0
+    self.p_move_in_jump_accel = 180.0
+    self.p_run_accel = 3500.0
 
     self.p_floor_dumping = 0.9999
     self.p_air_dumping = 0.25
@@ -92,14 +92,6 @@ function EntityTypes.TestPlayer:initVars()
 
     self.dYaw = 0
     self.dPitch = 0
-end
-
-function EntityTypes.TestPlayer:Activate()
-    self.world.controller:SetActive(self.ent, true)
-end
-
-function EntityTypes.TestPlayer:Deactivate()
-    self.world.controller:SetActive(self.ent, false)
 end
 
 -- TODO: check normals of ground
@@ -144,7 +136,8 @@ function EntityTypes.TestPlayer:onTick(dt)
     self.inAir = self:InAir()
     
     if self.jumping == true then 
-        self.physicsSys:ApplyCentralImpulse(self.ent, Vector3(0, self.p_jump_accel, 0)) 
+        self.physicsSys:SetLinearDamping(self.ent, self.p_air_dumping)
+        self.physicsSys:ApplyCentralImpulse(self.ent, Vector3(0, self.p_jump_impulse, 0)) 
         self.jumping = false
         self.inAir = true
     end
@@ -188,10 +181,10 @@ function EntityTypes.TestPlayer:onTick(dt)
             end
         end
 
-        local moveDir = Vector3.MulScalar(unitDir, accel * dt)
+        local moveDir = Vector3.MulScalar(unitDir, accel)
         self.physicsSys:ApplyCentralForce(self.ent, moveDir)
     end
-    
+
     if self.dPitch ~= 0 or self.dYaw ~= 0 then
         local rotation = self.camera:GetRotationL()
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
@@ -209,7 +202,10 @@ function EntityTypes.TestPlayer:onAction(key, pressed, x, y, z)
 end
 
 function EntityTypes.TestPlayer:onLight(key, pressed, x, y, z)
-    if pressed == true then self.light:Enable(not self.light:IsEnabled()) end
+    if pressed == true then 
+        if self.light:IsEnabled() then self.light:Disable()
+        else self.light:Enable() end
+    end
 end
 
 function EntityTypes.TestPlayer:onRun(key, pressed, x, y, z)

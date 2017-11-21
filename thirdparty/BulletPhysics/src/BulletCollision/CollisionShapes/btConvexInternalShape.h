@@ -85,7 +85,7 @@ public:
 	}
 
 	///getAabb's default implementation is brute force, expected derived classes to implement a fast dedicated version
-	void getAabb(const btTransform& t,btVector3& aabbMin,btVector3& aabbMax) const
+	virtual void getAabb(const btTransform& t,btVector3& aabbMin,btVector3& aabbMax) const
 	{
 		getAabbSlow(t,aabbMin,aabbMax);
 	}

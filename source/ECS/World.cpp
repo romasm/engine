@@ -253,6 +253,18 @@ Entity BaseWorld::CopyEntity(Entity e)
 	return newEnt;
 }
 
+void BaseWorld::SetEntityEnable(Entity e, bool enable, bool noCamera)
+{
+	m_entityMgr->SetEnable(e, enable);
+
+	m_collisionSystem->SetEnable(e, enable);
+	m_physicsSystem->SetEnable(e, enable);
+	m_triggerSystem->SetEnable(e, enable);
+	
+	if(!noCamera)
+		m_cameraSystem->SetEnable(e, enable);
+}
+
 #define SAVE_BUFFER_SIZE 16384
 
 bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
@@ -310,8 +322,6 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 		bool enableState = (*(uint8_t*)t_data) > 0;
 		t_data += sizeof(uint8_t);
 
-		m_entityMgr->SetEnable(ent, enableState);
-
 		uint32_t comp_count = *(uint32_t*)t_data;
 		t_data += sizeof(uint32_t);
 		string components((char*)t_data, comp_count);
@@ -354,6 +364,8 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 		ConstructEditorGui(ent);
 	#endif
 
+		SetEntityEnable(ent, enableState);
+
 		entCount--;
 	}
 
@@ -393,7 +405,6 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 	ep_comp.diffCube = TexMgr::nullres;
 	ep_comp.is_distant = true;
 	m_envProbSystem->AddComponent(skyEP, ep_comp);
-	m_envProbSystem->SetActive(skyEP, true);
 }
 
 bool BaseWorld::saveWorld(string& filename)

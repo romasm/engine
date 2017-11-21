@@ -44,7 +44,7 @@ namespace EngineCore
 		void DumpToFile(string& name)
 		{
 			uint32_t mapSize = (uint32_t)codeMap.size();
-			uint32_t fileSize = mapSize * (FUNC_CODE_MAX_SIZE + FUNC_CODE_MAX_SIZE + sizeof(int32_t));
+			uint32_t fileSize =  sizeof(uint32_t) + mapSize * (FUNC_CODE_MAX_SIZE + FUNC_CODE_MAX_SIZE + sizeof(int32_t));
 
 			unique_ptr<uint8_t> data(new uint8_t[fileSize]);
 			uint8_t* t_data = data.get();

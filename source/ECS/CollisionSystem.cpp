@@ -28,6 +28,9 @@ void CollisionSystem::UpdateTransformations()
 {
 	for(auto& i: *components.data())
 	{
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
 		if(!i.dirty)
 			continue;
 		
@@ -375,46 +378,30 @@ uint32_t CollisionSystem::Deserialize(Entity e, uint8_t* data)
 		string collision_name((char*)t_data, collision_name_size);
 		t_data += collision_name_size * sizeof(char);
 
-		if( !collision_name.empty() )
-			_SetCollisionConvex(e, comp, collision_name);
+		_SetCollisionConvex(e, comp, collision_name);
 	}
 
 	return (uint32_t)(t_data - data);
 }
 
 // PARAMS
-/*
-bool CollisionSystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false);
 
-	return comp.active;
-}
-
-void CollisionSystem::SetActive(Entity e, bool active)
+void CollisionSystem::SetEnable(Entity e, bool enable)
 {
 	GET_COMPONENT(void());
-	if(active)
+	if(!comp.object)
+		return;
+
+	if(enable)
 	{
-		if(!comp.active)
-		{
-			auto collComp = collisionSystem->GetComponent(e);
-			if(collComp)
-				return;
-			comp.active = true;
-			dynamicsWorld->addCollisionObject(comp.object, collComp->collisionGroup, collComp->collisionMask);
-		}
+		dynamicsWorld->addCollisionObject(comp.object, comp.collisionGroup, comp.collisionMask);
 	}
 	else
 	{
-		if(comp.active)
-		{
-			comp.active = false;
-			dynamicsWorld->removeCollisionObject(comp.object);
-		}
+		dynamicsWorld->removeCollisionObject(comp.object);
 	}
 }
-*/
+
 int32_t CollisionSystem::GetCollisionGroup(Entity e)
 {
 	GET_COMPONENT(false);
@@ -611,8 +598,6 @@ void CollisionSystem::RegLuaClass()
 		.beginClass<CollisionSystem>("CollisionSystem")
 
 		.addFunction("IsDummy", &CollisionSystem::IsDummy)
-		//.addFunction("IsActive", &CollisionSystem::IsActive)
-		//.addFunction("SetActive", &CollisionSystem::SetActive)
 
 		.addFunction("GetCollisionGroup", &CollisionSystem::GetCollisionGroup)
 		.addFunction("SetCollisionGroup", &CollisionSystem::SetCollisionGroup)

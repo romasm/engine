@@ -109,9 +109,8 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		//bool IsActive(Entity e);
-		//void SetActive(Entity e, bool active);
-
+		void SetEnable(Entity e, bool enable);
+		
 		int32_t GetCollisionGroup(Entity e);
 		void SetCollisionGroup(Entity e, int32_t group);
 		bool HasCollisionMask(Entity e, int32_t mask);

@@ -62,8 +62,10 @@ namespace EngineCore
 		bool SetDirty(Entity e);
 
 		bool IsActive(Entity e);
-		bool IsEnable(Entity e);
-		void SetEnable(Entity e, bool enable, bool nonSleeping);
+		bool IsEnableSimulation(Entity e);
+		void SetEnableSimulation(Entity e, bool enable, bool nonSleeping);
+
+		void SetEnable(Entity e, bool enable);
 		
 		void SetType(Entity e, int32_t type);
 		int32_t GetType(Entity e);

@@ -30,7 +30,8 @@ end
 
 function EntityTypes.TestEnt.testTrigger(state)
     local light = Viewport.lua_world.world:GetLuaEntity(Viewport.lua_world.world:GetEntityByName("trig_light"))
-    light:Enable(state)
+    if state == true then light:Enable()
+    else light:Disable() end
 end
 
 function EntityTypes.TestEnt:initVars()

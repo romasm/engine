@@ -57,7 +57,7 @@ void GlobalLightSystem::initShadows(GlobalLightComponent& comp)
 	comp.cascadePerCamera.resize(camerasCount);
 	for(auto& i: *cameraSystem->components.data())
 	{
-		if(!i.active)
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
 		auto cascadeId = cascadeNumForCamera[i.get_id()];
@@ -185,7 +185,7 @@ void GlobalLightSystem::destroyCascades(CascadeShadow& cascade)
 void GlobalLightSystem::matrixGenerate(GlobalLightComponent& comp, CascadeShadow& cascade, CascadeProj& projCascade)
 {
 	auto cam = cameraSystem->GetComponent(cascade.camera);
-	uint16_t shadowRes = cam->render_mgr->shadowsRenderer->GetShadowCascadeRes();
+	uint16_t shadowRes = cam->scene->GetRenderMgr()->shadowsRenderer->GetShadowCascadeRes();
 
 	Vector3 Side = comp.dir_up.Cross(comp.dir);
 	Side.Normalize();
@@ -235,9 +235,6 @@ void GlobalLightSystem::RegShadowMaps()
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-
-		if(!i.active)
-			continue;
 		
 		for(auto f: frustumMgr->camDataArray)
 		{
@@ -258,9 +255,6 @@ void GlobalLightSystem::RegToScene()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		if(!i.active)
-			continue;
-
 		for(auto f: frustumMgr->camDataArray)
 		{
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
@@ -276,7 +270,7 @@ void GlobalLightSystem::Update()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
-		if(!i.active || !i.dirty)
+		if(!i.dirty)
 			continue;
 
 		updateLightComp(i);
@@ -316,10 +310,7 @@ void GlobalLightSystem::RenderShadows()
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-
-		if(!i.active)
-			continue;
-
+		
 		for(auto f: frustumMgr->camDataArray)
 		{
 			auto& cascade = i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
@@ -335,10 +326,7 @@ void GlobalLightSystem::ClearShadowsQueue()
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-
-		if(!i.active)
-			continue;
-		
+				
 		for(auto f: frustumMgr->camDataArray)
 		{
 			CascadeShadow* shadowMap = &i.cascadePerCamera[cascadeNumForCamera[f->get_id()]];
@@ -372,9 +360,6 @@ uint32_t GlobalLightSystem::Serialize(Entity e, uint8_t* data)
 	auto t_data = data;
 	uint32_t size = 0;
 
-	*(bool*)t_data = comp.active;
-	t_data += sizeof(bool);
-	size += sizeof(bool);
 	*(Vector3*)t_data = comp.color;
 	t_data += sizeof(Vector3);
 	size += sizeof(Vector3);
@@ -394,9 +379,6 @@ uint32_t GlobalLightSystem::Deserialize(Entity e, uint8_t* data)
 	uint32_t size = 0;
 
 	GlobalLightComponent comp;
-	comp.active = *(bool*)t_data;
-	t_data += sizeof(bool);
-	size += sizeof(bool);
 	comp.color = *(Vector3*)t_data;
 	t_data += sizeof(Vector3);
 	size += sizeof(Vector3);
@@ -409,19 +391,6 @@ uint32_t GlobalLightSystem::Deserialize(Entity e, uint8_t* data)
 
 	AddComponent(e, comp);
 	return size;
-}
-
-bool GlobalLightSystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.active;
-}
-
-bool GlobalLightSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(false)
-	comp.active = active;
-	return true;
 }
 
 bool GlobalLightSystem::SetColor(Entity e, Vector3 color)

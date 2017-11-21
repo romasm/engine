@@ -240,60 +240,63 @@ void SkeletonSystem::UpdateBuffers()
 {
 	for(auto& i: *components.data())
 	{
-		if( i.dirty || false/* animation? */ )
+		if( !world->IsEntityNeedProcess(i.get_entity()) )
+			continue;
+
+		if( !i.dirty )
+			continue;
+
+		i.dirty = false;
+
+		VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
+
+		bitset<FRUSTUM_MAX_COUNT> bits;
+		if(visComponent)
 		{
-			VisibilityComponent* visComponent = visibilitySys->GetComponent(i.get_entity());
+			bits = visComponent->inFrust;	
+			if(bits == 0)
+				continue;
+		}
+		else
+		{
+			if(earlyVisibilitySys)
+			{
+				EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
 
-			bitset<FRUSTUM_MAX_COUNT> bits;
-			if(visComponent)
-			{
-				bits = visComponent->inFrust;	
-				if(bits == 0)
-					continue;
-			}
-			else
-			{
-				if(earlyVisibilitySys)
+				if(earlyVisibilityComponent)
 				{
-					EarlyVisibilityComponent* earlyVisibilityComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-
-					if(earlyVisibilityComponent)
-					{
-						bits = earlyVisibilityComponent->inFrust;	
-						if(bits == 0)
-							continue;
-					}
-					else
-						bits = 0;
+					bits = earlyVisibilityComponent->inFrust;	
+					if(bits == 0)
+						continue;
 				}
 				else
 					bits = 0;
 			}
-
-			if( bits == 0 )
-				continue;
-
-			for( uint32_t j = 0; j < (uint32_t)i.bones.size(); j++)
-			{
-				const XMMATRIX* worldMatrix = sceneGraph->GetWorldTransformation(i.bones[j]);
-
-				XMVECTOR scale, pos, rot;
-				XMMatrixDecompose(&scale, &rot, &pos, *worldMatrix);
-				XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
-				XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
-
-				XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
-				normalMatrix = normalMatrix * rotM;
-
-				const auto matrixID = j * 2;
-				i.matrixBuffer[matrixID] = XMMatrixTranspose(*worldMatrix);
-				i.matrixBuffer[matrixID + 1] = XMMatrixTranspose(normalMatrix);
-			}
-
-			Render::UpdateDynamicResource(i.gpuMatrixBuffer.buf, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
-
-			i.dirty = false;
+			else
+				bits = 0;
 		}
+
+		if( bits == 0 )
+			continue;
+
+		for( uint32_t j = 0; j < (uint32_t)i.bones.size(); j++)
+		{
+			const XMMATRIX* worldMatrix = sceneGraph->GetWorldTransformation(i.bones[j]);
+
+			XMVECTOR scale, pos, rot;
+			XMMatrixDecompose(&scale, &rot, &pos, *worldMatrix);
+			XMMATRIX rotM = XMMatrixRotationQuaternion(rot);
+			XMMATRIX scaleM = XMMatrixScalingFromVector(scale);
+
+			XMMATRIX normalMatrix = XMMatrixInverse(nullptr, scaleM);
+			normalMatrix = normalMatrix * rotM;
+
+			const auto matrixID = j * 2;
+			i.matrixBuffer[matrixID] = XMMatrixTranspose(*worldMatrix);
+			i.matrixBuffer[matrixID + 1] = XMMatrixTranspose(normalMatrix);
+		}
+
+		Render::UpdateDynamicResource(i.gpuMatrixBuffer.buf, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
 	}
 }
 

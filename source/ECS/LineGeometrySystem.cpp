@@ -100,19 +100,6 @@ bool LineGeometrySystem::SetDirty(Entity e)
 	return true;
 }
 
-bool LineGeometrySystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.dirty;
-}
-
-bool LineGeometrySystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(false)
-	comp.active = active;
-	return true;
-}
-
 bool LineGeometrySystem::SetFromVis(Entity e, bool forceEVS)
 {
 	GET_COMPONENT(false)

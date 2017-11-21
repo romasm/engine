@@ -28,7 +28,6 @@ CameraSystem::~CameraSystem()
 {
 	for(auto& it: *components.data())
 	{
-		_DELETE(it.render_mgr);
 		if(globalLightSystem)
 			globalLightSystem->DeleteCascadesForCamera(&it);
 	}
@@ -37,11 +36,12 @@ CameraSystem::~CameraSystem()
 void CameraSystem::DeleteComponent(Entity e)
 {
 	auto comp = GetComponent(e);
-	if(!comp) return;
-	_DELETE(comp->render_mgr);
-	if(comp->active)
+	if(!comp) 
+		return;
+	comp->scene = nullptr;
+	if(world->IsEntityEnable(e))
 	{
-		WRN("Camera component still active for deleted entity!");
+		WRN("Camera still active for deleted entity!");
 		if(globalLightSystem)
 			globalLightSystem->DeleteCascadesForCamera(comp);
 	}
@@ -53,7 +53,7 @@ void CameraSystem::initCamera(CameraComponent* comp)
 	comp->dirty = true;
 	comp->projMatrix = XMMatrixPerspectiveFovLH(comp->fov, comp->aspect_ratio, comp->near_clip, comp->far_clip);
 	BoundingFrustum::CreateFromMatrix(comp->localFrustum, comp->projMatrix);
-	comp->render_mgr = nullptr;
+	comp->scene = nullptr;
 	comp->volume_id = FRUSTUM_MAX_COUNT;
 }
 
@@ -64,17 +64,19 @@ void CameraSystem::RegToDraw()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 
+		if(!i.scene)
+			return;
+
 		regCamera(i);
 	}
 }
 
 void CameraSystem::regCamera(CameraComponent& comp)
 {
-	if(!comp.active)
-		return;
-
 	comp.prevViewProj = comp.viewMatrix * comp.projMatrix; // store prev frame
 	
+	auto rndMgr = comp.scene->GetRenderMgr();
+
 	if(comp.dirty)
 	{
 		XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
@@ -95,24 +97,24 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 		comp.view_proj = XMMatrixMultiply(comp.viewMatrix, comp.projMatrix); // remove
 
-		if(comp.render_mgr->voxelRenderer) // todo
-			comp.render_mgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
+		if(rndMgr->voxelRenderer) // todo
+			rndMgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
 
 		comp.dirty = false;
 	}
 
 	auto ent = comp.get_entity();
 
-	auto f = frustum_mgr->AddFrustum(ent, &comp.worldFrustum, comp.render_mgr, &comp.viewMatrix, &comp.projMatrix);
+	auto f = frustum_mgr->AddFrustum(ent, &comp.worldFrustum, rndMgr, &comp.viewMatrix, &comp.projMatrix);
 	comp.frust_id = int32_t(f->get_frustum_id());
 
-	if(comp.render_mgr->voxelRenderer)
+	if(rndMgr->voxelRenderer)
 	{
-		auto v = frustum_mgr->AddFrustum(ent, &comp.render_mgr->voxelRenderer->GetBigVolumeBox(), comp.render_mgr, nullptr, nullptr, true, true);
+		auto v = frustum_mgr->AddFrustum(ent, &rndMgr->voxelRenderer->GetBigVolumeBox(), rndMgr, nullptr, nullptr, true, true);
 		comp.volume_id = int32_t(v->get_frustum_id());
 	}
 
-	comp.render_mgr->UpdateCamera(&comp);
+	rndMgr->UpdateCamera(&comp);
 }
 
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
@@ -178,57 +180,59 @@ bool CameraSystem::SetDirty(Entity e)
 	return true;
 }
 
-bool CameraSystem::IsActive(Entity e)
+void CameraSystem::AssignScene(Entity e, ScenePipeline* scene)
 {
-	GET_COMPONENT(false)
-	return comp.active;
+	GET_COMPONENT(void())
+	comp.scene = scene;
+
+	if(world->IsEntityEnable(e))
+		SetEnable(e, true);
 }
 
-bool CameraSystem::Activate(Entity e, ScenePipeline* scene)
+void CameraSystem::SetEnable(Entity e, bool enable)
 {
-	if(!scene)
-		return false;
-	GET_COMPONENT(false)
-	comp.active = true;
-
-	auto oldCam = scene->GetSceneCamera();
-	CameraComponent* oldCamComp = nullptr;
-	if(oldCam.sys && (oldCamComp = GetComponent(oldCam.e)))
+	GET_COMPONENT(void())
+		
+	if(enable)
 	{
-		if(oldCamComp != &comp)
+		if(!comp.scene)
 		{
-			oldCamComp->active = false;
+			ERR("Camera component has no scene assigned");
+			return;
+		}
+
+		auto oldCam = comp.scene->GetSceneCamera();
+		if( e == oldCam.e )
+			return;
+
+		CameraComponent* oldCamComp = nullptr;
+		if(oldCam.sys && (oldCamComp = GetComponent(oldCam.e)))
+		{
+			world->SetEntityEnable(oldCam.e, false, true);
 			if(globalLightSystem)
 				globalLightSystem->SwitchCascadesForCamera(oldCamComp, &comp);
-			oldCamComp->render_mgr = nullptr;
 		}
+		else
+		{
+			if(globalLightSystem)
+				globalLightSystem->AddCascadesForCamera(&comp);
+		}
+		comp.scene->SetCamera(CameraLink(this, e));
 	}
 	else
 	{
+		if(!comp.scene)
+			return;
+
+		auto sceneCam = comp.scene->GetSceneCamera();
+		if( e != sceneCam.e )
+			return;
+
 		if(globalLightSystem)
-			globalLightSystem->AddCascadesForCamera(&comp);
+			globalLightSystem->DeleteCascadesForCamera(&comp);
+
+		comp.scene->SetCamera(CameraLink());
 	}
-	comp.render_mgr = scene->GetRenderMgr();
-	scene->SetCamera(CameraLink(this, e));
-	return true;
-}
-
-bool CameraSystem::Deactivate(Entity e, ScenePipeline* scene)
-{
-	GET_COMPONENT(false)
-
-	auto sceneCam = scene->GetSceneCamera();
-	if(!EntIsEq(e, sceneCam.e))
-		return false;
-
-	comp.active = false;
-	if(globalLightSystem)
-		globalLightSystem->DeleteCascadesForCamera(&comp);
-	comp.render_mgr = nullptr;
-
-	scene->SetCamera(CameraLink());
-
-	return true;
 }
 
 int32_t CameraSystem::GetFrustumId(Entity e)
@@ -283,7 +287,7 @@ bool CameraSystem::SetProps(Entity e, CameraComponent D)
 	comp.projMatrix = XMMatrixPerspectiveFovLH(comp.fov, comp.aspect_ratio, comp.near_clip, comp.far_clip);
 	BoundingFrustum::CreateFromMatrix(comp.localFrustum, comp.projMatrix);
 	comp.dirty = true;
-	if(comp.active && globalLightSystem)
+	if(world->IsEntityEnable(e) && globalLightSystem)
 		globalLightSystem->AddCascadesForCamera(&comp);
 	return true;
 }
@@ -295,7 +299,7 @@ bool CameraSystem::SetFov(Entity e, float fov)
 	comp.projMatrix = XMMatrixPerspectiveFovLH(comp.fov, comp.aspect_ratio, comp.near_clip, comp.far_clip);
 	BoundingFrustum::CreateFromMatrix(comp.localFrustum, comp.projMatrix);
 	comp.dirty = true;
-	if(comp.active && globalLightSystem)
+	if(world->IsEntityEnable(e) && globalLightSystem)
 		globalLightSystem->AddCascadesForCamera(&comp);
 	return true;
 }
@@ -307,7 +311,7 @@ bool CameraSystem::SetAspect(Entity e, float aspect)
 	comp.projMatrix = XMMatrixPerspectiveFovLH(comp.fov, comp.aspect_ratio, comp.near_clip, comp.far_clip);
 	BoundingFrustum::CreateFromMatrix(comp.localFrustum, comp.projMatrix);
 	comp.dirty = true;
-	if(comp.active && globalLightSystem)
+	if(world->IsEntityEnable(e) && globalLightSystem)
 		globalLightSystem->AddCascadesForCamera(&comp);
 	return true;
 }
@@ -319,7 +323,7 @@ bool CameraSystem::SetFar(Entity e, float farplane)
 	comp.projMatrix = XMMatrixPerspectiveFovLH(comp.fov, comp.aspect_ratio, comp.near_clip, comp.far_clip);
 	BoundingFrustum::CreateFromMatrix(comp.localFrustum, comp.projMatrix);
 	comp.dirty = true;
-	if(comp.active && globalLightSystem)
+	if(world->IsEntityEnable(e) && globalLightSystem)
 		globalLightSystem->AddCascadesForCamera(&comp);
 	return true;
 }
@@ -331,7 +335,7 @@ bool CameraSystem::SetNear(Entity e, float nearplane)
 	comp.projMatrix = XMMatrixPerspectiveFovLH(comp.fov, comp.aspect_ratio, comp.near_clip, comp.far_clip);
 	BoundingFrustum::CreateFromMatrix(comp.localFrustum, comp.projMatrix);
 	comp.dirty = true;
-	if(comp.active && globalLightSystem)
+	if(world->IsEntityEnable(e) && globalLightSystem)
 		globalLightSystem->AddCascadesForCamera(&comp);
 	return true;
 }

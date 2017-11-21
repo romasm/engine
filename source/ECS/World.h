@@ -108,7 +108,7 @@ namespace EngineCore
 			ScenePipeline* scene = new ScenePipeline();
 			if(!scene->Init(w, h, lightweight))
 			{_CLOSE(scene); return nullptr;}
-			m_cameraSystem->Activate(cam, scene);
+			m_cameraSystem->AssignScene(cam, scene);
 			m_scenes.push_back(scene);
 			return scene;
 		}
@@ -184,7 +184,9 @@ namespace EngineCore
 		}
 		Entity GetEntityByName(string name) { return m_nameMgr->GetEntityByName(name); }
 				
-		inline void SetEntityEnable(Entity e, bool enable) {m_entityMgr->SetEnable(e, enable);}
+		void SetEntityEnable(Entity e, bool enable, bool noCamera = false);
+		inline void SetEntityEnableLua(Entity e, bool enable) {SetEntityEnable(e, enable);}
+
 		inline bool IsEntityEnable(Entity e) {return m_entityMgr->IsEnable(e);}
 
 		inline bool IsEntityNeedProcess(Entity e) {return m_entityMgr->IsNeedProcess(e);}
@@ -297,7 +299,7 @@ namespace EngineCore
 					.addFunction("GetFirstEntityByType", &BaseWorld::GetFirstEntityByType)
 					.addFunction("GetNextEntityByType", &BaseWorld::GetNextEntityByType)
 
-					.addFunction("SetEntityEnable", &BaseWorld::SetEntityEnable)
+					.addFunction("SetEntityEnable", &BaseWorld::SetEntityEnableLua)
 					.addFunction("IsEntityEnable", &BaseWorld::IsEntityEnable)
 
 					.addFunction("GetLuaEntity", &BaseWorld::WrapEntityForLua)

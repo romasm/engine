@@ -45,12 +45,11 @@ namespace EngineCore
 		friend class ControllerSystem;
 		ENTITY_IN_COMPONENT	
 	public:
-		bool active;
 		FuncMap* funcMap;
 		LuaRef classInstanceRef;
 		string keyMapName;
 
-		Controller() : active(false), funcMap(nullptr), classInstanceRef(LSTATE) {}
+		Controller() : funcMap(nullptr), classInstanceRef(LSTATE) {}
 	};
 
 	class BaseWorld;
@@ -96,7 +95,6 @@ namespace EngineCore
 			if(!comp)
 				return;
 
-			comp->active = false;
 			if(comp->funcMap)
 			{
 				for(uint16_t j = 0; j < eKeyCodes::KEY_MAX; j++)
@@ -119,10 +117,7 @@ namespace EngineCore
 		}
 
 		void RawInput(RawInputData& data);
-
-		bool IsActive(Entity e);
-		bool SetActive(Entity e, bool active);
-
+		
 		#ifdef _DEV
 			void UpdateLuaFuncs();
 		#endif
@@ -131,9 +126,6 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<ControllerSystem>("ControllerSystem")
-					.addFunction("IsActive", &ControllerSystem::IsActive)
-					.addFunction("SetActive", &ControllerSystem::SetActive)
-
 					.addFunction("AddComponent", &ControllerSystem::AddComponent)
 					.addFunction("DeleteComponent", &ControllerSystem::DeleteComponent)
 					.addFunction("HasComponent", &ControllerSystem::HasComponent)

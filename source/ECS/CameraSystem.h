@@ -17,10 +17,9 @@ namespace EngineCore
 		ENTITY_IN_COMPONENT
 			
 		bool dirty;
-		bool active;
 
 		// static
-		SceneRenderMgr* render_mgr;
+		ScenePipeline* scene;
 
 		// update on props change
 		BoundingFrustum localFrustum;
@@ -57,6 +56,7 @@ namespace EngineCore
 	{
 		friend BaseWorld;
 		friend GlobalLightSystem;
+		friend ScenePipeline;
 	public:
 		CameraSystem(BaseWorld* w, uint32_t maxCount);
 		void SetGlobalLightSys(GlobalLightSystem* gls);
@@ -71,7 +71,6 @@ namespace EngineCore
 			res->near_clip = 0.1f;
 			res->fov = 1.57f;
 			res->aspect_ratio = 1.0f;
-			res->active = false;
 
 			res->parent = e;
 			res->dirty = true;
@@ -84,7 +83,6 @@ namespace EngineCore
 				return;
 			D.parent = e;
 			D.dirty = true;
-			D.active = false;
 			D.aspect_ratio = 1.0f;
 			components.add(e.index(), D);
 			initCamera(&components.getDataById(e.index()));
@@ -115,9 +113,9 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		bool IsActive(Entity e);
-		bool Activate(Entity e, ScenePipeline* scene);
-		bool Deactivate(Entity e, ScenePipeline* scene);
+		void AssignScene(Entity e, ScenePipeline* scene);
+
+		void SetEnable(Entity e, bool enable);
 
 		XMVECTOR GetVectorFromScreen(Entity e, XMVECTOR screen_point, float screen_w, float screen_h);
 
@@ -180,11 +178,9 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<CameraSystem>("CameraSystem")
-					.addFunction("IsActive", &CameraSystem::IsActive)
-					.addFunction("Activate", &CameraSystem::Activate)
-					.addFunction("Deactivate", &CameraSystem::Deactivate)
-					.addFunction("GetVectorFromScreen", &CameraSystem::_GetVectorFromScreen)
+					.addFunction("AssignScene", &CameraSystem::AssignScene)
 
+					.addFunction("GetVectorFromScreen", &CameraSystem::_GetVectorFromScreen)
 					.addFunction("GetPos", &CameraSystem::GetPos)
 					.addFunction("GetUp", &CameraSystem::GetUp)
 					.addFunction("GetLookDir", &CameraSystem::GetLookDir)

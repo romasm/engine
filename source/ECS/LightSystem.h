@@ -26,7 +26,6 @@ namespace EngineCore
 
 	public:
 		bool dirty;
-		bool active;
 
 		uint8_t type;
 
@@ -83,7 +82,6 @@ namespace EngineCore
 			res->cone = Vector2(XM_PIDIV2, 0.1f);
 			res->range = 1.0f;
 			res->type = 0;
-			res->active = true;
 			res->color = Vector3(0,0,0);
 			res->brightness = 1.0f;
 			res->nonAreaBrightness = 1.0f;
@@ -132,9 +130,6 @@ namespace EngineCore
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 
-		bool IsActive(Entity e);
-		bool SetActive(Entity e, bool active);
-
 		bool SetType(Entity e, uint8_t type);
 		uint8_t GetType(Entity e);
 
@@ -177,9 +172,6 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<LightSystem>("LightSystem")
-					.addFunction("IsActive", &LightSystem::IsActive)
-					.addFunction("SetActive", &LightSystem::SetActive)
-
 					.addFunction("SetType", &LightSystem::SetType)
 					.addFunction("GetType", &LightSystem::GetType)
 					.addFunction("SetColor", &LightSystem::SetColor)

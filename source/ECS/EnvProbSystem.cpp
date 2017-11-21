@@ -27,9 +27,6 @@ void EnvProbSystem::RegToScene()
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
 				
-		if(!i.active)
-			continue;
-
 		if(i.mips_count <= 1)
 		{
 			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
@@ -138,19 +135,6 @@ bool EnvProbSystem::SetDirty(Entity e)
 {
 	GET_COMPONENT(false)
 	comp.dirty = true;
-	return true;
-}
-
-bool EnvProbSystem::IsActive(Entity e)
-{
-	GET_COMPONENT(false)
-	return comp.active;
-}
-
-bool EnvProbSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(false)
-	comp.active = active;
 	return true;
 }
 

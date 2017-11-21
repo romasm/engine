@@ -36,7 +36,6 @@ namespace EngineCore
 	{
 		ENTITY_IN_COMPONENT
 			
-		bool active;
 		bool dirty;
 
 		// static
@@ -136,9 +135,6 @@ namespace EngineCore
 		
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
-
-		bool IsActive(Entity e);
-		bool SetActive(Entity e, bool active);
 		
 		bool Bake(Entity e);
 
@@ -151,9 +147,6 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<EnvProbSystem>("EnvProbSystem")
-					.addFunction("IsActive", &EnvProbSystem::IsActive)
-					.addFunction("SetActive", &EnvProbSystem::SetActive)
-
 					//.addFunction("AddComponent", &EnvProbSystem::AddComponent)
 					.addFunction("DeleteComponent", &EnvProbSystem::DeleteComponent)
 					.addFunction("HasComponent", &EnvProbSystem::HasComponent)

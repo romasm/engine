@@ -42,7 +42,6 @@ namespace EngineCore
 		
 		bool dirty;
 
-		bool active;
 		TriggerFilterType filter; 
 		string filterString; 
 		float reactionDelay;
@@ -57,7 +56,6 @@ namespace EngineCore
 		TriggerComponent() : startTouch(LSTATE), endTouch(LSTATE), endTouchAll(LSTATE)
 		{
 			dirty = false;
-			active = false;
 			object = nullptr;
 			filter = TriggerFilterType::FilterNone;
 			reactionDelay = 0;
@@ -108,8 +106,7 @@ namespace EngineCore
 		string GetFilterString(Entity e);
 		void SetFilterString(Entity e, string str);
 
-		bool IsActive(Entity e);
-		void SetActive(Entity e, bool active);
+		void SetEnable(Entity e, bool enable);
 
 		float GetDelay(Entity e);
 		void SetDelay(Entity e, float d);

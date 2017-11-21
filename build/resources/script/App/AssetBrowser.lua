@@ -394,17 +394,17 @@ function AssetBrowser:InitPreviewWorld()
     renderConfig.cameraConstExposure = 0.2
     renderConfig.bloomEnable = false
 
-    self.screenshotCamera:Deactivate(self.screenshotScene)
+    self.screenshotCamera:Enable()
 
     self.screenshotSphere = EntityTypes.Mesh(self.previewWorld)
     self.screenshotSphere:SetMesh("../resources/meshes/mat_sphere"..EXT.MESH)
-    self.screenshotSphere:Enable(false)
+    self.screenshotSphere:Disable()
 
     self.screenshotAlphaPlane = EntityTypes.Mesh(self.previewWorld)
     self.screenshotAlphaPlane:SetMesh("../resources/meshes/alpha_bg"..EXT.MESH)
     self.screenshotAlphaPlane:SetMaterial("../resources/meshes/alpha_bg"..EXT.MATERIAL, 0)
     self.screenshotAlphaPlane:SetPosition(0.0, 0.0, 5.2)--4.6)
-    self.screenshotAlphaPlane:Enable(false)
+    self.screenshotAlphaPlane:Disable()
 
     -- for preview   
     self.previewNode = EntityTypes.Node(self.previewWorld)
@@ -435,14 +435,13 @@ function AssetBrowser:GeneratePreview(filename)
 
     self.waitingForPreview = true
     
-    self.screenshotCamera:Activate(self.screenshotScene)
-    self.screenshotSphere:Enable(true)
+    self.screenshotSphere:Enable()
     self.screenshotSphere:SetMaterial(filename, 0)
 
     local material = self.screenshotSphere:GetMaterialRef(0)
 
     if material:IsTransparent() then
-        self.screenshotAlphaPlane:Enable(true)
+        self.screenshotAlphaPlane:Enable()
     end
 
     --Resource.ForceResourceReload() -- TODO: use job callback system?
@@ -453,10 +452,9 @@ function AssetBrowser:PostGeneratePreview(filename)
     self.previewWorld:Snapshot(self.screenshotScene)
     self.screenshotScene:SaveScreenshot(filename, GUI_PREVIEW_SIZE.X, GUI_PREVIEW_SIZE.Y)
     
-    self.screenshotAlphaPlane:Enable(false)
+    self.screenshotAlphaPlane:Disable()
     self.screenshotSphere:SetMaterial(self.nullMat, 0)
-    self.screenshotSphere:Enable(false)
-    self.screenshotCamera:Deactivate(self.screenshotScene)
+    self.screenshotSphere:Disable()
 
     self.waitingForPreview = false
 

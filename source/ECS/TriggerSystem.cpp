@@ -31,10 +31,7 @@ void TriggerSystem::CheckOverlaps(float dt, uint32_t frameID)
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-
-		if(!i.active)
-			continue;
-
+		
 		const Entity e = i.get_entity();
 		auto scriptComp = scriptSystem->GetComponent(e);
 		if(!scriptComp)
@@ -163,7 +160,6 @@ TriggerComponent* TriggerSystem::AddComponent(Entity e)
 	TriggerComponent* res = components.add(e.index());
 	res->parent = e;
 	res->dirty = true;
-	res->active = true;
 	res->filter = TriggerFilterType::FilterNone;
 	res->filterString = "";
 	res->reactionDelay = 0;
@@ -333,10 +329,7 @@ uint32_t TriggerSystem::Serialize(Entity e, uint8_t* data)
 	GET_COMPONENT(0)
 	
 	uint8_t* t_data = data;
-
-	*(bool*)t_data = comp.active;
-	t_data += sizeof(bool);
-
+	
 	*(int32_t*)t_data = (int32_t)comp.filter;
 	t_data += sizeof(int32_t);
 
@@ -357,9 +350,6 @@ uint32_t TriggerSystem::Deserialize(Entity e, uint8_t* data)
 		
 	uint8_t* t_data = data;
 
-	SetActive(comp->get_entity(), *(bool*)t_data);
-	t_data += sizeof(bool);
-
 	comp->filter = TriggerFilterType(*(int32_t*)t_data);
 	t_data += sizeof(int32_t);
 
@@ -371,34 +361,20 @@ uint32_t TriggerSystem::Deserialize(Entity e, uint8_t* data)
 	return (uint32_t)(t_data - data);
 }
 
-bool TriggerSystem::IsActive(Entity e)
+void TriggerSystem::SetEnable(Entity e, bool enable)
 {
-	GET_COMPONENT(false);
-	
-	return comp.active;
-}
+	GET_COMPONENT(void());	
 
-void TriggerSystem::SetActive(Entity e, bool active)
-{
-	GET_COMPONENT(void());
-	if(active)
+	if(enable)
 	{
-		if(!comp.active)
-		{
-			auto collComp = collisionSystem->GetComponent(e);
-			if(collComp)
-				return;
-			comp.active = true;
-			dynamicsWorld->addCollisionObject(comp.object, collComp->collisionGroup, collComp->collisionMask);
-		}
+		auto clsComp = collisionSystem->GetComponent(e);
+		if(clsComp)
+			return;
+		dynamicsWorld->addCollisionObject(comp.object, clsComp->collisionGroup, clsComp->collisionMask);
 	}
 	else
 	{
-		if(comp.active)
-		{
-			comp.active = false;
-			dynamicsWorld->removeCollisionObject(comp.object);
-		}
+		dynamicsWorld->removeCollisionObject(comp.object);
 	}
 }
 
@@ -451,9 +427,6 @@ void TriggerSystem::RegLuaClass()
 {
 	getGlobalNamespace(LSTATE)
 		.beginClass<TriggerSystem>("TriggerSystem")
-		.addFunction("IsActive", &TriggerSystem::IsActive)
-		.addFunction("SetActive", &TriggerSystem::SetActive)
-
 		.addFunction("UpdateState", &TriggerSystem::UpdateState)
 
 		.addFunction("GetDelay", &TriggerSystem::GetDelay)

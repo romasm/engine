@@ -35,6 +35,14 @@ function EntityTypes.BaseEntity:init(world, ent)
     return true
 end
 
+function EntityTypes.BaseEntity:KillHi()
+    if self.ent ~= nil then
+        self.world:DestroyEntityHierarchically(self.ent)
+    end
+    self.ent = nil
+    self.world = nil
+end
+
 function EntityTypes.BaseEntity:Kill()
     if self.ent ~= nil then
         self.world:DestroyEntity(self.ent)
@@ -147,8 +155,12 @@ function EntityTypes.BaseEntity:GetNext()
     return self.transformSys:GetChildNext(self.ent)
 end
 
-function EntityTypes.BaseEntity:Enable(enable)
-    return self.world:SetEntityEnable(self.ent, enable)
+function EntityTypes.BaseEntity:Enable()
+    return self.world:SetEntityEnable(self.ent, true)
+end
+
+function EntityTypes.BaseEntity:Disable()
+    return self.world:SetEntityEnable(self.ent, false)
 end
 
 function EntityTypes.BaseEntity:IsEnabled()

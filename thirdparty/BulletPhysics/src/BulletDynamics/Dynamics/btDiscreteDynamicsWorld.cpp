@@ -565,6 +565,10 @@ void	btDiscreteDynamicsWorld::removeRigidBody(btRigidBody* body)
 
 void	btDiscreteDynamicsWorld::addRigidBody(btRigidBody* body)
 {
+	// check if it already exist in some world
+	if( body->getWorldArrayIndex() != -1 )
+		return; 
+
 	if (!body->isStaticOrKinematicObject() && !(body->getFlags() &BT_DISABLE_WORLD_GRAVITY))
 	{
 		body->setGravity(m_gravity);
@@ -590,6 +594,10 @@ void	btDiscreteDynamicsWorld::addRigidBody(btRigidBody* body)
 
 void	btDiscreteDynamicsWorld::addRigidBody(btRigidBody* body, int group, int mask)
 {
+	// check if it already exist in some world
+	if( body->getWorldArrayIndex() != -1 )
+		return; 
+
 	if (!body->isStaticOrKinematicObject() && !(body->getFlags() &BT_DISABLE_WORLD_GRAVITY))
 	{
 		body->setGravity(m_gravity);

@@ -293,15 +293,12 @@ function Viewport:SpawnPhysics(cam)
     local pos = cam:GetPositionW()
     local dir = cam:GetLookDir()
     pos = Vector3.Add(pos, Vector3.MulScalar(dir, 2.5))
-    dir = Vector3.MulScalar(dir, 50000)
+    dir = Vector3.MulScalar(dir, 600)
     
-    phymodel:SetMesh(PATH.ROOT .. "content/statics/multimesh01.FBX")
+    --phymodel:SetMesh(PATH.ROOT .. "content/statics/multimesh01.FBX")
     
     phymodel:SetPosition(pos.x, pos.y, pos.z)
     phymodel:ApplyCentralImpulse(dir)
-
-    SceneBrowser:Refill()
-    SceneBrowser:SyncSelection()
 end
 
 function Viewport:ToggleGamemode()
@@ -311,15 +308,15 @@ function Viewport:ToggleGamemode()
         local player = self.lua_world.world:GetLuaEntity( self.lua_world.world:GetEntityByName("Player0") )
         if player == nil then return end
 
-        player:Deactivate()
-        EditorCamera.camera:Activate(self.lua_world.scenepl)
+        EditorCamera.camera:Enable()
+
+        player:KillHi()
 
         self.drawhud = true
         --self.lua_world.scenepl:GetConfig().editorGuiEnable = true
         
         self:SetMouseVis(true)
         
-        self.lua_world.world:DestroyEntityHierarchically(player.ent)
         self.lua_world.world.mode = WORLDMODES.NO_LIVE
 
         self.gamemode = false
@@ -331,10 +328,8 @@ function Viewport:ToggleGamemode()
         local cameraRot = EditorCamera.camera:GetRotationW()
         player:SetPosition(cameraPos.x, cameraPos.y, cameraPos.z)
         player.camera:SetRotation(cameraRot.x, cameraRot.y, 0)
-
-        player.camera:Activate(self.lua_world.scenepl)
         
-        player:Activate()
+        player.camera:AssignScene(self.lua_world.scenepl)
 
         self.drawhud = false
         --self.lua_world.scenepl:GetConfig().editorGuiEnable = false
