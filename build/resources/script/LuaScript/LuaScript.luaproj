@@ -239,6 +239,9 @@
     <Compile Include="..\App\Tools.lua">
       <Link>App\Tools.lua</Link>
     </Compile>
+    <Compile Include="..\App\TransformControls.lua">
+      <Link>App\TransformControls.lua</Link>
+    </Compile>
     <Compile Include="..\App\Viewport.lua">
       <Link>App\Viewport.lua</Link>
     </Compile>
