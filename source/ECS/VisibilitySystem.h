@@ -79,6 +79,7 @@ namespace EngineCore
 
 		Entity CollideRay(Vector3 origin, Vector3 ray, int frust_id);
 		Vector4 CollideRayCoords(Vector3 origin, Vector3 ray, int frust_id);
+		float CollideRaySingleEntity(Entity e, Vector3 origin, Vector3 ray, int frust_id);
 
 		Vector3 GetBoxSizeW(Entity e)
 		{
@@ -108,7 +109,9 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.beginClass<VisibilitySystem>("VisibilitySystem")
 					.addFunction("CollideRay", &VisibilitySystem::CollideRay)
-					.addFunction("CollideRayCoords", &VisibilitySystem::CollideRayCoords)
+					.addFunction("CollideRayCoords", &VisibilitySystem::CollideRayCoords) // REMOVE?
+					.addFunction("CollideRaySingleEntity", &VisibilitySystem::CollideRaySingleEntity)
+
 					.addFunction("GetBoxSizeL", &VisibilitySystem::GetBoxSizeL)
 					.addFunction("GetBoxCenterL", &VisibilitySystem::GetBoxCenterL)
 					.addFunction("GetBoxSizeW", &VisibilitySystem::GetBoxSizeW)

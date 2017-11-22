@@ -132,7 +132,7 @@ namespace EngineCore
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
-				.beginClass<TransformControls>("TransformControls")
+				.beginClass<TransformControls>("TransformControlsOld")
 					.addFunction("SetTransformation", &TransformControls::SetTransformation)
 					.addFunction("SetFromEntity", &TransformControls::SetFromEntity)
 					.addProperty("mode", &TransformControls::_GetMode, &TransformControls::_SetMode)				

@@ -205,7 +205,7 @@ function SceneBrowser:SelectEntities(entities, add)
     if #entities > 0 then Viewport:AddSelection(entities) end
 
     Viewport:PushSelectHistory()
-    Viewport:PlaceArrows()
+    TransformControls:UpdateTransform(Viewport.selection_set)
     Properties:Update()
 end
 
@@ -215,7 +215,7 @@ function SceneBrowser:UnselectEntity(entity)
     Viewport:Unselect(entity)
     
     Viewport:PushSelectHistory()
-    Viewport:PlaceArrows()
+    TransformControls:UpdateTransform(Viewport.selection_set)
     Properties:Update()
 end
 

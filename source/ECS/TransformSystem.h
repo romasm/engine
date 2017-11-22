@@ -97,11 +97,11 @@ namespace EngineCore
 
 		bool SetRotation(Entity e, float p, float y, float r);
 		bool SetRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool SetRotation(Entity e, Vector3 axis, float angle) 
+		inline bool SetRotation(Entity e, Vector3& axis, float angle) 
 		{return SetRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
 
 		bool SetRotation(Entity e, XMVECTOR quat);
-		inline bool SetRotation(Entity e, Vector4 quat)
+		inline bool SetRotation(Entity e, Vector4& quat)
 		{return SetRotation(e, XMLoadFloat4(&quat));}
 
 		bool SetScale(Entity e, float x, float y, float z);
@@ -116,11 +116,11 @@ namespace EngineCore
 
 		bool AddRotation(Entity e, float p, float y, float r);
 		bool AddRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool AddRotation(Entity e, Vector3 axis, float angle) 
+		inline bool AddRotation(Entity e, Vector3& axis, float angle) 
 		{return AddRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
 
 		bool AddRotation(Entity e, XMVECTOR quat);
-		inline bool AddRotation(Entity e, Vector4 quat)
+		inline bool AddRotation(Entity e, Vector4& quat)
 		{return AddRotation(e, XMLoadFloat4(&quat));}
 
 		bool AddScale(Entity e, float x, float y, float z);
@@ -170,12 +170,16 @@ namespace EngineCore
 		ALIGNED_ALLOCATION
 
 		inline bool _SetPosition(Entity e, float x, float y, float z){return SetPosition(e, x, y, z);}
+		inline bool _SetPositionV(Entity e, Vector3& vect){return SetPosition(e, vect);}
 		inline bool _SetRotation1(Entity e, float p, float y, float r){return SetRotation(e, p, y, r);}
-		inline bool _SetRotation2(Entity e, Vector3 axis, float angle){return SetRotation(e, axis, angle);}
+		inline bool _SetRotation2(Entity e, Vector3& axis, float angle){return SetRotation(e, axis, angle);}
+		inline bool _SetRotationQ(Entity e, Quaternion& vect){return SetRotation(e, XMVECTOR(vect));}
 		inline bool _SetScale(Entity e, float x, float y, float z){return SetScale(e, x, y, z);}
+		inline bool _SetScaleV(Entity e, Vector3& vect){return SetScale(e, vect);}
+
 		inline bool _AddPosition(Entity e, float x, float y, float z){return AddPosition(e, x, y, z);}
 		inline bool _AddRotation1(Entity e, float x, float y, float z){return AddRotation(e, x, y, z);}
-		inline bool _AddRotation2(Entity e, Vector3 normalAxis, float angle){return AddRotation(e, normalAxis, angle);}
+		inline bool _AddRotation2(Entity e, Vector3& normalAxis, float angle){return AddRotation(e, normalAxis, angle);}
 		inline bool _AddScale(Entity e, float x, float y, float z){return AddScale(e, x, y, z);}
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
@@ -184,23 +188,32 @@ namespace EngineCore
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<TransformSystem>("TransformSystem")
+
 					.addFunction("SetPosition", &TransformSystem::_SetPosition)
 					.addFunction("SetRotation", &TransformSystem::_SetRotation1)
 					.addFunction("SetRotationAxis", &TransformSystem::_SetRotation2)
 					.addFunction("SetScale", &TransformSystem::_SetScale)
+
+					.addFunction("SetPositionVect", &TransformSystem::_SetPositionV)
+					.addFunction("SetRotationQuat", &TransformSystem::_SetRotationQ)
+					.addFunction("SetScaleVect", &TransformSystem::_SetScaleV)
+
 					.addFunction("GetPositionL", &TransformSystem::GetPositionL)
 					.addFunction("GetRotationL", &TransformSystem::GetRotationL)
+					.addFunction("GetQuatRotationL", &TransformSystem::GetQuatRotationL)
 					.addFunction("GetDirectionL", &TransformSystem::GetDirectionL)
 					.addFunction("GetScaleL", &TransformSystem::GetScaleL)
 					.addFunction("GetPositionW", &TransformSystem::GetPositionW)
 					.addFunction("GetRotationW", &TransformSystem::GetRotationW)
+					.addFunction("GetQuatRotationW", &TransformSystem::GetQuatRotationW)
 					.addFunction("GetDirectionW", &TransformSystem::GetDirectionW)
 					.addFunction("GetScaleW", &TransformSystem::GetScaleW)
+
+					// REMOVE?
 					.addFunction("AddPosition", &TransformSystem::_AddPosition)
 					.addFunction("AddRotation", &TransformSystem::_AddRotation1)
 					.addFunction("AddRotationAxis", &TransformSystem::_AddRotation2)
 					.addFunction("AddScale", &TransformSystem::_AddScale)
-
 					.addFunction("AddPositionLocal", &TransformSystem::AddPositionLocal)
 
 					.addFunction("Attach", &TransformSystem::Attach)

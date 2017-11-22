@@ -2,7 +2,7 @@ shader = "../resources/shaders/objects/editor/3d_hud_alpha"
 
 ps
 {
-	dcolor = "1.0 1.0 1.0 1.0"
+	dcolor = "0.6 0.0 0.6 1.0"
 	useTexture = 1
 	colorTex = "../resources/textures/editor_hud/3d_plane.dds"
 }

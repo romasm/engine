@@ -759,8 +759,6 @@ void World::Frame()
 	m_shadowSystem->ClearShadowsQueue();
 	m_globalLightSystem->ClearShadowsQueue();
 
-	m_transformControls->RegToDraw();
-
 	for(auto& it: m_scenes)
 	{
 		if(it->StartFrame(&m_world_timer))

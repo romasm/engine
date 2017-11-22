@@ -38,7 +38,7 @@ float4 HudPS(PI_PosTex input) : SV_TARGET
 	float4 color_opacity = 1;
 	if(useTexture > 0)
 		color_opacity = colorTex.Sample(samplerAnisotropicClamp, input.tex);
-
+	
 	return color_opacity * dcolor;
 }
 

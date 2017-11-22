@@ -130,8 +130,8 @@ function TransformCallback.SetPos(self, ev, xyz)
     end
 
     if not is_change then return true end
-
-    Viewport:PlaceArrows()
+    
+    TransformControls:UpdateTransform(Viewport.selection_set)
     History:Push(history)
     return true 
 end
@@ -188,8 +188,8 @@ function TransformCallback.SetRot(self, ev, pyr)
     end
 
     if not is_change then return true end
-
-    Viewport:PlaceArrows()
+    
+    TransformControls:UpdateTransform(Viewport.selection_set)
     History:Push(history)
     return true 
 end
@@ -246,7 +246,7 @@ function TransformCallback.SetScale(self, ev, xyz)
     
     if not is_change then return true end
     
-    Viewport:PlaceArrows()
+    TransformControls:UpdateTransform(Viewport.selection_set)
     History:Push(history)
     return true 
 end

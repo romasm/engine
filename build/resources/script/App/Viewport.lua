@@ -1,4 +1,5 @@
 loader.require("App.EditorCamera")
+loader.require("App.TransformControls")
 
 if not Viewport then Viewport = {} end
 
@@ -57,6 +58,8 @@ function Viewport:Init()
     loader.require("ViewportWindow", Viewport.reload)
     self.reload()
 
+    TransformControls:PreInit()
+
     -- configs
     self.movespeed = 0.02
     self.hidemouse = true
@@ -112,6 +115,7 @@ function Viewport:Tick(dt, isActive)
     if self.renderActive == false then return end
 
     EditorCamera:Tick(dt)
+    TransformControls:Tick(EditorCamera.cameraEntity)
 
     if self.frame_ms < 100 then
         self.frame_ms = self.frame_ms + dt
@@ -130,6 +134,7 @@ function Viewport:SetWorld(WLD)
     if not WLD.world or WLD.scenepl then return end
     
     EditorCamera:Init( WLD.world )
+    TransformControls:Init( WLD.world )
 
     local vp_rect = self.viewport.entity:GetRectAbsolute()
     WLD.scenepl = WLD.world:CreateScene(EditorCamera.cameraEntity, vp_rect.w, vp_rect.h, false)
@@ -139,9 +144,7 @@ function Viewport:SetWorld(WLD)
     self.viewport.entity.visible = true
 
     WLD.world.active = true
-
-    WLD.world.transformControls.scale = self.arrows_scale
-
+    
     self.lua_world = WLD
 
     self:onResize(true)
@@ -165,6 +168,7 @@ end
 
 function Viewport:ClearWorld()
     EditorCamera:Close()
+    TransformControls:Close()
 
     self.lua_world = nil
     self.viewport.rect_mat:ClearTextures()
@@ -421,7 +425,7 @@ function Viewport:PlaceAndSelect(entity, mouse_coords)
     local ents = {entity}
     self:SetSelection(ents)
     self:PushSelectHistory() -- temp
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
     Properties:Update()
     SceneBrowser:Refill()
     SceneBrowser:SyncSelection()
@@ -465,7 +469,7 @@ function Viewport:onMouseDown(eventData)
 		if self.tc_hover then
 			self.tc_action = true
 			
-            self.history.transform_type = self.lua_world.world.transformControls.mode
+            self.history.transform_type = TransformControls.mode
             if self.history.transform_type == TRANSFORM_MODE.MOVE then
 			    for i, ent in ipairs(self.selection_set) do
 				    self.history.transform_old[i] = self.lua_world.world.transform:GetPositionL(ent)
@@ -513,7 +517,7 @@ function Viewport:onMouseUp(eventData)
     end
 
     if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
-        if self.tc_action == true and self.lua_world.world.transformControls.mode == TRANSFORM_MODE.SCALE then
+        if self.tc_action == true and TransformControls.mode == TRANSFORM_MODE.SCALE then
             self:PostScaleSelection()
         end
 
@@ -563,7 +567,7 @@ function Viewport:DropSelection()
     self:RememberSelection()
     self:UnselectAll()
     self:PushSelectHistory()
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
     Properties:Update()
     SceneBrowser:SyncSelection()
 end
@@ -587,7 +591,7 @@ function Viewport:DeleteSelection() -- to history
             Viewport.lua_world.world:DestroyEntity(Viewport.selection_set[i])
             table.remove(Viewport.selection_set, i) 
         end
-		Viewport:PlaceArrows()
+        TransformControls:UpdateTransform(self.selection_set)
         Properties:Update()
         SceneBrowser:Refill()
         SceneBrowser:SyncSelection()
@@ -676,14 +680,14 @@ function Viewport:onMouseMove(eventData)
             SceneBrowser:SyncSelection()
         end 
 
-		local tc_mode = self.lua_world.world.transformControls.mode
+		local tc_mode = TransformControls.mode
 		
 		if tc_mode == TRANSFORM_MODE.NONE then
 			self.tc_action = false
 		elseif tc_mode == TRANSFORM_MODE.MOVE then		
-			local tc_move = self.lua_world.world.transformControls:CalcMove(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
+			local tc_move = TransformControls:CalcMove(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
-				self.lua_world.world.transformControls:ApplyMove(tc_move, ent)
+				TransformControls:ApplyMove(tc_move, ent)
 			end
 
             if not self.history_push then
@@ -693,9 +697,9 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetPositionsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.ROT then
-			local tc_rot = self.lua_world.world.transformControls:CalcRot(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
+			local tc_rot = TransformControls:CalcRot(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
-				self.lua_world.world.transformControls:ApplyRot(tc_rot, ent)
+				TransformControls:ApplyRot(tc_rot, ent)
 			end
 
             if not self.history_push then
@@ -705,9 +709,9 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetRotationsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.SCALE then
-			local tc_scale = self.lua_world.world.transformControls:CalcScale(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
+			local tc_scale = TransformControls:CalcScale(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
 			for i, ent in ipairs(self.selection_set) do
-				self.lua_world.world.transformControls:ApplyScale(tc_scale, ent)
+				TransformControls:ApplyScale(tc_scale, ent)
 			end
 
             if not self.history_push then
@@ -726,7 +730,7 @@ function Viewport:onMouseMove(eventData)
     
     if self.freelook then
 		if not self.tc_action then
-			self.lua_world.world.transformControls:Unhover()
+			TransformControls:Unhover()
 			self.tc_hover = false
 		end
 		
@@ -751,7 +755,7 @@ function Viewport:onMouseMove(eventData)
         end
     else
 		if not self.tc_action then
-			self.tc_hover = self.lua_world.world.transformControls:CheckHover(ray_dir, EditorCamera.cameraEntity)
+			self.tc_hover = TransformControls:CheckHover(ray_dir)
 		end
     end
 
@@ -832,7 +836,7 @@ function Viewport:onItemDroped(eventData)
         self:RememberSelection()
         self:SetSelection(entities)
         self:PushSelectHistory() -- temp
-        self:PlaceArrows()
+        TransformControls:UpdateTransform(self.selection_set)
         Properties:Update()
         SceneBrowser:Refill()
         SceneBrowser:SyncSelection()
@@ -875,7 +879,7 @@ function Viewport:SetPositionsToSelection(positions)
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
 end
 
 function Viewport:SetRotationsToSelection(rotations)
@@ -885,7 +889,7 @@ function Viewport:SetRotationsToSelection(rotations)
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
 end
 
 function Viewport:SetScalesToSelection(scales)
@@ -895,7 +899,7 @@ function Viewport:SetScalesToSelection(scales)
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
 end
 
 function Viewport:PostScaleSelection()
@@ -916,7 +920,7 @@ end
 function Viewport:SwitchTransform()
     if not self.lua_world then return end
 
-    local cur_mode = self.lua_world.world.transformControls.mode
+    local cur_mode = TransformControls.mode
     cur_mode = cur_mode + 1
     if cur_mode > TRANSFORM_MODE.SCALE then cur_mode = TRANSFORM_MODE.NONE end
     self:SetTransform(cur_mode, true)
@@ -925,34 +929,36 @@ end
 function Viewport:SetTransform(mode, tools)
     if not self.lua_world then return end
 
+    TransformControls:SetMode(mode)
+
     if mode == TRANSFORM_MODE.NONE then
         self.lua_world.world.transformControls.mode = TRANSFORM_MODE.NONE
         if tools then Tools:SetTransform(TRANSFORM_MODE.NONE) end
 
     elseif mode == TRANSFORM_MODE.MOVE then
-        if self.lua_world.world.transformControls.mode == TRANSFORM_MODE.MOVE then
+        if TransformControls.mode == TRANSFORM_MODE.MOVE then
             self.tc_local = not self.tc_local
         else
-            self.lua_world.world.transformControls.mode = TRANSFORM_MODE.MOVE
+            TransformControls:SetMode(TRANSFORM_MODE.MOVE)
         end
-        self.lua_world.world.transformControls.islocal = self.tc_local
-        self:PlaceArrows()
+        TransformControls:SetLocal(self.tc_local)
+        TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.MOVE) end
 
     elseif mode == TRANSFORM_MODE.ROT then
-        if self.lua_world.world.transformControls.mode == TRANSFORM_MODE.ROT then
+        if TransformControls.mode == TRANSFORM_MODE.ROT then
             self.tc_local = not self.tc_local
         else
-            self.lua_world.world.transformControls.mode = TRANSFORM_MODE.ROT
+            TransformControls:SetMode(TRANSFORM_MODE.ROT)
         end
-        self.lua_world.world.transformControls.islocal = self.tc_local
-        self:PlaceArrows()
+        TransformControls:SetLocal(self.tc_local)
+        TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.ROT) end
 
     elseif mode == TRANSFORM_MODE.SCALE then
-        self.lua_world.world.transformControls.mode = TRANSFORM_MODE.SCALE
-        self.lua_world.world.transformControls.islocal = true
-        self:PlaceArrows()
+        TransformControls:SetMode(TRANSFORM_MODE.SCALE)
+        TransformControls:SetLocal(true)
+        TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.SCALE) end
     end
 end
@@ -981,7 +987,7 @@ function Viewport:Select(coords)
 
                         self:PushSelectHistory()
 						
-						self:PlaceArrows()
+						TransformControls:UpdateTransform(self.selection_set)
                         Properties:Update()
                         SceneBrowser:SyncSelection()
                     end
@@ -1006,7 +1012,7 @@ function Viewport:Select(coords)
             self.lua_world.world.lineGeometry:SetColor(s_ent, self.selection_color)
 		end
     end
-	self:PlaceArrows()
+	TransformControls:UpdateTransform(self.selection_set)
     
     if self.selection_mode ~= SELECTION_MODE.SNAKE then self:PushSelectHistory() end
     Properties:Update()
@@ -1056,7 +1062,7 @@ function Viewport:AddSelection(ents)
         self.lua_world.world.lineGeometry:SetFromVis(i_ent)
         self.lua_world.world.lineGeometry:SetColor(i_ent, self.selection_color)
     end
-    self:PlaceArrows()
+    TransformControls:UpdateTransform(self.selection_set)
     Properties:Update()
 end
 
@@ -1073,7 +1079,7 @@ end
 function Viewport:SetSelection(ents)
     self:UnselectAll()
     if #ents == 0 then 
-        self:PlaceArrows()
+        TransformControls:UpdateTransform(self.selection_set)
         Properties:Update()
         SceneBrowser:SyncSelection()
         return
@@ -1092,18 +1098,6 @@ function Viewport:CopySelection(history)
         history.old_ents[i] = ent
     end
     Viewport:SetSelection(new_ents)
-end
-
-function Viewport:PlaceArrows()
-	if #self.selection_set == 0 then 
-		self.lua_world.world.transformControls:Deactivate() 
-		return
-	end
-	
-	self.lua_world.world.transformControls:Activate()
-	for i, ent in ipairs(self.selection_set) do
-		self.lua_world.world.transformControls:SetFromEntity(ent)
-	end
 end
 
 function Viewport:SetFreelook(look)

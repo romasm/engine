@@ -126,7 +126,7 @@ void StaticMeshSystem::RegToDraw()
 		{
 			for( auto& f: *(frustumMgr->m_frustums.data()) )
 			{
-				if( !f.rendermgr->IsShadow() )
+				if( !f.rendermgr->IsShadow() && !f.is_volume )
 				{
 					for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
 						((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 

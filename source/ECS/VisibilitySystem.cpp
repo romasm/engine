@@ -56,7 +56,7 @@ Vector4 VisibilitySystem::CollideRayCoords(Vector3 origin, Vector3 ray, int frus
 
 void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Vector4* colide_coord, Entity* ent)
 {
-	Frustum& f = frustumMgr->GetFrustum(frust_id);
+	const Frustum& f = frustumMgr->GetFrustum(frust_id);
 
 	float min_dist = SELECT_3D_MAX_DIST;
 	ent->setnull();
@@ -88,6 +88,17 @@ void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Ve
 #define GET_COMPONENT(res) size_t idx = components.getArrayIdx(e.index());\
 	if(idx == components.capacity())	return res;\
 	auto& comp = components.getDataByArrayIdx(idx);
+
+float VisibilitySystem::CollideRaySingleEntity(Entity e, Vector3 origin, Vector3 ray, int frust_id)
+{
+	GET_COMPONENT(-1.0f);
+
+	const Frustum& f = frustumMgr->GetFrustum(frust_id);
+	if( (comp.inFrust & f.bit) != f.bit )
+		return -1.0f;
+
+	return RayOrientedBoxIntersect(origin, ray, comp.worldBox);
+}
 
 bool VisibilitySystem::IsDirty(Entity e)
 {
