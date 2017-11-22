@@ -114,7 +114,7 @@ end
 
 function TransformControls:Tick(camEnt)
     if not self.world then return end
-
+    
     self.camPos = self.CameraSy:GetPos(camEnt)    
     self.frustID = self.CameraSy:GetFrustumId(camEnt)
     self.farClip = self.CameraSy:GetFar(camEnt)
@@ -263,6 +263,9 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
     local hoverType = self.hoverControl:len()
     if self.mode == TRANSFORM_MODE.NONE or hoverType == 0 or #selectionSet == 0 then return end
     
+    local rayNextFar = Vector3.MulScalar(rayNext, self.farClip)
+    local rayPrevFar = Vector3.MulScalar(rayPrev, self.farClip)
+
     if self.mode == TRANSFORM_MODE.MOVE then
         local move = Vector3.Zero
 
@@ -279,12 +282,14 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             normal:Normalize()
 
             local plane = Vector4.CreatePlane(self.currentPos, normal)
-            local fromP = Vector4.PlaneRayCollide(plane, self.currentPos, Vector3.MulScalar(rayPrev, self.farClip))
-            local toP = Vector4.PlaneRayCollide(plane, self.currentPos, Vector3.MulScalar(rayNext, self.farClip))
+            local fromP = Vector4.PlaneLineCollide(plane, self.currentPos, rayPrevFar)
+            local toP = Vector4.PlaneLineCollide(plane, self.currentPos, rayNextFar)
 
             local moveVect = Vector3.Sub(toP, fromP)
             move = Vector3.MulScalar(dir, moveVect:Dot(dir))
-
+            print(moveVect.x)
+            print(moveVect.y)
+            print(moveVect.z)
         elseif hoverType == 2 then
             local axis = Vector3(0,0,1)
             if self.hoverControl == "XZ" then axis = Vector3(0,1,0)
@@ -292,15 +297,19 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             
             local normal = Vector3.Rotate(axis, self.currentRot)
             local plane = Vector4.CreatePlane(self.currentPos, normal)
-            local fromP = Vector4.PlaneRayCollide(plane, self.currentPos, Vector3.MulScalar(rayPrev, self.farClip))
-            local toP = Vector4.PlaneRayCollide(plane, self.currentPos, Vector3.MulScalar(rayNext, self.farClip))
+            local fromP = Vector4.PlaneLineCollide(plane, self.currentPos, rayPrevFar)
+            local toP = Vector4.PlaneLineCollide(plane, self.currentPos, rayNextFar)
 
             move = Vector3.Sub(toP, fromP)
             
         end
 
+        self.currentPos = Vector3.Add(self.currentPos, move)
+        self.TransformSy:SetPositionVect(self.Ccontrol, self.currentPos)
+        
         for i, ent in ipairs(selectionSet) do
-			TransformControls:ApplyMove(tc_move, ent)
+            local newPos = Vector3.Add(self.TransformSy:GetPositionL(ent), move)
+			self.TransformSy:SetPositionVect(ent, newPos)
 		end
 
     elseif self.mode == TRANSFORM_MODE.ROT then

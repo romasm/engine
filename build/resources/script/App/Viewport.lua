@@ -684,11 +684,8 @@ function Viewport:onMouseMove(eventData)
 		
 		if tc_mode == TRANSFORM_MODE.NONE then
 			self.tc_action = false
-		elseif tc_mode == TRANSFORM_MODE.MOVE then		
-			local tc_move = TransformControls:CalcMove(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
-			for i, ent in ipairs(self.selection_set) do
-				TransformControls:ApplyMove(tc_move, ent)
-			end
+		elseif tc_mode == TRANSFORM_MODE.MOVE then
+            TransformControls:ApplyTransform(ray_dir, self.tc_prevray, self.selection_set)
 
             if not self.history_push then
                 self.history_push = true
