@@ -97,6 +97,14 @@ inline Vector4 Vector4CreatePlane(Vector3& pos, Vector3& norm)
 inline Vector3 Vector4PlaneLineCollide(Vector4& plane, Vector3& pos, Vector3& rayTo)
 {return XMPlaneIntersectLine(plane, pos, rayTo);}
 
+inline float Vector2AngleBetween(Vector2& v1, Vector2& v2)
+{return XMVectorGetX(XMVector2AngleBetweenVectors(v1, v2));}
+inline float Vector3AngleBetween(Vector3& v1, Vector3& v2)
+{return XMVectorGetX(XMVector3AngleBetweenVectors(v1, v2));}
+inline float Vector4AngleBetween(Vector4& v1, Vector4& v2)
+{return XMVectorGetX(XMVector4AngleBetweenVectors(v1, v2));}
+
+
 inline void RegLuaMath()
 {
 	getGlobalNamespace(LSTATE)
@@ -138,6 +146,7 @@ inline void RegLuaMath()
 		.addFunction("Dot", &Vector2::Dot)
 		.addFunction("Length", &Vector2::Length)
 		.addFunction("LengthSq", &Vector2::LengthSquared)
+		.addStaticFunction("AngleBetween", &Vector2AngleBetween)
 		.endClass()
 
 		.beginClass<Vector3>("Vector3")
@@ -162,6 +171,7 @@ inline void RegLuaMath()
 		.addFunction("Length", &Vector3::Length)
 		.addFunction("LengthSq", &Vector3::LengthSquared)
 		.addFunction("Cross", static_cast<Vector3 (Vector3::*)(const Vector3&) const>(&Vector3::Cross))
+		.addStaticFunction("AngleBetween", &Vector3AngleBetween)
 		.endClass()
 
 		.beginClass<Vector4>("Vector4")
@@ -191,6 +201,7 @@ inline void RegLuaMath()
 
 		.addStaticFunction("CreatePlane", &Vector4CreatePlane)
 		.addStaticFunction("PlaneLineCollide", &Vector4PlaneLineCollide)
+		.addStaticFunction("AngleBetween", &Vector4AngleBetween)
 		.endClass()
 
 		.beginClass<MLRECT>("Rect")

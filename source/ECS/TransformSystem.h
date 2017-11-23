@@ -171,8 +171,8 @@ namespace EngineCore
 
 		inline bool _SetPosition(Entity e, float x, float y, float z){return SetPosition(e, x, y, z);}
 		inline bool _SetPositionV(Entity e, Vector3& vect){return SetPosition(e, vect);}
-		inline bool _SetRotation1(Entity e, float p, float y, float r){return SetRotation(e, p, y, r);}
-		inline bool _SetRotation2(Entity e, Vector3& axis, float angle){return SetRotation(e, axis, angle);}
+		inline bool _SetRotation(Entity e, float p, float y, float r){return SetRotation(e, p, y, r);}
+		inline bool _SetRotationAxis(Entity e, Vector3& axis, float angle){return SetRotation(e, axis, angle);}
 		inline bool _SetRotationQ(Entity e, Quaternion& vect){return SetRotation(e, XMVECTOR(vect));}
 		inline bool _SetScale(Entity e, float x, float y, float z){return SetScale(e, x, y, z);}
 		inline bool _SetScaleV(Entity e, Vector3& vect){return SetScale(e, vect);}
@@ -189,27 +189,35 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.beginClass<TransformSystem>("TransformSystem")
 
-					.addFunction("SetPosition", &TransformSystem::_SetPosition)
-					.addFunction("SetRotation", &TransformSystem::_SetRotation1)
-					.addFunction("SetRotationAxis", &TransformSystem::_SetRotation2)
-					.addFunction("SetScale", &TransformSystem::_SetScale)
+					.addFunction("SetPositionL", &TransformSystem::_SetPositionL)
+					.addFunction("SetRotationL", &TransformSystem::_SetRotationL)
+					.addFunction("SetScaleL", &TransformSystem::_SetScaleL)
 
-					.addFunction("SetPositionVect", &TransformSystem::_SetPositionV)
-					.addFunction("SetRotationQuat", &TransformSystem::_SetRotationQ)
-					.addFunction("SetScaleVect", &TransformSystem::_SetScaleV)
+					.addFunction("SetRotationLAxis", &TransformSystem::_SetRotationLAxis)
+					.addFunction("SetPositionLVect", &TransformSystem::_SetPositionLVect)
+					.addFunction("SetRotationLQuat", &TransformSystem::_SetRotationLQuat)
+					.addFunction("SetScaleLVect", &TransformSystem::_SetScaleLVect)
+
+					.addFunction("SetPositionW", &TransformSystem::_SetPositionW)
+					.addFunction("SetRotationW", &TransformSystem::_SetRotationW)
+					.addFunction("SetScaleW", &TransformSystem::_SetScaleW)
+
+					.addFunction("SetRotationWAxis", &TransformSystem::_SetRotationWAxis)
+					.addFunction("SetPositionWVect", &TransformSystem::_SetPositionWVect)
+					.addFunction("SetRotationWQuat", &TransformSystem::_SetRotationWQuat)
+					.addFunction("SetScaleWVect", &TransformSystem::_SetScaleWVect)
 
 					.addFunction("GetPositionL", &TransformSystem::GetPositionL)
 					.addFunction("GetRotationL", &TransformSystem::GetRotationL)
-					.addFunction("GetQuatRotationL", &TransformSystem::GetQuatRotationL)
+					.addFunction("GetRotationLQuat", &TransformSystem::GetRotationLQuat)
 					.addFunction("GetDirectionL", &TransformSystem::GetDirectionL)
 					.addFunction("GetScaleL", &TransformSystem::GetScaleL)
 					.addFunction("GetPositionW", &TransformSystem::GetPositionW)
 					.addFunction("GetRotationW", &TransformSystem::GetRotationW)
-					.addFunction("GetQuatRotationW", &TransformSystem::GetQuatRotationW)
+					.addFunction("GetRotationWQuat", &TransformSystem::GetRotationWQuat)
 					.addFunction("GetDirectionW", &TransformSystem::GetDirectionW)
 					.addFunction("GetScaleW", &TransformSystem::GetScaleW)
 
-					// REMOVE?
 					.addFunction("AddPosition", &TransformSystem::_AddPosition)
 					.addFunction("AddRotation", &TransformSystem::_AddRotation1)
 					.addFunction("AddRotationAxis", &TransformSystem::_AddRotation2)

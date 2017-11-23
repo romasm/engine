@@ -116,6 +116,7 @@ function TransformControls:Tick(camEnt)
     if not self.world then return end
     
     self.camPos = self.CameraSy:GetPos(camEnt)    
+    self.camDir = self.CameraSy:GetLookDir(camEnt)    
     self.frustID = self.CameraSy:GetFrustumId(camEnt)
     self.farClip = self.CameraSy:GetFar(camEnt)
 
@@ -282,14 +283,12 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             normal:Normalize()
 
             local plane = Vector4.CreatePlane(self.currentPos, normal)
-            local fromP = Vector4.PlaneLineCollide(plane, self.currentPos, rayPrevFar)
-            local toP = Vector4.PlaneLineCollide(plane, self.currentPos, rayNextFar)
+            local fromP = Vector4.PlaneLineCollide(plane, self.camPos, rayPrevFar)
+            local toP = Vector4.PlaneLineCollide(plane, self.camPos, rayNextFar)
 
             local moveVect = Vector3.Sub(toP, fromP)
             move = Vector3.MulScalar(dir, moveVect:Dot(dir))
-            print(moveVect.x)
-            print(moveVect.y)
-            print(moveVect.z)
+
         elseif hoverType == 2 then
             local axis = Vector3(0,0,1)
             if self.hoverControl == "XZ" then axis = Vector3(0,1,0)
@@ -297,8 +296,8 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             
             local normal = Vector3.Rotate(axis, self.currentRot)
             local plane = Vector4.CreatePlane(self.currentPos, normal)
-            local fromP = Vector4.PlaneLineCollide(plane, self.currentPos, rayPrevFar)
-            local toP = Vector4.PlaneLineCollide(plane, self.currentPos, rayNextFar)
+            local fromP = Vector4.PlaneLineCollide(plane, self.camPos, rayPrevFar)
+            local toP = Vector4.PlaneLineCollide(plane, self.camPos, rayNextFar)
 
             move = Vector3.Sub(toP, fromP)
             
@@ -313,7 +312,39 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
 		end
 
     elseif self.mode == TRANSFORM_MODE.ROT then
+        local normal = Vector3.Zero
+
+        if hoverType == 1 then
+            local axis = Vector3(1,0,0)
+            if self.hoverControl == "Y" then axis = Vector3(0,1,0)
+            elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end 
+            normal = Vector3.Rotate(axis, self.currentRot)
+        else
+            normal = Vector3.Inverse(self.camDir)
+            normal:Normalize()
+        end
         
+        local plane = Vector4.CreatePlane(self.currentPos, normal)
+
+        local fromP = Vector4.PlaneLineCollide(plane, self.camPos, rayPrevFar)
+        local toP = Vector4.PlaneLineCollide(plane, self.camPos, rayNextFar)
+        fromP = Vector3.Sub(fromP, self.currentPos)
+        toP = Vector3.Sub(toP, self.currentPos)
+
+        local angle = Vector3.AngleBetween(fromP, toP)
+        local rotDirTest = fromP:Cross(toP)
+        if normal:Dot(rotDirTest) < 0 then angle = -angle end
+
+        if self.isLocal then
+            self.TransformSy:AddRotationAxis(self.Ccontrol, normal, angle)
+            self.currentRot = self.TransformSy:GetQuatRotationL(self.Ccontrol)
+        end
+        
+        for i, ent in ipairs(selectionSet) do
+            local newPos = Vector3.Add(self.TransformSy:GetPositionL(ent), move)
+			self.TransformSy:SetPositionVect(ent, newPos)
+		end  
+
     elseif self.mode == TRANSFORM_MODE.SCALE then
         
     end
