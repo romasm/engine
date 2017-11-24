@@ -108,6 +108,10 @@ inline float Vector4AngleBetween(Vector4& v1, Vector4& v2)
 inline void RegLuaMath()
 {
 	getGlobalNamespace(LSTATE)
+		.beginClass<Matrix>("Matrix")
+		.addConstructor<void (*)(void)>()
+		.endClass()
+
 		.beginClass<Quaternion>("Quaternion")
 		.addData("x", &Quaternion::x)
 		.addData("y", &Quaternion::y)

@@ -90,97 +90,74 @@ namespace EngineCore
 		Entity GetChildFirst(Entity parent);
 		Entity GetChildNext(Entity child);
 
+		// TODO
 		bool SetPhysicsTransform(Entity e, XMMATRIX& transform);
 
-		bool SetPosition(Entity e, float x, float y, float z);
-		bool SetPosition(Entity e, XMVECTOR p);
-
-		bool SetRotation(Entity e, float p, float y, float r);
-		bool SetRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool SetRotation(Entity e, Vector3& axis, float angle) 
-		{return SetRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
-
-		bool SetRotation(Entity e, XMVECTOR quat);
-		inline bool SetRotation(Entity e, Vector4& quat)
-		{return SetRotation(e, XMLoadFloat4(&quat));}
-
-		bool SetScale(Entity e, float x, float y, float z);
-		bool SetScale(Entity e, XMVECTOR s);
-
-		bool SetTransform(Entity e, CXMMATRIX mat);
-
-		bool AddPosition(Entity e, float x, float y, float z);
-		bool AddPosition(Entity e, XMVECTOR p);
-
-		bool AddPositionLocal(Entity e, float x, float y, float z);
-
-		bool AddRotation(Entity e, float p, float y, float r);
-		bool AddRotation(Entity e, XMVECTOR normalAxis, float angle);
-		inline bool AddRotation(Entity e, Vector3& axis, float angle) 
-		{return AddRotation(e, XMVector3Normalize(XMLoadFloat3(&axis)), angle);}
-
-		bool AddRotation(Entity e, XMVECTOR quat);
-		inline bool AddRotation(Entity e, Vector4& quat)
-		{return AddRotation(e, XMLoadFloat4(&quat));}
-
-		bool AddScale(Entity e, float x, float y, float z);
-		bool AddScale(Entity e, XMVECTOR s);
-
-		bool AddTransform(Entity e, CXMMATRIX mat);
-
+		// Set Transform
+		bool SetPosition_L3F(Entity e, float x, float y, float z);
+		bool SetPosition_L(Entity e, Vector3& p);
+		bool SetRotationPYR_L3F(Entity e, Vector3& r);
+		bool SetRotationPYR_L(Entity e, float p, float y, float r);
+		bool SetRotation_L(Entity e, Vector4& quat);
+		bool SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
+		bool SetScale_L3F(Entity e, float x, float y, float z);
+		bool SetScale_L(Entity e, Vector4& s);
 		
-		XMVECTOR GetVectPositionL(Entity e);
-		inline Vector3 GetPositionL(Entity e)
-		{XMVECTOR v = GetVectPositionL(e); Vector3 res;
-			XMStoreFloat3(&res, v); return res;}
+		bool SetPosition_W3F(Entity e, float x, float y, float z);
+		bool SetPosition_W(Entity e, Vector3 p);
+		bool SetRotationPYR_W3F(Entity e, Vector3& r);
+		bool SetRotationPYR_W(Entity e, float p, float y, float r);
+		bool SetRotation_W(Entity e, Vector4& quat);
+		bool SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
+		bool SetScale_W3F(Entity e, float x, float y, float z);
+		bool SetScale_W(Entity e, Vector4& s);
 
-		Quaternion GetQuatRotationL(Entity e);
-		Vector3 GetRotationL(Entity e);
-		inline XMVECTOR GetVectRotationL(Entity e)
-		{Vector3 res = GetRotationL(e); return XMLoadFloat3(&res);}
+		bool SetTransform_LInternal(Entity e, XMMATRIX& mat);
+		inline bool SetTransform_L(Entity e, Matrix& mat) {return SetTransform_LInternal(e, XMMATRIX(mat));};
+		bool SetTransform_WInternal(Entity e, XMMATRIX& mat);
+		inline bool SetTransform_W(Entity e, Matrix& mat) {return SetTransform_WInternal(e, XMMATRIX(mat));};
+		
+		// Get Transform		
+		Vector3 GetPosition_L(Entity e);
+		Quaternion GetRotation_L(Entity e);
+		Vector3 GetRotationPYR_L(Entity e);
+		Vector3 GetDirection_L(Entity e);
+		Vector3 GetScale_L(Entity e);
 
-		Vector3 GetDirectionL(Entity e);
+		Vector3 GetPosition_W(Entity e);
+		Quaternion GetRotation_W(Entity e);
+		Vector3 GetRotationPYR_W(Entity e);
+		Vector3 GetDirection_W(Entity e);
+		Vector3 GetScale_W(Entity e);
 
-		XMVECTOR GetVectScaleL(Entity e);
-		inline Vector3 GetScaleL(Entity e)
-		{XMVECTOR v = GetVectScaleL(e); Vector3 res;
-			XMStoreFloat3(&res, v); return res;}
+		const XMMATRIX& GetTransform_LInternal(Entity e);
+		inline Matrix GetTransform_L(Entity e) {return GetTransform_LInternal(e);}
+		const XMMATRIX& GetTransform_WInternal(Entity e);
+		inline Matrix GetTransform_W(Entity e) {return GetTransform_WInternal(e);}
 
-		XMMATRIX GetTransformL(Entity e);
+		// Add Transform
+		bool AddPosition_L3F(Entity e, float x, float y, float z);
+		bool AddPosition_L(Entity e, Vector3& p);
+		bool AddRotationPYR_L(Entity e, Vector3& r);
+		bool AddRotationPYR_L3F(Entity e, float p, float y, float r);
+		bool AddRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
+		bool AddRotation_L(Entity e, Quaternion& quat);
+		bool AddScale_L3F(Entity e, float x, float y, float z);
+		bool AddScale_L(Entity e, Vector3& s);
 
-		XMVECTOR GetVectPositionW(Entity e);
-		inline Vector3 GetPositionW(Entity e)
-		{XMVECTOR v = GetVectPositionW(e); Vector3 res;
-			XMStoreFloat3(&res, v); return res;}
-
-		Vector3 GetDirectionW(Entity e);
-
-		Quaternion GetQuatRotationW(Entity e);
-		Vector3 GetRotationW(Entity e);
-		inline XMVECTOR GetVectRotationW(Entity e)
-		{Vector3 res = GetRotationW(e); return XMLoadFloat3(&res);}
-
-		XMVECTOR GetVectScaleW(Entity e);
-		inline Vector3 GetScaleW(Entity e)
-		{XMVECTOR v = GetVectScaleW(e); Vector3 res;
-			XMStoreFloat3(&res, v); return res;}
-
-		XMMATRIX GetTransformW(Entity e);
+		bool AddPosition_W3F(Entity e, float x, float y, float z);
+		bool AddPosition_W(Entity e, Vector3& p);
+		bool AddRotationPYR_W(Entity e, Vector3& r);
+		bool AddRotationPYR_W3F(Entity e, float p, float y, float r);
+		bool AddRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
+		bool AddRotation_W(Entity e, Quaternion& quat);
+		bool AddScale_W3F(Entity e, float x, float y, float z);
+		bool AddScale_W(Entity e, Vector3& s);
+		
+		bool AddTransform_L(Entity e, Matrix& mat);
+		bool AddTransform_W(Entity e, Matrix& mat);
 
 		ALIGNED_ALLOCATION
-
-		inline bool _SetPosition(Entity e, float x, float y, float z){return SetPosition(e, x, y, z);}
-		inline bool _SetPositionV(Entity e, Vector3& vect){return SetPosition(e, vect);}
-		inline bool _SetRotation(Entity e, float p, float y, float r){return SetRotation(e, p, y, r);}
-		inline bool _SetRotationAxis(Entity e, Vector3& axis, float angle){return SetRotation(e, axis, angle);}
-		inline bool _SetRotationQ(Entity e, Quaternion& vect){return SetRotation(e, XMVECTOR(vect));}
-		inline bool _SetScale(Entity e, float x, float y, float z){return SetScale(e, x, y, z);}
-		inline bool _SetScaleV(Entity e, Vector3& vect){return SetScale(e, vect);}
-
-		inline bool _AddPosition(Entity e, float x, float y, float z){return AddPosition(e, x, y, z);}
-		inline bool _AddRotation1(Entity e, float x, float y, float z){return AddRotation(e, x, y, z);}
-		inline bool _AddRotation2(Entity e, Vector3& normalAxis, float angle){return AddRotation(e, normalAxis, angle);}
-		inline bool _AddScale(Entity e, float x, float y, float z){return AddScale(e, x, y, z);}
 
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
@@ -189,40 +166,56 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.beginClass<TransformSystem>("TransformSystem")
 
-					.addFunction("SetPositionL", &TransformSystem::_SetPositionL)
-					.addFunction("SetRotationL", &TransformSystem::_SetRotationL)
-					.addFunction("SetScaleL", &TransformSystem::_SetScaleL)
+					.addFunction("SetPosition_L3F", &TransformSystem::SetPosition_L3F)
+					.addFunction("SetRotationPYR_L3F", &TransformSystem::SetRotationPYR_L3F)
+					.addFunction("SetScale_L3F", &TransformSystem::SetScale_L3F)
+					.addFunction("SetRotationPYR_L", &TransformSystem::SetRotationPYR_L)
+					.addFunction("SetRotationAxis_L", &TransformSystem::SetRotationAxis_L)
+					.addFunction("SetPosition_L", &TransformSystem::SetPosition_L)
+					.addFunction("SetRotation_L", &TransformSystem::SetRotation_L)
+					.addFunction("SetScale_L", &TransformSystem::SetScale_L)
+					.addFunction("SetPosition_W3F", &TransformSystem::SetPosition_W3F)
+					.addFunction("SetRotationPYR_W3F", &TransformSystem::SetRotationPYR_W3F)
+					.addFunction("SetScale_W3F", &TransformSystem::SetScale_W3F)
+					.addFunction("SetRotationPYR_W", &TransformSystem::SetRotationPYR_W)
+					.addFunction("SetRotationAxis_W", &TransformSystem::SetRotationAxis_W)
+					.addFunction("SetPosition_W", &TransformSystem::SetPosition_W)
+					.addFunction("SetRotation_W", &TransformSystem::SetRotation_W)
+					.addFunction("SetScale_W", &TransformSystem::SetScale_W)
+					.addFunction("SetTransform_L", &TransformSystem::SetTransform_L)
+					.addFunction("SetTransform_W", &TransformSystem::SetTransform_W)
 
-					.addFunction("SetRotationLAxis", &TransformSystem::_SetRotationLAxis)
-					.addFunction("SetPositionLVect", &TransformSystem::_SetPositionLVect)
-					.addFunction("SetRotationLQuat", &TransformSystem::_SetRotationLQuat)
-					.addFunction("SetScaleLVect", &TransformSystem::_SetScaleLVect)
+					.addFunction("GetPosition_L", &TransformSystem::GetPosition_L)
+					.addFunction("GetRotationPYR_L", &TransformSystem::GetRotationPYR_L)
+					.addFunction("GetRotation_L", &TransformSystem::GetRotation_L)
+					.addFunction("GetDirection_L", &TransformSystem::GetDirection_L)
+					.addFunction("GetScale_L", &TransformSystem::GetScale_L)
+					.addFunction("GetPosition_W", &TransformSystem::GetPosition_W)
+					.addFunction("GetRotationPYR_W", &TransformSystem::GetRotationPYR_W)
+					.addFunction("GetRotation_W", &TransformSystem::GetRotation_W)
+					.addFunction("GetDirection_W", &TransformSystem::GetDirection_W)
+					.addFunction("GetScale_W", &TransformSystem::GetScale_W)
+					.addFunction("GetTransform_L", &TransformSystem::GetTransform_L)
+					.addFunction("GetTransform_W", &TransformSystem::GetTransform_W)
 
-					.addFunction("SetPositionW", &TransformSystem::_SetPositionW)
-					.addFunction("SetRotationW", &TransformSystem::_SetRotationW)
-					.addFunction("SetScaleW", &TransformSystem::_SetScaleW)
-
-					.addFunction("SetRotationWAxis", &TransformSystem::_SetRotationWAxis)
-					.addFunction("SetPositionWVect", &TransformSystem::_SetPositionWVect)
-					.addFunction("SetRotationWQuat", &TransformSystem::_SetRotationWQuat)
-					.addFunction("SetScaleWVect", &TransformSystem::_SetScaleWVect)
-
-					.addFunction("GetPositionL", &TransformSystem::GetPositionL)
-					.addFunction("GetRotationL", &TransformSystem::GetRotationL)
-					.addFunction("GetRotationLQuat", &TransformSystem::GetRotationLQuat)
-					.addFunction("GetDirectionL", &TransformSystem::GetDirectionL)
-					.addFunction("GetScaleL", &TransformSystem::GetScaleL)
-					.addFunction("GetPositionW", &TransformSystem::GetPositionW)
-					.addFunction("GetRotationW", &TransformSystem::GetRotationW)
-					.addFunction("GetRotationWQuat", &TransformSystem::GetRotationWQuat)
-					.addFunction("GetDirectionW", &TransformSystem::GetDirectionW)
-					.addFunction("GetScaleW", &TransformSystem::GetScaleW)
-
-					.addFunction("AddPosition", &TransformSystem::_AddPosition)
-					.addFunction("AddRotation", &TransformSystem::_AddRotation1)
-					.addFunction("AddRotationAxis", &TransformSystem::_AddRotation2)
-					.addFunction("AddScale", &TransformSystem::_AddScale)
-					.addFunction("AddPositionLocal", &TransformSystem::AddPositionLocal)
+					.addFunction("AddPosition_L3F", &TransformSystem::AddPosition_L3F)
+					.addFunction("AddRotationPYR_L3F", &TransformSystem::AddRotationPYR_L3F)
+					.addFunction("AddScale_L3F", &TransformSystem::AddScale_L3F)
+					.addFunction("AddRotationPYR_L", &TransformSystem::AddRotationPYR_L)
+					.addFunction("AddRotationAxis_L", &TransformSystem::AddRotationAxis_L)
+					.addFunction("AddPosition_L", &TransformSystem::AddPosition_L)
+					.addFunction("AddRotation_L", &TransformSystem::AddRotation_L)
+					.addFunction("AddScale_L", &TransformSystem::AddScale_L)
+					.addFunction("AddPosition_W3F", &TransformSystem::AddPosition_W3F)
+					.addFunction("AddRotationPYR_W3F", &TransformSystem::AddRotationPYR_W3F)
+					.addFunction("AddScale_W3F", &TransformSystem::AddScale_W3F)
+					.addFunction("AddRotationPYR_W", &TransformSystem::AddRotationPYR_W)
+					.addFunction("AddRotationAxis_W", &TransformSystem::AddRotationAxis_W)
+					.addFunction("AddPosition_W", &TransformSystem::AddPosition_W)
+					.addFunction("AddRotation_W", &TransformSystem::AddRotation_W)
+					.addFunction("AddScale_W", &TransformSystem::AddScale_W)
+					.addFunction("AddTransform_L", &TransformSystem::AddTransform_L)
+					.addFunction("AddTransform_W", &TransformSystem::AddTransform_W)
 
 					.addFunction("Attach", &TransformSystem::Attach)
 					.addFunction("Detach", &TransformSystem::Detach)
