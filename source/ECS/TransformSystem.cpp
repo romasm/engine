@@ -224,286 +224,311 @@ bool TransformSystem::SetPhysicsTransform(Entity e, XMMATRIX& transform)
 	return true;
 }
 
-bool TransformSystem::SetPosition(Entity e, float x, float y, float z)
-{
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslation(x, y, z);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
+// Set Transform
+#define SET_TRANSFORM_L(transform) \
+	GET_COMPONENT(false)\
+	XMVECTOR pos, rot, scale;\
+	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));\
+	XMMATRIX matrix = transform;\
+	sceneGraph->SetTransformation(comp.nodeID, matrix);\
+	world->SetDirty(e);\
 	return true;
+
+bool TransformSystem::SetPosition_L3F(Entity e, float x, float y, float z)
+{
+	return SetPosition_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::SetPosition(Entity e, XMVECTOR p)
+bool TransformSystem::SetPosition_L(Entity e, Vector3& p)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p));
 }
 
-bool TransformSystem::SetRotation(Entity e, float p, float y, float r)
+bool TransformSystem::SetRotationPYR_L3F(Entity e, float p, float y, float r)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	return SetRotationPYR_L(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::SetRotation(Entity e, XMVECTOR normalAxis, float angle)
+bool TransformSystem::SetRotationPYR_L(Entity e, Vector3& r)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotation(Entity e, XMVECTOR quat)
+bool TransformSystem::SetRotation_L(Entity e, Vector4& quat)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetScale(Entity e, float x, float y, float z)
+bool TransformSystem::SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetScale(Entity e, XMVECTOR s)
+bool TransformSystem::SetScale_L3F(Entity e, float x, float y, float z)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	return SetScale_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::SetTransform(Entity e, CXMMATRIX mat)
+bool TransformSystem::SetScale_L(Entity e, Vector3& s)
 {
-	GET_COMPONENT(false)
-	sceneGraph->SetTransformation(comp.nodeID, mat);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddPosition(Entity e, float x, float y, float z)
+bool TransformSystem::SetPosition_W3F(Entity e, float x, float y, float z)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslation(x, y, z);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	return SetPosition_W(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddPosition(Entity e, XMVECTOR p)
-{
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
+#define SET_TRANSFORM_W(transform) \
+	GET_COMPONENT(false)\
+	XMVECTOR pos, rot, scale;\
+	const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(comp.nodeID);\
+	XMMatrixDecompose(&scale, &rot, &pos, *parentMatrix);\
+	XMMATRIX matrix = transform;\
+	XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);\
+	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( matrix, invParent ));\
+	world->SetDirty(e);\
 	return true;
+
+bool TransformSystem::SetPosition_W(Entity e, Vector3& p)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p));
 }
 
-bool TransformSystem::AddPositionLocal(Entity e, float x, float y, float z)
+bool TransformSystem::SetRotationPYR_W3F(Entity e, float p, float y, float r)
 {
-	GET_COMPONENT(false)
-	XMMATRIX matrix = XMMatrixTranslation(x, y, z) * (*sceneGraph->GetLocalTransformation(comp.nodeID));
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	return SetRotationPYR_W(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::AddRotation(Entity e, float p, float y, float r)
+bool TransformSystem::SetRotationPYR_W(Entity e, Vector3& r)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYaw(p, y, r) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotation(Entity e, XMVECTOR normalAxis, float angle)
+bool TransformSystem::SetRotation_W(Entity e, Vector4& quat)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotation(Entity e, XMVECTOR quat)
+bool TransformSystem::SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddScale(Entity e, float x, float y, float z)
+bool TransformSystem::SetScale_W3F(Entity e, float x, float y, float z)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixScaling(x, y, z) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	return SetScale_W(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddScale(Entity e, XMVECTOR s)
+bool TransformSystem::SetScale_W(Entity e, Vector3& s)
 {
-	GET_COMPONENT(false)
-	XMVECTOR pos, rot, scale;
-	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
-	XMMATRIX matrix = XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos);
-	sceneGraph->SetTransformation(comp.nodeID, matrix);
-
-	world->SetDirty(e);
-	return true;
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddTransform(Entity e, CXMMATRIX mat)
+bool TransformSystem::SetTransform_LInternal(Entity e, XMMATRIX& mat)
 {
 	GET_COMPONENT(false)
 	sceneGraph->SetTransformation(comp.nodeID, mat);
-
 	world->SetDirty(e);
 	return true;
 }
 
-XMVECTOR TransformSystem::GetVectPositionL(Entity e)
+bool TransformSystem::SetTransform_WInternal(Entity e, XMMATRIX& mat)
 {
-	GET_COMPONENT(XMVECTOR())
+	GET_COMPONENT(false)
+	XMMATRIX invParent = XMMatrixInverse(nullptr, *sceneGraph->GetWorldTransformation(comp.nodeID));
+	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( mat, invParent ));
+	world->SetDirty(e);
+	return true;
+}
+
+// Get Transform
+
+Vector3 TransformSystem::GetPosition_L(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return pos;
 }
 
-Quaternion TransformSystem::GetQuatRotationL(Entity e)
+Quaternion TransformSystem::GetRotation_L(Entity e)
 {
-	GET_COMPONENT(Quaternion())
+	GET_COMPONENT(Quaternion::Identity)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return rot;
 }
 
-Vector3 TransformSystem::GetRotationL(Entity e)
+Vector3 TransformSystem::GetRotationPYR_L(Entity e)
 {
-	GET_COMPONENT(Vector3())
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return PYRFromQuat(rot);
 }
 
-Vector3 TransformSystem::GetDirectionL(Entity e)
+Vector3 TransformSystem::GetDirection_L(Entity e)
 {
 	GET_COMPONENT(Vector3())
 	return XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetLocalTransformation(comp.nodeID));
 }
 
-XMVECTOR TransformSystem::GetVectScaleL(Entity e)
+Vector3 TransformSystem::GetScale_L(Entity e)
 {
-	GET_COMPONENT(XMVECTOR())
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetLocalTransformation(comp.nodeID));
 	return scale;
 }
 
-XMMATRIX TransformSystem::GetTransformL(Entity e)
+const XMMATRIX& TransformSystem::GetTransform_LInternal(Entity e)
 {
 	GET_COMPONENT(XMMatrixIdentity())
 	return *sceneGraph->GetLocalTransformation(comp.nodeID);
 }
 
-XMVECTOR TransformSystem::GetVectPositionW(Entity e)
+Vector3 TransformSystem::GetPosition_W(Entity e)
 {
-	GET_COMPONENT(XMVECTOR())
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return pos;
 }
 
-Quaternion TransformSystem::GetQuatRotationW(Entity e)
+Quaternion TransformSystem::GetRotation_W(Entity e)
 {
-	GET_COMPONENT(Quaternion())
+	GET_COMPONENT(Quaternion::Identity)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return rot;
 }
 
-Vector3 TransformSystem::GetRotationW(Entity e)
+Vector3 TransformSystem::GetRotationPYR_W(Entity e)
 {
-	GET_COMPONENT(Vector3())
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return PYRFromQuat(rot);
 }
 
-Vector3 TransformSystem::GetDirectionW(Entity e)
+Vector3 TransformSystem::GetDirection_W(Entity e)
 {
 	GET_COMPONENT(Vector3())
 	return XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetWorldTransformation(comp.nodeID));
 }
 
-XMVECTOR TransformSystem::GetVectScaleW(Entity e)
+Vector3 TransformSystem::GetScale_W(Entity e)
 {
-	GET_COMPONENT(XMVECTOR())
+	GET_COMPONENT(Vector3::Zero)
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, *sceneGraph->GetWorldTransformation(comp.nodeID));
 	return scale;
 }
 
-XMMATRIX TransformSystem::GetTransformW(Entity e)
+const XMMATRIX& TransformSystem::GetTransform_WInternal(Entity e)
 {
 	GET_COMPONENT(XMMatrixIdentity())
 	return *sceneGraph->GetWorldTransformation(comp.nodeID);
+}
+
+// Add Transform
+
+bool TransformSystem::AddPosition_L3F(Entity e, float x, float y, float z)
+{
+	return AddPosition_L(e, Vector3(x, y, z));
+}
+
+bool TransformSystem::AddPosition_L(Entity e, Vector3& p)
+{
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p));
+}
+
+bool TransformSystem::AddRotationPYR_L3F(Entity e, float p, float y, float r)
+{
+	return AddRotationPYR_L(e, Vector3(p, y, r));
+}
+
+bool TransformSystem::AddRotationPYR_L(Entity e, Vector3& r)
+{
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddRotationAxis_L(Entity e, Vector3& normalAxis, float angle)
+{
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddRotation_L(Entity e, Quaternion& quat)
+{
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddScale_L3F(Entity e, float x, float y, float z)
+{
+	return AddScale_L(e, Vector3(x, y, z));
+}
+
+bool TransformSystem::AddScale_L(Entity e, Vector3& s)
+{
+	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddPosition_W3F(Entity e, float x, float y, float z)
+{
+	return AddPosition_W(e, Vector3(x, y, z));
+}
+
+bool TransformSystem::AddPosition_W(Entity e, Vector3& p)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p));
+}
+
+bool TransformSystem::AddRotationPYR_W3F(Entity e, float p, float y, float r)
+{
+	return AddRotationPYR_W(e, Vector3(p, y, r));
+}
+
+bool TransformSystem::AddRotationPYR_W(Entity e, Vector3& r)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddRotationAxis_W(Entity e, Vector3& normalAxis, float angle)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddRotation_W(Entity e, Quaternion& quat)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddScale_W3F(Entity e, float x, float y, float z)
+{
+	return AddScale_W(e, Vector3(x, y, z));
+}
+
+bool TransformSystem::AddScale_W(Entity e, Vector3& s)
+{
+	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
+}
+
+bool TransformSystem::AddTransform_L(Entity e, Matrix& mat)
+{
+	GET_COMPONENT(false)
+	const XMMATRIX* localMat = sceneGraph->GetLocalTransformation(comp.nodeID);
+	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply(mat, *localMat));
+	world->SetDirty(e);
+	return true;
+}
+
+bool TransformSystem::AddTransform_W(Entity e, Matrix& mat)
+{
+	GET_COMPONENT(false)
+	const XMMATRIX* worldMat = sceneGraph->GetWorldTransformation(comp.nodeID);
+	XMMATRIX invParent = XMMatrixInverse(nullptr, *sceneGraph->GetWorldTransformation(comp.nodeID));
+	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( DirectX::XMMatrixMultiply(mat, *worldMat), invParent ));
+	world->SetDirty(e);
+	return true;
 }

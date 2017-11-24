@@ -86,6 +86,19 @@ namespace EngineCore
 			UpdateNode(lookupID);
 		}
 
+		void ForceUpdateHierarchy(uint32_t nodeID)
+		{
+			uint32_t lookupID = lookup[nodeID];
+			if(lookupID == SCENEGRAPH_NULL_ID)
+				return;
+
+			Relation& relt = relations[lookupID];
+			if(relt.parentID != SCENEGRAPH_NULL_ID)
+				ForceUpdateHierarchy(relations[relt.parentID].nodeID);
+
+			UpdateNode(lookupID);
+		}
+
 		void DebugDraw(DebugDrawer* dbgDrawer);
 
 		bool IsDirty(uint32_t nodeID);

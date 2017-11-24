@@ -76,6 +76,14 @@ namespace EngineCore
 			sceneGraph->ForceUpdate(comp->nodeID);
 		}
 
+		void ForceUpdateHierarchy(Entity e)
+		{
+			TransformComponent* comp = GetComponent(e);
+			if(!comp)
+				return;		
+			sceneGraph->ForceUpdateHierarchy(comp->nodeID);
+		}
+
 		void PreLoad();
 		bool PostLoadParentsResolve();
 
@@ -96,21 +104,21 @@ namespace EngineCore
 		// Set Transform
 		bool SetPosition_L3F(Entity e, float x, float y, float z);
 		bool SetPosition_L(Entity e, Vector3& p);
-		bool SetRotationPYR_L3F(Entity e, Vector3& r);
-		bool SetRotationPYR_L(Entity e, float p, float y, float r);
+		bool SetRotationPYR_L3F(Entity e, float p, float y, float r);
+		bool SetRotationPYR_L(Entity e, Vector3& r);
 		bool SetRotation_L(Entity e, Vector4& quat);
 		bool SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
 		bool SetScale_L3F(Entity e, float x, float y, float z);
-		bool SetScale_L(Entity e, Vector4& s);
+		bool SetScale_L(Entity e, Vector3& s);
 		
 		bool SetPosition_W3F(Entity e, float x, float y, float z);
-		bool SetPosition_W(Entity e, Vector3 p);
-		bool SetRotationPYR_W3F(Entity e, Vector3& r);
-		bool SetRotationPYR_W(Entity e, float p, float y, float r);
+		bool SetPosition_W(Entity e, Vector3& p);
+		bool SetRotationPYR_W3F(Entity e, float p, float y, float r);
+		bool SetRotationPYR_W(Entity e, Vector3& r);
 		bool SetRotation_W(Entity e, Vector4& quat);
 		bool SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
 		bool SetScale_W3F(Entity e, float x, float y, float z);
-		bool SetScale_W(Entity e, Vector4& s);
+		bool SetScale_W(Entity e, Vector3& s);
 
 		bool SetTransform_LInternal(Entity e, XMMATRIX& mat);
 		inline bool SetTransform_L(Entity e, Matrix& mat) {return SetTransform_LInternal(e, XMMATRIX(mat));};
@@ -225,6 +233,7 @@ namespace EngineCore
 					.addFunction("GetChildNext", &TransformSystem::GetChildNext)
 
 					.addFunction("ForceUpdate", &TransformSystem::ForceUpdate)
+					.addFunction("ForceUpdateHierarchy", &TransformSystem::ForceUpdateHierarchy)
 
 					.addFunction("AddComponent", &TransformSystem::_AddComponent)
 					.addFunction("DeleteComponent", &TransformSystem::DeleteComponent)

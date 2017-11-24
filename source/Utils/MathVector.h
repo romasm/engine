@@ -130,6 +130,8 @@ inline void RegLuaMath()
 		.addFunction("Dot", &Quaternion::Dot)
 		.addFunction("Length", &Quaternion::Length)
 		.addFunction("LengthSq", &Quaternion::LengthSquared)
+
+		//.addFunction("Normalize", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&)>(&operator+))
 		.endClass()
 
 		.beginClass<Vector2>("Vector2")
