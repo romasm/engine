@@ -222,8 +222,8 @@ end
 function Viewport:MoveCameraToSelection()
     if #self.selection_set == 0 then return end
 
-    pos = self.lua_world.world.transform:GetPositionW(self.selection_set[1])
-    EditorCamera.cameraNode:SetPosition(pos.x, pos.y, pos.z)
+    pos = self.lua_world.world.transform:GetPosition_W(self.selection_set[1])
+    EditorCamera.cameraNode:SetPosition_L3F(pos.x, pos.y, pos.z)
 end
 
 function Viewport:ToggleFullscreen()
@@ -294,14 +294,14 @@ function Viewport:SpawnPhysics(cam)
     
     local phymodel = EntityTypes.PhysicsModel(self.lua_world.world)
     
-    local pos = cam:GetPositionW()
+    local pos = cam:GetPosition_W()
     local dir = cam:GetLookDir()
     pos = Vector3.Add(pos, Vector3.MulScalar(dir, 2.5))
     dir = Vector3.MulScalar(dir, 600)
     
     --phymodel:SetMesh(PATH.ROOT .. "content/statics/multimesh01.FBX")
     
-    phymodel:SetPosition(pos.x, pos.y, pos.z)
+    phymodel:SetPosition_L3F(pos.x, pos.y, pos.z)
     phymodel:ApplyCentralImpulse(dir)
 end
 
@@ -328,10 +328,10 @@ function Viewport:ToggleGamemode()
         local player = EntityTypes.TestPlayer(self.lua_world.world)
         player:Rename("Player0")
 
-        local cameraPos = EditorCamera.camera:GetPositionW()
-        local cameraRot = EditorCamera.camera:GetRotationW()
-        player:SetPosition(cameraPos.x, cameraPos.y, cameraPos.z)
-        player.camera:SetRotation(cameraRot.x, cameraRot.y, 0)
+        local cameraPos = EditorCamera.camera:GetPosition_W()
+        local cameraRot = EditorCamera.camera:GetRotation_W()
+        player:SetPosition_L3F(cameraPos.x, cameraPos.y, cameraPos.z)
+        player.camera:SetRotationPYR_L3F(cameraRot.x, cameraRot.y, 0)
         
         player.camera:AssignScene(self.lua_world.scenepl)
 
@@ -448,7 +448,7 @@ function Viewport:PlaceEntity(entity, mouse_coords)
         coords.y = coords.y + math.max(0, size.y - center.y)
     end
 
-    self.lua_world.world.transform:SetPosition(entity, coords.x, coords.y, coords.z)
+    self.lua_world.world.transform:SetPosition_L3F(entity, coords.x, coords.y, coords.z)
     self.lua_world.world.transform:ForceUpdate(entity)
 end
 
@@ -472,15 +472,15 @@ function Viewport:onMouseDown(eventData)
             self.history.transform_type = TransformControls.mode
             if self.history.transform_type == TRANSFORM_MODE.MOVE then
 			    for i, ent in ipairs(self.selection_set) do
-				    self.history.transform_old[i] = self.lua_world.world.transform:GetPositionL(ent)
+				    self.history.transform_old[i] = self.lua_world.world.transform:GetPosition_L(ent)
 			    end
 		    elseif self.history.transform_type == TRANSFORM_MODE.ROT then
 			    for i, ent in ipairs(self.selection_set) do
-				    self.history.transform_old[i] = self.lua_world.world.transform:GetRotationL(ent)
+				    self.history.transform_old[i] = self.lua_world.world.transform:GetRotation_L(ent)
 			    end
 		    elseif self.history.transform_type == TRANSFORM_MODE.SCALE then
 			    for i, ent in ipairs(self.selection_set) do
-				    self.history.transform_old[i] = self.lua_world.world.transform:GetScaleL(ent)
+				    self.history.transform_old[i] = self.lua_world.world.transform:GetScale_L(ent)
 			    end
 		    end
 
@@ -694,10 +694,7 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetPositionsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.ROT then
-			local tc_rot = TransformControls:CalcRot(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
-			for i, ent in ipairs(self.selection_set) do
-				TransformControls:ApplyRot(tc_rot, ent)
-			end
+            TransformControls:ApplyTransform(ray_dir, self.tc_prevray, self.selection_set)
 
             if not self.history_push then
                 self.history_push = true
@@ -847,15 +844,15 @@ function Viewport:PushHistory()
 
     if self.history.transform_type == TRANSFORM_MODE.MOVE then
 	    for i, ent in ipairs(self.selection_set) do
-		    self.history.transform_new[i] = self.lua_world.world.transform:GetPositionL(ent)
+		    self.history.transform_new[i] = self.lua_world.world.transform:GetPosition_L(ent)
 		end
 	elseif self.history.transform_type == TRANSFORM_MODE.ROT then
 		for i, ent in ipairs(self.selection_set) do
-			self.history.transform_new[i] = self.lua_world.world.transform:GetRotationL(ent)
+			self.history.transform_new[i] = self.lua_world.world.transform:GetRotation_L(ent)
 		end
 	elseif self.history.transform_type == TRANSFORM_MODE.SCALE then
 		for i, ent in ipairs(self.selection_set) do
-		    self.history.transform_new[i] = self.lua_world.world.transform:GetScaleL(ent)
+		    self.history.transform_new[i] = self.lua_world.world.transform:GetScale_L(ent)
 		end
 	end
     History:Push(self.history)
@@ -872,7 +869,7 @@ end
 function Viewport:SetPositionsToSelection(positions)
     for i, ent in ipairs(self.selection_set) do
         if i > #positions then return end
-        self.lua_world.world.transform:SetPosition(ent, positions[i].x, positions[i].y, positions[i].z)
+        self.lua_world.world.transform:SetPosition_L3F(ent, positions[i])
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
@@ -892,7 +889,7 @@ end
 function Viewport:SetScalesToSelection(scales)
     for i, ent in ipairs(self.selection_set) do
         if i > #scales then return end
-        self.lua_world.world.transform:SetScale(ent, scales[i].x, scales[i].y, scales[i].z)
+        self.lua_world.world.transform:SetScale_L(ent, scales[i])
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)

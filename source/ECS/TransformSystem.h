@@ -106,7 +106,7 @@ namespace EngineCore
 		bool SetPosition_L(Entity e, Vector3& p);
 		bool SetRotationPYR_L3F(Entity e, float p, float y, float r);
 		bool SetRotationPYR_L(Entity e, Vector3& r);
-		bool SetRotation_L(Entity e, Vector4& quat);
+		bool SetRotation_L(Entity e, Quaternion& quat);
 		bool SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
 		bool SetScale_L3F(Entity e, float x, float y, float z);
 		bool SetScale_L(Entity e, Vector3& s);
@@ -115,7 +115,7 @@ namespace EngineCore
 		bool SetPosition_W(Entity e, Vector3& p);
 		bool SetRotationPYR_W3F(Entity e, float p, float y, float r);
 		bool SetRotationPYR_W(Entity e, Vector3& r);
-		bool SetRotation_W(Entity e, Vector4& quat);
+		bool SetRotation_W(Entity e, Quaternion& quat);
 		bool SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
 		bool SetScale_W3F(Entity e, float x, float y, float z);
 		bool SetScale_W(Entity e, Vector3& s);

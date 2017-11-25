@@ -251,7 +251,7 @@ void LightSystem::Update()
 
 void LightSystem::updateSpot(LightComponent& comp)
 {
-	XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
+	XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(comp.get_entity());
 
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);
@@ -270,7 +270,7 @@ void LightSystem::updateSpot(LightComponent& comp)
 
 void LightSystem::updatePoint(LightComponent& comp)
 {
-	XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
+	XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(comp.get_entity());
 
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);

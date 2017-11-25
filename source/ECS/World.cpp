@@ -384,12 +384,12 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 
 	skyEP = m_entityMgr->CreateEntity();
 	m_transformSystem->AddComponent(skyEP);
-	m_transformSystem->SetPosition(skyEP, 0, 0, 0);
-	m_transformSystem->SetRotation(skyEP, header.env_rot);
+	m_transformSystem->SetPosition_L3F(skyEP, 0, 0, 0);
+	m_transformSystem->SetRotationPYR_L(skyEP, Vector3(header.env_rot));
 
 	const float far_clip = CONFIG(float, cam_far_clip);
 	const float sky_scale = far_clip * 0.95f;
-	m_transformSystem->SetScale(skyEP, sky_scale, sky_scale, sky_scale);
+	m_transformSystem->SetScale_L3F(skyEP, sky_scale, sky_scale, sky_scale);
 
 	m_staticMeshSystem->AddComponent(skyEP);
 	m_staticMeshSystem->SetMesh(skyEP, ENV_MESH);
@@ -420,12 +420,12 @@ bool BaseWorld::saveWorld(string& filename)
 	WorldHeader header;
 	header.version = WORLD_FILE_VERSION;
 	strcpy_s(header.env_name, envName.data());
-	header.env_rot = m_transformSystem->GetVectRotationW(skyEP);
+	header.env_rot = m_transformSystem->GetRotationPYR_W(skyEP);
 
 	Entity editorCamera = GetEntityByName(EDITOR_TYPE "Camera");
 	if(!editorCamera.isnull())
 	{
-		XMMATRIX cam_mat = m_transformSystem->GetTransformW(editorCamera);
+		XMMATRIX cam_mat = m_transformSystem->GetTransform_WInternal(editorCamera);
 		XMVECTOR temp;
 		XMMatrixDecompose(&temp, &header.free_cam_rot, &header.free_cam_pos, cam_mat);
 	}

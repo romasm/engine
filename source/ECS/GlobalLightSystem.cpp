@@ -292,7 +292,7 @@ void GlobalLightSystem::updateLightComp(GlobalLightComponent& comp)
 	comp.area_data.x = sin(comp.area);
 	comp.area_data.y = cos(comp.area);
 	
-	XMMATRIX worldMatrix = transformSys->GetTransformW(comp.get_entity());
+	XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(comp.get_entity());
 
 	XMVECTOR pos, rot, scale;
 	XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);

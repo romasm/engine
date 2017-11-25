@@ -24,7 +24,7 @@ void EarlyVisibilitySystem::CheckEarlyVisibility()
 				
 		if(i.dirty)
 		{
-			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
 
 			switch (i.type)
 			{

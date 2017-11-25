@@ -381,7 +381,7 @@ function AssetBrowser:InitPreviewWorld()
     
     -- for screenshots    
     self.screenshotCamera = EntityTypes.Camera(self.previewWorld)
-    self.screenshotCamera:SetPosition(0.0, 0.0, -4.3)
+    self.screenshotCamera:SetPosition_L3F(0.0, 0.0, -4.3)
     self.screenshotCamera:SetFov(0.25)
     self.screenshotCamera:SetFar(100.0)
     
@@ -403,15 +403,15 @@ function AssetBrowser:InitPreviewWorld()
     self.screenshotAlphaPlane = EntityTypes.Mesh(self.previewWorld)
     self.screenshotAlphaPlane:SetMesh("../resources/meshes/alpha_bg"..EXT.MESH)
     self.screenshotAlphaPlane:SetMaterial("../resources/meshes/alpha_bg"..EXT.MATERIAL, 0)
-    self.screenshotAlphaPlane:SetPosition(0.0, 0.0, 5.2)--4.6)
+    self.screenshotAlphaPlane:SetPosition_L3F(0.0, 0.0, 5.2)--4.6)
     self.screenshotAlphaPlane:Disable()
 
     -- for preview   
     self.previewNode = EntityTypes.Node(self.previewWorld)
-    self.previewNode:SetPosition(100.0, 0.0, 0.0)
+    self.previewNode:SetPosition_L3F(100.0, 0.0, 0.0)
      
     self.previewCamera = EntityTypes.Camera(self.previewWorld)
-    self.previewCamera:SetPosition(0.0, 0.0, -1.3)
+    self.previewCamera:SetPosition_L3F(0.0, 0.0, -1.3)
     self.previewCamera:Attach(self.previewNode)
     self.previewCamera:SetFov(0.5)
     
@@ -423,7 +423,7 @@ function AssetBrowser:InitPreviewWorld()
     
     self.previewSphere = EntityTypes.Mesh(self.previewWorld)
     self.previewSphere:SetMesh("../resources/meshes/mat_sphere"..EXT.MESH)
-    self.previewSphere:SetPosition(100.0, 0.0, 0.0)
+    self.previewSphere:SetPosition_L3F(100.0, 0.0, 0.0)
 
     self.previewWorld.active = false
 end

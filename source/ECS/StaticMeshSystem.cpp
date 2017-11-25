@@ -96,7 +96,7 @@ void StaticMeshSystem::RegToDraw()
 		{
 			if(i.dirty)
 			{		
-				XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
+				XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
 
 				XMVECTOR scale, pos, rot;
 				XMMatrixDecompose(&scale, &rot, &pos, worldMatrix);

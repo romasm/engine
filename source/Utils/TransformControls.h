@@ -103,7 +103,7 @@ namespace EngineCore
 		void ApplyScale(Vector4 scale, Entity e);
 
 		void SetFromEntity(Entity e)
-		{SetTransformation(transformSys->GetTransformW(e));}
+		{SetTransformation(transformSys->GetTransform_WInternal(e));}
 
 		void _SetMode(uint32_t type) {mode = eModeType(type);}
 		void SetMode(eModeType type) {mode = type;}

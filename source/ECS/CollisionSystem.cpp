@@ -38,7 +38,7 @@ void CollisionSystem::UpdateTransformations()
 		{
 			Entity e = i.get_entity();
 		
-			btTransform transform = ToBtTransform( transformSystem->GetTransformW(e) );
+			btTransform transform = ToBtTransform( transformSystem->GetTransform_WInternal(e) );
 			i.object->setWorldTransform( transform );
 		}
 
@@ -570,7 +570,7 @@ void CollisionSystem::PostScaleCollision(Entity e)
 			return;
 
 		auto shape = (btCollisionShape*)comp.collisionData;
-		Vector3 scale = transformSystem->GetScaleL(e);
+		Vector3 scale = transformSystem->GetScale_L(e);
 		swap(scale.z, scale.y);
 		shape->setLocalScaling( scale );
 	}
@@ -578,7 +578,7 @@ void CollisionSystem::PostScaleCollision(Entity e)
 	{
 		auto oldRes = (uint32_t)comp.collisionData;
 		auto& oldName = CollisionMgr::GetName(oldRes);
-		string newName = CollisionMgr::SetScaleToResourceId(oldName, transformSystem->GetScaleL(e));
+		string newName = CollisionMgr::SetScaleToResourceId(oldName, transformSystem->GetScale_L(e));
 		
 		_SetCollisionConvex(e, &comp, newName);
 		CollisionMgr::Get()->DeleteResource(oldRes);

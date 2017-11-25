@@ -10,7 +10,7 @@ function EditorCamera:Init( world )
     if nodeEnt:IsNull() then 
         self.cameraNode = EntityTypes.Node(self.world)
         self.world:RenameEntity(self.cameraNode.ent, nodeName)
-        self.cameraNode:SetPosition(0.0, 1.0, 0.0)
+        self.cameraNode:SetPosition_L3F(0.0, 1.0, 0.0)
     else
         self.cameraNode = EntityTypes.wrap(self.world, nodeEnt)
     end
@@ -45,7 +45,7 @@ function EditorCamera:Init( world )
 end
 
 function EditorCamera:GetPosition()
-    return self.camera:GetPositionW()
+    return self.camera:GetPosition_W()
 end
 
 function EditorCamera:GetDirection()
@@ -61,7 +61,7 @@ function EditorCamera:EditorPlane()
         if self.world.staticMesh:AddComponent(self.planeEnt) then
             self.world.staticMesh:SetMesh(self.planeEnt, PATH.EDITOR_MESHES.. "unit_plane"..EXT.MESH)
             self.world.staticMesh:SetMaterial(self.planeEnt, 0, PATH.EDITOR_MESHES.. "unit_plane"..EXT.MATERIAL)
-            self.world.transform:SetScale(self.planeEnt, 100.0, 100.0, 100.0)
+            self.world.transform:SetScale_L3F(self.planeEnt, 100.0, 100.0, 100.0)
             return
         end
 
@@ -131,14 +131,19 @@ function EditorCamera:Tick(dt)
     local move_y = (self.states.up and move_dist or 0.0) - (self.states.down and move_dist or 0.0)
     local move_x = (self.states.right and move_dist or 0.0) - (self.states.left and move_dist or 0.0)
 
-    self.cameraNode:AddPositionLocal( move_x, move_y, move_z )
+    local transformMat = self.cameraNode:GetTransform_L()
+    local rotation = self.cameraNode:GetRotationPYR_L()
 
-    local rotation = self.cameraNode:GetRotationL()
+    local moveMat = Matrix.CreateTranslation(Vector3(move_x, move_y, move_z))
+    moveMat = Matrix.Mul(moveMat, transformMat)
+
+    self.cameraNode:SetTransform_L(moveMat)
+
     rotation.x = rotation.x - self.rot_coords.pitch * self.rotspeed
     rotation.y = rotation.y + self.rot_coords.yaw * self.rotspeed
     rotation.x = math.max( -math.pi * 0.49, math.min( rotation.x, math.pi * 0.49 ) )
 
-    self.cameraNode:SetRotation( rotation.x, rotation.y, rotation.z )
+    self.cameraNode:SetRotationPYR_L( rotation )
 
     self.rot_coords.yaw = 0
     self.rot_coords.pitch = 0

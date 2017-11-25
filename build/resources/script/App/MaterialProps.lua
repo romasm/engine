@@ -416,12 +416,12 @@ function MaterialProps:ProcessPreviewMove(viewport, ev)
     self.previewPrevCoords.x = ev.coords.x
     self.previewPrevCoords.y = ev.coords.y
 
-    local rotation = AssetBrowser.previewNode:GetRotationL()
+    local rotation = AssetBrowser.previewNode:GetRotation_L()
     rotation.x = rotation.x + delta.y * self.previewRotSpeed * self.previewZoom
     rotation.y = rotation.y + delta.x * self.previewRotSpeed * self.previewZoom
     rotation.x = math.max( -math.pi * 0.4, math.min( rotation.x, math.pi * 0.4 ) )
 
-    AssetBrowser.previewNode:SetRotation( rotation.x, rotation.y, rotation.z )
+    AssetBrowser.previewNode:SetRotationPYR_L( rotation )
 end
 
 function MaterialProps:ProcessPreviewStartMove(viewport, ev)
@@ -439,7 +439,7 @@ function MaterialProps:ProcessPreviewZoom(viewport, ev)
     self.previewZoom = self.previewZoom + ev.coords.x * self.previewZoomSpeed
     self.previewZoom = math.max( 0.7, math.min( self.previewZoom, 2.3 ) )
 
-    AssetBrowser.previewCamera:SetPosition( 0.0, 0.0, -self.previewZoom )
+    AssetBrowser.previewCamera:SetPosition_L3F( 0.0, 0.0, -self.previewZoom )
 end
 
 -- MENU

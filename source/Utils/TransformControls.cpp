@@ -538,19 +538,19 @@ Vector4 TransformControls::CalcRot(Vector3 Ray, Vector3 PrevRay, Entity cam)
 
 void TransformControls::ApplyMove(Vector3 move, Entity e)
 {
-	transformSys->AddPosition(e, move.x, move.y, move.z);
-	SetTransformation(transformSys->GetTransformL(e)); // todo
+	transformSys->AddPosition_L3F(e, move.x, move.y, move.z);
+	SetTransformation(transformSys->GetTransform_LInternal(e)); // todo
 }
 
 void TransformControls::ApplyRot(Vector4 rot, Entity e)
 {
-	transformSys->AddRotation(e, Vector3(rot.x, rot.y, rot.z), rot.w);
-	SetTransformation(transformSys->GetTransformL(e)); // todo
+	transformSys->AddRotationAxis_L(e, Vector3(rot.x, rot.y, rot.z), rot.w);
+	SetTransformation(transformSys->GetTransform_LInternal(e)); // todo
 }
 
 void TransformControls::ApplyScale(Vector4 scale, Entity e)
 {
-	transformSys->AddScale(e, 1 + (scale.x * scale.w), 1 + (scale.y * scale.w), 1 + (scale.z * scale.w));
+	transformSys->AddScale_L3F(e, 1 + (scale.x * scale.w), 1 + (scale.y * scale.w), 1 + (scale.z * scale.w));
 }
 
 bool TransformControls::CheckHover(Vector3 HoverRay, Entity cam)

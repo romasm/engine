@@ -254,7 +254,7 @@ bool TransformSystem::SetRotationPYR_L(Entity e, Vector3& r)
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotation_L(Entity e, Vector4& quat)
+bool TransformSystem::SetRotation_L(Entity e, Quaternion& quat)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
@@ -282,11 +282,15 @@ bool TransformSystem::SetPosition_W3F(Entity e, float x, float y, float z)
 #define SET_TRANSFORM_W(transform) \
 	GET_COMPONENT(false)\
 	XMVECTOR pos, rot, scale;\
-	const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(comp.nodeID);\
-	XMMatrixDecompose(&scale, &rot, &pos, *parentMatrix);\
+	const XMMATRIX* worldMatrix = sceneGraph->GetWorldTransformation(comp.nodeID);\
+	XMMatrixDecompose(&scale, &rot, &pos, *worldMatrix);\
 	XMMATRIX matrix = transform;\
-	XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);\
-	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( matrix, invParent ));\
+	auto parent = sceneGraph->GetParent(comp.nodeID);\
+	if(parent != SCENEGRAPH_NULL_ID){\
+		const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(parent);\
+		XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);\
+		matrix = DirectX::XMMatrixMultiply( matrix, invParent );}\
+	sceneGraph->SetTransformation(comp.nodeID, matrix);\
 	world->SetDirty(e);\
 	return true;
 
@@ -305,7 +309,7 @@ bool TransformSystem::SetRotationPYR_W(Entity e, Vector3& r)
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotation_W(Entity e, Vector4& quat)
+bool TransformSystem::SetRotation_W(Entity e, Quaternion& quat)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }

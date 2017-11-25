@@ -96,7 +96,7 @@ end
 
 -- TODO: check normals of ground
 function EntityTypes.TestPlayer:InAir()
-    local rayStart0 = Vector3.Add(self:GetPositionW(), Vector3(0, -(self.p_player_height * 0.5 - self.p_player_radius), 0))
+    local rayStart0 = Vector3.Add(self:GetPosition_W(), Vector3(0, -(self.p_player_height * 0.5 - self.p_player_radius), 0))
     local rayEnd0 = Vector3.Add(rayStart0, Vector3(0, -(self.p_player_radius + self.p_ground_sence), 0))
 
     local rayTest = self.collisionSys:RayCast(rayStart0, rayEnd0, COLLISION_GROUPS.Character, COLLISION_GROUPS.RayCastPhysicsNoChar)
@@ -186,7 +186,7 @@ function EntityTypes.TestPlayer:onTick(dt)
     end
 
     if self.dPitch ~= 0 or self.dYaw ~= 0 then
-        local rotation = self.camera:GetRotationL()
+        local rotation = self.camera:GetRotationPYR_L()
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
         rotation.x = math.max( -math.pi * 0.499, math.min( rotation.x, math.pi * 0.499 ) )
         rotation.y = rotation.y + self.dYaw * self.p_rot_sence

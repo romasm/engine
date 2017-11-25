@@ -28,7 +28,7 @@ void PhysicsSystem::updateSingleTransformation(PhysicsComponent& comp)
 	Entity e = comp.get_entity();
 
 	// TODO: parented entities?
-	btTransform transform = ToBtTransform( transformSystem->GetTransformL(e) );
+	btTransform transform = ToBtTransform( transformSystem->GetTransform_LInternal(e) );
 	//transform.setOrigin( transform.getOrigin() + btVector3(i.centerOfMassOffset) );
 	comp.body->proceedToTransform( transform );
 

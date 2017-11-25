@@ -135,18 +135,18 @@ function TransformControls:UpdateTransform(selectionSet)
     self.currentRot = Quaternion.Identity
 
 	for i, ent in ipairs(selectionSet) do
-        self.currentPos = Vector3.Add(self.currentPos, self.TransformSy:GetPositionW(ent))
-        self.currentRot = Quaternion.Add(self.currentRot, self.TransformSy:GetQuatRotationW(ent))
+        self.currentPos = Vector3.Add(self.currentPos, self.TransformSy:GetPosition_W(ent))
+        self.currentRot = Quaternion.Add(self.currentRot, self.TransformSy:GetRotation_W(ent))
 	end
 
     self.currentPos = Vector3.MulScalar(self.currentPos, 1.0 / #selectionSet)
     self.currentRot:Normalize()
 
-    self.TransformSy:SetPositionVect(self.Ccontrol, self.currentPos)
+    self.TransformSy:SetPosition_L(self.Ccontrol, self.currentPos)
     if self.isLocal then
-        self.TransformSy:SetRotationQuat(self.Ccontrol, self.currentRot)
+        self.TransformSy:SetRotation_L(self.Ccontrol, self.currentRot)
     else 
-        self.TransformSy:SetRotation(self.Ccontrol, 0, 0, 0)
+        self.TransformSy:SetRotationPYR_L3F(self.Ccontrol, 0, 0, 0)
     end
 
     self:UpdateScale()
@@ -155,7 +155,7 @@ end
 function TransformControls:UpdateScale()
     local distVect = Vector3.Sub(self.camPos, self.currentPos)
     local scale = distVect:Length() * self.scaleMul
-    self.TransformSy:SetScale(self.Ccontrol, scale, scale, scale)
+    self.TransformSy:SetScale_L3F(self.Ccontrol, scale, scale, scale)
 end
 
 function TransformControls:Close()
@@ -303,12 +303,11 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             
         end
 
-        self.currentPos = Vector3.Add(self.currentPos, move)
-        self.TransformSy:SetPositionVect(self.Ccontrol, self.currentPos)
+        self.TransformSy:AddPosition_L(self.Ccontrol, move)
+        self.currentPos = self.TransformSy:GetPosition_L(self.Ccontrol)
         
         for i, ent in ipairs(selectionSet) do
-            local newPos = Vector3.Add(self.TransformSy:GetPositionL(ent), move)
-			self.TransformSy:SetPositionVect(ent, newPos)
+			self.TransformSy:AddPosition_W(ent, move)
 		end
 
     elseif self.mode == TRANSFORM_MODE.ROT then
@@ -336,13 +335,12 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
         if normal:Dot(rotDirTest) < 0 then angle = -angle end
 
         if self.isLocal then
-            self.TransformSy:AddRotationAxis(self.Ccontrol, normal, angle)
-            self.currentRot = self.TransformSy:GetQuatRotationL(self.Ccontrol)
+            self.TransformSy:AddRotationAxis_L(self.Ccontrol, normal, angle)
+            self.currentRot = self.TransformSy:GetRotation_L(self.Ccontrol)
         end
         
         for i, ent in ipairs(selectionSet) do
-            local newPos = Vector3.Add(self.TransformSy:GetPositionL(ent), move)
-			self.TransformSy:SetPositionVect(ent, newPos)
+			self.TransformSy:AddRotationAxis_L(ent, normal, angle)
 		end  
 
     elseif self.mode == TRANSFORM_MODE.SCALE then

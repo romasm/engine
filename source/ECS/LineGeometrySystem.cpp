@@ -51,7 +51,7 @@ void LineGeometrySystem::RegToDraw()
 
 		if(i.dirty)
 		{
-			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
 
 			LineGeometryBuffer mb;
 			mb.world = XMMatrixTranspose(worldMatrix);

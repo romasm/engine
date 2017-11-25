@@ -26,6 +26,7 @@ inline int FloatRoundInt(float f)
 	return int(f < 0.0f ? ceil(f - 0.5f) : floor(f + 0.5f));
 }
 
+static Matrix mIdent = Matrix::Identity; 
 static Quaternion qIdent = Quaternion::Identity; 
 static Vector2 v2Zero = Vector2::Zero; 
 static Vector3 v3Zero = Vector3::Zero; 
@@ -110,6 +111,22 @@ inline void RegLuaMath()
 	getGlobalNamespace(LSTATE)
 		.beginClass<Matrix>("Matrix")
 		.addConstructor<void (*)(void)>()
+		.addStaticData("Identity", &mIdent, false)
+		.addStaticFunction("Add", static_cast<Matrix (*)(const Matrix&, const Matrix&)>(&operator+))
+		.addStaticFunction("Sub", static_cast<Matrix (*)(const Matrix&, const Matrix&)>(&operator-))
+		.addStaticFunction("Mul", static_cast<Matrix (*)(const Matrix&, const Matrix&)>(&operator*))
+		.addStaticFunction("Div", static_cast<Matrix (*)(const Matrix&, const Matrix&)>(&operator/))
+
+		.addStaticFunction("CreateTranslation", static_cast<Matrix (*)(const Vector3&)>(&Matrix::CreateTranslation))
+		.addStaticFunction("CreateScale", static_cast<Matrix (*)(const Vector3&)>(&Matrix::CreateScale))
+		.addStaticFunction("CreateRotationQuat", static_cast<Matrix (*)(const Quaternion&)>(&Matrix::CreateFromQuaternion))
+		.addStaticFunction("CreateRotationYPR", static_cast<Matrix (*)(float, float, float)>(&Matrix::CreateFromYawPitchRoll))
+		.addStaticFunction("CreateRotationAxis", static_cast<Matrix (*)(const Vector3&, float)>(&Matrix::CreateFromAxisAngle))
+
+		.addStaticFunction("Lerp", static_cast<Matrix (*)(const Matrix&, const Matrix&, float)>(&Matrix::Lerp))
+		.addFunction("Invert", static_cast<Matrix (Matrix::*)(void) const>(&Matrix::Invert))
+		.addFunction("Transpose", static_cast<Matrix (Matrix::*)(void) const>(&Matrix::Transpose))
+		.addFunction("Decompose", &Matrix::Decompose)
 		.endClass()
 
 		.beginClass<Quaternion>("Quaternion")

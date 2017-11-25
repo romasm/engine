@@ -115,7 +115,7 @@ function TransformCallback.SetPos(self, ev, xyz)
 
     local is_change = false
     for i, ent in ipairs(Viewport.selection_set) do
-        history.s_oldval[i] = Viewport.lua_world.world.transform:GetPositionL(ent)
+        history.s_oldval[i] = Viewport.lua_world.world.transform:GetPosition_L(ent)
 
         if xyz == 1 then history.s_newval[i] = Vector3(val, history.s_oldval[i].y, history.s_oldval[i].z)
         elseif xyz == 2 then history.s_newval[i] = Vector3(history.s_oldval[i].x, val, history.s_oldval[i].z)
@@ -139,7 +139,7 @@ end
 function TransformCallback.UpdPos(self, ev, xyz)
     local val = 0
     for i, ent in ipairs(Viewport.selection_set) do
-        local pos = Viewport.lua_world.world.transform:GetPositionL(ent)
+        local pos = Viewport.lua_world.world.transform:GetPosition_L(ent)
         local pos_coord = 0
         if xyz == 1 then pos_coord = pos.x
         elseif xyz == 2 then pos_coord = pos.y
@@ -173,7 +173,7 @@ function TransformCallback.SetRot(self, ev, pyr)
 
     local is_change = false
     for i, ent in ipairs(Viewport.selection_set) do
-        history.s_oldval[i] = Viewport.lua_world.world.transform:GetRotationL(ent)
+        history.s_oldval[i] = Viewport.lua_world.world.transform:GetRotationPYR_L(ent)
 
         if pyr == 1 then history.s_newval[i] = Vector3(val, history.s_oldval[i].y, history.s_oldval[i].z)
         elseif pyr == 2 then history.s_newval[i] = Vector3(history.s_oldval[i].x, val, history.s_oldval[i].z)
@@ -183,7 +183,7 @@ function TransformCallback.SetRot(self, ev, pyr)
             history.s_newval[i].y == history.s_oldval[i].y and
             history.s_newval[i].z == history.s_oldval[i].z)
 
-        Viewport.lua_world.world.transform:SetRotation(ent, history.s_newval[i].x, history.s_newval[i].y, history.s_newval[i].z)
+        Viewport.lua_world.world.transform:SetRotationPYR_L(ent, history.s_newval[i])
         Viewport.lua_world.world.transform:ForceUpdate(ent)
     end
 
@@ -197,7 +197,7 @@ end
 function TransformCallback.UpdRot(self, ev, pyr)
     local val = 0
     for i, ent in ipairs(Viewport.selection_set) do
-        local rot = Viewport.lua_world.world.transform:GetRotationL(ent)
+        local rot = Viewport.lua_world.world.transform:GetRotationPYR_L(ent)
         local rot_coord = 0
         if pyr == 1 then rot_coord = rot.x * 180 / math.pi
         elseif pyr == 2 then rot_coord = rot.y * 180 / math.pi
@@ -230,7 +230,7 @@ function TransformCallback.SetScale(self, ev, xyz)
 
     local is_change = false
     for i, ent in ipairs(Viewport.selection_set) do
-        history.s_oldval[i] = Viewport.lua_world.world.transform:GetScaleL(ent)
+        history.s_oldval[i] = Viewport.lua_world.world.transform:GetScale_L(ent)
 
         if xyz == 1 then history.s_newval[i] = Vector3(val, history.s_oldval[i].y, history.s_oldval[i].z)
         elseif xyz == 2 then history.s_newval[i] = Vector3(history.s_oldval[i].x, val, history.s_oldval[i].z)
@@ -240,7 +240,7 @@ function TransformCallback.SetScale(self, ev, xyz)
             history.s_newval[i].y == history.s_oldval[i].y and
             history.s_newval[i].z == history.s_oldval[i].z)
 
-        Viewport.lua_world.world.transform:SetScale(ent, history.s_newval[i].x, history.s_newval[i].y, history.s_newval[i].z)
+        Viewport.lua_world.world.transform:SetScale_L(ent, history.s_newval[i])
         Viewport.lua_world.world.transform:ForceUpdate(ent)
     end
     
@@ -254,7 +254,7 @@ end
 function TransformCallback.UpdScale(self, ev, xyz)
     local val = 0
     for i, ent in ipairs(Viewport.selection_set) do
-        local scale = Viewport.lua_world.world.transform:GetScaleL(ent)
+        local scale = Viewport.lua_world.world.transform:GetScale_L(ent)
         local scale_coord = 0
         if xyz == 1 then scale_coord = scale.x
         elseif xyz == 2 then scale_coord = scale.y

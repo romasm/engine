@@ -36,7 +36,7 @@ void EnvProbSystem::RegToScene()
 
 		if(i.is_distant) // to do: env rotation
 		{
-			XMMATRIX worldMatrix = transformSys->GetTransformW(i.get_entity());
+			XMMATRIX worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
 
 			for(auto f: *frustums)
 				((SceneRenderMgr*)f->rendermgr)->RegDistEnvProb(TEXTURE_GETPTR(i.specCube), TEXTURE_GETPTR(i.diffCube), i.mips_count, worldMatrix);
@@ -145,24 +145,23 @@ bool EnvProbSystem::Bake(Entity e)
 	HRESULT hr;
 
 	DXGI_FORMAT fmt;
-	XMVECTOR env_pos;
+	Vector3 env_pos;
 	if(comp.is_distant)
 	{
 		fmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		env_pos = XMVectorZero();
 	}
 	else
 	{
 		fmt = DXGI_FORMAT_R8G8B8A8_UNORM;
-		env_pos = XMVector3Transform(XMLoadFloat3(&comp.offset), transformSys->GetTransformW(comp.get_entity()));
+		env_pos = XMVector3Transform(XMLoadFloat3(&comp.offset), transformSys->GetTransform_WInternal(comp.get_entity()));
 	}
 
 	Entity env_cam = world->GetEntityMgr()->CreateEntity();
 	
 	transformSys->AddComponent(env_cam);
-	transformSys->SetPosition(env_cam, env_pos);
-	transformSys->SetRotation(env_cam, 0, 0, 0);
-	transformSys->SetScale(env_cam, 1, 1, 1);
+	transformSys->SetPosition_L(env_cam, env_pos);
+	transformSys->SetRotationPYR_L3F(env_cam, 0, 0, 0);
+	transformSys->SetScale_L3F(env_cam, 1, 1, 1);
 
 	auto camSys = world->GetCameraSystem();
 	camSys->AddComponent(env_cam);
@@ -185,7 +184,7 @@ bool EnvProbSystem::Bake(Entity e)
 
 	ScratchImage raw_cube[6];
 
-	const Vector3 m_cam_rot[6] = {
+	Vector3 m_cam_rot[6] = {
 		Vector3(0, XM_PIDIV2, 0),
 		Vector3(0, -XM_PIDIV2, 0),
 		Vector3(-XM_PIDIV2, 0, 0),
@@ -196,7 +195,7 @@ bool EnvProbSystem::Bake(Entity e)
 	
 	for(int i=0; i<6; i++)
 	{
-		transformSys->SetRotation(env_cam, m_cam_rot[i].x, m_cam_rot[i].y, m_cam_rot[i].z);
+		transformSys->SetRotationPYR_L(env_cam, m_cam_rot[i]);
 		
 		if(comp.is_distant /**/ && false)
 		{

@@ -142,7 +142,7 @@ void TriggerSystem::UpdateTransformations()
 
 		Entity e = i.get_entity();
 
-		btTransform transform = ToBtTransform( transformSystem->GetTransformW(e) );
+		btTransform transform = ToBtTransform( transformSystem->GetTransform_WInternal(e) );
 		i.object->setWorldTransform( transform );
 		
 		i.dirty = false;
