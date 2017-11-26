@@ -26,20 +26,20 @@ inline int FloatRoundInt(float f)
 	return int(f < 0.0f ? ceil(f - 0.5f) : floor(f + 0.5f));
 }
 
-static Matrix mIdent = Matrix::Identity; 
-static Quaternion qIdent = Quaternion::Identity; 
-static Vector2 v2Zero = Vector2::Zero; 
-static Vector3 v3Zero = Vector3::Zero; 
-static Vector4 v4Zero = Vector4::Zero; 
-static Vector2 v2UnitX = Vector2::UnitX; 
-static Vector2 v2UnitY = Vector2::UnitY; 
-static Vector3 v3UnitX = Vector3::UnitX; 
-static Vector3 v3UnitY = Vector3::UnitY; 
-static Vector3 v3UnitZ = Vector3::UnitZ; 
-static Vector4 v4UnitX = Vector4::UnitX; 
-static Vector4 v4UnitY = Vector4::UnitY; 
-static Vector4 v4UnitZ = Vector4::UnitZ; 
-static Vector4 v4UnitW = Vector4::UnitW; 
+static Matrix mIdent = Matrix(); 
+static Quaternion qIdent = Quaternion(); 
+static Vector2 v2Zero = Vector2(); 
+static Vector3 v3Zero = Vector3(); 
+static Vector4 v4Zero = Vector4(); 
+static Vector2 v2UnitX = Vector2(1.0f, 0.0f); 
+static Vector2 v2UnitY = Vector2(0.0f, 1.0f); 
+static Vector3 v3UnitX = Vector3(1.0f, 0.0f, 0.0f); 
+static Vector3 v3UnitY = Vector3(0.0f, 1.0f, 0.0f); 
+static Vector3 v3UnitZ = Vector3(0.0f, 0.0f, 1.0f); 
+static Vector4 v4UnitX = Vector4(1.0f, 0.0f, 0.0f, 0.0f); 
+static Vector4 v4UnitY = Vector4(0.0f, 1.0f, 0.0f, 0.0f); 
+static Vector4 v4UnitZ = Vector4(0.0f, 0.0f, 1.0f, 0.0f); 
+static Vector4 v4UnitW = Vector4(0.0f, 0.0f, 0.0f, 1.0f); 
 
 inline Vector4 Vector4Add(Vector4& v1, Vector4& v2)
 {return v1 + v2;}

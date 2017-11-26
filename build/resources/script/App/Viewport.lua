@@ -329,7 +329,7 @@ function Viewport:ToggleGamemode()
         player:Rename("Player0")
 
         local cameraPos = EditorCamera.camera:GetPosition_W()
-        local cameraRot = EditorCamera.camera:GetRotation_W()
+        local cameraRot = EditorCamera.camera:GetRotationPYR_W()
         player:SetPosition_L3F(cameraPos.x, cameraPos.y, cameraPos.z)
         player.camera:SetRotationPYR_L3F(cameraRot.x, cameraRot.y, 0)
         

@@ -484,11 +484,6 @@ public:
 											ConvexResultCallback& resultCallback, btScalar allowedPenetration);
 
 	virtual void	addCollisionObject(btCollisionObject* collisionObject, int collisionFilterGroup=btBroadphaseProxy::DefaultFilter, int collisionFilterMask=btBroadphaseProxy::AllFilter);
-	
-	bool hasCollisionObject(btCollisionObject* collisionObject)
-	{
-		return (m_collisionObjects.findLinearSearch(collisionObject) != m_collisionObjects.size());
-	}
 
 	btCollisionObjectArray& getCollisionObjectArray()
 	{

@@ -340,8 +340,17 @@ bool TransformSystem::SetTransform_LInternal(Entity e, XMMATRIX& mat)
 bool TransformSystem::SetTransform_WInternal(Entity e, XMMATRIX& mat)
 {
 	GET_COMPONENT(false)
-	XMMATRIX invParent = XMMatrixInverse(nullptr, *sceneGraph->GetWorldTransformation(comp.nodeID));
-	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( mat, invParent ));
+	auto parent = sceneGraph->GetParent(comp.nodeID);
+	if(parent != SCENEGRAPH_NULL_ID)
+	{
+		const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(parent);
+		XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);
+		sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( mat, invParent ));
+	}
+	else
+	{
+		sceneGraph->SetTransformation(comp.nodeID, mat);
+	}
 	world->SetDirty(e);
 	return true;
 }
@@ -530,9 +539,19 @@ bool TransformSystem::AddTransform_L(Entity e, Matrix& mat)
 bool TransformSystem::AddTransform_W(Entity e, Matrix& mat)
 {
 	GET_COMPONENT(false)
+
 	const XMMATRIX* worldMat = sceneGraph->GetWorldTransformation(comp.nodeID);
-	XMMATRIX invParent = XMMatrixInverse(nullptr, *sceneGraph->GetWorldTransformation(comp.nodeID));
-	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply( DirectX::XMMatrixMultiply(mat, *worldMat), invParent ));
+	XMMATRIX matrix = DirectX::XMMatrixMultiply(mat, *worldMat);
+
+	auto parent = sceneGraph->GetParent(comp.nodeID);
+	if(parent != SCENEGRAPH_NULL_ID)
+	{
+		const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(parent);
+		XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);
+		matrix = DirectX::XMMatrixMultiply( matrix, invParent );
+	}
+
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
 	world->SetDirty(e);
 	return true;
 }
