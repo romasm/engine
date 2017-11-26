@@ -152,6 +152,7 @@ function TransformControls:UpdateTransform(selectionSet)
 
 	for i, ent in ipairs(selectionSet) do
         self.currentPos = Vector3.Add(self.currentPos, self.TransformSy:GetPosition_W(ent))
+        --self.currentPos = self.currentPos + self.TransformSy:GetPosition_W(ent)
         self.currentRot = Quaternion.Add(self.currentRot, self.TransformSy:GetRotation_W(ent))
 	end
 

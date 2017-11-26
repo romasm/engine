@@ -226,10 +226,10 @@ function SceneBrowser:SyncSelection()
     self.selectedBtns = {}
     self.prevSelectedNum = 0
 
-    for i, ent in ipairs(Viewport.selection_set) do
+    for i, ent in ipairs(Viewport.selection_set) do -- ERROR: ui entities overflow?
         local entNum = self:GetEntityNum(ent)
         if entNum > 0 then
-            local btn = self.body:GetChildById( tostring(entNum) ):GetInherited()
+            local btn = self.body:GetChildById( tostring(entNum) ):GetInherited() 
             self.selectedBtns[#self.selectedBtns + 1] = btn
             btn:SetPressed(true)
         end

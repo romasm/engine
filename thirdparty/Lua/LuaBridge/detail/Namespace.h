@@ -795,7 +795,21 @@ private:
     {
       CFunc::CallMemberFunctionHelper <MemFn, FuncTraits <MemFn>::isConstMemberFunction>::add (L, name, mf);
       return *this;
-    }
+	}
+
+    //--------------------------------------------------------------------------
+    /**
+        Add or replace a global operator.
+    */
+	template <class MemFn>
+	Class <T>& addOperatorGlobal (char const* name, MemFn mf)
+	{
+		new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
+		lua_pushcclosure (L, &CFunc::Call <MemFn, FuncTraits <MemFn>::ReturnType>::f, 1);
+		rawsetfield (L, -3, name); // class table
+
+		return *this;
+	}
 
     //--------------------------------------------------------------------------
     /**
