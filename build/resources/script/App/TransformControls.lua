@@ -148,12 +148,11 @@ function TransformControls:UpdateTransform(selectionSet)
     if self.active == false then self:Activate() end
 
     self.currentPos = Vector3.Zero
-    self.currentRot = Quaternion.Identity
+    self.currentRot = Quaternion.Zero
 
 	for i, ent in ipairs(selectionSet) do
-        self.currentPos = Vector3.Add(self.currentPos, self.TransformSy:GetPosition_W(ent))
-        --self.currentPos = self.currentPos + self.TransformSy:GetPosition_W(ent)
-        self.currentRot = Quaternion.Add(self.currentRot, self.TransformSy:GetRotation_W(ent))
+        self.currentPos = self.currentPos + self.TransformSy:GetPosition_W(ent)
+        self.currentRot = self.currentRot + self.TransformSy:GetRotation_W(ent)
 	end
 
     self.currentPos = Vector3.MulScalar(self.currentPos, 1.0 / #selectionSet)

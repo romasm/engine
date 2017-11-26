@@ -28,6 +28,7 @@ inline int FloatRoundInt(float f)
 
 static Matrix mIdent = Matrix(); 
 static Quaternion qIdent = Quaternion(); 
+static Quaternion qZero = Quaternion(0,0,0,0); 
 static Vector2 v2Zero = Vector2(); 
 static Vector3 v3Zero = Vector3(); 
 static Vector4 v4Zero = Vector4(); 
@@ -145,6 +146,7 @@ inline void RegLuaMath()
 		.addData("w", &Quaternion::w)
 		.addConstructor<void (*)(float, float, float, float)>() 
 		.addStaticData("Identity", &qIdent, false)
+		.addStaticData("Zero", &qZero, false)
 
 		// REMOVE
 		.addStaticFunction("Add", &QuaternionAdd)
@@ -152,6 +154,14 @@ inline void RegLuaMath()
 		.addStaticFunction("Mul", &QuaternionMul)
 		.addStaticFunction("Div", &QuaternionDiv)
 		.addStaticFunction("MulScalar", &QuaternionMulScalar)
+
+		.addOperatorGlobal("__add", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&)>(&operator+))
+		.addOperatorGlobal("__sub", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&)>(&operator-))
+		.addOperatorGlobal("__mul", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&)>(&operator*))
+		.addOperatorGlobal("__div", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&)>(&operator/))
+		.addFunction("__unm", &Quaternion::operator-)
+		.addFunction("__eq", &Quaternion::operator==)
+
 		.addFunction("Normalize", static_cast<void (Quaternion::*)(void)>(&Quaternion::Normalize))
 		.addStaticFunction("Lerp", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&, float)>(&Quaternion::Lerp))
 		.addStaticFunction("Slerp", static_cast<Quaternion (*)(const Quaternion&, const Quaternion&, float)>(&Quaternion::Slerp))
