@@ -703,10 +703,7 @@ function Viewport:onMouseMove(eventData)
                 self.history.redo = function(self) Viewport:SetRotationsToSelection(self.transform_new) end
             end
 		elseif tc_mode == TRANSFORM_MODE.SCALE then
-			local tc_scale = TransformControls:CalcScale(ray_dir, self.tc_prevray, EditorCamera.cameraEntity)
-			for i, ent in ipairs(self.selection_set) do
-				TransformControls:ApplyScale(tc_scale, ent)
-			end
+            TransformControls:ApplyTransform(ray_dir, self.tc_prevray, self.selection_set)
 
             if not self.history_push then
                 self.history_push = true
@@ -879,7 +876,7 @@ end
 function Viewport:SetRotationsToSelection(rotations)
     for i, ent in ipairs(self.selection_set) do
         if i > #rotations then return end
-        self.lua_world.world.transform:SetRotation(ent, rotations[i].x, rotations[i].y, rotations[i].z)
+        self.lua_world.world.transform:SetRotation_L(ent, rotations[i])
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
@@ -926,7 +923,6 @@ function Viewport:SetTransform(mode, tools)
     TransformControls:SetMode(mode)
 
     if mode == TRANSFORM_MODE.NONE then
-        self.lua_world.world.transformControls.mode = TRANSFORM_MODE.NONE
         if tools then Tools:SetTransform(TRANSFORM_MODE.NONE) end
 
     elseif mode == TRANSFORM_MODE.MOVE then

@@ -600,8 +600,6 @@ World::World( uint32_t id ) : BaseWorld( id )
 	m_cameraSystem->SetGlobalLightSys(m_globalLightSystem);
 
 	m_lineGeometrySystem = new LineGeometrySystem(this, ENTITY_COUNT);
-
-	m_transformControls = new TransformControls(this);
 }
 
 void World::Snapshot(ScenePipeline* scene)
@@ -792,8 +790,6 @@ void World::Frame()
 
 void World::Close()
 {
-	_DELETE(m_transformControls);
-
 	BaseWorld::Close();
 
 	_DELETE(physDebugDrawer);

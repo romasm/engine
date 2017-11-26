@@ -34,18 +34,21 @@ function EntityTypes.TestPlayer:init(world, ent)
     self.physicsSys:SetFriction(self.ent, 0.5)
     self.physicsSys:SetLinearDamping(self.ent, self.p_air_dumping)
     self.physicsSys:SetEnable(self.ent, true, true)
+
+    self.collisionSys:SetCollisionGroup(self.ent, COLLISION_GROUPS.Character)
+
     self.physicsSys:UpdateState(self.ent)
 
     -- camera attach
     self.camera = EntityTypes.Camera(self.world)
-    self.camera:SetPosition(0.0, 0.8, 0.0)
+    self.camera:SetPosition_L3F(0.0, 0.8, 0.0)
     self.camera:SetFov(1.3)
     self.camera:Attach(self)
     
     -- light attach
     self.light = EntityTypes.LocalLight(self.world)
-    self.light:SetPosition(0.3, -0.3, 0.1)
-    self.light:SetRotation(-1.57, 0, 0)
+    self.light:SetPosition_L3F(0.3, -0.3, 0.1)
+    self.light:SetRotationPYR_L3F(-1.57, 0, 0)
     self.light:Attach(self.camera)
 
     self.light.lightSys:SetType(self.light.ent, 3)
@@ -190,7 +193,7 @@ function EntityTypes.TestPlayer:onTick(dt)
         rotation.x = rotation.x + self.dPitch * self.p_rot_sence
         rotation.x = math.max( -math.pi * 0.499, math.min( rotation.x, math.pi * 0.499 ) )
         rotation.y = rotation.y + self.dYaw * self.p_rot_sence
-        self.camera:SetRotation(rotation.x, rotation.y, 0)
+        self.camera:SetRotationPYR_L(rotation)
         self.dPitch = 0
         self.dYaw = 0
     end

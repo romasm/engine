@@ -241,7 +241,6 @@
     <ClInclude Include="Utils\MathVector.h" />
     <ClInclude Include="Utils\Profiler.h" />
     <ClInclude Include="Utils\ProfilerIDs.h" />
-    <ClInclude Include="Utils\TransformControls.h" />
     <ClInclude Include="Utils\Util.h" />
     <ClInclude Include="Utils\WinAPIDialogs.h" />
     <ClInclude Include="resource.h" />
@@ -315,7 +314,6 @@
     <ClCompile Include="System\VirtualFileSystem.cpp" />
     <ClCompile Include="Utils\Log.cpp" />
     <ClCompile Include="Utils\Profiler.cpp" />
-    <ClCompile Include="Utils\TransformControls.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

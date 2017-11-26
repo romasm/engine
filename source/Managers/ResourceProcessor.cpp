@@ -636,6 +636,46 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		fontMgr->GetFont(filename);
 		break;
 	case EngineCore::MATERIAL:
+		materialMgr->GetMaterial(filename);
+		break;
+	}
+}
+
+void ResourceProcessor::Drop(string& filename, ResourceType type)
+{
+	switch(type)
+	{
+	case EngineCore::TEXTURE:
+		texMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::MESH:
+		meshMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::COLLISION:
+		collisionMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::SKELETON:
+		skeletonMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::ANIMATION:
+		animationMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::SHADER:
+		shaderMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::GUI_SHADER:
+		shaderMgr->DeleteResourceByName(filename);
+		break;
+	case EngineCore::COMPUTE: // TODO
+		{
+			ERR("Compute shaders is unloadable for now! Name: path@entry");
+		}
+		break;
+	case EngineCore::FONT:
+		fontMgr->DeleteFont(filename);
+		break;
+	case EngineCore::MATERIAL:
+		materialMgr->DeleteMaterial(filename);
 		break;
 	}
 }
@@ -749,6 +789,11 @@ void PreloadResource(string filename, uint32_t type)
 	ResourceProcessor::Get()->Preload(filename, ResourceType(type));
 }
 
+void DropResource(string filename, uint32_t type)
+{
+	ResourceProcessor::Get()->Drop(filename, ResourceType(type));
+}
+
 void WaitLoadingCompleteLua()
 {
 	ResourceProcessor::Get()->WaitLoadingComplete();
@@ -760,6 +805,7 @@ void ResourceProcessor::RegLuaFunctions()
 	.beginNamespace("Resource")
 		.addFunction("PreloadResource", &PreloadResource)
 		.addFunction("WaitLoadingComplete", &WaitLoadingCompleteLua)
+		.addFunction("DropResource", &DropResource)
 
 		.addFunction("ImportResource", &ImportResourceLua)
 		.addFunction("ImportResourceCallback", &ImportResourceCallbackLua)

@@ -46,6 +46,6 @@ end
 --[[
 function EntityTypes.TestEnt:onTick(dt)
     self.current_time = self.current_time + 0.001 * dt
-    self:SetPosition(math.sin(self.current_time) * 5.0, 0, 0)
+    self:SetPosition_L3F(math.sin(self.current_time) * 5.0, 0, 0)
 end
 --]]

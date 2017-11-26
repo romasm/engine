@@ -27,19 +27,6 @@ function TransformControls:PreInit()
     self.YRotMatPath = PATH.EDITOR_MESHES.. "rot_y"..EXT.MATERIAL
     self.ZRotMatPath = PATH.EDITOR_MESHES.. "rot_z"..EXT.MATERIAL
 
-    self.scaleMul = 0.12
-    self.radialCollisionMax = 1.06
-    self.radialCollisionMin = 0.78
-
-    self.hoverColor = Vector4(1.0, 0.5, 0.0, 1.0)
-    self.XColor = Vector4(0.9, 0.0, 0.0, 1.0)
-    self.YColor = Vector4(0.0, 0.9, 0.0, 1.0)
-    self.ZColor = Vector4(0.0, 0.0, 0.9, 1.0)
-    self.XYColor = Vector4(0.6, 0.6, 0.0, 1.0)
-    self.XZColor = Vector4(0.6, 0.0, 0.6, 1.0)
-    self.YZColor = Vector4(0.0, 0.6, 0.6, 1.0)
-    self.CColor = Vector4(0.9, 0.9, 0.9, 1.0)
-
     Resource.PreloadResource( self.XArrowPath, RESOURCE_TYPE.MESH )
     Resource.PreloadResource( self.YArrowPath, RESOURCE_TYPE.MESH )
     Resource.PreloadResource( self.ZArrowPath, RESOURCE_TYPE.MESH )
@@ -55,7 +42,29 @@ function TransformControls:PreInit()
     Resource.PreloadResource( self.XZPlanePath, RESOURCE_TYPE.MESH )
     Resource.PreloadResource( self.YZPlanePath, RESOURCE_TYPE.MESH )
 
-    -- TODO: preload materials
+    Resource.PreloadResource( self.XArrowMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.YArrowMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.ZArrowMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.CenterMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.XYPlaneMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.XZPlaneMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.YZPlaneMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.XRotMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.YRotMatPath, RESOURCE_TYPE.MATERIAL )
+    Resource.PreloadResource( self.ZRotMatPath, RESOURCE_TYPE.MATERIAL )
+
+    self.scaleMul = 0.12
+    self.radialCollisionMaxSq = 1.06 * 1.06
+    self.radialCollisionMinSq = 0.78 * 0.78
+
+    self.hoverColor = Vector4(1.0, 0.5, 0.0, 1.0)
+    self.XColor = Vector4(0.9, 0.0, 0.0, 1.0)
+    self.YColor = Vector4(0.0, 0.9, 0.0, 1.0)
+    self.ZColor = Vector4(0.0, 0.0, 0.9, 1.0)
+    self.XYColor = Vector4(0.6, 0.6, 0.0, 1.0)
+    self.XZColor = Vector4(0.6, 0.0, 0.6, 1.0)
+    self.YZColor = Vector4(0.0, 0.6, 0.6, 1.0)
+    self.CColor = Vector4(0.9, 0.9, 0.9, 1.0)
 end
 
 function TransformControls:Init( world )
@@ -97,6 +106,7 @@ function TransformControls:Init( world )
 
     self.currentPos = Vector3.Zero
     self.currentRot = Quaternion.Identity
+    self.currentScale = 0
 end
 
 function TransformControls:CreatePart()
@@ -117,6 +127,8 @@ function TransformControls:Tick(camEnt)
     
     self.camPos = self.CameraSy:GetPos(camEnt)    
     self.camDir = self.CameraSy:GetLookDir(camEnt)    
+    self.camTang = self.CameraSy:GetLookTangent(camEnt)    
+    self.camUp = self.CameraSy:GetUp(camEnt)    
     self.frustID = self.CameraSy:GetFrustumId(camEnt)
     self.farClip = self.CameraSy:GetFar(camEnt)
 
@@ -124,6 +136,10 @@ function TransformControls:Tick(camEnt)
 end
 
 function TransformControls:UpdateTransform(selectionSet)
+    if selectionSet == nil then 
+		self:Deactivate()
+		return
+	end
     if #selectionSet == 0 then 
 		self:Deactivate()
 		return
@@ -154,8 +170,8 @@ end
 
 function TransformControls:UpdateScale()
     local distVect = Vector3.Sub(self.camPos, self.currentPos)
-    local scale = distVect:Length() * self.scaleMul
-    self.TransformSy:SetScale_L3F(self.Ccontrol, scale, scale, scale)
+    self.currentScale = distVect:Length() * self.scaleMul
+    self.TransformSy:SetScale_L3F(self.Ccontrol, self.currentScale, self.currentScale, self.currentScale)
 end
 
 function TransformControls:Close()
@@ -182,6 +198,16 @@ function TransformControls:Unhover()
     self.hoverControl = ""
 end
 
+function TransformControls:CheckRadial(ray, dist)
+    if self.mode ~= TRANSFORM_MODE.ROT then return true end
+
+    local radialVect = Vector3.Sub( Vector3.Add(self.camPos, Vector3.MulScalar(ray, dist)), self.currentPos )
+    radialVect = Vector3.MulScalar(radialVect, 1.0/self.currentScale)
+    local radialDistSq = radialVect:LengthSq()
+    if radialDistSq <= self.radialCollisionMaxSq and radialDistSq >= self.radialCollisionMinSq then return true
+    else return false end
+end
+
 function TransformControls:CheckHover(ray)
     if self.mode == TRANSFORM_MODE.NONE then return false end
     
@@ -189,17 +215,17 @@ function TransformControls:CheckHover(ray)
     local minDist = self.farClip
 
     local tempDist = self.VisSy:CollideRaySingleEntity(self.Xcontrol, self.camPos, ray, self.frustID)
-    if tempDist >= 0.0 and tempDist < minDist then 
+    if tempDist >= 0.0 and tempDist < minDist and self:CheckRadial(ray, tempDist) then 
         self.hoverControl = "X" 
         minDist = tempDist
     end
     tempDist = self.VisSy:CollideRaySingleEntity(self.Ycontrol, self.camPos, ray, self.frustID)
-    if tempDist >= 0.0 and tempDist < minDist then 
+    if tempDist >= 0.0 and tempDist < minDist and self:CheckRadial(ray, tempDist) then 
         self.hoverControl = "Y" 
         minDist = tempDist
     end
     tempDist = self.VisSy:CollideRaySingleEntity(self.Zcontrol, self.camPos, ray, self.frustID)
-    if tempDist >= 0.0 and tempDist < minDist then 
+    if tempDist >= 0.0 and tempDist < minDist and self:CheckRadial(ray, tempDist) then 
         self.hoverControl = "Z" 
         minDist = tempDist
     end
@@ -317,7 +343,12 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             local axis = Vector3(1,0,0)
             if self.hoverControl == "Y" then axis = Vector3(0,1,0)
             elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end 
-            normal = Vector3.Rotate(axis, self.currentRot)
+
+            if self.isLocal then
+                normal = Vector3.Rotate(axis, self.currentRot)
+            else
+                normal = axis
+            end
         else
             normal = Vector3.Inverse(self.camDir)
             normal:Normalize()
@@ -339,12 +370,62 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             self.currentRot = self.TransformSy:GetRotation_L(self.Ccontrol)
         end
         
+        -- TODO: group rotation
         for i, ent in ipairs(selectionSet) do
-			self.TransformSy:AddRotationAxis_L(ent, normal, angle)
+			self.TransformSy:AddRotationAxis_W(ent, normal, angle)
 		end  
 
     elseif self.mode == TRANSFORM_MODE.SCALE then
+        local scale = Vector3.Zero
+        local plane = Vector4.Zero
+        local dir = Vector3.Zero
+        local axis = Vector3.Zero
+
+        if hoverType == 1 then
+            local viewVect = Vector3.Sub(self.currentPos, self.camPos)
+            viewVect:Normalize()
+
+            axis = Vector3(1,0,0)
+            if self.hoverControl == "Y" then axis = Vector3(0,1,0)
+            elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end
+ 
+            dir = Vector3.Rotate(axis, self.currentRot)
+            local normal = dir:Cross( dir:Cross(viewVect) )
+            normal:Normalize()
+            plane = Vector4.CreatePlane(self.currentPos, normal)
+
+        elseif hoverType == 2 then
+            axis = Vector3(1,1,0)
+            local planeAxis = Vector3(0,0,1)
+            if self.hoverControl == "XZ" then 
+                axis = Vector3(1,0,1)
+                planeAxis = Vector3(0,1,0)
+            elseif self.hoverControl == "YZ" then 
+                axis = Vector3(0,1,1)
+                planeAxis = Vector3(1,0,0)
+            end
+            
+            dir = Vector3.Rotate(axis, self.currentRot)
+            local normal = Vector3.Rotate(planeAxis, self.currentRot)
+            plane = Vector4.CreatePlane(self.currentPos, normal)
+
+        elseif hoverType == 3 then -- TODO: scale from delta mouse coords
+            axis = Vector3(1,1,1)    
+            plane = Vector4.CreatePlane(self.currentPos, Vector3.Inverse(self.camDir))
+            dir = Vector3.Add( Vector3.Inverse(self.camTang), self.camUp )
+            dir:Normalize()  
+                
+        end
         
+        local fromP = Vector4.PlaneLineCollide(plane, self.camPos, rayPrevFar)
+        local toP = Vector4.PlaneLineCollide(plane, self.camPos, rayNextFar)
+        local moveVect = Vector3.Sub(toP, fromP)           
+        scale = Vector3.MulScalar(axis, moveVect:Dot(dir))   
+        scale = Vector3.Add(Vector3(1,1,1), scale)
+
+        for i, ent in ipairs(selectionSet) do
+			self.TransformSy:AddScale_L(ent, scale)
+		end
     end
 end
 

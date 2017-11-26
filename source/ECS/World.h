@@ -28,7 +28,6 @@
 #include "SceneGraph.h"
 
 #include "FunctionCodeMgr.h"
-#include "TransformControls.h"
 #include "DebugDrawer.h"
 
 #define DEFAULT_ENV "default"
@@ -418,9 +417,7 @@ namespace EngineCore
 		{
 			return saveWorld(filename);
 		}
-		
-		inline TransformControls* GetTransformControls() const {return m_transformControls;}
-		
+				
 		void RebakeSky()
 		{
 			m_envProbSystem->Bake(skyEP);
@@ -432,13 +429,10 @@ namespace EngineCore
 				.deriveClass<World, BaseWorld>("World")
 					.addFunction("Save", &World::SaveWorld)
 					.addFunction("RebakeSky", &World::RebakeSky)
-
-					.addProperty("transformControls", &World::GetTransformControls)
 				.endClass();
 		}
 
 	protected:
-		TransformControls* m_transformControls;
 		DebugDrawer dbgDrawer;
 
 		CollisionDebugDrawer* physDebugDrawer;

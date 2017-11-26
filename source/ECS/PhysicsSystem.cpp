@@ -220,7 +220,11 @@ uint32_t PhysicsSystem::Deserialize(Entity e, uint8_t* data)
 
 void PhysicsSystem::UpdateState(Entity e)
 {
+	if(!world->IsEntityEnable(e))
+		return;
+
 	GET_COMPONENT(void());
+
 	// TODO: optimize? 
 	// dynamicsWorld->resetRigidBody(comp.body)
 	dynamicsWorld->removeRigidBody(comp.body);
@@ -228,13 +232,14 @@ void PhysicsSystem::UpdateState(Entity e)
 	int32_t collisionGroup = CollisionGroups::Default;
 	int32_t collisionMask = CollisionGroups::Physics;
 
-	auto collision = collisionSystem->GetCollision(e);
-	if(!collision)
+	auto collisionComp = collisionSystem->GetComponent(e);
+	if(!collisionComp)
 		WRN("Collision component must be set before Physics component");
 	else
 	{
-		comp.body->setCollisionShape(collision);
-		auto collisionComp = collisionSystem->GetComponent(e);
+		auto collision = collisionSystem->GetCollision(e);
+		if(collision)
+			comp.body->setCollisionShape(collision);
 		collisionGroup = collisionComp->collisionGroup;
 		collisionMask = collisionComp->collisionMask;
 	}

@@ -120,6 +120,7 @@ namespace EngineCore
 		void DeleteUpdateJobs();
 
 		void Preload(string& filename, ResourceType type);
+		void Drop(string& filename, ResourceType type);
 
 		void WaitLoadingComplete();
 

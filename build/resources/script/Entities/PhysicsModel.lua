@@ -15,7 +15,7 @@ function EntityTypes.PhysicsModel:init(world, ent)
     self.physicsSys:SetFriction(self.ent, 0.8)
     self.physicsSys:SetMass(self.ent, 100.0)
     self.physicsSys:UpdateState(self.ent)
-
+    
     return true
 end
 

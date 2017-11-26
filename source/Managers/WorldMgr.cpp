@@ -56,8 +56,6 @@ WorldMgr::WorldMgr()
 		ControllerSystem::RegLuaClass();
 		SkeletonSystem::RegLuaClass();
 
-		TransformControls::RegLuaClass();
-
 		RegLuaClassEntity();
 	}
 	else

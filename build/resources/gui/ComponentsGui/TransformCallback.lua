@@ -125,7 +125,7 @@ function TransformCallback.SetPos(self, ev, xyz)
             history.s_newval[i].y == history.s_oldval[i].y and
             history.s_newval[i].z == history.s_oldval[i].z)
 
-        Viewport.lua_world.world.transform:SetPosition(ent, history.s_newval[i].x, history.s_newval[i].y, history.s_newval[i].z)
+        Viewport.lua_world.world.transform:SetPosition_L(ent, history.s_newval[i])
         Viewport.lua_world.world.transform:ForceUpdate(ent)
     end
 
