@@ -2,7 +2,7 @@ import
 {
 	filePath = '../resources/meshes/null_mesh.fbx'
 	version = '101'
-	fileDate = '1508174250'
+	fileDate = '1511721986'
 }
 mesh
 {

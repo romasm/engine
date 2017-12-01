@@ -304,7 +304,11 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             if self.hoverControl == "Y" then axis = Vector3(0,1,0)
             elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end
  
-            local dir = Vector3.Rotate(axis, self.currentRot)
+            local dir = axis
+            if self.isLocal then
+                dir = Vector3.Rotate(dir, self.currentRot)
+            end
+
             local normal = dir:Cross( dir:Cross(viewVect) )
             normal:Normalize()
 
@@ -320,7 +324,11 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             if self.hoverControl == "XZ" then axis = Vector3(0,1,0)
             elseif self.hoverControl == "YZ" then axis = Vector3(1,0,0) end
             
-            local normal = Vector3.Rotate(axis, self.currentRot)
+            local normal = axis
+            if self.isLocal then
+                normal = Vector3.Rotate(normal, self.currentRot)
+            end
+
             local plane = Vector4.CreatePlane(self.currentPos, normal)
             local fromP = Vector4.PlaneLineCollide(plane, self.camPos, rayPrevFar)
             local toP = Vector4.PlaneLineCollide(plane, self.camPos, rayNextFar)
