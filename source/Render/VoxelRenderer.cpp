@@ -7,7 +7,7 @@
 
 using namespace EngineCore;
 
-#define NO_VOXEL_GI
+//#define NO_VOXEL_GI
 
 VoxelRenderer::VoxelRenderer(SceneRenderMgr* rndm)
 {

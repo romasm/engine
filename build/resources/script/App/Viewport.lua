@@ -866,7 +866,7 @@ end
 function Viewport:SetPositionsToSelection(positions)
     for i, ent in ipairs(self.selection_set) do
         if i > #positions then return end
-        self.lua_world.world.transform:SetPosition_L3F(ent, positions[i])
+        self.lua_world.world.transform:SetPosition_L(ent, positions[i])
         self.lua_world.world.transform:ForceUpdate(ent)
     end
     Properties:UpdateData(false, COMPONENTS.TRANSFORM)
