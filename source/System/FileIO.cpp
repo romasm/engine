@@ -674,3 +674,34 @@ bool FileIO::Delete(string path)
 	LOG_GOOD("Successfully deleted %s", path.data());
 	return true;
 }
+
+FileReadStream::FileReadStream(string& filename)
+{
+	dataSize = 0;
+	stream.open(filename, ifstream::in | ifstream::binary);
+	if(!stream.good())
+		return;
+
+	stream.seekg(0, ios::end);
+	dataSize = uint32_t(stream.tellg());
+	stream.seekg(0, ios::beg);
+}
+
+FileReadStream::~FileReadStream()
+{
+	stream.close();
+}
+
+bool FileReadStream::ReadFilePart(uint8_t* data, uint32_t readPos, uint32_t readSize)
+{
+	if(!stream.is_open())
+		return false;
+
+	if( readPos + readSize > dataSize )
+		return false;
+
+	stream.seekg(readPos, ios::beg);
+	stream.read((char*)data, readSize);
+	stream.seekg(0, ios::beg);
+	return true;
+}

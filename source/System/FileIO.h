@@ -216,7 +216,7 @@ public:
 	inline static uint8_t* ReadFileDataS(char* filename, uint32_t *ret_size){return ReadFileData(string(filename), ret_size);}
 	static bool WriteFileData(string& filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0);
 	inline static bool WriteFileDataS(char* filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0){return WriteFileData(string(filename), data, size, modif_date);}
-
+	
 	static void RegLuaFunctions()
 	{
 		getGlobalNamespace(LSTATE)
@@ -245,6 +245,21 @@ public:
 				.endClass()
 			.endNamespace();
 	}
+};
+
+class FileReadStream
+{
+public:
+	FileReadStream(string& filename);
+	~FileReadStream();
+
+	bool ReadFilePart(uint8_t* data, uint32_t readPos, uint32_t readSize);
+	bool IsOpen() {return stream.is_open();}
+	uint32_t Size() {return dataSize;}
+
+private:
+	ifstream stream;
+	uint32_t dataSize;
 };
 
 }
