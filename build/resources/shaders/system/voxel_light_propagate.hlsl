@@ -13,6 +13,9 @@
 #define ONE_DIV_THREE 1.0 / 3.0
 #define COS_45 0.7071068
 
+#define INV_SQRT3 0.577735
+#define INV_SQRT2 0.707107
+
 RWTexture3D <float4> targetLightVolume : register(u0);  
 
 SamplerState samplerPointClamp : register(s0);
@@ -40,28 +43,79 @@ Faces:
 5 - Z-
 */
 
+static const int4 cornerOffset[8] = 
+{
+	int4(1, 1, 1, 0),
+	int4(1, 1, -1, 0),
+	int4(1, -1, 1, 0),
+	int4(1, -1, -1, 0),
+	int4(-1, 1, 1, 0),
+	int4(-1, 1, -1, 0),
+	int4(-1, -1, 1, 0),
+	int4(-1, -1, -1, 0)
+};
+
+static const int cornerFaceIDs[8][3] = 
+{
+	{1,3,5},
+	{1,3,4},
+	{1,2,5},
+	{1,2,4},
+	{0,3,5},
+	{0,3,4},
+	{0,2,5},
+	{0,2,4}
+};
+
+static const int4 sideOffset[12] = 
+{
+	int4(0, 1, 1, 0),
+	int4(0, 1, -1, 0),
+	int4(0, -1, 1, 0),
+	int4(0, -1, -1, 0),
+	int4(-1, 0, 1, 0),
+	int4(-1, 0, -1, 0),
+	int4(1, 0, 1, 0),
+	int4(1, 0, -1, 0),
+	int4(-1, 1, 0, 0),
+	int4(-1, -1, 0, 0),
+	int4(1, 1, 0, 0),
+	int4(1, -1, 0, 0)
+};
+
+static const int sideFaceIDs[12][2] = 
+{
+	{3,5},
+	{3,4},
+	{2,5},
+	{2,4},
+	{0,5},
+	{0,4},
+	{1,5},
+	{1,4},
+	{0,3},
+	{0,2},
+	{1,3},
+	{1,2}
+};
+
 static const int4 dirOffset[6] = 
 {
-	int4(1, 0, 0, 0),
 	int4(-1, 0, 0, 0),
-	int4(0, 1, 0, 0),
+	int4(1, 0, 0, 0),
 	int4(0, -1, 0, 0),
-	int4(0, 0, 1, 0),
-	int4(0, 0, -1, 0)
+	int4(0, 1, 0, 0),
+	int4(0, 0, -1, 0),
+	int4(0, 0, 1, 0)
 };
-static const int dirFaceIDs[6][4] = 
-{
-	{2,3,4,5},
-	{2,3,4,5},
-	{0,1,4,5},
-	{0,1,4,5},
-	{0,1,2,3},
-	{0,1,2,3}
-};
+
 static const int faceInv[6] = {1,0,3,2,5,4};
 
-static const float sideWeightMax = 0.175;
-static const float lightFalloff = 0.999;
+static const float cornerWeight = INV_SQRT3 / (1 + INV_SQRT2 + INV_SQRT3);
+static const float sideWeight = INV_SQRT2 / (1 + INV_SQRT2 + INV_SQRT3);
+static const float dirWeight = 1.0 / (1 + INV_SQRT2 + INV_SQRT3);
+
+static const float lightFalloff = 0.4;
  
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM][CACHE_DIM][CACHE_DIM][VOXEL_FACES_COUNT];
@@ -108,7 +162,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		float4(0,0,0,0),
 		float4(0,0,0,0),
 		float4(0,0,0,0)
-	};
+	}; 
 	 
 	int4 selfCoords = int4(voxelID, 0);
 	[unroll] 
@@ -131,57 +185,103 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 
 	int4 coords = int4(voxelID, 0);
 	coords.x -= volumeData[0].volumeRes * level;
-
-	const float lightFalloffLevel = pow(lightFalloff, pow(2.0, level));
-
+	
+	// corners
 	[unroll]
-	for(int k = 0; k < 6; k++)
+	for(int k0 = 0; k0 < 8; k0++)
 	{
 		uint sampleLevel = level;
-		int4 dirCoords = coords + dirOffset[k];
+		int4 cornerCoords = coords - cornerOffset[k0];
+		
+		[flatten]
+		if(!validateCoords(cornerCoords, sampleLevel))
+			continue;
+		cornerCoords.x += volumeData[0].volumeRes * sampleLevel;
+
+		float4 corner = 0;
+		[unroll]
+		for(int f0 = 0; f0 < 3; f0++)
+		{
+			int4 cornerCoordsFace = cornerCoords;
+			cornerCoordsFace.y += volumeData[0].volumeRes *	cornerFaceIDs[k0][f0];
+			corner += sourceLightVolume.Load(cornerCoordsFace);
+		}
+		corner = (corner * ONE_DIV_THREE) * COS_45 * cornerWeight;
+
+		[unroll]
+		for(int l0 = 0; l0 < 3; l0++)
+			lightIn[cornerFaceIDs[k0][l0]] += corner;
+	}
+	
+	// sides
+	[unroll]
+	for(int k1 = 0; k1 < 12; k1++)
+	{
+		uint sampleLevel = level;
+		int4 sideCoords = coords - sideOffset[k1];
+				
+		[flatten]
+		if(!validateCoords(sideCoords, sampleLevel))
+			continue;
+		sideCoords.x += volumeData[0].volumeRes * sampleLevel;
+
+		float4 side = 0;
+		[unroll]
+		for(int f1 = 0; f1 < 2; f1++)
+		{
+			int4 sideCoordsFace = sideCoords;
+			sideCoordsFace.y += volumeData[0].volumeRes * sideFaceIDs[k1][f1];
+			side += sourceLightVolume.Load(sideCoordsFace);
+		}
+		side = (side * 0.5) * COS_45 * sideWeight;
+
+		[unroll]
+		for(int l1 = 0; l1 < 2; l1++)
+			lightIn[sideFaceIDs[k1][l1]] += side;
+	}
+	
+	// dirs
+	[unroll]
+	for(int k2 = 0; k2 < 6; k2++)
+	{
+		uint sampleLevel = level;
+		int4 dirCoords = coords - dirOffset[k2];
+				
 		[flatten]
 		if(!validateCoords(dirCoords, sampleLevel))
 			continue;
 		dirCoords.x += volumeData[0].volumeRes * sampleLevel;
 
-		// light sample
-		float sideWeight = 0;
-		float4 light = 0;
-		[unroll]
-		for(int f = 0; f < 4; f++)
-		{
-			const uint faceID = dirFaceIDs[k][f];
-			int4 faceCoords = dirCoords;
-			faceCoords.y += volumeData[0].volumeRes * faceID;
-
-			const float occluding = 1 - lightSelf[faceInv[faceID]].a;
-
-			const float4 sample = sourceLightVolume.Load(faceCoords);
-			const float weight = sideWeightMax * sample.a;
-
-			sideWeight += weight;
-			light += sample * weight * occluding;
-		}
+		dirCoords.y += volumeData[0].volumeRes * k2;
+		float4 dir = sourceLightVolume.Load(dirCoords) * dirWeight;
 		
-		const uint frontFaceID = k;
-		dirCoords.y += volumeData[0].volumeRes * frontFaceID;
-		const float frontOccluding = 1 - lightSelf[faceInv[frontFaceID]].a;
-		// TODO: weight balance based on visibility
-		const float frontWeight = 1 - sideWeight;
-		light += sourceLightVolume.Load(dirCoords) * frontWeight * frontOccluding;
-
-		lightIn[k] = light * lightFalloffLevel;
+		lightIn[k2] += dir;
 	}
+	
+	const float lightFalloffLevel = pow(lightFalloff, pow(2.0, level));
 
 	// write light
+	float occluding = 0;
+	[unroll]
+	for(int v = 0; v < VOXEL_FACES_COUNT; v++)
+	{
+		occluding = max(occluding, lightSelf[faceInv[v]].a);
+	}
+	occluding = 1 - occluding;
+
 	int3 targetCoords = voxelID;
 	[unroll]
 	for(int t = 0; t < VOXEL_FACES_COUNT; t++)
 	{
 		if(any(lightSelf[t]))
+		{
 			targetLightVolume[targetCoords] = lightSelf[t];
+		}
 		else
-			targetLightVolume[targetCoords] = lightIn[t];
+		{
+			//const float occluding = 1 - lightSelf[faceInv[t]].a; 
+			targetLightVolume[targetCoords] = lightIn[t] * occluding * lightFalloff;
+		}
 		targetCoords.y += volumeData[0].volumeRes;
 	}
 }

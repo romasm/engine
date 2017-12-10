@@ -44,7 +44,7 @@ float4 DecodeVoxelData(float4 data)
 {
 	[flatten] 
 	if(data.a > 0)
-		data.rgb /= data.a;
+		data.rgb = (data.rgb / data.a) * VOXEL_SUBSAMPLES_COUNT_RCP;
 	data.a = saturate(data.a);
 	return data;
 
