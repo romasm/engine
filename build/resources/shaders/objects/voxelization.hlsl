@@ -12,8 +12,8 @@
  
 #include "pixel_input.hlsl"
 
-static const float bounceFalloff = 0.5;
-static const float skyFalloff = 0.2;
+static const float bounceFalloff = 0.8;
+static const float skyFalloff = 0.5;
 
 SamplerState samplerTrilinearWrap : register(s0);
 SamplerState samplerPointClamp : register(s1);
@@ -96,6 +96,8 @@ void WriteVoxel(float3 emittance, int3 coords, bool front, int planeId)
 		coords.y += volumeData[0].volumeRes;
 	
 	coords.x *= 4;
+
+	emittance *= VOXEL_SUBSAMPLES_COUNT_RCP;
 
 	InterlockedFloatAdd(coords, emittance.r);
 	coords.x += 1;

@@ -235,7 +235,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 		if(voxelVis == 1)               
 		{      
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
-				volumeTraceData, voxelCascade, voxelLightTex, 0.0001);
+				volumeTraceData, voxelCascade, voxelLightTex, 0.003);
 			tonemapped = lerp(0, light.rgb, light.a * VOXEL_ALPHA); 
 		}  
 		else if(voxelVis == 2)         

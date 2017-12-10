@@ -111,11 +111,12 @@ static const int4 dirOffset[6] =
 
 static const int faceInv[6] = {1,0,3,2,5,4};
 
-static const float cornerWeight = INV_SQRT3 / (1 + INV_SQRT2 + INV_SQRT3);
-static const float sideWeight = INV_SQRT2 / (1 + INV_SQRT2 + INV_SQRT3);
+static const float cornerWeight = (1.0 / 4.0) * INV_SQRT3 / (1 + INV_SQRT2 + INV_SQRT3);// * COS_45;
+static const float sideWeight = (1.0 / 4.0) * INV_SQRT2 / (1 + INV_SQRT2 + INV_SQRT3);// * COS_45;
 static const float dirWeight = 1.0 / (1 + INV_SQRT2 + INV_SQRT3);
 
-static const float lightFalloff = 0.4;
+static const float lightFalloff = 0.9; 
+static const float emissiveFalloff = 6.0; 
  
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM][CACHE_DIM][CACHE_DIM][VOXEL_FACES_COUNT];
@@ -181,7 +182,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		float4(0,0,0,0),
 		float4(0,0,0,0),
 		float4(0,0,0,0)
-	};
+	}; 
 
 	int4 coords = int4(voxelID, 0);
 	coords.x -= volumeData[0].volumeRes * level;
@@ -198,19 +199,26 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 			continue;
 		cornerCoords.x += volumeData[0].volumeRes * sampleLevel;
 
-		float4 corner = 0;
+		float4 cornerLight[3];
 		[unroll]
 		for(int f0 = 0; f0 < 3; f0++)
 		{
 			int4 cornerCoordsFace = cornerCoords;
 			cornerCoordsFace.y += volumeData[0].volumeRes *	cornerFaceIDs[k0][f0];
-			corner += sourceLightVolume.Load(cornerCoordsFace);
+			cornerLight[f0] = sourceLightVolume.Load(cornerCoordsFace);
 		}
-		corner = (corner * ONE_DIV_THREE) * COS_45 * cornerWeight;
+
+		float totalGeomWeightRcp = (cornerLight[0].a + cornerLight[1].a + cornerLight[2].a);
+		totalGeomWeightRcp = totalGeomWeightRcp > 0 ? (1.0 / totalGeomWeightRcp) : 1.0;
 
 		[unroll]
 		for(int l0 = 0; l0 < 3; l0++)
-			lightIn[cornerFaceIDs[k0][l0]] += corner;
+		{
+			const float4 cornerLightPerFace = cornerLight[0] * (cornerLight[0].a * totalGeomWeightRcp) + 
+				cornerLight[1] * (cornerLight[1].a * totalGeomWeightRcp) + 
+				cornerLight[2] * (cornerLight[2].a * totalGeomWeightRcp);
+			lightIn[cornerFaceIDs[k0][l0]] += (cornerLightPerFace * cornerWeight);
+		}
 	}
 	
 	// sides
@@ -225,19 +233,25 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 			continue;
 		sideCoords.x += volumeData[0].volumeRes * sampleLevel;
 
-		float4 side = 0;
+		float4 sideLight[2];
 		[unroll]
 		for(int f1 = 0; f1 < 2; f1++)
 		{
 			int4 sideCoordsFace = sideCoords;
 			sideCoordsFace.y += volumeData[0].volumeRes * sideFaceIDs[k1][f1];
-			side += sourceLightVolume.Load(sideCoordsFace);
+			sideLight[f1] = sourceLightVolume.Load(sideCoordsFace);
 		}
-		side = (side * 0.5) * COS_45 * sideWeight;
+		
+		float totalGeomWeightRcp = (sideLight[0].a + sideLight[1].a);
+		totalGeomWeightRcp = totalGeomWeightRcp > 0 ? (1.0 / totalGeomWeightRcp) : 1.0;
 
 		[unroll]
 		for(int l1 = 0; l1 < 2; l1++)
-			lightIn[sideFaceIDs[k1][l1]] += side;
+		{
+			const float4 sideLightPerFace = sideLight[0] * (sideLight[0].a * totalGeomWeightRcp) + 
+				sideLight[1] * (sideLight[1].a * totalGeomWeightRcp);
+			lightIn[sideFaceIDs[k1][l1]] += (sideLightPerFace * sideWeight);
+		}
 	}
 	
 	// dirs
@@ -275,12 +289,13 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	{
 		if(any(lightSelf[t]))
 		{
+			lightSelf[t].rgb *= emissiveFalloff;
 			targetLightVolume[targetCoords] = lightSelf[t];
 		}
 		else
 		{
 			//const float occluding = 1 - lightSelf[faceInv[t]].a; 
-			targetLightVolume[targetCoords] = lightIn[t] * occluding * lightFalloff;
+			targetLightVolume[targetCoords] = lightIn[t] * occluding * lightFalloffLevel;
 		}
 		targetCoords.y += volumeData[0].volumeRes;
 	}
