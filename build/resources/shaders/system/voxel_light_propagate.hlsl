@@ -272,7 +272,8 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		lightIn[k2] += dir;
 	}
 	
-	const float lightFalloffLevel = pow(lightFalloff, pow(2.0, level));
+	// TODO
+	const float lightFalloffLevel = pow(lightFalloff, pow(3.0, level));
 	
 	// write light
 	float occluding = 0;
@@ -290,12 +291,10 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		if(any(lightSelf[t]))
 		{
 			lightSelf[t].rgb *= emissiveFalloff;
-			//lightSelf[t] = 0.5;
 			targetLightVolume[targetCoords] = lightSelf[t];
 		}
 		else
 		{
-			//const float occluding = 1 - lightSelf[faceInv[t]].a; 
 			targetLightVolume[targetCoords] = lightIn[t] * occluding * lightFalloffLevel;
 		}
 		targetCoords.y += volumeData[0].volumeRes;

@@ -517,7 +517,7 @@ LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVol
 			diffuse += lightVolume.SampleLevel(samp, faceCoords, 0) * dirWeight[f];
 		}
 
-		result.diffuse = diffuse.rgb * diffuseBrdf * gbuffer.ao;
+		result.diffuse = diffuse.a;//diffuse.rgb * diffuseBrdf * gbuffer.ao;
 		result.diffuseW = 1.0;//diffuse.a;
 	}
 

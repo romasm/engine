@@ -128,7 +128,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	 
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);  
 	    
-	// DIRECT LIGHT
+	// DIRECT LIGHT 
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
 	     
 	// IBL
@@ -136,10 +136,10 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	      
-	// VCTGI     
+	// VCTGI      
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
-	 
-	indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, saturate(vctLight.diffuseW));
+	
+	indirectLight.diffuse = (1 - saturate(vctLight.diffuseW)) * indirectLight.diffuse + vctLight.diffuse;
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
 	
