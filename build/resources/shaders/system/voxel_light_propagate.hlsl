@@ -295,7 +295,9 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		}
 		else
 		{
-			targetLightVolume[targetCoords] = lightIn[t] * occluding * lightFalloffLevel;
+			lightIn[t].rgb *= occluding * lightFalloffLevel;
+			lightIn[t].a = max(lightIn[t].a, occluding);
+			targetLightVolume[targetCoords] = lightIn[t];// * occluding * lightFalloffLevel;
 		}
 		targetCoords.y += volumeData[0].volumeRes;
 	}
