@@ -13,7 +13,7 @@
 #include "pixel_input.hlsl"
 
 static const float bounceFalloff = 0.5;
-static const float skyFalloff = 0.0000001;
+static const float skyFalloff = 0.9;
 
 SamplerState samplerTrilinearWrap : register(s0);
 SamplerState samplerPointClamp : register(s1);
@@ -133,7 +133,7 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	
 	// distant light
 	const float3 distLight = CalcutaleDistantProbVoxel(samplerBilinearWrap, envDistDiffuse, normal, diffuseBrdf);
-	indirectLight.rgb = (1 - indirectLight.a) * distLight * skyFalloff + indirectLight.rgb;
+	indirectLight.rgb = indirectLight.a * distLight * skyFalloff + indirectLight.rgb;
 
 	// analytical lighting  
 	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;

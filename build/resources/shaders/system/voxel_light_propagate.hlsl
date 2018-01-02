@@ -214,10 +214,12 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		[unroll]
 		for(int l0 = 0; l0 < 3; l0++)
 		{
-			const float4 cornerLightPerFace = cornerLight[0] * (cornerLight[0].a * totalGeomWeightRcp) + 
+			float4 cornerLightPerFace = cornerLight[0] * (cornerLight[0].a * totalGeomWeightRcp) + 
 				cornerLight[1] * (cornerLight[1].a * totalGeomWeightRcp) + 
 				cornerLight[2] * (cornerLight[2].a * totalGeomWeightRcp);
-			lightIn[cornerFaceIDs[k0][l0]] += (cornerLightPerFace * cornerWeight);
+			//cornerLightPerFace.a = max(max(cornerLight[0].a, cornerLight[1].a), cornerLight[2].a); // todo
+			lightIn[cornerFaceIDs[k0][l0]].rgb += (cornerLightPerFace.rgb * cornerWeight);
+			lightIn[cornerFaceIDs[k0][l0]].a = max(lightIn[cornerFaceIDs[k0][l0]].a, cornerLightPerFace.a);
 		}
 	}
 	
@@ -248,9 +250,11 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		[unroll]
 		for(int l1 = 0; l1 < 2; l1++)
 		{
-			const float4 sideLightPerFace = sideLight[0] * (sideLight[0].a * totalGeomWeightRcp) + 
+			float4 sideLightPerFace = sideLight[0] * (sideLight[0].a * totalGeomWeightRcp) + 
 				sideLight[1] * (sideLight[1].a * totalGeomWeightRcp);
-			lightIn[sideFaceIDs[k1][l1]] += (sideLightPerFace * sideWeight);
+
+			lightIn[sideFaceIDs[k1][l1]].rgb += (sideLightPerFace.rgb * sideWeight);
+			lightIn[sideFaceIDs[k1][l1]].a = max(lightIn[sideFaceIDs[k1][l1]].a, sideLightPerFace.a);
 		}
 	}
 	
@@ -267,13 +271,15 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		dirCoords.x += volumeData[0].volumeRes * sampleLevel;
 
 		dirCoords.y += volumeData[0].volumeRes * k2;
-		float4 dir = sourceLightVolume.Load(dirCoords) * dirWeight;
+		float4 dir = sourceLightVolume.Load(dirCoords);
 		
-		lightIn[k2] += dir;
+		lightIn[k2].rgb += (dir.rgb * dirWeight);
+		lightIn[k2].a = max(lightIn[k2].a, dir.a);
 	}
 	
 	// TODO
 	const float lightFalloffLevel = pow(lightFalloff, pow(3.0, level));
+	const float lightFalloffLevelA = 0.9;//pow(lightFalloff, pow(1.0, level));
 	
 	// write light
 	float occluding = 0;
@@ -282,7 +288,7 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 	{
 		occluding = max(occluding, lightSelf[faceInv[v]].a);
 	}
-	occluding = 1 - occluding;
+	//occluding = 1 - occluding;
 	
 	int3 targetCoords = voxelID;
 	[unroll]
@@ -291,12 +297,14 @@ void PropagateLight(uint3 voxelID : SV_DispatchThreadID)
 		if(any(lightSelf[t]))
 		{
 			lightSelf[t].rgb *= emissiveFalloff;
+			lightSelf[t].a = occluding;
 			targetLightVolume[targetCoords] = lightSelf[t];
 		}
 		else
 		{
-			lightIn[t].rgb *= occluding * lightFalloffLevel;
-			lightIn[t].a = max(lightIn[t].a, occluding);
+			lightIn[t].rgb *= (1 - occluding) * lightFalloffLevel;
+			lightIn[t].a = max(lightIn[t].a * lightFalloffLevelA, occluding); 
+			//lightIn[t].a = lightIn[t].a * lightFalloffLevelA;
 			targetLightVolume[targetCoords] = lightIn[t];// * occluding * lightFalloffLevel;
 		}
 		targetCoords.y += volumeData[0].volumeRes;

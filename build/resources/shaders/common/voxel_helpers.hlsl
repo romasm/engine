@@ -517,8 +517,8 @@ LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVol
 			diffuse += lightVolume.SampleLevel(samp, faceCoords, 0) * dirWeight[f];
 		}
 
-		result.diffuse = diffuse.a;//diffuse.rgb * diffuseBrdf * gbuffer.ao;
-		result.diffuseW = 1.0;//diffuse.a;
+		result.diffuse = diffuse.rgb * diffuseBrdf;
+		result.diffuseW = saturate(/*(1 - diffuse.a) */ gbuffer.ao);
 	}
 
 	// specular
@@ -583,7 +583,7 @@ float4 GetIndirectVoxel(sampler samp, Texture3D <float4> lightVolume, VolumeData
 		}
 
 		result.rgb = diffuse.rgb * diffuseBrdf;
-		result.a = diffuse.a;
+		result.a = saturate(1 - diffuse.a);
 	}
 
 	return result;

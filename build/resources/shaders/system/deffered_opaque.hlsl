@@ -111,9 +111,9 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	if(materialParams.unlit == 1)
 	{  
 		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
-		return;
+		return; 
 	}
-
+	    
 	gbuffer.subsurfTint = lerp(1.0, gbuffer.subsurf, materialParams.ssTint);  
 	      
 	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
@@ -122,16 +122,16 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	 
 	float3 ViewVector = g_CamPos - gbuffer.wpos;    
 	const float linDepth = length(ViewVector);
-	ViewVector = ViewVector / linDepth;
+	ViewVector = ViewVector / linDepth;  
 	 
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
 	 
-	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);  
-	    
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);   
+	     
 	// DIRECT LIGHT 
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	     
-	// IBL
+	      
+	// IBL 
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
@@ -139,7 +139,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	// VCTGI      
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	
-	indirectLight.diffuse = (1 - saturate(vctLight.diffuseW)) * indirectLight.diffuse + vctLight.diffuse;
+	indirectLight.diffuse = vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
 	
