@@ -47,26 +47,27 @@ TextureCube g_envprobsDistBlurred : register(t14);
 Texture2DArray <float> shadows: register(t15); 
 
 Texture3D <float4> volumeLight : register(t16); 
+Texture3D <float4> volumeEmittance : register(t17); 
    
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t19); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t18); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t19); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t20); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t20); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t21); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t22); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t21); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t22); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t23); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t23); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t24); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t25); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t24); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t25); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t26); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t26); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t27); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t27); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t28); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t29); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29);     
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t30);     
 
-StructuredBuffer<int> g_lightIDs : register(t30); 
+StructuredBuffer<int> g_lightIDs : register(t31); 
 
 cbuffer configBuffer : register(b1)
 {
@@ -79,7 +80,7 @@ cbuffer lightsCount : register(b2)
 };               
  
 // TEMP       
-#define TEMP_FAST_COMPILE    
+//#define TEMP_FAST_COMPILE    
 
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
@@ -104,7 +105,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	[branch]
 	if(coords.x > 1.0f || coords.y > 1.0f)
 		return;
-
+	 
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
@@ -120,24 +121,24 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
 	gbuffer.ao = min( SceneAO, gbuffer.ao );
 	 
-	float3 ViewVector = g_CamPos - gbuffer.wpos;    
+	float3 ViewVector = g_CamPos - gbuffer.wpos;     
 	const float linDepth = length(ViewVector);
-	ViewVector = ViewVector / linDepth;  
-	 
-	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector); 
-	 
-	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);   
-	     
-	// DIRECT LIGHT 
+	ViewVector = ViewVector / linDepth;   
+	   
+	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);  
+	  
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);    
+	         
+	// DIRECT LIGHT               
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	      
-	// IBL 
+	          
+	// IBL  
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
-	      
-	// VCTGI      
-	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
+	       
+	// VCTGI       
+	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	
 	indirectLight.diffuse = vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);

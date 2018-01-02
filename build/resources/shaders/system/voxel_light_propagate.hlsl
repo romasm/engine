@@ -104,7 +104,7 @@ static const int4 dirOffset[6] =
 	int4(-1, 0, 0, 0),
 	int4(1, 0, 0, 0),
 	int4(0, -1, 0, 0),
-	int4(0, 1, 0, 0),
+	int4(0, 1, 0, 0), 
 	int4(0, 0, -1, 0),
 	int4(0, 0, 1, 0)
 };
@@ -116,7 +116,6 @@ static const float sideWeight = (1.0 / 4.0) * INV_SQRT2 / (1 + INV_SQRT2 + INV_S
 static const float dirWeight = 1.0 / (1 + INV_SQRT2 + INV_SQRT3);
 
 static const float lightFalloff = 0.9; 
-static const float emissiveFalloff = 6.0; 
  
 #define CACHE_DIM (GROUP_THREAD_COUNT + 2)
 //groupshared float4 voxelCache[CACHE_DIM][CACHE_DIM][CACHE_DIM][VOXEL_FACES_COUNT];

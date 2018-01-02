@@ -10,6 +10,8 @@
 #define COLOR_RANGE 255.0f 
 #define COLOR_RANGE_RCP (1.0f / COLOR_RANGE)
 
+static const float emissiveFalloff = 6.0; 
+
 float4 DecodeVoxelColor(uint a, uint b, uint count)
 {
 	if(count == 0)
@@ -148,11 +150,11 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 
         float diameter = apertureDouble * distance;
         float level = log2(diameter * volumeData[0].voxelSizeRcp);
-		level = clamp(level, currentLevel, volumeTraceData.maxLevel);
+		currentLevel = clamp(level, currentLevel, volumeTraceData.maxLevel);
 		
 		float levelUpDown[2];
-		levelUpDown[0] = ceil(level);
-		levelUpDown[1] = floor(level);
+		levelUpDown[0] = ceil(currentLevel);
+		levelUpDown[1] = floor(currentLevel);
 
 		uint iDownLevel = (uint)levelUpDown[1];
 
@@ -188,25 +190,19 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 				float3 coords = coordsLevel;
 				coords.y += faces[faceID];
 
-				float4 sample = volumeEmittance.SampleLevel(volumeSampler, coords, 0);
+				float4 sample = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, coords, 0));
 								
-				voxelSample[voxelLevel] += sample * dirWeight[faceID];
+				voxelSample[voxelLevel].rgb += (sample.rgb * sample.a);// * dirWeight[faceID];
+				voxelSample[voxelLevel].a += sample.a;// * dirWeight[faceID];
+				//voxelSample[voxelLevel].a = max(voxelSample[voxelLevel].a, sample.a);
 			}
 		}
-		        
-		//[branch]
-		//if(uint(levelUpDown[1]) == startLevel)
-		//	return 1;////voxelSample[1] *= startLevelFade;
-
-		float4 finalColor = lerp(voxelSample[1], voxelSample[0], levelLerp);
 		
-		[flatten]
-		if(finalColor.a > 0)
-			finalColor.rgb /= finalColor.a;
-		finalColor.a = saturate(finalColor.a * VOXEL_SUBSAMPLES_COUNT_RCP);
-
-		coneColor.rgb += (1.0f - coneColor.a) * finalColor.rgb * finalColor.a; // todo: correct accumulation
-		coneColor.a += finalColor.a;
+		float4 finalColor = lerp(voxelSample[1], voxelSample[0], saturate(levelLerp));
+				
+		//const float currentWeight = (1.0f - coneColor.a) * finalColor.a;
+		coneColor.rgb += (1.0f - coneColor.a) * finalColor.rgb * emissiveFalloff;
+		coneColor.a += (1.0f - coneColor.a) * finalColor.a;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
 		i++;
@@ -214,9 +210,6 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 	
 	coneColor.a = saturate(coneColor.a);
 
-	//coneColor = lerp(coneColor, float4(startLevelFade,startLevelFade,startLevelFade,1.0), 0.9999);
-
-	//return float4(coneColor.rgb, 1.0);
 	return coneColor;
 }
 
@@ -471,7 +464,7 @@ LightComponentsWeight CalculateVCTLight(sampler samp, Texture3D <float4> Emittan
 	return result;
 }
 
-LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVolume, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData vTraceData, 
+LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVolume, Texture3D <float4> emittanceVolume, VolumeData vData[VCT_CLIPMAP_COUNT_MAX], VolumeTraceData vTraceData, 
 								  in GBufferData gbuffer, in DataForLightCompute mData, in float3 specularBrdf, in float3 diffuseBrdf, in float SO)
 {
 	LightComponentsWeight result = (LightComponentsWeight)0;
@@ -522,14 +515,14 @@ LightComponentsWeight GetIndirectLight(sampler samp, Texture3D <float4> lightVol
 	}
 
 	// specular
-	/*float3 coneReflDirection = normalize(mData.reflect);
+	float3 coneReflDirection = normalize(mData.reflect);
 
 	float apertureSpecular = tan( clamp( PIDIV2 * mData.avgR, 0.0174533f, PI) );
-	float4 specular = VoxelConeTrace(gbuffer.wpos, coneReflDirection, apertureSpecular, gbuffer.normal, vData, vTraceData, Emittance, samp);
-	 */
-	//result.specular = specular.rgb * specularBrdf * SO;
-	//result.specularW = specular.a;
-		
+	float4 specular = VoxelConeTrace(gbuffer.wpos, coneReflDirection, apertureSpecular, gbuffer.vertex_normal, vData, vTraceData, emittanceVolume, samp);
+	 
+	result.specular = specular.rgb * specularBrdf * SO;
+	result.specularW = specular.a;
+	
 	// TODO
 	//result.scattering = 0;
 	//result.scatteringW = 0;

@@ -1027,13 +1027,15 @@ void ScenePipeline::OpaqueDefferedStage()
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
 		auto volumeLight = render_mgr->voxelRenderer->GetVoxelLightSRV();
+		auto volumeEmittance = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
 
 		Render::CSSetShaderResources(15, 1, &shadowBuffer);
 		Render::CSSetShaderResources(16, 1, &volumeLight);
+		Render::CSSetShaderResources(17, 1, &volumeEmittance);
 
-		LoadLights(17, true);
+		LoadLights(18, true);
 
-		Render::CSSetShaderResources(30, 1, &lightsPerTile.srv); 
+		Render::CSSetShaderResources(31, 1, &lightsPerTile.srv); 
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
