@@ -71,41 +71,41 @@ StructuredBuffer<int> g_lightIDs : register(t31);
 
 cbuffer configBuffer : register(b1)
 {
-	ConfigParams configs;    
+	ConfigParams configs;     
 }; 
-  
-cbuffer lightsCount : register(b2)  
+   
+cbuffer lightsCount : register(b2)   
 { 
 	LightsCount g_lightCount; 
 };               
- 
+  
 // TEMP       
-//#define TEMP_FAST_COMPILE    
-
+#define TEMP_FAST_COMPILE     
+ 
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
 #include "../common/voxel_helpers.hlsl"
-
+ 
 cbuffer volumeBuffer0 : register(b3)
 { 
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
-};
-
+}; 
+ 
 cbuffer volumeBuffer1 : register(b4)
 { 
-	VolumeTraceData volumeTraceData;
+	VolumeTraceData volumeTraceData; 
 };
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {
-	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
+	const float2 coords = PixelCoordsFromThreadID(threadID.xy); 
 	[branch]
 	if(coords.x > 1.0f || coords.y > 1.0f)
-		return;
-	 
+		return; 
+	  
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
@@ -126,28 +126,28 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	ViewVector = ViewVector / linDepth;   
 	   
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);  
-	  
+	   
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);    
-	         
-	// DIRECT LIGHT               
+	           
+	// DIRECT LIGHT                 
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	          
-	// IBL  
-	float3 specularBrdf, diffuseBrdf;
+	             
+	// IBL     
+	float3 specularBrdf, diffuseBrdf; 
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
-	       
-	// VCTGI       
+	               
+	// VCTGI           
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	
 	indirectLight.diffuse = vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
 	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
 	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
-	
-	// SSR
+	     
+	// SSR 
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf * SO ) * SSR.a, 1 - SSR.a );
-	
-	// OUTPUT
+	   
+	// OUTPUT  
 	// temp, move somewhere
 	float scatteringBlendFactor = saturate(luminance(gbuffer.albedo) + float(materialParams.ior == 0.0));
 
@@ -160,4 +160,5 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba;
-}
+}      
+                               

@@ -71,7 +71,7 @@ cbuffer lightCountBuffer : register(b9)
 	uint _padding;
 };
 
-#define MAX_WAITING_CYCLES 10
+#define MAX_WAITING_CYCLES 20
 void InterlockedFloatAdd(uint3 coords, float value)
 {
 	uint comp;
@@ -90,10 +90,10 @@ void InterlockedFloatAdd(uint3 coords, float value)
 
 void WriteVoxel(float3 emittance, int3 coords, bool front, int planeId)
 {
-	coords.y += volumeData[0].volumeRes * 2 * planeId;
+	//coords.y += volumeData[0].volumeRes * 2 * planeId;
 	coords.xy += volumeData[currentLevel].levelOffset;
-	if(!front)
-		coords.y += volumeData[0].volumeRes;
+	//if(!front)
+	//	coords.y += volumeData[0].volumeRes;
 	
 	coords.x *= 4;
 
@@ -134,6 +134,7 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	// distant light
 	const float3 distLight = CalcutaleDistantProbVoxel(samplerBilinearWrap, envDistDiffuse, normal, diffuseBrdf);
 	indirectLight.rgb = indirectLight.a * distLight * skyFalloff + indirectLight.rgb;
+	indirectLight.rgb *= 0.0001;
 
 	// analytical lighting  
 	const float shadowBias = volumeData[currentLevel].voxelSize * 0.5;
@@ -171,18 +172,21 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 #define RCP3 1.0 / 3.0
 
 // geometry
-[instance(3)] 
+//[instance(3)] 
 //[maxvertexcount(18)]
 [maxvertexcount(3)]
-void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream, uint instanceId : SV_GSInstanceID )
+void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Voxel> outputStream/*, uint instanceId : SV_GSInstanceID*/ )
 {
 	PI_Mesh_Voxel output = (PI_Mesh_Voxel)0;
 
-	output.planeId = instanceId; 
+	//output.planeId = instanceId; 
 	//output.level = currentLevel;
 
 	const float3 trisRadiusVect = input[0].position.xyz - (input[0].position.xyz + input[1].position.xyz + input[2].position.xyz) * RCP3;
 	output.trisRadiusSq = min(length(trisRadiusVect) * volumeData[currentLevel].voxelSizeRcp, 1.0);
+
+	const float3 trisNormal = abs(cross(input[0].position.xyz - input[1].position.xyz, input[2].position.xyz - input[1].position.xyz));
+	output.planeId = trisNormal.x > trisNormal.y ? (trisNormal.x > trisNormal.z ? 0 : 2) : (trisNormal.y > trisNormal.z ? 1 : 2); 
 
 	[unroll]
 	for ( int i = 0; i < 3; i++ )
@@ -190,7 +194,7 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 		output.worldPosition = input[i].position.xyz;
 		output.voxelCoords.xyz = (output.worldPosition - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
 		output.voxelCoords.w = 1.0f;
-		output.position = mul(float4(output.worldPosition, 1.0f), volumeVP[currentLevel][instanceId]);
+		output.position = mul(float4(output.worldPosition, 1.0f), volumeVP[currentLevel][output.planeId]);
 		
 		output.tex = input[i].tex;
 		output.normal = input[i].normal; 
@@ -200,6 +204,7 @@ void VoxelizationGS( triangle GI_Mesh input[3], inout TriangleStream<PI_Mesh_Vox
 		outputStream.Append( output );
 	}
 	outputStream.RestartStrip(); 
+
 	/*
 	[loop]
 	for( int level = currentLevel - 1; level <= (int)volumeData[currentLevel].maxLevel; level++ )

@@ -142,7 +142,7 @@ void VoxelRenderer::calcVolumesConfigs()
 	volumesConfig.resize(levelsCount);
 
 	float fullXRes = (float)(volumeResolution * clipmapCount + volumeResolution / 2);
-	float fullYRes = (float)(volumeResolution * 6);
+	float fullYRes = (float)(volumeResolution/* * 6*/);
 	for(uint16_t i = 0; i < clipmapCount; i++)
 	{
 		volumesConfig[i].corner = Vector3::Zero;
@@ -225,7 +225,7 @@ bool VoxelRenderer::initVoxelBuffers()
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
 	volumeDesc.Width = volumeResolution * clipmapCount + volumeResolution / 2;	// x - level
-	volumeDesc.Height = volumeResolution * 6;					// y - face
+	volumeDesc.Height = volumeResolution;// * 6;					// y - face
 	volumeDesc.Depth = volumeResolution;
 	volumeDesc.MipLevels = 1;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -279,7 +279,7 @@ bool VoxelRenderer::initVoxelBuffers()
 
 	volumeDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	volumeDesc.Width = downsampleRes;
-	volumeDesc.Height = downsampleRes * 6;
+	volumeDesc.Height = downsampleRes;// * 6;
 	volumeDesc.Depth = downsampleRes;
 	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &voxelDownsampleTemp)) )
 		return false;

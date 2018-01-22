@@ -97,33 +97,18 @@ static const float diffuseConeWeightsCheap[4] =
 
 #define VOXEL_FACE_COUNT_RCP 1.0f / 6
 
+#define VOXEL_VIS_THRESH 0.95f
 float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 surfaceNormal, VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX], 
 					  VolumeTraceData volumeTraceData, Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
-	float faces[3];
-	faces[0] = (direction.x >= 0) ? 0 : 1;
-    faces[1] = (direction.y >= 0) ? 2 : 3;
-    faces[2] = (direction.z >= 0) ? 4 : 5;
-	faces[0] *= VOXEL_FACE_COUNT_RCP;
-	faces[1] *= VOXEL_FACE_COUNT_RCP;
-	faces[2] *= VOXEL_FACE_COUNT_RCP;
-
-	float dirWeight[3];
-	dirWeight[0] = direction.x * direction.x;
-	dirWeight[1] = direction.y * direction.y;
-	dirWeight[2] = direction.z * direction.z;
-
 	const float apertureDouble = 2.0f * aperture;
-
-	// TODO: ???
-	float3 coneStart = origin + surfaceNormal * volumeData[0].voxelSize;
 
 	uint startLevel;
 	//float startLevelFade = 1.0;
 	[unroll]
 	for(startLevel = 0; startLevel < volumeTraceData.clipmapCount; startLevel++)
 	{
-		float3 startCoords = (coneStart - volumeData[startLevel].cornerOffset) * volumeData[startLevel].worldSizeRcp;
+		float3 startCoords = (origin - volumeData[startLevel].cornerOffset) * volumeData[startLevel].worldSizeRcp;
 
 		float maxStartCoord = max(startCoords.x, max(startCoords.y, startCoords.z));
 		float minStartCoord = min(startCoords.x, min(startCoords.y, startCoords.z));
@@ -134,82 +119,89 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 			break;
 		}
 	}
-
 	if( startLevel == volumeTraceData.clipmapCount )
 		return 0;
+
+	// TODO: ???
+	float3 coneStart = origin + surfaceNormal * volumeData[startLevel].voxelSize;
 
 	float distance = volumeData[startLevel].voxelSize;
 	float4 coneColor = 0;
 		
 	int i = 0;
-	uint currentLevel = startLevel;
+	float currentLevel = (float)startLevel;
 	[loop]
-	while(coneColor.a < 1.0f && i <= VOXEL_CONE_TRACING_MAX_STEPS && currentLevel < volumeTraceData.levelsCount)
+	while(coneColor.a < VOXEL_VIS_THRESH && i <= VOXEL_CONE_TRACING_MAX_STEPS && uint(currentLevel) < volumeTraceData.levelsCount)
     {
+		i++;
+
         float3 currentConePos = coneStart + direction * distance;
 
+		/*
+		float3 sampleCoords = (currentConePos - volumeData[0].cornerOffset) * volumeData[0].worldSizeRcp;
+
+		sampleCoords.x *= volumeTraceData.xVolumeSizeRcp;
+		sampleCoords.xy += volumeData[0].levelOffsetTex;
+
+		float4 voxelSample = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, sampleCoords, 0));
+				
+		const float occluded = 1.0f - coneColor.a;
+		coneColor.rgb = lerp(coneColor.rgb, voxelSample.rgb, occluded);//occluded * voxelSample;
+        
+		coneColor.a += voxelSample.a * occluded;
+
+        distance += 0.2;
+		*/
+		
         float diameter = apertureDouble * distance;
         float level = log2(diameter * volumeData[0].voxelSizeRcp);
 		currentLevel = clamp(level, currentLevel, volumeTraceData.maxLevel);
 		
 		float levelUpDown[2];
-		levelUpDown[0] = ceil(currentLevel);
-		levelUpDown[1] = floor(currentLevel);
+		levelUpDown[0] = floor(currentLevel);
+		levelUpDown[1] = ceil(currentLevel);
 
-		uint iDownLevel = (uint)levelUpDown[1];
+		uint iDownLevel = (uint)levelUpDown[0];
 
 		float3 sampleCoords[2];
-        sampleCoords[1] = (currentConePos - volumeData[iDownLevel].cornerOffset) * volumeData[iDownLevel].worldSizeRcp;
+        sampleCoords[0] = (currentConePos - volumeData[iDownLevel].cornerOffset) * volumeData[iDownLevel].worldSizeRcp;
 
-		float maxCoord = max(sampleCoords[1].x, max(sampleCoords[1].y, sampleCoords[1].z));
-		float minCoord = min(sampleCoords[1].x, min(sampleCoords[1].y, sampleCoords[1].z));
+		float maxCoord = max(sampleCoords[0].x, max(sampleCoords[0].y, sampleCoords[0].z));
+		float minCoord = min(sampleCoords[0].x, min(sampleCoords[0].y, sampleCoords[0].z));
 		[branch]
 		if(maxCoord > 1.0f || minCoord < 0.0f)
 		{
-			currentLevel++;
+			currentLevel = floor(currentLevel) + 1.0;
 			continue;
 		}
 
-		uint iUpLevel = (uint)levelUpDown[0];
-		sampleCoords[0] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
+		uint iUpLevel = (uint)levelUpDown[1];
+		sampleCoords[1] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
 		
-		float levelLerp = saturate(level - levelUpDown[1]);
+		float levelLerp = saturate(currentLevel - levelUpDown[0]);
 		
 		float4 voxelSample[2];
 		[unroll]
 		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
 		{
 			float3 coordsLevel = sampleCoords[voxelLevel];
-			coordsLevel.xy *= float2(volumeTraceData.xVolumeSizeRcp, VOXEL_FACE_COUNT_RCP);
+			coordsLevel.x *= volumeTraceData.xVolumeSizeRcp;
 			coordsLevel.xy += volumeData[levelUpDown[voxelLevel]].levelOffsetTex;
 
-			voxelSample[voxelLevel] = 0;
-			[unroll]
-			for(int faceID = 0; faceID < 3; faceID++)
-			{
-				float3 coords = coordsLevel;
-				coords.y += faces[faceID];
-
-				float4 sample = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, coords, 0));
-								
-				voxelSample[voxelLevel].rgb += (sample.rgb * sample.a);// * dirWeight[faceID];
-				voxelSample[voxelLevel].a += sample.a;// * dirWeight[faceID];
-				//voxelSample[voxelLevel].a = max(voxelSample[voxelLevel].a, sample.a);
-			}
+			voxelSample[voxelLevel] = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, coordsLevel, 0));
 		}
 		
-		float4 finalColor = lerp(voxelSample[1], voxelSample[0], saturate(levelLerp));
-				
-		//const float currentWeight = (1.0f - coneColor.a) * finalColor.a;
-		coneColor.rgb += (1.0f - coneColor.a) * finalColor.rgb * emissiveFalloff;
-		coneColor.a += (1.0f - coneColor.a) * finalColor.a;
+		const float4 finalColor = lerp(voxelSample[0], voxelSample[1], levelLerp);
+		
+		const float occluded = 1.0f - coneColor.a;
+		coneColor.rgb += finalColor.rgb * occluded * finalColor.a;// * emissiveFalloff;
+		coneColor.a += finalColor.a * occluded;
         
         distance += diameter * VOXEL_CONE_TRACING_STEP;
-		i++;
     }
 	
-	coneColor.a = saturate(coneColor.a);
-
+	coneColor.a = saturate(coneColor.a / VOXEL_VIS_THRESH);
+	//coneColor.rgb = float(i) / 128.0;
 	return coneColor;
 }
 
@@ -237,7 +229,6 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	step = saturate(step);
 	
 	float3 samplePoint = origin + ray * RAY_TRACE_NEARCLIP;
-	float3 voxelSnap = 0;
 	float3 prevVoxel = 0;
 
 	ray *= RAY_TRACE_DISTANCE;
@@ -257,24 +248,16 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 			continue;
 		}
 		
-		voxelSnap = floor(inVolumePoint * volumeData[currentLevel].scaleHelper);
+		float3 voxelSnap = floor(inVolumePoint * volumeData[currentLevel].scaleHelper);
 
 		int4 voxelCoords = int4(voxelSnap, 0);
 		voxelCoords.xy += volumeData[currentLevel].levelOffset;
-		float anyValue = 0;
-		[unroll]
-		for(int j = 0; j < 6; j++)
-		{
-			anyValue += voxelEmittance.Load(voxelCoords).w;
-			voxelCoords.y += volumeData[0].volumeRes;
-		}
-		
 		voxelSnap *= volumeData[currentLevel].voxelSize;
 		voxelSnap += volumeData[currentLevel].cornerOffset;
 		prevVoxel = voxelSnap;
 
 		[branch]
-		if( anyValue > 0.0f )
+		if( voxelEmittance.Load(voxelCoords).w > 0.0f )
 			break;
 
 		voxelSnap += step * volumeData[currentLevel].voxelSize;
@@ -299,21 +282,8 @@ int4 GetVoxelOnRay(float3 origin, float3 ray, VolumeData volumeData[VCT_CLIPMAP_
 	float3 originInVoxel = origin - (prevVoxel + voxelExtend);
 	float2 voxelIntersections = RayBoxIntersect( originInVoxel, ray, -voxelExtend, voxelExtend );
 	collideWS = origin + ray * voxelIntersections.x;
-		
-	float3 entry = collideWS - prevVoxel;
-	entry.x = ray.x < 0 ? (volumeData[currentLevel].voxelSize - entry.x) : entry.x;
-	entry.y = ray.y < 0 ? (volumeData[currentLevel].voxelSize - entry.y) : entry.y;
-	entry.z = ray.z < 0 ? (volumeData[currentLevel].voxelSize - entry.z) : entry.z;
-	float minEntry = min(entry.x, min(entry.y, entry.z));
-	
-	uint faceID;
-	[branch]
-	if(minEntry == entry.x) faceID = ray.x < 0 ? 1 : 0;
-	else if(minEntry == entry.y) faceID = ray.y < 0 ? 3 : 2;
-	else faceID = ray.z < 0 ? 5 : 4;
 
 	prevVoxel = (prevVoxel - volumeData[currentLevel].cornerOffset) * volumeData[currentLevel].scaleHelper;
-	prevVoxel.y += volumeData[0].volumeRes * faceID;
 	prevVoxel.xy += volumeData[currentLevel].levelOffset;
 
 	return int4(prevVoxel, 0);	

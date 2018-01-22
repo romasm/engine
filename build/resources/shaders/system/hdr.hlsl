@@ -112,7 +112,7 @@ float4 Combine(Texture2D opaque, Texture2D transperency, float2 coord)
 	return color;
 }
 
-struct PO_LDR
+struct PO_LDR 
 {
     float4 srgb : SV_TARGET0;
 	float4 lin : SV_TARGET1;
@@ -233,7 +233,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 		float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
 		
 		if(voxelVis == 1)               
-		{      
+		{       
 			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
 				volumeTraceData, voxelCascade, voxelLightTex, 0.003);
 			tonemapped = lerp(0, light.rgb, light.a * VOXEL_ALPHA); 
