@@ -7,7 +7,6 @@
 #include "RenderState.h"
 #include "LightBuffers.h"
 #include "Compute.h"
-#include "VoxelRenderer.h"
 #include "ShadowsRenderer.h"
 #include "Entity.h"
 #include "MeshLoader.h"
@@ -221,7 +220,6 @@ namespace EngineCore
 		inline TubeCasterBuffer* GetPointCasterTubeDataPtr(size_t* size) 
 		{*size = casterPointTube_count; return casterPointTube_array;}
 		
-		VoxelRenderer* voxelRenderer;
 		ShadowsRenderer* shadowsRenderer;
 
 		ALIGNED_ALLOCATION

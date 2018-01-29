@@ -4,7 +4,6 @@
 #include "macros.h"
 #include "Render.h"
 #include "ScenePipeline.h"
-#include "VoxelRenderer.h"
 #include "Compute.h"
 #include "Log.h"
 

@@ -35,7 +35,6 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		casterPointSphere_array = nullptr;	
 		casterPointTube_array = nullptr;	
 		shadowsRenderer = nullptr;
-		voxelRenderer = nullptr;
 	}
 	else
 	{
@@ -55,7 +54,6 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		casterPointTube_array = new TubeCasterBuffer[CASTER_POINT_TUBE_FRAME_MAX];	
 
 		shadowsRenderer = new ShadowsRenderer(this);
-		voxelRenderer = new VoxelRenderer(this);
 	}
 	
 	ClearAll();
@@ -81,7 +79,6 @@ SceneRenderMgr::~SceneRenderMgr()
 	_DELETE_ARRAY(casterPointTube_array);
 		
 	_DELETE(shadowsRenderer);
-	_DELETE(voxelRenderer);
 }
 
 void SceneRenderMgr::cleanRenderArrayLights()
@@ -103,8 +100,6 @@ void SceneRenderMgr::cleanRenderArrayLights()
 	
 	if(shadowsRenderer)
 		shadowsRenderer->ClearPerFrame();
-	if(voxelRenderer)
-		voxelRenderer->ClearPerFrame();
 }
 
 bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
@@ -182,25 +177,12 @@ bool SceneRenderMgr::RegSpotCaster(Vector4& color, Vector4& nonAreaColor, float 
 	
 	ShadowMap& shm = shadowsRenderer->GetShadowAdress(id);
 
-	// to voxels
-	SpotVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
-	vData.DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
-	vData.Virtpos = vData.PosRange;
-	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
+	casterSpot_array[casterSpot_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterSpot_array[casterSpot_count].ColorConeX = Vector4(color.x, color.y, color.z, cone.x);
+	casterSpot_array[casterSpot_count].DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
+	casterSpot_array[casterSpot_count].ShadowmapAdress = Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
 		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
-	vData.matViewProj = vp;
-
-	voxelRenderer->RegisterSpotCaster(vData);
-
-	// to deffered
-	casterSpot_array[casterSpot_count].PosRange = vData.PosRange;
-	casterSpot_array[casterSpot_count].ColorConeX = Vector4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpot_array[casterSpot_count].DirConeY = vData.DirConeY;
-	casterSpot_array[casterSpot_count].ShadowmapAdress = vData.ShadowmapAdress;
-	casterSpot_array[casterSpot_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpot_array[casterSpot_count].ShadowmapParams = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	casterSpot_array[casterSpot_count].farNear = farNear;
 	casterSpot_array[casterSpot_count].matViewProj = vp;
 
@@ -233,27 +215,14 @@ bool SceneRenderMgr::RegSpotCasterDisk(Vector4& color, Vector4& nonAreaColor, fl
 	
 	ShadowMap& shm = shadowsRenderer->GetShadowAdress(id);
 	
-	// to voxels
-	SpotVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
-	vData.DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
-	vData.Virtpos = Vector4(virtpos.x, virtpos.y, virtpos.z, 0);
-	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
-		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
-	vData.matViewProj = vp;
-
-	voxelRenderer->RegisterSpotCaster(vData);
-
-	// to deffered
-	casterSpotDisk_array[casterSpotDisk_count].PosRange = vData.PosRange;
-	casterSpotDisk_array[casterSpotDisk_count].ColorConeX = Vector4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpotDisk_array[casterSpotDisk_count].DirConeY = vData.DirConeY;
+	casterSpotDisk_array[casterSpotDisk_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterSpotDisk_array[casterSpotDisk_count].ColorConeX = Vector4(color.x, color.y, color.z, cone.x);
+	casterSpotDisk_array[casterSpotDisk_count].DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
 	casterSpotDisk_array[casterSpotDisk_count].AreaInfoEmpty = Vector4(area.x, area.y, 0, 0);
-	casterSpotDisk_array[casterSpotDisk_count].VirtposEmpty = vData.Virtpos;
-	casterSpotDisk_array[casterSpotDisk_count].ShadowmapAdress = vData.ShadowmapAdress;
-	casterSpotDisk_array[casterSpotDisk_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotDisk_array[casterSpotDisk_count].VirtposEmpty = Vector4(virtpos.x, virtpos.y, virtpos.z, 0);
+	casterSpotDisk_array[casterSpotDisk_count].ShadowmapAdress = Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
+		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
+	casterSpotDisk_array[casterSpotDisk_count].ShadowmapParams = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	casterSpotDisk_array[casterSpotDisk_count].farNear = farNear;
 	casterSpotDisk_array[casterSpotDisk_count].matViewProj = vp;
 	
@@ -287,28 +256,15 @@ bool SceneRenderMgr::RegSpotCasterRect(Vector4& color, Vector4& nonAreaColor, fl
 	
 	ShadowMap& shm = shadowsRenderer->GetShadowAdress(id);
 	
-	// to voxels
-	SpotVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorConeX = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, cone.x);
-	vData.DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
-	vData.Virtpos = Vector4(virtpos.x, virtpos.y, virtpos.z, 0);
-	vData.ShadowmapAdress =  Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
-		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
-	vData.ShadowmapHPixProjNearclip = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
-	vData.matViewProj = vp;
-	
-	voxelRenderer->RegisterSpotCaster(vData);
-
-	// to deffered
-	casterSpotRect_array[casterSpotRect_count].PosRange = vData.PosRange;
-	casterSpotRect_array[casterSpotRect_count].ColorConeX = Vector4(color.x, color.y, color.z, vData.ColorConeX.w);
-	casterSpotRect_array[casterSpotRect_count].DirConeY = vData.DirConeY;
+	casterSpotRect_array[casterSpotRect_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterSpotRect_array[casterSpotRect_count].ColorConeX = Vector4(color.x, color.y, color.z, cone.x);
+	casterSpotRect_array[casterSpotRect_count].DirConeY = Vector4(dir.x, dir.y, dir.z, cone.y);
 	casterSpotRect_array[casterSpotRect_count].DirUpAreaX = Vector4(up.x, up.y, up.z, area.x);
 	casterSpotRect_array[casterSpotRect_count].DirSideAreaY = Vector4(side.x, side.y, side.z, area.y);
 	casterSpotRect_array[casterSpotRect_count].VirtposAreaZ = Vector4(virtpos.x, virtpos.y, virtpos.z, area.z);
-	casterSpotRect_array[casterSpotRect_count].ShadowmapAdress = vData.ShadowmapAdress;
-	casterSpotRect_array[casterSpotRect_count].ShadowmapParams = vData.ShadowmapHPixProjNearclip;
+	casterSpotRect_array[casterSpotRect_count].ShadowmapAdress = Vector4(shm.x * SHADOWS_BUF_RES_RCP, shm.y * SHADOWS_BUF_RES_RCP, 
+		shm.res * SHADOWS_BUF_RES_RCP, (float)shm.dsv);
+	casterSpotRect_array[casterSpotRect_count].ShadowmapParams = Vector4(PIXEL_HALF / shm.res, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]), farNear.x, 0);
 	casterSpotRect_array[casterSpotRect_count].farNear = farNear;
 	casterSpotRect_array[casterSpotRect_count].matViewProj = vp;
 
@@ -340,43 +296,25 @@ bool SceneRenderMgr::RegPointCaster(Vector4& color, Vector4& nonAreaColor, float
 	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 
-	// to voxels
-	PointVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
-	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterPoint_array[casterPoint_count].ColorShParams = Vector4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
+	casterPoint_array[casterPoint_count].ShadowmapParams0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
+	casterPoint_array[casterPoint_count].ShadowmapParams1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
+	casterPoint_array[casterPoint_count].ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
 		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
-	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
 		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
-	vData.ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
 		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
-	vData.ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
 		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
-	vData.ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
 		shm[4].res * SHADOWS_BUF_RES_RCP, (float)shm[4].dsv);
-	vData.ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
+	casterPoint_array[casterPoint_count].ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
 		shm[5].res * SHADOWS_BUF_RES_RCP, (float)shm[5].dsv);
-	vData.ShadowmapHPix0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
-	vData.ShadowmapHPix1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
-	vData.matProj = proj;
-	vData.matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
-
-	voxelRenderer->RegisterPointCaster(vData);
-
-	// to deffered
-	casterPoint_array[casterPoint_count].PosRange = vData.PosRange;
-	casterPoint_array[casterPoint_count].ColorShParams = Vector4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
-	casterPoint_array[casterPoint_count].ShadowmapParams0 = vData.ShadowmapHPix0;
-	casterPoint_array[casterPoint_count].ShadowmapParams1 = vData.ShadowmapHPix1;
-	casterPoint_array[casterPoint_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
-	casterPoint_array[casterPoint_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
-	casterPoint_array[casterPoint_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
-	casterPoint_array[casterPoint_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
-	casterPoint_array[casterPoint_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
-	casterPoint_array[casterPoint_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
 	casterPoint_array[casterPoint_count].farNear = farNear;
-	casterPoint_array[casterPoint_count].matProj = vData.matProj;
-	casterPoint_array[casterPoint_count].matView = vData.matView;
+	casterPoint_array[casterPoint_count].matProj = proj;
+	casterPoint_array[casterPoint_count].matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
 	
 	casterPoint_count++;
 
@@ -407,44 +345,26 @@ bool SceneRenderMgr::RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor,
 	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 	
-	// to voxels
-	PointVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
-	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
-		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
-	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
-		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
-	vData.ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
-		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
-	vData.ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
-		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
-	vData.ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
-		shm[4].res * SHADOWS_BUF_RES_RCP, (float)shm[4].dsv);
-	vData.ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
-		shm[5].res * SHADOWS_BUF_RES_RCP, (float)shm[5].dsv);
-	vData.ShadowmapHPix0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
-	vData.ShadowmapHPix1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
-	vData.matProj = proj;
-	vData.matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
-
-	voxelRenderer->RegisterPointCaster(vData);
-
-	// to deffered
-	casterPointSphere_array[casterPointSphere_count].PosRange = vData.PosRange;
-	casterPointSphere_array[casterPointSphere_count].ColorShParams = Vector4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
+	casterPointSphere_array[casterPointSphere_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterPointSphere_array[casterPointSphere_count].ColorShParams = Vector4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	casterPointSphere_array[casterPointSphere_count].AreaInfo = Vector4(area.x, area.x * area.x, 0, 0);
-	casterPointSphere_array[casterPointSphere_count].ShadowmapParams0 = vData.ShadowmapHPix0;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapParams1 = vData.ShadowmapHPix1;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
-	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointSphere_array[casterPointSphere_count].ShadowmapParams0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapParams1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
+		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
+		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
+		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
+		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
+		shm[4].res * SHADOWS_BUF_RES_RCP, (float)shm[4].dsv);
+	casterPointSphere_array[casterPointSphere_count].ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
+		shm[5].res * SHADOWS_BUF_RES_RCP, (float)shm[5].dsv);
 	casterPointSphere_array[casterPointSphere_count].farNear = farNear;
-	casterPointSphere_array[casterPointSphere_count].matProj = vData.matProj;
-	casterPointSphere_array[casterPointSphere_count].matView = vData.matView;
+	casterPointSphere_array[casterPointSphere_count].matProj = proj;
+	casterPointSphere_array[casterPointSphere_count].matView = XMMatrixSet(1.0f,0,0,-pos.x, 0,1.0f,0,-pos.y, 0,0,1.0f,-pos.z, 0,0,0,1.0f);
 	
 	casterPointSphere_count++;
 
@@ -476,45 +396,27 @@ bool SceneRenderMgr::RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, f
 	for(uint32_t i=0; i<5; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 	
-	// to voxels
-	PointVoxelBuffer vData;
-	vData.PosRange = Vector4(pos.x, pos.y, pos.z, range);
-	vData.ColorShadowmapProj = Vector4(nonAreaColor.x, nonAreaColor.y, nonAreaColor.z, max<float>(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
-	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
-		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
-	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
-		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
-	vData.ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
-		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
-	vData.ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
-		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
-	vData.ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
-		shm[4].res * SHADOWS_BUF_RES_RCP, (float)shm[4].dsv);
-	vData.ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
-		shm[5].res * SHADOWS_BUF_RES_RCP, (float)shm[5].dsv);
-	vData.ShadowmapHPix0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
-	vData.ShadowmapHPix1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
-	vData.matProj = proj;
-	vData.matView = view;
-
-	voxelRenderer->RegisterPointCaster(vData);
-
-	// to deffered
-	casterPointTube_array[casterPointTube_count].PosRange = vData.PosRange;
-	casterPointTube_array[casterPointTube_count].ColorShParams = Vector4(color.x, color.y, color.z, vData.ColorShadowmapProj.w);
+	casterPointTube_array[casterPointTube_count].PosRange = Vector4(pos.x, pos.y, pos.z, range);
+	casterPointTube_array[casterPointTube_count].ColorShParams = Vector4(color.x, color.y, color.z, max(proj.r[0].m128_f32[0], proj.r[1].m128_f32[1]));
 	casterPointTube_array[casterPointTube_count].AreaInfo = Vector4(area.x, area.y, area.z, area.y * area.y);
 	casterPointTube_array[casterPointTube_count].DirAreaA = Vector4(dir.x, dir.y, dir.z, area.y + 2 * area.x);
-	casterPointTube_array[casterPointTube_count].ShadowmapParams0 = vData.ShadowmapHPix0;
-	casterPointTube_array[casterPointTube_count].ShadowmapParams1 = vData.ShadowmapHPix1;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress4 = vData.ShadowmapAdress4;
-	casterPointTube_array[casterPointTube_count].ShadowmapAdress5 = vData.ShadowmapAdress5;
+	casterPointTube_array[casterPointTube_count].ShadowmapParams0 = Vector4( PIXEL_HALF / shm[0].res, PIXEL_HALF / shm[1].res, PIXEL_HALF / shm[2].res, PIXEL_HALF / shm[3].res);
+	casterPointTube_array[casterPointTube_count].ShadowmapParams1 = Vector4( PIXEL_HALF / shm[4].res, PIXEL_HALF / shm[5].res, 0, 0);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
+		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
+		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
+		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
+		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress4 = Vector4(shm[4].x * SHADOWS_BUF_RES_RCP, shm[4].y * SHADOWS_BUF_RES_RCP, 
+		shm[4].res * SHADOWS_BUF_RES_RCP, (float)shm[4].dsv);
+	casterPointTube_array[casterPointTube_count].ShadowmapAdress5 = Vector4(shm[5].x * SHADOWS_BUF_RES_RCP, shm[5].y * SHADOWS_BUF_RES_RCP, 
+		shm[5].res * SHADOWS_BUF_RES_RCP, (float)shm[5].dsv);
 	casterPointTube_array[casterPointTube_count].farNear = farNear;
-	casterPointTube_array[casterPointTube_count].matProj = vData.matProj;
-	casterPointTube_array[casterPointTube_count].matView = vData.matView;
+	casterPointTube_array[casterPointTube_count].matProj = proj;
+	casterPointTube_array[casterPointTube_count].matView = view;
 	
 	casterPointTube_count++;
 
@@ -531,46 +433,26 @@ bool SceneRenderMgr::RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XM
 	for(uint8_t i=0; i<LIGHT_DIR_NUM_CASCADES-1; i++)
 		shm[i+1] = shadowsRenderer->GetShadowAdressNext(shm[i]);
 
-	// to voxel
-	DirVoxelBuffer vData;
-	vData.Color = Vector4(color.x, color.y, color.z, area.x);
-	vData.Dir = Vector4(dir.x, dir.y, dir.z, area.y);
-	vData.PosHPix0 = Vector4(pos[0].x, pos[0].y, pos[0].z, PIXEL_HALF / shm[0].res);
-	vData.PosHPix1 = Vector4(pos[1].x, pos[1].y, pos[1].z, PIXEL_HALF / shm[1].res);
-	vData.PosHPix2 = Vector4(pos[2].x, pos[2].y, pos[2].z, PIXEL_HALF / shm[2].res);
-	vData.PosHPix3 = Vector4(pos[3].x, pos[3].y, pos[3].z, PIXEL_HALF / shm[3].res);
-	vData.ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
-		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
-	vData.ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
-		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
-	vData.ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
-		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
-	vData.ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
-		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
-	vData.ViewProj0 = view_proj[0];
-	vData.ViewProj1 = view_proj[1];
-	vData.ViewProj2 = view_proj[2];
-	vData.ViewProj3 = view_proj[3];
-
-	voxelRenderer->RegisterDirCaster(vData);
-
-	// to deffered
-	lightDir_array[lightDir_count].ColorAreaX = vData.Color;
-	lightDir_array[lightDir_count].DirAreaY = vData.Dir;
+	lightDir_array[lightDir_count].ColorAreaX = Vector4(color.x, color.y, color.z, area.x);
+	lightDir_array[lightDir_count].DirAreaY = Vector4(dir.x, dir.y, dir.z, area.y);
 
 	// locked for 4 cascades
-	lightDir_array[lightDir_count].Pos0 = vData.PosHPix0;
-	lightDir_array[lightDir_count].Pos1 = vData.PosHPix1;
-	lightDir_array[lightDir_count].Pos2 = vData.PosHPix2;
-	lightDir_array[lightDir_count].Pos3 = vData.PosHPix3;
+	lightDir_array[lightDir_count].Pos0 = Vector4(pos[0].x, pos[0].y, pos[0].z, PIXEL_HALF / shm[0].res);
+	lightDir_array[lightDir_count].Pos1 = Vector4(pos[1].x, pos[1].y, pos[1].z, PIXEL_HALF / shm[1].res);
+	lightDir_array[lightDir_count].Pos2 = Vector4(pos[2].x, pos[2].y, pos[2].z, PIXEL_HALF / shm[2].res);
+	lightDir_array[lightDir_count].Pos3 = Vector4(pos[3].x, pos[3].y, pos[3].z, PIXEL_HALF / shm[3].res);
 	lightDir_array[lightDir_count].matViewProj0 = view_proj[0];
 	lightDir_array[lightDir_count].matViewProj1 = view_proj[1];
 	lightDir_array[lightDir_count].matViewProj2 = view_proj[2];
 	lightDir_array[lightDir_count].matViewProj3 = view_proj[3];
-	lightDir_array[lightDir_count].ShadowmapAdress0 = vData.ShadowmapAdress0;
-	lightDir_array[lightDir_count].ShadowmapAdress1 = vData.ShadowmapAdress1;
-	lightDir_array[lightDir_count].ShadowmapAdress2 = vData.ShadowmapAdress2;
-	lightDir_array[lightDir_count].ShadowmapAdress3 = vData.ShadowmapAdress3;
+	lightDir_array[lightDir_count].ShadowmapAdress0 = Vector4(shm[0].x * SHADOWS_BUF_RES_RCP, shm[0].y * SHADOWS_BUF_RES_RCP, 
+		shm[0].res * SHADOWS_BUF_RES_RCP, (float)shm[0].dsv);
+	lightDir_array[lightDir_count].ShadowmapAdress1 = Vector4(shm[1].x * SHADOWS_BUF_RES_RCP, shm[1].y * SHADOWS_BUF_RES_RCP, 
+		shm[1].res * SHADOWS_BUF_RES_RCP, (float)shm[1].dsv);
+	lightDir_array[lightDir_count].ShadowmapAdress2 = Vector4(shm[2].x * SHADOWS_BUF_RES_RCP, shm[2].y * SHADOWS_BUF_RES_RCP, 
+		shm[2].res * SHADOWS_BUF_RES_RCP, (float)shm[2].dsv);
+	lightDir_array[lightDir_count].ShadowmapAdress3 = Vector4(shm[3].x * SHADOWS_BUF_RES_RCP, shm[3].y * SHADOWS_BUF_RES_RCP, 
+		shm[3].res * SHADOWS_BUF_RES_RCP, (float)shm[3].dsv);
 
 	lightDir_count++;
 

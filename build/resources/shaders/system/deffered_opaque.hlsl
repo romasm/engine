@@ -13,7 +13,7 @@ SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s3);
-SamplerState samplerBilinearVolumeClamp : register(s4);
+//SamplerState samplerBilinearVolumeClamp : register(s4);
 
 // GBUFFER 
 #define GBUFFER_READ
@@ -46,28 +46,25 @@ TextureCube g_envprobsDistBlurred : register(t14);
 
 Texture2DArray <float> shadows: register(t15); 
 
-Texture3D <float4> volumeLight : register(t16); 
-Texture3D <float4> volumeEmittance : register(t17); 
-   
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t18); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t19); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t20); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t16); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t17); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t18); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t21); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t22); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t23); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t19); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t20); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t21); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t24); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t25); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t26); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t22); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t23); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t24); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t27); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t28); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t29); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t25); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t26); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t27); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t30);     
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t28);     
 
-StructuredBuffer<int> g_lightIDs : register(t31); 
+StructuredBuffer<int> g_lightIDs : register(t29); 
 
 cbuffer configBuffer : register(b1)
 {
@@ -80,23 +77,12 @@ cbuffer lightsCount : register(b2)
 };               
   
 // TEMP       
-#define TEMP_FAST_COMPILE     
+//#define TEMP_FAST_COMPILE     
  
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
-#include "../common/voxel_helpers.hlsl"
- 
-cbuffer volumeBuffer0 : register(b3)
-{ 
-	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
-}; 
- 
-cbuffer volumeBuffer1 : register(b4)
-{ 
-	VolumeTraceData volumeTraceData; 
-};
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
@@ -136,14 +122,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float3 specularBrdf, diffuseBrdf; 
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
-	               
-	// VCTGI            
-	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	
-	indirectLight.diffuse = vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
-	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
-	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
-	     
 	// SSR 
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf * SO ) * SSR.a, 1 - SSR.a );
 	   

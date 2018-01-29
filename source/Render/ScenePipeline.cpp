@@ -512,12 +512,6 @@ bool ScenePipeline::InitRts()
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
 
-	if(!isLightweight)
-	{ 
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 14);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
-	}
-
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_strength), 1);
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_angle), 2);
@@ -699,21 +693,6 @@ void ScenePipeline::UIOverlayStage()
 
 void ScenePipeline::OpaqueForwardStage()
 {
-	if(!isLightweight)
-	{
-		PERF_CPU_BEGIN(_VOXELIZATION);
-		PERF_GPU_TIMESTAMP(_VOXELIZATION);
-
-		render_mgr->voxelRenderer->VoxelizeScene();
-		PERF_CPU_END(_VOXELIZATION);
-	
-		PERF_CPU_BEGIN(_VOXELLIGHT);
-		PERF_GPU_TIMESTAMP(_VOXELLIGHT);
-
-		render_mgr->voxelRenderer->ProcessEmittance();
-		PERF_CPU_END(_VOXELLIGHT);
-	}
-
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
 	rt_OpaqueForward->ClearRenderTargets();
@@ -746,28 +725,20 @@ void ScenePipeline::TransparentForwardStage()
 	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 8;
+	const uint32_t srvs_size = 6;
 	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[1] = nullptr;
 	srvs[2] = nullptr;
-	srvs[3] = nullptr;
-	srvs[4] = nullptr;
-	srvs[5] = rt_OpaqueFinal->GetShaderResourceView(0);
-	srvs[6] = transparencyDepthSRV;
-	srvs[7] = rt_TransparentPrepass->GetShaderResourceView(0);
+	srvs[3] = rt_OpaqueFinal->GetShaderResourceView(0);
+	srvs[4] = transparencyDepthSRV;
+	srvs[5] = rt_TransparentPrepass->GetShaderResourceView(0);
 				
 	auto& distProb = render_mgr->GetDistEnvProb();
 	if(distProb.mipsCount != 0)
 	{
 		srvs[1] = distProb.specCube;
 		srvs[2] = distProb.diffCube;
-	}
-
-	if(!isLightweight)
-	{
-		srvs[3] = render_mgr->shadowsRenderer->GetShadowBuffer();
-		srvs[4] = render_mgr->voxelRenderer->GetVoxelLightSRV();
 	}
 		
 	Render::PSSetShaderResources(0, srvs_size, srvs);
@@ -780,14 +751,7 @@ void ScenePipeline::TransparentForwardStage()
 	if(!isLightweight)
 	{
 		Render::PSSetShaderResources(srvs_size + 13, 1, &lightsPerTile.srv); 
-
-		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount); 
-
-		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-		Render::PSSetConstantBuffers(5, 1, &volumeBuffer); 
-
-		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
-		Render::PSSetConstantBuffers(6, 1, &volumeBuffer); 
+		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount);
 	}
 
 	render_mgr->DrawTransparent(this);
@@ -1026,16 +990,11 @@ void ScenePipeline::OpaqueDefferedStage()
 	if(!isLightweight)
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		auto volumeLight = render_mgr->voxelRenderer->GetVoxelLightSRV();
-		auto volumeEmittance = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
-
 		Render::CSSetShaderResources(15, 1, &shadowBuffer);
-		Render::CSSetShaderResources(16, 1, &volumeLight);
-		Render::CSSetShaderResources(17, 1, &volumeEmittance);
 
-		LoadLights(18, true);
+		LoadLights(16, true);
 
-		Render::CSSetShaderResources(31, 1, &lightsPerTile.srv); 
+		Render::CSSetShaderResources(29, 1, &lightsPerTile.srv); 
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
@@ -1044,12 +1003,6 @@ void ScenePipeline::OpaqueDefferedStage()
 	if(!isLightweight)
 	{
 		Render::CSSetConstantBuffers(2, 1, &lightsPerTileCount); 
-
-		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-		Render::CSSetConstantBuffers(3, 1, &volumeBuffer); 
-
-		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
-		Render::CSSetConstantBuffers(4, 1, &volumeBuffer); 
 	}
 		
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
@@ -1118,19 +1071,7 @@ void ScenePipeline::HDRtoLDRStage()
 	r_target[0] = rt_FinalLDR->GetRenderTargetView(0);
 	r_target[1] = rt_Antialiased->GetRenderTargetView(0);
 	Render::OMSetRenderTargets(2, r_target, nullptr);
-
-	if(!isLightweight)
-	{
-		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-		Render::PSSetConstantBuffers(2, 1, &volumeBuffer); 
-
-		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
-		Render::PSSetConstantBuffers(3, 1, &volumeBuffer); 
-
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 14);
-		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 15);
-	}
-
+	
 	sp_HDRtoLDR->Draw();
 
 	PERF_GPU_TIMESTAMP(_AA);
