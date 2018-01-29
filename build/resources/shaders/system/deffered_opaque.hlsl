@@ -137,7 +137,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
 	               
-	// VCTGI           
+	// VCTGI            
 	LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
 	
 	indirectLight.diffuse = vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
@@ -160,5 +160,5 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba;
-}      
-                               
+}                    
+                                                               

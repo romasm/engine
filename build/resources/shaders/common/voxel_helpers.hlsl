@@ -156,7 +156,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
         float diameter = apertureDouble * distance;
         float level = log2(diameter * volumeData[0].voxelSizeRcp);
 		currentLevel = clamp(level, currentLevel, volumeTraceData.maxLevel);
-		
+		 
 		float levelUpDown[2];
 		levelUpDown[0] = floor(currentLevel);
 		levelUpDown[1] = ceil(currentLevel);
@@ -171,15 +171,15 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		[branch]
 		if(maxCoord > 1.0f || minCoord < 0.0f)
 		{
-			currentLevel = floor(currentLevel) + 1.0;
+			currentLevel = levelUpDown[0] + 1.0;
 			continue;
 		}
 
 		uint iUpLevel = (uint)levelUpDown[1];
 		sampleCoords[1] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
 		
-		float levelLerp = saturate(currentLevel - levelUpDown[0]);
-		
+		float levelLerp = 0.0;//frac(currentLevel);
+				
 		float4 voxelSample[2];
 		[unroll]
 		for(int voxelLevel = 0; voxelLevel < 2; voxelLevel++)
@@ -201,7 +201,6 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
     }
 	
 	coneColor.a = saturate(coneColor.a / VOXEL_VIS_THRESH);
-	//coneColor.rgb = float(i) / 128.0;
 	return coneColor;
 }
 
