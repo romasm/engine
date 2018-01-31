@@ -44,14 +44,13 @@ void EnvProbSystem::RegToScene()
 		}
 
 		// Locals disable for now 
-		/*
 		EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
 		
 		auto bits = earlyVisComponent->inFrust;	
 		if(bits == 0)
 			continue;
 
-		TransformComponent* transfComponent = transformSys->GetComponent(i.get_entity());
+		auto& worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
 
 		if(i.dirty)
 		{
@@ -59,7 +58,7 @@ void EnvProbSystem::RegToScene()
 			{
 			case EP_PARALLAX_BOX:
 				{
-					i.invTransform = XMMatrixInverse(nullptr, XMMatrixTranspose(transfComponent->worldMatrix));
+					i.invTransform = XMMatrixInverse(nullptr, XMMatrixTranspose(worldMatrix));
 					XMVECTOR extv = XMLoadFloat3(&earlyVisComponent->worldBox.Extents);
 					i.distance = XMVectorGetX(XMVector3Length(extv));
 				}
@@ -69,16 +68,16 @@ void EnvProbSystem::RegToScene()
 				break;
 			}
 
-			XMVECTOR cubePivot = XMVector3TransformCoord(XMVectorSet(0,0,0,1), transfComponent->worldMatrix);
+			XMVECTOR cubePivot = XMVector3TransformCoord(XMVectorSet(0,0,0,1), worldMatrix);
 			XMStoreFloat3(&i.pos, cubePivot);
 		}
 
-		for(auto& f: *frustums)
+		for(auto f: *frustums)
 		{
-			if(f.rendermgr->IsShadow())
+			if(f->rendermgr->IsShadow())
 				continue;
 
-			if((bits & f.bit) == f.bit)
+			if((bits & f->bit) == f->bit)
 			{
 				EnvProbBuffer data;
 				data.Pos = i.pos;
@@ -95,12 +94,12 @@ void EnvProbSystem::RegToScene()
 					data.InvTransform = i.invTransform;
 				}
 
-				((SceneRenderMgr*)f.rendermgr)->RegEnvProb(i.specCube, data);
+				((SceneRenderMgr*)f->rendermgr)->RegEnvProb(i.specCube, data);
 
-				bits &= ~f.bit;
+				bits &= ~f->bit;
 				if(bits == 0) break;
 			}
-		}*/
+		}
 	}
 }
 
@@ -136,6 +135,25 @@ bool EnvProbSystem::SetDirty(Entity e)
 	GET_COMPONENT(false)
 	comp.dirty = true;
 	return true;
+}
+
+void EnvProbSystem::UpdateEnvProps(Entity e)
+{
+	GET_COMPONENT(void())
+
+		/*
+	switch (comp.type)
+	{
+	case EP_PARALLAX_SPHERE:
+	case EP_PARALLAX_NONE:
+		earlyVisibilitySys->SetType(e, BT_SPHERE);
+		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1));
+		break;
+	case EP_PARALLAX_BOX:
+		earlyVisibilitySys->SetType(e, BT_BOX);
+		earlyVisibilitySys->SetBBox(e, BoundingBox(Vector3(0,0,0), Vector3(1,1,1)));
+		break;
+	}*/
 }
 
 bool EnvProbSystem::Bake(Entity e)

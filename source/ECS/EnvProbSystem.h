@@ -13,6 +13,7 @@
 #define ENVPROBS_DIFF_MAT PATH_SHADERS "offline/envmap_diffgen"
 
 #define ENVPROBS_DIST_RES 512
+#define ENVPROBS_RES 256
 #define ENVPROBS_DIFFUSE_DIV 8
 
 #define ENVPROBS_SPEC_MIN 2
@@ -79,37 +80,28 @@ namespace EngineCore
 			}
 		}
 		
-		void AddComponent(Entity e, EnvProbComponent D)
+		void AddComponent(Entity e, bool distant)
 		{
-			D.parent = e;
-			D.dirty = true;
-			
-			if(D.is_distant)
-			{
-				D.far_clip = 1000000.0f;
-				D.near_clip = 1000.0f;
-				D.offset = Vector3(0,0,0);
-				D.resolution = ENVPROBS_DIST_RES;
-			}
+			EnvProbComponent* comp = components.add(e.index());
+			comp->parent = e;
+			comp->dirty = true;
+			comp->is_distant = distant;
+			comp->far_clip = 100000.0f;
+			comp->near_clip = 1.0f;
+			comp->offset = Vector3(0,0,0);
+			comp->resolution = distant ? ENVPROBS_DIST_RES : ENVPROBS_RES;
+			comp->type = EP_PARALLAX_NONE;
+			comp->diffCube = TexMgr::nullres;
+			comp->specCube = TexMgr::nullres;
+			comp->eptex_name = "";
+			comp->distance = 10.0f;
+			comp->fade = 0.1f;
+			comp->mips_count = 1;
 
-			components.add(e.index(), D);
-			auto& comp = components.getDataById(e.index());
-			LoadCubemap(&comp);
-
-			// move to UpdateEnvProps(Entity e);
-			if(comp.is_distant)
-				return;
-			switch (comp.type)
+			if(!distant)
 			{
-			case EP_PARALLAX_SPHERE:
-			case EP_PARALLAX_NONE:
-				earlyVisibilitySys->SetType(comp.get_entity(), BT_SPHERE);
-				earlyVisibilitySys->SetBSphere(comp.get_entity(), BoundingSphere(Vector3(0,0,0), 1));
-				break;
-			case EP_PARALLAX_BOX:
-				earlyVisibilitySys->SetType(comp.get_entity(), BT_BOX);
-				earlyVisibilitySys->SetBBox(comp.get_entity(), BoundingBox(Vector3(0,0,0), Vector3(1,1,1)));
-				break;
+				earlyVisibilitySys->SetType(e, BT_SPHERE);
+				earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1));
 			}
 		}
 		bool HasComponent(Entity e) const {return components.has(e.index());}
@@ -140,16 +132,17 @@ namespace EngineCore
 
 		void LoadCubemap(EnvProbComponent* comp);
 
-		// TODO: props setting
-		//void UpdateEnvProps(Entity e);
+		void UpdateEnvProps(Entity e);
 
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<EnvProbSystem>("EnvProbSystem")
-					//.addFunction("AddComponent", &EnvProbSystem::AddComponent)
+					.addFunction("AddComponent", &EnvProbSystem::AddComponent)
 					.addFunction("DeleteComponent", &EnvProbSystem::DeleteComponent)
 					.addFunction("HasComponent", &EnvProbSystem::HasComponent)
+
+					.addFunction("Bake", &EnvProbSystem::Bake)
 				.endClass();
 		}
 
