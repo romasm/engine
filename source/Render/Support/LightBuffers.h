@@ -271,4 +271,15 @@ namespace EngineCore
 		XMMATRIX matViewProj2;
 		XMMATRIX matViewProj3;
 	};
+
+	// env probes
+	
+	struct EnvProbBuffer
+	{
+		Vector4 PositionDistance;
+		Vector4 OffsetFade;
+		Vector4 MipsTypeAdress;
+		Vector4 BBox;
+		XMMATRIX BBoxInvTransform;
+	};
 }

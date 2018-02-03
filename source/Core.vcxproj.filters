@@ -294,6 +294,9 @@
     <ClInclude Include="Managers\FunctionCodeMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="Render\EnvProbMgr.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -474,6 +477,9 @@
     </ClCompile>
     <ClCompile Include="ECS\CollisionSystem.cpp">
       <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\EnvProbMgr.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

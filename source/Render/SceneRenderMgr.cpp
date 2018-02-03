@@ -2,6 +2,7 @@
 #include "RenderMgrs.h"
 #include "ScenePipeline.h"
 #include "CameraSystem.h"
+#include "ECS\EnvProbSystem.h"
 #include "Utils\Profiler.h"
 
 using namespace EngineCore;
@@ -457,6 +458,12 @@ bool SceneRenderMgr::RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XM
 	lightDir_count++;
 
 	return true;
+}
+
+bool SceneRenderMgr::RegEnvProb(uint32_t probId, int32_t resolution, bool isHQ, const Vector3& pos, uint32_t mips, float distance, float fade, 
+				EnvParallaxType type, const Vector3& offset, const Vector3& BBox, const XMMATRIX& invTransform, uint32_t priority)
+{
+
 }
 
 void SceneRenderMgr::UpdateCamera(CameraComponent* cam)

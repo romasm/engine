@@ -5,22 +5,21 @@
 #include "TransformSystem.h"
 #include "EarlyVisibilitySystem.h"
 #include "RenderMgrs.h"
+#include "Util.h"
 
-#define ENVPROBS_INIT_COUNT 1 // only dist?
+#define ENVPROBS_INIT_COUNT 128
 
 #define ENVPROBS_MAT PATH_SHADERS "offline/envmap_render"
 #define ENVPROBS_MIPS_MAT PATH_SHADERS "offline/envmap_mipgen"
-#define ENVPROBS_DIFF_MAT PATH_SHADERS "offline/envmap_diffgen"
-
-#define ENVPROBS_DIST_RES 512
-#define ENVPROBS_RES 256
-#define ENVPROBS_DIFFUSE_DIV 8
 
 #define ENVPROBS_SPEC_MIN 2
 #define ENVPROBS_SPEC_MIPS_OFFSET 0
+#define ENVPROBS_RES 128
 
-#define ENVPROBS_POSTFIX_S "_s" EXT_TEXTURE
-#define ENVPROBS_POSTFIX_D "_d" EXT_TEXTURE
+#define ENVPROBS_SUBFOLDER "/probes/"
+#define ENVPROBS_NAME_LENGTH 10
+
+#define ENVPROBS_PRIORITY_ALWAYS 0
 
 #define TEX_HAMMERSLEY PATH_SYS_TEXTURES "hammersley" EXT_TEXTURE
 
@@ -33,6 +32,17 @@ namespace EngineCore
 		EP_PARALLAX_NONE = 2
 	};
 
+	enum EnvProbPriority
+	{
+		EP_PRIORITY_ALWAYS = 0,
+		EP_PRIORITY_1 = 1,
+		EP_PRIORITY_2 = 2,
+		EP_PRIORITY_3 = 3,
+		EP_PRIORITY_4 = 4,
+		EP_PRIORITY_5 = 5,
+		EP_PRIORITY_6 = 6,
+	};
+
 	struct EnvProbComponent
 	{
 		ENTITY_IN_COMPONENT
@@ -40,27 +50,24 @@ namespace EngineCore
 		bool dirty;
 
 		// static
-		string eptex_name;
-
-		// MEMORY LEAK - fixed?
-		uint32_t specCube;	// TODO TextureCubeArray direct load, store ID 
-		uint32_t diffCube;
-
-		bool is_distant;
+		string probName;
+		uint32_t probId;
 
 		// update on props change
 		EnvParallaxType type;
 		float fade;		
-		uint32_t mips_count; // mipsNum - 1
+		uint32_t mipsCount; // mipsNum - 1
 		Vector3 offset;
-
-		float near_clip, far_clip;
-		int resolution;
+		float nearClip;
+		float farClip;
+		int32_t resolution;
+		bool isHQ;
+		uint32_t priority;
 
 		// update on dirty
-		XMMATRIX invTransform;
-		float distance;
-		Vector3 pos;
+		float cachedDistance;
+		XMMATRIX cachedInvTransform;
+		Vector3 cachedPos;
 		
 		ALIGNED_ALLOCATION
 	};
@@ -75,35 +82,11 @@ namespace EngineCore
 		{
 			for(auto& i: *components.data())
 			{
-				TEXTURE_DROP(i.specCube);
-				TEXTURE_DROP(i.diffCube);
+				TEXTURE_DROP(i.probId);
 			}
 		}
 		
-		void AddComponent(Entity e, bool distant)
-		{
-			EnvProbComponent* comp = components.add(e.index());
-			comp->parent = e;
-			comp->dirty = true;
-			comp->is_distant = distant;
-			comp->far_clip = 100000.0f;
-			comp->near_clip = 1.0f;
-			comp->offset = Vector3(0,0,0);
-			comp->resolution = distant ? ENVPROBS_DIST_RES : ENVPROBS_RES;
-			comp->type = EP_PARALLAX_NONE;
-			comp->diffCube = TexMgr::nullres;
-			comp->specCube = TexMgr::nullres;
-			comp->eptex_name = "";
-			comp->distance = 10.0f;
-			comp->fade = 0.1f;
-			comp->mips_count = 1;
-
-			if(!distant)
-			{
-				earlyVisibilitySys->SetType(e, BT_SPHERE);
-				earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1));
-			}
-		}
+		void AddComponent(Entity e);
 		bool HasComponent(Entity e) const {return components.has(e.index());}
 		size_t ComponentsCount() {return components.dataSize();}
 
@@ -113,15 +96,7 @@ namespace EngineCore
 			if(idx == components.capacity()) return nullptr;
 			return &components.getDataByArrayIdx(idx);
 		}
-		void DeleteComponent(Entity e)
-		{
-			auto comp = GetComponent(e);
-			if(!comp)
-				return;
-			TEXTURE_DROP(comp->specCube);
-			TEXTURE_DROP(comp->diffCube);
-			components.remove(e.index());
-		}
+		void DeleteComponent(Entity e);
 		
 		void RegToScene();
 		
@@ -130,9 +105,9 @@ namespace EngineCore
 		
 		bool Bake(Entity e);
 
-		void LoadCubemap(EnvProbComponent* comp);
+		string GetProbFileName(string& probName) const;
 
-		void UpdateEnvProps(Entity e);
+		void UpdateProps(Entity e);
 
 		static void RegLuaClass()
 		{
@@ -141,6 +116,8 @@ namespace EngineCore
 					.addFunction("AddComponent", &EnvProbSystem::AddComponent)
 					.addFunction("DeleteComponent", &EnvProbSystem::DeleteComponent)
 					.addFunction("HasComponent", &EnvProbSystem::HasComponent)
+
+					.addFunction("UpdateProps", &EnvProbSystem::UpdateProps)
 
 					.addFunction("Bake", &EnvProbSystem::Bake)
 				.endClass();

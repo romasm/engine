@@ -137,15 +137,7 @@ namespace EngineCore
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-
-		void RegDistEnvProb(ID3D11ShaderResourceView* specCube, ID3D11ShaderResourceView* diffCube, uint32_t mipsCount, CXMMATRIX envRot)
-		{
-			skyEP.specCube = specCube;
-			skyEP.diffCube = diffCube;
-			skyEP.mipsCount = mipsCount;
-			skyEP.matrix = envRot;
-		}
-
+		
 		bool RegSpotLight(Vector4& color, float range, Vector2& cone, Vector3& pos, Vector3& dir);
 		bool RegSpotLightDisk(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& virtpos);
 		bool RegSpotLightRect(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos);
@@ -165,6 +157,9 @@ namespace EngineCore
 		bool RegPointCaster(Vector4& color, Vector4& nonAreaColor, float range, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
 		bool RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
 		bool RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
+		
+		bool RegEnvProb(uint32_t probId, int32_t resolution, bool isHQ, const Vector3& pos, uint32_t mips, float distance, float fade, 
+			EnvParallaxType type, const Vector3& offset, const Vector3& BBox, const XMMATRIX& invTransform, uint32_t priority);
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);

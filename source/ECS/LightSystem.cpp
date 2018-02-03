@@ -14,7 +14,7 @@ LightSystem::LightSystem(BaseWorld* w, uint32_t maxCount)
 	earlyVisibilitySys = w->GetEarlyVisibilitySystem();
 	shadowSystem = w->GetShadowSystem();
 	
-	maxCount = std::min<uint32_t>(maxCount, ENTITY_COUNT);
+	maxCount = min<uint32_t>(maxCount, ENTITY_COUNT);
 	components.create(maxCount);
 }
 

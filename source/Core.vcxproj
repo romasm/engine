@@ -215,6 +215,7 @@
     <ClInclude Include="Managers\WorldMgr.h" />
     <ClInclude Include="Render\Buffer.h" />
     <ClInclude Include="Render\Compute.h" />
+    <ClInclude Include="Render\EnvProbMgr.h" />
     <ClInclude Include="Render\Frustum.h" />
     <ClInclude Include="Render\Material.h" />
     <ClInclude Include="Render\Render.h" />
@@ -298,6 +299,7 @@
     <ClCompile Include="Managers\WindowsMgr.cpp" />
     <ClCompile Include="Managers\WorldMgr.cpp" />
     <ClCompile Include="Render\Buffer.cpp" />
+    <ClCompile Include="Render\EnvProbMgr.cpp" />
     <ClCompile Include="Render\Material.cpp" />
     <ClCompile Include="Render\Render.cpp" />
     <ClCompile Include="Render\RenderMgrs.cpp" />
