@@ -10,6 +10,8 @@
 #include "ShadowsRenderer.h"
 #include "Entity.h"
 #include "MeshLoader.h"
+#include "EnvProbMgr.h"
+#include "ECS/EnvProbSystem.h"
 
 namespace EngineCore
 {
@@ -158,8 +160,7 @@ namespace EngineCore
 		bool RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
 		bool RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
 		
-		bool RegEnvProb(uint32_t probId, int32_t resolution, bool isHQ, const Vector3& pos, uint32_t mips, float distance, float fade, 
-			EnvParallaxType type, const Vector3& offset, const Vector3& BBox, const XMMATRIX& invTransform, uint32_t priority);
+		bool RegEnvProb(const EnvProbData& data);
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);
@@ -216,6 +217,7 @@ namespace EngineCore
 		{*size = casterPointTube_count; return casterPointTube_array;}
 		
 		ShadowsRenderer* shadowsRenderer;
+		EnvProbMgr* envProbMgr;
 
 		ALIGNED_ALLOCATION
 

@@ -274,6 +274,42 @@ namespace EngineCore
 
 	// env probes
 	
+	enum EnvParallaxType
+	{
+		EP_PARALLAX_SPHERE = 0,
+		EP_PARALLAX_BOX = 1,
+		EP_PARALLAX_NONE = 2
+	};
+
+	enum EnvProbQuality
+	{
+		EP_HIGH = 0,
+		EP_STANDART,
+		EP_LOW,
+		EP_QUAL_COUNT
+	};
+
+	struct EnvProbData 
+	{
+		uint32_t probId;
+		EnvProbQuality quality;
+		Vector3 position;
+		uint32_t mips;
+		float distance;
+		float fade;
+		EnvParallaxType type;
+		Vector3 offset;
+		Vector3 bBox;
+		XMMATRIX invTransform;
+		float priority;
+
+		EnvProbData(uint32_t pId, EnvProbQuality q, const Vector3& pos, uint32_t m, float dist, float f, 
+			EnvParallaxType t, const Vector3& o, const Vector3& bb, const XMMATRIX& invT, float p) :
+		probId(pId), quality(q), position(pos), mips(m), distance(dist), fade(f), type(t), 
+			offset(o), bBox(bb), invTransform(invT), priority(p)
+		{}
+	};
+
 	struct EnvProbBuffer
 	{
 		Vector4 PositionDistance;

@@ -18,6 +18,15 @@ EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 
 	FrustumMgr* frustumMgr = world->GetFrustumMgr();
 	frustums = &frustumMgr->camDataArray;
+
+	// static data
+	epResolutions[EnvProbQuality::EP_HIGH] = 256;
+	epResolutions[EnvProbQuality::EP_STANDART] = 128;
+	epResolutions[EnvProbQuality::EP_LOW] = 32;
+
+	epFormats[EnvProbQuality::EP_HIGH] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	epFormats[EnvProbQuality::EP_STANDART] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	epFormats[EnvProbQuality::EP_LOW] = DXGI_FORMAT_R8G8B8A8_UNORM;
 }
 
 void EnvProbSystem::AddComponent(Entity e)
@@ -28,8 +37,7 @@ void EnvProbSystem::AddComponent(Entity e)
 	comp->farClip = 100000.0f;
 	comp->nearClip = 1.0f;
 	comp->offset = Vector3(0,0,0);
-	comp->resolution = ENVPROBS_RES;
-	comp->isHQ = false;
+	comp->quality = EP_STANDART;
 	comp->priority = 1;
 	comp->type = EP_PARALLAX_NONE;
 	comp->probName = RandomString(ENVPROBS_NAME_LENGTH);
@@ -106,16 +114,21 @@ void EnvProbSystem::RegToScene()
 
 		if(!earlyVisibilitySys)
 		{
+			EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
+				EnvParallaxType::EP_PARALLAX_NONE, i.offset, Vector3::Zero, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
+
 			for(auto f: *frustums)
 			{
 				if(f->rendermgr->IsShadow())
 					continue;
 
-				((SceneRenderMgr*)f->rendermgr)->RegEnvProb(i.probId, i.resolution, i.isHQ, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
-					EnvParallaxType::EP_PARALLAX_NONE, i.offset, Vector3::Zero, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
+				((SceneRenderMgr*)f->rendermgr)->RegEnvProb(epData);
 			}
 			continue;
 		}
+		
+		EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
+			i.type, i.offset, Vector3(earlyVisComponent->worldBox.Extents), i.cachedInvTransform, i.priority);
 
 		for(auto f: *frustums)
 		{
@@ -124,8 +137,7 @@ void EnvProbSystem::RegToScene()
 
 			if((bits & f->bit) == f->bit)
 			{
-				((SceneRenderMgr*)f->rendermgr)->RegEnvProb(i.probId, i.resolution, i.isHQ, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
-					i.type, i.offset, Vector3(earlyVisComponent->worldBox.Extents), i.cachedInvTransform, i.priority);
+				((SceneRenderMgr*)f->rendermgr)->RegEnvProb(epData);
 
 				bits &= ~f->bit;
 				if(bits == 0) break;
@@ -190,7 +202,8 @@ bool EnvProbSystem::Bake(Entity e)
 
 	HRESULT hr;
 
-	DXGI_FORMAT fmt = comp.isHQ ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT fmt = GetFormat(comp.quality);
+	int32_t resolution = GetResolution(comp.quality);
 
 	Vector3 env_pos = XMVector3Transform(XMLoadFloat3(&comp.offset), transformSys->GetTransform_WInternal(comp.get_entity()));
 	Entity env_cam = world->GetEntityMgr()->CreateEntity();
@@ -207,12 +220,12 @@ bool EnvProbSystem::Bake(Entity e)
 	camSys->SetNear(env_cam, comp.nearClip);
 	camSys->SetFov(env_cam, XM_PIDIV2);
 
-	auto env_scene = world->CreateScene(env_cam, comp.resolution, comp.resolution, true);
+	auto env_scene = world->CreateScene(env_cam, resolution, resolution, true);
 	
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
 	
 	int mipNum = 1;
-	int cur_mip_res = comp.resolution;
+	int cur_mip_res = resolution;
 	while( cur_mip_res > ENVPROBS_SPEC_MIN )
 	{
 		cur_mip_res /= 2;
@@ -237,7 +250,7 @@ bool EnvProbSystem::Bake(Entity e)
 		world->Snapshot(env_scene);
 		
 		RenderTarget* face = new RenderTarget;
-		if(!face->Init(comp.resolution, comp.resolution))
+		if(!face->Init(resolution, resolution))
 		{
 			_CLOSE(face);
 			for(int i=0; i<6; i++)raw_cube[i].Release();
@@ -272,7 +285,7 @@ bool EnvProbSystem::Bake(Entity e)
 	world->DestroyEntity(env_cam);
 
 	ScratchImage mipgen_cube;
-	mipgen_cube.InitializeCube(fmt, comp.resolution, comp.resolution, 1, 1);
+	mipgen_cube.InitializeCube(fmt, resolution, resolution, 1, 1);
 	mipgen_cube.FillData(raw_cube, 6);
 
 	ScratchImage mipcube;
@@ -311,7 +324,7 @@ bool EnvProbSystem::Bake(Entity e)
 			continue;
 		}
 
-		int mip_res = comp.resolution / int(pow(2, i));
+		int mip_res = resolution / int(pow(2, i));
 		float roughness = pow(float(i) / float(mipNum - 1), 2);
 
 		RenderTarget* mip_rt = new RenderTarget;
@@ -345,7 +358,7 @@ bool EnvProbSystem::Bake(Entity e)
 		mip_sp->SetTexture(cubemap_srv, 1);
 		mip_sp->SetFloat(roughness, 0);
 		mip_sp->SetFloat(float(mipNum + ENVPROBS_SPEC_MIPS_OFFSET), 1);
-		mip_sp->SetFloat(float(comp.resolution), 2);
+		mip_sp->SetFloat(float(resolution), 2);
 
 		mip_rt->ClearRenderTargets();
 		mip_rt->SetRenderTarget();
@@ -374,7 +387,7 @@ bool EnvProbSystem::Bake(Entity e)
 	_RELEASE(cubemap_srv);
 
 	ScratchImage cube;
-	cube.InitializeCube(fmt, comp.resolution, comp.resolution, 1, mipNum);
+	cube.InitializeCube(fmt, resolution, resolution, 1, mipNum);
 	cube.FillData(i_faces.data(), facesCount);
 
 	ID3D11ShaderResourceView* cubemap_filtered = nullptr;

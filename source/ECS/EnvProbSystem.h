@@ -6,6 +6,7 @@
 #include "EarlyVisibilitySystem.h"
 #include "RenderMgrs.h"
 #include "Util.h"
+#include "LightBuffers.h"
 
 #define ENVPROBS_INIT_COUNT 128
 
@@ -25,24 +26,6 @@
 
 namespace EngineCore
 {
-	enum EnvParallaxType
-	{
-		EP_PARALLAX_SPHERE = 0,
-		EP_PARALLAX_BOX = 1,
-		EP_PARALLAX_NONE = 2
-	};
-
-	enum EnvProbPriority
-	{
-		EP_PRIORITY_ALWAYS = 0,
-		EP_PRIORITY_1 = 1,
-		EP_PRIORITY_2 = 2,
-		EP_PRIORITY_3 = 3,
-		EP_PRIORITY_4 = 4,
-		EP_PRIORITY_5 = 5,
-		EP_PRIORITY_6 = 6,
-	};
-
 	struct EnvProbComponent
 	{
 		ENTITY_IN_COMPONENT
@@ -56,12 +39,11 @@ namespace EngineCore
 		// update on props change
 		EnvParallaxType type;
 		float fade;		
-		uint32_t mipsCount; // mipsNum - 1
+		uint32_t mipsCount;
 		Vector3 offset;
 		float nearClip;
 		float farClip;
-		int32_t resolution;
-		bool isHQ;
+		EnvProbQuality quality;
 		uint32_t priority;
 
 		// update on dirty
@@ -123,6 +105,19 @@ namespace EngineCore
 				.endClass();
 		}
 
+		static inline int32_t GetResolution(EnvProbQuality qual) 
+		{
+			return epResolutions[qual];
+		}
+		static inline int32_t GetMipsCount(EnvProbQuality qual) 
+		{
+			return GetLog2(epResolutions[qual]) - GetLog2(ENVPROBS_SPEC_MIN) + 1;
+		}
+		static inline DXGI_FORMAT GetFormat(EnvProbQuality qual) 
+		{
+			return epFormats[qual];
+		}
+
 	private:
 
 		ComponentRDArray<EnvProbComponent> components;
@@ -131,5 +126,8 @@ namespace EngineCore
 		EarlyVisibilitySystem* earlyVisibilitySys;
 		SArray<Frustum*, FRUSTUM_MAX_COUNT>* frustums;
 		BaseWorld* world;
+
+		static int32_t epResolutions[EP_QUAL_COUNT];
+		static DXGI_FORMAT epFormats[EP_QUAL_COUNT];
 	};
 }

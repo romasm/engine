@@ -458,3 +458,14 @@ inline XMMATRIX ToXMMATRIX(const btTransform& transf)
 	Quaternion rot = transf.getRotation();
 	return XMMatrixMultiply(XMMatrixRotationQuaternion(rot), XMMatrixTranslationFromVector(pos));
 }
+
+inline int32_t GetLog2(int32_t a)
+{
+	int32_t i = 0;
+	while (a >= 2)
+	{
+		a /= 2;
+		i++;
+	}
+	return i;
+}

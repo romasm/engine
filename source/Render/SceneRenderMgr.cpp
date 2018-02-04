@@ -460,10 +460,9 @@ bool SceneRenderMgr::RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XM
 	return true;
 }
 
-bool SceneRenderMgr::RegEnvProb(uint32_t probId, int32_t resolution, bool isHQ, const Vector3& pos, uint32_t mips, float distance, float fade, 
-				EnvParallaxType type, const Vector3& offset, const Vector3& BBox, const XMMATRIX& invTransform, uint32_t priority)
+bool SceneRenderMgr::RegEnvProb(const EnvProbData& data)
 {
-
+	envProbMgr->AddEnvProb(data, cameraPosition);
 }
 
 void SceneRenderMgr::UpdateCamera(CameraComponent* cam)
