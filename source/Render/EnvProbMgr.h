@@ -33,6 +33,10 @@ namespace EngineCore
 
 		bool InitBuffers();
 
+		template<size_t FRAME_COUNT>
+		void PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev, 
+			SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, ID3D11Texture2D* probArray );
+
 		SceneRenderMgr* render_mgr;		
 
 		SArray<EnvProbData, ENVPROBS_FRAME_COUNT_HQ * 4> hqEnvProbs;
@@ -55,6 +59,10 @@ namespace EngineCore
 		unordered_map<uint32_t, int32_t> hqRegedProbs;
 		unordered_map<uint32_t, int32_t> sqRegedProbs;
 		unordered_map<uint32_t, int32_t> lqRegedProbs;
+
+		SArray<int32_t, ENVPROBS_FRAME_COUNT_HQ> hqFreeProbIndex;
+		SArray<int32_t, ENVPROBS_FRAME_COUNT_SQ> sqFreeProbIndex;
+		SArray<int32_t, ENVPROBS_FRAME_COUNT_LQ> lqFreeProbIndex;
 	};
 
 }
