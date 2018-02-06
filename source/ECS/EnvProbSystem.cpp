@@ -5,6 +5,9 @@
 
 using namespace EngineCore;
 
+int32_t EnvProbSystem::epResolutions[EP_QUAL_COUNT] = {256, 128, 32};
+DXGI_FORMAT EnvProbSystem::epFormats[EP_QUAL_COUNT] = {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM};
+
 EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 {
 	maxCount = min<uint32_t>(maxCount, ENTITY_COUNT);
@@ -18,15 +21,6 @@ EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 
 	FrustumMgr* frustumMgr = world->GetFrustumMgr();
 	frustums = &frustumMgr->camDataArray;
-
-	// static data
-	epResolutions[EnvProbQuality::EP_HIGH] = 256;
-	epResolutions[EnvProbQuality::EP_STANDART] = 128;
-	epResolutions[EnvProbQuality::EP_LOW] = 32;
-
-	epFormats[EnvProbQuality::EP_HIGH] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	epFormats[EnvProbQuality::EP_STANDART] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	epFormats[EnvProbQuality::EP_LOW] = DXGI_FORMAT_R8G8B8A8_UNORM;
 }
 
 void EnvProbSystem::AddComponent(Entity e)
@@ -44,6 +38,7 @@ void EnvProbSystem::AddComponent(Entity e)
 	comp->fade = 0.1f;
 	comp->mipsCount = 1;
 	comp->cachedDistance = 1.0f;
+	comp->needRebake = true;
 
 	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
 
@@ -69,13 +64,6 @@ void EnvProbSystem::RegToScene()
 	{
 		if( !world->IsEntityNeedProcess(i.get_entity()) )
 			continue;
-				
-		if(i.mipsCount <= 1)
-		{
-			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-			TEXTURE_GETPTR(i.probId)->GetDesc(&desc);
-			i.mipsCount = desc.TextureCube.MipLevels;
-		}
 
 		bitset<FRUSTUM_MAX_COUNT> bits;
 		EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
@@ -110,6 +98,42 @@ void EnvProbSystem::RegToScene()
 
 			XMVECTOR cubePivot = XMVector3TransformCoord(XMVectorSet(0,0,0,1), worldMatrix);
 			XMStoreFloat3(&i.cachedPos, cubePivot);
+		}
+
+		if(i.needRebake)
+		{
+			// Verify texture params
+			// TODO: move to texture mgr !!!!!!!!!!!!!!!!!!
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+			const auto texCubeSrv = TEXTURE_GETPTR(i.probId);
+			texCubeSrv->GetDesc(&desc);
+
+			if( desc.Format != GetFormat(i.quality) )
+				continue;
+			
+			ID3D11Resource* resource = nullptr;
+			texCubeSrv->GetResource(&resource);
+			if(!resource)
+				continue;
+
+			ID3D11Texture2D *cube = 0;
+			resource->QueryInterface<ID3D11Texture2D>(&cube);
+			if(!cube)
+				continue;
+
+			D3D11_TEXTURE2D_DESC texDesc;
+			cube->GetDesc(&texDesc);
+
+			if( texDesc.Width != GetResolution(i.quality) )
+				continue;
+		}
+
+		if(i.mipsCount <= 1)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+			TEXTURE_GETPTR(i.probId)->GetDesc(&desc);
+			i.mipsCount = desc.TextureCube.MipLevels;
 		}
 
 		if(!earlyVisibilitySys)
@@ -160,6 +184,102 @@ bool EnvProbSystem::SetDirty(Entity e)
 {
 	GET_COMPONENT(false)
 	comp.dirty = true;
+	return true;
+}
+
+uint32_t EnvProbSystem::GetType(Entity e)
+{
+	GET_COMPONENT(0)
+	return (uint32_t)comp.type;
+}
+
+bool EnvProbSystem::SetType(Entity e, uint32_t type)
+{
+	GET_COMPONENT(false)
+	comp.type = EnvParallaxType(type);
+	UpdateProps(e);
+	return true;
+}
+
+float EnvProbSystem::GetFade(Entity e)
+{
+	GET_COMPONENT(0)
+	return comp.fade;
+}
+
+bool EnvProbSystem::SetFade(Entity e, float fade)
+{
+	GET_COMPONENT(false)
+	comp.fade = fade;
+	return true;
+}
+
+Vector3 EnvProbSystem::GetOffset(Entity e)
+{
+	GET_COMPONENT(Vector3::Zero)
+	return comp.offset;
+}
+
+bool EnvProbSystem::SetOffset(Entity e, Vector3& offset)
+{
+	GET_COMPONENT(false)
+	comp.offset = offset;
+	comp.needRebake = true;
+	return true;
+}
+
+float EnvProbSystem::GetNearClip(Entity e)
+{
+	GET_COMPONENT(0)
+	return comp.nearClip;
+}
+
+bool EnvProbSystem::SetNearClip(Entity e, float clip)
+{
+	GET_COMPONENT(false)
+	comp.nearClip = clip;
+	comp.needRebake = true;
+	return true;
+}
+
+float EnvProbSystem::GetFarClip(Entity e)
+{
+	GET_COMPONENT(0)
+	return comp.farClip;
+}
+
+bool EnvProbSystem::SetFarClip(Entity e, float clip)
+{
+	GET_COMPONENT(false)
+	comp.farClip = clip;
+	comp.needRebake = true;
+	return true;
+}
+
+uint32_t EnvProbSystem::GetPriority(Entity e)
+{
+	GET_COMPONENT(0)
+	return comp.priority;
+}
+
+bool EnvProbSystem::SetPriority(Entity e, uint32_t priority)
+{
+	GET_COMPONENT(false)
+	comp.priority = priority;
+	return true;
+}
+
+uint32_t EnvProbSystem::GetQuality(Entity e)
+{
+	GET_COMPONENT(0)
+	return (uint32_t)comp.quality;
+}
+
+bool EnvProbSystem::SetQuality(Entity e, uint32_t quality)
+{
+	GET_COMPONENT(false)
+	comp.quality = EnvProbQuality(quality);
+	comp.needRebake = true;
 	return true;
 }
 
@@ -423,5 +543,7 @@ bool EnvProbSystem::Bake(Entity e)
 	}
 
 	cube.Release();	
+
+	comp.needRebake = false;
 	return true;
 }

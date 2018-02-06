@@ -2,7 +2,6 @@
 #include "ECS\Entity.h"
 #include "RenderMgrs.h"
 
-#define FRUSTUM_MAX_COUNT 256
 #define VOLUME_MAX_COUNT 8
 
 namespace EngineCore

@@ -373,9 +373,6 @@ namespace EngineCore
 		ID3D11Buffer* lightsPerTileCount;
 		LightsCount lightsCount;
 
-		StructBuf m_LightShadowStructBuffer;
-
-		StructBuf m_EnvProbBuffer;
 		StructBuf m_MaterialBuffer;
 		
 		ALIGNED_ALLOCATION

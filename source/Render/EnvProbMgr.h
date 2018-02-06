@@ -22,22 +22,24 @@ namespace EngineCore
 	class EnvProbMgr
 	{
 	public:
-		EnvProbMgr(SceneRenderMgr* rndm);
+		EnvProbMgr(bool onlySky);
 		~EnvProbMgr();
 		
 		void AddEnvProb(const EnvProbData& data, const Vector3& camPos);
 
 		void PrepareEnvProbs();
+		void BindEnvProbs(bool isCS, uint32_t& srvLocation);
+
+		ALIGNED_ALLOCATION
 
 	private:
-
 		bool InitBuffers();
 
 		template<size_t FRAME_COUNT>
 		void PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev, 
-			SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, ID3D11Texture2D* probArray );
-
-		SceneRenderMgr* render_mgr;		
+			SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, ID3D11Texture2D* probArray, 
+			SArray<EnvProbRenderData, FRAME_COUNT>& probsBuffer );
+		
 
 		SArray<EnvProbData, ENVPROBS_FRAME_COUNT_HQ * 4> hqEnvProbs;
 		SArray<EnvProbData, ENVPROBS_FRAME_COUNT_SQ * 4> sqEnvProbs;
@@ -63,6 +65,14 @@ namespace EngineCore
 		SArray<int32_t, ENVPROBS_FRAME_COUNT_HQ> hqFreeProbIndex;
 		SArray<int32_t, ENVPROBS_FRAME_COUNT_SQ> sqFreeProbIndex;
 		SArray<int32_t, ENVPROBS_FRAME_COUNT_LQ> lqFreeProbIndex;
+		
+		StructBuf hqProbsBufferGPU;
+		StructBuf sqProbsBufferGPU;
+		StructBuf lqProbsBufferGPU;
+
+		SArray<EnvProbRenderData, ENVPROBS_FRAME_COUNT_HQ> hqProbsBuffer;
+		SArray<EnvProbRenderData, ENVPROBS_FRAME_COUNT_SQ> sqProbsBuffer;
+		SArray<EnvProbRenderData, ENVPROBS_FRAME_COUNT_LQ> lqProbsBuffer;
 	};
 
 }

@@ -398,13 +398,11 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 	sky_mat += EXT_MATERIAL;
 	m_staticMeshSystem->SetMaterial(skyEP, 0, sky_mat);
 
-	EnvProbComponent ep_comp;
-	ep_comp.eptex_name = PATH_ENVS;
-	ep_comp.eptex_name += header.env_name;
-	ep_comp.specCube = TexMgr::nullres;
-	ep_comp.diffCube = TexMgr::nullres;
-	ep_comp.is_distant = true;
-	m_envProbSystem->AddComponent(skyEP, ep_comp);
+	m_envProbSystem->AddComponent(skyEP);
+	m_envProbSystem->SetNearClip(skyEP, 1000.0f);
+	m_envProbSystem->SetFarClip(skyEP, 100000.0f);
+	m_envProbSystem->SetPriority(skyEP, ENVPROBS_PRIORITY_ALWAYS);
+	m_envProbSystem->SetQuality(skyEP, EnvProbQuality::EP_HIGH);
 }
 
 bool BaseWorld::saveWorld(string& filename)

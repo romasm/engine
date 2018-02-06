@@ -3,31 +3,39 @@
 #include "EnvProbMgr.h"
 #include "RenderMgrs.h"
 #include "Render.h"
+#include "Frustum.h"
 #include "Utils\Profiler.h"
 
 using namespace EngineCore;
 
-EnvProbMgr::EnvProbMgr(SceneRenderMgr* rndm)
+EnvProbMgr::EnvProbMgr(bool onlySky)
 {
-	render_mgr = rndm;
-
 	if(!InitBuffers())
 	{
 		ERR("Cant init EnvProbs buffers");
 	}
 
 	hqRegedProbsPrev.reserve(ENVPROBS_FRAME_COUNT_HQ);
-	hqRegedProbsPrev.reserve(ENVPROBS_FRAME_COUNT_SQ);
-	hqRegedProbsPrev.reserve(ENVPROBS_FRAME_COUNT_LQ);
+	sqRegedProbsPrev.reserve(ENVPROBS_FRAME_COUNT_SQ);
+	lqRegedProbsPrev.reserve(ENVPROBS_FRAME_COUNT_LQ);
 
 	hqRegedProbs.reserve(ENVPROBS_FRAME_COUNT_HQ);
-	hqRegedProbs.reserve(ENVPROBS_FRAME_COUNT_SQ);
-	hqRegedProbs.reserve(ENVPROBS_FRAME_COUNT_LQ);
+	sqRegedProbs.reserve(ENVPROBS_FRAME_COUNT_SQ);
+	lqRegedProbs.reserve(ENVPROBS_FRAME_COUNT_LQ);
 }
 
 EnvProbMgr::~EnvProbMgr()
 {
-	render_mgr = nullptr;
+	hqProbsBufferGPU.Release();
+	sqProbsBufferGPU.Release();
+	lqProbsBufferGPU.Release();
+	
+	_RELEASE(hqProbArraySRV);
+	_RELEASE(hqProbArray);
+	_RELEASE(sqProbArraySRV);
+	_RELEASE(sqProbArray);
+	_RELEASE(lqProbArraySRV);
+	_RELEASE(lqProbArray);
 }
 
 bool EnvProbMgr::InitBuffers()
@@ -97,6 +105,10 @@ bool EnvProbMgr::InitBuffers()
 	if( FAILED(Render::CreateShaderResourceView(lqProbArray, &cubeArraySRVDesc, &lqProbArraySRV)) )
 		return false;
 
+	hqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_HQ, sizeof(EnvProbRenderData), true);
+	sqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_SQ, sizeof(EnvProbRenderData), true);
+	lqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_LQ, sizeof(EnvProbRenderData), true);
+
 	return true;
 }
 
@@ -139,61 +151,34 @@ bool CompareEnvProbs(EnvProbData& first, EnvProbData& second)
 	return first.priority < second.priority;
 }
 
+bool CompareEnvProbsRenderData(EnvProbRenderData& first, EnvProbRenderData& second)
+{
+	return first.mipsTypeAdressPriority.w >= second.mipsTypeAdressPriority.w;
+}
+
 void EnvProbMgr::PrepareEnvProbs()
 {
-	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_HQ>(hqRegedProbs, hqRegedProbsPrev, hqEnvProbs, hqFreeProbIndex);
-	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_SQ>(sqRegedProbs, sqRegedProbsPrev, sqEnvProbs, sqFreeProbIndex);
-	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_LQ>(lqRegedProbs, lqRegedProbsPrev, lqEnvProbs, lqFreeProbIndex);
+	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_HQ>(hqRegedProbs, hqRegedProbsPrev, hqEnvProbs, hqFreeProbIndex, hqProbArray, hqProbsBuffer);
+	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_SQ>(sqRegedProbs, sqRegedProbsPrev, sqEnvProbs, sqFreeProbIndex, sqProbArray, sqProbsBuffer);
+	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_LQ>(lqRegedProbs, lqRegedProbsPrev, lqEnvProbs, lqFreeProbIndex, lqProbArray, lqProbsBuffer);
 
-	/*hqFreeProbIndex.resize(ENVPROBS_FRAME_COUNT_HQ);
-	for(int32_t i = 0; i < ENVPROBS_FRAME_COUNT_HQ; i++)
-	{
-		hqFreeProbIndex[i] = i;
-	}
-
-	const size_t arraySize = min<size_t>(ENVPROBS_FRAME_COUNT_HQ, hqEnvProbs.size());
-	for(size_t i = 0; i < arraySize; i++)
-	{
-		EnvProbData& prob = hqEnvProbs[i];
-
-		auto hasProb = hqRegedProbsPrev.find(prob.probId);
-		if(hasProb != hqRegedProbsPrev.end())
-		{
-			hqRegedProbs.insert(make_pair(prob.probId, hasProb->second));
-			hqFreeProbIndex.erase_and_pop_back(hasProb->second);
-		}
-		else
-		{
-			hqRegedProbs.insert(make_pair(prob.probId, ENVPROBS_NEED_COPY_KEY));
-		}
-	}
-
-	for(size_t i = 0; i < arraySize; i++)
-	{
-		EnvProbData& prob = hqEnvProbs[i];
-
-		auto probSlot = hqRegedProbs.find(prob.probId);
-		if(probSlot->second == ENVPROBS_NEED_COPY_KEY)
-		{
-			probSlot->second = hqFreeProbIndex[0];
-			hqFreeProbIndex.erase_and_pop_back(0);
-
-			// TODO: copy cube
-		}
-
-		// TODO: push to data array
-	}
-
-	// TODO: sort data array by priority*/
+	if(!hqProbsBuffer.empty())
+		Render::UpdateDynamicResource(hqProbsBufferGPU.buf, hqProbsBuffer.data(), sizeof(EnvProbRenderData) * hqProbsBuffer.size());
+	if(!sqProbsBuffer.empty())
+		Render::UpdateDynamicResource(sqProbsBufferGPU.buf, sqProbsBuffer.data(), sizeof(EnvProbRenderData) * sqProbsBuffer.size());
+	if(!lqProbsBuffer.empty())
+		Render::UpdateDynamicResource(lqProbsBufferGPU.buf, lqProbsBuffer.data(), sizeof(EnvProbRenderData) * lqProbsBuffer.size());
 }
 
 template<size_t FRAME_COUNT>
 void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev, 
-										SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, ID3D11Texture2D* hqProbArray )
+										SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, 
+										ID3D11Texture2D* probArray, SArray<EnvProbRenderData, FRAME_COUNT>& probsBuffer )
 {
 	sort(envProbs.begin(), envProbs.end(), CompareEnvProbs );
 
 	regedProbs.clear();
+	probsBuffer.clear();
 
 	freeProbIndex.resize(FRAME_COUNT);
 	for(int32_t i = 0; i < FRAME_COUNT; i++)
@@ -238,30 +223,49 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 			probSlot->second = arrayId;
 			freeProbIndex.erase_and_pop_back(0);
 			
-			auto textureCube = TEXTURE_GETPTR(i.probId);
+			auto textureCube = TEXTURE_GETPTR(prob.probId);
 			ID3D11Resource* srcRes = nullptr;
-			textureCube->GetResource(srcRes);
+			textureCube->GetResource(&srcRes);
 			
 			for(int32_t face = 0; face < 6; face++)
 			{
 				int32_t currentRes = desc.Width;
-				for(int32_t mipSlice = 0; mipSlice < prob.mips; mipSlice++)
+				for(uint32_t mipSlice = 0; mipSlice < prob.mips; mipSlice++)
 				{
 					region.right = currentRes;
 					region.bottom = region.right;
 
 					CONTEXT->CopySubresourceRegion(probArray, D3D11CalcSubresource(mipSlice, arrayId * 6 + face, desc.MipLevels), 0, 0, 0, 
-						srcRes, D3D11CalcSubresource(mipSlice, face, prob.mips), region);
+						srcRes, D3D11CalcSubresource(mipSlice, face, prob.mips), &region);
 
 					currentRes /= 2;
 				}
 			}
 		}
 
-		// TODO: push to data array
+		probsBuffer.push_back(EnvProbRenderData(prob.position, prob.distance, prob.offset, prob.fade, prob.mips, prob.type, 
+			probSlot->second, prob.priority, prob.bBox, prob.invTransform));
 	}
 
-	// TODO: sort data array by priority
+	sort(probsBuffer.begin(), probsBuffer.end(), CompareEnvProbsRenderData );
 
 	swap(regedProbs, regedProbsPrev);
+}
+
+void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation) // TODO: bind counts
+{
+	ID3D11ShaderResourceView* srvs[6];
+	srvs[0] = hqProbArraySRV;
+	srvs[1] = sqProbArraySRV;
+	srvs[2] = lqProbArraySRV;
+	srvs[3] = hqProbsBufferGPU.srv;
+	srvs[4] = sqProbsBufferGPU.srv;
+	srvs[5] = lqProbsBufferGPU.srv;
+
+	if(isCS)
+		Render::CSSetShaderResources(srvLocation, 6, srvs);
+	else
+		Render::PSSetShaderResources(srvLocation, 6, srvs);
+
+	srvLocation += 6;
 }

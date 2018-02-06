@@ -276,9 +276,9 @@ namespace EngineCore
 	
 	enum EnvParallaxType
 	{
-		EP_PARALLAX_SPHERE = 0,
-		EP_PARALLAX_BOX = 1,
-		EP_PARALLAX_NONE = 2
+		EP_PARALLAX_NONE = 0,
+		EP_PARALLAX_SPHERE = 1,
+		EP_PARALLAX_BOX = 2
 	};
 
 	enum EnvProbQuality
@@ -304,6 +304,8 @@ namespace EngineCore
 		float priorityDist;
 		uint32_t priority;
 
+		EnvProbData() {}
+
 		EnvProbData(uint32_t pId, EnvProbQuality q, const Vector3& pos, uint32_t m, float dist, float f, 
 			EnvParallaxType t, const Vector3& o, const Vector3& bb, const XMMATRIX& invT, uint32_t p) :
 		probId(pId), quality(q), position(pos), mips(m), distance(dist), fade(f), type(t), 
@@ -313,12 +315,20 @@ namespace EngineCore
 		}
 	};
 
-	struct EnvProbBuffer
+	struct EnvProbRenderData
 	{
-		Vector4 PositionDistance;
-		Vector4 OffsetFade;
-		Vector4 MipsTypeAdress;
-		Vector4 BBox;
-		XMMATRIX BBoxInvTransform;
+		Vector4 positionDistance;
+		Vector4 offsetFade;
+		Vector4 mipsTypeAdressPriority;
+		Vector4 bBox;
+		XMMATRIX invTransform;
+
+		EnvProbRenderData(){}
+
+		EnvProbRenderData(const Vector3& pos, float dist, const Vector3& offset, float fade, uint32_t mips,
+			EnvParallaxType type, int32_t adress, uint32_t p, const Vector3& bb, const XMMATRIX& invT) :
+				positionDistance(pos.x, pos.y, pos.z, dist), offsetFade(offset.x, offset.y, offset.z, fade), 
+				mipsTypeAdressPriority(float(mips), float(type), float(adress), float(p)), bBox(bb.x, bb.y, bb.z, 0), invTransform(invT)
+		{}
 	};
 }

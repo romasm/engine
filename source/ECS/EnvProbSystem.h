@@ -3,7 +3,6 @@
 #include "ECS_defines.h"
 #include "Entity.h"
 #include "TransformSystem.h"
-#include "EarlyVisibilitySystem.h"
 #include "RenderMgrs.h"
 #include "Util.h"
 #include "LightBuffers.h"
@@ -35,11 +34,11 @@ namespace EngineCore
 		// static
 		string probName;
 		uint32_t probId;
+		uint32_t mipsCount;
 
 		// update on props change
 		EnvParallaxType type;
 		float fade;		
-		uint32_t mipsCount;
 		Vector3 offset;
 		float nearClip;
 		float farClip;
@@ -50,11 +49,15 @@ namespace EngineCore
 		float cachedDistance;
 		XMMATRIX cachedInvTransform;
 		Vector3 cachedPos;
+
+		bool needRebake;
 		
 		ALIGNED_ALLOCATION
 	};
 
 	class BaseWorld;
+	class EarlyVisibilitySystem;
+	struct Frustum;
 
 	class EnvProbSystem
 	{
@@ -81,10 +84,28 @@ namespace EngineCore
 		void DeleteComponent(Entity e);
 		
 		void RegToScene();
-		
+
+		uint32_t Serialize(Entity e, uint8_t* data);
+		uint32_t Deserialize(Entity e, uint8_t* data);
+
 		bool IsDirty(Entity e);
 		bool SetDirty(Entity e);
 		
+		uint32_t GetType(Entity e);
+		bool SetType(Entity e, uint32_t type);
+		float GetFade(Entity e);
+		bool SetFade(Entity e, float fade);
+		Vector3 GetOffset(Entity e);
+		bool SetOffset(Entity e, Vector3& offset);
+		float GetNearClip(Entity e);
+		bool SetNearClip(Entity e, float clip);
+		float GetFarClip(Entity e);
+		bool SetFarClip(Entity e, float clip);
+		uint32_t GetPriority(Entity e);
+		bool SetPriority(Entity e, uint32_t priority);
+		uint32_t GetQuality(Entity e);
+		bool SetQuality(Entity e, uint32_t quality);
+
 		bool Bake(Entity e);
 
 		string GetProbFileName(string& probName) const;
@@ -99,8 +120,21 @@ namespace EngineCore
 					.addFunction("DeleteComponent", &EnvProbSystem::DeleteComponent)
 					.addFunction("HasComponent", &EnvProbSystem::HasComponent)
 
-					.addFunction("UpdateProps", &EnvProbSystem::UpdateProps)
-
+					.addFunction("GetType", &EnvProbSystem::GetType)
+					.addFunction("SetType", &EnvProbSystem::SetType)
+					.addFunction("GetFade", &EnvProbSystem::GetFade)
+					.addFunction("SetFade", &EnvProbSystem::SetFade)
+					.addFunction("GetOffset", &EnvProbSystem::GetOffset)
+					.addFunction("SetOffset", &EnvProbSystem::SetOffset)
+					.addFunction("GetNearClip", &EnvProbSystem::GetNearClip)
+					.addFunction("SetNearClip", &EnvProbSystem::SetNearClip)
+					.addFunction("GetFarClip", &EnvProbSystem::GetFarClip)
+					.addFunction("SetFarClip", &EnvProbSystem::SetFarClip)
+					.addFunction("GetPriority", &EnvProbSystem::GetPriority)
+					.addFunction("SetPriority", &EnvProbSystem::SetPriority)
+					.addFunction("GetQuality", &EnvProbSystem::GetQuality)
+					.addFunction("SetQuality", &EnvProbSystem::SetQuality)
+					
 					.addFunction("Bake", &EnvProbSystem::Bake)
 				.endClass();
 		}

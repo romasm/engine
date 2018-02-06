@@ -10,7 +10,6 @@
 #include "ShadowsRenderer.h"
 #include "Entity.h"
 #include "MeshLoader.h"
-#include "EnvProbMgr.h"
 #include "ECS/EnvProbSystem.h"
 
 namespace EngineCore
@@ -128,6 +127,7 @@ namespace EngineCore
 #define ENVPROB_FRAME_MAX 32
 
 	struct CameraComponent;
+	class EnvProbMgr;
 
 	class SceneRenderMgr: public BaseRenderMgr
 	{
@@ -160,7 +160,7 @@ namespace EngineCore
 		bool RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
 		bool RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
 		
-		bool RegEnvProb(const EnvProbData& data);
+		void RegEnvProb(const EnvProbData& data);
 
 		void DrawOpaque(ScenePipeline* scene);
 		void DrawAlphatest(ScenePipeline* scene);

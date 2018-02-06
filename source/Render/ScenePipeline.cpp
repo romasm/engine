@@ -122,9 +122,6 @@ void ScenePipeline::Close()
 
 	_RELEASE(lightsPerTileCount);
 
-	m_LightShadowStructBuffer.Release();
-
-	m_EnvProbBuffer.Release();
 	m_MaterialBuffer.Release();
 
 	_RELEASE(m_SharedBuffer);

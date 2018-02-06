@@ -4,6 +4,7 @@
 #include "CameraSystem.h"
 #include "ECS\EnvProbSystem.h"
 #include "Utils\Profiler.h"
+#include "EnvProbMgr.h"
 
 using namespace EngineCore;
 
@@ -36,6 +37,8 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		casterPointSphere_array = nullptr;	
 		casterPointTube_array = nullptr;	
 		shadowsRenderer = nullptr;
+
+		envProbMgr = new EnvProbMgr(true);
 	}
 	else
 	{
@@ -55,6 +58,7 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		casterPointTube_array = new TubeCasterBuffer[CASTER_POINT_TUBE_FRAME_MAX];	
 
 		shadowsRenderer = new ShadowsRenderer(this);
+		envProbMgr = new EnvProbMgr(false);
 	}
 	
 	ClearAll();
@@ -80,6 +84,7 @@ SceneRenderMgr::~SceneRenderMgr()
 	_DELETE_ARRAY(casterPointTube_array);
 		
 	_DELETE(shadowsRenderer);
+	_DELETE(envProbMgr);
 }
 
 void SceneRenderMgr::cleanRenderArrayLights()
@@ -460,7 +465,7 @@ bool SceneRenderMgr::RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XM
 	return true;
 }
 
-bool SceneRenderMgr::RegEnvProb(const EnvProbData& data)
+void SceneRenderMgr::RegEnvProb(const EnvProbData& data)
 {
 	envProbMgr->AddEnvProb(data, cameraPosition);
 }

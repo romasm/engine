@@ -5,6 +5,8 @@
 #define ENTITY_COUNT				MAX_ENTITY_COUNT
 #define MINIMUM_FREE_INDICES		1024
 
+#define FRUSTUM_MAX_COUNT 256
+
 namespace EngineCore
 {
 	class EntityMgr 
