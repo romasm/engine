@@ -42,7 +42,7 @@ void EnvProbSystem::AddComponent(Entity e)
 
 	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
 
-	if(earlyVisibilitySys->HasComponent(e))
+	if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
 	{
 		earlyVisibilitySys->SetType(e, BT_SPHERE);
 		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), comp->cachedDistance));
@@ -66,8 +66,12 @@ void EnvProbSystem::RegToScene()
 			continue;
 
 		bitset<FRUSTUM_MAX_COUNT> bits;
-		EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+		EarlyVisibilityComponent* earlyVisComponent = nullptr;
+
 		if(earlyVisibilitySys)
+			earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
+
+		if(earlyVisComponent)
 		{
 			bits = earlyVisComponent->inFrust;	
 			if(bits == 0)
@@ -78,7 +82,7 @@ void EnvProbSystem::RegToScene()
 
 		if(i.dirty)
 		{
-			if(earlyVisibilitySys)
+			if(earlyVisComponent)
 			{
 				switch(i.type)
 				{
@@ -136,7 +140,7 @@ void EnvProbSystem::RegToScene()
 			i.mipsCount = desc.TextureCube.MipLevels;
 		}
 
-		if(!earlyVisibilitySys)
+		if(!earlyVisComponent)
 		{
 			EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
 				EnvParallaxType::EP_PARALLAX_NONE, i.offset, Vector3::Zero, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
@@ -286,6 +290,9 @@ bool EnvProbSystem::SetQuality(Entity e, uint32_t quality)
 void EnvProbSystem::UpdateProps(Entity e)
 {
 	GET_COMPONENT(void())
+
+	if(!earlyVisibilitySys)
+		return;
 
 	EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(e);
 	if(!earlyVisComponent)

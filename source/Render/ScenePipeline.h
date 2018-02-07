@@ -271,7 +271,7 @@ namespace EngineCore
 		bool StartFrame(LocalTimer* timer);
 		void EndFrame();
 		
-		uint8_t LoadLights(uint8_t startOffset, bool isCS);
+		uint32_t LoadLights(uint32_t startOffset, bool isCS);
 
 		bool SaveScreenshot(string path, uint32_t targetX, uint32_t targetY);
 

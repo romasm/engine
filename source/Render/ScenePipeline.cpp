@@ -3,6 +3,7 @@
 #include "Render.h"
 #include "World.h"
 #include "Utils\Profiler.h"
+#include "EnvProbMgr.h"
 
 using namespace EngineCore;
 
@@ -746,15 +747,12 @@ void ScenePipeline::TransparentForwardStage()
 	Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
 
 	if(!isLightweight)
-	{
-		Render::PSSetShaderResources(srvs_size + 13, 1, &lightsPerTile.srv); 
 		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount);
-	}
 
 	render_mgr->DrawTransparent(this);
 }
 
-uint8_t ScenePipeline::LoadLights(uint8_t startOffset, bool isCS)
+uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
 {
 	size_t spot_size, disk_size, rect_size, point_size, sphere_size, tube_size, dir_size;
 	void* spot_data = (void*)render_mgr->GetSpotLightDataPtr(&spot_size);
@@ -773,7 +771,7 @@ uint8_t ScenePipeline::LoadLights(uint8_t startOffset, bool isCS)
 	void* caster_sphere_data = (void*)render_mgr->GetPointCasterSphereDataPtr(&caster_sphere_size);
 	void* caster_tube_data = (void*)render_mgr->GetPointCasterTubeDataPtr(&caster_tube_size);
 
-	uint8_t structed_offset = startOffset;
+	uint32_t structed_offset = startOffset;
 
 	ID3D11ShaderResourceView* srvs[13];
 
@@ -846,20 +844,6 @@ uint8_t ScenePipeline::LoadLights(uint8_t startOffset, bool isCS)
 		Render::CSSetShaderResources(startOffset, 13, srvs);
 	else
 		Render::PSSetShaderResources(startOffset, 13, srvs);
-
-	lightsCount.spot_count = (int32_t)spot_size;
-	lightsCount.disk_count = (int32_t)disk_size;
-	lightsCount.rect_count = (int32_t)rect_size;
-	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
-	lightsCount.caster_disk_count = (int32_t)caster_disk_size;
-	lightsCount.caster_rect_count = (int32_t)caster_rect_size;
-	lightsCount.point_count = (int32_t)point_size;
-	lightsCount.sphere_count = (int32_t)sphere_size;
-	lightsCount.tube_count = (int32_t)tube_size;
-	lightsCount.caster_point_count = (int32_t)caster_point_size;
-	lightsCount.caster_sphere_count = (int32_t)caster_sphere_size;
-	lightsCount.caster_tube_count = (int32_t)caster_tube_size;
-	lightsCount.dir_count = (int32_t)dir_size;
 		
 		// TEMP
 		for(uint16_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
@@ -890,6 +874,28 @@ uint8_t ScenePipeline::LoadLights(uint8_t startOffset, bool isCS)
 			lightsIDs[DIR_ID(i)] = i;
 
 	Render::UpdateDynamicResource(lightsPerTile.buf, &lightsIDs, sizeof(LightsIDs));
+
+	if(isCS)
+		Render::CSSetShaderResources(structed_offset, 1, &lightsPerTile.srv); 
+	else
+		Render::PSSetShaderResources(structed_offset, 1, &lightsPerTile.srv);
+	structed_offset++;
+
+	lightsCount.spot_count = (int32_t)spot_size;
+	lightsCount.disk_count = (int32_t)disk_size;
+	lightsCount.rect_count = (int32_t)rect_size;
+	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
+	lightsCount.caster_disk_count = (int32_t)caster_disk_size;
+	lightsCount.caster_rect_count = (int32_t)caster_rect_size;
+	lightsCount.point_count = (int32_t)point_size;
+	lightsCount.sphere_count = (int32_t)sphere_size;
+	lightsCount.tube_count = (int32_t)tube_size;
+	lightsCount.caster_point_count = (int32_t)caster_point_size;
+	lightsCount.caster_sphere_count = (int32_t)caster_sphere_size;
+	lightsCount.caster_tube_count = (int32_t)caster_tube_size;
+	lightsCount.dir_count = (int32_t)dir_size;
+
+	render_mgr->envProbMgr->BindEnvProbs(isCS, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
 
 	Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
 
@@ -990,8 +996,6 @@ void ScenePipeline::OpaqueDefferedStage()
 		Render::CSSetShaderResources(15, 1, &shadowBuffer);
 
 		LoadLights(16, true);
-
-		Render::CSSetShaderResources(29, 1, &lightsPerTile.srv); 
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 

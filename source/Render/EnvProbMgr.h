@@ -28,7 +28,7 @@ namespace EngineCore
 		void AddEnvProb(const EnvProbData& data, const Vector3& camPos);
 
 		void PrepareEnvProbs();
-		void BindEnvProbs(bool isCS, uint32_t& srvLocation);
+		void BindEnvProbs(bool isCS, uint32_t& srvLocation, int32_t& hqCount, int32_t& sqCount, int32_t& lqCount);
 
 		ALIGNED_ALLOCATION
 

@@ -66,6 +66,10 @@ StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t28);
 
 StructuredBuffer<int> g_lightIDs : register(t29); 
 
+TextureCubeArray <float4> hqEnvProbs: register(t30); 
+TextureCubeArray <float4> sqEnvProbs: register(t31); 
+TextureCubeArray <float4> lqEnvProbs: register(t32); 
+
 cbuffer configBuffer : register(b1)
 {
 	ConfigParams configs;     

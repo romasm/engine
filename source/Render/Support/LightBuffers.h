@@ -109,9 +109,9 @@ namespace EngineCore
 		int32_t caster_sphere_count;
 
 		int32_t caster_tube_count;
-		int32_t _padding0;
-		int32_t _padding1;
-		int32_t _padding2;
+		int32_t envProbsCountHQ;
+		int32_t envProbsCountSQ;
+		int32_t envProbsCountLQ;
 	};
 		
 	// for deffered

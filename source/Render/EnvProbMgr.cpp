@@ -10,7 +10,7 @@ using namespace EngineCore;
 
 EnvProbMgr::EnvProbMgr(bool onlySky)
 {
-	if(!InitBuffers())
+ 	if(!InitBuffers())
 	{
 		ERR("Cant init EnvProbs buffers");
 	}
@@ -50,10 +50,12 @@ bool EnvProbMgr::InitBuffers()
 	cubeArrayDesc.Height = resolution;
 	cubeArrayDesc.MipLevels = mipCount;
 	cubeArrayDesc.ArraySize = ENVPROBS_FRAME_COUNT_HQ * 6;
+	cubeArrayDesc.SampleDesc.Count = 1;
+	cubeArrayDesc.SampleDesc.Quality = 0;
 	cubeArrayDesc.Usage = D3D11_USAGE_DEFAULT;
 	cubeArrayDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	cubeArrayDesc.CPUAccessFlags = 0;
-	cubeArrayDesc.MiscFlags = 0;
+	cubeArrayDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 	cubeArrayDesc.Format = format;
 	if( FAILED(Render::CreateTexture2D(&cubeArrayDesc, NULL, &hqProbArray)) )
 		return false;
@@ -252,7 +254,7 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 	swap(regedProbs, regedProbsPrev);
 }
 
-void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation) // TODO: bind counts
+void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation, int32_t& hqCount, int32_t& sqCount, int32_t& lqCount)
 {
 	ID3D11ShaderResourceView* srvs[6];
 	srvs[0] = hqProbArraySRV;
@@ -263,9 +265,17 @@ void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation) // TODO: bind co
 	srvs[5] = lqProbsBufferGPU.srv;
 
 	if(isCS)
+	{
 		Render::CSSetShaderResources(srvLocation, 6, srvs);
+	}
 	else
+	{
 		Render::PSSetShaderResources(srvLocation, 6, srvs);
+	}
 
 	srvLocation += 6;
+
+	hqCount = (int32_t)hqProbsBuffer.size();
+	sqCount = (int32_t)sqProbsBuffer.size();
+	lqCount = (int32_t)lqProbsBuffer.size();
 }
