@@ -119,9 +119,9 @@ struct LightsCount
 	int caster_sphere_count;
 
 	int caster_tube_count;
-	int _padding0;
-	int _padding1;
-	int _padding2;
+	int envProbsCountHQ;
+	int envProbsCountSQ;
+	int envProbsCountLQ;
 };
 
 // for deffered
@@ -430,4 +430,23 @@ struct DirVoxelBuffer
 	matrix ViewProj1;
 	matrix ViewProj2;
 	matrix ViewProj3;
+};
+
+// env probes
+
+#define ENVPROBS_FRAME_COUNT_HQ 8
+#define ENVPROBS_FRAME_COUNT_SQ 32
+#define ENVPROBS_FRAME_COUNT_LQ 64
+
+#define ENVPROBS_PARALLAX_NONE 0
+#define ENVPROBS_PARALLAX_SPHERE 1
+#define ENVPROBS_PARALLAX_BOX 2
+
+struct EnvProbRenderData
+{
+	float4 positionDistance;
+	float4 offsetFade;
+	float4 mipsTypeAdressPriority;
+	float4 bBox;
+	matrix invTransform;
 };

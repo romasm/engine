@@ -406,7 +406,7 @@ bool FileIO::CreateDir(string path)
 	}
 
 	auto res = _mkdir(path.data());
-	if( res == ENOENT )
+	if( res != 0 )
 	{
 		auto slash = GetLastSlash(path);
 		if(slash == string::npos)

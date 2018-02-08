@@ -28,7 +28,7 @@ void EnvProbSystem::AddComponent(Entity e)
 	EnvProbComponent* comp = components.add(e.index());
 	comp->parent = e;
 	comp->dirty = true;
-	comp->farClip = 100000.0f;
+	comp->farClip = 10000.0f;
 	comp->nearClip = 1.0f;
 	comp->offset = Vector3(0,0,0);
 	comp->quality = EP_STANDART;
@@ -45,7 +45,7 @@ void EnvProbSystem::AddComponent(Entity e)
 	if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
 	{
 		earlyVisibilitySys->SetType(e, BT_SPHERE);
-		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), comp->cachedDistance));
+		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1.0f));
 	}
 }
 
@@ -77,11 +77,17 @@ void EnvProbSystem::RegToScene()
 			if(bits == 0)
 				continue;
 		}
-
-		auto& worldMatrix = transformSys->GetTransform_WInternal(i.get_entity());
-
+		
 		if(i.dirty)
 		{
+			auto worldMatrix = transformSys->GetTransform_W(i.get_entity());
+			
+			Vector3 scale, translation;
+			Quaternion rotation;
+			worldMatrix.Decompose(scale, rotation, translation);
+			worldMatrix = Matrix::CreateFromQuaternion(rotation);
+			worldMatrix.Translation(translation);
+			
 			if(earlyVisComponent)
 			{
 				switch(i.type)
@@ -93,15 +99,22 @@ void EnvProbSystem::RegToScene()
 					}
 					break;
 				case EP_PARALLAX_SPHERE:
+				case EP_PARALLAX_NONE:
 					i.cachedDistance = earlyVisComponent->worldSphere.Radius;
 					break;
 				}
+			}
+			else
+			{
+				i.cachedDistance = max(max(scale.x, scale.y), scale.z);
 			}
 
 			i.cachedInvTransform = XMMatrixInverse(nullptr, XMMatrixTranspose(worldMatrix));
 
 			XMVECTOR cubePivot = XMVector3TransformCoord(XMVectorSet(0,0,0,1), worldMatrix);
 			XMStoreFloat3(&i.cachedPos, cubePivot);
+
+			i.dirty = false;
 		}
 
 		if(i.needRebake)
@@ -347,7 +360,8 @@ bool EnvProbSystem::Bake(Entity e)
 	camSys->SetNear(env_cam, comp.nearClip);
 	camSys->SetFov(env_cam, XM_PIDIV2);
 
-	auto env_scene = world->CreateScene(env_cam, resolution, resolution, true);
+	// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	auto env_scene = world->CreateScene(env_cam, resolution, resolution, false);
 	
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
 	
@@ -540,6 +554,10 @@ bool EnvProbSystem::Bake(Entity e)
 	i_faces.destroy();
 
 	// TODO: save async
+	// TEMP
+	string envPath = RemoveExtension(world->GetWorldName()) + "/probes/";
+	FileIO::CreateDir(envPath);
+
 	string envTexName = GetProbFileName(comp.probName);
 	hr = SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() );
 	if ( FAILED(hr) )
@@ -552,5 +570,8 @@ bool EnvProbSystem::Bake(Entity e)
 	cube.Release();	
 
 	comp.needRebake = false;
+
+	world->UpdateEnvProbRenderData(e);
+
 	return true;
 }

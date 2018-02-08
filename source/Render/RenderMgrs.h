@@ -14,23 +14,6 @@
 
 namespace EngineCore
 {
-	struct distEP
-	{
-		ID3D11ShaderResourceView* specCube;
-		ID3D11ShaderResourceView* diffCube;
-		uint32_t mipsCount;
-		XMMATRIX matrix;
-		
-		ALIGNED_ALLOCATION
-
-		distEP()
-		{
-			specCube = nullptr;
-			diffCube = nullptr;
-			mipsCount = 0;
-		}
-	};
-
 	class BaseRenderMgr
 	{
 	public:
@@ -174,7 +157,6 @@ namespace EngineCore
 			BaseRenderMgr::ClearAll();
 			ovhud_array.clear();
 			hud_array.clear();
-			skyEP = distEP();
 
 			cleanRenderArrayLights();
 		}
@@ -182,9 +164,7 @@ namespace EngineCore
 		void UpdateCamera(CameraComponent* cam);
 		
 		inline CameraComponent* GetCurrentCamera() const {return current_cam;} 
-
-		inline const distEP& GetDistEnvProb() const {return skyEP;}
-
+		
 		inline SpotLightBuffer* GetSpotLightDataPtr(size_t* size) 
 		{*size = lightSpot_count; return lightSpot_array;}
 		inline DiskLightBuffer* GetSpotLightDiskDataPtr(size_t* size) 
@@ -226,9 +206,7 @@ namespace EngineCore
 
 		RArray<RenderMesh> hud_array;
 		RArray<RenderMesh> ovhud_array;
-
-		distEP skyEP;
-
+		
 		SpotLightBuffer* lightSpot_array;
 		size_t lightSpot_count;
 		DiskLightBuffer* lightSpotDisk_array;

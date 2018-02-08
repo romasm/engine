@@ -658,6 +658,8 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	defferedConfigData.isLightweight = isLightweight ? 1.0f : 0.0f;
 	Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
 
+	render_mgr->envProbMgr->PrepareEnvProbs();
+
 	return true;
 }
 
@@ -723,21 +725,12 @@ void ScenePipeline::TransparentForwardStage()
 	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 6;
+	const uint32_t srvs_size = 4;
 	ID3D11ShaderResourceView* srvs[srvs_size];
 	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
-	srvs[1] = nullptr;
-	srvs[2] = nullptr;
-	srvs[3] = rt_OpaqueFinal->GetShaderResourceView(0);
-	srvs[4] = transparencyDepthSRV;
-	srvs[5] = rt_TransparentPrepass->GetShaderResourceView(0);
-				
-	auto& distProb = render_mgr->GetDistEnvProb();
-	if(distProb.mipsCount != 0)
-	{
-		srvs[1] = distProb.specCube;
-		srvs[2] = distProb.diffCube;
-	}
+	srvs[1] = rt_OpaqueFinal->GetShaderResourceView(0);
+	srvs[2] = transparencyDepthSRV;
+	srvs[3] = rt_TransparentPrepass->GetShaderResourceView(0);
 		
 	Render::PSSetShaderResources(0, srvs_size, srvs);
 
@@ -964,7 +957,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
-	ID3D11ShaderResourceView* srvs[15];
+	ID3D11ShaderResourceView* srvs[13];
 	srvs[0] = m_MaterialBuffer.srv;
 	srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
 	srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
@@ -978,24 +971,15 @@ void ScenePipeline::OpaqueDefferedStage()
 	srvs[10] = rt_AO->GetShaderResourceView(0);
 	srvs[11] = rt_SSR->GetShaderResourceView(0);
 	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
-	srvs[13] = nullptr;
-	srvs[14] = nullptr;
-				
-	auto& distProb = render_mgr->GetDistEnvProb();
-	if(distProb.mipsCount != 0)
-	{
-		srvs[13] = distProb.specCube;
-		srvs[14] = distProb.diffCube;
-	}
-		
-	Render::CSSetShaderResources(0, 15, srvs);
+			
+	Render::CSSetShaderResources(0, 13, srvs);
 
 	if(!isLightweight)
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		Render::CSSetShaderResources(15, 1, &shadowBuffer);
+		Render::CSSetShaderResources(13, 1, &shadowBuffer);
 
-		LoadLights(16, true);
+		LoadLights(14, true);
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 

@@ -30,6 +30,8 @@ namespace EngineCore
 		void PrepareEnvProbs();
 		void BindEnvProbs(bool isCS, uint32_t& srvLocation, int32_t& hqCount, int32_t& sqCount, int32_t& lqCount);
 
+		void ForceUpdate(uint32_t probId);
+
 		ALIGNED_ALLOCATION
 
 	private:

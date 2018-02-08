@@ -148,6 +148,13 @@ void EnvProbMgr::AddEnvProb(const EnvProbData& data, const Vector3& camPos)
 	targetData->priorityDist = priorityDist;
 }
 
+void EnvProbMgr::ForceUpdate(uint32_t probId)
+{
+	hqRegedProbsPrev.erase(probId);
+	sqRegedProbsPrev.erase(probId);
+	lqRegedProbsPrev.erase(probId);
+}
+
 bool CompareEnvProbs(EnvProbData& first, EnvProbData& second)
 {
 	return first.priority < second.priority;
@@ -250,8 +257,8 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 	}
 
 	sort(probsBuffer.begin(), probsBuffer.end(), CompareEnvProbsRenderData );
-
 	swap(regedProbs, regedProbsPrev);
+	envProbs.clear();
 }
 
 void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation, int32_t& hqCount, int32_t& sqCount, int32_t& lqCount)

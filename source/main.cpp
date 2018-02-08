@@ -54,13 +54,17 @@ inline void ApplyCommandLineParams(int argc, char** argv, CommandLineParams& par
 	}
 }
 
-void configLocale()
+void configThings()
 {
+	// locale
 	setlocale(LC_ALL,""); 
 	setlocale(LC_NUMERIC,"C"); 
 
 	locale loc("", locale::all & (~locale::numeric));
 	locale::global(loc);
+
+	// random generator
+	srand((uint32_t)time(nullptr));
 }
 
 int main(int argc, char* argv[])
@@ -72,7 +76,7 @@ int main(int argc, char* argv[])
 	CommandLineParams commandLineParams;
 	ApplyCommandLineParams(argc, argv, commandLineParams); // TODO: remove to config system
 
-	configLocale();
+	configThings();
 
 	Log* log = new Log(commandLineParams.console);
 

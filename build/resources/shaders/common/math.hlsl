@@ -195,14 +195,13 @@ void Float3ToUint3(float3 color, RWTexture2D<unsigned int> tex[3], float2 coords
 	tex[2][coords] = asuint(color.b);
 }
 
-float MinFromBoxToPoint(float3 box_mins, float3 box_maxs, float3 Point)
+float MinFromBoxToPoint(float3 box_mins, float3 box_maxs, float3 oPoint)
 {
-	float3 DistancesMin = Point < box_mins ? abs(Point - box_mins) : 0;
-	float3 DistancesMax = Point > box_maxs ? abs(Point - box_maxs) : 0;
+	const float3 distancesMin = oPoint < box_mins ? abs(oPoint - box_mins) : 0;
+	const float3 distancesMax = oPoint > box_maxs ? abs(oPoint - box_maxs) : 0;
 
-	float Distance = dot(DistancesMin, 1);
-	Distance += dot(DistancesMax, 1);
-	return Distance;
+	const float distance = dot(distancesMin, 1);
+	return distance + dot(distancesMax, 1);
 }
 
 //Returns the closest intersection along the ray in x, and furthest in y. If the ray did not intersect the box, then the furthest intersection <= the closest intersection.

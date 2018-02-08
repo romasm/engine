@@ -219,6 +219,8 @@ namespace EngineCore
 			return res;
 		}
 
+		void UpdateEnvProbRenderData(Entity e);
+
 		void UpdateScript(Entity e)
 		{
 			m_scriptSystem->UpdateScript(e);
@@ -304,6 +306,7 @@ namespace EngineCore
 					.addFunction("GetLuaEntity", &BaseWorld::WrapEntityForLua)
 					.addFunction("UpdateScript", &BaseWorld::UpdateScript)
 					.addFunction("UpdateCollision", &BaseWorld::UpdateCollision)
+					.addFunction("UpdateEnvProbRenderData", &BaseWorld::UpdateEnvProbRenderData)					
 
 				#ifdef _EDITOR
 					.addFunction("SetEntityEditorVisible", &BaseWorld::SetEntityEditorVisible)

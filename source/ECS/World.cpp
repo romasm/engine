@@ -3,6 +3,8 @@
 #include "Common.h"
 #include "TypeMgr.h"
 #include "Utils/Profiler.h"
+#include "Render/RenderMgrs.h"
+#include "Render/EnvProbMgr.h"
 
 using namespace EngineCore;
 
@@ -54,6 +56,13 @@ void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 		m_lineGeometrySystem->SetDirty(e);
 }
 
+void BaseWorld::UpdateEnvProbRenderData(Entity e)
+{
+	auto comp = m_envProbSystem->GetComponent(e);
+	for(auto it: m_scenes)
+		it->render_mgr->envProbMgr->ForceUpdate(comp->probId);
+}
+
 bool BaseWorld::Init(string filename)
 {
 	if(world_name.size() > 0)
@@ -66,10 +75,9 @@ bool BaseWorld::Init(string filename)
 		ERR("Can\'t load world %s", filename.data());
 		return false;
 	}
+	world_name = filename;
 
 	initMainEntities(header);
-
-	world_name = filename;
 
 	m_world_timer.Start();
 	
@@ -382,7 +390,7 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 {
 	envName = header.env_name;
 
-	skyEP = m_entityMgr->CreateEntity();
+	skyEP = CreateNamedEntity("skydome");
 	m_transformSystem->AddComponent(skyEP);
 	m_transformSystem->SetPosition_L3F(skyEP, 0, 0, 0);
 	m_transformSystem->SetRotationPYR_L(skyEP, Vector3(header.env_rot));
@@ -399,8 +407,8 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 	m_staticMeshSystem->SetMaterial(skyEP, 0, sky_mat);
 
 	m_envProbSystem->AddComponent(skyEP);
-	m_envProbSystem->SetNearClip(skyEP, 1000.0f);
-	m_envProbSystem->SetFarClip(skyEP, 100000.0f);
+	m_envProbSystem->SetNearClip(skyEP, 1.0f);
+	m_envProbSystem->SetFarClip(skyEP, far_clip);
 	m_envProbSystem->SetPriority(skyEP, ENVPROBS_PRIORITY_ALWAYS);
 	m_envProbSystem->SetQuality(skyEP, EnvProbQuality::EP_HIGH);
 }
