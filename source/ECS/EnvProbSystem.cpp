@@ -23,9 +23,12 @@ EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
 	frustums = &frustumMgr->camDataArray;
 }
 
-void EnvProbSystem::AddComponent(Entity e)
+EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 {
 	EnvProbComponent* comp = components.add(e.index());
+	if(!comp)
+		return nullptr;
+
 	comp->parent = e;
 	comp->dirty = true;
 	comp->farClip = 10000.0f;
@@ -39,7 +42,7 @@ void EnvProbSystem::AddComponent(Entity e)
 	comp->mipsCount = 1;
 	comp->cachedDistance = 1.0f;
 	comp->needRebake = true;
-
+	
 	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
 
 	if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
@@ -47,6 +50,8 @@ void EnvProbSystem::AddComponent(Entity e)
 		earlyVisibilitySys->SetType(e, BT_SPHERE);
 		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1.0f));
 	}
+
+	return comp;
 }
 
 void EnvProbSystem::DeleteComponent(Entity e)
@@ -56,6 +61,16 @@ void EnvProbSystem::DeleteComponent(Entity e)
 		return;
 	TEXTURE_DROP(comp->probId);
 	components.remove(e.index());
+}
+
+void EnvProbSystem::CopyComponent(Entity src, Entity dest)
+{
+	auto copyBuffer = world->GetCopyBuffer();
+
+	if( !Serialize(src, copyBuffer) )
+		return;
+
+	Deserialize(dest, copyBuffer);
 }
 
 void EnvProbSystem::RegToScene()
@@ -117,7 +132,8 @@ void EnvProbSystem::RegToScene()
 			i.dirty = false;
 		}
 
-		if(i.needRebake)
+		// TODO: update & validation on load
+		//if(i.needRebake)
 		{
 			// Verify texture params
 			// TODO: move to texture mgr !!!!!!!!!!!!!!!!!!
@@ -202,6 +218,75 @@ bool EnvProbSystem::SetDirty(Entity e)
 	GET_COMPONENT(false)
 	comp.dirty = true;
 	return true;
+}
+
+uint32_t EnvProbSystem::Serialize(Entity e, uint8_t* data)
+{
+	GET_COMPONENT(0)
+
+	uint8_t* t_data = data;
+
+	uint32_t dummySize = 0;
+	StringSerialize(comp.probName, &t_data, &dummySize);
+
+	*(uint8_t*)t_data = (uint8_t)comp.type;
+	t_data += sizeof(uint8_t);
+	
+	*(float*)t_data = (float)comp.fade;
+	t_data += sizeof(float);
+
+	*(Vector3*)t_data = (Vector3)comp.offset;
+	t_data += sizeof(Vector3);
+
+	*(float*)t_data = (float)comp.nearClip;
+	t_data += sizeof(float);
+
+	*(float*)t_data = (float)comp.farClip;
+	t_data += sizeof(float);
+
+	*(uint8_t*)t_data = (uint8_t)comp.quality;
+	t_data += sizeof(uint8_t);
+
+	*(uint32_t*)t_data = (uint32_t)comp.priority;
+	t_data += sizeof(uint32_t);
+
+	return (uint32_t)(t_data - data);
+}
+
+uint32_t EnvProbSystem::Deserialize(Entity e, uint8_t* data)
+{
+	auto comp = AddComponent(e);
+	if(!comp)
+		return 0; // TODO must return size
+
+	uint8_t* t_data = data;
+
+	comp->probName = StringDeserialize(&t_data);
+
+	comp->type = EnvParallaxType(*(uint8_t*)t_data);
+	t_data += sizeof(uint8_t);
+
+	comp->fade = *(float*)t_data;
+	t_data += sizeof(float);
+
+	comp->offset = *(Vector3*)t_data;
+	t_data += sizeof(Vector3);
+	
+	comp->nearClip = *(float*)t_data;
+	t_data += sizeof(float);
+
+	comp->farClip = *(float*)t_data;
+	t_data += sizeof(float);
+
+	comp->quality = EnvProbQuality(*(uint8_t*)t_data);
+	t_data += sizeof(uint8_t);
+
+	comp->priority = *(uint32_t*)t_data;
+	t_data += sizeof(uint32_t);
+
+	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
+
+	return (uint32_t)(t_data - data);
 }
 
 uint32_t EnvProbSystem::GetType(Entity e)

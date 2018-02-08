@@ -71,7 +71,7 @@ namespace EngineCore
 			}
 		}
 		
-		void AddComponent(Entity e);
+		EnvProbComponent* AddComponent(Entity e);
 		bool HasComponent(Entity e) const {return components.has(e.index());}
 		size_t ComponentsCount() {return components.dataSize();}
 
@@ -83,6 +83,8 @@ namespace EngineCore
 		}
 		void DeleteComponent(Entity e);
 		
+		void CopyComponent(Entity src, Entity dest);
+
 		void RegToScene();
 
 		uint32_t Serialize(Entity e, uint8_t* data);
@@ -112,11 +114,13 @@ namespace EngineCore
 
 		void UpdateProps(Entity e);
 
+		inline void _AddComponent(Entity e) {AddComponent(e);}
+
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<EnvProbSystem>("EnvProbSystem")
-					.addFunction("AddComponent", &EnvProbSystem::AddComponent)
+					.addFunction("AddComponent", &EnvProbSystem::_AddComponent)
 					.addFunction("DeleteComponent", &EnvProbSystem::DeleteComponent)
 					.addFunction("HasComponent", &EnvProbSystem::HasComponent)
 

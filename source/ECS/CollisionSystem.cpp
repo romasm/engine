@@ -185,7 +185,8 @@ uint32_t CollisionSystem::Serialize(Entity e, uint8_t* data)
 		if( comp.collisionData != 0 )
 		{
 			childrenCount = ((btCompoundShape*)comp.collisionData)->getNumChildShapes();
-			childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
+			if(childrenCount > 0)
+				childrenPtrs = ((btCompoundShape*)comp.collisionData)->getChildList();
 		}
 
 		*(uint32_t*)t_data = childrenCount;

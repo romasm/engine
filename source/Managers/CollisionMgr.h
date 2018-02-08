@@ -163,8 +163,11 @@ namespace EngineCore
 			{
 				btCompoundShape* cShape = (btCompoundShape*)resource;
 
+				btCompoundShapeChild* childrenPtrs = nullptr;
+
 				auto childrenCount = cShape->getNumChildShapes();
-				auto childrenPtrs = cShape->getChildList();
+				if(childrenCount > 0)
+					childrenPtrs = cShape->getChildList();
 
 				while( childrenCount > 0 )
 				{

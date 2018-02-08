@@ -245,7 +245,7 @@ Entity BaseWorld::CopyEntity(Entity e)
 	m_triggerSystem->CopyComponent(e, newEnt);
 
 	m_cameraSystem->CopyComponent(e, newEnt);
-	//m_envProbSystem->CopyComponent(e, newEnt);
+	m_envProbSystem->CopyComponent(e, newEnt);
 	
 	if(m_lightSystem)
 		m_lightSystem->CopyComponent(e, newEnt);
@@ -364,6 +364,8 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 				break;
 			case TRIGGER_BYTE: compSize = m_triggerSystem->Deserialize(ent, t_data);
 				break;
+			case ENVPROB_BYTE: compSize = m_envProbSystem->Deserialize(ent, t_data);
+				break;
 			}
 			t_data += compSize;
 		}
@@ -389,7 +391,7 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 void BaseWorld::initMainEntities(WorldHeader& header)
 {
 	envName = header.env_name;
-
+	/*
 	skyEP = CreateNamedEntity("skydome");
 	m_transformSystem->AddComponent(skyEP);
 	m_transformSystem->SetPosition_L3F(skyEP, 0, 0, 0);
@@ -410,7 +412,7 @@ void BaseWorld::initMainEntities(WorldHeader& header)
 	m_envProbSystem->SetNearClip(skyEP, 1.0f);
 	m_envProbSystem->SetFarClip(skyEP, far_clip);
 	m_envProbSystem->SetPriority(skyEP, ENVPROBS_PRIORITY_ALWAYS);
-	m_envProbSystem->SetQuality(skyEP, EnvProbQuality::EP_HIGH);
+	m_envProbSystem->SetQuality(skyEP, EnvProbQuality::EP_HIGH);*/
 }
 
 bool BaseWorld::saveWorld(string& filename)
@@ -453,9 +455,6 @@ bool BaseWorld::saveWorld(string& filename)
 	iterator.setnull();
 	while( !(iterator = m_entityMgr->GetNextEntity(iterator)).isnull() )
 	{
-		if( iterator == skyEP )
-			continue;
-
 		string name = m_nameMgr->GetName(iterator);
 		if( name.find(EDITOR_TYPE) != string::npos )
 			continue;
@@ -502,6 +501,8 @@ bool BaseWorld::saveWorld(string& filename)
 			components += PHYSICS_BYTE;
 		if(m_triggerSystem->HasComponent(iterator))
 			components += TRIGGER_BYTE;
+		if(m_envProbSystem->HasComponent(iterator))
+			components += ENVPROB_BYTE;
 
 		uint32_t comp_count = (uint32_t)components.size();
 		file.write( (char*)&comp_count, sizeof(uint32_t) );
@@ -537,6 +538,8 @@ bool BaseWorld::saveWorld(string& filename)
 			case PHYSICS_BYTE: compSize = m_physicsSystem->Serialize(iterator, buffer);
 				break;
 			case TRIGGER_BYTE: compSize = m_triggerSystem->Serialize(iterator, buffer);
+				break;
+			case ENVPROB_BYTE: compSize = m_envProbSystem->Serialize(iterator, buffer);
 				break;
 			}
 
