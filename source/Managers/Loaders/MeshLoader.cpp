@@ -583,7 +583,7 @@ bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, 
 
 	if( !meshImporter.IsExtensionSupported(ext) )
 	{
-		ERR("Extension is not supported for mesh", sourceFile.data());
+		ERR("Extension is not supported for mesh %s", sourceFile.data());
 		return false;
 	}
 

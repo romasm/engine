@@ -70,12 +70,12 @@ bool BaseWorld::Init(string filename)
 
 	WorldHeader header;
 
+	world_name = filename;
 	if( !loadWorld(filename, header) )
 	{
 		ERR("Can\'t load world %s", filename.data());
 		return false;
 	}
-	world_name = filename;
 
 	initMainEntities(header);
 
@@ -391,8 +391,8 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 void BaseWorld::initMainEntities(WorldHeader& header)
 {
 	envName = header.env_name;
-	/*
-	skyEP = CreateNamedEntity("skydome");
+	
+	/*skyEP = CreateNamedEntity("skydome");
 	m_transformSystem->AddComponent(skyEP);
 	m_transformSystem->SetPosition_L3F(skyEP, 0, 0, 0);
 	m_transformSystem->SetRotationPYR_L(skyEP, Vector3(header.env_rot));
