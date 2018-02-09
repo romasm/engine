@@ -263,6 +263,9 @@
     <Compile Include="..\Entities\const_EntityDefines.lua">
       <Link>Entities\const_EntityDefines.lua</Link>
     </Compile>
+    <Compile Include="..\Entities\EnvProb.lua">
+      <Link>Entities\EnvProb.lua</Link>
+    </Compile>
     <Compile Include="..\Entities\GlobalLight.lua">
       <Link>Entities\GlobalLight.lua</Link>
     </Compile>

@@ -148,5 +148,5 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba; 
-}                    
+}                           
                                                                

@@ -46,7 +46,11 @@ static int printfunc(lua_State* L)
 
 	string output;
 	for (int i=1; i <= nargs; ++i) 
-		output += lua_tostring(L, i);
+	{
+		auto str = lua_tostring(L, i);
+		if(str)
+			output += str;
+	}
 
 	LUA("%s", output.data());
 
@@ -59,7 +63,11 @@ static int errorfunc(lua_State* L) // todo
 
 	string output;
 	for (int i=1; i <= nargs; ++i) 
-		output += lua_tostring(L, i);
+	{
+		auto str = lua_tostring(L, i);
+		if(str)
+			output += str;
+	}
 
 	LUA_ERROR("%s", output.data());
 

@@ -164,9 +164,9 @@ float4 EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, 
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SimpleEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				SphereEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 			else
-				SimpleEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				BoxEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 		}
 		i++;
 	}
@@ -185,9 +185,9 @@ float4 EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, 
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SimpleEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				SphereEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 			else
-				SimpleEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				BoxEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 		}
 		i++;
 	}
@@ -206,9 +206,9 @@ float4 EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, 
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SimpleEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				SphereEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 			else
-				SimpleEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
+				BoxEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, Roughness, result);
 		}
 		i++;
 	}

@@ -428,7 +428,7 @@ bool BaseWorld::saveWorld(string& filename)
 	WorldHeader header;
 	header.version = WORLD_FILE_VERSION;
 	strcpy_s(header.env_name, envName.data());
-	header.env_rot = m_transformSystem->GetRotationPYR_W(skyEP);
+	//header.env_rot = m_transformSystem->GetRotationPYR_W(skyEP);
 
 	Entity editorCamera = GetEntityByName(EDITOR_TYPE "Camera");
 	if(!editorCamera.isnull())

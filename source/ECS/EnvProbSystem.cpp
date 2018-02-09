@@ -37,19 +37,19 @@ EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 	comp->quality = EP_STANDART;
 	comp->priority = 1;
 	comp->type = EP_PARALLAX_NONE;
-	comp->probName = RandomString(ENVPROBS_NAME_LENGTH);
+	comp->probName = "";
 	comp->fade = 0.1f;
 	comp->mipsCount = 1;
 	comp->cachedDistance = 1.0f;
 	comp->needRebake = true;
 	
-	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
+	comp->probId = TexMgr::nullres;
 
-	if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
+	/*if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
 	{
 		earlyVisibilitySys->SetType(e, BT_SPHERE);
 		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1.0f));
-	}
+	}*/
 
 	return comp;
 }
@@ -110,12 +110,12 @@ void EnvProbSystem::RegToScene()
 				case EP_PARALLAX_BOX:
 					{
 						XMVECTOR extv = XMLoadFloat3(&earlyVisComponent->worldBox.Extents);
-						i.cachedDistance = XMVectorGetX(XMVector3Length(extv));
+						i.cachedDistance = XMVectorGetX(XMVector3Length(extv)) * 2.0f;
 					}
 					break;
 				case EP_PARALLAX_SPHERE:
 				case EP_PARALLAX_NONE:
-					i.cachedDistance = earlyVisComponent->worldSphere.Radius;
+					i.cachedDistance = earlyVisComponent->worldSphere.Radius * 2.0f;
 					break;
 				}
 			}
@@ -136,6 +136,9 @@ void EnvProbSystem::RegToScene()
 		//if(i.needRebake)
 		{
 			// Verify texture params
+			if( i.probId == TexMgr::nullres || i.probName.empty() )
+				continue;
+
 			// TODO: move to texture mgr !!!!!!!!!!!!!!!!!!
 
 			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
@@ -425,6 +428,11 @@ bool EnvProbSystem::Bake(Entity e)
 {
 	GET_COMPONENT(false)
 
+	if(comp.probName.empty())
+	{
+		comp.probName = RandomString(ENVPROBS_NAME_LENGTH);
+	}
+
 	HRESULT hr;
 
 	DXGI_FORMAT fmt = GetFormat(comp.quality);
@@ -449,6 +457,7 @@ bool EnvProbSystem::Bake(Entity e)
 	auto env_scene = world->CreateScene(env_cam, resolution, resolution, false);
 	
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
+	sp->SetFloat(comp.farClip, 0);
 	
 	int mipNum = 1;
 	int cur_mip_res = resolution;
@@ -655,6 +664,8 @@ bool EnvProbSystem::Bake(Entity e)
 	cube.Release();	
 
 	comp.needRebake = false;
+	if( comp.probId == TexMgr::nullres )
+		comp.probId = RELOADABLE_TEXTURE(envTexName, true);
 
 	world->UpdateEnvProbRenderData(e);
 

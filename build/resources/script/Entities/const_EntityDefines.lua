@@ -37,3 +37,17 @@ COLLISION_GROUPS = {
 	All = -1,
     AllNoSpecial = 127,--All & ~(Special0 | Special1 | Special2 | Special3 | Special4 | Special5),
 }
+
+ENVPROB_TYPE = {
+    None = 0, 
+    Sphere = 1,
+    Box = 2
+}
+
+ENVPROB_QUALITY = {
+    High = 0, 
+    Standart = 1,
+    Low = 2
+}
+
+ENVPROB_PRIORITY_ALWAYS = 0

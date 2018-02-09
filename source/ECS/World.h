@@ -324,6 +324,7 @@ namespace EngineCore
 					.addProperty("staticMesh", &BaseWorld::GetStaticMeshSystem)
 					.addProperty("camera", &BaseWorld::GetCameraSystem)
 					.addProperty("light", &BaseWorld::GetLightSystem)
+					.addProperty("envprobs", &BaseWorld::GetEnvProbSystem)
 					.addProperty("globalLight", &BaseWorld::GetGlobalLightSystem)
 					.addProperty("lineGeometry", &BaseWorld::GetLineGeometrySystem)
 					.addProperty("controller", &BaseWorld::GetControllerSystem)
@@ -424,7 +425,8 @@ namespace EngineCore
 				
 		void RebakeSky()
 		{
-			m_envProbSystem->Bake(skyEP);
+			if(!skyEP.isnull())
+				m_envProbSystem->Bake(skyEP);
 		}
 
 		static void RegLuaClass()
