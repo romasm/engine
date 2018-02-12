@@ -71,6 +71,13 @@ void EnvProbSystem::CopyComponent(Entity src, Entity dest)
 		return;
 
 	Deserialize(dest, copyBuffer);
+	
+	auto comp = GetComponent(dest);
+	TEXTURE_DROP(comp->probId);
+
+	comp->probName = "";
+	comp->probId = TexMgr::nullres;
+	comp->needRebake = true;
 }
 
 void EnvProbSystem::RegToScene()

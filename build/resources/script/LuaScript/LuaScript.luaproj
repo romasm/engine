@@ -35,6 +35,9 @@
     <Compile Include="..\..\gui\ComponentsGui\Collision.lua">
       <Link>Gui\ComponentsGui\Collision.lua</Link>
     </Compile>
+    <Compile Include="..\..\gui\ComponentsGui\EnvProb.lua">
+      <Link>Gui\ComponentsGui\EnvProb.lua</Link>
+    </Compile>
     <Compile Include="..\..\gui\ComponentsGui\GlobalLight.lua">
       <Link>Gui\ComponentsGui\GlobalLight.lua</Link>
     </Compile>

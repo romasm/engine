@@ -12,6 +12,7 @@ loader.require("ComponentsGui.GlobalLight", Properties.reloadComponents)
 loader.require("ComponentsGui.StaticMesh", Properties.reloadComponents)
 loader.require("ComponentsGui.Script", Properties.reloadComponents)
 loader.require("ComponentsGui.Collision", Properties.reloadComponents)
+loader.require("ComponentsGui.EnvProb", Properties.reloadComponents)
 
 function Properties.reload()
     if Properties.window then
@@ -47,6 +48,7 @@ function Properties:Init()
     self.update_stmesh_need = false
     self.update_script_need = false
     self.update_collision_need = false
+    self.update_envprob_need = false
 end
 
 function Properties:Tick(dt)
@@ -65,7 +67,8 @@ function Properties:Tick(dt)
         if self.update_Glight_need and Properties.Glight_gr then Properties.Glight_gr.entity:SendEvent(ev) end 
         if self.update_stmesh_need and Properties.stmesh_gr then Properties.stmesh_gr.entity:SendEvent(ev) end                         
         if self.update_script_need and Properties.script_gr then Properties.script_gr.entity:SendEvent(ev) end                         
-        if self.update_collision_need and Properties.collision_gr then Properties.collision_gr.entity:SendEvent(ev) end                         
+        if self.update_collision_need and Properties.collision_gr then Properties.collision_gr.entity:SendEvent(ev) end                  
+        if self.update_envprob_need and Properties.envprob_gr then Properties.envprob_gr.entity:SendEvent(ev) end                       
 
         self.update_transf_need = false
         self.update_light_need = false
@@ -73,6 +76,7 @@ function Properties:Tick(dt)
         self.update_stmesh_need = false
         self.update_script_need = false
         self.update_collision_need = false
+        self.update_envprob_need = false
     end
 end
 
@@ -84,6 +88,7 @@ function Properties:Update()
     self.stmesh_gr = nil
     self.script_gr = nil
     self.collision_gr = nil
+    self.envprob_gr = nil
     
     if not Viewport.selection_set or #Viewport.selection_set == 0 or not Viewport.lua_world then
         self.none_msg.enable = true
@@ -96,6 +101,7 @@ function Properties:Update()
     local has_globallight = true
     local has_script = true
     local has_collision = true
+    local has_envprob = true
 
     local ent_type = nil
     local lua_entity = nil
@@ -107,6 +113,7 @@ function Properties:Update()
         has_globallight = has_globallight and Viewport.lua_world.world.globalLight:HasComponent(ent)
         has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent)
         has_collision = has_collision and Viewport.lua_world.world.collision:HasComponent(ent)
+        has_envprob = has_envprob and Viewport.lua_world.world.envprobs:HasComponent(ent)
         
         if has_script then
             lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)
@@ -146,6 +153,11 @@ function Properties:Update()
     if has_collision then
         self.collision_gr = Gui.CollisionComp()
         self.body:AddGroup(self.collision_gr)
+    end
+    
+    if has_envprob then
+        self.envprob_gr = Gui.EnvProbComp()
+        self.body:AddGroup(self.envprob_gr)
     end
 
     if has_script and ent_type ~= nil then
@@ -190,6 +202,7 @@ function Properties:UpdateData(force, comp)
         self.update_stmesh_need = self.stmesh_gr ~= nil
         self.update_script_need = self.script_gr ~= nil
         self.update_collision_need = self.collision_gr ~= nil
+        self.update_envprob_need = self.envprob_gr ~= nil
         if comp ~= nil then
             if comp ~= COMPONENTS.TRANSFORM then self.update_transf_need = false end
             if comp ~= COMPONENTS.LIGHT then self.update_light_need = false end
@@ -197,6 +210,7 @@ function Properties:UpdateData(force, comp)
             if comp ~= COMPONENTS.STATIC then self.update_stmesh_need = false end
             if comp ~= COMPONENTS.SCRIPT then self.update_script_need = false end
             if comp ~= COMPONENTS.COLLISION then self.update_collision_need = false end
+            if comp ~= COMPONENTS.ENVPROB then self.update_envprob_need = false end
         end
         return
     end
@@ -211,6 +225,7 @@ function Properties:UpdateData(force, comp)
         if self.stmesh_gr then self.stmesh_gr.entity:SendEvent(ev) end
         if self.script_gr then self.script_gr.entity:SendEvent(ev) end
         if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
+        if self.envprob_gr then self.envprob_gr.entity:SendEvent(ev) end
     else
         if comp == COMPONENTS.TRANSFORM then 
             if self.transf_gr then  self.transf_gr.entity:SendEvent(ev) end
@@ -224,6 +239,8 @@ function Properties:UpdateData(force, comp)
             if self.script_gr then self.script_gr.entity:SendEvent(ev) end
         elseif comp == COMPONENTS.COLLISION then 
             if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
+        elseif comp == COMPONENTS.ENVPROB then 
+            if self.envprob_gr then self.envprob_gr.entity:SendEvent(ev) end
         end
     end
 
@@ -234,4 +251,5 @@ function Properties:UpdateData(force, comp)
     self.update_stmesh_need = false
     self.update_script_need = false
     self.update_collision_need = false
+    self.update_envprob_need = false
 end

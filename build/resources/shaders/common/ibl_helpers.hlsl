@@ -101,7 +101,7 @@ void SphereEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 	const float distAlpha = saturate( distFade / data.offsetFade.w );
 		
 	const float3 localDir = mul( dominantR, (float3x3)data.invTransform ) * data.positionDistance.w;
-	const float2 intersections = RaySphereIntersect( localPos, localDir, data.positionDistance.w );
+	const float2 intersections = RaySphereIntersect( localPos, localDir, data.positionDistance.w * 0.5 );
 		
 	[branch]
 	if(intersections.y <= intersections.x)

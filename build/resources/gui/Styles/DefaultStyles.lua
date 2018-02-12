@@ -85,6 +85,26 @@ GuiStyles.color_button = {
     },
 }
 
+GuiStyles.colorwin_button = {
+    styles = {GuiStyles.solid_button,},
+    background = {
+        color = 'bg_08',
+        color_hover = 'act_01',
+        color_press = 'act_00',
+        color_nonactive = 'bg_01',
+    },
+    text = {
+        font = "../resources/fonts/opensans_normal_20px",
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_03',
+        color_nonactive = 'text_02',
+    },
+    right = 10,
+    width = 100,
+    height = 30,
+}
+
 GuiStyles.tool_button = {
     styles = {
         GuiStyles.common_button,
