@@ -7,7 +7,7 @@ return GuiMenu({
     id = "vp_menu",
     
     width = 135,
-    height = 50, 
+    height = 75, 
     
     -- children
     
@@ -68,8 +68,15 @@ return GuiMenu({
 
     GuiButton({
         styles = {GuiStyles.menu_button_default,},
-        id = "vp_dumb",
+        id = "vp_newentity",
         top = 25,
+        text = { str = "Create Entity", },
+    }),
+
+    GuiButton({
+        styles = {GuiStyles.menu_button_default,},
+        id = "vp_dumb",
+        top = 50,
         text = { str = "Dumb", },
     }),
 })
