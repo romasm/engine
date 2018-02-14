@@ -65,7 +65,7 @@ void BoxEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, Env
 {
 	const float3 localPos = mul( wPos, data.invTransform ).xyz;
 	
-	const float distBoxToPoint = MinFromBoxToPoint(data.offsetFade.www - data.bBox.xyz, data.bBox.xyz - data.offsetFade.www, localPos);
+	const float distBoxToPoint = MinFromBoxToPoint(data.offsetFade.www - data.shape.xyz, data.shape.xyz - data.offsetFade.www, localPos);
 	const float distAlpha = 1 - saturate( distBoxToPoint / data.offsetFade.w );
 
 	[branch]
@@ -73,7 +73,7 @@ void BoxEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, Env
 		return;
 	
 	const float3 localDir = mul( dominantR, (float3x3)data.invTransform ) * data.positionDistance.w;
-	const float2 intersections = RayBoxIntersect( localPos, localDir, -data.bBox.xyz, data.bBox.xyz );
+	const float2 intersections = RayBoxIntersect( localPos, localDir, -data.shape.xyz, data.shape.xyz );
 	
 	[branch]
 	if( intersections.y <= intersections.x )
@@ -92,7 +92,7 @@ void SphereEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 {
 	const float3 localPos = mul( wPos, data.invTransform ).xyz;
 	const float distFromCenter = length(localPos);
-	const float distFade = data.positionDistance.w - distFromCenter;
+	const float distFade = data.shape.x - distFromCenter;
 
 	[branch]
 	if(distFade <= 0)
@@ -101,7 +101,7 @@ void SphereEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 	const float distAlpha = saturate( distFade / data.offsetFade.w );
 		
 	const float3 localDir = mul( dominantR, (float3x3)data.invTransform ) * data.positionDistance.w;
-	const float2 intersections = RaySphereIntersect( localPos, localDir, data.positionDistance.w * 0.5 );
+	const float2 intersections = RaySphereIntersect( localPos, localDir, data.shape.x );
 		
 	[branch]
 	if(intersections.y <= intersections.x)
@@ -120,7 +120,7 @@ void SimpleEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 {
 	const float3 localPos = mul( wPos, data.invTransform ).xyz;
 	const float distFromCenter = length(localPos);
-	const float distFade = data.positionDistance.w - distFromCenter;
+	const float distFade = data.shape.x - distFromCenter;
 
 	[branch]
 	if(distFade <= 0)

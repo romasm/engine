@@ -253,7 +253,7 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 		}
 
 		probsBuffer.push_back(EnvProbRenderData(prob.position, prob.distance, prob.offset, prob.fade, prob.mips, prob.type, 
-			probSlot->second, prob.priority, prob.bBox, prob.invTransform));
+			probSlot->second, prob.priority, prob.shape, prob.invTransform));
 	}
 
 	sort(probsBuffer.begin(), probsBuffer.end(), CompareEnvProbsRenderData );

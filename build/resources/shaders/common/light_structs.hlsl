@@ -447,6 +447,6 @@ struct EnvProbRenderData
 	float4 positionDistance;
 	float4 offsetFade;
 	float4 mipsTypeAdressPriority;
-	float4 bBox;
+	float4 shape;
 	matrix invTransform;
 };

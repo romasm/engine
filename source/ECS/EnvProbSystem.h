@@ -47,6 +47,7 @@ namespace EngineCore
 
 		// update on dirty
 		float cachedDistance;
+		Vector3 cachedShape;
 		XMMATRIX cachedInvTransform;
 		Vector3 cachedPos;
 

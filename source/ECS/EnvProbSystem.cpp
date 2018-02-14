@@ -33,7 +33,7 @@ EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 	comp->dirty = true;
 	comp->farClip = 10000.0f;
 	comp->nearClip = 1.0f;
-	comp->offset = Vector3(0,0,0);
+	comp->offset = Vector3::Zero;
 	comp->quality = EP_STANDART;
 	comp->priority = 1;
 	comp->type = EP_PARALLAX_NONE;
@@ -41,6 +41,7 @@ EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 	comp->fade = 0.1f;
 	comp->mipsCount = 1;
 	comp->cachedDistance = 1.0f;
+	comp->cachedShape = Vector3::Zero;
 	comp->needRebake = true;
 	
 	comp->probId = TexMgr::nullres;
@@ -115,20 +116,20 @@ void EnvProbSystem::RegToScene()
 				switch(i.type)
 				{
 				case EP_PARALLAX_BOX:
-					{
-						XMVECTOR extv = XMLoadFloat3(&earlyVisComponent->worldBox.Extents);
-						i.cachedDistance = XMVectorGetX(XMVector3Length(extv)) * 2.0f;
-					}
+					i.cachedShape = earlyVisComponent->worldBox.Extents;
+					i.cachedDistance = i.cachedShape.Length() * 2.0f;
 					break;
 				case EP_PARALLAX_SPHERE:
+					i.cachedShape = Vector3(earlyVisComponent->worldSphere.Radius, 0, 0);
+					i.cachedDistance = i.cachedShape.x * 2.0f;
 				case EP_PARALLAX_NONE:
-					i.cachedDistance = earlyVisComponent->worldSphere.Radius * 2.0f;
+					i.cachedShape = Vector3(earlyVisComponent->worldSphere.Radius, 0, 0);
 					break;
 				}
 			}
 			else
 			{
-				i.cachedDistance = max(max(scale.x, scale.y), scale.z);
+				i.cachedShape = Vector3(max(max(scale.x, scale.y), scale.z), 0, 0);
 			}
 
 			i.cachedInvTransform = XMMatrixInverse(nullptr, XMMatrixTranspose(worldMatrix));
@@ -182,7 +183,7 @@ void EnvProbSystem::RegToScene()
 		if(!earlyVisComponent)
 		{
 			EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
-				EnvParallaxType::EP_PARALLAX_NONE, i.offset, Vector3::Zero, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
+				EnvParallaxType::EP_PARALLAX_NONE, i.offset, i.cachedShape, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
 
 			for(auto f: *frustums)
 			{
@@ -195,7 +196,7 @@ void EnvProbSystem::RegToScene()
 		}
 		
 		EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
-			i.type, i.offset, Vector3(earlyVisComponent->worldBox.Extents), i.cachedInvTransform, i.priority);
+			i.type, i.offset, i.cachedShape, i.cachedInvTransform, i.priority);
 
 		for(auto f: *frustums)
 		{

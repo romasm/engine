@@ -299,7 +299,7 @@ namespace EngineCore
 		float fade;
 		EnvParallaxType type;
 		Vector3 offset;
-		Vector3 bBox;
+		Vector3 shape;
 		XMMATRIX invTransform;
 		float priorityDist;
 		uint32_t priority;
@@ -307,9 +307,9 @@ namespace EngineCore
 		EnvProbData() {}
 
 		EnvProbData(uint32_t pId, EnvProbQuality q, const Vector3& pos, uint32_t m, float dist, float f, 
-			EnvParallaxType t, const Vector3& o, const Vector3& bb, const XMMATRIX& invT, uint32_t p) :
+			EnvParallaxType t, const Vector3& o, const Vector3& sh, const XMMATRIX& invT, uint32_t p) :
 		probId(pId), quality(q), position(pos), mips(m), distance(dist), fade(f), type(t), 
-			offset(o), bBox(bb), invTransform(invT), priority(p)
+			offset(o), shape(sh), invTransform(invT), priority(p)
 		{
 			priorityDist = 0;
 		}
@@ -320,15 +320,15 @@ namespace EngineCore
 		Vector4 positionDistance;
 		Vector4 offsetFade;
 		Vector4 mipsTypeAdressPriority;
-		Vector4 bBox;
+		Vector4 shape;
 		XMMATRIX invTransform;
 
 		EnvProbRenderData(){}
 
 		EnvProbRenderData(const Vector3& pos, float dist, const Vector3& offset, float fade, uint32_t mips,
-			EnvParallaxType type, int32_t adress, uint32_t p, const Vector3& bb, const XMMATRIX& invT) :
+			EnvParallaxType type, int32_t adress, uint32_t p, const Vector3& sh, const XMMATRIX& invT) :
 				positionDistance(pos.x, pos.y, pos.z, dist), offsetFade(offset.x, offset.y, offset.z, fade), 
-				mipsTypeAdressPriority(float(mips), float(type), float(adress), float(p)), bBox(bb.x, bb.y, bb.z, 0), invTransform(invT)
+				mipsTypeAdressPriority(float(mips), float(type), float(adress), float(p)), shape(sh.x, sh.y, sh.z, 0), invTransform(invT)
 		{}
 	};
 }
