@@ -42,11 +42,12 @@ GuiStyles.window_header = {
 
     color = 'text_01',
     color_nonactive = 'text_01',
-
+    
+    left = 10,
     height = 24,
     width = 100,
     width_percent = true,
-    center = { x = true, y = true },
+    center = { x = false, y = true },
 }
 
 GuiStyles.window_header_dynamic = {

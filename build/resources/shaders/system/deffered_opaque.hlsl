@@ -28,7 +28,7 @@ Texture2D <float4> gb_EmissiveVertexNormalZ : register(t5);
 Texture2D <uint> gb_MaterialObjectID : register(t6); 
 Texture2D <float4> gb_SubsurfaceThickness : register(t7); 
 Texture2D <float> gb_AmbientOcclusion : register(t8); 
-Texture2D <float2> gb_Depth : register(t9);
+Texture2D <float2> gb_Depth : register(t9); 
 
 #include "../common/common_helpers.hlsl"
 
