@@ -6,4 +6,7 @@ lcl = {
     save =              "Save",
     reset =             "Reset",
     pickcolor =         "Pick color",
+
+    comp_transform =      "Transform",
+    comp_vis =      "Visibility",
 }

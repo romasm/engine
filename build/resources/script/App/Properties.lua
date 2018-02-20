@@ -14,7 +14,7 @@ loader.require("ComponentsGui.Script", Properties.reloadComponents)
 loader.require("ComponentsGui.Collision", Properties.reloadComponents)
 loader.require("ComponentsGui.EnvProb", Properties.reloadComponents)
 
-loader.require("Menus.EP_AddComp")
+loader.require("Menus.AddComp")
 
 function Properties.reload()
     if Properties.window then
@@ -40,9 +40,7 @@ end
 
 function Properties:Init()
     print("Properties:Init") 
-
-    self.reload()
-
+    
     self.updateTime = 0	
 	self.compGroups = {}	
 	self.updateNeed = {}
@@ -50,6 +48,8 @@ function Properties:Init()
 	for i = 1, COMPONENTS.MAX - 1 do
 		self.updateNeed[#self.updateNeed + 1] = false
 	end
+    
+    self.reload()
 end
 
 function Properties:Tick(dt)
@@ -71,7 +71,7 @@ end
 function Properties:Update()
     self.body:ClearGroups()
 	
-	for i, gr in ipairs(self.compGroups) do
+	for i, gr in pairs(self.compGroups) do
 		self.compGroups[i] = nil
 	end
     
@@ -156,22 +156,10 @@ end
 
 function Properties:UpdateData(force, comp)
     if not force then
-        self.update_transf_need = self.transf_gr ~= nil
-        self.update_light_need = self.light_gr ~= nil
-        self.update_Glight_need = self.Glight_gr ~= nil
-        self.update_stmesh_need = self.stmesh_gr ~= nil
-        self.update_script_need = self.script_gr ~= nil
-        self.update_collision_need = self.collision_gr ~= nil
-        self.update_envprob_need = self.envprob_gr ~= nil
-        if comp ~= nil then
-            if comp ~= COMPONENTS.TRANSFORM then self.update_transf_need = false end
-            if comp ~= COMPONENTS.LIGHT then self.update_light_need = false end
-            if comp ~= COMPONENTS.GLIGHT then self.update_Glight_need = false end
-            if comp ~= COMPONENTS.STATIC then self.update_stmesh_need = false end
-            if comp ~= COMPONENTS.SCRIPT then self.update_script_need = false end
-            if comp ~= COMPONENTS.COLLISION then self.update_collision_need = false end
-            if comp ~= COMPONENTS.ENVPROB then self.update_envprob_need = false end
-        end
+        for i = 1, #self.updateNeed do
+            self.updateNeed[i] = self.compGroups[i] ~= nil
+            if comp ~= i then self.updateNeed[i] = false end
+	    end
         return
     end
 
@@ -179,39 +167,17 @@ function Properties:UpdateData(force, comp)
     ev.event = GUI_EVENTS.UPDATE
 
     if comp == nil then
-        if self.transf_gr then self.transf_gr.entity:SendEvent(ev) end
-        if self.light_gr then self.light_gr.entity:SendEvent(ev) end
-        if self.Glight_gr then self.Glight_gr.entity:SendEvent(ev) end
-        if self.stmesh_gr then self.stmesh_gr.entity:SendEvent(ev) end
-        if self.script_gr then self.script_gr.entity:SendEvent(ev) end
-        if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
-        if self.envprob_gr then self.envprob_gr.entity:SendEvent(ev) end
+        for i = 1, COMPONENTS.MAX - 1 do
+            if self.compGroups[i] ~= nil then self.compGroups[i].entity:SendEvent(ev) end
+	    end
     else
-        if comp == COMPONENTS.TRANSFORM then 
-            if self.transf_gr then  self.transf_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.LIGHT then 
-            if self.light_gr then self.light_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.GLIGHT then 
-            if self.Glight_gr then self.Glight_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.STATIC then 
-            if self.stmesh_gr then self.stmesh_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.SCRIPT then 
-            if self.script_gr then self.script_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.COLLISION then 
-            if self.collision_gr then self.collision_gr.entity:SendEvent(ev) end
-        elseif comp == COMPONENTS.ENVPROB then 
-            if self.envprob_gr then self.envprob_gr.entity:SendEvent(ev) end
-        end
+        if self.compGroups[comp] ~= nil then self.compGroups[comp].entity:SendEvent(ev) end
     end
 
     self.updateTime = 0
-    self.update_transf_need = false
-    self.update_light_need = false
-    self.update_Glight_need = false
-    self.update_stmesh_need = false
-    self.update_script_need = false
-    self.update_collision_need = false
-    self.update_envprob_need = false
+    for i = 1, #self.updateNeed do
+		self.updateNeed[i] = false
+	end
 end
 
 function Properties:OpenAddCompMenu(btn)
@@ -231,7 +197,7 @@ end
 function Properties:AddMenuClose(btn)
     if self.addCompMenu == nil then return true end
     self.addCompMenu = nil	
-	return ent:SetPressed(false) 
+	return btn:SetPressed(false) 
 end
 
 function Properties:AddMenuClick(btn, ev)
