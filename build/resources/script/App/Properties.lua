@@ -14,6 +14,8 @@ loader.require("ComponentsGui.Script", Properties.reloadComponents)
 loader.require("ComponentsGui.Collision", Properties.reloadComponents)
 loader.require("ComponentsGui.EnvProb", Properties.reloadComponents)
 
+loader.require("Menus.EP_AddComp")
+
 function Properties.reload()
     if Properties.window then
         Tools.right_side_area.entity:DetachChild(Properties.window.entity)
@@ -41,154 +43,112 @@ function Properties:Init()
 
     self.reload()
 
-    self.update_time = 0
-    self.update_transf_need = false
-    self.update_light_need = false
-    self.update_Glight_need = false
-    self.update_stmesh_need = false
-    self.update_script_need = false
-    self.update_collision_need = false
-    self.update_envprob_need = false
+    self.updateTime = 0	
+	self.compGroups = {}	
+	self.updateNeed = {}
+	
+	for i = 1, COMPONENTS.MAX - 1 do
+		self.updateNeed[#self.updateNeed + 1] = false
+	end
 end
 
 function Properties:Tick(dt)
-    self.update_time = self.update_time + dt
+    self.updateTime = self.updateTime + dt
 
-    if self.update_time < COMMON_UPDATE_WAIT then return end
-    self.update_time = 0
+    if self.updateTime < COMMON_UPDATE_WAIT then return end
+    self.updateTime = 0
 
-    local update_need = self.update_transf_need or self.update_light_need or self.update_Glight_need or self.update_stmesh_need or self.update_script_need
-    if update_need then
-        local ev = HEvent()
-        ev.event = GUI_EVENTS.UPDATE
-
-        if self.update_transf_need and Properties.transf_gr then Properties.transf_gr.entity:SendEvent(ev) end 
-        if self.update_light_need and Properties.light_gr then Properties.light_gr.entity:SendEvent(ev) end 
-        if self.update_Glight_need and Properties.Glight_gr then Properties.Glight_gr.entity:SendEvent(ev) end 
-        if self.update_stmesh_need and Properties.stmesh_gr then Properties.stmesh_gr.entity:SendEvent(ev) end                         
-        if self.update_script_need and Properties.script_gr then Properties.script_gr.entity:SendEvent(ev) end                         
-        if self.update_collision_need and Properties.collision_gr then Properties.collision_gr.entity:SendEvent(ev) end                  
-        if self.update_envprob_need and Properties.envprob_gr then Properties.envprob_gr.entity:SendEvent(ev) end                       
-
-        self.update_transf_need = false
-        self.update_light_need = false
-        self.update_Glight_need = false
-        self.update_stmesh_need = false
-        self.update_script_need = false
-        self.update_collision_need = false
-        self.update_envprob_need = false
-    end
+	local ev = HEvent()
+	ev.event = GUI_EVENTS.UPDATE
+	
+	for i = 1, #self.updateNeed do
+		if self.updateNeed[i] == true and self.compGroups[i] ~= nil then
+			self.compGroups[i].entity:SendEvent(ev)
+		end
+	end
 end
 
 function Properties:Update()
     self.body:ClearGroups()
-    self.transf_gr = nil
-    self.light_gr = nil
-    self.Glight_gr = nil
-    self.stmesh_gr = nil
-    self.script_gr = nil
-    self.collision_gr = nil
-    self.envprob_gr = nil
+	
+	for i, gr in ipairs(self.compGroups) do
+		self.compGroups[i] = nil
+	end
     
     if not Viewport.selection_set or #Viewport.selection_set == 0 or not Viewport.lua_world then
         self.none_msg.enable = true
         return 
     end
 
-    local has_transform = true
-    local has_stmesh = true
-    local has_light = true
-    local has_globallight = true
-    local has_script = true
-    local has_collision = true
-    local has_envprob = true
+    local hasComp = {}
+	for i = 1, COMPONENTS.MAX - 1 do
+		hasComp[#hasComp + 1] = true
+	end	
 
-    local ent_type = nil
-    local lua_entity = nil
+    local entType = nil
+    local luaEntity = nil
     
     for i, ent in ipairs(Viewport.selection_set) do
-        has_transform = has_transform and Viewport.lua_world.world.transform:HasComponent(ent)
-
-        has_light = has_light and Viewport.lua_world.world.light:HasComponent(ent)
-        has_globallight = has_globallight and Viewport.lua_world.world.globalLight:HasComponent(ent)
-        has_stmesh = has_stmesh and Viewport.lua_world.world.staticMesh:HasComponent(ent)
-        has_collision = has_collision and Viewport.lua_world.world.collision:HasComponent(ent)
-        has_envprob = has_envprob and Viewport.lua_world.world.envprobs:HasComponent(ent)
+        hasComp[COMPONENTS.TRANSFORM] = hasComp[COMPONENTS.TRANSFORM] and Viewport.lua_world.world.transform:HasComponent(ent)
+        hasComp[COMPONENTS.LIGHT] = hasComp[COMPONENTS.LIGHT] and Viewport.lua_world.world.light:HasComponent(ent)
+        hasComp[COMPONENTS.GLIGHT] = hasComp[COMPONENTS.GLIGHT] and Viewport.lua_world.world.globalLight:HasComponent(ent)
+        hasComp[COMPONENTS.STATIC] = hasComp[COMPONENTS.STATIC] and Viewport.lua_world.world.staticMesh:HasComponent(ent)
+        hasComp[COMPONENTS.COLLISION] = hasComp[COMPONENTS.COLLISION] and Viewport.lua_world.world.collision:HasComponent(ent)
+        hasComp[COMPONENTS.ENVPROB] = hasComp[COMPONENTS.ENVPROB] and Viewport.lua_world.world.envprobs:HasComponent(ent)
         
-        if has_script then
-            lua_entity = Viewport.lua_world.world.script:GetLuaEntity(ent)
-            if lua_entity == nil then 
+        if hasComp[COMPONENTS.SCRIPT] then
+            luaEntity = Viewport.lua_world.world.script:GetLuaEntity(ent)
+            if luaEntity == nil then 
                 has_script = false
             else
-                local current_type = Viewport.lua_world.world:GetEntityType(ent)
-                if ent_type == nil then 
-                    ent_type = current_type
+                local currentType = Viewport.lua_world.world:GetEntityType(ent)
+                if entType == nil then 
+                    entType = currentType
                 else
-                    if ent_type ~= current_type then has_script = false end
+                    if entType ~= currentType then hasComp[COMPONENTS.SCRIPT] = false end
                 end
             end
         end
     end
     
-    if has_transform then
-        self.transf_gr = Gui.TransformComp()
-        self.body:AddGroup(self.transf_gr)
-    end
+	for i, has in ipairs(hasComp) do
+		if has then
+			if i ~= COMPONENTS.SCRIPT then
+				self.compGroups[i] = Gui[COMPONENTS_NAMES[i] .. "Comp"]()
+				self.body:AddGroup(self.compGroups[i])
+			else
+				if entType ~= nil then
+					local varsCount = Viewport.lua_world.world.script:GetLuaVarsCount(luaEntity.ent)
+					local varsNames = {}
+					for i = 0, varsCount - 1 do
+						varsNames[#varsNames + 1] = Viewport.lua_world.world.script:GetLuaVarName(luaEntity.ent, i)
+					end
+					
+					-- TODO: sort vars
+					
+					self.compGroups[i] = Gui[COMPONENTS_NAMES[i] .. "Comp"]()
+					
+					local topOffset = 33
+					for j = 1, #varsNames do
+						local varType = type(luaEntity[varsNames[j]])
+						local varValue = luaEntity[varsNames[j]]
 
-    if has_light then
-        self.light_gr = Gui.LightComp()
-        self.body:AddGroup(self.light_gr)
-    end
+						local varGuiFunc = Gui["ScriptVar_"..varType]
+						if varGuiFunc ~= nil then
+							local varGui = varGuiFunc(varsNames[j], topOffset)
+							topOffset = topOffset + varGui.entity.height + 10
+							self.compGroups[i].entity:AttachChild(varGui.entity)   
+						end         
+					end
 
-    if has_globallight then
-        self.Glight_gr = Gui.GlobalLightComp()
-        self.body:AddGroup(self.Glight_gr)
-    end
-
-    if has_stmesh then
-        self.stmesh_gr = Gui.StaticMeshComp()
-        self.body:AddGroup(self.stmesh_gr)
-    end
-    
-    if has_collision then
-        self.collision_gr = Gui.CollisionComp()
-        self.body:AddGroup(self.collision_gr)
-    end
-    
-    if has_envprob then
-        self.envprob_gr = Gui.EnvProbComp()
-        self.body:AddGroup(self.envprob_gr)
-    end
-
-    if has_script and ent_type ~= nil then
-        local varsCount = Viewport.lua_world.world.script:GetLuaVarsCount(lua_entity.ent)
-        local varsNames = {}
-        for i = 0, varsCount - 1 do
-            varsNames[#varsNames + 1] = Viewport.lua_world.world.script:GetLuaVarName(lua_entity.ent, i)
-        end
-
-        -- TODO: sort vars
-        
-        self.script_gr = Gui.ScriptComp()
-        
-        local topOffset = 33
-        for j = 1, #varsNames do
-            local varType = type(lua_entity[varsNames[j]])
-            local varValue = lua_entity[varsNames[j]]
-
-            local varGuiFunc = Gui["ScriptVar_"..varType]
-            if varGuiFunc ~= nil then
-                local varGui = varGuiFunc(varsNames[j], topOffset)
-                topOffset = topOffset + varGui.entity.height + 10
-                self.script_gr.entity:AttachChild(varGui.entity)   
-            end         
-        end
-
-        local groupH = topOffset + 10
-        self.script_gr.entity.height = groupH
-        self.script_gr.opened_h = groupH
-        self.body:AddGroup(self.script_gr)
-    end
+					local groupH = topOffset + 10
+					self.compGroups[i].entity.height = groupH
+					self.compGroups[i].opened_h = groupH
+					self.body:AddGroup(self.compGroups[i])
+				end
+			end
+		end
+	end
     
     self:UpdateData(true)
     self.none_msg.enable = false
@@ -244,7 +204,7 @@ function Properties:UpdateData(force, comp)
         end
     end
 
-    self.update_time = 0
+    self.updateTime = 0
     self.update_transf_need = false
     self.update_light_need = false
     self.update_Glight_need = false
@@ -252,4 +212,35 @@ function Properties:UpdateData(force, comp)
     self.update_script_need = false
     self.update_collision_need = false
     self.update_envprob_need = false
+end
+
+function Properties:OpenAddCompMenu(btn)
+    if self.addCompMenu ~= nil then return true end
+
+	self.addCompMenu = Gui.AddCompMenu()
+    btn:AttachOverlay(self.addCompMenu)
+		
+	local corners = btn.entity:GetCorners()
+    self.addCompMenu:Open(corners.l, corners.b)
+    
+	-- TODO: set allowed comps
+	
+    return true
+end
+
+function Properties:AddMenuClose(btn)
+    if self.addCompMenu == nil then return true end
+    self.addCompMenu = nil	
+	return ent:SetPressed(false) 
+end
+
+function Properties:AddMenuClick(btn, ev)
+    self:AddMenuClose(btn)
+    
+    if ev.id == "ac_transform" then
+		
+    elseif ev.id == "ac_vis" then
+		
+	end
+	return true
 end

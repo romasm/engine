@@ -31,6 +31,36 @@ return GuiWindow({
         end,
     },
     
+	GuiButton({
+		styles = {
+			GuiStyles.solid_button,
+			GuiStyles.vp_header_colors,
+		},
+
+		id = "ep_addcomp",
+		holded = true,
+	
+		text = {
+			str = "Add component",
+		},
+		alt = "Add component to current selected entities",
+		
+		width = 150,
+		height = 25,
+
+		align = GUI_ALIGN.RIGHT,
+
+		events = {
+			[GUI_EVENTS.MOUSE_UP] = function(self, ev) 
+				if Properties.addCompMenu ~= nil then return true
+				else return false end 
+			end,
+			[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Properties:OpenAddCompMenu(self) end,			
+			[GUI_EVENTS.MENU_CLOSE] = function(self, ev) Properties:AddMenuClose(self) end,
+			[GUI_EVENTS.MENU_CLICK] = function(self, ev) Properties:AddMenuClick(self, ev) end, 
+		},
+	}),
+	
     GuiClientarea({
         GuiString({
             styles = {

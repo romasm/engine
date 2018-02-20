@@ -69,6 +69,19 @@ COMPONENTS = {
     STATIC = 4,
     SCRIPT = 5,
     COLLISION = 6,
+	ENVPROB = 7,
+	
+	MAX = 8,
+}
+
+COMPONENTS_NAMES = {
+    "Transform",
+    "Light",
+    "GlobalLight",
+    "StaticMesh",
+	"Script",
+    "Collision",
+    "EnvProb",
 }
 
 WORLDMODES = {
