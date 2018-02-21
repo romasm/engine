@@ -21,7 +21,7 @@ return GuiWindow({
         styles = {
             GuiStyles.window_header,
         },
-        str = "Entity properties"
+        str = lcl.property_header,
     },
     
     events = {
@@ -33,28 +33,23 @@ return GuiWindow({
     
 	GuiButton({
 		styles = {
-			GuiStyles.solid_button,
-			GuiStyles.vp_header_colors,
+			GuiStyles.topmenu_button_colors,
 		},
 
 		id = "ep_addcomp",
 		holded = true,
 	
 		text = {
-			str = "Add component",
+			str = lcl.add_comp,
 		},
-		alt = "Add component to current selected entities",
+		alt = lcl.add_comp_help,
 		
-		width = 150,
-		height = 25,
-
+		width = 136,
+		height = 25,        
+        height_percent = false,
 		align = GUI_ALIGN.RIGHT,
 
 		events = {
-			[GUI_EVENTS.MOUSE_UP] = function(self, ev) 
-				if Properties.addCompMenu ~= nil then return true
-				else return false end 
-			end,
 			[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Properties:OpenAddCompMenu(self) end,			
 			[GUI_EVENTS.MENU_CLOSE] = function(self, ev) Properties:AddMenuClose(self) end,
 			[GUI_EVENTS.MENU_CLICK] = function(self, ev) Properties:AddMenuClick(self, ev) end, 
@@ -71,7 +66,7 @@ return GuiWindow({
 
             id = 'none_msg',
 
-            str = "No entities selected",
+            str = lcl.no_entity_select,
 
             static = true,
 

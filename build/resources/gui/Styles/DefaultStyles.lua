@@ -658,3 +658,66 @@ GuiStyles.vp_header_colors = {
         font = "../resources/fonts/opensans_normal_18px",
     },
 }
+
+GuiStyles.topmenu_button_colors = {
+    styles = {
+        GuiStyles.solid_button,
+    },
+
+    background = {
+        color = 'bg_01',
+        color_hover = 'act_01',
+        color_press = 'bg_05',
+    },
+    
+    text = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_02',
+    },
+}
+
+GuiStyles.topmenu_button = {
+    styles = {
+        GuiStyles.topmenu_button_colors,
+    },
+
+    holded = true,
+    
+    height = 100,
+    height_percent = true,
+    
+    text = {
+        font = "../resources/fonts/opensans_normal_20px",
+    },
+}
+
+GuiStyles.sys_button = {
+    styles = {
+        GuiStyles.solid_button,
+    },
+
+    holded = false,
+
+    height = 25,
+    width = 25,
+
+    align = GUI_ALIGN.RIGHT,
+
+    background = {
+        color = 'bg_01',
+        color_hover = 'act_01',
+        color_press = 'bg_05',
+    },
+
+    text = {
+        font = '',
+    },
+
+    icon = {
+        color = 'text_01',
+        color_hover = 'act_03',
+        color_press = 'act_02',
+        rect = { l = 0, t = 0, w = 25, h = 25 },
+    },
+}

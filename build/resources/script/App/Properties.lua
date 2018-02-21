@@ -53,6 +53,7 @@ function Properties:Init()
 end
 
 function Properties:Tick(dt)
+    self.menuJustClosed = false
     self.updateTime = self.updateTime + dt
 
     if self.updateTime < COMMON_UPDATE_WAIT then return end
@@ -181,8 +182,16 @@ function Properties:UpdateData(force, comp)
 end
 
 function Properties:OpenAddCompMenu(btn)
-    if self.addCompMenu ~= nil then return true end
+    if self.menuJustClosed then
+        local fakeEvent = HEvent()
+        fakeEvent.event = GUI_EVENTS.MOUSE_DOWN
+        fakeEvent.key = KEYBOARD_CODES.KEY_LBUTTON
+        btn.entity:Callback(fakeEvent)
+        return true
+    end
 
+    if self.addCompMenu ~= nil then return true end
+    
 	self.addCompMenu = Gui.AddCompMenu()
     btn:AttachOverlay(self.addCompMenu)
 		
@@ -197,6 +206,7 @@ end
 function Properties:AddMenuClose(btn)
     if self.addCompMenu == nil then return true end
     self.addCompMenu = nil	
+    self.menuJustClosed = true
 	return btn:SetPressed(false) 
 end
 
@@ -204,9 +214,52 @@ function Properties:AddMenuClick(btn, ev)
     self:AddMenuClose(btn)
     
     if ev.id == "ac_transform" then
-		
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.transform:AddComponent(ent)
+		end
+
     elseif ev.id == "ac_vis" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.visibility:AddComponent(ent)
+		end
 		
+    elseif ev.id == "ac_earlyvis" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.earlyVisibility:AddComponent(ent)
+		end
+		
+    elseif ev.id == "ac_light" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.light:AddComponent(ent)
+		end
+		
+    elseif ev.id == "ac_glight" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.globalLight:AddComponent(ent)
+		end
+		
+    elseif ev.id == "ac_mesh" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.staticMesh:AddComponent(ent)
+		end
+				
+    elseif ev.id == "ac_script" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.script:AddComponent(ent)
+		end
+		
+    elseif ev.id == "ac_collision" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.collision:AddComponent(ent)
+		end
+		
+    elseif ev.id == "ac_envprob" then
+		for i, ent in ipairs(Viewport.selection_set) do
+            Viewport.lua_world.world.envprobs:AddComponent(ent)
+		end
+				
 	end
+
+    self:Update()
 	return true
 end

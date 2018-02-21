@@ -40,8 +40,8 @@ GuiStyles.window_header = {
         GuiStyles.string_18,
     },
 
-    color = 'text_01',
-    color_nonactive = 'text_01',
+    color = 'text_06',
+    color_nonactive = 'text_06',
     
     left = 10,
     height = 24,
