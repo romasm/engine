@@ -120,10 +120,9 @@ void EnvProbSystem::RegToScene()
 					i.cachedDistance = i.cachedShape.Length() * 2.0f;
 					break;
 				case EP_PARALLAX_SPHERE:
-					i.cachedShape = Vector3(earlyVisComponent->worldSphere.Radius, 0, 0);
-					i.cachedDistance = i.cachedShape.x * 2.0f;
 				case EP_PARALLAX_NONE:
 					i.cachedShape = Vector3(earlyVisComponent->worldSphere.Radius, 0, 0);
+					i.cachedDistance = i.cachedShape.x * 2.0f;
 					break;
 				}
 			}

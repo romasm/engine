@@ -117,7 +117,7 @@ bool EnvProbMgr::InitBuffers()
 void EnvProbMgr::AddEnvProb(const EnvProbData& data, const Vector3& camPos)
 {
 	Vector3 fromCamera = camPos - data.position;
-	float priorityDist = max(0.0f, fromCamera.Length() - data.distance) * data.priority;
+	float priorityDist = max(0.0f, fromCamera.Length() - data.distance * 0.5f) * data.priority;
 
 	EnvProbData* targetData = nullptr;
 	switch (data.quality)
@@ -167,6 +167,11 @@ bool CompareEnvProbsRenderData(EnvProbRenderData& first, EnvProbRenderData& seco
 
 void EnvProbMgr::PrepareEnvProbs()
 {
+	// TEMP
+	hqRegedProbsPrev.clear();
+	sqRegedProbsPrev.clear();
+	lqRegedProbsPrev.clear();
+
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_HQ>(hqRegedProbs, hqRegedProbsPrev, hqEnvProbs, hqFreeProbIndex, hqProbArray, hqProbsBuffer);
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_SQ>(sqRegedProbs, sqRegedProbsPrev, sqEnvProbs, sqFreeProbIndex, sqProbArray, sqProbsBuffer);
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_LQ>(lqRegedProbs, lqRegedProbsPrev, lqEnvProbs, lqFreeProbIndex, lqProbArray, lqProbsBuffer);

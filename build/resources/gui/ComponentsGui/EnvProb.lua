@@ -313,6 +313,7 @@ return GuiGroup({
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
                 for i, ent in ipairs(Viewport.selection_set) do
                     Viewport.lua_world.world.envprobs:Bake(ent)
+                    Viewport.lua_world.world:UpdateEnvProbRenderData(ent)
                 end
                 return true
             end,
