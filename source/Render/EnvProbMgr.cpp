@@ -167,11 +167,6 @@ bool CompareEnvProbsRenderData(EnvProbRenderData& first, EnvProbRenderData& seco
 
 void EnvProbMgr::PrepareEnvProbs()
 {
-	// TEMP
-	hqRegedProbsPrev.clear();
-	sqRegedProbsPrev.clear();
-	lqRegedProbsPrev.clear();
-
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_HQ>(hqRegedProbs, hqRegedProbsPrev, hqEnvProbs, hqFreeProbIndex, hqProbArray, hqProbsBuffer);
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_SQ>(sqRegedProbs, sqRegedProbsPrev, sqEnvProbs, sqFreeProbIndex, sqProbArray, sqProbsBuffer);
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_LQ>(lqRegedProbs, lqRegedProbsPrev, lqEnvProbs, lqFreeProbIndex, lqProbArray, lqProbsBuffer);

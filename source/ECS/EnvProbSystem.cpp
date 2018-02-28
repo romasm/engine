@@ -31,7 +31,7 @@ EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 
 	comp->parent = e;
 	comp->dirty = true;
-	comp->farClip = 10000.0f;
+	comp->farClip = 100000.0f;
 	comp->nearClip = 1.0f;
 	comp->offset = Vector3::Zero;
 	comp->quality = EP_STANDART;
@@ -172,7 +172,8 @@ void EnvProbSystem::RegToScene()
 				continue;
 		}
 
-		if(i.mipsCount <= 1)
+		// TODO
+		//if(i.mipsCount <= 1)
 		{
 			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 			TEXTURE_GETPTR(i.probId)->GetDesc(&desc);
