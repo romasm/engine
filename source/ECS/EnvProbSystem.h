@@ -34,7 +34,6 @@ namespace EngineCore
 		// static
 		string probName;
 		uint32_t probId;
-		uint32_t mipsCount;
 
 		// update on props change
 		EnvParallaxType type;
@@ -148,9 +147,9 @@ namespace EngineCore
 		{
 			return epResolutions[qual];
 		}
-		static inline int32_t GetMipsCount(EnvProbQuality qual) 
+		static inline uint32_t GetMipsCount(EnvProbQuality qual) 
 		{
-			return GetLog2(epResolutions[qual]) - GetLog2(ENVPROBS_SPEC_MIN) + 1;
+			return epMipsCount[qual]; // GetLog2(epResolutions[qual]) - GetLog2(ENVPROBS_SPEC_MIN) + 1;
 		}
 		static inline DXGI_FORMAT GetFormat(EnvProbQuality qual) 
 		{
@@ -168,5 +167,6 @@ namespace EngineCore
 
 		static int32_t epResolutions[EP_QUAL_COUNT];
 		static DXGI_FORMAT epFormats[EP_QUAL_COUNT];
+		static uint32_t epMipsCount[EP_QUAL_COUNT];
 	};
 }

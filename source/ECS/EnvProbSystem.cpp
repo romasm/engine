@@ -6,6 +6,7 @@
 using namespace EngineCore;
 
 int32_t EnvProbSystem::epResolutions[EP_QUAL_COUNT] = {256, 128, 32};
+uint32_t EnvProbSystem::epMipsCount[EP_QUAL_COUNT] = {8, 7, 5};
 DXGI_FORMAT EnvProbSystem::epFormats[EP_QUAL_COUNT] = {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM};
 
 EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)
@@ -39,18 +40,11 @@ EnvProbComponent* EnvProbSystem::AddComponent(Entity e)
 	comp->type = EP_PARALLAX_NONE;
 	comp->probName = "";
 	comp->fade = 0.1f;
-	comp->mipsCount = 1;
 	comp->cachedDistance = 1.0f;
 	comp->cachedShape = Vector3::Zero;
 	comp->needRebake = true;
 	
 	comp->probId = TexMgr::nullres;
-
-	/*if(earlyVisibilitySys && earlyVisibilitySys->HasComponent(e))
-	{
-		earlyVisibilitySys->SetType(e, BT_SPHERE);
-		earlyVisibilitySys->SetBSphere(e, BoundingSphere(Vector3(0,0,0), 1.0f));
-	}*/
 
 	return comp;
 }
@@ -139,50 +133,22 @@ void EnvProbSystem::RegToScene()
 			i.dirty = false;
 		}
 
+		const uint32_t mipsCount = GetMipsCount(i.quality);
+
 		// TODO: update & validation on load
-		//if(i.needRebake)
-		{
-			// Verify texture params
+		//if(i.needRebake) // Verify texture params
+		{			
 			if( i.probId == TexMgr::nullres || i.probName.empty() )
 				continue;
 
-			// TODO: move to texture mgr !!!!!!!!!!!!!!!!!!
-
-			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-			const auto texCubeSrv = TEXTURE_GETPTR(i.probId);
-			texCubeSrv->GetDesc(&desc);
-
-			if( desc.Format != GetFormat(i.quality) )
+			const TextureMeta info = TexMgr::GetMeta(i.probId);
+			if( info.width != GetResolution(i.quality) || info.mipsCount != mipsCount || info.format != GetFormat(i.quality) )
 				continue;
-			
-			ID3D11Resource* resource = nullptr;
-			texCubeSrv->GetResource(&resource);
-			if(!resource)
-				continue;
-
-			ID3D11Texture2D *cube = 0;
-			resource->QueryInterface<ID3D11Texture2D>(&cube);
-			if(!cube)
-				continue;
-
-			D3D11_TEXTURE2D_DESC texDesc;
-			cube->GetDesc(&texDesc);
-
-			if( texDesc.Width != GetResolution(i.quality) )
-				continue;
-		}
-
-		// TODO
-		//if(i.mipsCount <= 1)
-		{
-			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-			TEXTURE_GETPTR(i.probId)->GetDesc(&desc);
-			i.mipsCount = desc.TextureCube.MipLevels;
 		}
 
 		if(!earlyVisComponent)
 		{
-			EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
+			EnvProbData epData(i.probId, i.quality, i.cachedPos, mipsCount, i.cachedDistance, i.fade, 
 				EnvParallaxType::EP_PARALLAX_NONE, i.offset, i.cachedShape, i.cachedInvTransform, ENVPROBS_PRIORITY_ALWAYS);
 
 			for(auto f: *frustums)
@@ -195,7 +161,7 @@ void EnvProbSystem::RegToScene()
 			continue;
 		}
 		
-		EnvProbData epData(i.probId, i.quality, i.cachedPos, i.mipsCount, i.cachedDistance, i.fade, 
+		EnvProbData epData(i.probId, i.quality, i.cachedPos, mipsCount, i.cachedDistance, i.fade, 
 			i.type, i.offset, i.cachedShape, i.cachedInvTransform, i.priority);
 
 		for(auto f: *frustums)
@@ -445,6 +411,7 @@ bool EnvProbSystem::Bake(Entity e)
 
 	DXGI_FORMAT fmt = GetFormat(comp.quality);
 	int32_t resolution = GetResolution(comp.quality);
+	uint32_t mipNum = GetMipsCount(comp.quality);
 
 	Vector3 env_pos = XMVector3Transform(XMLoadFloat3(&comp.offset), transformSys->GetTransform_WInternal(comp.get_entity()));
 	Entity env_cam = world->GetEntityMgr()->CreateEntity();
@@ -467,14 +434,6 @@ bool EnvProbSystem::Bake(Entity e)
 	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
 	sp->SetFloat(comp.farClip, 0);
 	
-	int mipNum = 1;
-	int cur_mip_res = resolution;
-	while( cur_mip_res > ENVPROBS_SPEC_MIN )
-	{
-		cur_mip_res /= 2;
-		mipNum++;
-	}
-
 	ScratchImage raw_cube[6];
 
 	Vector3 m_cam_rot[6] = {
@@ -558,7 +517,7 @@ bool EnvProbSystem::Bake(Entity e)
 	i_faces.create(facesCount);
 	i_faces.resize(facesCount);
 
-	for(int i=0; i<mipNum; i++)
+	for(int i = 0; i < (int)mipNum; i++)
 	{
 		if(i==0)
 		{
