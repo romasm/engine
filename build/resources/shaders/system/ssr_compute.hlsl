@@ -30,13 +30,13 @@ cbuffer CamMove : register(b1)
 
 
 #define MIN_REFL_DEPTH 0.00002
-#define MAX_DEPTH_OFFSET 0.0025
+#define MAX_DEPTH_OFFSET 0.005
 #define RAY_ITERATOR 128
 
 #define MAX_RAY_DIST_SQ 32000.0f
 #define MAX_RAY_DIST_FADE 5000.0f
 
-#define BORDER_FADE 0.05f
+#define BORDER_FADE 0.2f
 
 
 float3 GetPrevPos(float3 pos) // screen space
@@ -376,7 +376,6 @@ float4 calc_ssr( float3 p, float3 N, float3 WP, float2 screenSize, float R, floa
 
 float4 SSR(PI_PosTex input) : SV_TARGET 
 {   
-	return 0;
 	float2 inUV = input.tex;      
 		  
 	int2 pixCoords = 0; 
