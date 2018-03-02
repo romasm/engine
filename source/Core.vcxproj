@@ -225,6 +225,7 @@
     <ClInclude Include="Render\ScenePipeline.h" />
     <ClInclude Include="Render\Shader.h" />
     <ClInclude Include="Render\ShadowsRenderer.h" />
+    <ClInclude Include="Render\Support\CubeRenderTarget.h" />
     <ClInclude Include="Render\Support\GaussianBlur.h" />
     <ClInclude Include="Render\Support\LightBuffers.h" />
     <ClInclude Include="Render\Support\MaterialData.h" />
@@ -309,6 +310,7 @@
     <ClCompile Include="Render\SceneRenderMgr.cpp" />
     <ClCompile Include="Render\Shader.cpp" />
     <ClCompile Include="Render\ShadowsRenderer.cpp" />
+    <ClCompile Include="Render\Support\CubeRenderTarget.cpp" />
     <ClCompile Include="Render\Support\GaussianBlur.cpp" />
     <ClCompile Include="Render\Support\ScreenPlane.cpp" />
     <ClCompile Include="Render\VoxelRenderer.cpp">

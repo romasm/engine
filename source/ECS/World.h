@@ -124,6 +124,7 @@ namespace EngineCore
 			}
 			return false;
 		}
+
 	#ifdef _EDITOR
 		inline void PostMeshesReload()
 		{
@@ -144,6 +145,10 @@ namespace EngineCore
 		void SetMode(int32_t m) {m_mode = (StateMode)m;}
 
 		inline float GetDT() const {return m_dt;} 
+
+		bool BeginCaptureProb(uint32_t width, uint32_t height, bool isLightweight = false);
+		bool CaptureProb(Matrix& probTransform, float nearClip, float farClip);
+		void EndCaptureProb();
 
 		inline FrustumMgr* GetFrustumMgr() const {return m_frustumMgr;}
 		inline SceneGraph* GetSceneGraph() const {return m_sceneGraph;}
@@ -407,6 +412,10 @@ namespace EngineCore
 		uint8_t* copyBuffer;
 
 		uint32_t frameID;
+
+		// prob capture
+		ScenePipeline* probScene;
+		Entity probCamera;
 	};
 	
 	class World: public BaseWorld

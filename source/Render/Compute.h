@@ -11,13 +11,15 @@ namespace EngineCore
 	class Compute
 	{
 	public:
-		Compute(string shader, string function)
+		Compute(string& shader, string& function)
 		{
 			uavs_count = 0;
 			shaderID = ShaderCodeMgr::Get()->GetShaderCode(shader + "_" + function, SHADER_CS);
 			if(shaderID == SHADER_NULL)
 				ERR("Cant init compute shader %s with entry point %s !", shader, function);
 		}
+
+		Compute(char* shader, char* function) {Compute(string(shader), string(function));}
 
 		~Compute()
 		{

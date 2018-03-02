@@ -260,6 +260,9 @@ void ScenePipeline::SetCamera(CameraLink cam)
 
 bool ScenePipeline::Resize(int t_width, int t_height)
 {
+	if( width == t_width && height == t_height )
+		return true;
+
 	CloseRts();
 
 	width = t_width;

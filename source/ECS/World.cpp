@@ -21,6 +21,7 @@ BaseWorld::BaseWorld( uint32_t id )
 
 	m_dt = 0;
 	frameID = 0;
+	probScene = nullptr;
 
 	copyBuffer = new uint8_t[COPY_BUFFER_SIZE];
 }
@@ -108,13 +109,18 @@ bool BaseWorld::Init()
 void BaseWorld::Close()
 {
 	world_name = "";
+		
+	probScene = nullptr;
+	probCamera.setnull();
 
 	for(auto& it: m_scenes)
+	{
 		if(it)
 		{
 			ScenePipeline* scene = it;
 			_CLOSE(scene);
 		}
+	}
 	m_scenes.clear();
 	
 	_DELETE(m_staticMeshSystem);
@@ -560,6 +566,72 @@ bool BaseWorld::saveWorld(string& filename)
 	return true;
 }
 
+bool BaseWorld::BeginCaptureProb(uint32_t width, uint32_t height, bool isLightweight)
+{
+	if(probScene)
+		return probScene->Resize(width, height);
+
+	Entity probCamera = m_entityMgr->CreateEntity();
+	
+	m_transformSystem->AddComponent(probCamera);
+
+	m_cameraSystem->AddComponent(probCamera);
+	m_cameraSystem->SetAspect(probCamera, 1.0f);
+	m_cameraSystem->SetFov(probCamera, XM_PIDIV2);
+
+	probScene = CreateScene(probCamera, width, height, isLightweight);
+
+	if(!probScene)
+	{
+		DestroyEntity(probCamera);
+		probCamera.setnull();
+		return false;
+	}
+
+	return true;
+}
+
+bool BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip)
+{
+	if( !probScene || probCamera.isnull() )
+		return false;
+		
+	m_transformSystem->SetTransform_L(probCamera, probTransform);
+	m_cameraSystem->SetNear(probCamera, nearClip);
+	m_cameraSystem->SetFar(probCamera, farClip);
+
+	Vector3 cameraRot[6] = {
+		Vector3(0, XM_PIDIV2, 0),
+		Vector3(0, -XM_PIDIV2, 0),
+		Vector3(-XM_PIDIV2, 0, 0),
+		Vector3(XM_PIDIV2, 0, 0),
+		Vector3(0, 0, 0),
+		Vector3(0, XM_PI, 0)
+	};
+	
+	for(int32_t i = 0; i < 6; i++)
+	{
+		m_transformSystem->AddRotationPYR_L(probCamera, cameraRot[i]);
+		
+		Snapshot(probScene);
+
+		// TODO: cube render
+		probScene->LinearAndDepthToRT(face, sp.get());
+	}
+
+	return true;
+}
+
+void BaseWorld::EndCaptureProb()
+{
+	if(!probScene)
+		return;
+	
+	DestroyEntity(probCamera);
+	probCamera.setnull();
+	DeleteScene(probScene);
+}
+
 // World ---------------------
 World::World( uint32_t id ) : BaseWorld( id )
 {
@@ -644,7 +716,7 @@ void World::Snapshot(ScenePipeline* scene)
 	if(!scene->IsLighweight())
 		scene->ResolveShadowmaps();
 
-	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
+	m_envProbSystem->RegToScene();
 	m_lightSystem->RegToScene();
 	m_globalLightSystem->RegToScene();
 
@@ -744,7 +816,7 @@ void World::Frame()
 		it->ResolveShadowmaps();
 	}
 
-	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
+	m_envProbSystem->RegToScene();
 	m_lightSystem->RegToScene();
 	m_globalLightSystem->RegToScene(); // TODO: now all RegToScene fill render queues endless if no scenes
 
@@ -869,7 +941,7 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 	m_frustumMgr->Clear();
 	m_cameraSystem->RegSingle(scene->GetSceneCamera().e);
 	
-	m_envProbSystem->RegToScene(); // replace system with one-envmap solution
+	m_envProbSystem->RegToScene();
 
 	m_visibilitySystem->CheckVisibility();
 
@@ -937,7 +1009,7 @@ void SmallWorld::Frame()
 		m_frustumMgr->Clear();
 		m_cameraSystem->RegToDraw();
 	
-		m_envProbSystem->RegToScene(); // replace system with one-envmap solution
+		m_envProbSystem->RegToScene();
 
 		m_visibilitySystem->CheckVisibility();
 

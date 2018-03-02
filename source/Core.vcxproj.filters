@@ -297,6 +297,9 @@
     <ClInclude Include="Render\EnvProbMgr.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\Support\CubeRenderTarget.h">
+      <Filter>Render\Support</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -480,6 +483,9 @@
     </ClCompile>
     <ClCompile Include="Render\EnvProbMgr.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Support\CubeRenderTarget.cpp">
+      <Filter>Render\Support</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
