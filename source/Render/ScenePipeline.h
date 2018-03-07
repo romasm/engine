@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Render.h"
 #include "RenderTarget.h"
+#include "CubeRenderTarget.h"
 #include "ScreenPlane.h"
 #include "LocalTimer.h"
 #include "GaussianBlur.h"
@@ -204,6 +205,7 @@ namespace EngineCore
 		//void AllCombineStage();
 
 		void LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp);
+		void LinearAndDepthToCube(CubeRenderTarget* rt, ScreenPlane* sp);
 
 		luaSRV GetSRV()
 		{

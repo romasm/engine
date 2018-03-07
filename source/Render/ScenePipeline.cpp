@@ -1076,7 +1076,22 @@ void ScenePipeline::HDRtoLDRStage()
 	sp_Antialiased[2]->Draw();
 }
 
+// TODO: compute
 void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
+{
+	sp->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
+	// to do: separate combine?
+
+	rt->ClearRenderTargets();
+	rt->SetRenderTarget();
+
+	sp->Draw();
+
+	sp->ClearTex();
+}
+
+// TODO: compute
+void ScenePipeline::LinearAndDepthToCube(CubeRenderTarget* rt, ScreenPlane* sp)
 {
 	sp->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
 	// to do: separate combine?
