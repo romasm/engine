@@ -407,125 +407,29 @@ bool EnvProbSystem::Bake(Entity e)
 		comp.probName = RandomString(ENVPROBS_NAME_LENGTH);
 	}
 
-	HRESULT hr;
-
 	DXGI_FORMAT fmt = GetFormat(comp.quality);
 	int32_t resolution = GetResolution(comp.quality);
 	uint32_t mipNum = GetMipsCount(comp.quality);
 
-	Vector3 env_pos = XMVector3Transform(XMLoadFloat3(&comp.offset), transformSys->GetTransform_WInternal(comp.get_entity()));
-	Entity env_cam = world->GetEntityMgr()->CreateEntity();
-	
-	transformSys->AddComponent(env_cam);
-	transformSys->SetPosition_L(env_cam, env_pos);
-	transformSys->SetRotationPYR_L3F(env_cam, 0, 0, 0);
-	transformSys->SetScale_L3F(env_cam, 1, 1, 1);
-
-	auto camSys = world->GetCameraSystem();
-	camSys->AddComponent(env_cam);
-	camSys->SetAspect(env_cam, 1.0f);
-	camSys->SetFar(env_cam, comp.farClip);
-	camSys->SetNear(env_cam, comp.nearClip);
-	camSys->SetFov(env_cam, XM_PIDIV2);
-
-	// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	auto env_scene = world->CreateScene(env_cam, resolution, resolution, false);
-	
-	unique_ptr<ScreenPlane> sp(new ScreenPlane(ENVPROBS_MAT));
-	sp->SetFloat(comp.farClip, 0);
-	
-	ScratchImage raw_cube[6];
-
-	Vector3 m_cam_rot[6] = {
-		Vector3(0, XM_PIDIV2, 0),
-		Vector3(0, -XM_PIDIV2, 0),
-		Vector3(-XM_PIDIV2, 0, 0),
-		Vector3(XM_PIDIV2, 0, 0),
-		Vector3(0, 0, 0),
-		Vector3(0, XM_PI, 0)
-	};
-	
-	for(int i=0; i<6; i++)
+	if( !world->BeginCaptureProb(resolution, fmt, false) )
 	{
-		transformSys->SetRotationPYR_L(env_cam, m_cam_rot[i]);
-		
-		world->Snapshot(env_scene);
-		
-		RenderTarget* face = new RenderTarget;
-		if(!face->Init(resolution, resolution))
-		{
-			_CLOSE(face);
-			for(int i=0; i<6; i++)raw_cube[i].Release();
-			world->DeleteScene(env_scene);
-			return false;
-		}
-		if(!face->AddRT(fmt))
-		{
-			_CLOSE(face);
-			for(int i=0; i<6; i++)raw_cube[i].Release();
-			world->DeleteScene(env_scene);
-			return false;
-		}
-
-		env_scene->LinearAndDepthToRT(face, sp.get());
-
-		ID3D11Resource* resource = nullptr;
-		face->GetShaderResourceView(0)->GetResource(&resource);
-
-		hr = CaptureTexture(Render::Device(), Render::Context(), resource, raw_cube[i]);
-		if ( FAILED(hr) )
-		{
-			_CLOSE(face);
-			for(int i=0; i<6; i++)raw_cube[i].Release();
-			world->DeleteScene(env_scene);
-			return false;
-		}
-		_CLOSE(face);
-	}
-	
-	world->DeleteScene(env_scene);
-	world->DestroyEntity(env_cam);
-
-	ScratchImage mipgen_cube;
-	mipgen_cube.InitializeCube(fmt, resolution, resolution, 1, 1);
-	mipgen_cube.FillData(raw_cube, 6);
-
-	ScratchImage mipcube;
-	hr = GenerateMipMaps(mipgen_cube.GetImages(), mipgen_cube.GetImageCount(), mipgen_cube.GetMetadata(), TEX_FILTER_DEFAULT | TEX_FILTER_BOX | TEX_FILTER_WRAP | TEX_FILTER_FORCE_NON_WIC, 0, mipcube);
-	mipgen_cube.Release();
-	if ( FAILED(hr) )
-	{
-		for(int i=0; i<6; i++)raw_cube[i].Release();
-		ERR("Cant bake environment prob!");
+		ERR("Cant init prob capture");
 		return false;
 	}
+	
+	const Matrix localOffset = Matrix::CreateTranslation(comp.offset);
+	Matrix worldTransform = transformSys->GetTransform_W(comp.get_entity());
+	worldTransform = localOffset * worldTransform;
 
-	ID3D11ShaderResourceView* cubemap_srv = nullptr;
-	hr = CreateShaderResourceView(Render::Device(), mipcube.GetImages(), 
-		mipcube.GetImageCount(), mipcube.GetMetadata(), &cubemap_srv);
-	if ( FAILED(hr) )
-	{
-		_RELEASE(cubemap_srv);
-		mipcube.Release();
-		for(int i=0; i<6; i++)raw_cube[i].Release();
-		return false;
-	}
+	ID3D11ShaderResourceView* cubemapSRV = world->CaptureProb(worldTransform, comp.nearClip, comp.farClip);
 	
 	const uint32_t facesCount = 6 * mipNum;
-
 	RArray<ScratchImage> i_faces;
 	i_faces.create(facesCount);
 	i_faces.resize(facesCount);
-
+		
 	for(int i = 0; i < (int)mipNum; i++)
 	{
-		if(i==0)
-		{
-			for(int j=0; j<6; j++)
-				i_faces[j * mipNum].InitializeFromImage(*raw_cube[j].GetImage(0,0,0));
-			continue;
-		}
-
 		int mip_res = resolution / int(pow(2, i));
 		float roughness = pow(float(i) / float(mipNum - 1), 2);
 
@@ -535,9 +439,6 @@ bool EnvProbSystem::Bake(Entity e)
 			for(uint32_t i=0; i<facesCount; i++)
 				i_faces[i].Release();
 			_CLOSE(mip_rt);
-			_RELEASE(cubemap_srv);
-			mipcube.Release();
-			for(int i=0; i<6; i++)raw_cube[i].Release();
 			return false;
 		}
 
@@ -548,16 +449,15 @@ bool EnvProbSystem::Bake(Entity e)
 				for(uint32_t i=0; i<facesCount; i++)
 					i_faces[i].Release();
 				_CLOSE(mip_rt);
-				_RELEASE(cubemap_srv);
-				mipcube.Release();
-				for(int i=0; i<6; i++)raw_cube[i].Release();
 				return false;
 			}
 		}
 
+		// TODO: to copmute & handle zero mip
+
 		unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_MIPS_MAT));
 		mip_sp->SetTextureByNameS(TEX_HAMMERSLEY, 0);
-		mip_sp->SetTexture(cubemap_srv, 1);
+		mip_sp->SetTexture(cubemapSRV, 1);
 		mip_sp->SetFloat(roughness, 0);
 		mip_sp->SetFloat(float(mipNum + ENVPROBS_SPEC_MIPS_OFFSET), 1);
 		mip_sp->SetFloat(float(resolution), 2);
@@ -572,43 +472,22 @@ bool EnvProbSystem::Bake(Entity e)
 			ID3D11Resource* resource = nullptr;
 			mip_rt->GetShaderResourceView(j)->GetResource(&resource);
 
-			hr = CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i]);
-			if ( FAILED(hr) )
+			if (FAILED( CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i]) ))
 			{
 				for(uint32_t i=0; i<facesCount; i++) 
 					i_faces[i].Release();
 				_CLOSE(mip_rt);
-				_RELEASE(cubemap_srv);
-				mipcube.Release();
-				for(int i=0; i<6; i++) raw_cube[i].Release();
 				return false;
 			}
 		}
 		_CLOSE(mip_rt);
 	}
-	_RELEASE(cubemap_srv);
+	
+	world->EndCaptureProb();
 
 	ScratchImage cube;
 	cube.InitializeCube(fmt, resolution, resolution, 1, mipNum);
 	cube.FillData(i_faces.data(), facesCount);
-
-	ID3D11ShaderResourceView* cubemap_filtered = nullptr;
-	hr = CreateShaderResourceView(Render::Device(), cube.GetImages(), 
-		cube.GetImageCount(), cube.GetMetadata(), &cubemap_filtered);
-	if ( FAILED(hr) )
-	{
-		for(uint32_t i=0; i<facesCount; i++)
-			i_faces[i].Release();
-		_RELEASE(cubemap_filtered);
-		mipcube.Release();
-		for(int i=0; i<6; i++)raw_cube[i].Release();
-		cube.Release();
-		return false;
-	}
-
-	mipcube.Release();
-	for(int i=0; i<6; i++)
-		raw_cube[i].Release();
 
 	for(uint32_t i=0; i<facesCount; i++)
 		i_faces[i].Release();
@@ -620,8 +499,7 @@ bool EnvProbSystem::Bake(Entity e)
 	FileIO::CreateDir(envPath);
 
 	string envTexName = GetProbFileName(comp.probName);
-	hr = SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() );
-	if ( FAILED(hr) )
+	if (FAILED( SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() ) ))
 	{
 		ERR("Cant save environment prob specular file %s !", envTexName.c_str());
 		cube.Release();

@@ -69,7 +69,7 @@ namespace EngineCore
 			case D3D11_SRV_DIMENSION_TEXTURE1D:
 			case D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
 				{
-					ID3D11Texture1D *tex = 0;
+					ID3D11Texture1D* tex = nullptr;
 					resource->QueryInterface<ID3D11Texture1D>(&tex);
 					if(!tex)
 						return result;
@@ -87,7 +87,7 @@ namespace EngineCore
 			case D3D11_SRV_DIMENSION_TEXTURECUBE:
 			case D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
 				{
-					ID3D11Texture2D *tex = 0;
+					ID3D11Texture2D* tex = nullptr;
 					resource->QueryInterface<ID3D11Texture2D>(&tex);
 					if(!tex)
 						return result;
@@ -103,7 +103,7 @@ namespace EngineCore
 				break;
 			case D3D11_SRV_DIMENSION_TEXTURE3D:
 				{
-					ID3D11Texture3D *tex = 0;
+					ID3D11Texture3D* tex = nullptr;
 					resource->QueryInterface<ID3D11Texture3D>(&tex);
 					if(!tex)
 						return result;
