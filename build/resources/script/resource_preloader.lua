@@ -94,6 +94,7 @@ PreloadList = {
     { PATH.SHADERS .."system/voxel_downsample@DownsampleMove8", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/deffered_opaque_simple@DefferedLightingIBL", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/deffered_opaque@DefferedLighting", RESOURCE_TYPE.COMPUTE },
+    { PATH.SHADERS .."offline/prob_capture@Capture", RESOURCE_TYPE.COMPUTE },
 }
 
 function PreloadList:PreloadResources()

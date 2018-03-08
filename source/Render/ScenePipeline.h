@@ -205,7 +205,7 @@ namespace EngineCore
 		//void AllCombineStage();
 
 		void LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp);
-		void LinearAndDepthToCube(CubeRenderTarget* rt, ScreenPlane* sp);
+		ID3D11ShaderResourceView* GetLinearAndDepthSRV();
 
 		luaSRV GetSRV()
 		{

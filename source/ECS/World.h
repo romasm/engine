@@ -4,6 +4,7 @@
 #include "Render.h"
 #include "ScenePipeline.h"
 #include "LocalTimer.h"
+#include "CubeRenderTarget.h"
 
 #include "Entity.h"
 #include "VisibilitySystem.h"
@@ -55,6 +56,8 @@
 #define WORLD_FILE_VERSION 104
 
 #define COPY_BUFFER_SIZE 512*1024
+
+#define SHADER_PROB_CAPTURTE PATH_SHADERS "offline/prob_capture", "Capture"
 
 namespace EngineCore
 {
@@ -146,8 +149,8 @@ namespace EngineCore
 
 		inline float GetDT() const {return m_dt;} 
 
-		bool BeginCaptureProb(uint32_t width, uint32_t height, bool isLightweight = false);
-		bool CaptureProb(Matrix& probTransform, float nearClip, float farClip);
+		bool BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight = false);
+		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip);
 		void EndCaptureProb();
 
 		inline FrustumMgr* GetFrustumMgr() const {return m_frustumMgr;}
@@ -416,6 +419,8 @@ namespace EngineCore
 		// prob capture
 		ScenePipeline* probScene;
 		Entity probCamera;
+		CubeRenderTarget probTarget;
+		Compute* probCaptureShader;
 	};
 	
 	class World: public BaseWorld

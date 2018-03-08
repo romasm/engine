@@ -2,9 +2,9 @@
 #include "World.h"
 #include "Common.h"
 #include "TypeMgr.h"
-#include "Utils/Profiler.h"
-#include "Render/RenderMgrs.h"
-#include "Render/EnvProbMgr.h"
+#include "Profiler.h"
+#include "RenderMgrs.h"
+#include "EnvProbMgr.h"
 
 using namespace EngineCore;
 
@@ -566,10 +566,10 @@ bool BaseWorld::saveWorld(string& filename)
 	return true;
 }
 
-bool BaseWorld::BeginCaptureProb(uint32_t width, uint32_t height, bool isLightweight)
+bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight)
 {
 	if(probScene)
-		return probScene->Resize(width, height);
+		return probScene->Resize(resolution, resolution);
 
 	Entity probCamera = m_entityMgr->CreateEntity();
 	
@@ -579,7 +579,7 @@ bool BaseWorld::BeginCaptureProb(uint32_t width, uint32_t height, bool isLightwe
 	m_cameraSystem->SetAspect(probCamera, 1.0f);
 	m_cameraSystem->SetFov(probCamera, XM_PIDIV2);
 
-	probScene = CreateScene(probCamera, width, height, isLightweight);
+	probScene = CreateScene(probCamera, resolution, resolution, isLightweight);
 
 	if(!probScene)
 	{
@@ -588,13 +588,17 @@ bool BaseWorld::BeginCaptureProb(uint32_t width, uint32_t height, bool isLightwe
 		return false;
 	}
 
+	probTarget.Init(resolution, fmt, true);
+
+	probCaptureShader = new Compute(SHADER_PROB_CAPTURTE);
+
 	return true;
 }
 
-bool BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip)
+ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip)
 {
-	if( !probScene || probCamera.isnull() )
-		return false;
+	if( !probScene || probCamera.isnull() || !probCaptureShader || probTarget.GetMipsCount() == 0 )
+		return nullptr;
 		
 	m_transformSystem->SetTransform_L(probCamera, probTransform);
 	m_cameraSystem->SetNear(probCamera, nearClip);
@@ -609,17 +613,27 @@ bool BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip
 		Vector3(0, XM_PI, 0)
 	};
 	
+	probTarget.ClearCube();
+	uint32_t groupCount = (uint32_t)ceil(float(probTarget.GetResolution()) / 8);
+
 	for(int32_t i = 0; i < 6; i++)
 	{
 		m_transformSystem->AddRotationPYR_L(probCamera, cameraRot[i]);
 		
 		Snapshot(probScene);
 
-		// TODO: cube render
-		probScene->LinearAndDepthToRT(face, sp.get());
+		auto uav = probTarget.GetUnorderedAccessView(i);
+		auto srv = probScene->GetLinearAndDepthSRV();
+		
+		Render::CSSetShaderResources( 0, 1, &srv );
+
+		probCaptureShader->BindUAV( uav );
+		probCaptureShader->Dispatch( groupCount, groupCount, 1 );
+		probCaptureShader->UnbindUAV();
 	}
 
-	return true;
+	probTarget.GenerateMips();
+	return probTarget.GetShaderResourceView();
 }
 
 void BaseWorld::EndCaptureProb()
@@ -627,6 +641,8 @@ void BaseWorld::EndCaptureProb()
 	if(!probScene)
 		return;
 	
+	_DELETE(probCaptureShader);
+	probTarget.Close();
 	DestroyEntity(probCamera);
 	probCamera.setnull();
 	DeleteScene(probScene);

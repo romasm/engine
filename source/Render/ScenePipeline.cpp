@@ -1090,18 +1090,9 @@ void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
 	sp->ClearTex();
 }
 
-// TODO: compute
-void ScenePipeline::LinearAndDepthToCube(CubeRenderTarget* rt, ScreenPlane* sp)
+ID3D11ShaderResourceView* ScenePipeline::GetLinearAndDepthSRV()
 {
-	sp->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
-	// to do: separate combine?
-
-	rt->ClearRenderTargets();
-	rt->SetRenderTarget();
-
-	sp->Draw();
-
-	sp->ClearTex();
+	return rt_OpaqueFinal->GetShaderResourceView(0);
 }
 
 bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targetY)
