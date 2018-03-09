@@ -23,6 +23,8 @@ BaseWorld::BaseWorld( uint32_t id )
 	frameID = 0;
 	probScene = nullptr;
 
+	probCaptureShader = new Compute(SHADER_PROB_CAPTURTE);
+
 	copyBuffer = new uint8_t[COPY_BUFFER_SIZE];
 }
 
@@ -155,6 +157,8 @@ void BaseWorld::Close()
 	_DELETE(physCollisionConfiguration);
 
 	_DELETE_ARRAY(copyBuffer);
+
+	_DELETE(probCaptureShader);
 }
 
 void BaseWorld::DestroyEntityHierarchically(Entity e)
@@ -571,7 +575,7 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 	if(probScene)
 		return probScene->Resize(resolution, resolution);
 
-	Entity probCamera = m_entityMgr->CreateEntity();
+	probCamera = m_entityMgr->CreateEntity();
 	
 	m_transformSystem->AddComponent(probCamera);
 
@@ -588,11 +592,13 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 		probCamera.setnull();
 		return false;
 	}
-
-	probTarget.Init(resolution, fmt, true);
-
-	probCaptureShader = new Compute(SHADER_PROB_CAPTURTE);
-
+	
+	if(!probTarget.Init(resolution, fmt, true))
+	{
+		EndCaptureProb();
+		return false;
+	}
+	
 	return true;
 }
 
@@ -602,6 +608,7 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		return nullptr;
 		
 	m_transformSystem->SetTransform_L(probCamera, probTransform);
+	m_transformSystem->ForceUpdate(probCamera);
 	m_cameraSystem->SetNear(probCamera, nearClip);
 	m_cameraSystem->SetFar(probCamera, farClip);
 
@@ -617,9 +624,14 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 	probTarget.ClearCube();
 	uint32_t groupCount = (uint32_t)ceil(float(probTarget.GetResolution()) / 8);
 
+	Quaternion baseRotation = m_transformSystem->GetRotation_W(probCamera);
+
 	for(int32_t i = 0; i < 6; i++)
 	{
-		m_transformSystem->AddRotationPYR_L(probCamera, cameraRot[i]);
+		Quaternion faceRotation = Quaternion::CreateFromYawPitchRoll(cameraRot[i].y, cameraRot[i].x, cameraRot[i].z);
+		faceRotation = faceRotation * baseRotation;
+
+		m_transformSystem->SetRotation_W(probCamera, faceRotation);
 		
 		Snapshot(probScene);
 
@@ -642,11 +654,11 @@ void BaseWorld::EndCaptureProb()
 	if(!probScene)
 		return;
 	
-	_DELETE(probCaptureShader);
 	probTarget.Close();
+	DeleteScene(probScene);
+	probScene = nullptr;
 	DestroyEntity(probCamera);
 	probCamera.setnull();
-	DeleteScene(probScene);
 }
 
 // World ---------------------

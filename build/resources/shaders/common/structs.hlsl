@@ -124,6 +124,30 @@ struct TripleVect
 	float3 zdir;
 };
 
+TripleVect UVCoordsToCube(float2 uv)
+{
+	TripleVect res;
+	
+	float2 normUV = (uv - float2(0.5f, 0.5f)) * 2;
+	
+	res.xdir.z = -normUV.y * SQRT2DIV2;
+	res.xdir.y = -normUV.x * SQRT2DIV2;
+	res.xdir.x = SQRT2DIV2;
+	res.xdir = normalize(res.xdir);
+	
+	res.ydir.z = -normUV.y * SQRT2DIV2;
+	res.ydir.x = normUV.x * SQRT2DIV2;
+	res.ydir.y = SQRT2DIV2;
+	res.ydir = normalize(res.ydir);
+	
+	res.zdir.x = normUV.x * SQRT2DIV2;
+	res.zdir.y = normUV.y * SQRT2DIV2;
+	res.zdir.z = SQRT2DIV2;
+	res.zdir = normalize(res.zdir);
+	
+	return res;
+}
+
 struct MaterialParams
 {
 	uint unlit;

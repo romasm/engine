@@ -507,8 +507,9 @@ bool EnvProbSystem::Bake(Entity e)
 
 	// TODO: save async
 	// TEMP
-	string envPath = RemoveExtension(world->GetWorldName()) + "/probes/";
-	FileIO::CreateDir(envPath);
+	string envPath = RemoveExtension(world->GetWorldName()) + ENVPROBS_SUBFOLDER_NOSLASH;
+	if(!FileIO::IsExist(envPath))
+		FileIO::CreateDir(envPath);
 
 	string envTexName = GetProbFileName(comp.probName);
 	if (FAILED( SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() ) ))

@@ -11,8 +11,6 @@ TextureCube cubemap : register(t0);
 
 SamplerState samplerBilinearWrap : register(s0); 
 
-#include "offline_ibl.hlsl"
-
 PO_faces MipCopy(PI_PosTex input)
 {
 	PO_faces res;
