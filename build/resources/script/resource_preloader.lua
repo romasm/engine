@@ -62,7 +62,6 @@ PreloadList = {
     { PATH.SHADERS .."system/aa_final", RESOURCE_TYPE.GUI_SHADER },
 
     { PATH.SHADERS .."system/scene_to_color_alpha", RESOURCE_TYPE.GUI_SHADER },
-    { PATH.SHADERS .."offline/envmap_render", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."offline/envmap_mipgen", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."offline/envmap_diffgen", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."offline/scep_diff_dfg", RESOURCE_TYPE.GUI_SHADER },

@@ -117,7 +117,7 @@ struct PO_faces
 	float4 face5 : SV_TARGET5;
 };
 
-struct triple_vect
+struct TripleVect
 {
 	float3 xdir;
 	float3 ydir;

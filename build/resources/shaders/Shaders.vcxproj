@@ -177,6 +177,8 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="objects\editor\debug_lines.hlsl" />
+    <FxCompile Include="offline\envmap_mipcopy.hlsl" />
+    <FxCompile Include="offline\prob_capture.hlsl" />
     <FxCompile Include="system\voxel_light_propagate.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

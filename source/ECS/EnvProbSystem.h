@@ -11,6 +11,7 @@
 
 #define ENVPROBS_MAT PATH_SHADERS "offline/envmap_render"
 #define ENVPROBS_MIPS_MAT PATH_SHADERS "offline/envmap_mipgen"
+#define ENVPROBS_COPY_MAT PATH_SHADERS "offline/envmap_mipcopy"
 
 #define ENVPROBS_SPEC_MIN 2
 #define ENVPROBS_SPEC_MIPS_OFFSET 0

@@ -453,19 +453,31 @@ bool EnvProbSystem::Bake(Entity e)
 			}
 		}
 
-		// TODO: to copmute & handle zero mip
+		// TODO: to copmute
+		if(i == 0)
+		{
+			unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_COPY_MAT));
+			mip_sp->SetTexture(cubemapSRV, 0);
 
-		unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_MIPS_MAT));
-		mip_sp->SetTextureByNameS(TEX_HAMMERSLEY, 0);
-		mip_sp->SetTexture(cubemapSRV, 1);
-		mip_sp->SetFloat(roughness, 0);
-		mip_sp->SetFloat(float(mipNum + ENVPROBS_SPEC_MIPS_OFFSET), 1);
-		mip_sp->SetFloat(float(resolution), 2);
+			mip_rt->ClearRenderTargets();
+			mip_rt->SetRenderTarget();
 
-		mip_rt->ClearRenderTargets();
-		mip_rt->SetRenderTarget();
+			mip_sp->Draw();
+		}
+		else
+		{
+			unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_MIPS_MAT));
+			mip_sp->SetTextureByNameS(TEX_HAMMERSLEY, 0);
+			mip_sp->SetTexture(cubemapSRV, 1);
+			mip_sp->SetFloat(roughness, 0);
+			mip_sp->SetFloat(float(mipNum + ENVPROBS_SPEC_MIPS_OFFSET), 1);
+			mip_sp->SetFloat(float(resolution), 2);
 
-		mip_sp->Draw();
+			mip_rt->ClearRenderTargets();
+			mip_rt->SetRenderTarget();
+
+			mip_sp->Draw();
+		}
 
 		for(int j=0; j<6; j++)
 		{

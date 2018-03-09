@@ -23,35 +23,11 @@ cbuffer materialBuffer : register(b0)
 	float _padding;
 };
 
-triple_vect coordsRTtoCube(float2 tex)
-{
-	triple_vect res;
-	
-	float2 norm_tex = (tex - float2(0.5f,0.5f)) * 2;
-	
-	res.xdir.z = -norm_tex.y * SQRT2DIV2;
-	res.xdir.y = -norm_tex.x * SQRT2DIV2;
-	res.xdir.x = SQRT2DIV2;
-	res.xdir = normalize(res.xdir);
-	
-	res.ydir.z = -norm_tex.y * SQRT2DIV2;
-	res.ydir.x = norm_tex.x * SQRT2DIV2;
-	res.ydir.y = SQRT2DIV2;
-	res.ydir = normalize(res.ydir);
-	
-	res.zdir.x = norm_tex.x * SQRT2DIV2;
-	res.zdir.y = norm_tex.y * SQRT2DIV2;
-	res.zdir.z = SQRT2DIV2;
-	res.zdir = normalize(res.zdir);
-	
-	return res;
-}
-
 PO_faces MipGen(PI_PosTex input)
 {
 	PO_faces res;
 	
-	triple_vect vects = coordsRTtoCube(input.tex);
+	TripleVect vects = UVCoordsToCube(input.tex);
 	
 	res.face0 = PrefilterMippedEnvMap( roughness, vects.xdir.xzy, cubemap, samplerTrilinearWrap, mipCount, resolution );
 	res.face1 = PrefilterMippedEnvMap( roughness, reflect(-vects.xdir, float3(0,0,1)).xzy, cubemap, samplerTrilinearWrap, mipCount, resolution );

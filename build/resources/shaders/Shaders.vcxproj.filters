@@ -360,5 +360,11 @@
     <FxCompile Include="system\voxel_light_propagate.hlsl">
       <Filter>system</Filter>
     </FxCompile>
+    <FxCompile Include="offline\prob_capture.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="offline\envmap_mipcopy.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
