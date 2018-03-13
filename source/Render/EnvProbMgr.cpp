@@ -10,6 +10,13 @@ using namespace EngineCore;
 
 EnvProbMgr::EnvProbMgr(bool onlySky)
 {
+	hqProbArray = nullptr;
+	hqProbArraySRV = nullptr;
+	sqProbArray = nullptr;
+	sqProbArraySRV = nullptr;
+	lqProbArray = nullptr;
+	lqProbArraySRV = nullptr;
+
  	if(!InitBuffers())
 	{
 		ERR("Cant init EnvProbs buffers");

@@ -27,7 +27,6 @@ public:
 	inline int32_t GetResolution() { return resolution; }
 
 private:
-	D3D11_VIEWPORT viewport;
 	ID3D11Texture2D* faces;
 	ID3D11UnorderedAccessView* UAV[6];
 	ID3D11ShaderResourceView* SRV;

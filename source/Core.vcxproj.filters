@@ -300,6 +300,9 @@
     <ClInclude Include="Render\Support\CubeRenderTarget.h">
       <Filter>Render\Support</Filter>
     </ClInclude>
+    <ClInclude Include="Render\GIMgr.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -486,6 +489,9 @@
     </ClCompile>
     <ClCompile Include="Render\Support\CubeRenderTarget.cpp">
       <Filter>Render\Support</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\GIMgr.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

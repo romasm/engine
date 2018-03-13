@@ -21,13 +21,6 @@ bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain)
 
 	resolution = res;
 	
-	viewport.Width = (float)resolution;
-	viewport.Height = (float)resolution;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-
 	if(hasMipChain)
 		mipsCount = GetLog2(resolution);
 	else
