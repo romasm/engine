@@ -24,7 +24,7 @@ public:
 		
 	#ifdef _DEV
 		profiler = new Profiler;
-		profiler->RegThread(this_thread::get_id().hash());
+		profiler->RegThread(std::hash<std::thread::id>()(std::this_thread::get_id()));
 		jobSystem->RegThreadsForProfiler();
 	#endif
 

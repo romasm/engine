@@ -1,12 +1,8 @@
 //--------------------------------------------------------------------------------------
 // File: PrimitiveBatch.h
 //
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
-//
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
 //--------------------------------------------------------------------------------------
@@ -19,13 +15,9 @@
 #include <d3d11_1.h>
 #endif
 
-#include <memory.h>
 #include <memory>
-
-#pragma warning(push)
-#pragma warning(disable: 4005)
+#include <utility>
 #include <stdint.h>
-#pragma warning(pop)
 
 
 namespace DirectX
@@ -39,6 +31,10 @@ namespace DirectX
             PrimitiveBatchBase(_In_ ID3D11DeviceContext* deviceContext, size_t maxIndices, size_t maxVertices, size_t vertexSize);
             PrimitiveBatchBase(PrimitiveBatchBase&& moveFrom);
             PrimitiveBatchBase& operator= (PrimitiveBatchBase&& moveFrom);
+
+            PrimitiveBatchBase(PrimitiveBatchBase const&) = delete;
+            PrimitiveBatchBase& operator= (PrimitiveBatchBase const&) = delete;
+
             virtual ~PrimitiveBatchBase();
 
         public:
@@ -55,10 +51,6 @@ namespace DirectX
             class Impl;
 
             std::unique_ptr<Impl> pImpl;
-
-            // Prevent copying.
-            PrimitiveBatchBase(PrimitiveBatchBase const&);
-            PrimitiveBatchBase& operator= (PrimitiveBatchBase const&);
         };
     }
 
@@ -70,15 +62,15 @@ namespace DirectX
         static const size_t DefaultBatchSize = 2048;
 
     public:
-        PrimitiveBatch(_In_ ID3D11DeviceContext* deviceContext, size_t maxIndices = DefaultBatchSize * 3, size_t maxVertices = DefaultBatchSize)
-          : PrimitiveBatchBase(deviceContext, maxIndices, maxVertices, sizeof(TVertex))
+        explicit PrimitiveBatch(_In_ ID3D11DeviceContext* deviceContext, size_t maxIndices = DefaultBatchSize * 3, size_t maxVertices = DefaultBatchSize)
+            : PrimitiveBatchBase(deviceContext, maxIndices, maxVertices, sizeof(TVertex))
         { }
 
         PrimitiveBatch(PrimitiveBatch&& moveFrom)
-          : PrimitiveBatchBase(std::move(moveFrom))
+            : PrimitiveBatchBase(std::move(moveFrom))
         { }
 
-        PrimitiveBatch& __cdecl operator= (PrimitiveBatch&& moveFrom)
+        PrimitiveBatch& operator= (PrimitiveBatch&& moveFrom)
         {
             PrimitiveBatchBase::operator=(std::move(moveFrom));
             return *this;
@@ -86,7 +78,7 @@ namespace DirectX
 
 
         // Similar to the D3D9 API DrawPrimitiveUP.
-        void __cdecl Draw(D3D11_PRIMITIVE_TOPOLOGY topology, _In_reads_(vertexCount) TVertex const* vertices, size_t vertexCount)
+        void Draw(D3D11_PRIMITIVE_TOPOLOGY topology, _In_reads_(vertexCount) TVertex const* vertices, size_t vertexCount)
         {
             void* mappedVertices;
 
@@ -97,7 +89,7 @@ namespace DirectX
 
 
         // Similar to the D3D9 API DrawIndexedPrimitiveUP.
-        void __cdecl DrawIndexed(D3D11_PRIMITIVE_TOPOLOGY topology, _In_reads_(indexCount) uint16_t const* indices, size_t indexCount, _In_reads_(vertexCount) TVertex const* vertices, size_t vertexCount)
+        void DrawIndexed(D3D11_PRIMITIVE_TOPOLOGY topology, _In_reads_(indexCount) uint16_t const* indices, size_t indexCount, _In_reads_(vertexCount) TVertex const* vertices, size_t vertexCount)
         {
             void* mappedVertices;
 
@@ -107,7 +99,7 @@ namespace DirectX
         }
 
 
-        void __cdecl DrawLine(TVertex const& v1, TVertex const& v2)
+        void DrawLine(TVertex const& v1, TVertex const& v2)
         {
             TVertex* mappedVertices;
 
@@ -118,7 +110,7 @@ namespace DirectX
         }
 
 
-        void __cdecl DrawTriangle(TVertex const& v1, TVertex const& v2, TVertex const& v3)
+        void DrawTriangle(TVertex const& v1, TVertex const& v2, TVertex const& v3)
         {
             TVertex* mappedVertices;
 
@@ -130,7 +122,7 @@ namespace DirectX
         }
 
 
-        void __cdecl DrawQuad(TVertex const& v1, TVertex const& v2, TVertex const& v3, TVertex const& v4)
+        void DrawQuad(TVertex const& v1, TVertex const& v2, TVertex const& v3, TVertex const& v4)
         {
             static const uint16_t quadIndices[] = { 0, 1, 2, 0, 2, 3 };
 

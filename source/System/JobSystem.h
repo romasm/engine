@@ -106,7 +106,7 @@ public:
 	}
 	inline static size_t GetThreadHash()
 	{
-		return std::this_thread::get_id().hash();
+		return std::hash<std::thread::id>()(std::this_thread::get_id());
 	}
 	
 	inline static uint32_t GetHWCount() {return instance->HW_count;}

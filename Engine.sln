@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "source\Core.vcxproj", "{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "build\resources\shaders\Shaders.vcxproj", "{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}"
-EndProject
-Project("{5697748A-77EF-44CA-8824-4F5637E5945B}") = "LuaScript", "build\resources\script\LuaScript\LuaScript.luaproj", "{E439935D-B2A2-46AE-856D-2AA408428F33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,11 +19,11 @@ Global
 		{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}.Release|x64.ActiveCfg = Release|x64
 		{2EB4837C-1AEB-840D-C3D7-6A10AFED000F}.Release|x64.Build.0 = Release|x64
 		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Debug|x64.ActiveCfg = Debug|x64
+		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Debug|x64.Build.0 = Debug|x64
 		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Development|x64.ActiveCfg = Development|x64
+		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Development|x64.Build.0 = Development|x64
 		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Release|x64.ActiveCfg = Release|x64
-		{E439935D-B2A2-46AE-856D-2AA408428F33}.Debug|x64.ActiveCfg = Release|Any CPU
-		{E439935D-B2A2-46AE-856D-2AA408428F33}.Development|x64.ActiveCfg = Release|Any CPU
-		{E439935D-B2A2-46AE-856D-2AA408428F33}.Release|x64.ActiveCfg = Release|Any CPU
+		{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

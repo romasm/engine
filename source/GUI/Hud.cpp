@@ -249,10 +249,12 @@ bool Hud::Init()
 bool Hud::CreateRoot(Window* wnd)
 {
 	HWND hwnd = wnd->GetHWND();
-
+	
 	if(rootEnts.find(hwnd) != rootEnts.end())
 	{
-		ERR("Window %i already has root", (int)hwnd);
+		wchar_t wndTitle[256];
+		GetWindowText(hwnd, wndTitle, sizeof(wndTitle));
+		ERR("Window %ls already has root", wndTitle);
 		return false;
 	}
 
@@ -288,7 +290,9 @@ bool Hud::DestroyRoot(Window* wnd)
 	auto it = rootEnts.find(hwnd);
 	if(it == rootEnts.end())
 	{
-		ERR("Window %i has no root", (int)hwnd);
+		wchar_t wndTitle[256];
+		GetWindowText(hwnd, wndTitle, sizeof(wndTitle));
+		ERR("Window %ls has no root", wndTitle);
 		return false;
 	}
 

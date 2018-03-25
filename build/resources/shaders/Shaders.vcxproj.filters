@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="common">
@@ -120,6 +120,9 @@
     <None Include="objects\editor\3d_hud_alpha.hlsl">
       <Filter>objects\editor</Filter>
     </None>
+    <None Include="objects\editor\debug_lines.hlsl">
+      <Filter>objects\editor</Filter>
+    </None>
     <None Include="objects\editor\line_geometry.hlsl">
       <Filter>objects\editor</Filter>
     </None>
@@ -159,6 +162,9 @@
     <None Include="offline\envmap_diffgen.hlsl">
       <Filter>offline</Filter>
     </None>
+    <None Include="offline\envmap_mipcopy.hlsl">
+      <Filter>offline</Filter>
+    </None>
     <None Include="offline\envmap_mipgen.hlsl">
       <Filter>offline</Filter>
     </None>
@@ -169,6 +175,9 @@
       <Filter>offline</Filter>
     </None>
     <None Include="offline\offline_ibl.hlsl">
+      <Filter>offline</Filter>
+    </None>
+    <None Include="offline\prob_capture.hlsl">
       <Filter>offline</Filter>
     </None>
     <None Include="offline\scep_diff_dfg.hlsl">
@@ -352,19 +361,8 @@
     <None Include="system\voxel_light_inject.hlsl">
       <Filter>system</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="objects\editor\debug_lines.hlsl">
-      <Filter>objects\editor</Filter>
-    </FxCompile>
-    <FxCompile Include="system\voxel_light_propagate.hlsl">
+    <None Include="system\voxel_light_propagate.hlsl">
       <Filter>system</Filter>
-    </FxCompile>
-    <FxCompile Include="offline\prob_capture.hlsl">
-      <Filter>offline</Filter>
-    </FxCompile>
-    <FxCompile Include="offline\envmap_mipcopy.hlsl">
-      <Filter>offline</Filter>
-    </FxCompile>
+    </None>
   </ItemGroup>
 </Project>

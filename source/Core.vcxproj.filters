@@ -19,6 +19,9 @@
     <Filter Include="Managers">
       <UniqueIdentifier>{B34CFEBD-9F19-59C9-C832-4771B45E8E57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Managers\Loaders">
+      <UniqueIdentifier>{ACE7ED84-98E0-0CD7-C112-F25BAD6AECE2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Render">
       <UniqueIdentifier>{C5BB87CE-B15D-B2A4-9A18-C6F8865939F5}</UniqueIdentifier>
     </Filter>
@@ -30,9 +33,6 @@
     </Filter>
     <Filter Include="Utils">
       <UniqueIdentifier>{F68B420E-62A0-6ABF-2B22-0E1F97F566F0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Managers\Loaders">
-      <UniqueIdentifier>{98bcbc65-adcb-4069-95f1-1b7f31d99f98}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -66,7 +66,13 @@
     <ClInclude Include="ECS\CameraSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\CollisionSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
     <ClInclude Include="ECS\ControllerSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\DebugDrawer.h">
       <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="ECS\ECS_defines.h">
@@ -102,10 +108,16 @@
     <ClInclude Include="ECS\ShadowSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\SkeletonSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
     <ClInclude Include="ECS\StaticMeshSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="ECS\TransformSystem.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\TriggerSystem.h">
       <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="ECS\TypeMgr.h">
@@ -145,10 +157,31 @@
       <Filter>Input</Filter>
     </ClInclude>
     <ClInclude Include="MainLoop.h" />
+    <ClInclude Include="Managers\BaseMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\CollisionMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
     <ClInclude Include="Managers\FontMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="Managers\FunctionCodeMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\Loaders\CollisionLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\Loaders\MeshLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\Loaders\TexLoader.h">
+      <Filter>Managers\Loaders</Filter>
+    </ClInclude>
     <ClInclude Include="Managers\MaterialMgr.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Managers\MeshMgr.h">
       <Filter>Managers</Filter>
     </ClInclude>
     <ClInclude Include="Managers\ResourceProcessor.h">
@@ -175,7 +208,13 @@
     <ClInclude Include="Render\Compute.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\EnvProbMgr.h">
+      <Filter>Render</Filter>
+    </ClInclude>
     <ClInclude Include="Render\Frustum.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\GIMgr.h">
       <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="Render\Material.h">
@@ -202,6 +241,9 @@
     <ClInclude Include="Render\ShadowsRenderer.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\Support\CubeRenderTarget.h">
+      <Filter>Render\Support</Filter>
+    </ClInclude>
     <ClInclude Include="Render\Support\GaussianBlur.h">
       <Filter>Render\Support</Filter>
     </ClInclude>
@@ -213,9 +255,6 @@
     </ClInclude>
     <ClInclude Include="Render\Support\ScreenPlane.h">
       <Filter>Render\Support</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\VoxelRenderer.h">
-      <Filter>Render</Filter>
     </ClInclude>
     <ClInclude Include="System\FileIO.h">
       <Filter>System</Filter>
@@ -232,6 +271,9 @@
     <ClInclude Include="System\Timer.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="System\VirtualFileSystem.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="Utils\Generate_PBS_Env_LUT.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -239,6 +281,9 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="Utils\MathGeometry.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\MathVector.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="Utils\Profiler.h">
@@ -253,62 +298,16 @@
     <ClInclude Include="Utils\WinAPIDialogs.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Utils\MathVector.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\Loaders\TexLoader.h">
-      <Filter>Managers\Loaders</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\Loaders\MeshLoader.h">
-      <Filter>Managers\Loaders</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\BaseMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\MeshMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\Loaders\CollisionLoader.h">
-      <Filter>Managers\Loaders</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\CollisionMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\DebugDrawer.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="System\VirtualFileSystem.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\SkeletonSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\TriggerSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\CollisionSystem.h">
-      <Filter>ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Managers\FunctionCodeMgr.h">
-      <Filter>Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\EnvProbMgr.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\Support\CubeRenderTarget.h">
-      <Filter>Render\Support</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\GIMgr.h">
-      <Filter>Render</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
       <Filter>Config</Filter>
     </ClCompile>
     <ClCompile Include="ECS\CameraSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\CollisionSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\ControllerSystem.cpp">
@@ -341,10 +340,16 @@
     <ClCompile Include="ECS\ShadowSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
+    <ClCompile Include="ECS\SkeletonSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
     <ClCompile Include="ECS\StaticMeshSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\TransformSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\TriggerSystem.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\TypeMgr.cpp">
@@ -380,7 +385,19 @@
     <ClCompile Include="Managers\FontMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
+    <ClCompile Include="Managers\Loaders\CollisionLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\Loaders\MeshLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\Loaders\TexLoader.cpp">
+      <Filter>Managers\Loaders</Filter>
+    </ClCompile>
     <ClCompile Include="Managers\MaterialMgr.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Managers\MeshMgr.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
     <ClCompile Include="Managers\ResourceProcessor.cpp">
@@ -399,6 +416,12 @@
       <Filter>Managers</Filter>
     </ClCompile>
     <ClCompile Include="Render\Buffer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\EnvProbMgr.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\GIMgr.cpp">
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="Render\Material.cpp">
@@ -428,14 +451,14 @@
     <ClCompile Include="Render\ShadowsRenderer.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\Support\CubeRenderTarget.cpp">
+      <Filter>Render\Support</Filter>
+    </ClCompile>
     <ClCompile Include="Render\Support\GaussianBlur.cpp">
       <Filter>Render\Support</Filter>
     </ClCompile>
     <ClCompile Include="Render\Support\ScreenPlane.cpp">
       <Filter>Render\Support</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\VoxelRenderer.cpp">
-      <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="System\FileIO.cpp">
       <Filter>System</Filter>
@@ -452,6 +475,9 @@
     <ClCompile Include="System\Timer.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="System\VirtualFileSystem.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
     <ClCompile Include="Utils\Log.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -460,38 +486,5 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="Managers\Loaders\TexLoader.cpp">
-      <Filter>Managers\Loaders</Filter>
-    </ClCompile>
-    <ClCompile Include="Managers\Loaders\MeshLoader.cpp">
-      <Filter>Managers\Loaders</Filter>
-    </ClCompile>
-    <ClCompile Include="Managers\MeshMgr.cpp">
-      <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="Managers\Loaders\CollisionLoader.cpp">
-      <Filter>Managers\Loaders</Filter>
-    </ClCompile>
-    <ClCompile Include="System\VirtualFileSystem.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS\SkeletonSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS\TriggerSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS\CollisionSystem.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\EnvProbMgr.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\Support\CubeRenderTarget.cpp">
-      <Filter>Render\Support</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\GIMgr.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

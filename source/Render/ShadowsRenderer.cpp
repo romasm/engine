@@ -106,8 +106,8 @@ bool ShadowsRenderer::CompareShadows(ShadowMap& first, ShadowMap& second)
 
 void ShadowsRenderer::SwapShadows(ShadowMap* first, ShadowMap* second, SArray<ShadowMap, SHADOWMAPS_COUNT>* arr)
 {
-	uint32_t fpos = (uint32_t(first) - uint32_t(arr->begin())) / sizeof(ShadowMap);
-	uint32_t spos = (uint32_t(second) - uint32_t(arr->begin())) / sizeof(ShadowMap);
+	uint32_t fpos = (uint32_t)(uint64_t(first) - uint64_t(arr->begin())) / sizeof(ShadowMap);
+	uint32_t spos = (uint32_t)(uint64_t(second) - uint64_t(arr->begin())) / sizeof(ShadowMap);
 
 	bool second_prev = false;
 	bool second_next = false;

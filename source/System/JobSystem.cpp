@@ -55,7 +55,7 @@ void JobSystem::Tick(float dt)
 void JobSystem::RegThreadsForProfiler()
 {
 	for(uint32_t i = 0; i < HW_count; i++)
-		Profiler::Get()->RegThread(workers[i].get_id().hash());
+		Profiler::Get()->RegThread( hash<thread::id>()(workers[i].get_id()) );
 }
 #endif
 

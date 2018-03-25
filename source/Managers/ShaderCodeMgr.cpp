@@ -293,22 +293,22 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 	switch(type)
 	{
 	case SHADER_VS:
-		target = "vs_"SHADER_COMPILE_TARGET;
+		target = "vs_" SHADER_COMPILE_TARGET;
 		break;
 	case SHADER_PS:
-		target = "ps_"SHADER_COMPILE_TARGET;
+		target = "ps_" SHADER_COMPILE_TARGET;
 		break;
 	case SHADER_HS: 
-		target = "hs_"SHADER_COMPILE_TARGET;
+		target = "hs_" SHADER_COMPILE_TARGET;
 		break;
 	case SHADER_DS:
-		target = "ds_"SHADER_COMPILE_TARGET;
+		target = "ds_" SHADER_COMPILE_TARGET;
 		break;
 	case SHADER_GS:
-		target = "gs_"SHADER_COMPILE_TARGET;
+		target = "gs_" SHADER_COMPILE_TARGET;
 		break;
 	case SHADER_CS:
-		target = "cs_"SHADER_COMPILE_TARGET;
+		target = "cs_" SHADER_COMPILE_TARGET;
 		break;
 	}
 

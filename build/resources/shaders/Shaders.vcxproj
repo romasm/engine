@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -16,21 +16,22 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Shaders</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -96,6 +97,7 @@
     <None Include="objects\alphatest_main.hlsl" />
     <None Include="objects\editor\3d_hud.hlsl" />
     <None Include="objects\editor\3d_hud_alpha.hlsl" />
+    <None Include="objects\editor\debug_lines.hlsl" />
     <None Include="objects\editor\line_geometry.hlsl" />
     <None Include="objects\editor\line_geometry_sphere.hlsl" />
     <None Include="objects\editor\tools_mesh.hlsl" />
@@ -109,10 +111,12 @@
     <None Include="objects\transparent_medium.hlsl" />
     <None Include="objects\voxelization.hlsl" />
     <None Include="offline\envmap_diffgen.hlsl" />
+    <None Include="offline\envmap_mipcopy.hlsl" />
     <None Include="offline\envmap_mipgen.hlsl" />
     <None Include="offline\envmap_render.hlsl" />
     <None Include="offline\noise2d.hlsl" />
     <None Include="offline\offline_ibl.hlsl" />
+    <None Include="offline\prob_capture.hlsl" />
     <None Include="offline\scep_diff_dfg.hlsl" />
     <None Include="samplers.hlsl" />
     <None Include="system\3dhud.hlsl" />
@@ -174,12 +178,7 @@
     <None Include="system\tonemapping.hlsl" />
     <None Include="system\voxel_downsample.hlsl" />
     <None Include="system\voxel_light_inject.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="objects\editor\debug_lines.hlsl" />
-    <FxCompile Include="offline\envmap_mipcopy.hlsl" />
-    <FxCompile Include="offline\prob_capture.hlsl" />
-    <FxCompile Include="system\voxel_light_propagate.hlsl" />
+    <None Include="system\voxel_light_propagate.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

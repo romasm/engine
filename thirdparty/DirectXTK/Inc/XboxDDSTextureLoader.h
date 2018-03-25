@@ -6,14 +6,10 @@
 //
 // Note these functions will not load standard DDS files. Use the DDSTextureLoader
 // module in the DirectXTex package or as part of the DirectXTK library to load
-// these files which use standard Direct3D 11 resource creation APIs.
-//
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
+// these files which use standard Direct3D resource creation APIs.
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248926
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -40,22 +36,23 @@ namespace Xbox
         DDS_ALPHA_MODE_CUSTOM        = 4,
     };
 
-    HRESULT __cdecl CreateDDSTextureFromMemory( _In_ ID3D11DeviceX* d3dDevice,
-                                                _In_reads_bytes_(ddsDataSize) const uint8_t* ddsData,
-                                                _In_ size_t ddsDataSize,
-                                                _Outptr_opt_ ID3D11Resource** texture,
-                                                _Outptr_opt_ ID3D11ShaderResourceView** textureView,
-                                                _Outptr_ void** grfxMemory,
-                                                _Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr, 
-                                                _In_ bool forceSRGB = false
-                                               );
+    HRESULT __cdecl CreateDDSTextureFromMemory(
+        _In_ ID3D11DeviceX* d3dDevice,
+        _In_reads_bytes_(ddsDataSize) const uint8_t* ddsData,
+        _In_ size_t ddsDataSize,
+        _Outptr_opt_ ID3D11Resource** texture,
+        _Outptr_opt_ ID3D11ShaderResourceView** textureView,
+        _Outptr_ void** grfxMemory,
+        _Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr, 
+        _In_ bool forceSRGB = false);
 
     HRESULT __cdecl CreateDDSTextureFromFile( _In_ ID3D11DeviceX* d3dDevice,
-                                              _In_z_ const wchar_t* szFileName,
-                                              _Outptr_opt_ ID3D11Resource** texture,
-                                              _Outptr_opt_ ID3D11ShaderResourceView** textureView,
-                                              _Outptr_ void** grfxMemory,
-                                              _Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
-                                              _In_ bool forceSRGB = false
-                                            );
+        _In_z_ const wchar_t* szFileName,
+        _Outptr_opt_ ID3D11Resource** texture,
+        _Outptr_opt_ ID3D11ShaderResourceView** textureView,
+        _Outptr_ void** grfxMemory,
+        _Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
+        _In_ bool forceSRGB = false);
+
+    void FreeDDSTextureMemory( _In_opt_ void* grfxMemory );
 }
