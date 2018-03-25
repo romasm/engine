@@ -397,7 +397,7 @@ Vector3 TransformSystem::GetScale_L(Entity e)
 
 const XMMATRIX& TransformSystem::GetTransform_LInternal(Entity e)
 {
-	GET_COMPONENT(XMMatrixIdentity())
+	GET_COMPONENT(SceneGraph::XMMatrixIdentityConst)
 	return *sceneGraph->GetLocalTransformation(comp.nodeID);
 }
 
@@ -441,7 +441,7 @@ Vector3 TransformSystem::GetScale_W(Entity e)
 
 const XMMATRIX& TransformSystem::GetTransform_WInternal(Entity e)
 {
-	GET_COMPONENT(XMMatrixIdentity())
+	GET_COMPONENT(SceneGraph::XMMatrixIdentityConst)
 	return *sceneGraph->GetWorldTransformation(comp.nodeID);
 }
 

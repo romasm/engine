@@ -4,6 +4,8 @@
 
 using namespace EngineCore;
 
+XMMATRIX SceneGraph::XMMatrixIdentityConst = XMMatrixIdentity();
+
 SceneGraph::SceneGraph(uint32_t maxCount, BaseWorld* w)
 {	
 	world = w;

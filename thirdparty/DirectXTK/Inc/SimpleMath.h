@@ -26,6 +26,8 @@
 #include <DirectXPackedVector.h>
 #include <DirectXCollision.h>
 
+// Bullet Physics
+#include "btBulletDynamicsCommon.h"
 
 namespace DirectX
 {
@@ -214,6 +216,13 @@ namespace DirectX
             explicit Vector3(const XMVECTORF32& F) { this->x = F.f[0]; this->y = F.f[1]; this->z = F.f[2]; }
 
             operator XMVECTOR() const { return XMLoadFloat3(this); }
+
+			// Bullet Physics
+			operator btVector3()
+			{
+				return btVector3(this->x, this->y, this->z);
+			}
+			Vector3(const btVector3& v) : XMFLOAT3(v.m_floats[0], v.m_floats[1], v.m_floats[2]) {}
 
             // Comparison operators
             bool operator == (const Vector3& V) const;
@@ -633,6 +642,13 @@ namespace DirectX
             explicit Quaternion(const XMVECTORF32& F) { this->x = F.f[0]; this->y = F.f[1]; this->z = F.f[2]; this->w = F.f[3]; }
 
             operator XMVECTOR() const { return XMLoadFloat4(this); }
+
+			// Bullet Physics
+			operator btQuaternion()
+			{
+				return btQuaternion(this->x, this->y, this->z, this->w);
+			}
+			Quaternion(const btQuaternion& q) : XMFLOAT4(q.m_floats[0], q.m_floats[1], q.m_floats[2], q.m_floats[3]) {}
 
             // Comparison operators
             bool operator == (const Quaternion& q) const;

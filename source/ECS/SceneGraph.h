@@ -136,6 +136,8 @@ namespace EngineCore
 				return nullptr;
 			return &worldTransformation[lookupID];
 		}
+
+		static XMMATRIX XMMatrixIdentityConst;
 		
 	private:
 		inline void detach(Relation& childRelation, uint32_t childID)

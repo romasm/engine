@@ -427,7 +427,7 @@ bool EnvProbSystem::Bake(Entity e)
 	RArray<ScratchImage> i_faces;
 	i_faces.create(facesCount);
 	i_faces.resize(facesCount);
-		
+	
 	for(int i = 0; i < (int)mipNum; i++)
 	{
 		int mip_res = resolution / int(pow(2, i));
@@ -497,14 +497,24 @@ bool EnvProbSystem::Bake(Entity e)
 	
 	world->EndCaptureProb();
 
+	RArray<Image> raw_faces;
+	raw_faces.create(facesCount);
+	raw_faces.resize(facesCount);
+	for (int i = 0; i < (int)facesCount; i++)
+	{
+		memcpy_s( &(raw_faces[i]), sizeof(Image), i_faces[i].GetImage(0, 0, 0), sizeof(Image));
+	}
+
 	ScratchImage cube;
 	cube.InitializeCube(fmt, resolution, resolution, 1, mipNum);
-	cube.FillData(i_faces.data(), facesCount);
+	cube.InitializeCubeFromImages(raw_faces.data(), facesCount);
+
+	raw_faces.destroy();
 
 	for(uint32_t i=0; i<facesCount; i++)
 		i_faces[i].Release();
 	i_faces.destroy();
-
+	
 	// TODO: save async
 	// TEMP
 	string envPath = RemoveExtension(world->GetWorldName()) + ENVPROBS_SUBFOLDER_NOSLASH;
