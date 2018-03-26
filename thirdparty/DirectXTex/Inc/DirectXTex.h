@@ -280,6 +280,9 @@ namespace DirectX
         HRESULT __cdecl InitializeCubeFromImages(_In_reads_(nImages) const Image* images, _In_ size_t nImages, _In_ DWORD flags = CP_FLAGS_NONE);
         HRESULT __cdecl Initialize3DFromImages(_In_reads_(depth) const Image* images, _In_ size_t depth, _In_ DWORD flags = CP_FLAGS_NONE);
 
+		// Initialize from array of single-image ScratchImages, array order: 6 faces of mip 0, 6 faces of mip 1, ...
+		HRESULT __cdecl InitializeCubeFromScratchImages(_In_reads_(nImages) const ScratchImage* images, _In_ size_t nImages, _In_ size_t nMips, _In_ DWORD flags = CP_FLAGS_NONE);
+
         void __cdecl Release();
 
         bool __cdecl OverrideFormat(_In_ DXGI_FORMAT f);

@@ -436,8 +436,6 @@ bool EnvProbSystem::Bake(Entity e)
 		RenderTarget* mip_rt = new RenderTarget;
 		if(!mip_rt->Init(mip_res, mip_res))
 		{
-			for(uint32_t i=0; i<facesCount; i++)
-				i_faces[i].Release();
 			_CLOSE(mip_rt);
 			return false;
 		}
@@ -446,8 +444,6 @@ bool EnvProbSystem::Bake(Entity e)
 		{
 			if(!mip_rt->AddRT(fmt))
 			{
-				for(uint32_t i=0; i<facesCount; i++)
-					i_faces[i].Release();
 				_CLOSE(mip_rt);
 				return false;
 			}
@@ -486,8 +482,6 @@ bool EnvProbSystem::Bake(Entity e)
 
 			if (FAILED( CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i]) ))
 			{
-				for(uint32_t i=0; i<facesCount; i++) 
-					i_faces[i].Release();
 				_CLOSE(mip_rt);
 				return false;
 			}
@@ -496,35 +490,11 @@ bool EnvProbSystem::Bake(Entity e)
 	}
 	
 	world->EndCaptureProb();
-
-	// TEMP shit
-
-	RArray<Image> raw_faces;
-	raw_faces.create(facesCount);
-	raw_faces.resize(facesCount);
-	for (int i = 0; i < (int)facesCount; i++)
-	{
-		memcpy_s( &(raw_faces[i]), sizeof(Image), i_faces[i].GetImage(0, 0, 0), sizeof(Image));
-	}
-
+	
 	ScratchImage cube;
-	cube.InitializeCube(fmt, resolution, resolution, 1, mipNum);
+	cube.InitializeCubeFromScratchImages(i_faces.data(), facesCount, mipNum);
 	
-	/*Image* img = (Image*)cube.GetImages();
-	for (int i = 0; i < (int)facesCount; i++)
-	{
-		memcpy_s(img, sizeof(Image), i_faces[i].GetImage(0, 0, 0), sizeof(Image));
-	}*/
-
-	cube.InitializeCubeFromImages(raw_faces.data(), facesCount);
-
-	raw_faces.destroy();
-
-	for(uint32_t i=0; i<facesCount; i++)
-		i_faces[i].Release();
-	i_faces.destroy();
-	
-	// TODO: save async
+	// TODO: save async 
 	// TEMP
 	string envPath = RemoveExtension(world->GetWorldName()) + ENVPROBS_SUBFOLDER_NOSLASH;
 	if(!FileIO::IsExist(envPath))
@@ -534,12 +504,9 @@ bool EnvProbSystem::Bake(Entity e)
 	if (FAILED( SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() ) ))
 	{
 		ERR("Cant save environment prob specular file %s !", envTexName.c_str());
-		cube.Release();
 		return false;
 	}
-
-	cube.Release();	
-
+	
 	comp.needRebake = false;
 	if( comp.probId == TexMgr::nullres )
 		comp.probId = RELOADABLE_TEXTURE(envTexName, true);
