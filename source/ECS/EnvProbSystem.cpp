@@ -497,6 +497,8 @@ bool EnvProbSystem::Bake(Entity e)
 	
 	world->EndCaptureProb();
 
+	// TEMP shit
+
 	RArray<Image> raw_faces;
 	raw_faces.create(facesCount);
 	raw_faces.resize(facesCount);
@@ -507,6 +509,13 @@ bool EnvProbSystem::Bake(Entity e)
 
 	ScratchImage cube;
 	cube.InitializeCube(fmt, resolution, resolution, 1, mipNum);
+	
+	/*Image* img = (Image*)cube.GetImages();
+	for (int i = 0; i < (int)facesCount; i++)
+	{
+		memcpy_s(img, sizeof(Image), i_faces[i].GetImage(0, 0, 0), sizeof(Image));
+	}*/
+
 	cube.InitializeCubeFromImages(raw_faces.data(), facesCount);
 
 	raw_faces.destroy();

@@ -20,7 +20,7 @@ namespace EngineCore
 		}
 		
 		instance = this;
-		
+				
 		// CONSOLE ----------------
 		if(has_console)
 		{
@@ -29,53 +29,9 @@ namespace EngineCore
 			EnableMenuItem(GetSystemMenu(GetConsoleWindow(), FALSE), SC_CLOSE , MF_GRAYED);
 			DrawMenuBar(GetConsoleWindow());
 
-			//Redirect unbuffered STDIN to the console
-			HANDLE stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
-			if(stdInHandle != INVALID_HANDLE_VALUE)
-			{
-				int fileDescriptor = _open_osfhandle((intptr_t)stdInHandle, _O_TEXT);
-				if(fileDescriptor != -1)
-				{
-					FILE* file = _fdopen(fileDescriptor, "r");
-					if(file != NULL)
-					{
-						*stdin = *file;
-						setvbuf(stdin, NULL, _IONBF, 0);
-					}
-				}
-			}
-
 			//Redirect unbuffered STDOUT to the console
 			consoleOutH = GetStdHandle(STD_OUTPUT_HANDLE);
-			if(consoleOutH != INVALID_HANDLE_VALUE)
-			{
-				int fileDescriptor = _open_osfhandle((intptr_t)consoleOutH, _O_TEXT);
-				if(fileDescriptor != -1)
-				{
-					FILE* file = _fdopen(fileDescriptor, "w");
-					if(file != NULL)
-					{
-						*stdout = *file;
-						setvbuf(stdout, NULL, _IONBF, 0);
-					}
-				}
-			}
-
-			//Redirect unbuffered STDERR to the console
-			HANDLE stdErrHandle = GetStdHandle(STD_ERROR_HANDLE);
-			if(stdErrHandle != INVALID_HANDLE_VALUE)
-			{
-				int fileDescriptor = _open_osfhandle((intptr_t)stdErrHandle, _O_TEXT);
-				if(fileDescriptor != -1)
-				{
-					FILE* file = _fdopen(fileDescriptor, "w");
-					if(file != NULL)
-					{
-						*stderr = *file;
-						setvbuf(stderr, NULL, _IONBF, 0);
-					}
-				}
-			}
+			freopen("CONOUT$", "w", stdout);
 		}
 
 		bufferLog.resize(CONSOLE_BUFFER_SIZE);
