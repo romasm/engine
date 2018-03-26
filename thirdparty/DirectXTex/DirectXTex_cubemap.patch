@@ -1,0 +1,3243 @@
+Index: DirectXTex.h
+===================================================================
+--- DirectXTex.h	(revision 499)
++++ DirectXTex.h	(working copy)
+@@ -1,773 +1,776 @@
+-//-------------------------------------------------------------------------------------
+-// DirectXTex.h
+-//  
+-// DirectX Texture Library
+-//
+-// Copyright (c) Microsoft Corporation. All rights reserved.
+-// Licensed under the MIT License.
+-//
+-// http://go.microsoft.com/fwlink/?LinkId=248926
+-//-------------------------------------------------------------------------------------
+-
+-#pragma once
+-
+-#include <stdint.h>
+-
+-#include <algorithm>
+-#include <functional>
+-#include <vector>
+-
+-#if !defined(__d3d11_h__) && !defined(__d3d11_x_h__) && !defined(__d3d12_h__) && !defined(__d3d12_x_h__)
+-#if defined(_XBOX_ONE) && defined(_TITLE)
+-#include <d3d11_x.h>
+-#define DCOMMON_H_INCLUDED
+-#else
+-#include <d3d11_1.h>
+-#endif
+-#endif
+-
+-#include <directxmath.h>
+-
+-#include <ocidl.h>
+-
+-#define DIRECTX_TEX_VERSION 152
+-
+-struct IWICImagingFactory;
+-struct IWICMetadataQueryReader;
+-
+-
+-namespace DirectX
+-{
+-
+-    //---------------------------------------------------------------------------------
+-    // DXGI Format Utilities
+-    bool __cdecl IsValid(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsCompressed(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsPacked(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsVideo(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsPlanar(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsPalettized(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsDepthStencil(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsSRGB(_In_ DXGI_FORMAT fmt);
+-    bool __cdecl IsTypeless(_In_ DXGI_FORMAT fmt, _In_ bool partialTypeless = true);
+-
+-    bool __cdecl HasAlpha(_In_ DXGI_FORMAT fmt);
+-
+-    size_t __cdecl BitsPerPixel(_In_ DXGI_FORMAT fmt);
+-
+-    size_t __cdecl BitsPerColor(_In_ DXGI_FORMAT fmt);
+-
+-    enum CP_FLAGS
+-    {
+-        CP_FLAGS_NONE               = 0x0,      // Normal operation
+-        CP_FLAGS_LEGACY_DWORD       = 0x1,      // Assume pitch is DWORD aligned instead of BYTE aligned
+-        CP_FLAGS_PARAGRAPH          = 0x2,      // Assume pitch is 16-byte aligned instead of BYTE aligned
+-        CP_FLAGS_YMM                = 0x4,      // Assume pitch is 32-byte aligned instead of BYTE aligned
+-        CP_FLAGS_ZMM                = 0x8,      // Assume pitch is 64-byte aligned instead of BYTE aligned
+-        CP_FLAGS_PAGE4K             = 0x200,    // Assume pitch is 4096-byte aligned instead of BYTE aligned
+-        CP_FLAGS_BAD_DXTN_TAILS     = 0x1000,   // BC formats with malformed mipchain blocks smaller than 4x4
+-        CP_FLAGS_24BPP              = 0x10000,  // Override with a legacy 24 bits-per-pixel format size
+-        CP_FLAGS_16BPP              = 0x20000,  // Override with a legacy 16 bits-per-pixel format size
+-        CP_FLAGS_8BPP               = 0x40000,  // Override with a legacy 8 bits-per-pixel format size
+-    };
+-
+-    void __cdecl ComputePitch(
+-        _In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height,
+-        _Out_ size_t& rowPitch, _Out_ size_t& slicePitch, _In_ DWORD flags = CP_FLAGS_NONE);
+-
+-    size_t __cdecl ComputeScanlines(_In_ DXGI_FORMAT fmt, _In_ size_t height);
+-
+-    DXGI_FORMAT __cdecl MakeSRGB(_In_ DXGI_FORMAT fmt);
+-    DXGI_FORMAT __cdecl MakeTypeless(_In_ DXGI_FORMAT fmt);
+-    DXGI_FORMAT __cdecl MakeTypelessUNORM(_In_ DXGI_FORMAT fmt);
+-    DXGI_FORMAT __cdecl MakeTypelessFLOAT(_In_ DXGI_FORMAT fmt);
+-
+-    //---------------------------------------------------------------------------------
+-    // Texture metadata
+-    enum TEX_DIMENSION
+-        // Subset here matches D3D10_RESOURCE_DIMENSION and D3D11_RESOURCE_DIMENSION
+-    {
+-        TEX_DIMENSION_TEXTURE1D    = 2,
+-        TEX_DIMENSION_TEXTURE2D    = 3,
+-        TEX_DIMENSION_TEXTURE3D    = 4,
+-    };
+-
+-    enum TEX_MISC_FLAG
+-        // Subset here matches D3D10_RESOURCE_MISC_FLAG and D3D11_RESOURCE_MISC_FLAG
+-    {
+-        TEX_MISC_TEXTURECUBE = 0x4L,
+-    };
+-
+-    enum TEX_MISC_FLAG2
+-    {
+-        TEX_MISC2_ALPHA_MODE_MASK = 0x7L,
+-    };
+-
+-    enum TEX_ALPHA_MODE
+-        // Matches DDS_ALPHA_MODE, encoded in MISC_FLAGS2
+-    {
+-        TEX_ALPHA_MODE_UNKNOWN       = 0,
+-        TEX_ALPHA_MODE_STRAIGHT      = 1,
+-        TEX_ALPHA_MODE_PREMULTIPLIED = 2,
+-        TEX_ALPHA_MODE_OPAQUE        = 3,
+-        TEX_ALPHA_MODE_CUSTOM        = 4,
+-    };
+-
+-    struct TexMetadata
+-    {
+-        size_t          width;
+-        size_t          height;     // Should be 1 for 1D textures
+-        size_t          depth;      // Should be 1 for 1D or 2D textures
+-        size_t          arraySize;  // For cubemap, this is a multiple of 6
+-        size_t          mipLevels;
+-        uint32_t        miscFlags;
+-        uint32_t        miscFlags2;
+-        DXGI_FORMAT     format;
+-        TEX_DIMENSION   dimension;
+-
+-        size_t __cdecl ComputeIndex(_In_ size_t mip, _In_ size_t item, _In_ size_t slice) const;
+-            // Returns size_t(-1) to indicate an out-of-range error
+-
+-        bool __cdecl IsCubemap() const { return (miscFlags & TEX_MISC_TEXTURECUBE) != 0; }
+-            // Helper for miscFlags
+-
+-        bool __cdecl IsPMAlpha() const { return ((miscFlags2 & TEX_MISC2_ALPHA_MODE_MASK) == TEX_ALPHA_MODE_PREMULTIPLIED) != 0; }
+-        void __cdecl SetAlphaMode(TEX_ALPHA_MODE mode) { miscFlags2 = (miscFlags2 & ~TEX_MISC2_ALPHA_MODE_MASK) | static_cast<uint32_t>(mode); }
+-        TEX_ALPHA_MODE __cdecl GetAlphaMode() const { return static_cast<TEX_ALPHA_MODE>(miscFlags2 & TEX_MISC2_ALPHA_MODE_MASK); }
+-            // Helpers for miscFlags2
+-
+-        bool __cdecl IsVolumemap() const { return (dimension == TEX_DIMENSION_TEXTURE3D); }
+-            // Helper for dimension
+-    };
+-
+-    enum DDS_FLAGS
+-    {
+-        DDS_FLAGS_NONE                  = 0x0,
+-
+-        DDS_FLAGS_LEGACY_DWORD          = 0x1,
+-            // Assume pitch is DWORD aligned instead of BYTE aligned (used by some legacy DDS files)
+-
+-        DDS_FLAGS_NO_LEGACY_EXPANSION   = 0x2,
+-            // Do not implicitly convert legacy formats that result in larger pixel sizes (24 bpp, 3:3:2, A8L8, A4L4, P8, A8P8) 
+-
+-        DDS_FLAGS_NO_R10B10G10A2_FIXUP  = 0x4,
+-            // Do not use work-around for long-standing D3DX DDS file format issue which reversed the 10:10:10:2 color order masks
+-
+-        DDS_FLAGS_FORCE_RGB             = 0x8,
+-            // Convert DXGI 1.1 BGR formats to DXGI_FORMAT_R8G8B8A8_UNORM to avoid use of optional WDDM 1.1 formats
+-
+-        DDS_FLAGS_NO_16BPP              = 0x10,
+-            // Conversions avoid use of 565, 5551, and 4444 formats and instead expand to 8888 to avoid use of optional WDDM 1.2 formats
+-
+-        DDS_FLAGS_EXPAND_LUMINANCE      = 0x20,
+-            // When loading legacy luminance formats expand replicating the color channels rather than leaving them packed (L8, L16, A8L8)
+-
+-        DDS_FLAGS_BAD_DXTN_TAILS        = 0x40,
+-            // Some older DXTn DDS files incorrectly handle mipchain tails for blocks smaller than 4x4
+-
+-        DDS_FLAGS_FORCE_DX10_EXT        = 0x10000,
+-            // Always use the 'DX10' header extension for DDS writer (i.e. don't try to write DX9 compatible DDS files)
+-
+-        DDS_FLAGS_FORCE_DX10_EXT_MISC2  = 0x20000,
+-            // DDS_FLAGS_FORCE_DX10_EXT including miscFlags2 information (result may not be compatible with D3DX10 or D3DX11)
+-    };
+-
+-    enum WIC_FLAGS
+-    {
+-        WIC_FLAGS_NONE                  = 0x0,
+-
+-        WIC_FLAGS_FORCE_RGB             = 0x1,
+-            // Loads DXGI 1.1 BGR formats as DXGI_FORMAT_R8G8B8A8_UNORM to avoid use of optional WDDM 1.1 formats
+-
+-        WIC_FLAGS_NO_X2_BIAS            = 0x2,
+-            // Loads DXGI 1.1 X2 10:10:10:2 format as DXGI_FORMAT_R10G10B10A2_UNORM
+-
+-        WIC_FLAGS_NO_16BPP              = 0x4,
+-            // Loads 565, 5551, and 4444 formats as 8888 to avoid use of optional WDDM 1.2 formats
+-
+-        WIC_FLAGS_ALLOW_MONO            = 0x8,
+-            // Loads 1-bit monochrome (black & white) as R1_UNORM rather than 8-bit grayscale
+-
+-        WIC_FLAGS_ALL_FRAMES            = 0x10,
+-            // Loads all images in a multi-frame file, converting/resizing to match the first frame as needed, defaults to 0th frame otherwise
+-
+-        WIC_FLAGS_IGNORE_SRGB           = 0x20,
+-            // Ignores sRGB metadata if present in the file
+-
+-        WIC_FLAGS_DITHER                = 0x10000,
+-            // Use ordered 4x4 dithering for any required conversions
+-
+-        WIC_FLAGS_DITHER_DIFFUSION      = 0x20000,
+-            // Use error-diffusion dithering for any required conversions
+-
+-        WIC_FLAGS_FILTER_POINT          = 0x100000,
+-        WIC_FLAGS_FILTER_LINEAR         = 0x200000,
+-        WIC_FLAGS_FILTER_CUBIC          = 0x300000,
+-        WIC_FLAGS_FILTER_FANT           = 0x400000, // Combination of Linear and Box filter
+-            // Filtering mode to use for any required image resizing (only needed when loading arrays of differently sized images; defaults to Fant)
+-    };
+-
+-    HRESULT __cdecl GetMetadataFromDDSMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _In_ DWORD flags,
+-        _Out_ TexMetadata& metadata);
+-    HRESULT __cdecl GetMetadataFromDDSFile(
+-        _In_z_ const wchar_t* szFile,
+-        _In_ DWORD flags,
+-        _Out_ TexMetadata& metadata);
+-
+-    HRESULT __cdecl GetMetadataFromHDRMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _Out_ TexMetadata& metadata);
+-    HRESULT __cdecl GetMetadataFromHDRFile(
+-        _In_z_ const wchar_t* szFile,
+-        _Out_ TexMetadata& metadata);
+-
+-    HRESULT __cdecl GetMetadataFromTGAMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _Out_ TexMetadata& metadata);
+-    HRESULT __cdecl GetMetadataFromTGAFile(
+-        _In_z_ const wchar_t* szFile,
+-        _Out_ TexMetadata& metadata);
+-
+-    HRESULT __cdecl GetMetadataFromWICMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _In_ DWORD flags,
+-        _Out_ TexMetadata& metadata,
+-        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-
+-    HRESULT __cdecl GetMetadataFromWICFile(
+-        _In_z_ const wchar_t* szFile,
+-        _In_ DWORD flags,
+-        _Out_ TexMetadata& metadata,
+-        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-
+-    //---------------------------------------------------------------------------------
+-    // Bitmap image container
+-    struct Image
+-    {
+-        size_t      width;
+-        size_t      height;
+-        DXGI_FORMAT format;
+-        size_t      rowPitch;
+-        size_t      slicePitch;
+-        uint8_t*    pixels;
+-    };
+-
+-    class ScratchImage
+-    {
+-    public:
+-        ScratchImage()
+-            : m_nimages(0), m_size(0), m_metadata{}, m_image(nullptr), m_memory(nullptr) {}
+-        ScratchImage(ScratchImage&& moveFrom)
+-            : m_nimages(0), m_size(0), m_metadata{}, m_image(nullptr), m_memory(nullptr) { *this = std::move(moveFrom); }
+-        ~ScratchImage() { Release(); }
+-
+-        ScratchImage& __cdecl operator= (ScratchImage&& moveFrom);
+-
+-        ScratchImage(const ScratchImage&) = delete;
+-        ScratchImage& operator=(const ScratchImage&) = delete;
+-
+-        HRESULT __cdecl Initialize(_In_ const TexMetadata& mdata, _In_ DWORD flags = CP_FLAGS_NONE);
+-
+-        HRESULT __cdecl Initialize1D(_In_ DXGI_FORMAT fmt, _In_ size_t length, _In_ size_t arraySize, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl Initialize2D(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t arraySize, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl Initialize3D(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t depth, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl InitializeCube(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t nCubes, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
+-
+-        HRESULT __cdecl InitializeFromImage(_In_ const Image& srcImage, _In_ bool allow1D = false, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl InitializeArrayFromImages(_In_reads_(nImages) const Image* images, _In_ size_t nImages, _In_ bool allow1D = false, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl InitializeCubeFromImages(_In_reads_(nImages) const Image* images, _In_ size_t nImages, _In_ DWORD flags = CP_FLAGS_NONE);
+-        HRESULT __cdecl Initialize3DFromImages(_In_reads_(depth) const Image* images, _In_ size_t depth, _In_ DWORD flags = CP_FLAGS_NONE);
+-
+-        void __cdecl Release();
+-
+-        bool __cdecl OverrideFormat(_In_ DXGI_FORMAT f);
+-
+-        const TexMetadata& __cdecl GetMetadata() const { return m_metadata; }
+-        const Image* __cdecl GetImage(_In_ size_t mip, _In_ size_t item, _In_ size_t slice) const;
+-
+-        const Image* __cdecl GetImages() const { return m_image; }
+-        size_t __cdecl GetImageCount() const { return m_nimages; }
+-
+-        uint8_t* __cdecl GetPixels() const { return m_memory; }
+-        size_t __cdecl GetPixelsSize() const { return m_size; }
+-
+-        bool __cdecl IsAlphaAllOpaque() const;
+-
+-    private:
+-        size_t      m_nimages;
+-        size_t      m_size;
+-        TexMetadata m_metadata;
+-        Image*      m_image;
+-        uint8_t*    m_memory;
+-    };
+-
+-    //---------------------------------------------------------------------------------
+-    // Memory blob (allocated buffer pointer is always 16-byte aligned)
+-    class Blob
+-    {
+-    public:
+-        Blob() : m_buffer(nullptr), m_size(0) {}
+-        Blob(Blob&& moveFrom) : m_buffer(nullptr), m_size(0) { *this = std::move(moveFrom); }
+-        ~Blob() { Release(); }
+-
+-        Blob& __cdecl operator= (Blob&& moveFrom);
+-
+-        Blob(const Blob&) = delete;
+-        Blob& operator=(const Blob&) = delete;
+-
+-        HRESULT __cdecl Initialize(_In_ size_t size);
+-
+-        void __cdecl Release();
+-
+-        void *__cdecl GetBufferPointer() const { return m_buffer; }
+-        size_t __cdecl GetBufferSize() const { return m_size; }
+-
+-        HRESULT __cdecl Trim(size_t size);
+-
+-    private:
+-        void*   m_buffer;
+-        size_t  m_size;
+-    };
+-
+-    //---------------------------------------------------------------------------------
+-    // Image I/O
+-
+-    // DDS operations
+-    HRESULT __cdecl LoadFromDDSMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _In_ DWORD flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-    HRESULT __cdecl LoadFromDDSFile(
+-        _In_z_ const wchar_t* szFile,
+-        _In_ DWORD flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-
+-    HRESULT __cdecl SaveToDDSMemory(
+-        _In_ const Image& image,
+-        _In_ DWORD flags,
+-        _Out_ Blob& blob);
+-    HRESULT __cdecl SaveToDDSMemory(
+-        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD flags,
+-        _Out_ Blob& blob);
+-
+-    HRESULT __cdecl SaveToDDSFile(_In_ const Image& image, _In_ DWORD flags, _In_z_ const wchar_t* szFile);
+-    HRESULT __cdecl SaveToDDSFile(
+-        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD flags, _In_z_ const wchar_t* szFile);
+-
+-    // HDR operations
+-    HRESULT __cdecl LoadFromHDRMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-    HRESULT __cdecl LoadFromHDRFile(
+-        _In_z_ const wchar_t* szFile,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-
+-    HRESULT __cdecl SaveToHDRMemory(_In_ const Image& image, _Out_ Blob& blob);
+-    HRESULT __cdecl SaveToHDRFile(_In_ const Image& image, _In_z_ const wchar_t* szFile);
+-
+-    // TGA operations
+-    HRESULT __cdecl LoadFromTGAMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-    HRESULT __cdecl LoadFromTGAFile(
+-        _In_z_ const wchar_t* szFile,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+-
+-    HRESULT __cdecl SaveToTGAMemory(_In_ const Image& image, _Out_ Blob& blob);
+-    HRESULT __cdecl SaveToTGAFile(_In_ const Image& image, _In_z_ const wchar_t* szFile);
+-
+-    // WIC operations
+-    HRESULT __cdecl LoadFromWICMemory(
+-        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
+-        _In_ DWORD flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
+-        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-    HRESULT __cdecl LoadFromWICFile(
+-        _In_z_ const wchar_t* szFile, _In_ DWORD flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
+-        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-
+-    HRESULT __cdecl SaveToWICMemory(
+-        _In_ const Image& image, _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
+-        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-    HRESULT __cdecl SaveToWICMemory(
+-        _In_count_(nimages) const Image* images, _In_ size_t nimages,
+-        _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
+-        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-
+-    HRESULT __cdecl SaveToWICFile(
+-        _In_ const Image& image, _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
+-        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-    HRESULT __cdecl SaveToWICFile(
+-        _In_count_(nimages) const Image* images, _In_ size_t nimages,
+-        _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
+-        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-
+-    //---------------------------------------------------------------------------------
+-    // Texture conversion, resizing, mipmap generation, and block compression
+-
+-    enum TEX_FR_FLAGS
+-    {
+-        TEX_FR_ROTATE0          = 0x0,
+-        TEX_FR_ROTATE90         = 0x1,
+-        TEX_FR_ROTATE180        = 0x2,
+-        TEX_FR_ROTATE270        = 0x3,
+-        TEX_FR_FLIP_HORIZONTAL  = 0x08,
+-        TEX_FR_FLIP_VERTICAL    = 0x10,
+-    };
+-
+-    HRESULT __cdecl FlipRotate(_In_ const Image& srcImage, _In_ DWORD flags, _Out_ ScratchImage& image);
+-    HRESULT __cdecl FlipRotate(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD flags, _Out_ ScratchImage& result);
+-        // Flip and/or rotate image
+-
+-    enum TEX_FILTER_FLAGS
+-    {
+-        TEX_FILTER_DEFAULT          = 0,
+-
+-        TEX_FILTER_WRAP_U           = 0x1,
+-        TEX_FILTER_WRAP_V           = 0x2,
+-        TEX_FILTER_WRAP_W           = 0x4,
+-        TEX_FILTER_WRAP             = (TEX_FILTER_WRAP_U | TEX_FILTER_WRAP_V | TEX_FILTER_WRAP_W),
+-        TEX_FILTER_MIRROR_U         = 0x10,
+-        TEX_FILTER_MIRROR_V         = 0x20,
+-        TEX_FILTER_MIRROR_W         = 0x40,
+-        TEX_FILTER_MIRROR          = (TEX_FILTER_MIRROR_U | TEX_FILTER_MIRROR_V | TEX_FILTER_MIRROR_W),
+-            // Wrap vs. Mirror vs. Clamp filtering options
+-
+-        TEX_FILTER_SEPARATE_ALPHA   = 0x100,
+-            // Resize color and alpha channel independently
+-
+-        TEX_FILTER_FLOAT_X2BIAS     = 0x200,
+-            // Enable *2 - 1 conversion cases for unorm<->float and positive-only float formats
+-
+-        TEX_FILTER_RGB_COPY_RED     = 0x1000,
+-        TEX_FILTER_RGB_COPY_GREEN   = 0x2000,
+-        TEX_FILTER_RGB_COPY_BLUE    = 0x4000,
+-            // When converting RGB to R, defaults to using grayscale. These flags indicate copying a specific channel instead
+-            // When converting RGB to RG, defaults to copying RED | GREEN. These flags control which channels are selected instead.
+-
+-        TEX_FILTER_DITHER           = 0x10000,
+-            // Use ordered 4x4 dithering for any required conversions
+-        TEX_FILTER_DITHER_DIFFUSION = 0x20000,
+-            // Use error-diffusion dithering for any required conversions
+-
+-        TEX_FILTER_POINT            = 0x100000,
+-        TEX_FILTER_LINEAR           = 0x200000,
+-        TEX_FILTER_CUBIC            = 0x300000,
+-        TEX_FILTER_BOX              = 0x400000,
+-        TEX_FILTER_FANT             = 0x400000, // Equiv to Box filtering for mipmap generation
+-        TEX_FILTER_TRIANGLE         = 0x500000,
+-            // Filtering mode to use for any required image resizing
+-
+-        TEX_FILTER_SRGB_IN          = 0x1000000,
+-        TEX_FILTER_SRGB_OUT         = 0x2000000,
+-        TEX_FILTER_SRGB             = (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT),
+-            // sRGB <-> RGB for use in conversion operations
+-            // if the input format type is IsSRGB(), then SRGB_IN is on by default
+-            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
+-
+-        TEX_FILTER_FORCE_NON_WIC    = 0x10000000,
+-            // Forces use of the non-WIC path when both are an option
+-
+-        TEX_FILTER_FORCE_WIC        = 0x20000000,
+-            // Forces use of the WIC path even when logic would have picked a non-WIC path when both are an option
+-    };
+-
+-    HRESULT __cdecl Resize(
+-        _In_ const Image& srcImage, _In_ size_t width, _In_ size_t height,
+-        _In_ DWORD filter,
+-        _Out_ ScratchImage& image);
+-    HRESULT __cdecl Resize(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ size_t width, _In_ size_t height, _In_ DWORD filter, _Out_ ScratchImage& result);
+-        // Resize the image to width x height. Defaults to Fant filtering.
+-        // Note for a complex resize, the result will always have mipLevels == 1
+-
+-    const float TEX_THRESHOLD_DEFAULT = 0.5f;
+-        // Default value for alpha threshold used when converting to 1-bit alpha
+-
+-    HRESULT __cdecl Convert(
+-        _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD filter, _In_ float threshold,
+-        _Out_ ScratchImage& image);
+-    HRESULT __cdecl Convert(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DXGI_FORMAT format, _In_ DWORD filter, _In_ float threshold, _Out_ ScratchImage& result);
+-        // Convert the image to a new format
+-
+-    HRESULT __cdecl ConvertToSinglePlane(_In_ const Image& srcImage, _Out_ ScratchImage& image);
+-    HRESULT __cdecl ConvertToSinglePlane(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _Out_ ScratchImage& image);
+-        // Converts the image from a planar format to an equivalent non-planar format
+-
+-    HRESULT __cdecl GenerateMipMaps(
+-        _In_ const Image& baseImage, _In_ DWORD filter, _In_ size_t levels,
+-        _Inout_ ScratchImage& mipChain, _In_ bool allow1D = false);
+-    HRESULT __cdecl GenerateMipMaps(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD filter, _In_ size_t levels, _Inout_ ScratchImage& mipChain);
+-        // levels of '0' indicates a full mipchain, otherwise is generates that number of total levels (including the source base image)
+-        // Defaults to Fant filtering which is equivalent to a box filter
+-
+-    HRESULT __cdecl GenerateMipMaps3D(
+-        _In_reads_(depth) const Image* baseImages, _In_ size_t depth, _In_ DWORD filter, _In_ size_t levels,
+-        _Out_ ScratchImage& mipChain);
+-    HRESULT __cdecl GenerateMipMaps3D(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD filter, _In_ size_t levels, _Out_ ScratchImage& mipChain);
+-        // levels of '0' indicates a full mipchain, otherwise is generates that number of total levels (including the source base image)
+-        // Defaults to Fant filtering which is equivalent to a box filter
+-
+-    enum TEX_PMALPHA_FLAGS
+-    {
+-        TEX_PMALPHA_DEFAULT         = 0,
+-
+-        TEX_PMALPHA_IGNORE_SRGB     = 0x1,
+-            // ignores sRGB colorspace conversions
+-
+-        TEX_PMALPHA_REVERSE         = 0x2,
+-            // converts from premultiplied alpha back to straight alpha
+-
+-        TEX_PMALPHA_SRGB_IN         = 0x1000000,
+-        TEX_PMALPHA_SRGB_OUT        = 0x2000000,
+-        TEX_PMALPHA_SRGB            = (TEX_PMALPHA_SRGB_IN | TEX_PMALPHA_SRGB_OUT),
+-            // if the input format type is IsSRGB(), then SRGB_IN is on by default
+-            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
+-    };
+-
+-    HRESULT __cdecl PremultiplyAlpha(_In_ const Image& srcImage, _In_ DWORD flags, _Out_ ScratchImage& image);
+-    HRESULT __cdecl PremultiplyAlpha(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD flags, _Out_ ScratchImage& result);
+-        // Converts to/from a premultiplied alpha version of the texture
+-
+-    enum TEX_COMPRESS_FLAGS
+-    {
+-        TEX_COMPRESS_DEFAULT            = 0,
+-
+-        TEX_COMPRESS_RGB_DITHER         = 0x10000,
+-            // Enables dithering RGB colors for BC1-3 compression
+-
+-        TEX_COMPRESS_A_DITHER           = 0x20000,
+-            // Enables dithering alpha for BC1-3 compression
+-
+-        TEX_COMPRESS_DITHER             = 0x30000,
+-            // Enables both RGB and alpha dithering for BC1-3 compression
+-
+-        TEX_COMPRESS_UNIFORM            = 0x40000,
+-            // Uniform color weighting for BC1-3 compression; by default uses perceptual weighting
+-
+-        TEX_COMPRESS_BC7_USE_3SUBSETS   = 0x80000,
+-            // Enables exhaustive search for BC7 compress for mode 0 and 2; by default skips trying these modes
+-
+-        TEX_COMPRESS_BC7_QUICK          = 0x100000,
+-            // Minimal modes (usually mode 6) for BC7 compression
+-
+-        TEX_COMPRESS_SRGB_IN            = 0x1000000,
+-        TEX_COMPRESS_SRGB_OUT           = 0x2000000,
+-        TEX_COMPRESS_SRGB               = (TEX_COMPRESS_SRGB_IN | TEX_COMPRESS_SRGB_OUT),
+-            // if the input format type is IsSRGB(), then SRGB_IN is on by default
+-            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
+-
+-        TEX_COMPRESS_PARALLEL           = 0x10000000,
+-            // Compress is free to use multithreading to improve performance (by default it does not use multithreading)
+-    };
+-
+-    HRESULT __cdecl Compress(
+-        _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float threshold,
+-        _Out_ ScratchImage& cImage);
+-    HRESULT __cdecl Compress(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float threshold, _Out_ ScratchImage& cImages);
+-        // Note that threshold is only used by BC1. TEX_THRESHOLD_DEFAULT is a typical value to use
+-
+-#if defined(__d3d11_h__) || defined(__d3d11_x_h__)
+-    HRESULT __cdecl Compress(
+-        _In_ ID3D11Device* pDevice, _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD compress,
+-        _In_ float alphaWeight, _Out_ ScratchImage& image);
+-    HRESULT __cdecl Compress(
+-        _In_ ID3D11Device* pDevice, _In_ const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float alphaWeight, _Out_ ScratchImage& cImages);
+-        // DirectCompute-based compression (alphaWeight is only used by BC7. 1.0 is the typical value to use)
+-#endif
+-
+-    HRESULT __cdecl Decompress(_In_ const Image& cImage, _In_ DXGI_FORMAT format, _Out_ ScratchImage& image);
+-    HRESULT __cdecl Decompress(
+-        _In_reads_(nimages) const Image* cImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DXGI_FORMAT format, _Out_ ScratchImage& images);
+-
+-    //---------------------------------------------------------------------------------
+-    // Normal map operations
+-
+-    enum CNMAP_FLAGS
+-    {
+-        CNMAP_DEFAULT           = 0,
+-
+-        CNMAP_CHANNEL_RED       = 0x1,
+-        CNMAP_CHANNEL_GREEN     = 0x2,
+-        CNMAP_CHANNEL_BLUE      = 0x3,
+-        CNMAP_CHANNEL_ALPHA     = 0x4,
+-        CNMAP_CHANNEL_LUMINANCE = 0x5,
+-            // Channel selection when evaluting color value for height
+-            // Luminance is a combination of red, green, and blue
+-
+-        CNMAP_MIRROR_U          = 0x1000,
+-        CNMAP_MIRROR_V          = 0x2000,
+-        CNMAP_MIRROR            = 0x3000,
+-            // Use mirror semantics for scanline references (defaults to wrap)
+-
+-        CNMAP_INVERT_SIGN       = 0x4000,
+-            // Inverts normal sign
+-
+-        CNMAP_COMPUTE_OCCLUSION = 0x8000,
+-            // Computes a crude occlusion term stored in the alpha channel
+-    };
+-
+-    HRESULT __cdecl ComputeNormalMap(
+-        _In_ const Image& srcImage, _In_ DWORD flags, _In_ float amplitude,
+-        _In_ DXGI_FORMAT format, _Out_ ScratchImage& normalMap);
+-    HRESULT __cdecl ComputeNormalMap(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ DWORD flags, _In_ float amplitude, _In_ DXGI_FORMAT format, _Out_ ScratchImage& normalMaps);
+-
+-    //---------------------------------------------------------------------------------
+-    // Misc image operations
+-
+-    struct Rect
+-    {
+-        size_t x;
+-        size_t y;
+-        size_t w;
+-        size_t h;
+-
+-        Rect() = default;
+-        Rect(size_t _x, size_t _y, size_t _w, size_t _h) : x(_x), y(_y), w(_w), h(_h) {}
+-    };
+-
+-    HRESULT __cdecl CopyRectangle(
+-        _In_ const Image& srcImage, _In_ const Rect& srcRect, _In_ const Image& dstImage,
+-        _In_ DWORD filter, _In_ size_t xOffset, _In_ size_t yOffset);
+-
+-    enum CMSE_FLAGS
+-    {
+-        CMSE_DEFAULT                = 0,
+-
+-        CMSE_IMAGE1_SRGB            = 0x1,
+-        CMSE_IMAGE2_SRGB            = 0x2,
+-            // Indicates that image needs gamma correction before comparision
+-
+-        CMSE_IGNORE_RED             = 0x10,
+-        CMSE_IGNORE_GREEN           = 0x20,
+-        CMSE_IGNORE_BLUE            = 0x40,
+-        CMSE_IGNORE_ALPHA           = 0x80,
+-            // Ignore the channel when computing MSE
+-
+-        CMSE_IMAGE1_X2_BIAS         = 0x100,
+-        CMSE_IMAGE2_X2_BIAS         = 0x200,
+-            // Indicates that image should be scaled and biased before comparison (i.e. UNORM -> SNORM)
+-    };
+-
+-    HRESULT __cdecl ComputeMSE(_In_ const Image& image1, _In_ const Image& image2, _Out_ float& mse, _Out_writes_opt_(4) float* mseV, _In_ DWORD flags = 0);
+-
+-    HRESULT __cdecl EvaluateImage(
+-        _In_ const Image& image,
+-        _In_ std::function<void __cdecl(_In_reads_(width) const XMVECTOR* pixels, size_t width, size_t y)> pixelFunc);
+-    HRESULT __cdecl EvaluateImage(
+-        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ std::function<void __cdecl(_In_reads_(width) const XMVECTOR* pixels, size_t width, size_t y)> pixelFunc);
+-
+-    HRESULT __cdecl TransformImage(
+-        _In_ const Image& image,
+-        _In_ std::function<void __cdecl(_Out_writes_(width) XMVECTOR* outPixels,
+-        _In_reads_(width) const XMVECTOR* inPixels, size_t width, size_t y)> pixelFunc,
+-        ScratchImage& result);
+-    HRESULT __cdecl TransformImage(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ std::function<void __cdecl(_Out_writes_(width) XMVECTOR* outPixels,
+-        _In_reads_(width) const XMVECTOR* inPixels, size_t width, size_t y)> pixelFunc,
+-        ScratchImage& result);
+-
+-    //---------------------------------------------------------------------------------
+-    // WIC utility code
+-
+-    enum WICCodecs
+-    {
+-        WIC_CODEC_BMP = 1,     // Windows Bitmap (.bmp)
+-        WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
+-        WIC_CODEC_PNG,              // Portable Network Graphics (.png)
+-        WIC_CODEC_TIFF,             // Tagged Image File Format  (.tif, .tiff)
+-        WIC_CODEC_GIF,              // Graphics Interchange Format  (.gif)
+-        WIC_CODEC_WMP,              // Windows Media Photo / HD Photo / JPEG XR (.hdp, .jxr, .wdp)
+-        WIC_CODEC_ICO,              // Windows Icon (.ico)
+-    };
+-
+-    REFGUID __cdecl GetWICCodec(_In_ WICCodecs codec);
+-
+-    IWICImagingFactory* __cdecl GetWICFactory(bool& iswic2);
+-    void __cdecl SetWICFactory(_In_opt_ IWICImagingFactory* pWIC);
+-
+-    //---------------------------------------------------------------------------------
+-    // Direct3D 11 functions
+-#if defined(__d3d11_h__) || defined(__d3d11_x_h__)
+-    bool __cdecl IsSupportedTexture(_In_ ID3D11Device* pDevice, _In_ const TexMetadata& metadata);
+-
+-    HRESULT __cdecl CreateTexture(
+-        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _Outptr_ ID3D11Resource** ppResource);
+-
+-    HRESULT __cdecl CreateShaderResourceView(
+-        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _Outptr_ ID3D11ShaderResourceView** ppSRV);
+-
+-    HRESULT __cdecl CreateTextureEx(
+-        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ D3D11_USAGE usage, _In_ unsigned int bindFlags, _In_ unsigned int cpuAccessFlags, _In_ unsigned int miscFlags, _In_ bool forceSRGB,
+-        _Outptr_ ID3D11Resource** ppResource);
+-
+-    HRESULT __cdecl CreateShaderResourceViewEx(
+-        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ D3D11_USAGE usage, _In_ unsigned int bindFlags, _In_ unsigned int cpuAccessFlags, _In_ unsigned int miscFlags, _In_ bool forceSRGB,
+-        _Outptr_ ID3D11ShaderResourceView** ppSRV);
+-
+-    HRESULT __cdecl CaptureTexture(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pContext, _In_ ID3D11Resource* pSource, _Out_ ScratchImage& result);
+-#endif
+-
+-    //---------------------------------------------------------------------------------
+-    // Direct3D 12 functions
+-#if defined(__d3d12_h__) || defined(__d3d12_x_h__)
+-    bool __cdecl IsSupportedTexture(_In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata);
+-
+-    HRESULT __cdecl CreateTexture(
+-        _In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata,
+-        _Outptr_ ID3D12Resource** ppResource);
+-
+-    HRESULT __cdecl CreateTextureEx(
+-        _In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata,
+-        _In_ D3D12_RESOURCE_FLAGS resFlags, _In_ bool forceSRGB,
+-        _Outptr_ ID3D12Resource** ppResource);
+-
+-    HRESULT __cdecl PrepareUpload(
+-        _In_ ID3D12Device* pDevice,
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        std::vector<D3D12_SUBRESOURCE_DATA>& subresources);
+-
+-    HRESULT __cdecl CaptureTexture(
+-        _In_ ID3D12CommandQueue* pCommandQueue, _In_ ID3D12Resource* pSource, _In_ bool isCubeMap,
+-        _Out_ ScratchImage& result,
+-        _In_ D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATE_RENDER_TARGET,
+-        _In_ D3D12_RESOURCE_STATES afterState = D3D12_RESOURCE_STATE_RENDER_TARGET);
+-#endif
+-
+-#include "DirectXTex.inl"
+-
+-} // namespace
++//-------------------------------------------------------------------------------------
++// DirectXTex.h
++//  
++// DirectX Texture Library
++//
++// Copyright (c) Microsoft Corporation. All rights reserved.
++// Licensed under the MIT License.
++//
++// http://go.microsoft.com/fwlink/?LinkId=248926
++//-------------------------------------------------------------------------------------
++
++#pragma once
++
++#include <stdint.h>
++
++#include <algorithm>
++#include <functional>
++#include <vector>
++
++#if !defined(__d3d11_h__) && !defined(__d3d11_x_h__) && !defined(__d3d12_h__) && !defined(__d3d12_x_h__)
++#if defined(_XBOX_ONE) && defined(_TITLE)
++#include <d3d11_x.h>
++#define DCOMMON_H_INCLUDED
++#else
++#include <d3d11_1.h>
++#endif
++#endif
++
++#include <directxmath.h>
++
++#include <ocidl.h>
++
++#define DIRECTX_TEX_VERSION 152
++
++struct IWICImagingFactory;
++struct IWICMetadataQueryReader;
++
++
++namespace DirectX
++{
++
++    //---------------------------------------------------------------------------------
++    // DXGI Format Utilities
++    bool __cdecl IsValid(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsCompressed(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsPacked(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsVideo(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsPlanar(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsPalettized(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsDepthStencil(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsSRGB(_In_ DXGI_FORMAT fmt);
++    bool __cdecl IsTypeless(_In_ DXGI_FORMAT fmt, _In_ bool partialTypeless = true);
++
++    bool __cdecl HasAlpha(_In_ DXGI_FORMAT fmt);
++
++    size_t __cdecl BitsPerPixel(_In_ DXGI_FORMAT fmt);
++
++    size_t __cdecl BitsPerColor(_In_ DXGI_FORMAT fmt);
++
++    enum CP_FLAGS
++    {
++        CP_FLAGS_NONE               = 0x0,      // Normal operation
++        CP_FLAGS_LEGACY_DWORD       = 0x1,      // Assume pitch is DWORD aligned instead of BYTE aligned
++        CP_FLAGS_PARAGRAPH          = 0x2,      // Assume pitch is 16-byte aligned instead of BYTE aligned
++        CP_FLAGS_YMM                = 0x4,      // Assume pitch is 32-byte aligned instead of BYTE aligned
++        CP_FLAGS_ZMM                = 0x8,      // Assume pitch is 64-byte aligned instead of BYTE aligned
++        CP_FLAGS_PAGE4K             = 0x200,    // Assume pitch is 4096-byte aligned instead of BYTE aligned
++        CP_FLAGS_BAD_DXTN_TAILS     = 0x1000,   // BC formats with malformed mipchain blocks smaller than 4x4
++        CP_FLAGS_24BPP              = 0x10000,  // Override with a legacy 24 bits-per-pixel format size
++        CP_FLAGS_16BPP              = 0x20000,  // Override with a legacy 16 bits-per-pixel format size
++        CP_FLAGS_8BPP               = 0x40000,  // Override with a legacy 8 bits-per-pixel format size
++    };
++
++    void __cdecl ComputePitch(
++        _In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height,
++        _Out_ size_t& rowPitch, _Out_ size_t& slicePitch, _In_ DWORD flags = CP_FLAGS_NONE);
++
++    size_t __cdecl ComputeScanlines(_In_ DXGI_FORMAT fmt, _In_ size_t height);
++
++    DXGI_FORMAT __cdecl MakeSRGB(_In_ DXGI_FORMAT fmt);
++    DXGI_FORMAT __cdecl MakeTypeless(_In_ DXGI_FORMAT fmt);
++    DXGI_FORMAT __cdecl MakeTypelessUNORM(_In_ DXGI_FORMAT fmt);
++    DXGI_FORMAT __cdecl MakeTypelessFLOAT(_In_ DXGI_FORMAT fmt);
++
++    //---------------------------------------------------------------------------------
++    // Texture metadata
++    enum TEX_DIMENSION
++        // Subset here matches D3D10_RESOURCE_DIMENSION and D3D11_RESOURCE_DIMENSION
++    {
++        TEX_DIMENSION_TEXTURE1D    = 2,
++        TEX_DIMENSION_TEXTURE2D    = 3,
++        TEX_DIMENSION_TEXTURE3D    = 4,
++    };
++
++    enum TEX_MISC_FLAG
++        // Subset here matches D3D10_RESOURCE_MISC_FLAG and D3D11_RESOURCE_MISC_FLAG
++    {
++        TEX_MISC_TEXTURECUBE = 0x4L,
++    };
++
++    enum TEX_MISC_FLAG2
++    {
++        TEX_MISC2_ALPHA_MODE_MASK = 0x7L,
++    };
++
++    enum TEX_ALPHA_MODE
++        // Matches DDS_ALPHA_MODE, encoded in MISC_FLAGS2
++    {
++        TEX_ALPHA_MODE_UNKNOWN       = 0,
++        TEX_ALPHA_MODE_STRAIGHT      = 1,
++        TEX_ALPHA_MODE_PREMULTIPLIED = 2,
++        TEX_ALPHA_MODE_OPAQUE        = 3,
++        TEX_ALPHA_MODE_CUSTOM        = 4,
++    };
++
++    struct TexMetadata
++    {
++        size_t          width;
++        size_t          height;     // Should be 1 for 1D textures
++        size_t          depth;      // Should be 1 for 1D or 2D textures
++        size_t          arraySize;  // For cubemap, this is a multiple of 6
++        size_t          mipLevels;
++        uint32_t        miscFlags;
++        uint32_t        miscFlags2;
++        DXGI_FORMAT     format;
++        TEX_DIMENSION   dimension;
++
++        size_t __cdecl ComputeIndex(_In_ size_t mip, _In_ size_t item, _In_ size_t slice) const;
++            // Returns size_t(-1) to indicate an out-of-range error
++
++        bool __cdecl IsCubemap() const { return (miscFlags & TEX_MISC_TEXTURECUBE) != 0; }
++            // Helper for miscFlags
++
++        bool __cdecl IsPMAlpha() const { return ((miscFlags2 & TEX_MISC2_ALPHA_MODE_MASK) == TEX_ALPHA_MODE_PREMULTIPLIED) != 0; }
++        void __cdecl SetAlphaMode(TEX_ALPHA_MODE mode) { miscFlags2 = (miscFlags2 & ~TEX_MISC2_ALPHA_MODE_MASK) | static_cast<uint32_t>(mode); }
++        TEX_ALPHA_MODE __cdecl GetAlphaMode() const { return static_cast<TEX_ALPHA_MODE>(miscFlags2 & TEX_MISC2_ALPHA_MODE_MASK); }
++            // Helpers for miscFlags2
++
++        bool __cdecl IsVolumemap() const { return (dimension == TEX_DIMENSION_TEXTURE3D); }
++            // Helper for dimension
++    };
++
++    enum DDS_FLAGS
++    {
++        DDS_FLAGS_NONE                  = 0x0,
++
++        DDS_FLAGS_LEGACY_DWORD          = 0x1,
++            // Assume pitch is DWORD aligned instead of BYTE aligned (used by some legacy DDS files)
++
++        DDS_FLAGS_NO_LEGACY_EXPANSION   = 0x2,
++            // Do not implicitly convert legacy formats that result in larger pixel sizes (24 bpp, 3:3:2, A8L8, A4L4, P8, A8P8) 
++
++        DDS_FLAGS_NO_R10B10G10A2_FIXUP  = 0x4,
++            // Do not use work-around for long-standing D3DX DDS file format issue which reversed the 10:10:10:2 color order masks
++
++        DDS_FLAGS_FORCE_RGB             = 0x8,
++            // Convert DXGI 1.1 BGR formats to DXGI_FORMAT_R8G8B8A8_UNORM to avoid use of optional WDDM 1.1 formats
++
++        DDS_FLAGS_NO_16BPP              = 0x10,
++            // Conversions avoid use of 565, 5551, and 4444 formats and instead expand to 8888 to avoid use of optional WDDM 1.2 formats
++
++        DDS_FLAGS_EXPAND_LUMINANCE      = 0x20,
++            // When loading legacy luminance formats expand replicating the color channels rather than leaving them packed (L8, L16, A8L8)
++
++        DDS_FLAGS_BAD_DXTN_TAILS        = 0x40,
++            // Some older DXTn DDS files incorrectly handle mipchain tails for blocks smaller than 4x4
++
++        DDS_FLAGS_FORCE_DX10_EXT        = 0x10000,
++            // Always use the 'DX10' header extension for DDS writer (i.e. don't try to write DX9 compatible DDS files)
++
++        DDS_FLAGS_FORCE_DX10_EXT_MISC2  = 0x20000,
++            // DDS_FLAGS_FORCE_DX10_EXT including miscFlags2 information (result may not be compatible with D3DX10 or D3DX11)
++    };
++
++    enum WIC_FLAGS
++    {
++        WIC_FLAGS_NONE                  = 0x0,
++
++        WIC_FLAGS_FORCE_RGB             = 0x1,
++            // Loads DXGI 1.1 BGR formats as DXGI_FORMAT_R8G8B8A8_UNORM to avoid use of optional WDDM 1.1 formats
++
++        WIC_FLAGS_NO_X2_BIAS            = 0x2,
++            // Loads DXGI 1.1 X2 10:10:10:2 format as DXGI_FORMAT_R10G10B10A2_UNORM
++
++        WIC_FLAGS_NO_16BPP              = 0x4,
++            // Loads 565, 5551, and 4444 formats as 8888 to avoid use of optional WDDM 1.2 formats
++
++        WIC_FLAGS_ALLOW_MONO            = 0x8,
++            // Loads 1-bit monochrome (black & white) as R1_UNORM rather than 8-bit grayscale
++
++        WIC_FLAGS_ALL_FRAMES            = 0x10,
++            // Loads all images in a multi-frame file, converting/resizing to match the first frame as needed, defaults to 0th frame otherwise
++
++        WIC_FLAGS_IGNORE_SRGB           = 0x20,
++            // Ignores sRGB metadata if present in the file
++
++        WIC_FLAGS_DITHER                = 0x10000,
++            // Use ordered 4x4 dithering for any required conversions
++
++        WIC_FLAGS_DITHER_DIFFUSION      = 0x20000,
++            // Use error-diffusion dithering for any required conversions
++
++        WIC_FLAGS_FILTER_POINT          = 0x100000,
++        WIC_FLAGS_FILTER_LINEAR         = 0x200000,
++        WIC_FLAGS_FILTER_CUBIC          = 0x300000,
++        WIC_FLAGS_FILTER_FANT           = 0x400000, // Combination of Linear and Box filter
++            // Filtering mode to use for any required image resizing (only needed when loading arrays of differently sized images; defaults to Fant)
++    };
++
++    HRESULT __cdecl GetMetadataFromDDSMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _In_ DWORD flags,
++        _Out_ TexMetadata& metadata);
++    HRESULT __cdecl GetMetadataFromDDSFile(
++        _In_z_ const wchar_t* szFile,
++        _In_ DWORD flags,
++        _Out_ TexMetadata& metadata);
++
++    HRESULT __cdecl GetMetadataFromHDRMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _Out_ TexMetadata& metadata);
++    HRESULT __cdecl GetMetadataFromHDRFile(
++        _In_z_ const wchar_t* szFile,
++        _Out_ TexMetadata& metadata);
++
++    HRESULT __cdecl GetMetadataFromTGAMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _Out_ TexMetadata& metadata);
++    HRESULT __cdecl GetMetadataFromTGAFile(
++        _In_z_ const wchar_t* szFile,
++        _Out_ TexMetadata& metadata);
++
++    HRESULT __cdecl GetMetadataFromWICMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _In_ DWORD flags,
++        _Out_ TexMetadata& metadata,
++        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
++
++    HRESULT __cdecl GetMetadataFromWICFile(
++        _In_z_ const wchar_t* szFile,
++        _In_ DWORD flags,
++        _Out_ TexMetadata& metadata,
++        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
++
++    //---------------------------------------------------------------------------------
++    // Bitmap image container
++    struct Image
++    {
++        size_t      width;
++        size_t      height;
++        DXGI_FORMAT format;
++        size_t      rowPitch;
++        size_t      slicePitch;
++        uint8_t*    pixels;
++    };
++
++    class ScratchImage
++    {
++    public:
++        ScratchImage()
++            : m_nimages(0), m_size(0), m_metadata{}, m_image(nullptr), m_memory(nullptr) {}
++        ScratchImage(ScratchImage&& moveFrom)
++            : m_nimages(0), m_size(0), m_metadata{}, m_image(nullptr), m_memory(nullptr) { *this = std::move(moveFrom); }
++        ~ScratchImage() { Release(); }
++
++        ScratchImage& __cdecl operator= (ScratchImage&& moveFrom);
++
++        ScratchImage(const ScratchImage&) = delete;
++        ScratchImage& operator=(const ScratchImage&) = delete;
++
++        HRESULT __cdecl Initialize(_In_ const TexMetadata& mdata, _In_ DWORD flags = CP_FLAGS_NONE);
++
++        HRESULT __cdecl Initialize1D(_In_ DXGI_FORMAT fmt, _In_ size_t length, _In_ size_t arraySize, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl Initialize2D(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t arraySize, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl Initialize3D(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t depth, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl InitializeCube(_In_ DXGI_FORMAT fmt, _In_ size_t width, _In_ size_t height, _In_ size_t nCubes, _In_ size_t mipLevels, _In_ DWORD flags = CP_FLAGS_NONE);
++
++        HRESULT __cdecl InitializeFromImage(_In_ const Image& srcImage, _In_ bool allow1D = false, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl InitializeArrayFromImages(_In_reads_(nImages) const Image* images, _In_ size_t nImages, _In_ bool allow1D = false, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl InitializeCubeFromImages(_In_reads_(nImages) const Image* images, _In_ size_t nImages, _In_ DWORD flags = CP_FLAGS_NONE);
++        HRESULT __cdecl Initialize3DFromImages(_In_reads_(depth) const Image* images, _In_ size_t depth, _In_ DWORD flags = CP_FLAGS_NONE);
++
++		// Initialize from array of single-image ScratchImages
++		HRESULT __cdecl InitializeCubeFromScratchImages(_In_reads_(nImages) const ScratchImage* images, _In_ size_t nImages, _In_ size_t nMips, _In_ DWORD flags = CP_FLAGS_NONE);
++
++        void __cdecl Release();
++
++        bool __cdecl OverrideFormat(_In_ DXGI_FORMAT f);
++
++        const TexMetadata& __cdecl GetMetadata() const { return m_metadata; }
++        const Image* __cdecl GetImage(_In_ size_t mip, _In_ size_t item, _In_ size_t slice) const;
++
++        const Image* __cdecl GetImages() const { return m_image; }
++        size_t __cdecl GetImageCount() const { return m_nimages; }
++
++        uint8_t* __cdecl GetPixels() const { return m_memory; }
++        size_t __cdecl GetPixelsSize() const { return m_size; }
++
++        bool __cdecl IsAlphaAllOpaque() const;
++
++    private:
++        size_t      m_nimages;
++        size_t      m_size;
++        TexMetadata m_metadata;
++        Image*      m_image;
++        uint8_t*    m_memory;
++    };
++
++    //---------------------------------------------------------------------------------
++    // Memory blob (allocated buffer pointer is always 16-byte aligned)
++    class Blob
++    {
++    public:
++        Blob() : m_buffer(nullptr), m_size(0) {}
++        Blob(Blob&& moveFrom) : m_buffer(nullptr), m_size(0) { *this = std::move(moveFrom); }
++        ~Blob() { Release(); }
++
++        Blob& __cdecl operator= (Blob&& moveFrom);
++
++        Blob(const Blob&) = delete;
++        Blob& operator=(const Blob&) = delete;
++
++        HRESULT __cdecl Initialize(_In_ size_t size);
++
++        void __cdecl Release();
++
++        void *__cdecl GetBufferPointer() const { return m_buffer; }
++        size_t __cdecl GetBufferSize() const { return m_size; }
++
++        HRESULT __cdecl Trim(size_t size);
++
++    private:
++        void*   m_buffer;
++        size_t  m_size;
++    };
++
++    //---------------------------------------------------------------------------------
++    // Image I/O
++
++    // DDS operations
++    HRESULT __cdecl LoadFromDDSMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _In_ DWORD flags,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++    HRESULT __cdecl LoadFromDDSFile(
++        _In_z_ const wchar_t* szFile,
++        _In_ DWORD flags,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++
++    HRESULT __cdecl SaveToDDSMemory(
++        _In_ const Image& image,
++        _In_ DWORD flags,
++        _Out_ Blob& blob);
++    HRESULT __cdecl SaveToDDSMemory(
++        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD flags,
++        _Out_ Blob& blob);
++
++    HRESULT __cdecl SaveToDDSFile(_In_ const Image& image, _In_ DWORD flags, _In_z_ const wchar_t* szFile);
++    HRESULT __cdecl SaveToDDSFile(
++        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD flags, _In_z_ const wchar_t* szFile);
++
++    // HDR operations
++    HRESULT __cdecl LoadFromHDRMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++    HRESULT __cdecl LoadFromHDRFile(
++        _In_z_ const wchar_t* szFile,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++
++    HRESULT __cdecl SaveToHDRMemory(_In_ const Image& image, _Out_ Blob& blob);
++    HRESULT __cdecl SaveToHDRFile(_In_ const Image& image, _In_z_ const wchar_t* szFile);
++
++    // TGA operations
++    HRESULT __cdecl LoadFromTGAMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++    HRESULT __cdecl LoadFromTGAFile(
++        _In_z_ const wchar_t* szFile,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
++
++    HRESULT __cdecl SaveToTGAMemory(_In_ const Image& image, _Out_ Blob& blob);
++    HRESULT __cdecl SaveToTGAFile(_In_ const Image& image, _In_z_ const wchar_t* szFile);
++
++    // WIC operations
++    HRESULT __cdecl LoadFromWICMemory(
++        _In_reads_bytes_(size) const void* pSource, _In_ size_t size,
++        _In_ DWORD flags,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
++        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
++    HRESULT __cdecl LoadFromWICFile(
++        _In_z_ const wchar_t* szFile, _In_ DWORD flags,
++        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
++        _In_opt_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
++
++    HRESULT __cdecl SaveToWICMemory(
++        _In_ const Image& image, _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
++        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
++        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
++    HRESULT __cdecl SaveToWICMemory(
++        _In_count_(nimages) const Image* images, _In_ size_t nimages,
++        _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
++        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
++        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
++
++    HRESULT __cdecl SaveToWICFile(
++        _In_ const Image& image, _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
++        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
++        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
++    HRESULT __cdecl SaveToWICFile(
++        _In_count_(nimages) const Image* images, _In_ size_t nimages,
++        _In_ DWORD flags, _In_ REFGUID guidContainerFormat,
++        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
++        _In_opt_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
++
++    //---------------------------------------------------------------------------------
++    // Texture conversion, resizing, mipmap generation, and block compression
++
++    enum TEX_FR_FLAGS
++    {
++        TEX_FR_ROTATE0          = 0x0,
++        TEX_FR_ROTATE90         = 0x1,
++        TEX_FR_ROTATE180        = 0x2,
++        TEX_FR_ROTATE270        = 0x3,
++        TEX_FR_FLIP_HORIZONTAL  = 0x08,
++        TEX_FR_FLIP_VERTICAL    = 0x10,
++    };
++
++    HRESULT __cdecl FlipRotate(_In_ const Image& srcImage, _In_ DWORD flags, _Out_ ScratchImage& image);
++    HRESULT __cdecl FlipRotate(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD flags, _Out_ ScratchImage& result);
++        // Flip and/or rotate image
++
++    enum TEX_FILTER_FLAGS
++    {
++        TEX_FILTER_DEFAULT          = 0,
++
++        TEX_FILTER_WRAP_U           = 0x1,
++        TEX_FILTER_WRAP_V           = 0x2,
++        TEX_FILTER_WRAP_W           = 0x4,
++        TEX_FILTER_WRAP             = (TEX_FILTER_WRAP_U | TEX_FILTER_WRAP_V | TEX_FILTER_WRAP_W),
++        TEX_FILTER_MIRROR_U         = 0x10,
++        TEX_FILTER_MIRROR_V         = 0x20,
++        TEX_FILTER_MIRROR_W         = 0x40,
++        TEX_FILTER_MIRROR          = (TEX_FILTER_MIRROR_U | TEX_FILTER_MIRROR_V | TEX_FILTER_MIRROR_W),
++            // Wrap vs. Mirror vs. Clamp filtering options
++
++        TEX_FILTER_SEPARATE_ALPHA   = 0x100,
++            // Resize color and alpha channel independently
++
++        TEX_FILTER_FLOAT_X2BIAS     = 0x200,
++            // Enable *2 - 1 conversion cases for unorm<->float and positive-only float formats
++
++        TEX_FILTER_RGB_COPY_RED     = 0x1000,
++        TEX_FILTER_RGB_COPY_GREEN   = 0x2000,
++        TEX_FILTER_RGB_COPY_BLUE    = 0x4000,
++            // When converting RGB to R, defaults to using grayscale. These flags indicate copying a specific channel instead
++            // When converting RGB to RG, defaults to copying RED | GREEN. These flags control which channels are selected instead.
++
++        TEX_FILTER_DITHER           = 0x10000,
++            // Use ordered 4x4 dithering for any required conversions
++        TEX_FILTER_DITHER_DIFFUSION = 0x20000,
++            // Use error-diffusion dithering for any required conversions
++
++        TEX_FILTER_POINT            = 0x100000,
++        TEX_FILTER_LINEAR           = 0x200000,
++        TEX_FILTER_CUBIC            = 0x300000,
++        TEX_FILTER_BOX              = 0x400000,
++        TEX_FILTER_FANT             = 0x400000, // Equiv to Box filtering for mipmap generation
++        TEX_FILTER_TRIANGLE         = 0x500000,
++            // Filtering mode to use for any required image resizing
++
++        TEX_FILTER_SRGB_IN          = 0x1000000,
++        TEX_FILTER_SRGB_OUT         = 0x2000000,
++        TEX_FILTER_SRGB             = (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT),
++            // sRGB <-> RGB for use in conversion operations
++            // if the input format type is IsSRGB(), then SRGB_IN is on by default
++            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
++
++        TEX_FILTER_FORCE_NON_WIC    = 0x10000000,
++            // Forces use of the non-WIC path when both are an option
++
++        TEX_FILTER_FORCE_WIC        = 0x20000000,
++            // Forces use of the WIC path even when logic would have picked a non-WIC path when both are an option
++    };
++
++    HRESULT __cdecl Resize(
++        _In_ const Image& srcImage, _In_ size_t width, _In_ size_t height,
++        _In_ DWORD filter,
++        _Out_ ScratchImage& image);
++    HRESULT __cdecl Resize(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ size_t width, _In_ size_t height, _In_ DWORD filter, _Out_ ScratchImage& result);
++        // Resize the image to width x height. Defaults to Fant filtering.
++        // Note for a complex resize, the result will always have mipLevels == 1
++
++    const float TEX_THRESHOLD_DEFAULT = 0.5f;
++        // Default value for alpha threshold used when converting to 1-bit alpha
++
++    HRESULT __cdecl Convert(
++        _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD filter, _In_ float threshold,
++        _Out_ ScratchImage& image);
++    HRESULT __cdecl Convert(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DXGI_FORMAT format, _In_ DWORD filter, _In_ float threshold, _Out_ ScratchImage& result);
++        // Convert the image to a new format
++
++    HRESULT __cdecl ConvertToSinglePlane(_In_ const Image& srcImage, _Out_ ScratchImage& image);
++    HRESULT __cdecl ConvertToSinglePlane(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _Out_ ScratchImage& image);
++        // Converts the image from a planar format to an equivalent non-planar format
++
++    HRESULT __cdecl GenerateMipMaps(
++        _In_ const Image& baseImage, _In_ DWORD filter, _In_ size_t levels,
++        _Inout_ ScratchImage& mipChain, _In_ bool allow1D = false);
++    HRESULT __cdecl GenerateMipMaps(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD filter, _In_ size_t levels, _Inout_ ScratchImage& mipChain);
++        // levels of '0' indicates a full mipchain, otherwise is generates that number of total levels (including the source base image)
++        // Defaults to Fant filtering which is equivalent to a box filter
++
++    HRESULT __cdecl GenerateMipMaps3D(
++        _In_reads_(depth) const Image* baseImages, _In_ size_t depth, _In_ DWORD filter, _In_ size_t levels,
++        _Out_ ScratchImage& mipChain);
++    HRESULT __cdecl GenerateMipMaps3D(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD filter, _In_ size_t levels, _Out_ ScratchImage& mipChain);
++        // levels of '0' indicates a full mipchain, otherwise is generates that number of total levels (including the source base image)
++        // Defaults to Fant filtering which is equivalent to a box filter
++
++    enum TEX_PMALPHA_FLAGS
++    {
++        TEX_PMALPHA_DEFAULT         = 0,
++
++        TEX_PMALPHA_IGNORE_SRGB     = 0x1,
++            // ignores sRGB colorspace conversions
++
++        TEX_PMALPHA_REVERSE         = 0x2,
++            // converts from premultiplied alpha back to straight alpha
++
++        TEX_PMALPHA_SRGB_IN         = 0x1000000,
++        TEX_PMALPHA_SRGB_OUT        = 0x2000000,
++        TEX_PMALPHA_SRGB            = (TEX_PMALPHA_SRGB_IN | TEX_PMALPHA_SRGB_OUT),
++            // if the input format type is IsSRGB(), then SRGB_IN is on by default
++            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
++    };
++
++    HRESULT __cdecl PremultiplyAlpha(_In_ const Image& srcImage, _In_ DWORD flags, _Out_ ScratchImage& image);
++    HRESULT __cdecl PremultiplyAlpha(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD flags, _Out_ ScratchImage& result);
++        // Converts to/from a premultiplied alpha version of the texture
++
++    enum TEX_COMPRESS_FLAGS
++    {
++        TEX_COMPRESS_DEFAULT            = 0,
++
++        TEX_COMPRESS_RGB_DITHER         = 0x10000,
++            // Enables dithering RGB colors for BC1-3 compression
++
++        TEX_COMPRESS_A_DITHER           = 0x20000,
++            // Enables dithering alpha for BC1-3 compression
++
++        TEX_COMPRESS_DITHER             = 0x30000,
++            // Enables both RGB and alpha dithering for BC1-3 compression
++
++        TEX_COMPRESS_UNIFORM            = 0x40000,
++            // Uniform color weighting for BC1-3 compression; by default uses perceptual weighting
++
++        TEX_COMPRESS_BC7_USE_3SUBSETS   = 0x80000,
++            // Enables exhaustive search for BC7 compress for mode 0 and 2; by default skips trying these modes
++
++        TEX_COMPRESS_BC7_QUICK          = 0x100000,
++            // Minimal modes (usually mode 6) for BC7 compression
++
++        TEX_COMPRESS_SRGB_IN            = 0x1000000,
++        TEX_COMPRESS_SRGB_OUT           = 0x2000000,
++        TEX_COMPRESS_SRGB               = (TEX_COMPRESS_SRGB_IN | TEX_COMPRESS_SRGB_OUT),
++            // if the input format type is IsSRGB(), then SRGB_IN is on by default
++            // if the output format type is IsSRGB(), then SRGB_OUT is on by default
++
++        TEX_COMPRESS_PARALLEL           = 0x10000000,
++            // Compress is free to use multithreading to improve performance (by default it does not use multithreading)
++    };
++
++    HRESULT __cdecl Compress(
++        _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float threshold,
++        _Out_ ScratchImage& cImage);
++    HRESULT __cdecl Compress(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float threshold, _Out_ ScratchImage& cImages);
++        // Note that threshold is only used by BC1. TEX_THRESHOLD_DEFAULT is a typical value to use
++
++#if defined(__d3d11_h__) || defined(__d3d11_x_h__)
++    HRESULT __cdecl Compress(
++        _In_ ID3D11Device* pDevice, _In_ const Image& srcImage, _In_ DXGI_FORMAT format, _In_ DWORD compress,
++        _In_ float alphaWeight, _Out_ ScratchImage& image);
++    HRESULT __cdecl Compress(
++        _In_ ID3D11Device* pDevice, _In_ const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DXGI_FORMAT format, _In_ DWORD compress, _In_ float alphaWeight, _Out_ ScratchImage& cImages);
++        // DirectCompute-based compression (alphaWeight is only used by BC7. 1.0 is the typical value to use)
++#endif
++
++    HRESULT __cdecl Decompress(_In_ const Image& cImage, _In_ DXGI_FORMAT format, _Out_ ScratchImage& image);
++    HRESULT __cdecl Decompress(
++        _In_reads_(nimages) const Image* cImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DXGI_FORMAT format, _Out_ ScratchImage& images);
++
++    //---------------------------------------------------------------------------------
++    // Normal map operations
++
++    enum CNMAP_FLAGS
++    {
++        CNMAP_DEFAULT           = 0,
++
++        CNMAP_CHANNEL_RED       = 0x1,
++        CNMAP_CHANNEL_GREEN     = 0x2,
++        CNMAP_CHANNEL_BLUE      = 0x3,
++        CNMAP_CHANNEL_ALPHA     = 0x4,
++        CNMAP_CHANNEL_LUMINANCE = 0x5,
++            // Channel selection when evaluting color value for height
++            // Luminance is a combination of red, green, and blue
++
++        CNMAP_MIRROR_U          = 0x1000,
++        CNMAP_MIRROR_V          = 0x2000,
++        CNMAP_MIRROR            = 0x3000,
++            // Use mirror semantics for scanline references (defaults to wrap)
++
++        CNMAP_INVERT_SIGN       = 0x4000,
++            // Inverts normal sign
++
++        CNMAP_COMPUTE_OCCLUSION = 0x8000,
++            // Computes a crude occlusion term stored in the alpha channel
++    };
++
++    HRESULT __cdecl ComputeNormalMap(
++        _In_ const Image& srcImage, _In_ DWORD flags, _In_ float amplitude,
++        _In_ DXGI_FORMAT format, _Out_ ScratchImage& normalMap);
++    HRESULT __cdecl ComputeNormalMap(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ DWORD flags, _In_ float amplitude, _In_ DXGI_FORMAT format, _Out_ ScratchImage& normalMaps);
++
++    //---------------------------------------------------------------------------------
++    // Misc image operations
++
++    struct Rect
++    {
++        size_t x;
++        size_t y;
++        size_t w;
++        size_t h;
++
++        Rect() = default;
++        Rect(size_t _x, size_t _y, size_t _w, size_t _h) : x(_x), y(_y), w(_w), h(_h) {}
++    };
++
++    HRESULT __cdecl CopyRectangle(
++        _In_ const Image& srcImage, _In_ const Rect& srcRect, _In_ const Image& dstImage,
++        _In_ DWORD filter, _In_ size_t xOffset, _In_ size_t yOffset);
++
++    enum CMSE_FLAGS
++    {
++        CMSE_DEFAULT                = 0,
++
++        CMSE_IMAGE1_SRGB            = 0x1,
++        CMSE_IMAGE2_SRGB            = 0x2,
++            // Indicates that image needs gamma correction before comparision
++
++        CMSE_IGNORE_RED             = 0x10,
++        CMSE_IGNORE_GREEN           = 0x20,
++        CMSE_IGNORE_BLUE            = 0x40,
++        CMSE_IGNORE_ALPHA           = 0x80,
++            // Ignore the channel when computing MSE
++
++        CMSE_IMAGE1_X2_BIAS         = 0x100,
++        CMSE_IMAGE2_X2_BIAS         = 0x200,
++            // Indicates that image should be scaled and biased before comparison (i.e. UNORM -> SNORM)
++    };
++
++    HRESULT __cdecl ComputeMSE(_In_ const Image& image1, _In_ const Image& image2, _Out_ float& mse, _Out_writes_opt_(4) float* mseV, _In_ DWORD flags = 0);
++
++    HRESULT __cdecl EvaluateImage(
++        _In_ const Image& image,
++        _In_ std::function<void __cdecl(_In_reads_(width) const XMVECTOR* pixels, size_t width, size_t y)> pixelFunc);
++    HRESULT __cdecl EvaluateImage(
++        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ std::function<void __cdecl(_In_reads_(width) const XMVECTOR* pixels, size_t width, size_t y)> pixelFunc);
++
++    HRESULT __cdecl TransformImage(
++        _In_ const Image& image,
++        _In_ std::function<void __cdecl(_Out_writes_(width) XMVECTOR* outPixels,
++        _In_reads_(width) const XMVECTOR* inPixels, size_t width, size_t y)> pixelFunc,
++        ScratchImage& result);
++    HRESULT __cdecl TransformImage(
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ std::function<void __cdecl(_Out_writes_(width) XMVECTOR* outPixels,
++        _In_reads_(width) const XMVECTOR* inPixels, size_t width, size_t y)> pixelFunc,
++        ScratchImage& result);
++
++    //---------------------------------------------------------------------------------
++    // WIC utility code
++
++    enum WICCodecs
++    {
++        WIC_CODEC_BMP = 1,     // Windows Bitmap (.bmp)
++        WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
++        WIC_CODEC_PNG,              // Portable Network Graphics (.png)
++        WIC_CODEC_TIFF,             // Tagged Image File Format  (.tif, .tiff)
++        WIC_CODEC_GIF,              // Graphics Interchange Format  (.gif)
++        WIC_CODEC_WMP,              // Windows Media Photo / HD Photo / JPEG XR (.hdp, .jxr, .wdp)
++        WIC_CODEC_ICO,              // Windows Icon (.ico)
++    };
++
++    REFGUID __cdecl GetWICCodec(_In_ WICCodecs codec);
++
++    IWICImagingFactory* __cdecl GetWICFactory(bool& iswic2);
++    void __cdecl SetWICFactory(_In_opt_ IWICImagingFactory* pWIC);
++
++    //---------------------------------------------------------------------------------
++    // Direct3D 11 functions
++#if defined(__d3d11_h__) || defined(__d3d11_x_h__)
++    bool __cdecl IsSupportedTexture(_In_ ID3D11Device* pDevice, _In_ const TexMetadata& metadata);
++
++    HRESULT __cdecl CreateTexture(
++        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _Outptr_ ID3D11Resource** ppResource);
++
++    HRESULT __cdecl CreateShaderResourceView(
++        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _Outptr_ ID3D11ShaderResourceView** ppSRV);
++
++    HRESULT __cdecl CreateTextureEx(
++        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ D3D11_USAGE usage, _In_ unsigned int bindFlags, _In_ unsigned int cpuAccessFlags, _In_ unsigned int miscFlags, _In_ bool forceSRGB,
++        _Outptr_ ID3D11Resource** ppResource);
++
++    HRESULT __cdecl CreateShaderResourceViewEx(
++        _In_ ID3D11Device* pDevice, _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        _In_ D3D11_USAGE usage, _In_ unsigned int bindFlags, _In_ unsigned int cpuAccessFlags, _In_ unsigned int miscFlags, _In_ bool forceSRGB,
++        _Outptr_ ID3D11ShaderResourceView** ppSRV);
++
++    HRESULT __cdecl CaptureTexture(_In_ ID3D11Device* pDevice, _In_ ID3D11DeviceContext* pContext, _In_ ID3D11Resource* pSource, _Out_ ScratchImage& result);
++#endif
++
++    //---------------------------------------------------------------------------------
++    // Direct3D 12 functions
++#if defined(__d3d12_h__) || defined(__d3d12_x_h__)
++    bool __cdecl IsSupportedTexture(_In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata);
++
++    HRESULT __cdecl CreateTexture(
++        _In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata,
++        _Outptr_ ID3D12Resource** ppResource);
++
++    HRESULT __cdecl CreateTextureEx(
++        _In_ ID3D12Device* pDevice, _In_ const TexMetadata& metadata,
++        _In_ D3D12_RESOURCE_FLAGS resFlags, _In_ bool forceSRGB,
++        _Outptr_ ID3D12Resource** ppResource);
++
++    HRESULT __cdecl PrepareUpload(
++        _In_ ID3D12Device* pDevice,
++        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
++        std::vector<D3D12_SUBRESOURCE_DATA>& subresources);
++
++    HRESULT __cdecl CaptureTexture(
++        _In_ ID3D12CommandQueue* pCommandQueue, _In_ ID3D12Resource* pSource, _In_ bool isCubeMap,
++        _Out_ ScratchImage& result,
++        _In_ D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATE_RENDER_TARGET,
++        _In_ D3D12_RESOURCE_STATES afterState = D3D12_RESOURCE_STATE_RENDER_TARGET);
++#endif
++
++#include "DirectXTex.inl"
++
++} // namespace
+Index: DirectXTexImage.cpp
+===================================================================
+--- DirectXTexImage.cpp	(revision 499)
++++ DirectXTexImage.cpp	(working copy)
+@@ -1,797 +1,887 @@
+-//-------------------------------------------------------------------------------------
+-// DirectXTexImage.cpp
+-//  
+-// DirectX Texture Library - Image container
+-//
+-// Copyright (c) Microsoft Corporation. All rights reserved.
+-// Licensed under the MIT License.
+-//
+-// http://go.microsoft.com/fwlink/?LinkId=248926
+-//-------------------------------------------------------------------------------------
+-
+-#include "directxtexp.h"
+-
+-namespace DirectX
+-{
+-    extern bool _CalculateMipLevels(_In_ size_t width, _In_ size_t height, _Inout_ size_t& mipLevels);
+-    extern bool _CalculateMipLevels3D(_In_ size_t width, _In_ size_t height, _In_ size_t depth, _Inout_ size_t& mipLevels);
+-    extern bool _IsAlphaAllOpaqueBC(_In_ const Image& cImage);
+-}
+-
+-using namespace DirectX;
+-
+-//-------------------------------------------------------------------------------------
+-// Determines number of image array entries and pixel size
+-//-------------------------------------------------------------------------------------
+-_Use_decl_annotations_
+-void DirectX::_DetermineImageArray(
+-    const TexMetadata& metadata,
+-    DWORD cpFlags,
+-    size_t& nImages,
+-    size_t& pixelSize)
+-{
+-    assert(metadata.width > 0 && metadata.height > 0 && metadata.depth > 0);
+-    assert(metadata.arraySize > 0);
+-    assert(metadata.mipLevels > 0);
+-
+-    size_t _pixelSize = 0;
+-    size_t _nimages = 0;
+-
+-    switch (metadata.dimension)
+-    {
+-    case TEX_DIMENSION_TEXTURE1D:
+-    case TEX_DIMENSION_TEXTURE2D:
+-        for (size_t item = 0; item < metadata.arraySize; ++item)
+-        {
+-            size_t w = metadata.width;
+-            size_t h = metadata.height;
+-
+-            for (size_t level = 0; level < metadata.mipLevels; ++level)
+-            {
+-                size_t rowPitch, slicePitch;
+-                ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
+-
+-                _pixelSize += slicePitch;
+-                ++_nimages;
+-
+-                if (h > 1)
+-                    h >>= 1;
+-
+-                if (w > 1)
+-                    w >>= 1;
+-            }
+-        }
+-        break;
+-
+-    case TEX_DIMENSION_TEXTURE3D:
+-    {
+-        size_t w = metadata.width;
+-        size_t h = metadata.height;
+-        size_t d = metadata.depth;
+-
+-        for (size_t level = 0; level < metadata.mipLevels; ++level)
+-        {
+-            size_t rowPitch, slicePitch;
+-            ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
+-
+-            for (size_t slice = 0; slice < d; ++slice)
+-            {
+-                _pixelSize += slicePitch;
+-                ++_nimages;
+-            }
+-
+-            if (h > 1)
+-                h >>= 1;
+-
+-            if (w > 1)
+-                w >>= 1;
+-
+-            if (d > 1)
+-                d >>= 1;
+-        }
+-    }
+-    break;
+-
+-    default:
+-        assert(false);
+-        break;
+-    }
+-
+-    nImages = _nimages;
+-    pixelSize = _pixelSize;
+-}
+-
+-
+-//-------------------------------------------------------------------------------------
+-// Fills in the image array entries
+-//-------------------------------------------------------------------------------------
+-_Use_decl_annotations_
+-bool DirectX::_SetupImageArray(
+-    uint8_t *pMemory,
+-    size_t pixelSize,
+-    const TexMetadata& metadata,
+-    DWORD cpFlags,
+-    Image* images,
+-    size_t nImages)
+-{
+-    assert(pMemory);
+-    assert(pixelSize > 0);
+-    assert(nImages > 0);
+-
+-    if (!images)
+-        return false;
+-
+-    size_t index = 0;
+-    uint8_t* pixels = pMemory;
+-    const uint8_t* pEndBits = pMemory + pixelSize;
+-
+-    switch (metadata.dimension)
+-    {
+-    case TEX_DIMENSION_TEXTURE1D:
+-    case TEX_DIMENSION_TEXTURE2D:
+-        if (metadata.arraySize == 0 || metadata.mipLevels == 0)
+-        {
+-            return false;
+-        }
+-
+-        for (size_t item = 0; item < metadata.arraySize; ++item)
+-        {
+-            size_t w = metadata.width;
+-            size_t h = metadata.height;
+-
+-            for (size_t level = 0; level < metadata.mipLevels; ++level)
+-            {
+-                if (index >= nImages)
+-                {
+-                    return false;
+-                }
+-
+-                size_t rowPitch, slicePitch;
+-                ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
+-
+-                images[index].width = w;
+-                images[index].height = h;
+-                images[index].format = metadata.format;
+-                images[index].rowPitch = rowPitch;
+-                images[index].slicePitch = slicePitch;
+-                images[index].pixels = pixels;
+-                ++index;
+-
+-                pixels += slicePitch;
+-                if (pixels > pEndBits)
+-                {
+-                    return false;
+-                }
+-
+-                if (h > 1)
+-                    h >>= 1;
+-
+-                if (w > 1)
+-                    w >>= 1;
+-            }
+-        }
+-        return true;
+-
+-    case TEX_DIMENSION_TEXTURE3D:
+-    {
+-        if (metadata.mipLevels == 0 || metadata.depth == 0)
+-        {
+-            return false;
+-        }
+-
+-        size_t w = metadata.width;
+-        size_t h = metadata.height;
+-        size_t d = metadata.depth;
+-
+-        for (size_t level = 0; level < metadata.mipLevels; ++level)
+-        {
+-            size_t rowPitch, slicePitch;
+-            ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
+-
+-            for (size_t slice = 0; slice < d; ++slice)
+-            {
+-                if (index >= nImages)
+-                {
+-                    return false;
+-                }
+-
+-                // We use the same memory organization that Direct3D 11 needs for D3D11_SUBRESOURCE_DATA
+-                // with all slices of a given miplevel being continuous in memory
+-                images[index].width = w;
+-                images[index].height = h;
+-                images[index].format = metadata.format;
+-                images[index].rowPitch = rowPitch;
+-                images[index].slicePitch = slicePitch;
+-                images[index].pixels = pixels;
+-                ++index;
+-
+-                pixels += slicePitch;
+-                if (pixels > pEndBits)
+-                {
+-                    return false;
+-                }
+-            }
+-
+-            if (h > 1)
+-                h >>= 1;
+-
+-            if (w > 1)
+-                w >>= 1;
+-
+-            if (d > 1)
+-                d >>= 1;
+-        }
+-    }
+-    return true;
+-
+-    default:
+-        return false;
+-    }
+-}
+-
+-
+-//=====================================================================================
+-// ScratchImage - Bitmap image container
+-//=====================================================================================
+-
+-ScratchImage& ScratchImage::operator= (ScratchImage&& moveFrom)
+-{
+-    if (this != &moveFrom)
+-    {
+-        Release();
+-
+-        m_nimages = moveFrom.m_nimages;
+-        m_size = moveFrom.m_size;
+-        m_metadata = moveFrom.m_metadata;
+-        m_image = moveFrom.m_image;
+-        m_memory = moveFrom.m_memory;
+-
+-        moveFrom.m_nimages = 0;
+-        moveFrom.m_size = 0;
+-        moveFrom.m_image = nullptr;
+-        moveFrom.m_memory = nullptr;
+-    }
+-    return *this;
+-}
+-
+-
+-//-------------------------------------------------------------------------------------
+-// Methods
+-//-------------------------------------------------------------------------------------
+-_Use_decl_annotations_
+-HRESULT ScratchImage::Initialize(const TexMetadata& mdata, DWORD flags)
+-{
+-    if (!IsValid(mdata.format))
+-        return E_INVALIDARG;
+-
+-    if (IsPalettized(mdata.format))
+-        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+-
+-    size_t mipLevels = mdata.mipLevels;
+-
+-    switch (mdata.dimension)
+-    {
+-    case TEX_DIMENSION_TEXTURE1D:
+-        if (!mdata.width || mdata.height != 1 || mdata.depth != 1 || !mdata.arraySize)
+-            return E_INVALIDARG;
+-
+-        if (!_CalculateMipLevels(mdata.width, 1, mipLevels))
+-            return E_INVALIDARG;
+-        break;
+-
+-    case TEX_DIMENSION_TEXTURE2D:
+-        if (!mdata.width || !mdata.height || mdata.depth != 1 || !mdata.arraySize)
+-            return E_INVALIDARG;
+-
+-        if (mdata.IsCubemap())
+-        {
+-            if ((mdata.arraySize % 6) != 0)
+-                return E_INVALIDARG;
+-        }
+-
+-        if (!_CalculateMipLevels(mdata.width, mdata.height, mipLevels))
+-            return E_INVALIDARG;
+-        break;
+-
+-    case TEX_DIMENSION_TEXTURE3D:
+-        if (!mdata.width || !mdata.height || !mdata.depth || mdata.arraySize != 1)
+-            return E_INVALIDARG;
+-
+-        if (!_CalculateMipLevels3D(mdata.width, mdata.height, mdata.depth, mipLevels))
+-            return E_INVALIDARG;
+-        break;
+-
+-    default:
+-        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+-    }
+-
+-    Release();
+-
+-    m_metadata.width = mdata.width;
+-    m_metadata.height = mdata.height;
+-    m_metadata.depth = mdata.depth;
+-    m_metadata.arraySize = mdata.arraySize;
+-    m_metadata.mipLevels = mipLevels;
+-    m_metadata.miscFlags = mdata.miscFlags;
+-    m_metadata.miscFlags2 = mdata.miscFlags2;
+-    m_metadata.format = mdata.format;
+-    m_metadata.dimension = mdata.dimension;
+-
+-    size_t pixelSize, nimages;
+-    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
+-
+-    m_image = new (std::nothrow) Image[nimages];
+-    if (!m_image)
+-        return E_OUTOFMEMORY;
+-
+-    m_nimages = nimages;
+-    memset(m_image, 0, sizeof(Image) * nimages);
+-
+-    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
+-    if (!m_memory)
+-    {
+-        Release();
+-        return E_OUTOFMEMORY;
+-    }
+-    m_size = pixelSize;
+-    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
+-    {
+-        Release();
+-        return E_FAIL;
+-    }
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::Initialize1D(DXGI_FORMAT fmt, size_t length, size_t arraySize, size_t mipLevels, DWORD flags)
+-{
+-    if (!length || !arraySize)
+-        return E_INVALIDARG;
+-
+-    // 1D is a special case of the 2D case
+-    HRESULT hr = Initialize2D(fmt, length, 1, arraySize, mipLevels, flags);
+-    if (FAILED(hr))
+-        return hr;
+-
+-    m_metadata.dimension = TEX_DIMENSION_TEXTURE1D;
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::Initialize2D(DXGI_FORMAT fmt, size_t width, size_t height, size_t arraySize, size_t mipLevels, DWORD flags)
+-{
+-    if (!IsValid(fmt) || !width || !height || !arraySize)
+-        return E_INVALIDARG;
+-
+-    if (IsPalettized(fmt))
+-        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+-
+-    if (!_CalculateMipLevels(width, height, mipLevels))
+-        return E_INVALIDARG;
+-
+-    Release();
+-
+-    m_metadata.width = width;
+-    m_metadata.height = height;
+-    m_metadata.depth = 1;
+-    m_metadata.arraySize = arraySize;
+-    m_metadata.mipLevels = mipLevels;
+-    m_metadata.miscFlags = 0;
+-    m_metadata.miscFlags2 = 0;
+-    m_metadata.format = fmt;
+-    m_metadata.dimension = TEX_DIMENSION_TEXTURE2D;
+-
+-    size_t pixelSize, nimages;
+-    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
+-
+-    m_image = new (std::nothrow) Image[nimages];
+-    if (!m_image)
+-        return E_OUTOFMEMORY;
+-
+-    m_nimages = nimages;
+-    memset(m_image, 0, sizeof(Image) * nimages);
+-
+-    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
+-    if (!m_memory)
+-    {
+-        Release();
+-        return E_OUTOFMEMORY;
+-    }
+-    m_size = pixelSize;
+-    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
+-    {
+-        Release();
+-        return E_FAIL;
+-    }
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::Initialize3D(DXGI_FORMAT fmt, size_t width, size_t height, size_t depth, size_t mipLevels, DWORD flags)
+-{
+-    if (!IsValid(fmt) || !width || !height || !depth)
+-        return E_INVALIDARG;
+-
+-    if (IsPalettized(fmt))
+-        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+-
+-    if (!_CalculateMipLevels3D(width, height, depth, mipLevels))
+-        return E_INVALIDARG;
+-
+-    Release();
+-
+-    m_metadata.width = width;
+-    m_metadata.height = height;
+-    m_metadata.depth = depth;
+-    m_metadata.arraySize = 1;    // Direct3D 10.x/11 does not support arrays of 3D textures
+-    m_metadata.mipLevels = mipLevels;
+-    m_metadata.miscFlags = 0;
+-    m_metadata.miscFlags2 = 0;
+-    m_metadata.format = fmt;
+-    m_metadata.dimension = TEX_DIMENSION_TEXTURE3D;
+-
+-    size_t pixelSize, nimages;
+-    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
+-
+-    m_image = new (std::nothrow) Image[nimages];
+-    if (!m_image)
+-    {
+-        Release();
+-        return E_OUTOFMEMORY;
+-    }
+-    m_nimages = nimages;
+-    memset(m_image, 0, sizeof(Image) * nimages);
+-
+-    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
+-    if (!m_memory)
+-    {
+-        Release();
+-        return E_OUTOFMEMORY;
+-    }
+-    m_size = pixelSize;
+-
+-    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
+-    {
+-        Release();
+-        return E_FAIL;
+-    }
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::InitializeCube(DXGI_FORMAT fmt, size_t width, size_t height, size_t nCubes, size_t mipLevels, DWORD flags)
+-{
+-    if (!width || !height || !nCubes)
+-        return E_INVALIDARG;
+-
+-    // A DirectX11 cubemap is just a 2D texture array that is a multiple of 6 for each cube
+-    HRESULT hr = Initialize2D(fmt, width, height, nCubes * 6, mipLevels, flags);
+-    if (FAILED(hr))
+-        return hr;
+-
+-    m_metadata.miscFlags |= TEX_MISC_TEXTURECUBE;
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::InitializeFromImage(const Image& srcImage, bool allow1D, DWORD flags)
+-{
+-    HRESULT hr = (srcImage.height > 1 || !allow1D)
+-        ? Initialize2D(srcImage.format, srcImage.width, srcImage.height, 1, 1, flags)
+-        : Initialize1D(srcImage.format, srcImage.width, 1, 1, flags);
+-
+-    if (FAILED(hr))
+-        return hr;
+-
+-    size_t rowCount = ComputeScanlines(srcImage.format, srcImage.height);
+-    if (!rowCount)
+-        return E_UNEXPECTED;
+-
+-    const uint8_t* sptr = reinterpret_cast<const uint8_t*>(srcImage.pixels);
+-    if (!sptr)
+-        return E_POINTER;
+-
+-    auto dptr = reinterpret_cast<uint8_t*>(m_image[0].pixels);
+-    if (!dptr)
+-        return E_POINTER;
+-
+-    size_t spitch = srcImage.rowPitch;
+-    size_t dpitch = m_image[0].rowPitch;
+-
+-    size_t size = std::min<size_t>(dpitch, spitch);
+-
+-    for (size_t y = 0; y < rowCount; ++y)
+-    {
+-        memcpy_s(dptr, dpitch, sptr, size);
+-        sptr += spitch;
+-        dptr += dpitch;
+-    }
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::InitializeArrayFromImages(const Image* images, size_t nImages, bool allow1D, DWORD flags)
+-{
+-    if (!images || !nImages)
+-        return E_INVALIDARG;
+-
+-    DXGI_FORMAT format = images[0].format;
+-    size_t width = images[0].width;
+-    size_t height = images[0].height;
+-
+-    for (size_t index = 0; index < nImages; ++index)
+-    {
+-        if (!images[index].pixels)
+-            return E_POINTER;
+-
+-        if (images[index].format != format || images[index].width != width || images[index].height != height)
+-        {
+-            // All images must be the same format, width, and height
+-            return E_FAIL;
+-        }
+-    }
+-
+-    HRESULT hr = (height > 1 || !allow1D)
+-        ? Initialize2D(format, width, height, nImages, 1, flags)
+-        : Initialize1D(format, width, nImages, 1, flags);
+-
+-    if (FAILED(hr))
+-        return hr;
+-
+-    size_t rowCount = ComputeScanlines(format, height);
+-    if (!rowCount)
+-        return E_UNEXPECTED;
+-
+-    for (size_t index = 0; index < nImages; ++index)
+-    {
+-        auto sptr = reinterpret_cast<const uint8_t*>(images[index].pixels);
+-        if (!sptr)
+-            return E_POINTER;
+-
+-        assert(index < m_nimages);
+-        auto dptr = reinterpret_cast<uint8_t*>(m_image[index].pixels);
+-        if (!dptr)
+-            return E_POINTER;
+-
+-        size_t spitch = images[index].rowPitch;
+-        size_t dpitch = m_image[index].rowPitch;
+-
+-        size_t size = std::min<size_t>(dpitch, spitch);
+-
+-        for (size_t y = 0; y < rowCount; ++y)
+-        {
+-            memcpy_s(dptr, dpitch, sptr, size);
+-            sptr += spitch;
+-            dptr += dpitch;
+-        }
+-    }
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::InitializeCubeFromImages(const Image* images, size_t nImages, DWORD flags)
+-{
+-    if (!images || !nImages)
+-        return E_INVALIDARG;
+-
+-    // A DirectX11 cubemap is just a 2D texture array that is a multiple of 6 for each cube
+-    if ((nImages % 6) != 0)
+-        return E_INVALIDARG;
+-
+-    HRESULT hr = InitializeArrayFromImages(images, nImages, false, flags);
+-    if (FAILED(hr))
+-        return hr;
+-
+-    m_metadata.miscFlags |= TEX_MISC_TEXTURECUBE;
+-
+-    return S_OK;
+-}
+-
+-_Use_decl_annotations_
+-HRESULT ScratchImage::Initialize3DFromImages(const Image* images, size_t depth, DWORD flags)
+-{
+-    if (!images || !depth)
+-        return E_INVALIDARG;
+-
+-    DXGI_FORMAT format = images[0].format;
+-    size_t width = images[0].width;
+-    size_t height = images[0].height;
+-
+-    for (size_t slice = 0; slice < depth; ++slice)
+-    {
+-        if (!images[slice].pixels)
+-            return E_POINTER;
+-
+-        if (images[slice].format != format || images[slice].width != width || images[slice].height != height)
+-        {
+-            // All images must be the same format, width, and height
+-            return E_FAIL;
+-        }
+-    }
+-
+-    HRESULT hr = Initialize3D(format, width, height, depth, 1, flags);
+-    if (FAILED(hr))
+-        return hr;
+-
+-    size_t rowCount = ComputeScanlines(format, height);
+-    if (!rowCount)
+-        return E_UNEXPECTED;
+-
+-    for (size_t slice = 0; slice < depth; ++slice)
+-    {
+-        auto sptr = reinterpret_cast<const uint8_t*>(images[slice].pixels);
+-        if (!sptr)
+-            return E_POINTER;
+-
+-        assert(slice < m_nimages);
+-        auto dptr = reinterpret_cast<uint8_t*>(m_image[slice].pixels);
+-        if (!dptr)
+-            return E_POINTER;
+-
+-        size_t spitch = images[slice].rowPitch;
+-        size_t dpitch = m_image[slice].rowPitch;
+-
+-        size_t size = std::min<size_t>(dpitch, spitch);
+-
+-        for (size_t y = 0; y < rowCount; ++y)
+-        {
+-            memcpy_s(dptr, dpitch, sptr, size);
+-            sptr += spitch;
+-            dptr += dpitch;
+-        }
+-    }
+-
+-    return S_OK;
+-}
+-
+-void ScratchImage::Release()
+-{
+-    m_nimages = 0;
+-    m_size = 0;
+-
+-    if (m_image)
+-    {
+-        delete[] m_image;
+-        m_image = nullptr;
+-    }
+-
+-    if (m_memory)
+-    {
+-        _aligned_free(m_memory);
+-        m_memory = nullptr;
+-    }
+-
+-    memset(&m_metadata, 0, sizeof(m_metadata));
+-}
+-
+-_Use_decl_annotations_
+-bool ScratchImage::OverrideFormat(DXGI_FORMAT f)
+-{
+-    if (!m_image)
+-        return false;
+-
+-    if (!IsValid(f) || IsPlanar(f) || IsPalettized(f))
+-        return false;
+-
+-    for (size_t index = 0; index < m_nimages; ++index)
+-    {
+-        m_image[index].format = f;
+-    }
+-
+-    m_metadata.format = f;
+-
+-    return true;
+-}
+-
+-_Use_decl_annotations_
+-const Image* ScratchImage::GetImage(size_t mip, size_t item, size_t slice) const
+-{
+-    if (mip >= m_metadata.mipLevels)
+-        return nullptr;
+-
+-    size_t index = 0;
+-
+-    switch (m_metadata.dimension)
+-    {
+-    case TEX_DIMENSION_TEXTURE1D:
+-    case TEX_DIMENSION_TEXTURE2D:
+-        if (slice > 0)
+-            return nullptr;
+-
+-        if (item >= m_metadata.arraySize)
+-            return nullptr;
+-
+-        index = item*(m_metadata.mipLevels) + mip;
+-        break;
+-
+-    case TEX_DIMENSION_TEXTURE3D:
+-        if (item > 0)
+-        {
+-            // No support for arrays of volumes
+-            return nullptr;
+-        }
+-        else
+-        {
+-            size_t d = m_metadata.depth;
+-
+-            for (size_t level = 0; level < mip; ++level)
+-            {
+-                index += d;
+-                if (d > 1)
+-                    d >>= 1;
+-            }
+-
+-            if (slice >= d)
+-                return nullptr;
+-
+-            index += slice;
+-        }
+-        break;
+-
+-    default:
+-        return nullptr;
+-    }
+-
+-    return &m_image[index];
+-}
+-
+-bool ScratchImage::IsAlphaAllOpaque() const
+-{
+-    if (!m_image)
+-        return false;
+-
+-    if (!HasAlpha(m_metadata.format))
+-        return true;
+-
+-    if (IsCompressed(m_metadata.format))
+-    {
+-        for (size_t index = 0; index < m_nimages; ++index)
+-        {
+-            if (!_IsAlphaAllOpaqueBC(m_image[index]))
+-                return false;
+-        }
+-    }
+-    else
+-    {
+-        ScopedAlignedArrayXMVECTOR scanline(reinterpret_cast<XMVECTOR*>(_aligned_malloc((sizeof(XMVECTOR)*m_metadata.width), 16)));
+-        if (!scanline)
+-            return false;
+-
+-        static const XMVECTORF32 threshold = { { { 0.99f, 0.99f, 0.99f, 0.99f } } };
+-
+-        for (size_t index = 0; index < m_nimages; ++index)
+-        {
+-#pragma warning( suppress : 6011 )
+-            const Image& img = m_image[index];
+-
+-            const uint8_t *pPixels = img.pixels;
+-            assert(pPixels);
+-
+-            for (size_t h = 0; h < img.height; ++h)
+-            {
+-                if (!_LoadScanline(scanline.get(), img.width, pPixels, img.rowPitch, img.format))
+-                    return false;
+-
+-                const XMVECTOR* ptr = scanline.get();
+-                for (size_t w = 0; w < img.width; ++w)
+-                {
+-                    XMVECTOR alpha = XMVectorSplatW(*ptr);
+-                    if (XMVector4Less(alpha, threshold))
+-                        return false;
+-                    ++ptr;
+-                }
+-
+-                pPixels += img.rowPitch;
+-            }
+-        }
+-    }
+-
+-    return true;
+-}
++//-------------------------------------------------------------------------------------
++// DirectXTexImage.cpp
++//  
++// DirectX Texture Library - Image container
++//
++// Copyright (c) Microsoft Corporation. All rights reserved.
++// Licensed under the MIT License.
++//
++// http://go.microsoft.com/fwlink/?LinkId=248926
++//-------------------------------------------------------------------------------------
++
++#include "directxtexp.h"
++
++namespace DirectX
++{
++    extern bool _CalculateMipLevels(_In_ size_t width, _In_ size_t height, _Inout_ size_t& mipLevels);
++    extern bool _CalculateMipLevels3D(_In_ size_t width, _In_ size_t height, _In_ size_t depth, _Inout_ size_t& mipLevels);
++    extern bool _IsAlphaAllOpaqueBC(_In_ const Image& cImage);
++}
++
++using namespace DirectX;
++
++//-------------------------------------------------------------------------------------
++// Determines number of image array entries and pixel size
++//-------------------------------------------------------------------------------------
++_Use_decl_annotations_
++void DirectX::_DetermineImageArray(
++    const TexMetadata& metadata,
++    DWORD cpFlags,
++    size_t& nImages,
++    size_t& pixelSize)
++{
++    assert(metadata.width > 0 && metadata.height > 0 && metadata.depth > 0);
++    assert(metadata.arraySize > 0);
++    assert(metadata.mipLevels > 0);
++
++    size_t _pixelSize = 0;
++    size_t _nimages = 0;
++
++    switch (metadata.dimension)
++    {
++    case TEX_DIMENSION_TEXTURE1D:
++    case TEX_DIMENSION_TEXTURE2D:
++        for (size_t item = 0; item < metadata.arraySize; ++item)
++        {
++            size_t w = metadata.width;
++            size_t h = metadata.height;
++
++            for (size_t level = 0; level < metadata.mipLevels; ++level)
++            {
++                size_t rowPitch, slicePitch;
++                ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
++
++                _pixelSize += slicePitch;
++                ++_nimages;
++
++                if (h > 1)
++                    h >>= 1;
++
++                if (w > 1)
++                    w >>= 1;
++            }
++        }
++        break;
++
++    case TEX_DIMENSION_TEXTURE3D:
++    {
++        size_t w = metadata.width;
++        size_t h = metadata.height;
++        size_t d = metadata.depth;
++
++        for (size_t level = 0; level < metadata.mipLevels; ++level)
++        {
++            size_t rowPitch, slicePitch;
++            ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
++
++            for (size_t slice = 0; slice < d; ++slice)
++            {
++                _pixelSize += slicePitch;
++                ++_nimages;
++            }
++
++            if (h > 1)
++                h >>= 1;
++
++            if (w > 1)
++                w >>= 1;
++
++            if (d > 1)
++                d >>= 1;
++        }
++    }
++    break;
++
++    default:
++        assert(false);
++        break;
++    }
++
++    nImages = _nimages;
++    pixelSize = _pixelSize;
++}
++
++
++//-------------------------------------------------------------------------------------
++// Fills in the image array entries
++//-------------------------------------------------------------------------------------
++_Use_decl_annotations_
++bool DirectX::_SetupImageArray(
++    uint8_t *pMemory,
++    size_t pixelSize,
++    const TexMetadata& metadata,
++    DWORD cpFlags,
++    Image* images,
++    size_t nImages)
++{
++    assert(pMemory);
++    assert(pixelSize > 0);
++    assert(nImages > 0);
++
++    if (!images)
++        return false;
++
++    size_t index = 0;
++    uint8_t* pixels = pMemory;
++    const uint8_t* pEndBits = pMemory + pixelSize;
++
++    switch (metadata.dimension)
++    {
++    case TEX_DIMENSION_TEXTURE1D:
++    case TEX_DIMENSION_TEXTURE2D:
++        if (metadata.arraySize == 0 || metadata.mipLevels == 0)
++        {
++            return false;
++        }
++
++        for (size_t item = 0; item < metadata.arraySize; ++item)
++        {
++            size_t w = metadata.width;
++            size_t h = metadata.height;
++
++            for (size_t level = 0; level < metadata.mipLevels; ++level)
++            {
++                if (index >= nImages)
++                {
++                    return false;
++                }
++
++                size_t rowPitch, slicePitch;
++                ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
++
++                images[index].width = w;
++                images[index].height = h;
++                images[index].format = metadata.format;
++                images[index].rowPitch = rowPitch;
++                images[index].slicePitch = slicePitch;
++                images[index].pixels = pixels;
++                ++index;
++
++                pixels += slicePitch;
++                if (pixels > pEndBits)
++                {
++                    return false;
++                }
++
++                if (h > 1)
++                    h >>= 1;
++
++                if (w > 1)
++                    w >>= 1;
++            }
++        }
++        return true;
++
++    case TEX_DIMENSION_TEXTURE3D:
++    {
++        if (metadata.mipLevels == 0 || metadata.depth == 0)
++        {
++            return false;
++        }
++
++        size_t w = metadata.width;
++        size_t h = metadata.height;
++        size_t d = metadata.depth;
++
++        for (size_t level = 0; level < metadata.mipLevels; ++level)
++        {
++            size_t rowPitch, slicePitch;
++            ComputePitch(metadata.format, w, h, rowPitch, slicePitch, cpFlags);
++
++            for (size_t slice = 0; slice < d; ++slice)
++            {
++                if (index >= nImages)
++                {
++                    return false;
++                }
++
++                // We use the same memory organization that Direct3D 11 needs for D3D11_SUBRESOURCE_DATA
++                // with all slices of a given miplevel being continuous in memory
++                images[index].width = w;
++                images[index].height = h;
++                images[index].format = metadata.format;
++                images[index].rowPitch = rowPitch;
++                images[index].slicePitch = slicePitch;
++                images[index].pixels = pixels;
++                ++index;
++
++                pixels += slicePitch;
++                if (pixels > pEndBits)
++                {
++                    return false;
++                }
++            }
++
++            if (h > 1)
++                h >>= 1;
++
++            if (w > 1)
++                w >>= 1;
++
++            if (d > 1)
++                d >>= 1;
++        }
++    }
++    return true;
++
++    default:
++        return false;
++    }
++}
++
++
++//=====================================================================================
++// ScratchImage - Bitmap image container
++//=====================================================================================
++
++ScratchImage& ScratchImage::operator= (ScratchImage&& moveFrom)
++{
++    if (this != &moveFrom)
++    {
++        Release();
++
++        m_nimages = moveFrom.m_nimages;
++        m_size = moveFrom.m_size;
++        m_metadata = moveFrom.m_metadata;
++        m_image = moveFrom.m_image;
++        m_memory = moveFrom.m_memory;
++
++        moveFrom.m_nimages = 0;
++        moveFrom.m_size = 0;
++        moveFrom.m_image = nullptr;
++        moveFrom.m_memory = nullptr;
++    }
++    return *this;
++}
++
++
++//-------------------------------------------------------------------------------------
++// Methods
++//-------------------------------------------------------------------------------------
++_Use_decl_annotations_
++HRESULT ScratchImage::Initialize(const TexMetadata& mdata, DWORD flags)
++{
++    if (!IsValid(mdata.format))
++        return E_INVALIDARG;
++
++    if (IsPalettized(mdata.format))
++        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
++
++    size_t mipLevels = mdata.mipLevels;
++
++    switch (mdata.dimension)
++    {
++    case TEX_DIMENSION_TEXTURE1D:
++        if (!mdata.width || mdata.height != 1 || mdata.depth != 1 || !mdata.arraySize)
++            return E_INVALIDARG;
++
++        if (!_CalculateMipLevels(mdata.width, 1, mipLevels))
++            return E_INVALIDARG;
++        break;
++
++    case TEX_DIMENSION_TEXTURE2D:
++        if (!mdata.width || !mdata.height || mdata.depth != 1 || !mdata.arraySize)
++            return E_INVALIDARG;
++
++        if (mdata.IsCubemap())
++        {
++            if ((mdata.arraySize % 6) != 0)
++                return E_INVALIDARG;
++        }
++
++        if (!_CalculateMipLevels(mdata.width, mdata.height, mipLevels))
++            return E_INVALIDARG;
++        break;
++
++    case TEX_DIMENSION_TEXTURE3D:
++        if (!mdata.width || !mdata.height || !mdata.depth || mdata.arraySize != 1)
++            return E_INVALIDARG;
++
++        if (!_CalculateMipLevels3D(mdata.width, mdata.height, mdata.depth, mipLevels))
++            return E_INVALIDARG;
++        break;
++
++    default:
++        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
++    }
++
++    Release();
++
++    m_metadata.width = mdata.width;
++    m_metadata.height = mdata.height;
++    m_metadata.depth = mdata.depth;
++    m_metadata.arraySize = mdata.arraySize;
++    m_metadata.mipLevels = mipLevels;
++    m_metadata.miscFlags = mdata.miscFlags;
++    m_metadata.miscFlags2 = mdata.miscFlags2;
++    m_metadata.format = mdata.format;
++    m_metadata.dimension = mdata.dimension;
++
++    size_t pixelSize, nimages;
++    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
++
++    m_image = new (std::nothrow) Image[nimages];
++    if (!m_image)
++        return E_OUTOFMEMORY;
++
++    m_nimages = nimages;
++    memset(m_image, 0, sizeof(Image) * nimages);
++
++    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
++    if (!m_memory)
++    {
++        Release();
++        return E_OUTOFMEMORY;
++    }
++    m_size = pixelSize;
++    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
++    {
++        Release();
++        return E_FAIL;
++    }
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::Initialize1D(DXGI_FORMAT fmt, size_t length, size_t arraySize, size_t mipLevels, DWORD flags)
++{
++    if (!length || !arraySize)
++        return E_INVALIDARG;
++
++    // 1D is a special case of the 2D case
++    HRESULT hr = Initialize2D(fmt, length, 1, arraySize, mipLevels, flags);
++    if (FAILED(hr))
++        return hr;
++
++    m_metadata.dimension = TEX_DIMENSION_TEXTURE1D;
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::Initialize2D(DXGI_FORMAT fmt, size_t width, size_t height, size_t arraySize, size_t mipLevels, DWORD flags)
++{
++    if (!IsValid(fmt) || !width || !height || !arraySize)
++        return E_INVALIDARG;
++
++    if (IsPalettized(fmt))
++        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
++
++    if (!_CalculateMipLevels(width, height, mipLevels))
++        return E_INVALIDARG;
++
++    Release();
++
++    m_metadata.width = width;
++    m_metadata.height = height;
++    m_metadata.depth = 1;
++    m_metadata.arraySize = arraySize;
++    m_metadata.mipLevels = mipLevels;
++    m_metadata.miscFlags = 0;
++    m_metadata.miscFlags2 = 0;
++    m_metadata.format = fmt;
++    m_metadata.dimension = TEX_DIMENSION_TEXTURE2D;
++
++    size_t pixelSize, nimages;
++    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
++
++    m_image = new (std::nothrow) Image[nimages];
++    if (!m_image)
++        return E_OUTOFMEMORY;
++
++    m_nimages = nimages;
++    memset(m_image, 0, sizeof(Image) * nimages);
++
++    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
++    if (!m_memory)
++    {
++        Release();
++        return E_OUTOFMEMORY;
++    }
++    m_size = pixelSize;
++    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
++    {
++        Release();
++        return E_FAIL;
++    }
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::Initialize3D(DXGI_FORMAT fmt, size_t width, size_t height, size_t depth, size_t mipLevels, DWORD flags)
++{
++    if (!IsValid(fmt) || !width || !height || !depth)
++        return E_INVALIDARG;
++
++    if (IsPalettized(fmt))
++        return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
++
++    if (!_CalculateMipLevels3D(width, height, depth, mipLevels))
++        return E_INVALIDARG;
++
++    Release();
++
++    m_metadata.width = width;
++    m_metadata.height = height;
++    m_metadata.depth = depth;
++    m_metadata.arraySize = 1;    // Direct3D 10.x/11 does not support arrays of 3D textures
++    m_metadata.mipLevels = mipLevels;
++    m_metadata.miscFlags = 0;
++    m_metadata.miscFlags2 = 0;
++    m_metadata.format = fmt;
++    m_metadata.dimension = TEX_DIMENSION_TEXTURE3D;
++
++    size_t pixelSize, nimages;
++    _DetermineImageArray(m_metadata, flags, nimages, pixelSize);
++
++    m_image = new (std::nothrow) Image[nimages];
++    if (!m_image)
++    {
++        Release();
++        return E_OUTOFMEMORY;
++    }
++    m_nimages = nimages;
++    memset(m_image, 0, sizeof(Image) * nimages);
++
++    m_memory = reinterpret_cast<uint8_t*>(_aligned_malloc(pixelSize, 16));
++    if (!m_memory)
++    {
++        Release();
++        return E_OUTOFMEMORY;
++    }
++    m_size = pixelSize;
++
++    if (!_SetupImageArray(m_memory, pixelSize, m_metadata, flags, m_image, nimages))
++    {
++        Release();
++        return E_FAIL;
++    }
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::InitializeCube(DXGI_FORMAT fmt, size_t width, size_t height, size_t nCubes, size_t mipLevels, DWORD flags)
++{
++    if (!width || !height || !nCubes)
++        return E_INVALIDARG;
++
++    // A DirectX11 cubemap is just a 2D texture array that is a multiple of 6 for each cube
++    HRESULT hr = Initialize2D(fmt, width, height, nCubes * 6, mipLevels, flags);
++    if (FAILED(hr))
++        return hr;
++
++    m_metadata.miscFlags |= TEX_MISC_TEXTURECUBE;
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::InitializeFromImage(const Image& srcImage, bool allow1D, DWORD flags)
++{
++    HRESULT hr = (srcImage.height > 1 || !allow1D)
++        ? Initialize2D(srcImage.format, srcImage.width, srcImage.height, 1, 1, flags)
++        : Initialize1D(srcImage.format, srcImage.width, 1, 1, flags);
++
++    if (FAILED(hr))
++        return hr;
++
++    size_t rowCount = ComputeScanlines(srcImage.format, srcImage.height);
++    if (!rowCount)
++        return E_UNEXPECTED;
++
++    const uint8_t* sptr = reinterpret_cast<const uint8_t*>(srcImage.pixels);
++    if (!sptr)
++        return E_POINTER;
++
++    auto dptr = reinterpret_cast<uint8_t*>(m_image[0].pixels);
++    if (!dptr)
++        return E_POINTER;
++
++    size_t spitch = srcImage.rowPitch;
++    size_t dpitch = m_image[0].rowPitch;
++
++    size_t size = std::min<size_t>(dpitch, spitch);
++
++    for (size_t y = 0; y < rowCount; ++y)
++    {
++        memcpy_s(dptr, dpitch, sptr, size);
++        sptr += spitch;
++        dptr += dpitch;
++    }
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::InitializeArrayFromImages(const Image* images, size_t nImages, bool allow1D, DWORD flags)
++{
++    if (!images || !nImages)
++        return E_INVALIDARG;
++
++    DXGI_FORMAT format = images[0].format;
++    size_t width = images[0].width;
++    size_t height = images[0].height;
++
++    for (size_t index = 0; index < nImages; ++index)
++    {
++        if (!images[index].pixels)
++            return E_POINTER;
++
++        if (images[index].format != format || images[index].width != width || images[index].height != height)
++        {
++            // All images must be the same format, width, and height
++            return E_FAIL;
++        }
++    }
++
++    HRESULT hr = (height > 1 || !allow1D)
++        ? Initialize2D(format, width, height, nImages, 1, flags)
++        : Initialize1D(format, width, nImages, 1, flags);
++
++    if (FAILED(hr))
++        return hr;
++
++    size_t rowCount = ComputeScanlines(format, height);
++    if (!rowCount)
++        return E_UNEXPECTED;
++
++    for (size_t index = 0; index < nImages; ++index)
++    {
++        auto sptr = reinterpret_cast<const uint8_t*>(images[index].pixels);
++        if (!sptr)
++            return E_POINTER;
++
++        assert(index < m_nimages);
++        auto dptr = reinterpret_cast<uint8_t*>(m_image[index].pixels);
++        if (!dptr)
++            return E_POINTER;
++
++        size_t spitch = images[index].rowPitch;
++        size_t dpitch = m_image[index].rowPitch;
++
++        size_t size = std::min<size_t>(dpitch, spitch);
++
++        for (size_t y = 0; y < rowCount; ++y)
++        {
++            memcpy_s(dptr, dpitch, sptr, size);
++            sptr += spitch;
++            dptr += dpitch;
++        }
++    }
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::InitializeCubeFromImages(const Image* images, size_t nImages, DWORD flags)
++{
++    if (!images || !nImages)
++        return E_INVALIDARG;
++
++    // A DirectX11 cubemap is just a 2D texture array that is a multiple of 6 for each cube
++    if ((nImages % 6) != 0)
++        return E_INVALIDARG;
++
++    HRESULT hr = InitializeArrayFromImages(images, nImages, false, flags);
++    if (FAILED(hr))
++        return hr;
++
++    m_metadata.miscFlags |= TEX_MISC_TEXTURECUBE;
++
++    return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::InitializeCubeFromScratchImages(const ScratchImage* images, size_t nImages, size_t nMips, DWORD flags)
++{
++	if (!images || !nImages)
++		return E_INVALIDARG;
++
++	// A DirectX11 cubemap is just a 2D texture array that is a multiple of 6 for each cube
++	if ((nImages % 6) != 0)
++		return E_INVALIDARG;
++
++	if(nMips == 0)
++		return E_INVALIDARG;
++
++	if (nImages / nMips != 6)
++		return E_INVALIDARG;
++	
++	if (!images || !nImages)
++		return E_INVALIDARG;
++
++	const Image* firstImage = images[0].GetImage(0, 0, 0);
++	if(!firstImage)
++		return E_INVALIDARG;
++
++	DXGI_FORMAT format = firstImage->format;
++	size_t width = firstImage->width;
++	size_t height = firstImage->height;
++
++	for (size_t index = 0; index < nImages; ++index)
++	{
++		if (!images[index].GetImage(0,0,0))
++			return E_POINTER;
++
++		if (!images[index].GetPixels())
++			return E_POINTER;
++
++		if (images[index].GetImage(0,0,0)->format != format)
++		{
++			// All images must be the same format
++			return E_FAIL;
++		}
++	}
++
++	HRESULT hr = Initialize2D(format, width, height, 6, nMips, flags);
++
++	if (FAILED(hr))
++		return hr;
++	
++	for (size_t face = 0; face < 6; ++face)
++	{
++		for (size_t mip = 0; mip < nMips; ++mip)
++		{
++			// destination
++			size_t index = face * nMips + mip;
++
++			assert(index < m_nimages);
++			auto dptr = reinterpret_cast<uint8_t*>(m_image[index].pixels);
++			if (!dptr)
++				return E_POINTER;
++
++			size_t dpitch = m_image[index].rowPitch;
++
++			// source
++			const Image* currentImage = images[index].GetImage(0, 0, 0);
++
++			auto sptr = reinterpret_cast<const uint8_t*>(currentImage->pixels);
++			if (!sptr)
++				return E_POINTER;
++
++			size_t spitch = currentImage->rowPitch;
++			
++			size_t rowCount = ComputeScanlines(format, currentImage->height);
++			if (!rowCount)
++				return E_UNEXPECTED;
++
++			size_t size = std::min<size_t>(dpitch, spitch);
++
++			for (size_t y = 0; y < rowCount; ++y)
++			{
++				memcpy_s(dptr, dpitch, sptr, size);
++				sptr += spitch;
++				dptr += dpitch;
++			}
++		}
++	}
++
++	m_metadata.miscFlags |= TEX_MISC_TEXTURECUBE;
++
++	return S_OK;
++}
++
++_Use_decl_annotations_
++HRESULT ScratchImage::Initialize3DFromImages(const Image* images, size_t depth, DWORD flags)
++{
++    if (!images || !depth)
++        return E_INVALIDARG;
++
++    DXGI_FORMAT format = images[0].format;
++    size_t width = images[0].width;
++    size_t height = images[0].height;
++
++    for (size_t slice = 0; slice < depth; ++slice)
++    {
++        if (!images[slice].pixels)
++            return E_POINTER;
++
++        if (images[slice].format != format || images[slice].width != width || images[slice].height != height)
++        {
++            // All images must be the same format, width, and height
++            return E_FAIL;
++        }
++    }
++
++    HRESULT hr = Initialize3D(format, width, height, depth, 1, flags);
++    if (FAILED(hr))
++        return hr;
++
++    size_t rowCount = ComputeScanlines(format, height);
++    if (!rowCount)
++        return E_UNEXPECTED;
++
++    for (size_t slice = 0; slice < depth; ++slice)
++    {
++        auto sptr = reinterpret_cast<const uint8_t*>(images[slice].pixels);
++        if (!sptr)
++            return E_POINTER;
++
++        assert(slice < m_nimages);
++        auto dptr = reinterpret_cast<uint8_t*>(m_image[slice].pixels);
++        if (!dptr)
++            return E_POINTER;
++
++        size_t spitch = images[slice].rowPitch;
++        size_t dpitch = m_image[slice].rowPitch;
++
++        size_t size = std::min<size_t>(dpitch, spitch);
++
++        for (size_t y = 0; y < rowCount; ++y)
++        {
++            memcpy_s(dptr, dpitch, sptr, size);
++            sptr += spitch;
++            dptr += dpitch;
++        }
++    }
++
++    return S_OK;
++}
++
++void ScratchImage::Release()
++{
++    m_nimages = 0;
++    m_size = 0;
++
++    if (m_image)
++    {
++        delete[] m_image;
++        m_image = nullptr;
++    }
++
++    if (m_memory)
++    {
++        _aligned_free(m_memory);
++        m_memory = nullptr;
++    }
++
++    memset(&m_metadata, 0, sizeof(m_metadata));
++}
++
++_Use_decl_annotations_
++bool ScratchImage::OverrideFormat(DXGI_FORMAT f)
++{
++    if (!m_image)
++        return false;
++
++    if (!IsValid(f) || IsPlanar(f) || IsPalettized(f))
++        return false;
++
++    for (size_t index = 0; index < m_nimages; ++index)
++    {
++        m_image[index].format = f;
++    }
++
++    m_metadata.format = f;
++
++    return true;
++}
++
++_Use_decl_annotations_
++const Image* ScratchImage::GetImage(size_t mip, size_t item, size_t slice) const
++{
++    if (mip >= m_metadata.mipLevels)
++        return nullptr;
++
++    size_t index = 0;
++
++    switch (m_metadata.dimension)
++    {
++    case TEX_DIMENSION_TEXTURE1D:
++    case TEX_DIMENSION_TEXTURE2D:
++        if (slice > 0)
++            return nullptr;
++
++        if (item >= m_metadata.arraySize)
++            return nullptr;
++
++        index = item*(m_metadata.mipLevels) + mip;
++        break;
++
++    case TEX_DIMENSION_TEXTURE3D:
++        if (item > 0)
++        {
++            // No support for arrays of volumes
++            return nullptr;
++        }
++        else
++        {
++            size_t d = m_metadata.depth;
++
++            for (size_t level = 0; level < mip; ++level)
++            {
++                index += d;
++                if (d > 1)
++                    d >>= 1;
++            }
++
++            if (slice >= d)
++                return nullptr;
++
++            index += slice;
++        }
++        break;
++
++    default:
++        return nullptr;
++    }
++
++    return &m_image[index];
++}
++
++bool ScratchImage::IsAlphaAllOpaque() const
++{
++    if (!m_image)
++        return false;
++
++    if (!HasAlpha(m_metadata.format))
++        return true;
++
++    if (IsCompressed(m_metadata.format))
++    {
++        for (size_t index = 0; index < m_nimages; ++index)
++        {
++            if (!_IsAlphaAllOpaqueBC(m_image[index]))
++                return false;
++        }
++    }
++    else
++    {
++        ScopedAlignedArrayXMVECTOR scanline(reinterpret_cast<XMVECTOR*>(_aligned_malloc((sizeof(XMVECTOR)*m_metadata.width), 16)));
++        if (!scanline)
++            return false;
++
++        static const XMVECTORF32 threshold = { { { 0.99f, 0.99f, 0.99f, 0.99f } } };
++
++        for (size_t index = 0; index < m_nimages; ++index)
++        {
++#pragma warning( suppress : 6011 )
++            const Image& img = m_image[index];
++
++            const uint8_t *pPixels = img.pixels;
++            assert(pPixels);
++
++            for (size_t h = 0; h < img.height; ++h)
++            {
++                if (!_LoadScanline(scanline.get(), img.width, pPixels, img.rowPitch, img.format))
++                    return false;
++
++                const XMVECTOR* ptr = scanline.get();
++                for (size_t w = 0; w < img.width; ++w)
++                {
++                    XMVECTOR alpha = XMVectorSplatW(*ptr);
++                    if (XMVector4Less(alpha, threshold))
++                        return false;
++                    ++ptr;
++                }
++
++                pPixels += img.rowPitch;
++            }
++        }
++    }
++
++    return true;
++}
