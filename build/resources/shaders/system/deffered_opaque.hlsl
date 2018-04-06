@@ -13,7 +13,7 @@ SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
 //SamplerState samplerBilinearWrap : register(s2);
 SamplerState samplerTrilinearWrap : register(s2);
-//SamplerState samplerBilinearVolumeClamp : register(s4);
+SamplerState samplerBilinearVolumeClamp : register(s3);
 
 // GBUFFER 
 #define GBUFFER_READ
@@ -38,47 +38,55 @@ Texture2D <float4> SSRTexture : register(t11);
  
 Texture2D g_envbrdfLUT : register(t12);
 
-Texture2DArray <float> shadows: register(t13); 
+Texture3D g_giVolume : register(t13);
 
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t14); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t15); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t16); 
+Texture2DArray <float> shadows: register(t14); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t17); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t18); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t19); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t15); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t16); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t17); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t20); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t21); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t22); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t18); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t19); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t20); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t23); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t24); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t25); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t21); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t22); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t23); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t26);     
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t24); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t25); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t26); 
 
-StructuredBuffer<int> g_lightIDs : register(t27); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t27);     
 
-TextureCubeArray <float4> g_hqEnvProbsArray: register(t28); 
-TextureCubeArray <float4> g_sqEnvProbsArray: register(t29); 
-TextureCubeArray <float4> g_lqEnvProbsArray: register(t30); 
+StructuredBuffer<int> g_lightIDs : register(t28); 
 
-StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t31); 
-StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t32); 
-StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t33); 
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t29); 
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t30); 
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t31); 
+
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t32); 
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t33); 
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t34); 
 
 cbuffer configBuffer : register(b1)
 {
 	ConfigParams configs;     
-}; 
+};
+
+cbuffer giData : register(b2)
+{
+	GISampleData g_giSampleData;
+};
    
-cbuffer lightsCount : register(b2)   
+cbuffer lightsCount : register(b3)   
 { 
 	LightsCount g_lightCount; 
 };      
 
 #include "../common/ibl_helpers.hlsl"         
+#include "../common/sg_helpers.hlsl"         
   
 // TEMP       
 //#define TEMP_FAST_COMPILE     
@@ -122,13 +130,12 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	// DIRECT LIGHT                 
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
 	             
-	// IBL     
-	//float3 specularBrdf, diffuseBrdf; 
-	//LightComponents indirectLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
-	//	mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
-	
+	// IBL     	
 	float3 specularBrdf = 0;
 	float4 envProbSpecular = EvaluateEnvProbSpecular(samplerTrilinearWrap, mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf);
+
+	// SG
+	float4 sgGI = EvaluateSGIndirect(gbuffer);
 
 	// SSR 
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );
@@ -140,7 +147,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
 	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
 
-	float3 diffuse = /*indirectLight.diffuse * configs.indirDiff*/ + directLight.diffuse * configs.dirDiff;
+	float3 diffuse = sgGI.rgb * configs.indirDiff + directLight.diffuse * configs.dirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec + directLight.specular * configs.dirSpec;
 
 	//diffuse = lerp(diffuse, g_lightCount.envProbsCountHQ, 0.999);

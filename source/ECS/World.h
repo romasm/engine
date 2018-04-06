@@ -109,7 +109,7 @@ namespace EngineCore
 		ScenePipeline* CreateScene(Entity cam, int w, int h, bool lightweight)
 		{
 			ScenePipeline* scene = new ScenePipeline();
-			if(!scene->Init(w, h, lightweight))
+			if(!scene->Init(this, w, h, lightweight))
 			{_CLOSE(scene); return nullptr;}
 			m_cameraSystem->AssignScene(cam, scene);
 			m_scenes.push_back(scene);

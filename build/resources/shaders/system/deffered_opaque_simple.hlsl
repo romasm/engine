@@ -37,16 +37,23 @@ Texture2D <float4> SSRTexture : register(t11);
 
 
 Texture2D g_envbrdfLUT : register(t12);
-TextureCube g_envprobsDist : register(t13); 
-TextureCube g_envprobsDistBlurred : register(t14); 
 
-#include "../common/ibl_helpers.hlsl"
+Texture3D g_giVolume : register(t13);
+
+
+#include "../common/ibl_helpers.hlsl" 
 
 cbuffer configBuffer : register(b1)
 {
 	ConfigParams configs;
 };
 
+cbuffer giData : register(b2)
+{
+	GISampleData g_giSampleData;
+};
+
+#include "../common/sg_helpers.hlsl"   
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
@@ -79,7 +86,10 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	float3 specularBrdf, diffuseBrdf;
 	LightComponents distantLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
 		NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
-	
+
+	// SG
+	float4 sgGI = EvaluateSGIndirect(GBufferData gbuffer);
+
 	// SSR
 	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;

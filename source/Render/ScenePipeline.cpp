@@ -63,6 +63,7 @@ ScenePipeline::ScenePipeline()
 
 	Materials_Count = 0;
 
+	giMgr = nullptr;
 	render_mgr = nullptr;
 		
 	m_CamMoveBuffer = nullptr;
@@ -129,6 +130,7 @@ void ScenePipeline::Close()
 	_RELEASE(m_CamMoveBuffer);
 	_RELEASE(m_AOBuffer);
 
+	_DELETE(giMgr);
 	_DELETE(render_mgr);
 }
 
@@ -188,7 +190,7 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_Antialiased[2]);
 }
 
-bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
+bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, bool lightweight)
 {
 	isLightweight = lightweight;
 
@@ -196,6 +198,9 @@ bool ScenePipeline::Init(int t_width, int t_height, bool lightweight)
 	
 	render_mgr = new SceneRenderMgr(isLightweight);
 	
+	giMgr = new GIMgr; 
+	giMgr->LoadGIData(wrd);
+
 	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
 
 	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
@@ -960,7 +965,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
-	ID3D11ShaderResourceView* srvs[13];
+	ID3D11ShaderResourceView* srvs[14];
 	srvs[0] = m_MaterialBuffer.srv;
 	srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
 	srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
@@ -974,23 +979,27 @@ void ScenePipeline::OpaqueDefferedStage()
 	srvs[10] = rt_AO->GetShaderResourceView(0);
 	srvs[11] = rt_SSR->GetShaderResourceView(0);
 	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
+	srvs[13] = giMgr->GetGIVolumeSRV();
 			
-	Render::CSSetShaderResources(0, 13, srvs);
+	Render::CSSetShaderResources(0, 14, srvs);
 
 	if(!isLightweight)
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		Render::CSSetShaderResources(13, 1, &shadowBuffer);
+		Render::CSSetShaderResources(14, 1, &shadowBuffer);
 
-		LoadLights(14, true);
+		LoadLights(15, true);
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::CSSetConstantBuffers(1, 1, &defferedConfigBuffer); 
+	
+	auto giSampleData = giMgr->GetGISampleData();
+	Render::CSSetConstantBuffers(2, 1, &giSampleData);
 
 	if(!isLightweight)
 	{
-		Render::CSSetConstantBuffers(2, 1, &lightsPerTileCount); 
+		Render::CSSetConstantBuffers(3, 1, &lightsPerTileCount); 
 	}
 		
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );

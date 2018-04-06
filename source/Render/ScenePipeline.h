@@ -9,6 +9,7 @@
 #include "GaussianBlur.h"
 #include "Compute.h"
 #include "ECS\CameraSystem.h"
+#include "GIMgr.h"
 
 namespace EngineCore
 {
@@ -258,7 +259,7 @@ namespace EngineCore
 
 		void Close();
 
-		bool Init(int t_width, int t_height, bool lightweight);
+		bool Init(BaseWorld* wrd, int t_width, int t_height, bool lightweight);
 
 		bool Resize(int t_width, int t_height);
 
@@ -376,6 +377,8 @@ namespace EngineCore
 		LightsCount lightsCount;
 
 		StructBuf m_MaterialBuffer;
+
+		GIMgr* giMgr;
 		
 		ALIGNED_ALLOCATION
 

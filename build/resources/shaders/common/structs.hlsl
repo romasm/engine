@@ -198,6 +198,12 @@ struct VolumeTraceData
 	uint clipmapCount;
 };
 
+struct GISampleData
+{
+	float3 minCorner;
+	float worldSizeRcp;
+};
+
 struct GBufferData
 {
 	float3 albedo;
