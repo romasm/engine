@@ -26,6 +26,8 @@ BaseWorld::BaseWorld( uint32_t id )
 	probCaptureShader = new Compute(SHADER_PROB_CAPTURTE);
 
 	copyBuffer = new uint8_t[COPY_BUFFER_SIZE];
+
+	giMgr = new GIMgr(this);
 }
 
 void BaseWorld::SetDirty(Entity e)
@@ -83,6 +85,8 @@ bool BaseWorld::Init(string filename)
 	initMainEntities(header);
 
 	m_world_timer.Start();
+
+	giMgr->ReloadGIData();
 	
 	return true;
 }
@@ -104,7 +108,9 @@ bool BaseWorld::Init()
 	initMainEntities(header);
 
 	m_world_timer.Start();
-	
+
+	giMgr->ReloadGIData();
+
 	return true;
 }
 
@@ -125,6 +131,9 @@ void BaseWorld::Close()
 	}
 	m_scenes.clear();
 	
+	giMgr->DropGIData();
+	_DELETE(giMgr);
+
 	_DELETE(m_staticMeshSystem);
 	_DELETE(m_skeletonSystem);
 	_DELETE(m_cameraSystem);

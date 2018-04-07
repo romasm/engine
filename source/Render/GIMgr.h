@@ -14,16 +14,19 @@ namespace EngineCore
 	class GIMgr
 	{
 	public:
-		GIMgr();
+		GIMgr(class BaseWorld* wrd);
 		~GIMgr();
 				
-		bool LoadGIData(class BaseWorld* wrd);
+		bool ReloadGIData();
+		void DropGIData();
 
 		ID3D11ShaderResourceView* GetGIVolumeSRV();
 		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
 
 	private:
 		bool InitBuffers();
+
+		BaseWorld* world;
 
 		ID3D11Texture3D* giVolume;
 		ID3D11ShaderResourceView* giVolumeSRV;

@@ -11,8 +11,8 @@ RWTexture2D <float2> specularSecondOutput : register(u2);
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
-SamplerState samplerBilinearWrap : register(s2);
-SamplerState samplerTrilinearWrap : register(s3);
+SamplerState samplerTrilinearWrap : register(s2);
+SamplerState samplerBilinearVolumeClamp : register(s3);
 
 // GBUFFER
 #define GBUFFER_READ
@@ -31,17 +31,21 @@ Texture2D <float2> gb_Depth : register(t9);
 
 #include "../common/common_helpers.hlsl"
 
-
 Texture2D <float> DynamicAO : register(t10); 
 Texture2D <float4> SSRTexture : register(t11); 
-
 
 Texture2D g_envbrdfLUT : register(t12);
 
 Texture3D g_giVolume : register(t13);
 
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t14);
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t15);
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t16);
 
-#include "../common/ibl_helpers.hlsl" 
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t17);
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t18);
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t19);
+
 
 cbuffer configBuffer : register(b1)
 {
@@ -53,6 +57,12 @@ cbuffer giData : register(b2)
 	GISampleData g_giSampleData;
 };
 
+cbuffer lightsCount : register(b3)
+{
+	LightsCount g_lightCount;
+};
+
+#include "../common/ibl_helpers.hlsl" 
 #include "../common/sg_helpers.hlsl"   
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
@@ -76,26 +86,28 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
 	gbuffer.ao = min( SceneAO, gbuffer.ao );
 	
-	// IBL
 	float3 ViewVector = normalize(g_CamPos - gbuffer.wpos);
 	float NoV = calculateNoV( gbuffer.normal, ViewVector );
 	float Roughness = clamp( min(gbuffer.roughness.x, gbuffer.roughness.y), 0.0001f, 0.9999f);
 
 	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, Roughness);
 
-	float3 specularBrdf, diffuseBrdf;
-	LightComponents distantLight = CalcutaleDistantProbLight(samplerBilinearClamp, samplerTrilinearWrap, samplerBilinearWrap, 
-		NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf);
+	// IBL     	
+	float3 specularBrdf = 0;
+	float4 envProbSpecular = EvaluateEnvProbSpecular(samplerTrilinearWrap, NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf);
 
 	// SG
-	float4 sgGI = EvaluateSGIndirect(GBufferData gbuffer);
+	float4 sgGI = EvaluateSGIndirect(gbuffer);
 
 	// SSR
 	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
-	
+
 	// OUTPUT
-	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + (distantLight.diffuse + distantLight.scattering) * configs.indirDiff, specularSecond.r);
-	specularFirstOutput[threadID.xy] = float4( distantLight.specular * configs.indirSpec, specularSecond.g);
+	float3 diffuse = sgGI.rgb * configs.indirDiff;
+	float3 specular = envProbSpecular.rgb * configs.indirSpec;
+
+	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
+	specularFirstOutput[threadID.xy] = float4(specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba; 
 }

@@ -95,7 +95,7 @@ cbuffer lightsCount : register(b3)
 #include "../system/direct_brdf.hlsl"   
 #define FULL_LIGHT
 #include "../common/light_helpers.hlsl"
-
+ 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {

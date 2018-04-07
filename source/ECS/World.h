@@ -25,6 +25,8 @@
 #include "CollisionSystem.h"
 #include "SkeletonSystem.h"
 
+#include "GIMgr.h"
+
 #include "Frustum.h"
 #include "SceneGraph.h"
 
@@ -175,7 +177,9 @@ namespace EngineCore
 		inline SkeletonSystem* GetSkeletonSystem() const {return m_skeletonSystem;}
 
 		inline TypeMgr* GetTypeMgr() const {return m_typeMgr;}
-		inline NameMgr* GetNameMgr() const {return m_nameMgr;}
+		inline NameMgr* GetNameMgr() const { return m_nameMgr; }
+
+		inline GIMgr* GetGIMgr() const {return giMgr;}
 
 		inline Entity CreateEntity() {return m_entityMgr->CreateEntity();}
 		Entity CreateNamedEntity(string name) 
@@ -403,6 +407,9 @@ namespace EngineCore
 #ifdef _EDITOR
 		FunctionCodeMgr codeMgr;
 #endif
+
+		// GI
+		GIMgr* giMgr;
 
 		// physics world
 		btDefaultCollisionConfiguration* physCollisionConfiguration;

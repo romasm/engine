@@ -377,9 +377,9 @@ namespace EngineCore
 		LightsCount lightsCount;
 
 		StructBuf m_MaterialBuffer;
-
-		GIMgr* giMgr;
 		
+		GIMgr* giMgr;
+
 		ALIGNED_ALLOCATION
 
 	protected:

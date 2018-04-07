@@ -130,7 +130,7 @@ void ScenePipeline::Close()
 	_RELEASE(m_CamMoveBuffer);
 	_RELEASE(m_AOBuffer);
 
-	_DELETE(giMgr);
+	giMgr = nullptr;
 	_DELETE(render_mgr);
 }
 
@@ -194,13 +194,12 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, bool lightwe
 {
 	isLightweight = lightweight;
 
+	giMgr = wrd->GetGIMgr();
+
 	codemgr = ShaderCodeMgr::Get();
 	
 	render_mgr = new SceneRenderMgr(isLightweight);
 	
-	giMgr = new GIMgr; 
-	giMgr->LoadGIData(wrd);
-
 	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
 
 	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
@@ -983,12 +982,21 @@ void ScenePipeline::OpaqueDefferedStage()
 			
 	Render::CSSetShaderResources(0, 14, srvs);
 
-	if(!isLightweight)
+	if (!isLightweight)
 	{
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
 		Render::CSSetShaderResources(14, 1, &shadowBuffer);
 
 		LoadLights(15, true);
+	}
+	else
+	{
+		ZeroMemory(&lightsCount, sizeof(lightsCount));
+
+		uint32_t structed_offset = 14;
+		render_mgr->envProbMgr->BindEnvProbs(true, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
+
+		Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
 	}
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
@@ -997,10 +1005,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	auto giSampleData = giMgr->GetGISampleData();
 	Render::CSSetConstantBuffers(2, 1, &giSampleData);
 
-	if(!isLightweight)
-	{
-		Render::CSSetConstantBuffers(3, 1, &lightsPerTileCount); 
-	}
+	Render::CSSetConstantBuffers(3, 1, &lightsPerTileCount); 
 		
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );

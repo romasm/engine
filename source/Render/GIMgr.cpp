@@ -9,8 +9,10 @@
 
 using namespace EngineCore;
 
-GIMgr::GIMgr()
+GIMgr::GIMgr(BaseWorld* wrd)
 {
+	world = wrd;
+
 	giVolume = nullptr;
 	giVolumeSRV = nullptr;
 	giVolumeUAV = nullptr;
@@ -36,8 +38,9 @@ GIMgr::~GIMgr()
 
 bool GIMgr::InitBuffers()
 {
-	/*const DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
-	const int32_t resolution = 256;
+#ifdef _EDITOR
+	const DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+	const int32_t resolution = 64;
 
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
@@ -46,11 +49,7 @@ bool GIMgr::InitBuffers()
 	volumeDesc.Depth = resolution;
 	volumeDesc.MipLevels = 1;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
-	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE
-#ifdef _EDITOR
-		| D3D11_BIND_UNORDERED_ACCESS
-#endif
-		;
+	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	volumeDesc.CPUAccessFlags = 0;
 	volumeDesc.MiscFlags = 0;
 	volumeDesc.Format = format;
@@ -66,7 +65,6 @@ bool GIMgr::InitBuffers()
 	if( FAILED(Render::CreateShaderResourceView(giVolume, &volumeSRVDesc, &giVolumeSRV)) )
 		return false;
 
-#ifdef _EDITOR
 	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
 	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
@@ -76,31 +74,47 @@ bool GIMgr::InitBuffers()
 	if( FAILED(Render::CreateUnorderedAccessView(giVolume, &volumeUAVDesc, &giVolumeUAV)) )
 		return false;
 #endif
-*/
+
 	sampleDataGPU = Buffer::CreateConstantBuffer(Render::Device(), sizeof(GISampleData), true);
 
 
 	// TEMP
-	//Render::ClearUnorderedAccessViewFloat(giVolumeUAV, Vector4(1.0f, 0, 0, 0));
 
-	sampleData.minCorner = Vector3(-10.0f, -10.0f, -10.0f);
-	sampleData.worldSizeRcp = 1.0f / 20.0f;
+#ifdef _EDITOR
+	Render::ClearUnorderedAccessViewFloat(giVolumeUAV, Vector4(1.0f, 0, 0, 0));
+#endif
+
+	sampleData.minCorner = Vector3(-5.0f, -5.0f, -5.0f);
+	sampleData.worldSizeRcp = 1.0f / 10.0f;
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 	return true;
 }
 
-bool GIMgr::LoadGIData(BaseWorld* wrd)
+bool GIMgr::ReloadGIData()
 {
-	TEXTURE_DROP(sgVolume);
+	DropGIData();
 
-	string giPath = RemoveExtension(wrd->GetWorldName()) + GI_VOLUME;
-	sgVolume = TEXTURE(giPath);
+	string giPath = RemoveExtension(world->GetWorldName()) + GI_VOLUME;
+
+#ifdef _EDITOR
+	sgVolume = TexMgr::Get()->GetResource(giPath, true);
+#else
+	sgVolume = TexMgr::Get()->GetResource(giPath, false);
+#endif
 
 	return (sgVolume != TexMgr::nullres);
 }
 
+void GIMgr::DropGIData()
+{
+	TEXTURE_DROP(sgVolume);
+}
+
 ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 {
-	return TEXTURE_GETPTR(sgVolume);
+	if(giVolumeSRV)
+		return giVolumeSRV;
+	else
+		return TEXTURE_GETPTR(sgVolume);
 }
