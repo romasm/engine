@@ -81,7 +81,7 @@ bool GIMgr::InitBuffers()
 	// TEMP
 
 #ifdef _EDITOR
-	Render::ClearUnorderedAccessViewFloat(giVolumeUAV, Vector4(1.0f, 0, 0, 0));
+	Render::ClearUnorderedAccessViewFloat(giVolumeUAV, Vector4(0, 0, 0, 0));
 #endif
 
 	sampleData.minCorner = Vector3(-5.0f, -5.0f, -5.0f);
