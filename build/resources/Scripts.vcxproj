@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Development|x64">
+      <Configuration>Development</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4D6F1AE8-B94E-9983-C266-245A2EC5FFE4}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Scripts</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>bin\x64\Debug\</OutDir>
+    <IntDir>obj\x64\Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+    <OutDir>bin\x64\Development\</OutDir>
+    <IntDir>obj\x64\Development\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>bin\x64\Release\</OutDir>
+    <IntDir>obj\x64\Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\bin\lua\jit\bc.lua" />
+    <None Include="..\bin\lua\jit\bcsave.lua" />
+    <None Include="..\bin\lua\jit\dis_arm.lua" />
+    <None Include="..\bin\lua\jit\dis_mips.lua" />
+    <None Include="..\bin\lua\jit\dis_mipsel.lua" />
+    <None Include="..\bin\lua\jit\dis_ppc.lua" />
+    <None Include="..\bin\lua\jit\dis_x64.lua" />
+    <None Include="..\bin\lua\jit\dis_x86.lua" />
+    <None Include="..\bin\lua\jit\dump.lua" />
+    <None Include="..\bin\lua\jit\v.lua" />
+    <None Include="..\bin\lua\jit\vmdef.lua" />
+    <None Include="..\config\colors_default.cfg" />
+    <None Include="..\config\engine_settings.cfg" />
+    <None Include="..\config\keymaps\FirstPerson.cfg" />
+    <None Include="..\tools\bake_build.lua" />
+    <None Include="gui\AssetBrowser.lua" />
+    <None Include="gui\AssetProps.lua" />
+    <None Include="gui\ColorsWindow.lua" />
+    <None Include="gui\ComponentsGui\Collision.lua" />
+    <None Include="gui\ComponentsGui\EnvProb.lua" />
+    <None Include="gui\ComponentsGui\GlobalLight.lua" />
+    <None Include="gui\ComponentsGui\GlobalLightCallback.lua" />
+    <None Include="gui\ComponentsGui\Light.lua" />
+    <None Include="gui\ComponentsGui\LightCallback.lua" />
+    <None Include="gui\ComponentsGui\Script.lua" />
+    <None Include="gui\ComponentsGui\StaticMesh.lua" />
+    <None Include="gui\ComponentsGui\StaticMeshCallback.lua" />
+    <None Include="gui\ComponentsGui\Transform.lua" />
+    <None Include="gui\ComponentsGui\TransformCallback.lua" />
+    <None Include="gui\EntityProps.lua" />
+    <None Include="gui\Localization\en.lua" />
+    <None Include="gui\Localization\ru.lua" />
+    <None Include="gui\MaterialGui\AO.lua" />
+    <None Include="gui\MaterialGui\AOCallback.lua" />
+    <None Include="gui\MaterialGui\Albedo.lua" />
+    <None Include="gui\MaterialGui\Alphatest.lua" />
+    <None Include="gui\MaterialGui\Emissive.lua" />
+    <None Include="gui\MaterialGui\MediumRoughness.lua" />
+    <None Include="gui\MaterialGui\Normal.lua" />
+    <None Include="gui\MaterialGui\NormalCallback.lua" />
+    <None Include="gui\MaterialGui\Opacity.lua" />
+    <None Include="gui\MaterialGui\Reflectivity.lua" />
+    <None Include="gui\MaterialGui\ReflectivityCallback.lua" />
+    <None Include="gui\MaterialGui\Roughness.lua" />
+    <None Include="gui\MaterialGui\RoughnessCallback.lua" />
+    <None Include="gui\MaterialGui\Scattering.lua" />
+    <None Include="gui\MaterialGui\ScatteringCallback.lua" />
+    <None Include="gui\MaterialGui\Thickness.lua" />
+    <None Include="gui\MaterialGui\Transmittance.lua" />
+    <None Include="gui\MaterialGui\TransmittanceCallback.lua" />
+    <None Include="gui\Menus\AddComp.lua" />
+    <None Include="gui\Menus\Asset.lua" />
+    <None Include="gui\Menus\Material.lua" />
+    <None Include="gui\Menus\TB_Asset.lua" />
+    <None Include="gui\Menus\TB_File.lua" />
+    <None Include="gui\Menus\TB_Sets.lua" />
+    <None Include="gui\Menus\Textfield.lua" />
+    <None Include="gui\Menus\Viewport.lua" />
+    <None Include="gui\Pieces\Alt.lua" />
+    <None Include="gui\Pieces\ColorPicker.lua" />
+    <None Include="gui\Pieces\ColorPickerScript.lua" />
+    <None Include="gui\Pieces\DialogScreen.lua" />
+    <None Include="gui\Pieces\Texture.lua" />
+    <None Include="gui\ProfilerWindow.lua" />
+    <None Include="gui\RenderConfig.lua" />
+    <None Include="gui\SceneBrowser.lua" />
+    <None Include="gui\SideArea.lua" />
+    <None Include="gui\Styles\DefaultStyles.lua" />
+    <None Include="gui\Styles\GroupStyles.lua" />
+    <None Include="gui\Styles\Materials.lua" />
+    <None Include="gui\Styles\MenuStyles.lua" />
+    <None Include="gui\Styles\WinStyles.lua" />
+    <None Include="gui\ToolBar.lua" />
+    <None Include="gui\TopBar.lua" />
+    <None Include="gui\ViewportWindow.lua" />
+    <None Include="script\App\AssetBrowser.lua" />
+    <None Include="script\App\DevConsole.lua" />
+    <None Include="script\App\EditorCamera.lua" />
+    <None Include="script\App\History.lua" />
+    <None Include="script\App\Hotkeys.lua" />
+    <None Include="script\App\Importer.lua" />
+    <None Include="script\App\MainWindow.lua" />
+    <None Include="script\App\MaterialProps.lua" />
+    <None Include="script\App\Profiler.lua" />
+    <None Include="script\App\Properties.lua" />
+    <None Include="script\App\SceneBrowser.lua" />
+    <None Include="script\App\SceneMgr.lua" />
+    <None Include="script\App\Tools.lua" />
+    <None Include="script\App\TransformControls.lua" />
+    <None Include="script\App\Viewport.lua" />
+    <None Include="script\App\const_Defines.lua" />
+    <None Include="script\Entities\BaseEntity.lua" />
+    <None Include="script\Entities\Camera.lua" />
+    <None Include="script\Entities\EnvProb.lua" />
+    <None Include="script\Entities\GlobalLight.lua" />
+    <None Include="script\Entities\LocalLight.lua" />
+    <None Include="script\Entities\Mesh.lua" />
+    <None Include="script\Entities\PhysicsModel.lua" />
+    <None Include="script\Entities\SkinnedMesh.lua" />
+    <None Include="script\Entities\StaticModel.lua" />
+    <None Include="script\Entities\TestEnt.lua" />
+    <None Include="script\Entities\TestPlayer.lua" />
+    <None Include="script\Entities\const_EntityDefines.lua" />
+    <None Include="script\GuiEntities\GuiButton.lua" />
+    <None Include="script\GuiEntities\GuiCheck.lua" />
+    <None Include="script\GuiEntities\GuiCheckGroup.lua" />
+    <None Include="script\GuiEntities\GuiCombo.lua" />
+    <None Include="script\GuiEntities\GuiDataSlider.lua" />
+    <None Include="script\GuiEntities\GuiEntity.lua" />
+    <None Include="script\GuiEntities\GuiFilefield.lua" />
+    <None Include="script\GuiEntities\GuiGroup.lua" />
+    <None Include="script\GuiEntities\GuiMenu.lua" />
+    <None Include="script\GuiEntities\GuiRect.lua" />
+    <None Include="script\GuiEntities\GuiRoot.lua" />
+    <None Include="script\GuiEntities\GuiSlider.lua" />
+    <None Include="script\GuiEntities\GuiString.lua" />
+    <None Include="script\GuiEntities\GuiStyles.lua" />
+    <None Include="script\GuiEntities\GuiTextfield.lua" />
+    <None Include="script\GuiEntities\GuiWindow.lua" />
+    <None Include="script\GuiEntities\const_GuiDefines.lua" />
+    <None Include="script\class.lua" />
+    <None Include="script\common.lua" />
+    <None Include="script\const_pathes.lua" />
+    <None Include="script\main.lua" />
+    <None Include="script\resource_preloader.lua" />
+    <None Include="script\script_loader.lua" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

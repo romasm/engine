@@ -71,6 +71,7 @@
     <None Include="common\light_helpers.hlsl" />
     <None Include="common\light_structs.hlsl" />
     <None Include="common\math.hlsl" />
+    <None Include="common\sg_helpers.hlsl" />
     <None Include="common\shadow_helpers.hlsl" />
     <None Include="common\shared.hlsl" />
     <None Include="common\structs.hlsl" />
@@ -179,9 +180,6 @@
     <None Include="system\voxel_downsample.hlsl" />
     <None Include="system\voxel_light_inject.hlsl" />
     <None Include="system\voxel_light_propagate.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="common\sg_helpers.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

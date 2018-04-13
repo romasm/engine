@@ -123,3 +123,19 @@ workspace "Engine"
 		files {
 			"build/resources/shaders/**.hlsl"
 		}
+		
+		filter { "files:**" }
+			flags { "ExcludeFromBuild" }
+			
+	project "Scripts"
+		kind "Utility"
+		location "build/resources"
+		language "C++"
+		
+		files {
+			"build/**.lua",			
+			"build/**.cfg"
+		}
+		
+		filter { "files:**" }
+			flags { "ExcludeFromBuild" }
