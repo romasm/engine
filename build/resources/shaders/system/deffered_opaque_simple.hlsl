@@ -94,7 +94,10 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 
 	// IBL     	
 	float3 specularBrdf = 0;
-	float4 envProbSpecular = EvaluateEnvProbSpecular(samplerTrilinearWrap, NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf);
+	float3 diffuseBrdf = 0;
+	float4 envProbSpecular = 0;
+	float4 envProbDiffuse = 0;
+	EvaluateEnvProbSpecular(samplerTrilinearWrap, NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 
 	// SG
 	float4 sgGI = EvaluateSGIndirect(gbuffer);
@@ -104,7 +107,7 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	specularSecond.rgb *= specularBrdf;
 
 	// OUTPUT
-	float3 diffuse = sgGI.rgb * configs.indirDiff;
+	float3 diffuse = (sgGI.rgb + envProbDiffuse.rgb) * configs.indirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec;
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);

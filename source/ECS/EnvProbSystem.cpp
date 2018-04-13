@@ -6,7 +6,8 @@
 using namespace EngineCore;
 
 int32_t EnvProbSystem::epResolutions[EP_QUAL_COUNT] = {256, 128, 32};
-uint32_t EnvProbSystem::epMipsCount[EP_QUAL_COUNT] = {8, 7, 5};
+// the coarsest mip resolution = 4 x 4
+uint32_t EnvProbSystem::epMipsCount[EP_QUAL_COUNT] = {7, 6, 4};
 DXGI_FORMAT EnvProbSystem::epFormats[EP_QUAL_COUNT] = {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM};
 
 EnvProbSystem::EnvProbSystem(BaseWorld* wrd, uint32_t maxCount)

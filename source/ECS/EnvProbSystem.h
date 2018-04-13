@@ -13,7 +13,6 @@
 #define ENVPROBS_MIPS_MAT PATH_SHADERS "offline/envmap_mipgen"
 #define ENVPROBS_COPY_MAT PATH_SHADERS "offline/envmap_mipcopy"
 
-#define ENVPROBS_SPEC_MIN 2
 #define ENVPROBS_SPEC_MIPS_OFFSET 0
 #define ENVPROBS_RES 128
 
@@ -149,7 +148,7 @@ namespace EngineCore
 		}
 		static inline uint32_t GetMipsCount(EnvProbQuality qual) 
 		{
-			return epMipsCount[qual]; // GetLog2(epResolutions[qual]) - GetLog2(ENVPROBS_SPEC_MIN) + 1;
+			return epMipsCount[qual];
 		}
 		static inline DXGI_FORMAT GetFormat(EnvProbQuality qual) 
 		{
