@@ -41,7 +41,7 @@ namespace EngineCore
 				return it->second.code;
 		}
 
-		void DumpToFile(string& name)
+		void DumpToFile(string& filename)
 		{
 			uint32_t mapSize = (uint32_t)codeMap.size();
 			uint32_t fileSize =  sizeof(uint32_t) + mapSize * (FUNC_CODE_MAX_SIZE + FUNC_CODE_MAX_SIZE + sizeof(int32_t));
@@ -63,21 +63,19 @@ namespace EngineCore
 
 				if( uint32_t(t_data - data.get()) > fileSize )
 				{
-					ERR("Wrong code map size estimation for %s", name.data());
+					ERR("Wrong code map size estimation for %s", filename.data());
 					return;
 				}
 			}
 
 			uint32_t totalSize = uint32_t(t_data - data.get());
-			string filename = name + FUNC_CODE_MAP_EXT;
 
 			if(!FileIO::WriteFileData( filename, data.get(), totalSize ))
 				ERR("Cant write code map file %s", filename.c_str() );
 		}
 
-		void LoadFromFile(string& name)
+		void LoadFromFile(string& filename)
 		{
-			string filename = name + FUNC_CODE_MAP_EXT;
 			uint32_t size = 0;
 			unique_ptr<uint8_t> data(FileIO::ReadFileData(filename, &size));
 			if(!data)

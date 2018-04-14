@@ -61,6 +61,9 @@
 
 #define SHADER_PROB_CAPTURTE PATH_SHADERS "offline/prob_capture", "Capture"
 
+#define FILE_WORLD_DATA "/world"
+#define FILE_CODE_DATA "/code"
+
 namespace EngineCore
 {
 	class TypeMgr;
@@ -70,6 +73,7 @@ namespace EngineCore
 		friend TypeMgr;
 	public:
 		
+		// TODO: move editor camera to separete file in lua
 		struct WorldHeader
 		{
 			uint32_t version;
@@ -372,11 +376,7 @@ namespace EngineCore
 
 		string world_name;
 		uint32_t ID;
-
-		Entity skyEP;
-
-		string envName;
-
+				
 		DArray<ScenePipeline*> m_scenes;
 
 		FrustumMgr* m_frustumMgr;
@@ -443,19 +443,12 @@ namespace EngineCore
 		{
 			return saveWorld(filename);
 		}
-				
-		void RebakeSky()
-		{
-			if(!skyEP.isnull())
-				m_envProbSystem->Bake(skyEP);
-		}
 
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.deriveClass<World, BaseWorld>("World")
 					.addFunction("Save", &World::SaveWorld)
-					.addFunction("RebakeSky", &World::RebakeSky)
 				.endClass();
 		}
 

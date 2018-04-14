@@ -222,9 +222,9 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, bool lightwe
 		casterTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_TUBE_FRAME_MAX, sizeof(TubeCasterBuffer), true);
 
 		lightsPerTile = Buffer::CreateStructedBuffer(Render::Device(), TOTAL_LIGHT_COUNT, sizeof(int32_t), true);
-
-		lightsPerTileCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
 	}
+
+	lightsPerTileCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;

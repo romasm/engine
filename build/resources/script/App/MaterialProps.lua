@@ -421,7 +421,7 @@ function MaterialProps:ProcessPreviewMove(viewport, ev)
     rotation.y = rotation.y + delta.x * self.previewRotSpeed * self.previewZoom
     rotation.x = math.max( -math.pi * 0.4, math.min( rotation.x, math.pi * 0.4 ) )
 
-    AssetBrowser.previewNode:SetRotationPYR_L( rotation )
+    AssetBrowser.previewNode:SetRotation_L( rotation )
 end
 
 function MaterialProps:ProcessPreviewStartMove(viewport, ev)

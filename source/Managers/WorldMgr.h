@@ -17,6 +17,8 @@ namespace EngineCore
 		SmallWorld* CreateSmallWorld();
 
 		World* OpenWorld(string filename);
+		SmallWorld* OpenSmallWorld(string filename);
+
 		void CloseWorldByID(uint32_t id);
 		void CloseWorld(BaseWorld* wrld){CloseWorldByID(wrld->GetID());}
 

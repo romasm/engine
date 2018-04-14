@@ -23,12 +23,10 @@ function MainWindow:Init()
 
     self.filterOpen = dlgFilter()
 	self.filterOpen:Add("Scene", "*.mls")
-	self.filterOpen:Add("Packed scene", "*.mlp")
 	self.filterOpen:Add("All files", "*.*")
 
     self.filterSave = dlgFilter()
 	self.filterSave:Add("Scene", "*.mls")
-	self.filterSave:Add("Packed scene", "*.mlp")
     
 	self.mainwin = CoreGui.SysWindows.Create()
     
@@ -198,8 +196,8 @@ function MainWindow:FileMenuClick(btn, ev)
         end
 
     elseif ev.id == "tb_open" then
-        local res = dlgOpenFile(self.mainwin:GetHWND(), "Open scene", self.filterOpen)
-        if res == "" then return true end
+		local res = dlgOpenFolder(self.mainwin:GetHWND(), "Open scene") -- self.filterOpen
+		if res == "" then return true end
         SceneMgr:LoadWorld(res)
 
     elseif ev.id == "tb_save" then

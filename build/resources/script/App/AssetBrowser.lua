@@ -371,10 +371,11 @@ end
 function AssetBrowser:InitPreviewWorld()
     local worldmgr = GetWorldMgr()
     
-    self.previewWorld = worldmgr:CreateSmallWorld()
-    -- TODO: set sky
+	-- TODO: set sky
+	--self.previewWorld = worldmgr:CreateSmallWorld()
+	self.previewWorld = worldmgr:OpenSmallWorld("../content/preview_scene.mls")
     
-    if not self.previewWorld then 
+	if not self.previewWorld then 
         error("Cant generate preview image for material " .. filename)
         return
     end

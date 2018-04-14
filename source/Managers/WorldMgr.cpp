@@ -20,6 +20,7 @@ void WorldMgr::RegLuaClass()
 			.addFunction("CreateWorld", &WorldMgr::CreateWorld)
 			.addFunction("CreateSmallWorld", &WorldMgr::CreateSmallWorld)
 			.addFunction("OpenWorld", &WorldMgr::OpenWorld)
+			.addFunction("OpenSmallWorld", &WorldMgr::OpenSmallWorld)
 			.addFunction("CloseWorld", &WorldMgr::CloseWorld)
 			.addFunction("CloseWorldByID", &WorldMgr::CloseWorldByID)
 		.endClass();
@@ -109,6 +110,19 @@ World* WorldMgr::OpenWorld(string filename)
 	regWorld(world);
 
 	if(!world->Init(filename))
+	{
+		CloseWorldByID(world->GetID());
+		return nullptr;
+	}
+	return world;
+}
+
+SmallWorld* WorldMgr::OpenSmallWorld(string filename)
+{
+	SmallWorld* world = new SmallWorld(nextID);
+	regWorld(world);
+
+	if (!world->Init(filename))
 	{
 		CloseWorldByID(world->GetID());
 		return nullptr;

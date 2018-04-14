@@ -396,7 +396,7 @@ void EnvProbSystem::UpdateProps(Entity e)
 
 string EnvProbSystem::GetProbFileName(string& probName) const
 {
-	return RemoveExtension(world->GetWorldName()) + ENVPROBS_SUBFOLDER + probName + EXT_TEXTURE;
+	return world->GetWorldName() + ENVPROBS_SUBFOLDER + probName + EXT_TEXTURE;
 }
 
 bool EnvProbSystem::Bake(Entity e)
@@ -497,7 +497,7 @@ bool EnvProbSystem::Bake(Entity e)
 	
 	// TODO: save async 
 	// TEMP
-	string envPath = RemoveExtension(world->GetWorldName()) + ENVPROBS_SUBFOLDER_NOSLASH;
+	string envPath = world->GetWorldName() + ENVPROBS_SUBFOLDER_NOSLASH;
 	if(!FileIO::IsExist(envPath))
 		FileIO::CreateDir(envPath);
 

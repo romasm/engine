@@ -81,9 +81,7 @@ bool BaseWorld::Init(string filename)
 		ERR("Can\'t load world %s", filename.data());
 		return false;
 	}
-
-	initMainEntities(header);
-
+	
 	m_world_timer.Start();
 
 	giMgr->ReloadGIData();
@@ -104,9 +102,7 @@ bool BaseWorld::Init()
 	header.free_cam_pos = XMVectorZero();
 	header.free_cam_rot = XMVectorZero();
 	header.env_rot = XMVectorZero();
-
-	initMainEntities(header);
-
+	
 	m_world_timer.Start();
 
 	giMgr->ReloadGIData();
@@ -296,8 +292,10 @@ void BaseWorld::SetEntityEnable(Entity e, bool enable, bool noCamera)
 
 bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 {
+	string worldDataFile = filename + FILE_WORLD_DATA;
+
 	uint32_t data_size = 0;
-	unique_ptr<uint8_t> data(FileIO::ReadFileData(filename, &data_size));
+	unique_ptr<uint8_t> data(FileIO::ReadFileData(worldDataFile, &data_size));
 	uint8_t* t_data = data.get();
 
 	if(!t_data)
@@ -401,43 +399,23 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 	m_transformSystem->PostLoadParentsResolve();
 
 #ifdef _EDITOR
-	codeMgr.LoadFromFile(filename);
+	string codeDataFile = filename + FILE_CODE_DATA;
+	codeMgr.LoadFromFile(codeDataFile);
 #endif
 
 	return true;
 }
 
-void BaseWorld::initMainEntities(WorldHeader& header)
-{
-	envName = header.env_name;
-	
-	/*skyEP = CreateNamedEntity("skydome");
-	m_transformSystem->AddComponent(skyEP);
-	m_transformSystem->SetPosition_L3F(skyEP, 0, 0, 0);
-	m_transformSystem->SetRotationPYR_L(skyEP, Vector3(header.env_rot));
-
-	const float far_clip = CONFIG(float, cam_far_clip);
-	const float sky_scale = far_clip * 0.95f;
-	m_transformSystem->SetScale_L3F(skyEP, sky_scale, sky_scale, sky_scale);
-
-	m_staticMeshSystem->AddComponent(skyEP);
-	m_staticMeshSystem->SetMesh(skyEP, ENV_MESH);
-	string sky_mat = PATH_ENVS;
-	sky_mat += header.env_name;
-	sky_mat += EXT_MATERIAL;
-	m_staticMeshSystem->SetMaterial(skyEP, 0, sky_mat);
-
-	m_envProbSystem->AddComponent(skyEP);
-	m_envProbSystem->SetNearClip(skyEP, 1.0f);
-	m_envProbSystem->SetFarClip(skyEP, far_clip);
-	m_envProbSystem->SetPriority(skyEP, ENVPROBS_PRIORITY_ALWAYS);
-	m_envProbSystem->SetQuality(skyEP, EnvProbQuality::EP_HIGH);*/
-}
-
 bool BaseWorld::saveWorld(string& filename)
 {
+	if (!FileIO::IsExist(filename))
+		if (!FileIO::CreateDir(filename))
+			return false;
+
+	string worldDataFile = filename + FILE_WORLD_DATA;
+
 	ofstream file;
-	file.open(filename, std::ios::trunc | std::ios::binary );
+	file.open(worldDataFile, std::ios::trunc | std::ios::binary );
 	if(!file.is_open())
 		return false;
 
@@ -446,8 +424,6 @@ bool BaseWorld::saveWorld(string& filename)
 	// header
 	WorldHeader header;
 	header.version = WORLD_FILE_VERSION;
-	strcpy_s(header.env_name, envName.data());
-	//header.env_rot = m_transformSystem->GetRotationPYR_W(skyEP);
 
 	Entity editorCamera = GetEntityByName(EDITOR_TYPE "Camera");
 	if(!editorCamera.isnull())
@@ -573,7 +549,8 @@ bool BaseWorld::saveWorld(string& filename)
 	file.close();
 
 #ifdef _EDITOR
-	codeMgr.DumpToFile(filename);
+	string codeDataFile = filename + FILE_CODE_DATA;
+	codeMgr.DumpToFile(codeDataFile);
 #endif
 
 	return true;

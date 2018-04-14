@@ -95,7 +95,7 @@ bool GIMgr::ReloadGIData()
 {
 	DropGIData();
 
-	string giPath = RemoveExtension(world->GetWorldName()) + GI_VOLUME;
+	string giPath = world->GetWorldName() + GI_VOLUME;
 
 #ifdef _EDITOR
 	sgVolume = TexMgr::Get()->GetResource(giPath, true);
