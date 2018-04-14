@@ -75,15 +75,15 @@ cbuffer configBuffer : register(b1)
 	ConfigParams configs;     
 };
 
-cbuffer giData : register(b2)
+cbuffer lightsCount : register(b2)
+{
+	LightsCount g_lightCount;
+};
+
+cbuffer giData : register(b3)
 {
 	GISampleData g_giSampleData;
-};
-   
-cbuffer lightsCount : register(b3)   
-{ 
-	LightsCount g_lightCount; 
-};      
+};   
 
 #include "../common/ibl_helpers.hlsl"         
 #include "../common/sg_helpers.hlsl"         

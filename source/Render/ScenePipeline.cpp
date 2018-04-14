@@ -978,12 +978,14 @@ void ScenePipeline::OpaqueDefferedStage()
 	srvs[10] = rt_AO->GetShaderResourceView(0);
 	srvs[11] = rt_SSR->GetShaderResourceView(0);
 	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
-	srvs[13] = giMgr->GetGIVolumeSRV();
-			
-	Render::CSSetShaderResources(0, 14, srvs);
-
+	srvs[13] = nullptr;
+	
 	if (!isLightweight)
 	{
+		srvs[13] = giMgr->GetGIVolumeSRV();
+
+		Render::CSSetShaderResources(0, 14, srvs);
+
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
 		Render::CSSetShaderResources(14, 1, &shadowBuffer);
 
@@ -991,9 +993,11 @@ void ScenePipeline::OpaqueDefferedStage()
 	}
 	else
 	{
+		Render::CSSetShaderResources(0, 13, srvs);
+
 		ZeroMemory(&lightsCount, sizeof(lightsCount));
 
-		uint32_t structed_offset = 14;
+		uint32_t structed_offset = 13;
 		render_mgr->envProbMgr->BindEnvProbs(true, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
 
 		Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
@@ -1001,11 +1005,14 @@ void ScenePipeline::OpaqueDefferedStage()
 	
 	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
 	Render::CSSetConstantBuffers(1, 1, &defferedConfigBuffer); 
-	
-	auto giSampleData = giMgr->GetGISampleData();
-	Render::CSSetConstantBuffers(2, 1, &giSampleData);
 
-	Render::CSSetConstantBuffers(3, 1, &lightsPerTileCount); 
+	Render::CSSetConstantBuffers(2, 1, &lightsPerTileCount);
+
+	if (!isLightweight)
+	{
+		auto giSampleData = giMgr->GetGISampleData();
+		Render::CSSetConstantBuffers(3, 1, &giSampleData);
+	}
 		
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
 	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );

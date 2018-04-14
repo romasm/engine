@@ -36,15 +36,13 @@ Texture2D <float4> SSRTexture : register(t11);
 
 Texture2D g_envbrdfLUT : register(t12);
 
-Texture3D g_giVolume : register(t13);
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t13);
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t14);
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t15);
 
-TextureCubeArray <float4> g_hqEnvProbsArray: register(t14);
-TextureCubeArray <float4> g_sqEnvProbsArray: register(t15);
-TextureCubeArray <float4> g_lqEnvProbsArray: register(t16);
-
-StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t17);
-StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t18);
-StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t19);
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t16);
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t17);
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t18);
 
 
 cbuffer configBuffer : register(b1)
@@ -52,18 +50,12 @@ cbuffer configBuffer : register(b1)
 	ConfigParams configs;
 };
 
-cbuffer giData : register(b2)
-{
-	GISampleData g_giSampleData;
-};
-
-cbuffer lightsCount : register(b3)
+cbuffer lightsCount : register(b2)
 {
 	LightsCount g_lightCount;
 };
 
 #include "../common/ibl_helpers.hlsl" 
-#include "../common/sg_helpers.hlsl"   
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
@@ -98,16 +90,13 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	float4 envProbSpecular = 0;
 	float4 envProbDiffuse = 0;
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
-
-	// SG
-	float4 sgGI = EvaluateSGIndirect(gbuffer);
-
+	
 	// SSR
 	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
 
 	// OUTPUT
-	float3 diffuse = (sgGI.rgb + envProbDiffuse.rgb) * configs.indirDiff;
+	float3 diffuse = envProbDiffuse.rgb * configs.indirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec;
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
