@@ -1,11 +1,11 @@
-import
-{
-	filePath = '../resources/meshes/null_mesh.fbx'
-	version = '101'
-	fileDate = '1511721986'
-}
 mesh
 {
-	resourceName = '../resources/meshes/null_mesh'
 	isSkinnedMesh = 'true'
+	resourceName = '../resources/meshes/null_mesh'
+}
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/null_mesh.fbx'
 }

@@ -25,7 +25,7 @@ return GuiMenu({
             id = "vp_create_sub",
     
             width = 135,
-            height = 125, 
+            height = 150, 
     
             offset = {x = 250, y = -25},
 
@@ -62,6 +62,13 @@ return GuiMenu({
                 id = "vp_player",
                 top = 100,
                 text = {str = "Player",},
+            }),
+
+            GuiButton({
+                styles = {GuiStyles.menu_button_default,},
+                id = "vp_envprob",
+                top = 125,
+                text = {str = "EnvProb",},
             }),
         }),
     }),

@@ -106,7 +106,9 @@ function TransformControls:Init( world )
 
     self.currentPos = Vector3.Zero
     self.currentRot = Quaternion.Identity
-    self.currentScale = 0
+	self.currentScale = 0
+
+	self.moveAcc = Vector3.Zero
 end
 
 function TransformControls:CreatePart()
@@ -335,14 +337,36 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
 
             move = Vector3.Sub(toP, fromP)
             
-        end
-
-        self.TransformSy:AddPosition_L(self.Ccontrol, move)
-        self.currentPos = self.TransformSy:GetPosition_L(self.Ccontrol)
-        
-        for i, ent in ipairs(selectionSet) do
-			self.TransformSy:AddPosition_W(ent, move)
 		end
+
+		-- temp
+		self.moveAcc = self.moveAcc + move
+
+		local oldPos = self.TransformSy:GetPosition_L(self.Ccontrol)
+		local newPos = oldPos + self.moveAcc
+
+		local snap = Vector3(0.5, 0.5, 0.5)
+
+		newPos = newPos / snap
+
+		newPos.x = self.moveAcc.x > 0 and math.floor(newPos.x) or math.ceil(newPos.x)
+		newPos.y = self.moveAcc.y > 0 and math.floor(newPos.y) or math.ceil(newPos.y)
+		newPos.z = self.moveAcc.z > 0 and math.floor(newPos.z) or math.ceil(newPos.z)
+
+		newPos = newPos * snap
+
+		if newPos ~= oldPos then
+			self.TransformSy:SetPosition_L(self.Ccontrol, newPos)
+			self.currentPos = newPos
+        
+			local deltaMove = newPos - oldPos
+
+			for i, ent in ipairs(selectionSet) do
+				self.TransformSy:AddPosition_W(ent, deltaMove)
+			end
+
+			self.moveAcc = Vector3.Zero
+		end		
 
     elseif self.mode == TRANSFORM_MODE.ROT then
         local normal = Vector3.Zero

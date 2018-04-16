@@ -413,8 +413,12 @@ function Viewport:MenuClick(ent, ev) -- to history
         local player = EntityTypes.TestPlayer(self.lua_world.world)
         player:Rename("Player0")
         self:PlaceAndSelect(player.ent, self.prev_coords)
+		
+	elseif ev.id == "vp_envprob" then
+		local light = EntityTypes.EnvProb(self.lua_world.world)
+		self:PlaceAndSelect(light.ent, self.prev_coords)
 
-     elseif ev.id == "vp_newentity" then
+	elseif ev.id == "vp_newentity" then
         local test_ent = EntityTypes.BaseEntity(self.lua_world.world)
         test_ent.world:SetEntityType(test_ent.ent, "Custom")
         test_ent.transformSys:AddComponent(test_ent.ent)
