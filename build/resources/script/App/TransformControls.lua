@@ -99,11 +99,11 @@ function TransformControls:Init( world )
     self.hoverControl = ""
     self.active = false
     
-	self.isMoveSnaped = false
+	self.isMoveSnapped = false
 	self.isMoveLocal = false
 	self.moveGridSize = Vector3(1,1,1)
     
-	self.isRotSnaped = false
+	self.isRotSnapped = false
 	self.isRotLocal = false
 	self.rotGridSize = 1.0
 
@@ -351,52 +351,52 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             
 		end
 
-		-- snaping
+		-- Snapping
 		self.moveAcc = self.moveAcc + move
 		
 		local oldPos = self.TransformSy:GetPosition_L(self.Ccontrol)
 		local newPos = oldPos + self.moveAcc
 		
-		local snapedNewPos = newPos
+		local snappedNewPos = newPos
 
-		if self.isMoveSnaped then -- TODO: wrong
+		if self.isMoveSnapped then -- TODO: wrong
 			if self.isMoveLocal then
-				local snapedMove = math.floor(self.moveAcc:Length() / self.moveGridSize.x) * self.moveGridSize.x
+				local SnappedMove = math.floor(self.moveAcc:Length() / self.moveGridSize.x) * self.moveGridSize.x
 
 				local moveNormal = self.moveAcc
 				moveNormal:Normalize()
 
-				snapedNewPos = oldPos + Vector3.MulScalar(moveNormal, snapedMove)
+				snappedNewPos = oldPos + Vector3.MulScalar(moveNormal, SnappedMove)
 
 			else
-				snapedNewPos = snapedNewPos / self.moveGridSize
+				snappedNewPos = snappedNewPos / self.moveGridSize
 
 				if self.hoverControl:find("X") then
-					snapedNewPos.x = self.moveAcc.x > 0 and math.floor(snapedNewPos.x) or math.ceil(snapedNewPos.x)
+					snappedNewPos.x = self.moveAcc.x > 0 and math.floor(snappedNewPos.x) or math.ceil(snappedNewPos.x)
 				end
 				if self.hoverControl:find("Y") then
-					snapedNewPos.y = self.moveAcc.y > 0 and math.floor(snapedNewPos.y) or math.ceil(snapedNewPos.y)
+					snappedNewPos.y = self.moveAcc.y > 0 and math.floor(snappedNewPos.y) or math.ceil(snappedNewPos.y)
 				end
 				if self.hoverControl:find("Z") then
-					snapedNewPos.z = self.moveAcc.z > 0 and math.floor(snapedNewPos.z) or math.ceil(snapedNewPos.z)
+					snappedNewPos.z = self.moveAcc.z > 0 and math.floor(snappedNewPos.z) or math.ceil(snappedNewPos.z)
 				end
 
-				snapedNewPos = snapedNewPos * self.moveGridSize
+				snappedNewPos = snappedNewPos * self.moveGridSize
 
 			end
 		end
 
-		if snapedNewPos ~= oldPos then
-			self.TransformSy:SetPosition_L(self.Ccontrol, snapedNewPos)
-			self.currentPos = snapedNewPos
+		if snappedNewPos ~= oldPos then
+			self.TransformSy:SetPosition_L(self.Ccontrol, snappedNewPos)
+			self.currentPos = snappedNewPos
         
-			local deltaMove = snapedNewPos - oldPos
+			local deltaMove = snappedNewPos - oldPos
 			
 			for i, ent in ipairs(selectionSet) do
 				self.TransformSy:AddPosition_W(ent, deltaMove)
 			end
 
-			self.moveAcc = newPos - snapedNewPos
+			self.moveAcc = newPos - snappedNewPos
 		end		
 
     elseif self.mode == TRANSFORM_MODE.ROT then
@@ -516,16 +516,16 @@ function TransformControls:SetRotLocal(lcl)
 	self.isRotLocal = lcl
 end
 
-function TransformControls:SetMoveSnaping(isSnaped)
-	self.isMoveSnaped = isSnaped
+function TransformControls:SetMoveSnapping(isSnapped)
+	self.isMoveSnapped = isSnapped
 end
 
 function TransformControls:SetMoveGrid(gridSize)
 	self.moveGridSize = Vector3(gridSize, gridSize, gridSize)
 end
 
-function TransformControls:SetRotSnaping(isSnaped)
-	self.isRotSnaped = isSnaped
+function TransformControls:SetRotSnapping(isSnapped)
+	self.isRotSnapped = isSnapped
 end
 
 function TransformControls:SetRotGrid(gridSize)

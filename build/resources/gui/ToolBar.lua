@@ -134,11 +134,11 @@ return GuiRect({
 
 		events = {
 			[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-				TransformControls:SetMoveSnaping(true)
+				TransformControls:SetMoveSnapping(true)
 				return true 
 			end,
 			[GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-				TransformControls:SetMoveSnaping(false)
+				TransformControls:SetMoveSnapping(false)
 				return true 
 			end,
 		},
