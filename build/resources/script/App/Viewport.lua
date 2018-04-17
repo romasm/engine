@@ -942,7 +942,7 @@ function Viewport:SetTransform(mode, tools)
         else
             TransformControls:SetMode(TRANSFORM_MODE.MOVE)
         end
-        TransformControls:SetLocal(self.tc_local)
+        TransformControls:SetMoveLocal(self.tc_local)
         TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.MOVE) end
 
@@ -952,13 +952,12 @@ function Viewport:SetTransform(mode, tools)
         else
             TransformControls:SetMode(TRANSFORM_MODE.ROT)
         end
-        TransformControls:SetLocal(self.tc_local)
+        TransformControls:SetRotLocal(self.tc_local)
         TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.ROT) end
 
     elseif mode == TRANSFORM_MODE.SCALE then
         TransformControls:SetMode(TRANSFORM_MODE.SCALE)
-        TransformControls:SetLocal(true)
         TransformControls:UpdateTransform(self.selection_set)
         if tools then Tools:SetTransform(TRANSFORM_MODE.SCALE) end
     end

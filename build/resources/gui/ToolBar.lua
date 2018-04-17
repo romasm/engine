@@ -118,6 +118,30 @@ return GuiRect({
                 return true 
             end,
         },
-    }),
-})
+	}),
+--[[
+	GuiButton({
+		styles = {
+			GuiStyles.tool_button,
+		},
+
+		left = 180,
+
+		icon = {material = GuiMaterials.scale_icon},
+
+		id = 'tool_move_snap',
+		alt = "Move snap",
+
+		events = {
+			[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+				TransformControls:SetMoveSnaping(true)
+				return true 
+			end,
+			[GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
+				TransformControls:SetMoveSnaping(false)
+				return true 
+			end,
+		},
+	}),--]]
+	})
 end

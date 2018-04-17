@@ -97,10 +97,17 @@ function TransformControls:Init( world )
 
     self.mode = TRANSFORM_MODE.NONE
     self.hoverControl = ""
-    self.isLocal = false
     self.active = false
     
-    self.camPos = Vector3.Zero
+	self.isMoveSnaped = false
+	self.isMoveLocal = false
+	self.moveGridSize = Vector3(1,1,1)
+    
+	self.isRotSnaped = false
+	self.isRotLocal = false
+	self.rotGridSize = 1.0
+
+	self.camPos = Vector3.Zero
     self.frustID = 0
     self.farClip = 0
 
@@ -161,7 +168,8 @@ function TransformControls:UpdateTransform(selectionSet)
     self.currentRot:Normalize()
 
     self.TransformSy:SetPosition_L(self.Ccontrol, self.currentPos)
-    if self.isLocal then
+	if (self.isMoveLocal and self.mode == TRANSFORM_MODE.MOVE) or 
+		(self.isRotLocal and self.mode == TRANSFORM_MODE.ROT) or self.mode == TRANSFORM_MODE.SCALE then
         self.TransformSy:SetRotation_L(self.Ccontrol, self.currentRot)
     else 
         self.TransformSy:SetRotationPYR_L3F(self.Ccontrol, 0, 0, 0)
@@ -253,7 +261,7 @@ function TransformControls:CheckHover(ray)
     if self.mode ~= TRANSFORM_MODE.MOVE then
         tempDist = self.VisSy:CollideRaySingleEntity(self.Ccontrol, self.camPos, ray, self.frustID)
         if tempDist >= 0.0 and tempDist < minDist then 
-            self.hoverControl = "CNT" 
+            self.hoverControl = "XZY" 
             minDist = tempDist
         end
     end
@@ -267,7 +275,10 @@ function TransformControls:CheckHover(ray)
     self.MeshSy:GetMaterialObject(self.YZcontrol, 0):SetVectorByID(self.YZColor, 0, SHADERS.PS)
     self.MeshSy:GetMaterialObject(self.Ccontrol, 0):SetVectorByID(self.CColor, 0, SHADERS.PS)
 
-    if self.hoverControl:len() == 0 then return false end
+	if self.hoverControl:len() == 0 then 
+		self.moveAcc = Vector3.Zero
+		return false 
+	end
     
     if self.hoverControl == "X" then
         self.MeshSy:GetMaterialObject(self.Xcontrol, 0):SetVectorByID(self.hoverColor, 0, SHADERS.PS)
@@ -281,7 +292,7 @@ function TransformControls:CheckHover(ray)
         self.MeshSy:GetMaterialObject(self.XZcontrol, 0):SetVectorByID(self.hoverColor, 0, SHADERS.PS) 
     elseif self.hoverControl == "YZ" then
         self.MeshSy:GetMaterialObject(self.YZcontrol, 0):SetVectorByID(self.hoverColor, 0, SHADERS.PS) 
-    elseif self.hoverControl == "CNT" then
+    elseif self.hoverControl == "XZY" then
         self.MeshSy:GetMaterialObject(self.Ccontrol, 0):SetVectorByID(self.hoverColor, 0, SHADERS.PS) 
     end
     
@@ -307,9 +318,10 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end
  
             local dir = axis
-            if self.isLocal then
-                dir = Vector3.Rotate(dir, self.currentRot)
-            end
+            if self.isMoveLocal then
+				dir = Vector3.Rotate(dir, self.currentRot)
+				dir:Normalize()
+			end
 
             local normal = dir:Cross( dir:Cross(viewVect) )
             normal:Normalize()
@@ -327,7 +339,7 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             elseif self.hoverControl == "YZ" then axis = Vector3(1,0,0) end
             
             local normal = axis
-            if self.isLocal then
+			if self.isMoveLocal then
                 normal = Vector3.Rotate(normal, self.currentRot)
             end
 
@@ -339,33 +351,52 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             
 		end
 
-		-- temp
+		-- snaping
 		self.moveAcc = self.moveAcc + move
-
+		
 		local oldPos = self.TransformSy:GetPosition_L(self.Ccontrol)
 		local newPos = oldPos + self.moveAcc
+		
+		local snapedNewPos = newPos
 
-		local snap = Vector3(0.5, 0.5, 0.5)
+		if self.isMoveSnaped then -- TODO: wrong
+			if self.isMoveLocal then
+				local snapedMove = math.floor(self.moveAcc:Length() / self.moveGridSize.x) * self.moveGridSize.x
 
-		newPos = newPos / snap
+				local moveNormal = self.moveAcc
+				moveNormal:Normalize()
 
-		newPos.x = self.moveAcc.x > 0 and math.floor(newPos.x) or math.ceil(newPos.x)
-		newPos.y = self.moveAcc.y > 0 and math.floor(newPos.y) or math.ceil(newPos.y)
-		newPos.z = self.moveAcc.z > 0 and math.floor(newPos.z) or math.ceil(newPos.z)
+				snapedNewPos = oldPos + Vector3.MulScalar(moveNormal, snapedMove)
 
-		newPos = newPos * snap
+			else
+				snapedNewPos = snapedNewPos / self.moveGridSize
 
-		if newPos ~= oldPos then
-			self.TransformSy:SetPosition_L(self.Ccontrol, newPos)
-			self.currentPos = newPos
+				if self.hoverControl:find("X") then
+					snapedNewPos.x = self.moveAcc.x > 0 and math.floor(snapedNewPos.x) or math.ceil(snapedNewPos.x)
+				end
+				if self.hoverControl:find("Y") then
+					snapedNewPos.y = self.moveAcc.y > 0 and math.floor(snapedNewPos.y) or math.ceil(snapedNewPos.y)
+				end
+				if self.hoverControl:find("Z") then
+					snapedNewPos.z = self.moveAcc.z > 0 and math.floor(snapedNewPos.z) or math.ceil(snapedNewPos.z)
+				end
+
+				snapedNewPos = snapedNewPos * self.moveGridSize
+
+			end
+		end
+
+		if snapedNewPos ~= oldPos then
+			self.TransformSy:SetPosition_L(self.Ccontrol, snapedNewPos)
+			self.currentPos = snapedNewPos
         
-			local deltaMove = newPos - oldPos
-
+			local deltaMove = snapedNewPos - oldPos
+			
 			for i, ent in ipairs(selectionSet) do
 				self.TransformSy:AddPosition_W(ent, deltaMove)
 			end
 
-			self.moveAcc = Vector3.Zero
+			self.moveAcc = newPos - snapedNewPos
 		end		
 
     elseif self.mode == TRANSFORM_MODE.ROT then
@@ -376,7 +407,7 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
             if self.hoverControl == "Y" then axis = Vector3(0,1,0)
             elseif self.hoverControl == "Z" then axis = Vector3(0,0,1) end 
 
-            if self.isLocal then
+            if self.isRotLocal then
                 normal = Vector3.Rotate(axis, self.currentRot)
             else
                 normal = axis
@@ -397,7 +428,7 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
         local rotDirTest = fromP:Cross(toP)
         if normal:Dot(rotDirTest) < 0 then angle = -angle end
 
-        if self.isLocal then
+        if self.isRotLocal then
             self.TransformSy:AddRotationAxis_L(self.Ccontrol, normal, angle)
             self.currentRot = self.TransformSy:GetRotation_L(self.Ccontrol)
         end
@@ -477,8 +508,28 @@ function TransformControls:Activate()
     self:SetMode(self.mode)
 end
 
-function TransformControls:SetLocal(lcl)
-    self.isLocal = lcl
+function TransformControls:SetMoveLocal(lcl)
+	self.isMoveLocal = lcl
+end
+
+function TransformControls:SetRotLocal(lcl)
+	self.isRotLocal = lcl
+end
+
+function TransformControls:SetMoveSnaping(isSnaped)
+	self.isMoveSnaped = isSnaped
+end
+
+function TransformControls:SetMoveGrid(gridSize)
+	self.moveGridSize = Vector3(gridSize, gridSize, gridSize)
+end
+
+function TransformControls:SetRotSnaping(isSnaped)
+	self.isRotSnaped = isSnaped
+end
+
+function TransformControls:SetRotGrid(gridSize)
+	self.rotGridSize = gridSize
 end
 
 function TransformControls:SetMode(m)

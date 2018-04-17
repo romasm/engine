@@ -32,12 +32,10 @@ function Tools.reloadToolbar()
     Tools.tool_scale = tool_scale:GetInherited()
 
     if not Viewport or not Viewport.lua_world then
-        Tools:DeactivateAll()
-    else
-        Tools:SetTransform(Viewport.lua_world.world.transformControls.mode)
-    end
+		Tools:DeactivateAll()
+	end
 
-    local Grect = root:GetRectAbsolute()
+	local Grect = root:GetRectAbsolute()
     
     if Tools.left_side_area then
         Tools.left_side_area.entity.top = top_rect.b
