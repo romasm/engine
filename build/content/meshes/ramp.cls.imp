@@ -1,0 +1,10 @@
+import
+{
+	fileDate = '1523902381'
+	version = '101'
+	filePath = 'D:\EngineGit\build\content\meshes\ramp.fbx'
+}
+collision
+{
+	resourceName = 'D:\EngineGit\build\content\meshes\ramp'
+}

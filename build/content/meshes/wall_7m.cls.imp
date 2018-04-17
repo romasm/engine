@@ -1,0 +1,10 @@
+import
+{
+	fileDate = '1523902372'
+	version = '101'
+	filePath = 'D:\EngineGit\build\content\meshes\wall_7m.fbx'
+}
+collision
+{
+	resourceName = 'D:\EngineGit\build\content\meshes\wall_7m'
+}

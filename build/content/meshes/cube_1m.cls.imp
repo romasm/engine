@@ -1,0 +1,10 @@
+import
+{
+	fileDate = '1523901103'
+	version = '101'
+	filePath = 'D:\EngineGit\build\content\meshes\cube_1m.fbx'
+}
+collision
+{
+	resourceName = 'D:\EngineGit\build\content\meshes\cube_1m'
+}

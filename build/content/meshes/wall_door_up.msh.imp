@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = 'D:\EngineGit\build\content\meshes\wall_door_up'
+}
+import
+{
+	fileDate = '1523907813'
+	version = '101'
+	filePath = 'D:\EngineGit\build\content\meshes\wall_door_up.FBX'
+}
