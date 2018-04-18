@@ -162,8 +162,10 @@ namespace EngineCore
 		bool AddScale_W3F(Entity e, float x, float y, float z);
 		bool AddScale_W(Entity e, Vector3& s);
 		
-		bool AddTransform_L(Entity e, Matrix& mat);
-		bool AddTransform_W(Entity e, Matrix& mat);
+		bool PostTransform_L(Entity e, Matrix& mat);
+		bool PostTransform_W(Entity e, Matrix& mat);
+		bool PreTransform_L(Entity e, Matrix& mat);
+		bool PreTransform_W(Entity e, Matrix& mat);
 
 		ALIGNED_ALLOCATION
 
@@ -222,8 +224,11 @@ namespace EngineCore
 					.addFunction("AddPosition_W", &TransformSystem::AddPosition_W)
 					.addFunction("AddRotation_W", &TransformSystem::AddRotation_W)
 					.addFunction("AddScale_W", &TransformSystem::AddScale_W)
-					.addFunction("AddTransform_L", &TransformSystem::AddTransform_L)
-					.addFunction("AddTransform_W", &TransformSystem::AddTransform_W)
+
+					.addFunction("PostTransform_L", &TransformSystem::PostTransform_L)
+					.addFunction("PostTransform_W", &TransformSystem::PostTransform_W)
+					.addFunction("PreTransform_L", &TransformSystem::PreTransform_L)
+					.addFunction("PreTransform_W", &TransformSystem::PreTransform_W)
 
 					.addFunction("Attach", &TransformSystem::Attach)
 					.addFunction("Detach", &TransformSystem::Detach)

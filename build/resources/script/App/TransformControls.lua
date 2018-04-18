@@ -102,10 +102,12 @@ function TransformControls:Init( world )
 	self.isMoveSnapped = false
 	self.isMoveLocal = false
 	self.moveGridSize = Vector3(1,1,1)
+	self.moveAcc = Vector3.Zero
     
 	self.isRotSnapped = false
 	self.isRotLocal = false
-	self.rotGridSize = 1.0
+	self.rotGridSize = 0.785398
+	self.rotAcc = 0
 
 	self.camPos = Vector3.Zero
     self.frustID = 0
@@ -114,8 +116,6 @@ function TransformControls:Init( world )
     self.currentPos = Vector3.Zero
     self.currentRot = Quaternion.Identity
 	self.currentScale = 0
-
-	self.moveAcc = Vector3.Zero
 end
 
 function TransformControls:CreatePart()
@@ -277,6 +277,7 @@ function TransformControls:CheckHover(ray)
 
 	if self.hoverControl:len() == 0 then 
 		self.moveAcc = Vector3.Zero
+		self.rotAcc = 0
 		return false 
 	end
     
@@ -361,13 +362,15 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
 
 		if self.isMoveSnapped then -- TODO: wrong
 			if self.isMoveLocal then
-				local SnappedMove = math.floor(self.moveAcc:Length() / self.moveGridSize.x) * self.moveGridSize.x
+				error("TODO: local snapping is unsupported")
+
+				--[[local SnappedMove = math.floor(self.moveAcc:Length() / self.moveGridSize.x) * self.moveGridSize.x
 
 				local moveNormal = self.moveAcc
 				moveNormal:Normalize()
 
-				snappedNewPos = oldPos + Vector3.MulScalar(moveNormal, SnappedMove)
-
+				snappedNewPos = oldPos + Vector3.MulScalar(moveNormal, SnappedMove)--]]
+			
 			else
 				snappedNewPos = snappedNewPos / self.moveGridSize
 
@@ -427,18 +430,35 @@ function TransformControls:ApplyTransform(rayNext, rayPrev, selectionSet)
         local angle = Vector3.AngleBetween(fromP, toP)
         local rotDirTest = fromP:Cross(toP)
         if normal:Dot(rotDirTest) < 0 then angle = -angle end
+		
+		-- snapping
+		self.rotAcc = self.rotAcc + angle
+		local snappedAngle = self.rotAcc
 
-        if self.isRotLocal then
-            self.TransformSy:AddRotationAxis_L(self.Ccontrol, normal, angle)
-            self.currentRot = self.TransformSy:GetRotation_L(self.Ccontrol)
-        end
-        
-        -- TODO: group rotation
-        for i, ent in ipairs(selectionSet) do
-			self.TransformSy:AddRotationAxis_W(ent, normal, angle)
-		end  
+		if self.isRotSnapped then
+			snappedAngle = snappedAngle / self.rotGridSize
+			snappedAngle = self.rotAcc > 0 and math.floor(snappedAngle) or math.ceil(snappedAngle)
+			snappedAngle = snappedAngle * self.rotGridSize
+		end
 
-    elseif self.mode == TRANSFORM_MODE.SCALE then
+		if snappedAngle ~= 0 then
+			if self.isRotLocal then
+				self.TransformSy:AddRotationAxis_L(self.Ccontrol, normal, snappedAngle)
+				self.currentRot = self.TransformSy:GetRotation_L(self.Ccontrol)
+			end
+       
+			local rotMat = Matrix.CreateTranslation(-self.currentPos)
+			rotMat = rotMat * Matrix.CreateRotationAxis(normal, snappedAngle)
+			rotMat = rotMat * Matrix.CreateTranslation(self.currentPos)
+		
+			for i, ent in ipairs(selectionSet) do
+				self.TransformSy:PostTransform_W(ent, rotMat)
+			end  
+						
+			self.rotAcc = self.rotAcc - snappedAngle
+		end
+
+	elseif self.mode == TRANSFORM_MODE.SCALE then
         local scale = Vector3.Zero
         local plane = Vector4.Zero
         local dir = Vector3.Zero

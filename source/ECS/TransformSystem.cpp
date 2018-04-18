@@ -527,7 +527,36 @@ bool TransformSystem::AddScale_W(Entity e, Vector3& s)
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddTransform_L(Entity e, Matrix& mat)
+bool TransformSystem::PostTransform_L(Entity e, Matrix& mat)
+{
+	GET_COMPONENT(false)
+	const XMMATRIX* localMat = sceneGraph->GetLocalTransformation(comp.nodeID);
+	sceneGraph->SetTransformation(comp.nodeID, DirectX::XMMatrixMultiply(*localMat, mat));
+	world->SetDirty(e);
+	return true;
+}
+
+bool TransformSystem::PostTransform_W(Entity e, Matrix& mat)
+{
+	GET_COMPONENT(false)
+
+	const XMMATRIX* worldMat = sceneGraph->GetWorldTransformation(comp.nodeID);
+	XMMATRIX matrix = DirectX::XMMatrixMultiply(*worldMat, mat);
+
+	auto parent = sceneGraph->GetParent(comp.nodeID);
+	if(parent != SCENEGRAPH_NULL_ID)
+	{
+		const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(parent);
+		XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);
+		matrix = DirectX::XMMatrixMultiply( matrix, invParent );
+	}
+
+	sceneGraph->SetTransformation(comp.nodeID, matrix);
+	world->SetDirty(e);
+	return true;
+}
+
+bool TransformSystem::PreTransform_L(Entity e, Matrix& mat)
 {
 	GET_COMPONENT(false)
 	const XMMATRIX* localMat = sceneGraph->GetLocalTransformation(comp.nodeID);
@@ -536,7 +565,7 @@ bool TransformSystem::AddTransform_L(Entity e, Matrix& mat)
 	return true;
 }
 
-bool TransformSystem::AddTransform_W(Entity e, Matrix& mat)
+bool TransformSystem::PreTransform_W(Entity e, Matrix& mat)
 {
 	GET_COMPONENT(false)
 
@@ -544,11 +573,11 @@ bool TransformSystem::AddTransform_W(Entity e, Matrix& mat)
 	XMMATRIX matrix = DirectX::XMMatrixMultiply(mat, *worldMat);
 
 	auto parent = sceneGraph->GetParent(comp.nodeID);
-	if(parent != SCENEGRAPH_NULL_ID)
+	if (parent != SCENEGRAPH_NULL_ID)
 	{
 		const XMMATRIX* parentMatrix = sceneGraph->GetWorldTransformation(parent);
 		XMMATRIX invParent = XMMatrixInverse(nullptr, *parentMatrix);
-		matrix = DirectX::XMMatrixMultiply( matrix, invParent );
+		matrix = DirectX::XMMatrixMultiply(matrix, invParent);
 	}
 
 	sceneGraph->SetTransformation(comp.nodeID, matrix);

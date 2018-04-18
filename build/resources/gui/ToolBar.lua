@@ -119,8 +119,8 @@ return GuiRect({
             end,
         },
 	}),
---[[
-	GuiButton({
+
+	--[[GuiButton({
 		styles = {
 			GuiStyles.tool_button,
 		},
