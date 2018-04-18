@@ -87,7 +87,7 @@ namespace EngineCore
 			m_size--;
 			std::swap((*it), m_data[m_size]);
 		}
-		inline void	erase_and_pop_back( const T& val ) 
+		inline void	erase_and_pop_back_by_value( const T& val ) 
 		{
 			iterator it = find( val );
 			if(it != end()) erase_and_pop_back( it );
@@ -258,7 +258,7 @@ namespace EngineCore
 			m_size--;
 			std::swap((*it), m_data[m_size]);
 		}
-		inline void	erase_and_pop_back( const T& val ) 
+		inline void	erase_and_pop_back_by_value( const T& val ) 
 		{
 			iterator it = find( val );
 			if(it != end()) erase_and_pop_back( it );
@@ -410,7 +410,7 @@ namespace EngineCore
 			m_size--;
 			std::swap((*it), m_data[m_size]);
 		}
-		inline void	erase_and_pop_back( const T& val ) 
+		inline void	erase_and_pop_back_by_value( const T& val )
 		{
 			iterator it = find( val );
 			if(it != end()) erase_and_pop_back( it );
@@ -618,7 +618,7 @@ namespace EngineCore
 			m_size--;
 			std::swap(m_data[getIdx(i)], m_data[getIdx(m_size)]);
 		}
-		inline void	erase_and_pop_back( const T& val ) 
+		inline void	erase_and_pop_back_by_value( const T& val )
 		{
 			size_t it = find( val );
 			if(it != S) erase_and_pop_back( it );
@@ -797,7 +797,7 @@ namespace EngineCore
 			m_size--;
 			std::swap(m_data[getIdx(i)], m_data[getIdx(m_size)]);
 		}
-		inline void	erase_and_pop_back( const T& val ) 
+		inline void	erase_and_pop_back_by_value( const T& val )
 		{
 			size_t it = find( val );
 			if(it != m_capacity) erase_and_pop_back( it );

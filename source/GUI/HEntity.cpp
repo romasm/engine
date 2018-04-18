@@ -772,11 +772,11 @@ bool HEntity::DetachChild(uint32_t e)
 	else
 	{
 		if(unnamed_children)
-			for(auto& i: *unnamed_children)
+			for(auto i: *unnamed_children)
 				if(i->e == e)
 				{
 					removedChild = i;
-					unnamed_children->erase_and_pop_back(i);
+					unnamed_children->erase_and_pop_back_by_value(i);
 					break;
 				}
 		if(!removedChild)

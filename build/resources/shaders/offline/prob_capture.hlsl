@@ -20,6 +20,6 @@ void Capture(uint3 threadID : SV_DispatchThreadID)
 
 	float4 color = linColorAndDepth.SampleLevel(samplerPointClamp, uv, 0);
 	color.a = color.a == 1.0 ? 0.0 : 1.0;
-		
+
 	probFace[pixelID] = color;
 }

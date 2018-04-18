@@ -169,7 +169,7 @@ bool CompareEnvProbs(EnvProbData& first, EnvProbData& second)
 
 bool CompareEnvProbsRenderData(EnvProbRenderData& first, EnvProbRenderData& second)
 {
-	return first.mipsTypeAdressPriority.w >= second.mipsTypeAdressPriority.w;
+	return first.mipsTypeAdressPriority.w > second.mipsTypeAdressPriority.w;
 }
 
 void EnvProbMgr::PrepareEnvProbs()
@@ -211,12 +211,18 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 		if(hasProb != regedProbsPrev.end())
 		{
 			regedProbs.insert(make_pair(prob.probId, hasProb->second));
-			freeProbIndex.erase_and_pop_back(hasProb->second);
+			freeProbIndex[hasProb->second] = -1;
 		}
 		else
 		{
 			regedProbs.insert(make_pair(prob.probId, ENVPROBS_NEED_COPY_KEY));
 		}
+	}
+
+	for (int32_t i = FRAME_COUNT - 1; i >= 0; i--)
+	{
+		if( freeProbIndex[i] == -1)
+			freeProbIndex.erase_and_pop_back(i);
 	}
 
 	D3D11_TEXTURE2D_DESC desc;
@@ -237,7 +243,7 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 		{
 			const int32_t arrayId = freeProbIndex[0];
 			probSlot->second = arrayId;
-			freeProbIndex.erase_and_pop_back(0);
+			freeProbIndex.erase_and_pop_back((size_t)0);
 			
 			auto textureCube = TEXTURE_GETPTR(prob.probId);
 			ID3D11Resource* srcRes = nullptr;

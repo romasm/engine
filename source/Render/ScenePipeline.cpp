@@ -81,6 +81,11 @@ ScenePipeline::ScenePipeline()
 
 	defferedOpaqueCompute = nullptr;
 	defferedConfigBuffer = nullptr;
+
+	width = 0;
+	height = 0;
+	width_pow2 = 0;
+	height_pow2 = 0;
 }
 
 ScenePipeline::~ScenePipeline()
@@ -939,11 +944,11 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
-
-	sp_SSR->Draw();
-
+	
+	//sp_SSR->Draw();
+	
 	g_SSR->blur(rt_SSR, 0, rt_HiZDepth->GetShaderResourceView(0));
-
+	
 	// ao
 	PERF_GPU_TIMESTAMP(_AO);
 

@@ -624,6 +624,16 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		auto uav = probTarget.GetUnorderedAccessView(i);
 		auto srv = probScene->GetLinearAndDepthSRV();
 		
+		// temp
+		/*ScratchImage tempCube;
+		ID3D11Resource* ggggg = nullptr;
+		srv->GetResource(&ggggg);
+		CaptureTexture(Render::Device(), Render::Context(), ggggg, tempCube);
+
+		string envTexNamerrrrrr = GetWorldName() + ENVPROBS_SUBFOLDER + RandomString(4) + "_raw" + EXT_TEXTURE;
+		SaveToDDSFile(tempCube.GetImages(), tempCube.GetImageCount(), tempCube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamerrrrrr).data());*/
+		// temp
+
 		Render::CSSetShaderResources( 0, 1, &srv );
 
 		probCaptureShader->BindUAV( uav );
