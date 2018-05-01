@@ -10,7 +10,7 @@ ShaderMgr::ShaderMgr() : BaseMgr<BaseShader, SHADERS_MAX_COUNT>()
 	resExt = nullptr;
 }
 
-uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback callback)
+uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback callback, onLoadCallback callbackUpdate)
 {
 	if(free_ids.size() == 0)
 	{
@@ -36,6 +36,11 @@ uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback 
 
 	handle.name = name;
 	handle.refcount = 1;
+	
+#ifdef _EDITOR
+	if (callbackUpdate)
+		handle.callbackUpdate = callbackUpdate;
+#endif // _EDITOR
 
 	resource_map.insert(make_pair(name, idx));
 	free_ids.pop_front();

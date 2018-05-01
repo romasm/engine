@@ -32,11 +32,7 @@ ResourceProcessor::ResourceProcessor()
 		importQueue = new RQueueLockfree<ImportSlot>(IMPORT_QUEUE_SIZE);
 		postImportQueue = new RQueueLockfree<ImportSlot>(IMPORT_QUEUE_SIZE);
 #endif
-
-		loaderRunning = true;
-		loadingComplete = true;
-		loader = new thread(&ResourceProcessor::ThreadMain, &(*this));
-		
+				
 		shaderMgr = new ShaderMgr;
 		shaderCodeMgr = new ShaderCodeMgr;
 		fontMgr = new FontMgr;
@@ -47,6 +43,10 @@ ResourceProcessor::ResourceProcessor()
 		skeletonMgr = new SkeletonMgr;
 		animationMgr = new AnimationMgr;
 		collisionMgr = new CollisionMgr;
+
+		loaderRunning = true;
+		loadingComplete = true;
+		loader = new thread(&ResourceProcessor::ThreadMain, &(*this));
 	}
 	else
 		ERR("Only one instance of ResourceProcessor is allowed!");

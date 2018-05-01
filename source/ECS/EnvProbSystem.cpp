@@ -55,7 +55,10 @@ void EnvProbSystem::DeleteComponent(Entity e)
 	auto comp = GetComponent(e);
 	if(!comp)
 		return;
-	TEXTURE_DROP(comp->probId);
+
+	TexMgr::Get()->DeleteResource(comp->probId);
+	comp->probId = TexMgr::nullres;
+
 	components.remove(e.index());
 }
 
@@ -69,7 +72,9 @@ void EnvProbSystem::CopyComponent(Entity src, Entity dest)
 	Deserialize(dest, copyBuffer);
 	
 	auto comp = GetComponent(dest);
-	TEXTURE_DROP(comp->probId);
+
+	TexMgr::Get()->DeleteResource(comp->probId);
+	comp->probId = TexMgr::nullres;
 
 	comp->probName = "";
 	comp->probId = TexMgr::nullres;
@@ -262,7 +267,13 @@ uint32_t EnvProbSystem::Deserialize(Entity e, uint8_t* data)
 	comp->priority = *(uint32_t*)t_data;
 	t_data += sizeof(uint32_t);
 
-	comp->probId = RELOADABLE_TEXTURE(GetProbFileName(comp->probName), true);
+#ifdef _EDITOR
+	BaseWorld* wrl = world;
+	auto func = [wrl, e](uint32_t id, bool status) -> void { wrl->UpdateEnvProbRenderData(e); };
+	comp->probId = TexMgr::Get()->GetResource(GetProbFileName(comp->probName), true, func, func);
+#else
+	comp->probId = TexMgr::Get()->GetResource(GetProbFileName(comp->probName));
+#endif
 
 	return (uint32_t)(t_data - data);
 }
@@ -403,47 +414,47 @@ bool EnvProbSystem::Bake(Entity e)
 {
 	GET_COMPONENT(false)
 
-	if(comp.probName.empty())
-	{
-		comp.probName = RandomString(ENVPROBS_NAME_LENGTH);
-	}
+		if (comp.probName.empty())
+		{
+			comp.probName = RandomString(ENVPROBS_NAME_LENGTH);
+		}
 
 	DXGI_FORMAT fmt = GetFormat(comp.quality);
 	int32_t resolution = GetResolution(comp.quality);
 	uint32_t mipNum = GetMipsCount(comp.quality);
 
-	if( !world->BeginCaptureProb(resolution, fmt, false) )
+	if (!world->BeginCaptureProb(resolution, fmt, false))
 	{
 		ERR("Cant init prob capture");
 		return false;
 	}
-	
+
 	const Matrix localOffset = Matrix::CreateTranslation(comp.offset);
 	Matrix worldTransform = transformSys->GetTransform_W(comp.get_entity());
 	worldTransform = localOffset * worldTransform;
 
 	ID3D11ShaderResourceView* cubemapSRV = world->CaptureProb(worldTransform, comp.nearClip, comp.farClip);
-	
+
 	const uint32_t facesCount = 6 * mipNum;
 	RArray<ScratchImage> i_faces;
 	i_faces.create(facesCount);
 	i_faces.resize(facesCount);
-	
-	for(int i = 0; i < (int)mipNum; i++)
+
+	for (int i = 0; i < (int)mipNum; i++)
 	{
 		int mip_res = resolution / int(pow(2, i));
 		float roughness = pow(float(i) / float(mipNum - 1), 2);
 
 		RenderTarget* mip_rt = new RenderTarget;
-		if(!mip_rt->Init(mip_res, mip_res))
+		if (!mip_rt->Init(mip_res, mip_res))
 		{
 			_CLOSE(mip_rt);
 			return false;
 		}
 
-		for(int j=0; j<6; j++)
+		for (int j = 0; j < 6; j++)
 		{
-			if(!mip_rt->AddRT(fmt))
+			if (!mip_rt->AddRT(fmt))
 			{
 				_CLOSE(mip_rt);
 				return false;
@@ -451,7 +462,7 @@ bool EnvProbSystem::Bake(Entity e)
 		}
 
 		// TODO: to copmute
-		if(i == 0)
+		if (i == 0)
 		{
 			unique_ptr<ScreenPlane> mip_sp(new ScreenPlane(ENVPROBS_COPY_MAT));
 			mip_sp->SetTexture(cubemapSRV, 0);
@@ -476,12 +487,12 @@ bool EnvProbSystem::Bake(Entity e)
 			mip_sp->Draw();
 		}
 
-		for(int j=0; j<6; j++)
+		for (int j = 0; j < 6; j++)
 		{
 			ID3D11Resource* resource = nullptr;
 			mip_rt->GetShaderResourceView(j)->GetResource(&resource);
 
-			if (FAILED( CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i]) ))
+			if (FAILED(CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i])))
 			{
 				_CLOSE(mip_rt);
 				return false;
@@ -489,30 +500,33 @@ bool EnvProbSystem::Bake(Entity e)
 		}
 		_CLOSE(mip_rt);
 	}
-	
+
 	world->EndCaptureProb();
-	
+
 	ScratchImage cube;
 	cube.InitializeCubeFromScratchImages(i_faces.data(), facesCount, mipNum);
-	
+
 	// TODO: save async 
 	// TEMP
 	string envPath = world->GetWorldName() + ENVPROBS_SUBFOLDER_NOSLASH;
-	if(!FileIO::IsExist(envPath))
+	if (!FileIO::IsExist(envPath))
 		FileIO::CreateDir(envPath);
 
 	string envTexName = GetProbFileName(comp.probName);
-	if (FAILED( SaveToDDSFile( cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data() ) ))
+	if (FAILED(SaveToDDSFile(cube.GetImages(), cube.GetImageCount(), cube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexName).data())))
 	{
 		ERR("Cant save environment prob specular file %s !", envTexName.c_str());
 		return false;
 	}
-	
-	comp.needRebake = false;
-	if( comp.probId == TexMgr::nullres )
-		comp.probId = RELOADABLE_TEXTURE(envTexName, true);
 
-	world->UpdateEnvProbRenderData(e);
+	comp.needRebake = false;
+	if (comp.probId == TexMgr::nullres)
+	{
+		BaseWorld* wrl = world;
+		auto func = [wrl, e](uint32_t id, bool status) -> void { wrl->UpdateEnvProbRenderData(e); };
+
+		comp.probId = TexMgr::Get()->GetResource(envTexName, true, func, func);
+	}
 
 	return true;
 }

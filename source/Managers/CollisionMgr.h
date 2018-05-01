@@ -51,7 +51,7 @@ namespace EngineCore
 			instance->CallCallback(newgId, callback, status);
 		}
 		
-		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback)
+		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 		{
 			if(free_ids.size() == 0)
 			{
@@ -65,6 +65,11 @@ namespace EngineCore
 			handle.name = name;
 			handle.resource = null_resource;
 			handle.refcount = 1;
+			
+#ifdef _EDITOR
+			if (callbackUpdate)
+				handle.callbackUpdate = callbackUpdate;
+#endif // _EDITOR
 
 			auto scaleStrN = name.rfind('?');
 			if( scaleStrN != string::npos )

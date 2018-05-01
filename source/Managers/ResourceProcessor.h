@@ -112,9 +112,9 @@ namespace EngineCore
 		void Tick();
 
 		void ThreadMain();
-		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback, bool clone = false);
+		bool QueueLoad(uint32_t id, ResourceType type, onLoadCallback callback = nullptr, bool clone = false);
 
-		bool QueueImport(ImportInfo info, onImportCallback callback, bool clone = false);
+		bool QueueImport(ImportInfo info, onImportCallback callback = nullptr, bool clone = false);
 
 		void AddUpdateJobs();
 		void DeleteUpdateJobs();

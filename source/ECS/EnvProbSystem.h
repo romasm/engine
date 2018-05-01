@@ -112,7 +112,7 @@ namespace EngineCore
 		string GetProbFileName(string& probName) const;
 
 		void UpdateProps(Entity e);
-
+		
 		inline void _AddComponent(Entity e) {AddComponent(e);}
 
 		static void RegLuaClass()

@@ -22,7 +22,8 @@ namespace EngineCore
 			return instance->resource_array[id].name;
 		}
 
-		uint32_t GetResource(string& name, bool reload = false, onLoadCallback callback = nullptr);
+		// callbackUpdate - only for last resource request, overwrite previous
+		uint32_t GetResource(string& name, bool reload = false, onLoadCallback callback = nullptr, onLoadCallback callbackUpdate = nullptr);
 		void DeleteResource(uint32_t id);
 		void DeleteResourceByName(string& name);
 		
@@ -49,7 +50,7 @@ namespace EngineCore
 			_DELETE(resource);
 		};
 
-		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback);
+		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate);
 		uint32_t FindResourceInList(string& name);
 
 		static BaseMgr *instance;
@@ -66,6 +67,8 @@ namespace EngineCore
 			string name;
 
 #ifdef _EDITOR
+			onLoadCallback callbackUpdate;
+
 			ReloadingType reloadStatus;
 			uint32_t filedate;
 			ImportInfo impInfo;
@@ -76,6 +79,8 @@ namespace EngineCore
 				resource = nullptr;
 				refcount = 0;
 #ifdef _EDITOR
+				callbackUpdate = nullptr;
+
 				reloadStatus = ReloadingType::RELOAD_NONE;
 				filedate = 0;
 				ZeroMemory(&impInfo, sizeof(impInfo));
@@ -149,7 +154,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	uint32_t BaseMgr<DataType, MaxCount>::GetResource(string& name, bool reload, onLoadCallback callback)
+	uint32_t BaseMgr<DataType, MaxCount>::GetResource(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 	{
 		uint32_t res = nullres;
 		if( name.length() == 0 )
@@ -168,7 +173,14 @@ namespace EngineCore
 		res = FindResourceInList(name);
 		if(res != nullres)
 		{
-			const LoadingStatus status = (resource_array[res].resource == null_resource) ? LoadingStatus::NEW : LoadingStatus::LOADED;
+			auto& handle = resource_array[res];
+
+#ifdef _EDITOR
+			if (callbackUpdate)
+				handle.callbackUpdate = callbackUpdate;
+#endif // _EDITOR
+
+			const LoadingStatus status = (handle.resource == null_resource) ? LoadingStatus::NEW : LoadingStatus::LOADED;
 
 			if( status == LoadingStatus::NEW )
 				ResourceProcessor::Get()->QueueLoad(res, resType, callback, true);
@@ -178,7 +190,7 @@ namespace EngineCore
 			return res;
 		}
 
-		res = AddResourceToList(name, reload, callback);
+		res = AddResourceToList(name, reload, callback, callbackUpdate);
 		if(res != nullres)
 			return res;
 
@@ -188,7 +200,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	uint32_t BaseMgr<DataType, MaxCount>::AddResourceToList(string& name, bool reload, onLoadCallback callback)
+	uint32_t BaseMgr<DataType, MaxCount>::AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 	{
 		if(free_ids.size() == 0)
 		{
@@ -203,6 +215,11 @@ namespace EngineCore
 		handle.resource = null_resource;
 		handle.refcount = 1;
 
+#ifdef _EDITOR
+		if(callbackUpdate)
+			handle.callbackUpdate = callbackUpdate;
+#endif // _EDITOR
+
 		if(!FileIO::IsExist(name))
 		{
 #ifdef _EDITOR
@@ -214,9 +231,9 @@ namespace EngineCore
 			handle.filedate = 1;
 
 			ResourceProcessor::Get()->QueueLoad(idx, resType, callback);
-#else
+#else // _EDITOR
 			ERR("File %s doesn\'t exist", name.data());
-#endif
+#endif // _EDITOR
 		}
 		else
 		{
@@ -226,7 +243,7 @@ namespace EngineCore
 			else
 				handle.reloadStatus = ReloadingType::RELOAD_NONE;
 			handle.filedate = 0;
-#endif
+#endif // _EDITOR
 			ResourceProcessor::Get()->QueueLoad(idx, resType, callback);
 		}
 
@@ -273,10 +290,12 @@ namespace EngineCore
 			handle.refcount = 0;
 
 #ifdef _EDITOR
+			handle.callbackUpdate = nullptr;
+
 			handle.filedate = 0;
 			handle.reloadStatus = ReloadingType::RELOAD_NONE;
 			ZeroMemory(&handle.impInfo, sizeof(handle.impInfo));
-#endif
+#endif // _EDITOR
 
 			free_ids.push_back(id);
 
@@ -289,7 +308,9 @@ namespace EngineCore
 			WRN("Resource %s has already deleted!", handle.name.c_str());
 		}
 		else
+		{
 			handle.refcount--;
+		}
 	}
 
 	template<typename DataType, uint32_t MaxCount>
@@ -371,18 +392,30 @@ namespace EngineCore
 
 			if( handle.impInfo.filePath.empty() || handle.impInfo.filePath == it->first )
 			{
-				ResourceProcessor::Get()->QueueLoad(it->second, resType, nullptr);
+				ResourceProcessor::Get()->QueueLoad(it->second, resType
+#ifdef _EDITOR
+					, handle.callbackUpdate
+#endif // _EDITOR
+				);
 			}
 			else
 			{
 				auto rt = resType;
 				uint32_t resId = it->second;
+				onLoadCallback func = nullptr;
+#ifdef _EDITOR
+				func = handle.callbackUpdate;
+#endif // _EDITOR	
 
 				ResourceProcessor::Get()->QueueImport(handle.impInfo,
-					[rt, resId](const ImportInfo& info, bool status) -> void
+					[rt, resId, func](const ImportInfo& info, bool status) -> void
 				{
 					if(status)
-						ResourceProcessor::Get()->QueueLoad(resId, rt, nullptr);
+						ResourceProcessor::Get()->QueueLoad(resId, rt
+#ifdef _EDITOR
+							, func
+#endif // _EDITOR						
+						);
 				}, false);
 			}
 
