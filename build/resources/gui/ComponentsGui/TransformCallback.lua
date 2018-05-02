@@ -268,3 +268,46 @@ function TransformCallback.UpdScale(self, ev, xyz)
     self:SetNum(val)
     return true 
 end
+
+function TransformCallback.SetDynamic(self, ev, dynamic)
+	local history = {
+		s_oldval = {},
+		s_newval = 0,
+		undo = function(self) 
+			for i, ent in ipairs(Viewport.selection_set) do
+				if i > #self.s_oldval then return end
+				Viewport.lua_world.world.transform:SetMobility(ent, self.s_oldval[i])
+			end
+			Properties:UpdateData(false, COMPONENTS.TRANSFORM)
+		end,
+		redo = function(self) 
+			for i, ent in ipairs(Viewport.selection_set) do
+				Viewport.lua_world.world.transform:SetMobility(ent, self.s_newval)
+			end
+			Properties:UpdateData(false, COMPONENTS.TRANSFORM)
+		end,
+		msg = "Mobility"
+	}
+
+	history.s_newval = dynamic and 1 or 0
+	for i, ent in ipairs(Viewport.selection_set) do
+		history.s_oldval[i] = Viewport.lua_world.world.transform:GetMobility(ent)
+		Viewport.lua_world.world.transform:SetMobility(ent, history.s_newval)
+	end
+
+	History:Push(history)
+	return true
+end
+
+function TransformCallback.UpdDynamic(self, ev)
+	local val = 0
+	for i, ent in ipairs(Viewport.selection_set) do
+		local mbl = Viewport.lua_world.world.transform:GetMobility(ent)
+		if i > 1 and val ~= mbl then
+			self:SetCheck(nil)
+			return true
+		else val = mbl end
+	end
+	self:SetCheck(val == 1)
+	return true 
+end

@@ -39,7 +39,7 @@ return GuiGroup({
     width = 100,
     width_percent = true,
     
-    height = 165,
+    height = 193,
 
      GuiString({
         styles = {GuiStyles.string_props_03,},
@@ -333,6 +333,29 @@ return GuiGroup({
             [GUI_EVENTS.TF_DEACTIVATE] = function(self, ev) return TransformCallback.SetScale(self, ev, 3) end,
             [GUI_EVENTS.UPDATE] = function(self, ev) return TransformCallback.UpdScale(self, ev, 3) end,
         },
-    }),
-})
+	}),
+
+	GuiString({
+		styles = {GuiStyles.string_props_03,},
+		str = "Mobility",
+		left = 10,
+		top = 168,
+	}),
+
+	GuiCheck({
+		styles = {GuiStyles.props_check,},
+		left = 120,
+		top = 165,
+		width = 120,
+		height = 18,
+		text = { str = "Dynamic" },
+		alt = "Dynamic entity is moveable, can be in hierarchy",
+
+		events = {
+			[GUI_EVENTS.CB_CHECKED] = function(self, ev) return TransformCallback.SetDynamic(self, ev, true) end,
+			[GUI_EVENTS.CB_UNCHECKED] = function(self, ev) return TransformCallback.SetDynamic(self, ev, false) end,
+			[GUI_EVENTS.UPDATE] = function(self, ev) return TransformCallback.UpdDynamic(self, ev) end,
+		}
+	}),
+	})
 end

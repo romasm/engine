@@ -6,15 +6,23 @@
 
 namespace EngineCore
 {
+	enum Mobility
+	{
+		MOBILITY_STATIC = 0,
+		MOBILITY_DYNAMIC = 1
+	};
+
 	struct TransformComponent
 	{
 		ENTITY_IN_COMPONENT
 				
 		uint32_t nodeID; 
+		Mobility mobility;
 
 		TransformComponent()
 		{
 			nodeID = SCENEGRAPH_NULL_ID;
+			mobility = MOBILITY_STATIC;
 		}
 	};
 
@@ -101,6 +109,9 @@ namespace EngineCore
 		// TODO
 		bool SetPhysicsTransform(Entity e, XMMATRIX& transform);
 
+		bool SetMobility(Entity e, uint32_t mbl);
+		uint32_t GetMobility(Entity e);
+
 		// Set Transform
 		bool SetPosition_L3F(Entity e, float x, float y, float z);
 		bool SetPosition_L(Entity e, Vector3& p);
@@ -124,7 +135,7 @@ namespace EngineCore
 		inline bool SetTransform_L(Entity e, Matrix& mat) {return SetTransform_LInternal(e, XMMATRIX(mat));};
 		bool SetTransform_WInternal(Entity e, XMMATRIX& mat);
 		inline bool SetTransform_W(Entity e, Matrix& mat) {return SetTransform_WInternal(e, XMMATRIX(mat));};
-		
+				
 		// Get Transform		
 		Vector3 GetPosition_L(Entity e);
 		Quaternion GetRotation_L(Entity e);
@@ -195,6 +206,8 @@ namespace EngineCore
 					.addFunction("SetTransform_L", &TransformSystem::SetTransform_L)
 					.addFunction("SetTransform_W", &TransformSystem::SetTransform_W)
 
+					.addFunction("SetMobility", &TransformSystem::SetMobility)
+
 					.addFunction("GetPosition_L", &TransformSystem::GetPosition_L)
 					.addFunction("GetRotationPYR_L", &TransformSystem::GetRotationPYR_L)
 					.addFunction("GetRotation_L", &TransformSystem::GetRotation_L)
@@ -207,6 +220,8 @@ namespace EngineCore
 					.addFunction("GetScale_W", &TransformSystem::GetScale_W)
 					.addFunction("GetTransform_L", &TransformSystem::GetTransform_L)
 					.addFunction("GetTransform_W", &TransformSystem::GetTransform_W)
+
+					.addFunction("GetMobility", &TransformSystem::GetMobility)
 
 					.addFunction("AddPosition_L3F", &TransformSystem::AddPosition_L3F)
 					.addFunction("AddRotationPYR_L3F", &TransformSystem::AddRotationPYR_L3F)

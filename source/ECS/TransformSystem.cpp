@@ -101,6 +101,10 @@ uint32_t TransformSystem::Serialize(Entity e, uint8_t* data)
 	uint8_t* t_data = data;
 	uint32_t size = 0;
 
+	*(uint32_t*)t_data = (uint32_t)comp.mobility;
+	t_data += sizeof(uint32_t);
+	size += sizeof(uint32_t);
+
 	const XMMATRIX* localMatrix = sceneGraph->GetLocalTransformation(comp.nodeID);
 
 	for(uint32_t row = 0; row < 4; row++)
@@ -150,6 +154,10 @@ uint32_t TransformSystem::Deserialize(Entity e, uint8_t* data)
 		
 	uint8_t* t_data = data;
 	uint32_t size = 0;
+
+	comp->mobility = Mobility(*(uint32_t*)t_data);
+	t_data += sizeof(uint32_t);
+	size += sizeof(uint32_t);
 
 	XMMATRIX localMatrix;
 	for(uint32_t row = 0; row < 4; row++)
@@ -222,6 +230,20 @@ bool TransformSystem::SetPhysicsTransform(Entity e, XMMATRIX& transform)
 
 	world->SetDirty(e);
 	return true;
+}
+
+bool TransformSystem::SetMobility(Entity e, uint32_t mbl)
+{
+	GET_COMPONENT(false)
+	// TODO: switch scene graph for no editor
+	comp.mobility = Mobility(mbl);
+	return true;
+}
+
+uint32_t TransformSystem::GetMobility(Entity e)
+{
+	GET_COMPONENT(0)
+	return (uint32_t)comp.mobility;
 }
 
 // Set Transform
