@@ -515,3 +515,162 @@ inline Vector3 PYRFromQuat(XMVECTOR Q)
 
 	return res;
 }
+
+inline bool PlaneBoxOverlap(Vector3& normal, Vector3& vert, Vector3& boxExtents)
+{
+	Vector3 vMin, vMax;
+
+	if (normal.x > 0.0f)
+	{
+		vMin.x = -boxExtents.x - vert.x;
+		vMax.x = boxExtents.x - vert.x;
+	}
+	else
+	{
+		vMin.x = boxExtents.x - vert.x;
+		vMax.x = -boxExtents.x - vert.x;
+	}
+
+	if (normal.y > 0.0f)
+	{
+		vMin.y = -boxExtents.y - vert.y;
+		vMax.y = boxExtents.y - vert.y;
+	}
+	else
+	{
+		vMin.y = boxExtents.y - vert.y;
+		vMax.y = -boxExtents.y - vert.y;
+	}
+
+	if (normal.z > 0.0f)
+	{
+		vMin.z = -boxExtents.z - vert.z;
+		vMax.z = boxExtents.z - vert.z;
+	}
+	else
+	{
+		vMin.z = boxExtents.z - vert.z;
+		vMax.z = -boxExtents.z - vert.z;
+	}
+
+	if (normal.Dot(vMin) > 0.0f)
+		return false;
+
+	if (normal.Dot(vMax) >= 0.0f)
+		return true;
+
+	return false;
+}
+
+/*======================== X-tests ========================*/
+#define AXISTEST_X01(a, b, fa, fb)			   \
+p0 = a*v0.y - b*v0.z;			       	   \
+p2 = a*v2.y - b*v2.z;			       	   \
+if (p0<p2) { minV = p0; maxV = p2; } else { minV = p2; maxV = p0; } \
+rad = fa * boxExtents.y + fb * boxExtents.z;   \
+if (minV>rad || maxV<-rad) return false;
+
+#define AXISTEST_X2(a, b, fa, fb)			   \
+p0 = a*v0.y - b*v0.z;			           \
+p1 = a*v1.y - b*v1.z;			       	   \
+if (p0<p1) { minV = p0; maxV = p1; } else { minV = p1; maxV = p0; } \
+rad = fa * boxExtents.y + fb * boxExtents.z;   \
+if (minV>rad || maxV<-rad) return false;
+
+/*======================== Y-tests ========================*/
+#define AXISTEST_Y02(a, b, fa, fb)			   \
+p0 = -a*v0.x + b*v0.z;		      	   \
+p2 = -a*v2.x + b*v2.z;	       	       	   \
+if (p0<p2) { minV = p0; maxV = p2; } else { minV = p2; maxV = p0; } \
+rad = fa * boxExtents.x + fb * boxExtents.z;   \
+if (minV>rad || maxV<-rad) return false;
+
+#define AXISTEST_Y1(a, b, fa, fb)			   \
+p0 = -a*v0.x + b*v0.z;		      	   \
+p1 = -a*v1.x + b*v1.z;	     	       	   \
+if (p0<p1) { minV = p0; maxV = p1; } else { minV = p1; maxV = p0; } \
+rad = fa * boxExtents.x + fb * boxExtents.z;   \
+if (minV>rad || maxV<-rad) return false;
+
+/*======================== Z-tests ========================*/
+#define AXISTEST_Z12(a, b, fa, fb)			   \
+p1 = a*v1.x - b*v1.y;			           \
+p2 = a*v2.x - b*v2.y;			       	   \
+if (p2<p1) { minV = p2; maxV = p1; } else { minV = p1; maxV = p2; } \
+rad = fa * boxExtents.x + fb * boxExtents.y;   \
+if (minV>rad || maxV<-rad) return false;
+
+#define AXISTEST_Z0(a, b, fa, fb)			   \
+p0 = a*v0.x - b*v0.y;				   \
+p1 = a*v1.x - b*v1.y;			           \
+if (p0<p1) { minV = p0; maxV = p1; } else { minV = p1; maxV = p0; } \
+rad = fa * boxExtents.x + fb * boxExtents.y;   \
+if (minV>rad || maxV<-rad) return false;
+
+#define FINDMINMAX(x0,x1,x2,minV,maxV) \
+minV = maxV = x0;   \
+if (x1<minV) minV = x1; \
+if (x1>maxV) maxV = x1; \
+if (x2<minV) minV = x2; \
+if (x2>maxV) maxV = x2;
+
+inline bool TriBoxOverlap(BoundingBox& bbox, Vector3 vertecies[3])
+{
+	float minV, maxV, p0, p1, p2, rad;
+
+	Vector3 boxCenter = bbox.Center;
+	Vector3 boxExtents = bbox.Extents;
+
+	Vector3 v0, v1, v2;
+	v0 = vertecies[0] - boxCenter;
+	v1 = vertecies[1] - boxCenter;
+	v2 = vertecies[2] - boxCenter;
+
+	Vector3 e0, e1, e2;
+	e0 = v1 - v0;
+	e1 = v2 - v1;
+	e2 = v0 - v2;
+
+	float fex, fey, fez;
+	fex = fabsf(e0.x);
+	fey = fabsf(e0.y);
+	fez = fabsf(e0.z);
+	
+	AXISTEST_X01(e0.z, e0.y, fez, fey);
+	AXISTEST_Y02(e0.z, e0.x, fez, fex);
+	AXISTEST_Z12(e0.y, e0.x, fey, fex);
+
+	fex = fabsf(e1.x);
+	fey = fabsf(e1.y);
+	fez = fabsf(e1.z);
+
+	AXISTEST_X01(e1.z, e1.y, fez, fey);
+	AXISTEST_Y02(e1.z, e1.x, fez, fex);
+	AXISTEST_Z12(e1.y, e1.x, fey, fex);
+
+	fex = fabsf(e2.x);
+	fey = fabsf(e2.y);
+	fez = fabsf(e2.z);
+
+	AXISTEST_X01(e2.z, e2.y, fez, fey);
+	AXISTEST_Y02(e2.z, e2.x, fez, fex);
+	AXISTEST_Z12(e2.y, e2.x, fey, fex);
+
+	FINDMINMAX(v0.x, v1.x, v2.x, minV, maxV);
+	if (minV > boxExtents.x || maxV < -boxExtents.x) 
+		return false;
+
+	FINDMINMAX(v0.y, v1.y, v2.y, minV, maxV);
+	if (minV > boxExtents.y || maxV < -boxExtents.y)
+		return false;
+
+	FINDMINMAX(v0.z, v1.z, v2.z, minV, maxV);
+	if (minV > boxExtents.z || maxV < -boxExtents.z)
+		return false;
+
+	Vector3 normal = e0.Cross(e1);
+	if (!PlaneBoxOverlap(normal, v0, boxExtents))
+		return false;
+
+	return true;
+}

@@ -68,6 +68,7 @@ namespace EngineCore
 		DArray<OctreeBranch> octree;
 
 		DArray<BoundingBox> debugOctreeVisuals;
+		bool bDebugOctree;
 
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
 		void ProcessOctreeBranch(DArray<OctreeBranch>& octree, DArray<VoxelizeSceneItem>& staticScene, uint32_t branchID, BoundingBox& bbox, int32_t octreeDepth);

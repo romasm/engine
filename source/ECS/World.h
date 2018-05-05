@@ -290,7 +290,11 @@ namespace EngineCore
 
 		bool BuildVoxelOctree()
 		{
+#ifdef _EDITOR
 			return giMgr->BuildVoxelOctree();
+#else
+			return false;
+#endif
 		}
 
 		static void RegLuaClass()

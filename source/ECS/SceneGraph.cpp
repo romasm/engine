@@ -203,7 +203,7 @@ void SceneGraph::DebugDraw(DebugDrawer* dbgDrawer)
 			Vector3 A(pos);
 			XMMatrixDecompose(&scale, &rot, &pos, worldTransformation[relt.parentID]);
 			Vector3 B(pos);
-			dbgDrawer->PushLine(A, B, color, color);
+			dbgDrawer->PushLine(A, B, color);
 		}
 		else
 		{

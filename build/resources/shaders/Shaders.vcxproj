@@ -181,6 +181,10 @@
     <None Include="system\voxel_light_inject.hlsl" />
     <None Include="system\voxel_light_propagate.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="objects\editor\debug_lines_common.hlsl" />
+    <FxCompile Include="objects\editor\debug_lines_cull.hlsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

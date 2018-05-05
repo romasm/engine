@@ -4,7 +4,7 @@ TECHNIQUE_DEFAULT
 
 	DepthEnable = true;
 	DepthWrite = true;
-	DepthFunc = ALWAYS;
+	DepthFunc = LESS_EQUAL;
 
 	FillMode = WIREFRAME;
 	CullMode = NONE;

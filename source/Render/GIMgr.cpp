@@ -22,6 +22,8 @@ GIMgr::GIMgr(BaseWorld* wrd)
 
 	voxelSize = DEFAULT_VOXEL_SIZE;
 
+	bDebugOctree = true;
+
  	if(!InitBuffers())
 	{
 		ERR("Cant init GI buffers");
@@ -123,6 +125,9 @@ ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 
 void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
 {
+	if (!bDebugOctree)
+		return;
+
 	for (auto& item : debugOctreeVisuals)
 	{
 		float colorParam = (item.Extents.x - voxelSize * 0.5f) / (worldBBPow2.Extents.x * 0.5f - voxelSize * 0.5f);
@@ -132,7 +137,7 @@ void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
 		color.y = 1.0f - powf(clamp(0.0f, 2.0f * abs(colorParam - 0.5f), 1.0f), 8.0f);
 		color.z = powf(clamp(0.0f, colorParam, 1.0f), 0.4f);
 
-		dbgDrawer->PushBoundingBox(item, color);
+		dbgDrawer->PushBoundingBox(item, color, true);
 	}
 }
 
@@ -146,6 +151,8 @@ bool GIMgr::BuildVoxelOctree()
 	DArray<VoxelizeSceneItem> staticScene;
 	Vector3 corners[8];
 
+	string editorType(EDITOR_TYPE);
+
 	for (auto& item : *transformSys->components.data())
 	{
 		if (item.mobility != MOBILITY_STATIC)
@@ -154,7 +161,7 @@ bool GIMgr::BuildVoxelOctree()
 		if (!visibilitySys->HasComponent(item.parent) || !meshSys->HasComponent(item.parent))
 			continue;
 
-		if (world->IsEntityType(item.parent, "_editor_"))
+		if (world->IsEntityType(item.parent, editorType))
 			continue;
 
 		VoxelizeSceneItem newItem;
@@ -184,7 +191,6 @@ bool GIMgr::BuildVoxelOctree()
 
 	BoundingBox::CreateFromPoints(worldBBPow2, minCornet, minCornet + Vector3(worldSizePow2));
 
-	// octree
 	octree.clear();
 	octree.reserve(16384);
 
@@ -194,7 +200,7 @@ bool GIMgr::BuildVoxelOctree()
 	octree.push_back();
 	ProcessOctreeBranch(octree, staticScene, 0, worldBBPow2, octreeDepth - 1);
 
-	LOG_GOOD("Octree size %u", (uint32_t)octree.size());
+	LOG_GOOD("Octree nodes count: %u", (uint32_t)octree.size());
 
 	return true;
 }
@@ -204,7 +210,14 @@ bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBo
 	for (auto& i : staticScene)
 	{
 		if (i.bbox.Intersects(bbox))
-			return true;
+		{
+			auto mesh = MeshMgr::GetResourcePtr(i.meshID);
+			if (!mesh)
+				continue;
+
+			if (MeshLoader::MeshBoxOverlap(mesh, i.transform, bbox))
+				return true;
+		}
 	}
 	return false;
 }

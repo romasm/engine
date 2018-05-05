@@ -192,9 +192,6 @@ AnimationData* MeshLoader::LoadAnimation(string& resName)
 
 MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
 {
-	uint8_t **vertices;
-	uint32_t **indices;
-
 	uint8_t* t_data = data;
 
 	MeshFileHeader header(*(MeshFileHeader*)t_data);
@@ -208,10 +205,21 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
 
-	vertices = new uint8_t*[header.materialCount];
-	indices = new uint32_t*[header.materialCount];
-
 	MeshData* mesh = new MeshData;
+
+#ifdef _EDITOR
+	RArray<uint8_t*>& vertices = mesh->vertices;
+	RArray<uint32_t*>& indices = mesh->indices;
+#else
+	RArray<uint8_t*> vertices;
+	RArray<uint32_t*> indices;
+#endif
+
+	vertices.create(header.materialCount);
+	vertices.resize(header.materialCount);
+	indices.create(header.materialCount);
+	indices.resize(header.materialCount);
+
 	mesh->vertexBuffers.create(header.materialCount);
 	mesh->indexBuffers.create(header.materialCount);
 	mesh->box.Center = header.bbox.center;
@@ -226,6 +234,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 		t_data += sizeof(uint32_t);
 
 		const auto sizeVB = vBuffer.count * vetrexSize;
+
 		vertices[i] = new uint8_t[sizeVB];
 		memcpy(vertices[i], t_data, sizeVB);
 		t_data += sizeVB;
@@ -257,13 +266,20 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 		}
 	}
 
-	for(int i = header.materialCount - 1; i >= 0; i--)
+#ifdef _EDITOR
+	if (header.vertexFormat == MeshVertexFormat::LIT_SKINNED_VERTEX)
 	{
-		_DELETE_ARRAY(vertices[i]);
-		_DELETE_ARRAY(indices[i]);
+#endif
+		for (int i = header.materialCount - 1; i >= 0; i--)
+		{
+			_DELETE_ARRAY(vertices[i]);
+			_DELETE_ARRAY(indices[i]);
+		}
+		vertices.destroy();
+		indices.destroy();
+#ifdef _EDITOR
 	}
-	_DELETE_ARRAY(vertices);
-	_DELETE_ARRAY(indices);
+#endif
 
 	LOG("Mesh loaded %s", filename.c_str());
 	return mesh;
@@ -1479,3 +1495,30 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		offset += vertexSize;
 	}
 }
+
+#ifdef _EDITOR
+bool MeshLoader::MeshBoxOverlap(MeshData* mesh, Matrix& transform, BoundingBox& bbox)
+{
+	Vector3 triVertecies[3];
+	for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
+	{
+		uint8_t* verts = mesh->vertices[i];
+		uint32_t* inds = mesh->indices[i];
+
+		for (uint32_t k = 0; k < (uint32_t)mesh->indexBuffers[i].count; k += 3)
+		{
+			triVertecies[0] = GetVertexPos(verts, inds[k], mesh->vertexFormat);
+			triVertecies[1] = GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
+			triVertecies[2] = GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
+
+			Vector3::Transform(triVertecies[0], transform, triVertecies[0]);
+			Vector3::Transform(triVertecies[1], transform, triVertecies[1]);
+			Vector3::Transform(triVertecies[2], transform, triVertecies[2]);
+
+			if (TriBoxOverlap(bbox, triVertecies))
+				return true;
+		}
+	}
+	return false;
+}
+#endif

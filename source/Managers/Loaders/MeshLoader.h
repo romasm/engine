@@ -37,6 +37,11 @@ namespace EngineCore
 		RArray<GPUMeshBuffer> vertexBuffers;
 		RArray<GPUMeshBuffer> indexBuffers;
 
+#ifdef _EDITOR
+		RArray<uint8_t*> vertices;
+		RArray<uint32_t*> indices;
+#endif
+
 		BoundingBox box;
 		MeshVertexFormat vertexFormat;
 		float maxVertexOffset;
@@ -49,6 +54,13 @@ namespace EngineCore
 				_RELEASE(vertexBuffers[i].buffer);
 			for(uint32_t i = 0; i < (uint32_t)indexBuffers.size(); i++)
 				_RELEASE(indexBuffers[i].buffer);
+
+#ifdef _EDITOR
+			for (uint32_t i = 0; i < (uint32_t)vertices.size(); i++)
+				_DELETE_ARRAY(vertices[i]);
+			for (uint32_t i = 0; i < (uint32_t)indices.size(); i++)
+				_DELETE_ARRAY(indices[i]);
+#endif
 
 			vertexBuffers.destroy();
 			indexBuffers.destroy();
@@ -178,7 +190,11 @@ namespace EngineCore
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 
 			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax, float& vertexOffset);
-		
+
+#ifdef _EDITOR
+		bool MeshBoxOverlap(MeshData* mesh, Matrix& transform, BoundingBox& bbox);
+#endif
+
 		inline uint32_t GetVertexSize(MeshVertexFormat format)
 		{
 			switch (format)
@@ -189,6 +205,18 @@ namespace EngineCore
 				return sizeof(LitSkinnedVertex);
 			}
 			return 0;
+		}
+		
+		inline Vector3 GetVertexPos(uint8_t* vertices, uint32_t index, MeshVertexFormat format)
+		{
+			switch (format)
+			{
+			case MeshVertexFormat::LIT_VERTEX:
+				return ((LitVertex*)vertices)[index].Pos;
+			case MeshVertexFormat::LIT_SKINNED_VERTEX:
+				return ((LitSkinnedVertex*)vertices)[index].Pos;
+			}
+			return Vector3();
 		}
 
 		inline bool IsSkinned(MeshVertexFormat format)
