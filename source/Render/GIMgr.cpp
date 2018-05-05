@@ -20,6 +20,8 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	sgVolume = TexMgr::nullres;
 	sampleDataGPU = nullptr;
 
+	voxelSize = DEFAULT_VOXEL_SIZE;
+
  	if(!InitBuffers())
 	{
 		ERR("Cant init GI buffers");
@@ -117,4 +119,121 @@ ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 		return giVolumeSRV;
 	else
 		return TEXTURE_GETPTR(sgVolume);
+}
+
+void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
+{
+	for (auto& item : debugOctreeVisuals)
+	{
+		float colorParam = (item.Extents.x - voxelSize * 0.5f) / (worldBBPow2.Extents.x * 0.5f - voxelSize * 0.5f);
+		
+		Vector3 color;
+		color.x = powf(1.0f - clamp(0.0f, colorParam, 1.0f), 16.0f);
+		color.y = 1.0f - powf(clamp(0.0f, 2.0f * abs(colorParam - 0.5f), 1.0f), 8.0f);
+		color.z = powf(clamp(0.0f, colorParam, 1.0f), 0.4f);
+
+		dbgDrawer->PushBoundingBox(item, color);
+	}
+}
+
+bool GIMgr::BuildVoxelOctree()
+{
+	auto transformSys = world->GetTransformSystem();
+	auto visibilitySys = world->GetVisibilitySystem();
+	auto meshSys = world->GetStaticMeshSystem();
+	
+	BoundingBox worldBB;
+	DArray<VoxelizeSceneItem> staticScene;
+	Vector3 corners[8];
+
+	for (auto& item : *transformSys->components.data())
+	{
+		if (item.mobility != MOBILITY_STATIC)
+			continue;
+
+		if (!visibilitySys->HasComponent(item.parent) || !meshSys->HasComponent(item.parent))
+			continue;
+
+		if (world->IsEntityType(item.parent, "_editor_"))
+			continue;
+
+		VoxelizeSceneItem newItem;
+
+		newItem.meshID = meshSys->GetMeshID(item.parent);
+		if (MeshMgr::GetResourcePtr(newItem.meshID)->vertexFormat == MeshVertexFormat::LIT_SKINNED_VERTEX)
+			continue;
+
+		visibilitySys->GetBBoxW(item.parent).GetCorners(corners);
+		BoundingBox::CreateFromPoints(newItem.bbox, 8, corners, sizeof(Vector3));
+
+		newItem.transform = *transformSys->sceneGraph->GetWorldTransformation(item.nodeID);
+
+		staticScene.push_back(newItem);
+
+		BoundingBox::CreateMerged(worldBB, worldBB, newItem.bbox);
+	}
+
+	float maxWorldSize = max(worldBB.Extents.x, max(worldBB.Extents.y, worldBB.Extents.z)) * 2.0f;
+	
+	int32_t octreeDepth = (int32_t)ceilf(log2f(maxWorldSize / voxelSize));
+	
+	Vector3 minCornet = worldBB.Center - worldBB.Extents;
+	Vector3 maxCornet = worldBB.Center + worldBB.Extents;
+
+	float worldSizePow2 = powf(2.0f, (float)octreeDepth) * voxelSize;
+
+	BoundingBox::CreateFromPoints(worldBBPow2, minCornet, minCornet + Vector3(worldSizePow2));
+
+	// octree
+	octree.clear();
+	octree.reserve(16384);
+
+	debugOctreeVisuals.clear();
+	debugOctreeVisuals.reserve(2048);
+
+	octree.push_back();
+	ProcessOctreeBranch(octree, staticScene, 0, worldBBPow2, octreeDepth - 1);
+
+	LOG_GOOD("Octree size %u", (uint32_t)octree.size());
+
+	return true;
+}
+
+bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox)
+{
+	for (auto& i : staticScene)
+	{
+		if (i.bbox.Intersects(bbox))
+			return true;
+	}
+	return false;
+}
+
+void GIMgr::ProcessOctreeBranch(DArray<OctreeBranch>& octree, DArray<VoxelizeSceneItem>& staticScene, uint32_t branchID, BoundingBox& bbox, int32_t octreeDepth)
+{
+	Vector3 corners[8];
+	bbox.GetCorners(corners);
+
+	OctreeBranch& branch = octree[branchID];
+	memset(&branch, 0, sizeof(OctreeBranch));
+
+	BoundingBox leafBox;
+	for (int32_t i = 0; i < 8; i++)
+	{
+		BoundingBox::CreateFromPoints(leafBox, Vector3(bbox.Center), corners[i]);
+
+		if (octreeDepth > 0 && SceneBoxIntersect(staticScene, leafBox))
+		{
+			MarkAsBranch(branch.leaf[i]);
+			
+			octree.push_back();
+			ProcessOctreeBranch(octree, staticScene, uint32_t(octree.size() - 1), leafBox, octreeDepth - 1);
+		}
+		else
+		{
+			MarkAsLeaf(branch.leaf[i]);
+
+			debugOctreeVisuals.push_back(leafBox);
+		}
+	}
 }

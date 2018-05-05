@@ -4,7 +4,7 @@
 #include "Render.h"
 #include "MaterialMgr.h"
 
-#define DEBUG_ARRAY_SIZE 32768
+#define DEBUG_ARRAY_SIZE 512000
 #define DEBUG_MATERIAL "$" PATH_SHADERS "objects/editor/debug_lines"
 
 namespace EngineCore
@@ -43,6 +43,23 @@ namespace EngineCore
 			line->B = B;
 			line->colorA = colorA;
 			line->colorB = colorB;
+		}
+
+		void PushBoundingBox(BoundingBox& box, Vector3& color)
+		{
+			box.GetCorners(bboxCorners);
+			PushLine(bboxCorners[0], bboxCorners[1], color, color);
+			PushLine(bboxCorners[0], bboxCorners[3], color, color);
+			PushLine(bboxCorners[0], bboxCorners[4], color, color);
+			PushLine(bboxCorners[1], bboxCorners[2], color, color);
+			PushLine(bboxCorners[1], bboxCorners[5], color, color);
+			PushLine(bboxCorners[2], bboxCorners[3], color, color);
+			PushLine(bboxCorners[2], bboxCorners[6], color, color);
+			PushLine(bboxCorners[3], bboxCorners[7], color, color);
+			PushLine(bboxCorners[4], bboxCorners[7], color, color);
+			PushLine(bboxCorners[4], bboxCorners[5], color, color);
+			PushLine(bboxCorners[5], bboxCorners[6], color, color);
+			PushLine(bboxCorners[6], bboxCorners[7], color, color);
 		}
 
 		void Prepare()
@@ -84,5 +101,7 @@ namespace EngineCore
 
 		ID3D11Buffer* lineBuffer;
 		Material* lineMat;
+
+		Vector3 bboxCorners[8];
 	};
 }

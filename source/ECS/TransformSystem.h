@@ -30,6 +30,8 @@ namespace EngineCore
 
 	class TransformSystem
 	{
+		friend class GIMgr;
+
 	public:
 		TransformSystem(BaseWorld* w, uint32_t maxCount);
 		~TransformSystem()

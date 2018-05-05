@@ -288,6 +288,11 @@ namespace EngineCore
 		
 		inline uint8_t* GetCopyBuffer() {return copyBuffer;}
 
+		bool BuildVoxelOctree()
+		{
+			return giMgr->BuildVoxelOctree();
+		}
+
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
@@ -355,6 +360,8 @@ namespace EngineCore
 					.addProperty("timeScale", &BaseWorld::GetTimeScale, &BaseWorld::SetTimeScale)
 
 					.addFunction("SetSceneGraphDebugDraw", &BaseWorld::SetSceneGraphDebugDraw)
+
+					.addFunction("BuildVoxelOctree", &BaseWorld::BuildVoxelOctree)
 				.endClass();
 		}
 

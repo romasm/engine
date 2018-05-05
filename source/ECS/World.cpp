@@ -817,6 +817,9 @@ void World::Frame()
 		return;
 	}
 
+	// temp
+	giMgr->DebugDrawOctree(&dbgDrawer);
+
 	m_collisionSystem->DebugDraw();	
 
 	m_lightSystem->Update();
