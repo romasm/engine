@@ -646,14 +646,14 @@ inline bool TriBoxOverlap(BoundingBox& bbox, Vector3 vertecies[3])
 
 	AXISTEST_X01(e1.z, e1.y, fez, fey);
 	AXISTEST_Y02(e1.z, e1.x, fez, fex);
-	AXISTEST_Z12(e1.y, e1.x, fey, fex);
+	AXISTEST_Z0(e1.y, e1.x, fey, fex);
 
 	fex = fabsf(e2.x);
 	fey = fabsf(e2.y);
 	fez = fabsf(e2.z);
 
-	AXISTEST_X01(e2.z, e2.y, fez, fey);
-	AXISTEST_Y02(e2.z, e2.x, fez, fex);
+	AXISTEST_X2(e2.z, e2.y, fez, fey);
+	AXISTEST_Y1(e2.z, e2.x, fez, fex);
 	AXISTEST_Z12(e2.y, e2.x, fey, fex);
 
 	FINDMINMAX(v0.x, v1.x, v2.x, minV, maxV);
