@@ -5,7 +5,8 @@
 #include "MeshMgr.h"
 #include "DebugDrawer.h"
 
-#define DEFAULT_VOXEL_SIZE 0.6f
+#define DEFAULT_OCTREE_DEPTH 7.0f
+#define DEFAULT_OCTREE_VOXEL_SIZE 0.25f
 
 namespace EngineCore
 {
@@ -30,6 +31,19 @@ namespace EngineCore
 	struct OctreeBranch
 	{
 		uint32_t leaf[8];
+	};
+
+	struct Octree
+	{
+		int32_t depth;
+		BoundingBox bbox;
+		DArray<OctreeBranch> branches;
+	};
+
+	struct BoxCornerSize
+	{
+		Vector3 corner;
+		Vector3 size;
 	};
 
 	class GIMgr
@@ -63,9 +77,13 @@ namespace EngineCore
 		ID3D11Buffer* sampleDataGPU;
 
 		float voxelSize;
+		float chunkSize;
+		int32_t maxOctreeDepth;
 
-		BoundingBox worldBBPow2;
-		DArray<OctreeBranch> octree;
+		BoxCornerSize worldBox;
+
+		DArray<Octree> octreeArray;
+		RArray<RArray<RArray<int32_t>>> chunks;
 
 		DArray<BoundingBox> debugOctreeVisuals;
 		bool bDebugOctree;

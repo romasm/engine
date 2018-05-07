@@ -20,7 +20,9 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	sgVolume = TexMgr::nullres;
 	sampleDataGPU = nullptr;
 
-	voxelSize = DEFAULT_VOXEL_SIZE;
+	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
+	chunkSize = powf(2.0f, DEFAULT_OCTREE_DEPTH) * DEFAULT_OCTREE_VOXEL_SIZE;
+	maxOctreeDepth = DEFAULT_OCTREE_DEPTH;
 
 	bDebugOctree = true;
 
@@ -143,11 +145,18 @@ void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
 
 bool GIMgr::BuildVoxelOctree()
 {
+	octreeArray.clear();
+	chunks.destroy();
+	
+	debugOctreeVisuals.clear();
+	debugOctreeVisuals.reserve(2048);
+	
+	// collect static geometry
 	auto transformSys = world->GetTransformSystem();
 	auto visibilitySys = world->GetVisibilitySystem();
 	auto meshSys = world->GetStaticMeshSystem();
 	
-	BoundingBox worldBB;
+	BoundingBox worldBBraw;
 	DArray<VoxelizeSceneItem> staticScene;
 	Vector3 corners[8];
 
@@ -177,30 +186,83 @@ bool GIMgr::BuildVoxelOctree()
 
 		staticScene.push_back(newItem);
 
-		BoundingBox::CreateMerged(worldBB, worldBB, newItem.bbox);
+		BoundingBox::CreateMerged(worldBBraw, worldBBraw, newItem.bbox);
 	}
 
-	float maxWorldSize = max(worldBB.Extents.x, max(worldBB.Extents.y, worldBB.Extents.z)) * 2.0f;
+	// build chunk array
+	// TODO: configurate
+	worldBox.corner = worldBBraw.Center - worldBBraw.Extents;
+	worldBox.size = worldBBraw.Extents * 2.0f;
+
+	Vector3 chunkCount = worldBox.size * (1.0f / chunkSize);
+	chunkCount.x = ceilf(chunkCount.x);
+	chunkCount.y = ceilf(chunkCount.y);
+	chunkCount.z = ceilf(chunkCount.z);
+
+	worldBox.size = chunkCount * chunkSize;
 	
-	int32_t octreeDepth = (int32_t)ceilf(log2f(maxWorldSize / voxelSize));
-	
-	Vector3 minCornet = worldBB.Center - worldBB.Extents;
-	Vector3 maxCornet = worldBB.Center + worldBB.Extents;
+	int32_t xSize = (int32_t)worldBox.size.x;
+	int32_t ySize = (int32_t)worldBox.size.y;
+	int32_t zSize = (int32_t)worldBox.size.z;
 
-	float worldSizePow2 = powf(2.0f, (float)octreeDepth) * voxelSize;
+	chunks.create(zSize);
+	chunks.resize(zSize);	
+	for (int32_t z = 0; z < zSize; z++)
+	{
+		chunks[z].create(ySize);
+		chunks[z].resize(ySize);
+		for (int32_t y = 0; y < ySize; y++)
+		{
+			chunks[z][y].create(xSize);
+			chunks[z][y].resize(xSize);
+			chunks[z][y].assign(-1);
+		}
+	}
 
-	BoundingBox::CreateFromPoints(worldBBPow2, minCornet, minCornet + Vector3(worldSizePow2));
+	BoundingBox chunkBox;
+	chunkBox.Extents = Vector3(chunkSize * 0.5f);
 
-	octree.clear();
-	octree.reserve(16384);
+	for (int32_t z = 0; z < zSize; z++)
+	{
+		for (int32_t y = 0; y < ySize; y++)
+		{
+			for (int32_t x = 0; x < xSize; x++)
+			{
+				chunkBox.Center = worldBox.corner + chunkSize * Vector3(float(x) / xSize, float(y) / ySize, float(z) / zSize);
 
-	debugOctreeVisuals.clear();
-	debugOctreeVisuals.reserve(2048);
+				auto& octree = octreeArray.push_back();
+				octree.bbox = chunkBox;
 
-	octree.push_back();
-	ProcessOctreeBranch(octree, staticScene, 0, worldBBPow2, octreeDepth - 1);
+				if (SceneBoxIntersect(staticScene, chunkBox))
+				{
+					// TODO: configurate per chunk
+					octree.depth = maxOctreeDepth;
+				}
+				else
+				{
+					octree.depth = 1;
+				}
+				chunks[z][y][x] = octreeArray.size() - 1;
+			}
+		}
+	}
 
-	LOG_GOOD("Octree nodes count: %u", (uint32_t)octree.size());
+	LOG("Chunks count: %i", (int32_t)octreeArray.size());
+
+	// build octrees
+	for (auto& octree : octreeArray)
+	{
+		int32_t estimatedCount = (int32_t)powf(2.0f, (float)octree.depth);
+		estimatedCount = estimatedCount * estimatedCount * estimatedCount;
+		estimatedCount = max(1, int32_t(estimatedCount * 0.004f));
+
+		octree.branches.reserve(estimatedCount);
+
+		octree.branches.push_back();
+		ProcessOctreeBranch(octree.branches, staticScene, 0, octree.bbox, octree.depth - 1);
+		
+		LOG("Octree nodes count: %i", (int32_t)octree.branches.size());
+	}
 
 	return true;
 }
@@ -245,6 +307,10 @@ void GIMgr::ProcessOctreeBranch(DArray<OctreeBranch>& octree, DArray<VoxelizeSce
 		else
 		{
 			MarkAsLeaf(branch.leaf[i]);
+
+			// TODO: add to leaf array (z-order)
+			// TODO: brick allocation needed for parent branch
+			// TODO: probs registration
 
 			debugOctreeVisuals.push_back(leafBox);
 		}
