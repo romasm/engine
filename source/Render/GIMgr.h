@@ -5,8 +5,8 @@
 #include "MeshMgr.h"
 #include "DebugDrawer.h"
 
-#define DEFAULT_OCTREE_DEPTH 7.0f
-#define DEFAULT_OCTREE_VOXEL_SIZE 0.25f
+#define DEFAULT_OCTREE_DEPTH 7
+#define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 
 namespace EngineCore
 {
@@ -28,16 +28,31 @@ namespace EngineCore
 		}
 	};
 
-	struct OctreeBranch
-	{
-		uint32_t leaf[8];
-	};
-
 	struct Octree
 	{
 		int32_t depth;
 		BoundingBox bbox;
-		DArray<OctreeBranch> branches;
+
+		int32_t lookupRes;
+		uint32_t*** lookup;
+
+		Octree()
+		{
+			depth = 0;
+			lookupRes = 0;
+			lookup = nullptr;
+		}
+
+		~Octree()
+		{
+			for (int32_t x = 0; x < lookupRes; x++)
+			{
+				for (int32_t y = 0; y < lookupRes; y++)
+					delete[] lookup[x][y];
+				delete[] lookup[x];
+			}
+			delete[] lookup;
+		}
 	};
 
 	struct BoxCornerSize
@@ -89,7 +104,7 @@ namespace EngineCore
 		bool bDebugOctree;
 
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
-		void ProcessOctreeBranch(DArray<OctreeBranch>& octree, DArray<VoxelizeSceneItem>& staticScene, uint32_t branchID, BoundingBox& bbox, int32_t octreeDepth);
+		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth);
 
 		inline void MarkAsLeaf(uint32_t& leaf)
 		{
