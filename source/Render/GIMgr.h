@@ -8,6 +8,8 @@
 #define DEFAULT_OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 
+#define BKICK_RESOLUTION 3
+
 namespace EngineCore
 {
 	struct GISampleData
@@ -61,6 +63,17 @@ namespace EngineCore
 		Vector3 size;
 	};
 
+	struct Brick
+	{
+		uint32_t probes[BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION];
+	};
+
+	struct Prob
+	{
+		Vector3 pos;
+		bool interpolated;
+	};
+
 	class GIMgr
 	{
 	public:
@@ -91,6 +104,8 @@ namespace EngineCore
 		GISampleData sampleData;
 		ID3D11Buffer* sampleDataGPU;
 
+		// baking
+
 		float voxelSize;
 		float chunkSize;
 		int32_t maxOctreeDepth;
@@ -100,25 +115,55 @@ namespace EngineCore
 		DArray<Octree> octreeArray;
 		RArray<RArray<RArray<int32_t>>> chunks;
 
+		DArray<Brick> bricks;
+
+		struct Int3Pos
+		{
+			int32_t x;
+			int32_t y;
+			int32_t z;
+
+			Int3Pos()
+			{
+				x = 0;
+				y = 0;
+				z = 0;
+			}
+
+			Int3Pos(const Vector3 pos)
+			{
+				x = (int32_t)roundf(pos.x * 1000.0f);
+				y = (int32_t)roundf(pos.y * 1000.0f);
+				z = (int32_t)roundf(pos.z * 1000.0f);
+			}
+		};
+		unordered_map<Int3Pos, uint32_t> probesLookup;
+		DArray<Prob> probesArray;
+
 		DArray<BoundingBox> debugOctreeVisuals;
 		bool bDebugOctree;
 
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
-		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth);
+		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper);
+	
+		#define BRICK_ADRESS_BITS 24
+		#define BRICK_ADRESS_MASK 0x00ffffff
+		#define BRICK_LEVEL_MASK 0xff000000
 
-		inline void MarkAsLeaf(uint32_t& leaf)
+		// lookup uint32: 8 bit - level, 12 bit - x, 12 bit - y
+		inline uint32_t SetLookupNode(uint32_t id, uint32_t level)
 		{
-			leaf = leaf | 0x80000000;
-		}
-		
-		inline void MarkAsBranch(uint32_t& leaf)
-		{
-			leaf = leaf & 0x7fffffff;
+			return (id & BRICK_ADRESS_MASK) + ((level << BRICK_ADRESS_BITS) & BRICK_LEVEL_MASK);
 		}
 
-		inline bool IsLeaf(uint32_t& leaf)
+		inline uint32_t GetBrickID(uint32_t node)
 		{
-			return (leaf >> 31) > 0;
+			return (node & BRICK_ADRESS_MASK);
+		}
+
+		inline uint32_t GetBrickLevel(uint32_t node)
+		{
+			return ((node & BRICK_LEVEL_MASK) >> BRICK_ADRESS_BITS);
 		}
 	};
 

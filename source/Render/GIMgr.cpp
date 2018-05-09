@@ -151,9 +151,11 @@ void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
 
 bool GIMgr::BuildVoxelOctree()
 {
-	octreeArray.clear();
+	octreeArray.destroy();
 	chunks.destroy();
-	
+	bricks.destroy();
+	probes.clear();
+
 	debugOctreeVisuals.clear();
 	debugOctreeVisuals.reserve(2048);
 	
@@ -276,7 +278,9 @@ bool GIMgr::BuildVoxelOctree()
 		estimatedCount = estimatedCount * estimatedCount * estimatedCount;
 		estimatedCount = max(1, int32_t(estimatedCount * 0.004f));
 
-		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1);
+		Vector3 octreeHelper = Vector3((float)octree.lookupRes) / (octree.bbox.Extents * 2.0f);
+
+		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1, octreeHelper);
 		
 		//LOG("Octree nodes count: %i", (int32_t)octree.branches.size());
 	}
@@ -301,7 +305,46 @@ bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBo
 	return false;
 }
 
-void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth)
+const int32_t brickPointsWeights[27][8] =
+{
+	{ 0,0, 0,0, 1,0, 0,0 },
+	{ 0,0, 0,0, 1,1, 0,0 },
+	{ 0,0, 0,0, 0,1, 0,0 },
+
+	{ 0,0, 0,0, 1,0, 0,1 },
+	{ 0,0, 0,0, 1,1, 1,1 },
+	{ 0,0, 0,0, 0,1, 1,0 },
+
+	{ 0,0, 0,0, 0,0, 0,1 },
+	{ 0,0, 0,0, 0,0, 1,1 },
+	{ 0,0, 0,0, 0,0, 1,0 },
+
+	{ 1,0, 0,0, 1,0, 0,0 },
+	{ 1,1, 0,0, 1,1, 0,0 },
+	{ 0,1, 0,0, 0,1, 0,0 },
+
+	{ 1,0, 0,1, 1,0, 0,1 },
+	{ 1,1, 1,1, 1,1, 1,1 },
+	{ 0,1, 1,0, 0,1, 1,0 },
+
+	{ 0,0, 0,1, 0,0, 0,1 },
+	{ 0,0, 1,1, 0,0, 1,1 },
+	{ 0,0, 1,0, 0,0, 1,0 },
+
+	{ 1,0, 0,0, 0,0, 0,0 },
+	{ 1,1, 0,0, 0,0, 0,0 },
+	{ 0,1, 0,0, 0,0, 0,0 },
+
+	{ 1,0, 0,1, 0,0, 0,0 },
+	{ 1,1, 1,1, 0,0, 0,0 },
+	{ 0,1, 1,0, 0,0, 0,0 },
+
+	{ 0,0, 0,1, 0,0, 0,0 },
+	{ 0,0, 1,1, 0,0, 0,0 },
+	{ 0,0, 1,0, 0,0, 0,0 }
+};
+
+void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper)
 {
 	Vector3 corners[8];
 	bbox.GetCorners(corners);
@@ -314,7 +357,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 
 		if (octreeDepth > 0 && SceneBoxIntersect(staticScene, leafBox))
 		{
-			ProcessOctreeBranch(octree, staticScene, leafBox, octreeDepth - 1);
+			ProcessOctreeBranch(octree, staticScene, leafBox, octreeDepth - 1, octreeHelper);
 		}
 		else
 		{
@@ -326,10 +369,61 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 
 	if (hasBrick)
 	{
-		// TODO: brick allocation needed for branch
-		// TODO: fill lookup free nodes in bbox with brick links
-		// lookup uint32: 12 bit - x, 12 bit - y, 8 bit - level
+		Brick& newBrick = bricks.push_back();
+		uint32_t brickID = uint32_t(bricks.size() - 1);
+		
+		Vector3 bboxMin = octreeHelper * (bbox.Center - bbox.Extents);
+		Vector3 bboxMax = octreeHelper * (bbox.Center + bbox.Extents);
 
-		// TODO: probs registration
+		for (int32_t x = (int32_t)roundf(bboxMin.x); x < (int32_t)roundf(bboxMax.x); x++)
+		{
+			for (int32_t y = (int32_t)roundf(bboxMin.y); y < (int32_t)roundf(bboxMax.y); y++)
+			{
+				for (int32_t z = (int32_t)roundf(bboxMin.z); z < (int32_t)roundf(bboxMax.z); z++)
+				{
+					uint32_t& lookupNode = octree.lookup[x][y][z];
+					if (lookupNode == 0xffffffff)
+					{
+						lookupNode = SetLookupNode(brickID, octreeDepth);
+					}
+				}
+			}
+		}
+		
+		// probs registration
+		for (int32_t i = 0; i < BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION; i++)
+		{
+			Vector3 probPos;
+			int32_t count = 0;
+			for (int32_t k = 0; k < 8; k++)
+			{
+				if (brickPointsWeights[i][k] > 0)
+				{
+					probPos += corners[k];
+					count++;
+				}
+			}
+
+			probPos *= Vector3(1.0f / count);
+
+			Int3Pos posForHash(probPos);
+
+			auto probIt = probesLookup.find(posForHash);
+			if (probIt == probesLookup.end())
+			{
+				Prob& prob = probesArray.push_back();
+				uint32_t probID = uint32_t(probesArray.size() - 1);
+
+				prob.interpolated = false;
+				prob.pos = probPos;
+
+				probesLookup.insert(make_pair(posForHash, probID));
+				newBrick.probes[i] = probID;
+			}
+			else
+			{
+				newBrick.probes[i] = probIt->second;
+			}
+		}
 	}
 }
