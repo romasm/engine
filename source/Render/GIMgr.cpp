@@ -154,7 +154,8 @@ bool GIMgr::BuildVoxelOctree()
 	octreeArray.destroy();
 	chunks.destroy();
 	bricks.destroy();
-	probes.clear();
+	probesArray.destroy();
+	probesLookup.clear();
 
 	debugOctreeVisuals.clear();
 	debugOctreeVisuals.reserve(2048);

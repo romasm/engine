@@ -8,40 +8,80 @@
 #define DEBUG_MATERIAL "$" PATH_SHADERS "objects/editor/debug_lines"
 #define DEBUG_MATERIAL_DEPTHCULL "$" PATH_SHADERS "objects/editor/debug_lines_cull"
 
+#define DEBUG_GEOM_MAXCOUNT 128
+
 namespace EngineCore
-{
-	struct DBGLine
-	{
-		Vector3 A;
-		Vector3 colorA;
-		Vector3 B;
-		Vector3 colorB;
-	};
-	
-	// TODO: extent for static data
+{	
 	class DebugDrawer
 	{
+		struct DBGLine
+		{
+			Vector3 A;
+			Vector3 colorA;
+			Vector3 B;
+			Vector3 colorB;
+		};
+
+		struct DebugGeomHandle
+		{
+			ID3D11Buffer* verts;
+			Material* mat;
+			IA_TOPOLOGY topo;
+			uint32_t vertCount;
+			uint32_t vertSize;
+			int32_t lookup;
+		};
+
 	public:
 		DebugDrawer()
 		{
 			dbgLines.create(DEBUG_ARRAY_SIZE);
 			lineBuffer = Buffer::CreateVertexBuffer(DEVICE, DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
-			lineMat = MATERIAL_S(DEBUG_MATERIAL);
+			lineMat = MaterialMgr::Get()->GetMaterial(string(DEBUG_MATERIAL));
 			lineCount = 0;
 
 			dbgLinesDepthCull.create(DEBUG_ARRAY_SIZE);
 			lineBufferDepthCull = Buffer::CreateVertexBuffer(DEVICE, DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
-			lineMatDepthCull = MATERIAL_S(DEBUG_MATERIAL_DEPTHCULL);
+			lineMatDepthCull = MaterialMgr::Get()->GetMaterial(string(DEBUG_MATERIAL_DEPTHCULL));
 			lineCountDepthCull = 0;
+
+			vertexGeometry.create(DEBUG_GEOM_MAXCOUNT);
+
+			vertexGeometryLookup.create(DEBUG_GEOM_MAXCOUNT);
+			vertexGeometryLookup.resize(DEBUG_GEOM_MAXCOUNT);
+			vertexGeometryLookup.assign(-1);
+
+			vertexGeometryFreeId.create(DEBUG_GEOM_MAXCOUNT);
+			vertexGeometryFreeId.resize(DEBUG_GEOM_MAXCOUNT);
+			for (int32_t i = 0; i < DEBUG_GEOM_MAXCOUNT; i++)
+				vertexGeometryFreeId[i] = i;
 		}
 
 		~DebugDrawer()
 		{
 			_RELEASE(lineBuffer);
-			MATERIAL_PTR_DROP(lineMat);
+			if (lineMat)
+			{ 
+				MaterialMgr::Get()->DeleteMaterial(lineMat->GetName());
+				lineMat = nullptr;
+			}
 
 			_RELEASE(lineBufferDepthCull);
-			MATERIAL_PTR_DROP(lineMatDepthCull);
+			if (lineMatDepthCull)
+			{
+				MaterialMgr::Get()->DeleteMaterial(lineMatDepthCull->GetName());
+				lineMatDepthCull = nullptr;
+			}
+
+			for (auto& i : vertexGeometry)
+			{
+				_RELEASE(i.verts);
+				if (i.mat)
+				{
+					MaterialMgr::Get()->DeleteMaterial(i.mat->GetName());
+					i.mat = nullptr;
+				}
+			}
 		}
 
 		void PushLine(Vector3& A, Vector3& B, Vector3& colorA, Vector3& colorB, bool depthCull = false)
@@ -82,6 +122,64 @@ namespace EngineCore
 			PushLine(bboxCorners[4], bboxCorners[5], color, depthCull);
 			PushLine(bboxCorners[5], bboxCorners[6], color, depthCull);
 			PushLine(bboxCorners[6], bboxCorners[7], color, depthCull);
+		}
+
+		int32_t CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize)
+		{
+			if (vertexGeometryFreeId.empty())
+				return -1;
+
+			uint32_t handleId = vertexGeometryFreeId.front();
+			vertexGeometryFreeId.pop_front();
+			
+			vertexGeometryLookup[handleId] = vertexGeometry.size();
+
+			auto handle = vertexGeometry.push_back();
+			handle->mat = MaterialMgr::Get()->GetMaterial(matName);
+			handle->topo = topo;
+			handle->vertCount = 0;
+			handle->vertSize = vertSize;
+			handle->verts = Buffer::CreateVertexBuffer(DEVICE, maxPrimCount * vertSize, true, nullptr);
+			handle->lookup = handleId;
+
+			return handleId;
+		}
+
+		void UpdateGeometry(int32_t handleId, void* verts, uint32_t count)
+		{
+			int32_t& lookupId = vertexGeometryLookup[handleId];
+			if (lookupId < 0)
+				return;
+
+			DebugGeomHandle& handle = vertexGeometry[lookupId];
+			handle.vertCount = count;
+
+			Render::UpdateDynamicResource(handle.verts, verts, count * handle.vertSize);
+		}
+
+		void DeleteGeometryHandle(int32_t handleId)
+		{
+			int32_t& lookupId = vertexGeometryLookup[handleId];
+			if (lookupId < 0)
+				return;
+
+			DebugGeomHandle& handle = vertexGeometry[lookupId];
+
+			_RELEASE(handle.verts);
+			if (handle.mat)
+			{
+				MaterialMgr::Get()->DeleteMaterial(handle.mat->GetName());
+				handle.mat = nullptr;
+			}
+
+			vertexGeometry.erase_and_pop_back(lookupId);
+			if (!vertexGeometry.empty())
+			{
+				vertexGeometryLookup[vertexGeometry[lookupId].lookup] = lookupId;
+			}
+
+			vertexGeometryFreeId.push_back(lookupId);
+			lookupId = -1;
 		}
 
 		void Prepare()
@@ -132,6 +230,14 @@ namespace EngineCore
 				Render::SetTopology(IA_TOPOLOGY::LINELIST);
 				Render::Context()->Draw(lineCountDepthCull * 2, 0);
 			}
+
+			for (auto& i : vertexGeometry)
+			{
+				Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
+				i.mat->Set();
+				Render::SetTopology(i.topo);
+				Render::Context()->Draw(i.vertCount, 0);
+			}
 		}
 
 	private:
@@ -148,5 +254,9 @@ namespace EngineCore
 		Material* lineMatDepthCull;
 
 		Vector3 bboxCorners[8];
+
+		RArray<DebugGeomHandle> vertexGeometry;
+		RDeque<int32_t> vertexGeometryFreeId;
+		RDeque<int32_t> vertexGeometryLookup;
 	};
 }
