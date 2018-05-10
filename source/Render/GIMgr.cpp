@@ -21,10 +21,11 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	sampleDataGPU = nullptr;
 
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
-	chunkSize = powf(2.0f, (float)DEFAULT_OCTREE_DEPTH) * DEFAULT_OCTREE_VOXEL_SIZE;
-	maxOctreeDepth = DEFAULT_OCTREE_DEPTH;
+	chunkSize = powf(2.0f, (float)OCTREE_DEPTH) * DEFAULT_OCTREE_VOXEL_SIZE;
 
-	bDebugOctree = true;
+#ifdef _DEV
+	debugGeomHandle = -1;
+#endif
 
  	if(!InitBuffers())
 	{
@@ -34,6 +35,12 @@ GIMgr::GIMgr(BaseWorld* wrd)
 
 GIMgr::~GIMgr()
 {
+#ifdef _DEV
+	auto dbg = world->GetDebugDrawer();
+	if(dbg)
+		dbg->DeleteGeometryHandle(debugGeomHandle);
+#endif
+
 	_RELEASE(giVolumeUAV);
 	_RELEASE(giVolumeSRV);
 	_RELEASE(giVolume);
@@ -125,30 +132,6 @@ ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 		return TEXTURE_GETPTR(sgVolume);
 }
 
-void GIMgr::DebugDrawOctree(DebugDrawer* dbgDrawer)
-{
-	if (!bDebugOctree)
-		return;
-
-	for (auto& item : debugOctreeVisuals)
-	{
-		float colorParam = (item.Extents.x - voxelSize * 0.5f) / ((chunkSize - voxelSize) * 0.5f);
-		
-		Vector3 color;
-		color.x = powf(1.0f - clamp(0.0f, colorParam, 1.0f), 16.0f);
-		color.y = 1.0f - powf(clamp(0.0f, 2.0f * abs(colorParam - 0.5f), 1.0f), 8.0f);
-		color.z = powf(clamp(0.0f, colorParam, 1.0f), 0.4f);
-
-		dbgDrawer->PushBoundingBox(item, color, true);
-	}
-
-	Vector3 colorChunk(1.0f);
-	for (auto& item : octreeArray)
-	{
-		dbgDrawer->PushBoundingBox(item.bbox, colorChunk, true);
-	}
-}
-
 bool GIMgr::BuildVoxelOctree()
 {
 	octreeArray.destroy();
@@ -156,9 +139,6 @@ bool GIMgr::BuildVoxelOctree()
 	bricks.destroy();
 	probesArray.destroy();
 	probesLookup.clear();
-
-	debugOctreeVisuals.clear();
-	debugOctreeVisuals.reserve(2048);
 	
 	// collect static geometry
 	auto transformSys = world->GetTransformSystem();
@@ -231,6 +211,8 @@ bool GIMgr::BuildVoxelOctree()
 	BoundingBox chunkBox;
 	chunkBox.Extents = Vector3(chunkSize * 0.5f);
 
+	octreeArray.create(xSize * ySize * zSize);
+
 	for (int32_t x = 0; x < xSize; x++)
 	{
 		for (int32_t y = 0; y < ySize; y++)
@@ -239,29 +221,29 @@ bool GIMgr::BuildVoxelOctree()
 			{
 				chunkBox.Center = worldBox.corner + chunkSize * Vector3(float(x), float(y), float(z)) + chunkBox.Extents;
 
-				auto& octree = octreeArray.push_back();
-				octree.bbox = chunkBox;
+				auto* octree = octreeArray.push_back();
+				octree->bbox = chunkBox;
 
 				if (SceneBoxIntersect(staticScene, chunkBox))
 				{
 					// TODO: configurate per chunk
-					octree.depth = maxOctreeDepth;
+					octree->depth = OCTREE_DEPTH;
 				}
 				else
 				{
-					octree.depth = 1;
+					octree->depth = 1;
 				}
 
-				octree.lookupRes = (int32_t)powf(2.0f, octree.depth - 1);
+				octree->lookupRes = (int32_t)powf(2.0f, float(octree->depth - 1));
 
-				octree.lookup = new uint32_t**[octree.lookupRes];
-				for (int32_t x = 0; x < octree.lookupRes; x++)
+				octree->lookup = new uint32_t**[octree->lookupRes];
+				for (int32_t x = 0; x < octree->lookupRes; x++)
 				{
-					octree.lookup[x] = new uint32_t*[octree.lookupRes];
-					for (int32_t y = 0; y < octree.lookupRes; y++)
+					octree->lookup[x] = new uint32_t*[octree->lookupRes];
+					for (int32_t y = 0; y < octree->lookupRes; y++)
 					{
-						octree.lookup[x][y] = new uint32_t[octree.lookupRes];
-						memset(octree.lookup[x][y], (int)0xffffffff, sizeof(uint32_t) * octree.lookupRes);
+						octree->lookup[x][y] = new uint32_t[octree->lookupRes];
+						memset(octree->lookup[x][y], (int)0xffffffff, sizeof(uint32_t) * octree->lookupRes);
 					}
 				}
 
@@ -270,7 +252,7 @@ bool GIMgr::BuildVoxelOctree()
 		}
 	}
 
-	LOG("Chunks count: %i", (int32_t)octreeArray.size());
+	LOG_GOOD("Chunks count: %i", (int32_t)octreeArray.size());
 
 	// build octrees
 	for (auto& octree : octreeArray)
@@ -280,11 +262,21 @@ bool GIMgr::BuildVoxelOctree()
 		estimatedCount = max(1, int32_t(estimatedCount * 0.004f));
 
 		Vector3 octreeHelper = Vector3((float)octree.lookupRes) / (octree.bbox.Extents * 2.0f);
+		Vector3 octreeCorner = octree.bbox.Center - octree.bbox.Extents;
 
-		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1, octreeHelper);
-		
-		//LOG("Octree nodes count: %i", (int32_t)octree.branches.size());
+		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1, octreeHelper, octreeCorner);
 	}
+
+	LOG_GOOD("Bricks count: %i", (int32_t)bricks.size());
+	LOG_GOOD("Probes count: %i", (int32_t)probesArray.size());
+
+#ifndef _DEV
+	octreeArray.destroy();
+	chunks.destroy();
+	bricks.destroy();
+	probesArray.destroy();
+	probesLookup.clear();
+#endif
 
 	return true;
 }
@@ -345,36 +337,45 @@ const int32_t brickPointsWeights[27][8] =
 	{ 0,0, 1,0, 0,0, 0,0 }
 };
 
-void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper)
+void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper, Vector3& octreeCorner)
 {
 	Vector3 corners[8];
 	bbox.GetCorners(corners);
 	
 	bool hasBrick = false;
-	BoundingBox leafBox;
-	for (int32_t i = 0; i < 8; i++)
-	{
-		BoundingBox::CreateFromPoints(leafBox, Vector3(bbox.Center), corners[i]);
 
-		if (octreeDepth > 0 && SceneBoxIntersect(staticScene, leafBox))
+	if (octreeDepth > 0)
+	{
+		BoundingBox leafBox;
+		for (int32_t i = 0; i < 8; i++)
 		{
-			ProcessOctreeBranch(octree, staticScene, leafBox, octreeDepth - 1, octreeHelper);
+			BoundingBox::CreateFromPoints(leafBox, Vector3(bbox.Center), corners[i]);
+
+			if (SceneBoxIntersect(staticScene, leafBox))
+			{
+				ProcessOctreeBranch(octree, staticScene, leafBox, octreeDepth - 1, octreeHelper, octreeCorner);
+			}
+			else
+			{
+				hasBrick = true;
+			}
 		}
-		else
-		{
-			hasBrick = true;
-			
-			debugOctreeVisuals.push_back(leafBox);
-		}
+	}
+	else
+	{
+		hasBrick = true;
 	}
 
 	if (hasBrick)
 	{
 		Brick& newBrick = bricks.push_back();
 		uint32_t brickID = uint32_t(bricks.size() - 1);
+
+		newBrick.bbox = bbox;
+		newBrick.levelInv = octreeDepth;
 		
-		Vector3 bboxMin = octreeHelper * (bbox.Center - bbox.Extents);
-		Vector3 bboxMax = octreeHelper * (bbox.Center + bbox.Extents);
+		Vector3 bboxMin = octreeHelper * (bbox.Center - octreeCorner - bbox.Extents);
+		Vector3 bboxMax = octreeHelper * (bbox.Center - octreeCorner + bbox.Extents);
 
 		for (int32_t x = (int32_t)roundf(bboxMin.x); x < (int32_t)roundf(bboxMax.x); x++)
 		{
@@ -407,7 +408,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 
 			probPos *= Vector3(1.0f / count);
 
-			Int3Pos posForHash(probPos);
+			uint64_t posForHash = PosToUint(probPos);
 
 			auto probIt = probesLookup.find(posForHash);
 			if (probIt == probesLookup.end())
@@ -428,3 +429,82 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		}
 	}
 }
+
+#ifdef _DEV
+const Vector3 octreeColors[OCTREE_DEPTH] =
+{
+	{ 1.0f, 0.0f, 0.0f },
+	{ 1.0f, 1.0f, 0.0f },
+	{ 0.0f, 1.0f, 0.0f },
+	{ 0.0f, 1.0f, 1.0f },
+	{ 0.0f, 0.0f, 1.0f },
+	{ 1.0f, 0.0f, 1.0f },
+	{ 0.0f, 0.0f, 0.0f }
+};
+
+#define PUSH_BOX_TO_LINES \
+	lines.push_back(DBGLine(bboxCorners[0], color, bboxCorners[1], color));\
+	lines.push_back(DBGLine(bboxCorners[0], color, bboxCorners[3], color));\
+	lines.push_back(DBGLine(bboxCorners[0], color, bboxCorners[4], color));\
+	lines.push_back(DBGLine(bboxCorners[1], color, bboxCorners[2], color));\
+	lines.push_back(DBGLine(bboxCorners[1], color, bboxCorners[5], color));\
+	lines.push_back(DBGLine(bboxCorners[2], color, bboxCorners[3], color));\
+	lines.push_back(DBGLine(bboxCorners[2], color, bboxCorners[6], color));\
+	lines.push_back(DBGLine(bboxCorners[3], color, bboxCorners[7], color));\
+	lines.push_back(DBGLine(bboxCorners[4], color, bboxCorners[7], color));\
+	lines.push_back(DBGLine(bboxCorners[4], color, bboxCorners[5], color));\
+	lines.push_back(DBGLine(bboxCorners[5], color, bboxCorners[6], color));\
+	lines.push_back(DBGLine(bboxCorners[6], color, bboxCorners[7], color));
+
+void GIMgr::DebugSetState(DebugState state)
+{
+	auto dbg = world->GetDebugDrawer();
+	if (!dbg || bricks.empty())
+		return;
+
+	dbg->DeleteGeometryHandle(debugGeomHandle);
+
+	switch (state)
+	{
+	case DebugState::DS_NONE:
+		break;
+
+	case DebugState::DS_OCTREE:
+		{
+			Vector3 bboxCorners[8];
+			RArray<DBGLine> lines;
+			lines.create((bricks.size() + octreeArray.size()) * 12);
+			
+			for (auto& item : bricks)
+			{
+				if (item.levelInv >= OCTREE_DEPTH - 1)
+					continue;
+
+				const Vector3& color = octreeColors[item.levelInv];
+				item.bbox.GetCorners(bboxCorners);
+				PUSH_BOX_TO_LINES
+			}
+
+			for (auto& item : octreeArray)
+			{
+				const Vector3 color(1.0f);
+				item.bbox.GetCorners(bboxCorners);
+				PUSH_BOX_TO_LINES
+			}
+
+			uint32_t vertsCount = (uint32_t)lines.size() * 2;
+
+			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
+			if (debugGeomHandle < 0)
+				return;
+
+			dbg->UpdateGeometry(debugGeomHandle, lines.data(), vertsCount);
+		}
+		break;
+
+	case DebugState::DS_PROBES:
+
+		break;
+	}
+}
+#endif

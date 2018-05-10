@@ -185,6 +185,8 @@ namespace EngineCore
 
 		inline GIMgr* GetGIMgr() const {return giMgr;}
 
+		virtual DebugDrawer* GetDebugDrawer() { return nullptr; }
+
 		inline Entity CreateEntity() {return m_entityMgr->CreateEntity();}
 		Entity CreateNamedEntity(string name) 
 		{
@@ -373,7 +375,6 @@ namespace EngineCore
 		void destroyEntity(Entity e);
 
 		bool loadWorld(string& filename, WorldHeader& header);
-		void initMainEntities(WorldHeader& header);
 		
 		bool saveWorld(string& filename);
 
@@ -449,10 +450,19 @@ namespace EngineCore
 		void Snapshot(ScenePipeline* scene);
 		void Frame();
 		virtual void Close();
-		
+
+		virtual DebugDrawer* GetDebugDrawer() override { return &dbgDrawer; }
+
 		bool SaveWorld(string filename)
 		{
 			return saveWorld(filename);
+		}
+
+		void GIDebugSetState(int32_t s)
+		{
+#ifdef _DEV
+			giMgr->DebugSetState(GIMgr::DebugState(s));
+#endif
 		}
 
 		static void RegLuaClass()
@@ -460,6 +470,7 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.deriveClass<World, BaseWorld>("World")
 					.addFunction("Save", &World::SaveWorld)
+					.addFunction("GIDebugSetState", &World::GIDebugSetState)
 				.endClass();
 		}
 

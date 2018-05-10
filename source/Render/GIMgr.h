@@ -5,7 +5,7 @@
 #include "MeshMgr.h"
 #include "DebugDrawer.h"
 
-#define DEFAULT_OCTREE_DEPTH 7
+#define OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 
 #define BKICK_RESOLUTION 3
@@ -30,6 +30,7 @@ namespace EngineCore
 		}
 	};
 
+	// !!! Use only with SArray or RArray
 	struct Octree
 	{
 		int32_t depth;
@@ -66,6 +67,8 @@ namespace EngineCore
 	struct Brick
 	{
 		uint32_t probes[BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION];
+		BoundingBox bbox;
+		uint32_t levelInv;
 	};
 
 	struct Prob
@@ -77,6 +80,13 @@ namespace EngineCore
 	class GIMgr
 	{
 	public:
+		enum DebugState
+		{
+			DS_NONE = 0,
+			DS_OCTREE,
+			DS_PROBES
+		};
+
 		GIMgr(class BaseWorld* wrd);
 		~GIMgr();
 				
@@ -87,9 +97,7 @@ namespace EngineCore
 		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
 
 		bool BuildVoxelOctree();
-
-		void DebugDrawOctree(DebugDrawer* dbgDrawer);
-
+		
 	private:
 		bool InitBuffers();
 
@@ -106,46 +114,34 @@ namespace EngineCore
 
 		// baking
 
+		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
+		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, 
+			Vector3& octreeHelper, Vector3& octreeCorner);
+
+
 		float voxelSize;
 		float chunkSize;
-		int32_t maxOctreeDepth;
 
 		BoxCornerSize worldBox;
 
-		DArray<Octree> octreeArray;
+		RArray<Octree> octreeArray;
 		RArray<RArray<RArray<int32_t>>> chunks;
 
 		DArray<Brick> bricks;
 
-		struct Int3Pos
-		{
-			int32_t x;
-			int32_t y;
-			int32_t z;
-
-			Int3Pos()
-			{
-				x = 0;
-				y = 0;
-				z = 0;
-			}
-
-			Int3Pos(const Vector3 pos)
-			{
-				x = (int32_t)roundf(pos.x * 1000.0f);
-				y = (int32_t)roundf(pos.y * 1000.0f);
-				z = (int32_t)roundf(pos.z * 1000.0f);
-			}
-		};
-		unordered_map<Int3Pos, uint32_t> probesLookup;
+		unordered_map<uint64_t, uint32_t> probesLookup;
 		DArray<Prob> probesArray;
+		
+#ifdef _DEV
 
-		DArray<BoundingBox> debugOctreeVisuals;
-		bool bDebugOctree;
+	public:
+		void DebugSetState(DebugState state);
 
-		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
-		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper);
-	
+	private:
+		int32_t debugGeomHandle;
+
+#endif
+
 		#define BRICK_ADRESS_BITS 24
 		#define BRICK_ADRESS_MASK 0x00ffffff
 		#define BRICK_LEVEL_MASK 0xff000000
@@ -164,6 +160,15 @@ namespace EngineCore
 		inline uint32_t GetBrickLevel(uint32_t node)
 		{
 			return ((node & BRICK_LEVEL_MASK) >> BRICK_ADRESS_BITS);
+		}
+
+		inline uint64_t PosToUint(const Vector3 pos)
+		{
+			int32_t x = (int32_t)roundf(pos.x * 1000.0f);
+			int32_t y = (int32_t)roundf(pos.y * 1000.0f);
+			int32_t z = (int32_t)roundf(pos.z * 1000.0f);
+
+			return (((uint64_t)z) << 32) + (((uint64_t)y) << 16) + ((uint64_t)x);
 		}
 	};
 

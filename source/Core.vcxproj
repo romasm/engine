@@ -253,6 +253,7 @@
     <ClCompile Include="ECS\CameraSystem.cpp" />
     <ClCompile Include="ECS\CollisionSystem.cpp" />
     <ClCompile Include="ECS\ControllerSystem.cpp" />
+    <ClCompile Include="ECS\DebugDrawer.cpp" />
     <ClCompile Include="ECS\EarlyVisibilitySystem.cpp" />
     <ClCompile Include="ECS\EnvProbSystem.cpp" />
     <ClCompile Include="ECS\GlobalLightSystem.cpp" />
