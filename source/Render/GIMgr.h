@@ -10,6 +10,8 @@
 
 #define BKICK_RESOLUTION 3
 
+#define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
+
 namespace EngineCore
 {
 	struct GISampleData

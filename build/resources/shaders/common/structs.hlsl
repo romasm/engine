@@ -10,6 +10,11 @@ struct VI_Pos
     float3 position			: POSITION;   
 };
 
+struct GI_Pos
+{
+	float3 position			: POSITION;
+};
+
 struct PI_PosTex
 {
     float4 pos				: SV_POSITION;   
@@ -20,6 +25,13 @@ struct VI_PosTex
 {
     float3 pos				: POSITION;
     float2 tex				: TEXCOORD;
+};
+
+struct PI_PosTexNorm
+{
+	float4 pos				: SV_POSITION;
+	float2 tex				: TEXCOORD0;
+	float3 normal			: NORMAL;
 };
 
 struct VI_PosColor

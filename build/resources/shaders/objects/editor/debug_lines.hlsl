@@ -9,6 +9,6 @@ TECHNIQUE_DEFAULT
 	FillMode = WIREFRAME;
 	CullMode = NONE;
 
-	VertexShader = "../resources/shaders/objects/editor/debug_lines_common VS";
-	PixelShader = "../resources/shaders/objects/editor/debug_lines_common PS";
+	VertexShader = "../resources/shaders/objects/editor/debug_common LineColorVS";
+	PixelShader = "../resources/shaders/objects/editor/debug_common LineColorPS";
 }

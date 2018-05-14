@@ -503,7 +503,20 @@ void GIMgr::DebugSetState(DebugState state)
 		break;
 
 	case DebugState::DS_PROBES:
+		{
+			RArray<Vector3> points;
+			points.create(probesArray.size());
+			for (auto& item : probesArray)
+			{
+				points.push_back(item.pos);
+			}
 
+			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::TRISLIST, (uint32_t)probesArray.size(), (uint32_t)sizeof(Vector3));
+			if (debugGeomHandle < 0)
+				return;
+
+			dbg->UpdateGeometry(debugGeomHandle, points.data(), (uint32_t)probesArray.size());
+		}
 		break;
 	}
 }
