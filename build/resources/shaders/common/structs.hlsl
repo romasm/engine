@@ -22,11 +22,13 @@ struct VI_PosTex
     float2 tex				: TEXCOORD;
 };
 
-struct PI_PosTexNorm
+struct PI_PosTexTBN
 {
 	float4 pos				: SV_POSITION;
 	float2 tex				: TEXCOORD0;
 	float3 normal			: NORMAL;
+	float3 tangent			: TANGENT;
+	float3 binormal			: BINORMAL;
 };
 
 struct VI_PosColor
