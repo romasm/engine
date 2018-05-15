@@ -608,4 +608,8 @@ void SimpleShader::Set()
 	Render::PSSetShader((ID3D11PixelShader*)shaderPS.code, nullptr, 0);
 	if(!shaderPS.input.samplers.empty())
 		Render::PSSetSamplers(0, (uint32_t)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
+	
+	Render::HSSetShader(nullptr, nullptr, 0);
+	Render::DSSetShader(nullptr, nullptr, 0);
+	Render::GSSetShader(nullptr, nullptr, 0);
 }

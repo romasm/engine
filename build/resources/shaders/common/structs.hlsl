@@ -10,11 +10,6 @@ struct VI_Pos
     float3 position			: POSITION;   
 };
 
-struct GI_Pos
-{
-	float3 position			: POSITION;
-};
-
 struct PI_PosTex
 {
     float4 pos				: SV_POSITION;   

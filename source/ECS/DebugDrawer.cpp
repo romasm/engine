@@ -199,7 +199,7 @@ void DebugDrawer::Render()
 		Render::SetTopology(IA_TOPOLOGY::LINELIST);
 		Render::Context()->Draw(lineCountDepthCull * 2, 0);
 	}
-
+	
 	for (auto& i : vertexGeometry)
 	{
 		Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
