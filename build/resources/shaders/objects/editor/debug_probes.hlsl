@@ -1,6 +1,6 @@
 TECHNIQUE_DEFAULT
 {
-	Queue = GUI_3D;
+	Queue = SC_OPAQUE;
 
 	DepthEnable = true;
 	DepthWrite = true;

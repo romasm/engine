@@ -73,13 +73,25 @@ void ProbGS(point VI_Pos input[1], inout TriangleStream<PI_PosTexTBN> outputStre
 	outputStream.RestartStrip();
 }
 
-float4 ProbPS(PI_PosTexTBN input) : SV_TARGET
+PO_Gbuffer ProbPS(PI_PosTexTBN input)
 {
 	float cosNsq = dot(input.tex, input.tex);
 	if (cosNsq > 1)
 		discard;
 
 	float3 normal = normalize(input.tex.x * input.tangent + input.tex.y * input.binormal + input.normal * sqrt(1 - cosNsq));
+	float3 nTangent = normalize(cross(normal, input.binormal));
 
-	return float4(normal * 0.5 + 0.5, 1);
+	const float3 albedo = 0.8;
+	const float roughness = 0.8;
+
+	PO_Gbuffer res = (PO_Gbuffer)0;
+	res.albedo_roughY = float4(albedo, roughness);
+	res.tbn = EncodeTBNasFloat4(normal, nTangent);
+	res.vnormXY = input.normal.xy;
+	res.spec_roughX = float4(0.04, 0.04, 0.04, roughness);
+	res.emiss_vnormZ = float4(0, 0, 0, input.normal.z);
+	res.ao = 1.0;
+
+	return res;
 }

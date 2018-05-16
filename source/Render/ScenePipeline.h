@@ -198,7 +198,7 @@ namespace EngineCore
 		bool UIStage();
 		void UIOverlayStage();
 
-		void OpaqueForwardStage();
+		void OpaqueForwardStage(DebugDrawer* dbgDrawer = nullptr);
 		void TransparentForwardStage();
 
 		void OpaqueDefferedStage();

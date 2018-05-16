@@ -33,6 +33,7 @@ namespace EngineCore
 			uint32_t vertCount;
 			uint32_t vertSize;
 			int32_t lookup;
+			bool opaque;
 		};
 
 	public:
@@ -47,13 +48,14 @@ namespace EngineCore
 
 		void PushBoundingBox(BoundingBox& box, Vector3& color, bool depthCull = false);
 
-		int32_t CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize);
+		int32_t CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque = false);
 		void UpdateGeometry(int32_t handleId, void* verts, uint32_t count);
 		void DeleteGeometryHandle(int32_t handleId);
 
 		void Prepare();
 		void Drop();
 		void Render();
+		void RenderOpaque();
 
 	private:
 		RArray<DBGLine> dbgLines;

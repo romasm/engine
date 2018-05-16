@@ -511,7 +511,7 @@ void GIMgr::DebugSetState(DebugState state)
 				points.push_back(item.pos);
 			}
 
-			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)probesArray.size(), (uint32_t)sizeof(Vector3));
+			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)probesArray.size(), (uint32_t)sizeof(Vector3), true);
 			if (debugGeomHandle < 0)
 				return;
 

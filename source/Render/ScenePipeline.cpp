@@ -703,7 +703,7 @@ void ScenePipeline::UIOverlayStage()
 	render_mgr->DrawOvHud();
 }
 
-void ScenePipeline::OpaqueForwardStage()
+void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 {
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
@@ -713,6 +713,9 @@ void ScenePipeline::OpaqueForwardStage()
 
 	render_mgr->DrawOpaque(this);
 	render_mgr->DrawAlphatest(this);
+	
+	if(dbgDrawer)
+		dbgDrawer->RenderOpaque();
 
 	PERF_GPU_TIMESTAMP(_DEPTH_COPY);
 

@@ -868,7 +868,7 @@ void World::Frame()
 		if(it->StartFrame(&m_world_timer))
 		{
 			PERF_GPU_TIMESTAMP(_SCENE_FORWARD);
-			it->OpaqueForwardStage();
+			it->OpaqueForwardStage(&dbgDrawer);
 
 			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
 			it->OpaqueDefferedStage();

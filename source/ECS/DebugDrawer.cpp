@@ -90,7 +90,7 @@ void DebugDrawer::PushBoundingBox(BoundingBox& box, Vector3& color, bool depthCu
 	PushLine(bboxCorners[6], bboxCorners[7], color, depthCull);
 }
 
-int32_t DebugDrawer::CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize)
+int32_t DebugDrawer::CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque)
 {
 	if (vertexGeometryFreeId.empty())
 		return -1;
@@ -107,6 +107,7 @@ int32_t DebugDrawer::CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uin
 	handle->vertSize = vertSize;
 	handle->verts = Buffer::CreateVertexBuffer(DEVICE, maxPrimCount * vertSize, true, nullptr);
 	handle->lookup = handleId;
+	handle->opaque = isOpaque;
 
 	return handleId;
 }
@@ -202,6 +203,25 @@ void DebugDrawer::Render()
 	
 	for (auto& i : vertexGeometry)
 	{
+		if (i.opaque)
+			continue;
+
+		Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
+		i.mat->Set();
+		Render::SetTopology(i.topo);
+		Render::Context()->Draw(i.vertCount, 0);
+	}
+}
+
+void DebugDrawer::RenderOpaque()
+{
+	const uint32_t offset = 0;
+
+	for (auto& i : vertexGeometry)
+	{
+		if (!i.opaque)
+			continue;
+
 		Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
 		i.mat->Set();
 		Render::SetTopology(i.topo);
