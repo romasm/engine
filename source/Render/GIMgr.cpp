@@ -13,15 +13,25 @@ GIMgr::GIMgr(BaseWorld* wrd)
 {
 	world = wrd;
 
-	giVolume = nullptr;
-	giVolumeSRV = nullptr;
-	giVolumeUAV = nullptr;
+	bricksAtlas = nullptr;
+	bricksAtlasSRV = nullptr;
+	bricksAtlasUAV = nullptr;
+
+	chunksLookup = nullptr;
+	chunksLookupSRV = nullptr;
+
+	bricksLookup = nullptr;
+	bricksLookupSRV = nullptr;
+
+	bricksTexX = 0;
+	bricksTexY = 0;
 
 	sgVolume = TexMgr::nullres;
 	sampleDataGPU = nullptr;
 
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
-	chunkSize = powf(2.0f, (float)OCTREE_DEPTH) * DEFAULT_OCTREE_VOXEL_SIZE;
+	lookupMaxSize = (uint32_t)powf(2.0f, (float)OCTREE_DEPTH);
+	chunkSize = (float)lookupMaxSize * DEFAULT_OCTREE_VOXEL_SIZE;
 
 #ifdef _DEV
 	debugGeomHandle = -1;
@@ -41,9 +51,7 @@ GIMgr::~GIMgr()
 		dbg->DeleteGeometryHandle(debugGeomHandle);
 #endif
 
-	_RELEASE(giVolumeUAV);
-	_RELEASE(giVolumeSRV);
-	_RELEASE(giVolume);
+	DeleteResources();
 
 	TEXTURE_DROP(sgVolume);
 	_RELEASE(sampleDataGPU);
@@ -130,6 +138,111 @@ ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 		return giVolumeSRV;
 	else
 		return TEXTURE_GETPTR(sgVolume);
+}
+
+bool GIMgr::DeleteResources()
+{
+	_RELEASE(chunksLookupSRV);
+	_RELEASE(chunksLookup);
+
+	_RELEASE(bricksLookupSRV);
+	_RELEASE(bricksLookup);
+
+	_RELEASE(bricksAtlasUAV);
+	_RELEASE(bricksAtlasSRV);
+	_RELEASE(bricksAtlas);
+
+	bricksTexX = 0;
+	bricksTexY = 0;
+}
+
+bool GIMgr::RecreateResources()
+{
+	DeleteResources();
+
+	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+	D3D11_TEXTURE3D_DESC volumeDesc;
+	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
+	volumeDesc.Width = bricksTexX * BKICK_RESOLUTION;
+	volumeDesc.Height = bricksTexY * BKICK_RESOLUTION;
+	volumeDesc.Depth = BKICK_RESOLUTION * BKICK_F4_COUNT;
+	volumeDesc.MipLevels = 1;
+	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
+	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	volumeDesc.CPUAccessFlags = 0;
+	volumeDesc.MiscFlags = 0;
+	volumeDesc.Format = formatBricks;
+	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksAtlas)))
+		return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
+	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Texture3D.MipLevels = -1;
+	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
+	volumeSRVDesc.Format = formatBricks;
+	if (FAILED(Render::CreateShaderResourceView(bricksAtlas, &volumeSRVDesc, &bricksAtlasSRV)))
+		return false;
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
+	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
+	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+	volumeUAVDesc.Texture3D.MipSlice = 0;
+	volumeUAVDesc.Texture3D.WSize = BKICK_RESOLUTION * BKICK_F4_COUNT;
+	volumeUAVDesc.Format = formatBricks;
+	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
+		return false;
+
+	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
+
+	// TODO: reserve bricks places
+
+	const DXGI_FORMAT formatChunks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
+
+	uint32_t chunksX = (uint32_t)chunks.size();
+	if (chunksX == 0)
+		return false;
+	uint32_t chunksY = (uint32_t)chunks[0].size();
+	if (chunksY == 0)
+		return false;
+	uint32_t chunksZ = (uint32_t)chunks[0][0].size();
+	
+	volumeDesc.Width = chunksX;
+	volumeDesc.Height = chunksY;
+	volumeDesc.Depth = chunksZ;
+	volumeDesc.Usage = D3D11_USAGE_DYNAMIC;
+	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	volumeDesc.Format = formatChunks;
+	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &chunksLookup)))
+		return false;
+
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Format = formatChunks;
+	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
+		return false;
+
+	// TODO: constuct lookup 3d volume
+	// TODO: fill chunks links
+
+	const DXGI_FORMAT formatLookup = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+
+	volumeDesc.Width = ;
+	volumeDesc.Height = ;
+	volumeDesc.Depth = lookupMaxSize;
+	volumeDesc.Format = formatLookup;
+	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &chunksLookup)))
+		return false;
+
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Format = formatLookup;
+	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
+		return false;
+
+	// TODO: fill lookup links
+
+	return true;
 }
 
 bool GIMgr::BuildVoxelOctree()
@@ -270,13 +383,27 @@ bool GIMgr::BuildVoxelOctree()
 	LOG_GOOD("Bricks count: %i", (int32_t)bricks.size());
 	LOG_GOOD("Probes count: %i", (int32_t)probesArray.size());
 
+	// build bricks texture
+	bricksTexX = (uint32_t)ceilf(sqrtf((float)bricks.size()));
+	bricksTexY = (uint32_t)ceilf((float)bricks.size() / bricksTexX);
+
+	if (!RecreateResources())
+	{
+		ERR("Cant create resources for GI");
+		return false;
+	}
+
+
+
+
 #ifndef _DEV
 	octreeArray.destroy();
 	chunks.destroy();
 	bricks.destroy();
 	probesArray.destroy();
-	probesLookup.clear();
 #endif
+
+	probesLookup.clear();
 
 	return true;
 }

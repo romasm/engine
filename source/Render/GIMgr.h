@@ -9,6 +9,7 @@
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 
 #define BKICK_RESOLUTION 3
+#define BKICK_F4_COUNT 4
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 
@@ -102,17 +103,30 @@ namespace EngineCore
 		
 	private:
 		bool InitBuffers();
+		bool RecreateResources();
+		bool DeleteResources();
 
 		BaseWorld* world;
 
-		ID3D11Texture3D* giVolume;
-		ID3D11ShaderResourceView* giVolumeSRV;
-		ID3D11UnorderedAccessView* giVolumeUAV;
-		
 		uint32_t sgVolume;
 
 		GISampleData sampleData;
 		ID3D11Buffer* sampleDataGPU;
+
+		// editor gi resources
+
+		ID3D11Texture3D* bricksAtlas;
+		ID3D11ShaderResourceView* bricksAtlasSRV;
+		ID3D11UnorderedAccessView* bricksAtlasUAV;
+
+		ID3D11Texture3D* chunksLookup;
+		ID3D11ShaderResourceView* chunksLookupSRV;
+
+		ID3D11Texture3D* bricksLookup;
+		ID3D11ShaderResourceView* bricksLookupSRV;
+		
+		uint32_t bricksTexX;
+		uint32_t bricksTexY;
 
 		// baking
 
@@ -123,6 +137,7 @@ namespace EngineCore
 
 		float voxelSize;
 		float chunkSize;
+		uint32_t lookupMaxSize;
 
 		BoxCornerSize worldBox;
 
