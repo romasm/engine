@@ -42,11 +42,17 @@ namespace EngineCore
 		int32_t lookupRes;
 		uint32_t*** lookup;
 
+		uint32_t parentChunk[3];
+
 		Octree()
 		{
 			depth = 0;
 			lookupRes = 0;
 			lookup = nullptr;
+
+			parentChunk[0] = 0;
+			parentChunk[1] = 0;
+			parentChunk[2] = 0;
 		}
 
 		~Octree()
@@ -58,6 +64,17 @@ namespace EngineCore
 				delete[] lookup[x];
 			}
 			delete[] lookup;
+		}
+
+		static void Swap(Octree& a, Octree& b)
+		{
+			swap(a.depth, b.depth);
+			swap(a.bbox, b.bbox);
+			swap(a.lookupRes, b.lookupRes);
+			swap(a.lookup, b.lookup);
+			swap(a.parentChunk[0], b.parentChunk[0]);
+			swap(a.parentChunk[1], b.parentChunk[1]);
+			swap(a.parentChunk[2], b.parentChunk[2]);
 		}
 	};
 
@@ -77,6 +94,7 @@ namespace EngineCore
 	struct Prob
 	{
 		Vector3 pos;
+		Vector3 adress;
 		bool interpolated;
 	};
 
@@ -101,6 +119,9 @@ namespace EngineCore
 
 		bool BuildVoxelOctree();
 		
+		static bool CompareOctrees(Octree& first, Octree& second);
+		static void SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr);
+
 	private:
 		bool InitBuffers();
 		bool RecreateResources();
@@ -143,12 +164,13 @@ namespace EngineCore
 
 		RArray<Octree> octreeArray;
 		RArray<RArray<RArray<int32_t>>> chunks;
-
 		DArray<Brick> bricks;
-
-		unordered_map<uint64_t, uint32_t> probesLookup;
 		DArray<Prob> probesArray;
-		
+
+		// global temp data
+		unordered_map<uint64_t, uint32_t> probesLookup;
+		DArray<uint32_t> bricksLinks;
+
 #ifdef _DEV
 
 	public:
@@ -160,18 +182,32 @@ namespace EngineCore
 #endif
 
 		#define BRICK_ADRESS_BITS 24
+		#define BRICK_XY_BITS 12
 		#define BRICK_ADRESS_MASK 0x00ffffff
+		#define BRICK_X_MASK 0x00fff000
+		#define BRICK_Y_MASK 0x00000fff
 		#define BRICK_LEVEL_MASK 0xff000000
 
-		// lookup uint32: 8 bit - level, 12 bit - x, 12 bit - y
 		inline uint32_t SetLookupNode(uint32_t id, uint32_t level)
 		{
 			return (id & BRICK_ADRESS_MASK) + ((level << BRICK_ADRESS_BITS) & BRICK_LEVEL_MASK);
 		}
 
+		// lookup uint32: 8 bit - level, 12 bit - x, 12 bit - y
+		inline uint32_t SetLookupNode(uint32_t x, uint32_t y, uint32_t level)
+		{
+			return ((x << BRICK_XY_BITS) & BRICK_X_MASK) + (y & BRICK_Y_MASK) + ((level << BRICK_ADRESS_BITS) & BRICK_LEVEL_MASK);
+		}
+
 		inline uint32_t GetBrickID(uint32_t node)
 		{
 			return (node & BRICK_ADRESS_MASK);
+		}
+
+		inline void GetBrickAdress(uint32_t node, uint32_t& x, uint32_t& y)
+		{
+			x = ((node & BRICK_X_MASK) >> BRICK_XY_BITS);
+			y = (node & BRICK_Y_MASK);
 		}
 
 		inline uint32_t GetBrickLevel(uint32_t node)

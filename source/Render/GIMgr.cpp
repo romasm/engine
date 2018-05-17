@@ -156,10 +156,57 @@ bool GIMgr::DeleteResources()
 	bricksTexY = 0;
 }
 
+bool GIMgr::CompareOctrees(Octree& first, Octree& second)
+{
+	return first.lookupRes < second.lookupRes;
+}
+
+void GIMgr::SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr)
+{
+	swap((*arr)[first->parentChunk[0]][first->parentChunk[1]][first->parentChunk[2]], 
+		(*arr)[second->parentChunk[0]][second->parentChunk[1]][second->parentChunk[2]]);
+	Octree::Swap(*first, *second);
+}
+
+const uint32_t probesOffset[27][3] =
+{
+	{ 0,0,0 },
+	{ 1,0,0 },
+	{ 2,0,0 },
+	{ 0,1,0 },
+	{ 1,1,0 },
+	{ 2,1,0 },
+	{ 0,2,0 },
+	{ 1,2,0 },
+	{ 2,2,0 },
+
+	{ 0,0,1 },
+	{ 1,0,1 },
+	{ 2,0,1 },
+	{ 0,1,1 },
+	{ 1,1,1 },
+	{ 2,1,1 },
+	{ 0,2,1 },
+	{ 1,2,1 },
+	{ 2,2,1 },
+
+	{ 0,0,2 },
+	{ 1,0,2 },
+	{ 2,0,2 },
+	{ 0,1,2 },
+	{ 1,1,2 },
+	{ 2,1,2 },
+	{ 0,2,2 },
+	{ 1,2,2 },
+	{ 2,2,2 }
+};
+
 bool GIMgr::RecreateResources()
 {
 	DeleteResources();
 
+	// bricks atlas
+	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP ???
 	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 	D3D11_TEXTURE3D_DESC volumeDesc;
@@ -195,9 +242,8 @@ bool GIMgr::RecreateResources()
 		return false;
 
 	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
-
-	// TODO: reserve bricks places
-
+	
+	// chunks lookup
 	const DXGI_FORMAT formatChunks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
 
 	uint32_t chunksX = (uint32_t)chunks.size();
@@ -224,8 +270,11 @@ bool GIMgr::RecreateResources()
 		return false;
 
 	// TODO: constuct lookup 3d volume
+	QSortSwap(octreeArray.begin(), octreeArray.end(), GIMgr::CompareOctrees, GIMgr::SwapOctrees, &chunks);
+
 	// TODO: fill chunks links
 
+	// octree lookup
 	const DXGI_FORMAT formatLookup = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
 
 	volumeDesc.Width = ;
@@ -251,7 +300,6 @@ bool GIMgr::BuildVoxelOctree()
 	chunks.destroy();
 	bricks.destroy();
 	probesArray.destroy();
-	probesLookup.clear();
 	
 	// collect static geometry
 	auto transformSys = world->GetTransformSystem();
@@ -360,6 +408,10 @@ bool GIMgr::BuildVoxelOctree()
 					}
 				}
 
+				octree->parentChunk[0] = x;
+				octree->parentChunk[1] = y;
+				octree->parentChunk[2] = z;
+
 				chunks[x][y][z] = (int32_t)octreeArray.size() - 1;
 			}
 		}
@@ -380,12 +432,31 @@ bool GIMgr::BuildVoxelOctree()
 		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1, octreeHelper, octreeCorner);
 	}
 
+	probesLookup.clear();
+
 	LOG_GOOD("Bricks count: %i", (int32_t)bricks.size());
 	LOG_GOOD("Probes count: %i", (int32_t)probesArray.size());
 
-	// build bricks texture
 	bricksTexX = (uint32_t)ceilf(sqrtf((float)bricks.size()));
 	bricksTexY = (uint32_t)ceilf((float)bricks.size() / bricksTexX);
+
+	// reserve bricks places & set probes adresses
+	bricksLinks.reserve(bricks.size());
+	for (uint32_t i = 0; i < (uint32_t)bricks.size(); i++)
+	{
+		uint32_t y = i / bricksTexX;
+		uint32_t x = i % bricksTexX;
+		bricksLinks.push_back(SetLookupNode(x, y, bricks[i].levelInv));
+
+		x *= 3;
+		y *= 3;
+
+		for (uint32_t k = 0; k < BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION; k++)
+		{
+			Prob& prob = probesArray[bricks[i].probes[k]];
+			prob.adress = Vector3(float(x + probesOffset[k][0]), float(y + probesOffset[k][1]), float(probesOffset[k][2]));
+		}
+	}
 
 	if (!RecreateResources())
 	{
@@ -393,8 +464,7 @@ bool GIMgr::BuildVoxelOctree()
 		return false;
 	}
 
-
-
+	bricksLinks.clear();
 
 #ifndef _DEV
 	octreeArray.destroy();
@@ -402,9 +472,7 @@ bool GIMgr::BuildVoxelOctree()
 	bricks.destroy();
 	probesArray.destroy();
 #endif
-
-	probesLookup.clear();
-
+	
 	return true;
 }
 
@@ -545,6 +613,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 
 				prob.interpolated = false;
 				prob.pos = probPos;
+				prob.adress = Vector3::Zero;
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
