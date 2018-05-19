@@ -59,52 +59,8 @@ GIMgr::~GIMgr()
 
 bool GIMgr::InitBuffers()
 {
-#ifdef _EDITOR
-	const DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
-	const int32_t resolution = 64;
-
-	D3D11_TEXTURE3D_DESC volumeDesc;
-	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = resolution;
-	volumeDesc.Height = resolution;
-	volumeDesc.Depth = resolution;
-	volumeDesc.MipLevels = 1;
-	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
-	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	volumeDesc.CPUAccessFlags = 0;
-	volumeDesc.MiscFlags = 0;
-	volumeDesc.Format = format;
-	if( FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &giVolume)) )
-		return false;
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
-	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Texture3D.MipLevels = -1;
-	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
-	volumeSRVDesc.Format = format;
-	if( FAILED(Render::CreateShaderResourceView(giVolume, &volumeSRVDesc, &giVolumeSRV)) )
-		return false;
-
-	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
-	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-	volumeUAVDesc.Texture3D.MipSlice = 0;
-	volumeUAVDesc.Texture3D.WSize = resolution;
-	volumeUAVDesc.Format = format;
-	if( FAILED(Render::CreateUnorderedAccessView(giVolume, &volumeUAVDesc, &giVolumeUAV)) )
-		return false;
-#endif
-
 	sampleDataGPU = Buffer::CreateConstantBuffer(Render::Device(), sizeof(GISampleData), true);
-
-
-	// TEMP
-
-#ifdef _EDITOR
-	Render::ClearUnorderedAccessViewFloat(giVolumeUAV, Vector4(0, 0, 0, 0));
-#endif
-
+	
 	sampleData.minCorner = Vector3(-5.0f, -5.0f, -5.0f);
 	sampleData.worldSizeRcp = 1.0f / 10.0f;
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
@@ -134,13 +90,10 @@ void GIMgr::DropGIData()
 
 ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
 {
-	if(giVolumeSRV)
-		return giVolumeSRV;
-	else
-		return TEXTURE_GETPTR(sgVolume);
+	return TEXTURE_GETPTR(sgVolume);
 }
 
-bool GIMgr::DeleteResources()
+void GIMgr::DeleteResources()
 {
 	_RELEASE(chunksLookupSRV);
 	_RELEASE(chunksLookup);
@@ -201,6 +154,15 @@ const uint32_t probesOffset[27][3] =
 	{ 2,2,2 }
 };
 
+#define PROB_MIDDLE_ID 13
+
+#define PROB_FACE_ID_0 4
+#define PROB_FACE_ID_1 10
+#define PROB_FACE_ID_2 12
+#define PROB_FACE_ID_3 14
+#define PROB_FACE_ID_4 16
+#define PROB_FACE_ID_5 22
+
 bool GIMgr::RecreateResources()
 {
 	DeleteResources();
@@ -244,8 +206,6 @@ bool GIMgr::RecreateResources()
 	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
 	
 	// chunks lookup
-	const DXGI_FORMAT formatChunks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
-
 	uint32_t chunksX = (uint32_t)chunks.size();
 	if (chunksX == 0)
 		return false;
@@ -254,21 +214,6 @@ bool GIMgr::RecreateResources()
 		return false;
 	uint32_t chunksZ = (uint32_t)chunks[0][0].size();
 	
-	volumeDesc.Width = chunksX;
-	volumeDesc.Height = chunksY;
-	volumeDesc.Depth = chunksZ;
-	volumeDesc.Usage = D3D11_USAGE_DYNAMIC;
-	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	volumeDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	volumeDesc.Format = formatChunks;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &chunksLookup)))
-		return false;
-
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Format = formatChunks;
-	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
-		return false;
-
 	// constuct lookup 3d volume
 	QSortSwap(octreeArray.begin(), octreeArray.end(), GIMgr::CompareOctrees, GIMgr::SwapOctrees, &chunks);
 
@@ -287,14 +232,28 @@ bool GIMgr::RecreateResources()
 	uint32_t offsetX = 0;
 	uint32_t offsetY = 0;
 	uint32_t offsetZ = 0;
+	uint32_t prevLevelX = 0;
+	uint32_t prevLevelY = 0;
+	uint32_t prevLevelZ = 0;
+
+	int32_t currentDepth = octreeArray[0].depth;
+
 	for (auto& item : octreeArray)
 	{
+		if (item.depth != currentDepth)
+		{
+			prevLevelX = offsetX;
+			prevLevelY = offsetY;
+			prevLevelZ = offsetZ;
+			currentDepth = item.depth;
+		}
+
 		uint32_t chunkID = item.parentChunk.z * zStride + item.parentChunk.y * chunksX + item.parentChunk.x;
 
 		Vector4Uint16 adress((uint16_t)offsetX, (uint16_t)offsetY, (uint16_t)offsetZ, (uint16_t)item.lookupRes);		
 		chunksArray[chunkID] = adress;
 		item.lookupAdress = adress;
-
+		
 		// next adress
 		offsetX += item.lookupRes;
 		if (offsetX % lookupMaxSize == 0 && item.depth != OCTREE_DEPTH)
@@ -313,16 +272,16 @@ bool GIMgr::RecreateResources()
 				{
 					offsetX -= lookupMaxSize;
 					offsetY = tempY;
-					continue;
 				}
 			}
 			else
 			{
 				offsetZ = tempZ;
 				offsetX -= lookupMaxSize;
-				continue;
 			}
 		}
+
+		// TODO: for different sizes this doesnt work !!!!!!!!!!!!!!!!!!!!!!
 		
 		if (offsetX >= lookupArrayX)
 		{
@@ -332,25 +291,79 @@ bool GIMgr::RecreateResources()
 	}
 	
 	// chunks to GPU
-	Render::UpdateDynamicResource(chunksLookup, chunksArray, chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
+	const DXGI_FORMAT formatChunks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
+
+	D3D11_SUBRESOURCE_DATA chunksData;
+	chunksData.pSysMem = chunksArray;
+	chunksData.SysMemPitch = chunksX * sizeof(Vector4Uint16);
+	chunksData.SysMemSlicePitch = zStride * sizeof(Vector4Uint16);
+
+	volumeDesc.Width = chunksX;
+	volumeDesc.Height = chunksY;
+	volumeDesc.Depth = chunksZ;
+	volumeDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.Format = formatChunks;
+
+	HRESULT hr = Render::CreateTexture3D(&volumeDesc, &chunksData, &chunksLookup);
 	_DELETE_ARRAY(chunksArray);
 
-	// octree lookup
+	if (FAILED(hr))
+		return false;
+
+	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	volumeSRVDesc.Format = formatChunks;
+	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
+		return false;
+	
+	// ----------------------------------------------
+
+	// fill lookups links
+	uint32_t* lookupArray = new uint32_t[lookupArrayX * lookupArrayY * lookupMaxSize];
+	zStride = lookupArrayX * lookupArrayY;
+
+	for (auto& item : octreeArray)
+	{
+		const int32_t lookupResSq = item.lookupRes * item.lookupRes;
+		for (int32_t x = 0; x < item.lookupRes; x++)
+		{
+			const int32_t arrX = item.lookupAdress.x + x;
+			for (int32_t y = 0; y < item.lookupRes; y++)
+			{
+				const int32_t luYX = y * item.lookupRes + x;
+				const int32_t arrYX = (item.lookupAdress.y + y) * lookupArrayX + arrX;
+				for (int32_t z = 0; z < item.lookupRes; z++)
+				{
+					uint32_t brickAdress = bricksLinks[item.lookup[z * lookupResSq + luYX]];
+					lookupArray[(item.lookupAdress.z + z) * zStride + arrYX] = brickAdress;
+				}
+			}
+		}
+	}
+
+	// lookups to GPU
 	const DXGI_FORMAT formatLookup = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+
+	D3D11_SUBRESOURCE_DATA lookupArrayData;
+	lookupArrayData.pSysMem = lookupArray;
+	lookupArrayData.SysMemPitch = lookupArrayX * sizeof(uint32_t);
+	lookupArrayData.SysMemSlicePitch = zStride * sizeof(uint32_t);
 
 	volumeDesc.Width = lookupArrayX;
 	volumeDesc.Height = lookupArrayY;
 	volumeDesc.Depth = lookupMaxSize;
 	volumeDesc.Format = formatLookup;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &chunksLookup)))
+
+	hr = Render::CreateTexture3D(&volumeDesc, &lookupArrayData, &bricksLookup);
+	_DELETE_ARRAY(lookupArray);
+
+	if (FAILED(hr))
 		return false;
 
 	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	volumeSRVDesc.Format = formatLookup;
-	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
+	if (FAILED(Render::CreateShaderResourceView(bricksLookup, &volumeSRVDesc, &bricksLookupSRV)))
 		return false;
-
-	// TODO: fill lookup links
 
 	return true;
 }
@@ -499,7 +512,7 @@ bool GIMgr::BuildVoxelOctree()
 	{
 		uint32_t y = i / bricksTexX;
 		uint32_t x = i % bricksTexX;
-		bricksLinks.push_back(SetLookupNode(x, y, bricks[i].levelInv));
+		bricksLinks.push_back(SetLookupNode(x, y, bricks[i].depth));
 
 		x *= 3;
 		y *= 3;
@@ -507,7 +520,37 @@ bool GIMgr::BuildVoxelOctree()
 		for (uint32_t k = 0; k < BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION; k++)
 		{
 			Prob& prob = probesArray[bricks[i].probes[k]];
-			prob.adress = Vector3(float(x + probesOffset[k][0]), float(y + probesOffset[k][1]), float(probesOffset[k][2]));
+			prob.adresses.push_back(Vector3Uint32(x + probesOffset[k][0], y + probesOffset[k][1], probesOffset[k][2]));
+
+			// copies check
+			if (prob.maxDepth == bricks[i].depth)
+			{
+				// TODO: force outter prob to bake (inverse depth?)
+
+				if (k == PROB_MIDDLE_ID) // center prob, always bake
+				{
+					prob.bake = true;
+				}
+				else
+				{
+					if (k % 2 != 0) // side prob, 4 copies for bake
+					{
+						prob.bake = (prob.copyCount >= 4);
+					}
+					else
+					{
+						if (k == PROB_FACE_ID_0 || k == PROB_FACE_ID_1 || k == PROB_FACE_ID_2 ||
+							k == PROB_FACE_ID_3 || k == PROB_FACE_ID_4 || k == PROB_FACE_ID_5) // face prob, 2 copies for bake
+						{
+							prob.bake = (prob.copyCount >= 2);
+						}
+						else // corner prob, 8 copies for bake
+						{
+							prob.bake = (prob.copyCount >= 8);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -518,6 +561,15 @@ bool GIMgr::BuildVoxelOctree()
 	}
 
 	bricksLinks.clear();
+
+	// post process probes
+	for (auto& prob : probesArray)
+	{
+		prob.pos = AdjustProbPos(prob.pos);
+
+		
+		// TODO: separate baked from interpolated 
+	}
 
 #ifndef _DEV
 	octreeArray.destroy();
@@ -620,7 +672,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		uint32_t brickID = uint32_t(bricks.size() - 1);
 
 		newBrick.bbox = bbox;
-		newBrick.levelInv = octreeDepth;
+		newBrick.depth = octreeDepth;
 		
 		Vector3 bboxMin = octreeHelper * (bbox.Center - octreeCorner - bbox.Extents);
 		Vector3 bboxMax = octreeHelper * (bbox.Center - octreeCorner + bbox.Extents);
@@ -664,9 +716,11 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				Prob& prob = probesArray.push_back();
 				uint32_t probID = uint32_t(probesArray.size() - 1);
 
-				prob.interpolated = false;
+				prob.bake = false;
 				prob.pos = probPos;
-				prob.adress = Vector3::Zero;
+				prob.adresses.destroy();
+				prob.copyCount = 1;
+				prob.maxDepth = octreeDepth;
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
@@ -674,9 +728,26 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 			else
 			{
 				newBrick.probes[i] = probIt->second;
+
+				uint8_t& probMaxDepth = probesArray[probIt->second].maxDepth;
+				if (probMaxDepth == (uint8_t)octreeDepth)
+				{
+					probesArray[probIt->second].copyCount++;
+				}
+				else if (probMaxDepth < (uint8_t)octreeDepth)
+				{
+					probMaxDepth = (uint8_t)octreeDepth;
+					probesArray[probIt->second].copyCount = 1;
+				}		
 			}
 		}
 	}
+}
+
+Vector3 GIMgr::AdjustProbPos(Vector3& pos)
+{
+	// TODO
+	return pos;
 }
 
 #ifdef _DEV
@@ -726,10 +797,10 @@ void GIMgr::DebugSetState(DebugState state)
 			
 			for (auto& item : bricks)
 			{
-				if (item.levelInv >= OCTREE_DEPTH - 1)
+				if (item.depth >= OCTREE_DEPTH - 1)
 					continue;
 
-				const Vector3& color = octreeColors[item.levelInv];
+				const Vector3& color = octreeColors[item.depth];
 				item.bbox.GetCorners(bboxCorners);
 				PUSH_BOX_TO_LINES
 			}
@@ -757,14 +828,15 @@ void GIMgr::DebugSetState(DebugState state)
 			points.create(probesArray.size());
 			for (auto& item : probesArray)
 			{
-				points.push_back(item.pos);
+				if(item.bake)
+					points.push_back(item.pos);
 			}
 
-			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)probesArray.size(), (uint32_t)sizeof(Vector3), true);
+			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)points.size(), (uint32_t)sizeof(Vector3), true);
 			if (debugGeomHandle < 0)
 				return;
 
-			dbg->UpdateGeometry(debugGeomHandle, points.data(), (uint32_t)probesArray.size());
+			dbg->UpdateGeometry(debugGeomHandle, points.data(), (uint32_t)points.size());
 		}
 		break;
 	}

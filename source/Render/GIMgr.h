@@ -9,6 +9,7 @@
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 
 #define BKICK_RESOLUTION 3
+
 #define BKICK_F4_COUNT 4
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
@@ -68,14 +69,16 @@ namespace EngineCore
 	{
 		uint32_t probes[BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION];
 		BoundingBox bbox;
-		uint32_t levelInv;
+		uint32_t depth;
 	};
 
 	struct Prob
 	{
 		Vector3 pos;
-		Vector3 adress;
-		bool interpolated;
+		bool bake;
+		uint8_t maxDepth;
+		uint8_t copyCount;
+		DArray<Vector3Uint32> adresses;
 	};
 
 	class GIMgr
@@ -105,7 +108,7 @@ namespace EngineCore
 	private:
 		bool InitBuffers();
 		bool RecreateResources();
-		bool DeleteResources();
+		void DeleteResources();
 
 		BaseWorld* world;
 
@@ -134,7 +137,7 @@ namespace EngineCore
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, 
 			Vector3& octreeHelper, Vector3& octreeCorner);
-
+		Vector3 AdjustProbPos(Vector3& pos);
 
 		float voxelSize;
 		float chunkSize;
