@@ -30,8 +30,8 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	sampleDataGPU = nullptr;
 
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
-	lookupMaxSize = (uint32_t)powf(2.0f, (float)OCTREE_DEPTH);
-	chunkSize = (float)lookupMaxSize * DEFAULT_OCTREE_VOXEL_SIZE;
+	lookupMaxSize = (uint32_t)powf(2.0f, float(OCTREE_DEPTH - 1));
+	chunkSize = (float)lookupMaxSize * 2.0f * DEFAULT_OCTREE_VOXEL_SIZE;
 
 #ifdef _DEV
 	debugGeomHandle = -1;
@@ -163,9 +163,9 @@ bool GIMgr::CompareOctrees(Octree& first, Octree& second)
 
 void GIMgr::SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr)
 {
-	swap((*arr)[first->parentChunk[0]][first->parentChunk[1]][first->parentChunk[2]], 
-		(*arr)[second->parentChunk[0]][second->parentChunk[1]][second->parentChunk[2]]);
-	Octree::Swap(*first, *second);
+	swap((*arr)[first->parentChunk.x][first->parentChunk.y][first->parentChunk.z], 
+		(*arr)[second->parentChunk.x][second->parentChunk.y][second->parentChunk.z]);
+	swap(*first, *second);
 }
 
 const uint32_t probesOffset[27][3] =
@@ -269,16 +269,77 @@ bool GIMgr::RecreateResources()
 	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
 		return false;
 
-	// TODO: constuct lookup 3d volume
+	// constuct lookup 3d volume
 	QSortSwap(octreeArray.begin(), octreeArray.end(), GIMgr::CompareOctrees, GIMgr::SwapOctrees, &chunks);
 
-	// TODO: fill chunks links
+	// estimate size
+	float lookup1DSize = 0;
+	for (auto& item : octreeArray)
+		lookup1DSize += float(lookupMaxSize) / powf(8.0f, float(OCTREE_DEPTH - item.depth));
+
+	uint32_t lookupArrayX = lookupMaxSize * (uint32_t)ceilf(sqrtf(lookup1DSize) / lookupMaxSize);
+	uint32_t lookupArrayY = lookupMaxSize * (uint32_t)ceilf((lookup1DSize / lookupArrayX) / lookupMaxSize);
+
+	// reserve adresses & fill chunks links
+	Vector4Uint16* chunksArray = new Vector4Uint16[chunksX * chunksY * chunksZ];
+	uint32_t zStride = chunksX * chunksY;
+
+	uint32_t offsetX = 0;
+	uint32_t offsetY = 0;
+	uint32_t offsetZ = 0;
+	for (auto& item : octreeArray)
+	{
+		uint32_t chunkID = item.parentChunk.z * zStride + item.parentChunk.y * chunksX + item.parentChunk.x;
+
+		Vector4Uint16 adress((uint16_t)offsetX, (uint16_t)offsetY, (uint16_t)offsetZ, (uint16_t)item.lookupRes);		
+		chunksArray[chunkID] = adress;
+		item.lookupAdress = adress;
+
+		// next adress
+		offsetX += item.lookupRes;
+		if (offsetX % lookupMaxSize == 0 && item.depth != OCTREE_DEPTH)
+		{
+			uint32_t tempZ = offsetZ + item.lookupRes;
+			if (tempZ >= lookupMaxSize)
+			{
+				uint32_t tempY = offsetY + item.lookupRes;
+				offsetZ = 0;
+
+				if (tempY % lookupMaxSize == 0)
+				{
+					offsetY = tempY - lookupMaxSize;
+				}
+				else
+				{
+					offsetX -= lookupMaxSize;
+					offsetY = tempY;
+					continue;
+				}
+			}
+			else
+			{
+				offsetZ = tempZ;
+				offsetX -= lookupMaxSize;
+				continue;
+			}
+		}
+		
+		if (offsetX >= lookupArrayX)
+		{
+			offsetX = 0;
+			offsetY += lookupMaxSize;
+		}
+	}
+	
+	// chunks to GPU
+	Render::UpdateDynamicResource(chunksLookup, chunksArray, chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
+	_DELETE_ARRAY(chunksArray);
 
 	// octree lookup
 	const DXGI_FORMAT formatLookup = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
 
-	volumeDesc.Width = ;
-	volumeDesc.Height = ;
+	volumeDesc.Width = lookupArrayX;
+	volumeDesc.Height = lookupArrayY;
 	volumeDesc.Depth = lookupMaxSize;
 	volumeDesc.Format = formatLookup;
 	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &chunksLookup)))
@@ -397,20 +458,12 @@ bool GIMgr::BuildVoxelOctree()
 
 				octree->lookupRes = (int32_t)powf(2.0f, float(octree->depth - 1));
 
-				octree->lookup = new uint32_t**[octree->lookupRes];
-				for (int32_t x = 0; x < octree->lookupRes; x++)
-				{
-					octree->lookup[x] = new uint32_t*[octree->lookupRes];
-					for (int32_t y = 0; y < octree->lookupRes; y++)
-					{
-						octree->lookup[x][y] = new uint32_t[octree->lookupRes];
-						memset(octree->lookup[x][y], (int)0xffffffff, sizeof(uint32_t) * octree->lookupRes);
-					}
-				}
+				uint32_t lookupPlanarSize = octree->lookupRes * octree->lookupRes * octree->lookupRes;
 
-				octree->parentChunk[0] = x;
-				octree->parentChunk[1] = y;
-				octree->parentChunk[2] = z;
+				octree->lookup = new int32_t[lookupPlanarSize];
+				memset(octree->lookup, -1, sizeof(int32_t) * lookupPlanarSize);
+
+				octree->parentChunk = Vector3Uint32(x, y, z);
 
 				chunks[x][y][z] = (int32_t)octreeArray.size() - 1;
 			}
@@ -572,17 +625,17 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		Vector3 bboxMin = octreeHelper * (bbox.Center - octreeCorner - bbox.Extents);
 		Vector3 bboxMax = octreeHelper * (bbox.Center - octreeCorner + bbox.Extents);
 
+		const int32_t lookupResSq = octree.lookupRes * octree.lookupRes;
+
 		for (int32_t x = (int32_t)roundf(bboxMin.x); x < (int32_t)roundf(bboxMax.x); x++)
 		{
 			for (int32_t y = (int32_t)roundf(bboxMin.y); y < (int32_t)roundf(bboxMax.y); y++)
 			{
 				for (int32_t z = (int32_t)roundf(bboxMin.z); z < (int32_t)roundf(bboxMax.z); z++)
 				{
-					uint32_t& lookupNode = octree.lookup[x][y][z];
-					if (lookupNode == 0xffffffff)
-					{
-						lookupNode = SetLookupNode(brickID, octreeDepth);
-					}
+					int32_t& lookupNode = octree.lookup[z * lookupResSq + y * octree.lookupRes + x];
+					if (lookupNode < 0)
+						lookupNode = brickID;
 				}
 			}
 		}

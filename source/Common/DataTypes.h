@@ -210,3 +210,25 @@ template <typename PointerClass=void> struct QueuePointer
 };
 
 // ------------------------------------
+struct Vector3Uint32
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+
+	Vector3Uint32() : x(0), y(0), z(0) {}
+
+	Vector3Uint32(uint32_t xx, uint32_t yy, uint32_t zz) : x(xx), y(yy), z(zz) {}
+};
+
+struct Vector4Uint16
+{
+	uint16_t x;
+	uint16_t y;
+	uint16_t z;
+	uint16_t w;
+
+	Vector4Uint16() : x(0), y(0), z(0), w(0) {}
+
+	Vector4Uint16(uint16_t xx, uint16_t yy, uint16_t zz, uint16_t ww) : x(xx), y(yy), z(zz), w(ww) {}
+};
