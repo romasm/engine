@@ -104,9 +104,6 @@ void GIMgr::DeleteResources()
 	_RELEASE(bricksAtlasUAV);
 	_RELEASE(bricksAtlasSRV);
 	_RELEASE(bricksAtlas);
-
-	bricksTexX = 0;
-	bricksTexY = 0;
 }
 
 bool GIMgr::CompareOctrees(Octree& first, Octree& second)
@@ -205,6 +202,9 @@ bool GIMgr::RecreateResources()
 
 	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
 	
+	LOG_GOOD("Brick atlas size: %i mb", volumeDesc.Width * volumeDesc.Height * volumeDesc.Depth * sizeof(Vector4Uint16) / 1048576);
+	// ----------------------------------------------------------------------
+	
 	// chunks lookup
 	uint32_t chunksX = (uint32_t)chunks.size();
 	if (chunksX == 0)
@@ -218,12 +218,17 @@ bool GIMgr::RecreateResources()
 	QSortSwap(octreeArray.begin(), octreeArray.end(), GIMgr::CompareOctrees, GIMgr::SwapOctrees, &chunks);
 
 	// estimate size
-	float lookup1DSize = 0;
+	float lookupCount = 0;
 	for (auto& item : octreeArray)
-		lookup1DSize += float(lookupMaxSize) / powf(8.0f, float(OCTREE_DEPTH - item.depth));
+		lookupCount += 1.0f / powf(8.0f, float(OCTREE_DEPTH - item.depth));
 
-	uint32_t lookupArrayX = lookupMaxSize * (uint32_t)ceilf(sqrtf(lookup1DSize) / lookupMaxSize);
-	uint32_t lookupArrayY = lookupMaxSize * (uint32_t)ceilf((lookup1DSize / lookupArrayX) / lookupMaxSize);
+	lookupCount = ceilf(lookupCount);
+
+	uint32_t lookupXCount = (uint32_t)ceilf(sqrtf(lookupCount));
+	uint32_t lookupYCount = (uint32_t)ceilf(lookupCount / lookupXCount);
+
+	uint32_t lookupArrayX = lookupMaxSize * lookupXCount;
+	uint32_t lookupArrayY = lookupMaxSize * lookupYCount;
 
 	// reserve adresses & fill chunks links
 	Vector4Uint16* chunksArray = new Vector4Uint16[chunksX * chunksY * chunksZ];
@@ -316,6 +321,7 @@ bool GIMgr::RecreateResources()
 	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
 		return false;
 	
+	LOG_GOOD("Chunks lookup size: %i", chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
 	// ----------------------------------------------
 
 	// fill lookups links
@@ -364,6 +370,8 @@ bool GIMgr::RecreateResources()
 	volumeSRVDesc.Format = formatLookup;
 	if (FAILED(Render::CreateShaderResourceView(bricksLookup, &volumeSRVDesc, &bricksLookupSRV)))
 		return false;
+
+	LOG_GOOD("Brick lookup size: %i kb", lookupArrayX * lookupArrayY * lookupMaxSize * sizeof(uint32_t) / 1024);
 
 	return true;
 }
@@ -565,11 +573,41 @@ bool GIMgr::BuildVoxelOctree()
 	// post process probes
 	for (auto& prob : probesArray)
 	{
-		prob.pos = AdjustProbPos(prob.pos);
+		if(prob.bake)
+			prob.pos = AdjustProbPos(prob.pos);
 
 		
-		// TODO: separate baked from interpolated 
+		// TODO: find interpalation locations
 	}
+
+	// TEMP baking
+	const int32_t captureResolution = 64;
+	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
+	{
+		ERR("Cant init prob capture");
+		return false;
+	}
+
+	ID3D11ShaderResourceView* probSRV = world->GetCaptureProbSRV();
+	if (!probSRV)
+		return false;
+
+	int32_t bakedCount = 0;
+	for (auto& prob : probesArray)
+	{
+		if (!prob.bake)
+			continue;
+
+		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP, false );
+
+		bakedCount++;
+		if (bakedCount % 100 == 0)
+			DBG_SHORT("Baked: %i", bakedCount);
+	}
+
+	world->EndCaptureProb();
 
 #ifndef _DEV
 	octreeArray.destroy();
@@ -583,15 +621,18 @@ bool GIMgr::BuildVoxelOctree()
 
 bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox)
 {
+	BoundingBox extendedBBox = bbox;
+	extendedBBox.Extents = extendedBBox.Extents + Vector3(voxelSize * OCTREE_INTERSECT_TOLERANCE);
+
 	for (auto& i : staticScene)
 	{
-		if (i.bbox.Intersects(bbox))
+		if (i.bbox.Intersects(extendedBBox))
 		{
 			auto mesh = MeshMgr::GetResourcePtr(i.meshID);
 			if (!mesh)
 				continue;
 
-			if (MeshLoader::MeshBoxOverlap(mesh, i.transform, bbox))
+			if (MeshLoader::MeshBoxOverlap(mesh, i.transform, extendedBBox))
 				return true;
 		}
 	}

@@ -588,7 +588,7 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 	return true;
 }
 
-ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip)
+ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip, bool genMips)
 {
 	if( !probScene || probCamera.isnull() || !probCaptureShader || probTarget.GetMipsCount() == 0 )
 		return nullptr;
@@ -641,7 +641,9 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		probCaptureShader->UnbindUAV();
 	}
 
-	probTarget.GenerateMips();
+	if(genMips)
+		probTarget.GenerateMips();
+
 	return probTarget.GetShaderResourceView();
 }
 

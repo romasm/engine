@@ -156,8 +156,13 @@ namespace EngineCore
 		inline float GetDT() const {return m_dt;} 
 
 		bool BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight = false);
-		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip);
+		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip, bool genMips = true);
 		void EndCaptureProb();
+
+		inline ID3D11ShaderResourceView* GetCaptureProbSRV()
+		{
+			return probTarget.GetShaderResourceView();
+		}
 
 		inline FrustumMgr* GetFrustumMgr() const {return m_frustumMgr;}
 		inline SceneGraph* GetSceneGraph() const {return m_sceneGraph;}
