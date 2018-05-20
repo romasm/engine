@@ -4,18 +4,20 @@
 #include "LightBuffers.h"
 #include "MeshMgr.h"
 #include "DebugDrawer.h"
+#include "Compute.h"
 
 #define OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 #define OCTREE_INTERSECT_TOLERANCE 0.5f
 
 #define BKICK_RESOLUTION 3
-#define BKICK_F4_COUNT 4
+#define BKICK_COEF_COUNT 9
 
 #define PROB_CAPTURE_NEARCLIP 0.01f
 #define PROB_CAPTURE_FARCLIP 10000.0f
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
+#define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
 
 namespace EngineCore
 {
@@ -23,6 +25,12 @@ namespace EngineCore
 	{
 		Vector3 minCorner;
 		float worldSizeRcp;
+	};
+
+	struct SHAdresses
+	{
+		Vector4 adressesCount;
+		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors
 	};
 
 	struct VoxelizeSceneItem
@@ -141,6 +149,9 @@ namespace EngineCore
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, 
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
+
+		Compute* cubemapToSH;
+		ID3D11Buffer* adressBuffer;
 
 		float voxelSize;
 		float chunkSize;

@@ -378,5 +378,8 @@
     <FxCompile Include="objects\editor\debug_probes.hlsl">
       <Filter>objects\editor</Filter>
     </FxCompile>
+    <FxCompile Include="offline\cubemap_to_sh.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

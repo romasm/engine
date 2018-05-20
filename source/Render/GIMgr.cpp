@@ -29,6 +29,9 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	sgVolume = TexMgr::nullres;
 	sampleDataGPU = nullptr;
 
+	cubemapToSH = nullptr;
+	adressBuffer = nullptr;
+
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
 	lookupMaxSize = (uint32_t)powf(2.0f, float(OCTREE_DEPTH - 1));
 	chunkSize = (float)lookupMaxSize * 2.0f * DEFAULT_OCTREE_VOXEL_SIZE;
@@ -55,6 +58,9 @@ GIMgr::~GIMgr()
 
 	TEXTURE_DROP(sgVolume);
 	_RELEASE(sampleDataGPU);
+
+	_DELETE(cubemapToSH);
+	_RELEASE(adressBuffer);
 }
 
 bool GIMgr::InitBuffers()
@@ -64,6 +70,14 @@ bool GIMgr::InitBuffers()
 	sampleData.minCorner = Vector3(-5.0f, -5.0f, -5.0f);
 	sampleData.worldSizeRcp = 1.0f / 10.0f;
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+
+#ifdef _EDITOR
+
+	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
+
+	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(Vector4), true);
+
+#endif
 
 	return true;
 }
@@ -172,7 +186,7 @@ bool GIMgr::RecreateResources()
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
 	volumeDesc.Width = bricksTexX * BKICK_RESOLUTION;
 	volumeDesc.Height = bricksTexY * BKICK_RESOLUTION;
-	volumeDesc.Depth = BKICK_RESOLUTION * BKICK_F4_COUNT;
+	volumeDesc.Depth = BKICK_RESOLUTION * BKICK_COEF_COUNT;
 	volumeDesc.MipLevels = 1;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
 	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
@@ -195,7 +209,7 @@ bool GIMgr::RecreateResources()
 	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
-	volumeUAVDesc.Texture3D.WSize = BKICK_RESOLUTION * BKICK_F4_COUNT;
+	volumeUAVDesc.Texture3D.WSize = volumeDesc.Depth;
 	volumeUAVDesc.Format = formatBricks;
 	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
 		return false;
@@ -594,19 +608,39 @@ bool GIMgr::BuildVoxelOctree()
 	if (!probSRV)
 		return false;
 
+	const uint32_t groupsCount = captureResolution / 8;
+
+	Render::CSSetConstantBuffers(0, 1, &adressBuffer);
+	Render::CSSetShaderResources(0, 1, &probSRV);
+	cubemapToSH->BindUAV(bricksAtlasUAV);
+
+	SHAdresses adresses;
+
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
 		if (!prob.bake)
 			continue;
+		
+		adresses.adressesCount.x = (float)prob.adresses.size();
+		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
+		{
+			auto& adr = prob.adresses[i];
+			adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
+		}
+
+		Render::UpdateDynamicResource(adressBuffer, &adresses, (prob.adresses.size() + 1) * sizeof(Vector4));
 
 		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP, false );
+
+		cubemapToSH->Dispatch(groupsCount, groupsCount, 1);
 
 		bakedCount++;
 		if (bakedCount % 100 == 0)
 			DBG_SHORT("Baked: %i", bakedCount);
 	}
 
+	cubemapToSH->UnbindUAV();
 	world->EndCaptureProb();
 
 #ifndef _DEV
