@@ -5,7 +5,8 @@
 
 RWTexture3D <uint> bricksAtlas : register(u0);
 
-Texture2DArray <float4> cubemap : register(t0); 
+TextureCube <float4> cubemap : register(t0);
+SamplerState samplerBilinearWrap : register(s0);
 
 cbuffer configBuffer : register(b0)
 {
@@ -62,12 +63,7 @@ void InterlockedFloatAdd(uint3 coords, float value)
 		InterlockedCompareExchange(bricksAtlas[coords], comp, asuint(newValue), orig);
 		iter++;
 	} while (orig != comp && iter < MAX_WAITING_CYCLES);
-}
-
-float3 GetCubeDir(float x, float y, uint face)
-{
-
-}
+} 
 
 void AppendSHvalue(float3 value, uint3 coords)
 {
@@ -78,22 +74,67 @@ void AppendSHvalue(float3 value, uint3 coords)
 	InterlockedFloatAdd(coords, value.g);
 	coords.x += 1;
 	InterlockedFloatAdd(coords, value.b);
-	coords.x += 1;
-	//InterlockedFloatAdd(coords, );
+}
+
+static const float3 cubeVectors[6][4] = 
+{
+	{
+		float3(1, 1, -1),
+		float3(1, 1, 1),
+		float3(1, -1, -1),
+		float3(1, -1, 1)
+	},
+	{
+		float3(-1, 1, 1),
+		float3(-1, 1, -1),
+		float3(-1, -1, 1),
+		float3(-1, -1, -1)
+	},
+	{
+		float3(1, 1, -1),
+		float3(-1, 1, -1),
+		float3(1, 1, 1),
+		float3(-1, 1, 1)
+	},
+	{
+		float3(-1, -1, -1),
+		float3(1, -1, -1),
+		float3(-1, -1, 1),
+		float3(1, -1, 1)
+	},
+	{
+		float3(1, 1, 1),
+		float3(-1, 1, 1),
+		float3(1, -1, 1),
+		float3(-1, -1, 1)
+	},
+	{
+		float3(-1, 1, -1),
+		float3(1, 1, -1),
+		float3(-1, -1, -1),
+		float3(1, -1, -1)
+	}
+};
+
+float3 GetCubeDir(float x, float y, uint face)
+{
+	float3 xVect0 = lerp(cubeVectors[face][0], cubeVectors[face][1], x);
+	float3 xVect1 = lerp(cubeVectors[face][2], cubeVectors[face][3], x);
+	return normalize(lerp(xVect0, xVect1, y));
 }
 
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 {
-	uint width, height, faces, levels;
-	cubemap.GetDimensions(0, width, height, faces, levels);
+	float width, height;
+	cubemap.GetDimensions(width, height);
 	const float cubeResRpc = 1.0f / width;
 
 	[unroll]
-	for (int face = 0; face < 6; face++)
-	{
-		float3 color = cubemap.Load(int4(threadID.x, threadID.y, face, 0)).xyz;
+	for (int face = 0; face < 6; face++) 
+	{		
 		float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
+		float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
 		SHcoef sh = CalcSH(color, dir);
 		
@@ -102,6 +143,7 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 		{
 			uint3 coords = (uint3)adresses[k].xyz;
 			coords.z *= 9;
+
 			[unroll]
 			for (int i = 0; i < 9; i++) 
 			{

@@ -180,7 +180,7 @@ bool GIMgr::RecreateResources()
 
 	// bricks atlas
 	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP ???
-	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
@@ -437,6 +437,7 @@ bool GIMgr::BuildVoxelOctree()
 
 	// build chunk array
 	// TODO: configurate
+	worldBBraw.Extents = worldBBraw.Extents + Vector3(voxelSize);
 	worldBox.corner = worldBBraw.Center - worldBBraw.Extents;
 	worldBox.size = worldBBraw.Extents * 2.0f;
 
@@ -610,12 +611,8 @@ bool GIMgr::BuildVoxelOctree()
 
 	const uint32_t groupsCount = captureResolution / 8;
 
-	Render::CSSetConstantBuffers(0, 1, &adressBuffer);
-	Render::CSSetShaderResources(0, 1, &probSRV);
-	cubemapToSH->BindUAV(bricksAtlasUAV);
-
 	SHAdresses adresses;
-
+	
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
@@ -632,16 +629,37 @@ bool GIMgr::BuildVoxelOctree()
 		Render::UpdateDynamicResource(adressBuffer, &adresses, (prob.adresses.size() + 1) * sizeof(Vector4));
 
 		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP, false );
-
+		
+		Render::CSSetConstantBuffers(0, 1, &adressBuffer);
+		Render::CSSetShaderResources(0, 1, &probSRV);
+		cubemapToSH->BindUAV(bricksAtlasUAV);
 		cubemapToSH->Dispatch(groupsCount, groupsCount, 1);
+		cubemapToSH->UnbindUAV();
+
+		// TEST
+		if (bakedCount == 0)
+		{
+			ScratchImage tempCube;
+			ID3D11Resource* ggggg = nullptr;
+			probSRV->GetResource(&ggggg);
+			CaptureTexture(Render::Device(), Render::Context(), ggggg, tempCube);
+			string envTexNamerrrrrr = world->GetWorldName() + "/gi_cubemap" + EXT_TEXTURE;
+			SaveToDDSFile(tempCube.GetImages(), tempCube.GetImageCount(), tempCube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamerrrrrr).data());
+		}
 
 		bakedCount++;
 		if (bakedCount % 100 == 0)
 			DBG_SHORT("Baked: %i", bakedCount);
 	}
 
-	cubemapToSH->UnbindUAV();
 	world->EndCaptureProb();
+
+	// TEST
+	ScratchImage tempVol;
+	HRESULT dfgd = CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, tempVol);
+	string envTexNamevvvvv = world->GetWorldName() + "/gi_bricks" + EXT_TEXTURE;
+	SaveToDDSFile(tempVol.GetImages(), tempVol.GetImageCount(), tempVol.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamevvvvv).data());
+
 
 #ifndef _DEV
 	octreeArray.destroy();
