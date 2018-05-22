@@ -38,9 +38,9 @@ Texture2D <float4> SSRTexture : register(t11);
  
 Texture2D g_envbrdfLUT : register(t12);
 
-Texture3D g_giChunks : register(t13);
-Texture3D g_giLookups : register(t14);
-Texture3D g_giBricks : register(t15);
+Texture3D<uint4> g_giChunks : register(t13);
+Texture3D<uint> g_giLookups : register(t14);
+Texture3D<float4> g_giBricks : register(t15);
 
 Texture2DArray <float> shadows: register(t16); 
 
@@ -82,17 +82,19 @@ cbuffer lightsCount : register(b2)
 	LightsCount g_lightCount;
 };
 
+#include "../common/sh_helpers.hlsl"   
+
 cbuffer giData : register(b3)
 {
 	GISampleData g_giSampleData;
 };   
 
-#include "../common/ibl_helpers.hlsl"         
-#include "../common/sg_helpers.hlsl"         
+#include "../common/gi_helpers.hlsl"   
+#include "../common/ibl_helpers.hlsl"           
   
 // TEMP       
-//#define TEMP_FAST_COMPILE     
- 
+#define TEMP_FAST_COMPILE     
+   
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
 #define FULL_LIGHT
@@ -105,7 +107,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	[branch]
 	if(coords.x > 1.0f || coords.y > 1.0f)
 		return; 
-	  
+	
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords);
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 
@@ -140,7 +142,10 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 
 	// SG
-	float4 sgGI = EvaluateSGIndirect(gbuffer);
+	float3 shGI;
+	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, shGI);
+	
+	shGI = lerp(envProbDiffuse.rgb, shGI, lerpEnvProbSH);
 
 	// SSR 
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );
@@ -152,7 +157,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
 	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
 
-	float3 diffuse = (sgGI.rgb/* + envProbDiffuse.rgb*/) * configs.indirDiff + directLight.diffuse * configs.dirDiff;
+	float3 diffuse = shGI.rgb * configs.indirDiff + directLight.diffuse * configs.dirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec + directLight.specular * configs.dirSpec;
 
 	//diffuse = lerp(diffuse, g_lightCount.envProbsCountHQ, 0.999);

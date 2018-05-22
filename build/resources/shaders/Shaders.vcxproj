@@ -71,7 +71,6 @@
     <None Include="common\light_helpers.hlsl" />
     <None Include="common\light_structs.hlsl" />
     <None Include="common\math.hlsl" />
-    <None Include="common\sg_helpers.hlsl" />
     <None Include="common\shadow_helpers.hlsl" />
     <None Include="common\shared.hlsl" />
     <None Include="common\structs.hlsl" />
@@ -182,6 +181,8 @@
     <None Include="system\voxel_light_propagate.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="common\gi_helpers.hlsl" />
+    <FxCompile Include="common\sh_helpers.hlsl" />
     <FxCompile Include="objects\editor\debug_common.hlsl" />
     <FxCompile Include="objects\editor\debug_lines_cull.hlsl" />
     <FxCompile Include="objects\editor\debug_probes.hlsl" />

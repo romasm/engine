@@ -42,9 +42,6 @@
     <None Include="common\math.hlsl">
       <Filter>common</Filter>
     </None>
-    <None Include="common\sg_helpers.hlsl">
-      <Filter>common</Filter>
-    </None>
     <None Include="common\shadow_helpers.hlsl">
       <Filter>common</Filter>
     </None>
@@ -380,6 +377,12 @@
     </FxCompile>
     <FxCompile Include="offline\cubemap_to_sh.hlsl">
       <Filter>offline</Filter>
+    </FxCompile>
+    <FxCompile Include="common\gi_helpers.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
+    <FxCompile Include="common\sh_helpers.hlsl">
+      <Filter>common</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

@@ -207,12 +207,6 @@ struct VolumeTraceData
 	uint clipmapCount;
 };
 
-struct GISampleData
-{
-	float3 minCorner;
-	float chunkSizeRcp;
-};
-
 struct GBufferData
 {
 	float3 albedo;
@@ -269,5 +263,19 @@ struct ConfigParams
 	float isLightweight;
 	float _padding0;
 	float _padding1;
+	float _padding2;
+};
+
+struct GISampleData
+{
+	float3 minCorner;
+	float chunkSizeRcp;
+	uint3 chunksCount;
+	float minHalfVoxelSize;
+	float3 brickAtlasOffset;
+	float _padding0;
+	float3 halfBrickVoxelSize;
+	float _padding1;
+	float3 brickSampleSize;
 	float _padding2;
 };

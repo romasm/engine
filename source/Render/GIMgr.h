@@ -10,8 +10,8 @@
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 #define OCTREE_INTERSECT_TOLERANCE 0.5f
 
-#define BKICK_RESOLUTION 3
-#define BKICK_COEF_COUNT 9
+#define BRICK_RESOLUTION 3
+#define BRICK_COEF_COUNT 9
 
 #define PROB_CAPTURE_NEARCLIP 0.01f
 #define PROB_CAPTURE_FARCLIP 10000.0f
@@ -24,7 +24,15 @@ namespace EngineCore
 	struct GISampleData
 	{
 		Vector3 minCorner;
-		Vector3 chunkSizeRcp;
+		float chunkSizeRcp;
+		Vector3Uint32 chunksCount;
+		float minHalfVoxelSize;
+		Vector3 brickAtlasOffset;
+		float _padding0;
+		Vector3 halfBrickVoxelSize;
+		float _padding1;
+		Vector3 brickSampleSize;
+		float _padding2;
 	};
 
 	struct SHAdresses
@@ -78,7 +86,7 @@ namespace EngineCore
 
 	struct Brick
 	{
-		uint32_t probes[BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION];
+		uint32_t probes[BRICK_RESOLUTION * BRICK_RESOLUTION * BRICK_RESOLUTION];
 		BoundingBox bbox;
 		uint32_t depth;
 	};
@@ -87,7 +95,7 @@ namespace EngineCore
 	{
 		Vector3 pos;
 		bool bake;
-		uint8_t maxDepth;
+		uint8_t minDepth;
 		uint8_t copyCount;
 		DArray<Vector3Uint32> adresses;
 	};
@@ -184,23 +192,19 @@ namespace EngineCore
 		#define BRICK_XY_BITS 12
 		#define BRICK_X_MASK 0x00fff000
 		#define BRICK_Y_MASK 0x00000fff
-		#define BRICK_LEVEL_MASK 0xff000000
+		#define BRICK_DEPTH_MASK 0xff000000
 
-		// lookup uint32: 8 bit - level, 12 bit - x, 12 bit - y
-		inline uint32_t SetLookupNode(uint32_t x, uint32_t y, uint32_t level)
+		// lookup uint32: 8 bit = pow(2, depth), 12 bit = x, 12 bit = y
+		inline uint32_t SetLookupNode(uint32_t x, uint32_t y, uint32_t depth)
 		{
-			return ((x << BRICK_XY_BITS) & BRICK_X_MASK) + (y & BRICK_Y_MASK) + ((level << BRICK_ADRESS_BITS) & BRICK_LEVEL_MASK);
+			uint32_t powDepth = (uint32_t)roundf(powf(2.0f, (float)depth));
+			return ((x << BRICK_XY_BITS) & BRICK_X_MASK) + (y & BRICK_Y_MASK) + ((powDepth << BRICK_ADRESS_BITS) & BRICK_DEPTH_MASK);
 		}
 
 		inline void GetBrickAdress(uint32_t node, uint32_t& x, uint32_t& y)
 		{
 			x = ((node & BRICK_X_MASK) >> BRICK_XY_BITS);
 			y = (node & BRICK_Y_MASK);
-		}
-
-		inline uint32_t GetBrickLevel(uint32_t node)
-		{
-			return ((node & BRICK_LEVEL_MASK) >> BRICK_ADRESS_BITS);
 		}
 
 		inline uint64_t PosToUint(const Vector3 pos)

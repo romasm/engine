@@ -69,7 +69,12 @@ bool GIMgr::InitBuffers()
 
 	GISampleData sampleData;
 	sampleData.minCorner = Vector3(-voxelSize);
-	sampleData.chunkSizeRcp = Vector3(1.0f / chunkSize);
+	sampleData.chunkSizeRcp = 1.0f / chunkSize;
+	sampleData.chunksCount = Vector3Uint32(1, 1, 1);
+	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
+	sampleData.brickAtlasOffset = Vector3(1.0f, 1.0f, 1.0f / BRICK_COEF_COUNT);
+	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / BRICK_RESOLUTION, 1.0f / BRICK_RESOLUTION, 1.0f / (BRICK_RESOLUTION * BRICK_COEF_COUNT));
+	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 #ifdef _EDITOR
@@ -197,6 +202,10 @@ const uint32_t probesOffset[27][3] =
 bool GIMgr::RecreateResources()
 {
 	DeleteResources();
+	
+	GISampleData sampleData;
+	sampleData.minCorner = worldBox.corner;
+	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
 
 	// bricks atlas
 	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP ???
@@ -204,9 +213,9 @@ bool GIMgr::RecreateResources()
 
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = bricksTexX * BKICK_RESOLUTION;
-	volumeDesc.Height = bricksTexY * BKICK_RESOLUTION;
-	volumeDesc.Depth = BKICK_RESOLUTION * BKICK_COEF_COUNT;
+	volumeDesc.Width = bricksTexX * BRICK_RESOLUTION;
+	volumeDesc.Height = bricksTexY * BRICK_RESOLUTION;
+	volumeDesc.Depth = BRICK_RESOLUTION * BRICK_COEF_COUNT;
 	volumeDesc.MipLevels = 1;
 	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
 	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
@@ -236,6 +245,10 @@ bool GIMgr::RecreateResources()
 
 	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
 	
+	sampleData.brickAtlasOffset = Vector3(1.0f / bricksTexX, 1.0f / bricksTexY, 1.0f / BRICK_COEF_COUNT);
+	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / volumeDesc.Width, 1.0f / volumeDesc.Height, 1.0f / volumeDesc.Depth);
+	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
+
 	LOG_GOOD("Brick atlas size: %i mb", volumeDesc.Width * volumeDesc.Height * volumeDesc.Depth * sizeof(Vector4Uint16) / 1048576);
 	// ----------------------------------------------------------------------
 	
@@ -355,6 +368,9 @@ bool GIMgr::RecreateResources()
 	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
 		return false;
 	
+	sampleData.chunkSizeRcp = 1.0f / chunkSize;
+	sampleData.chunksCount = Vector3Uint32(chunksX, chunksY, chunksZ);
+
 	LOG_GOOD("Chunks lookup size: %i", chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
 	// ----------------------------------------------
 
@@ -407,9 +423,6 @@ bool GIMgr::RecreateResources()
 
 	LOG_GOOD("Brick lookup size: %i kb", lookupArrayX * lookupArrayY * lookupMaxSize * sizeof(uint32_t) / 1024);
 
-	GISampleData sampleData;
-	sampleData.minCorner = worldBox.corner;
-	sampleData.chunkSizeRcp = Vector3(1.0f / chunkSize);
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 	return true;
@@ -565,13 +578,13 @@ bool GIMgr::BuildVoxelOctree()
 		x *= 3;
 		y *= 3;
 
-		for (uint32_t k = 0; k < BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION; k++)
+		for (uint32_t k = 0; k < BRICK_RESOLUTION * BRICK_RESOLUTION * BRICK_RESOLUTION; k++)
 		{
 			Prob& prob = probesArray[bricks[i].probes[k]];
 			prob.adresses.push_back(Vector3Uint32(x + probesOffset[k][0], y + probesOffset[k][1], probesOffset[k][2]));
 
 			// copies check
-			if (prob.maxDepth == bricks[i].depth)
+			if (prob.minDepth == bricks[i].depth)
 			{
 				// TODO: force outter prob to bake (inverse depth?)
 
@@ -620,6 +633,7 @@ bool GIMgr::BuildVoxelOctree()
 		// TODO: find interpalation locations
 	}
 
+	//return true;
 	// TEMP baking
 	const int32_t captureResolution = 64;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -637,7 +651,7 @@ bool GIMgr::BuildVoxelOctree()
 	const uint32_t groupsCount = captureResolution / 8;
 
 	SHAdresses adresses;
-	
+
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
@@ -669,11 +683,11 @@ bool GIMgr::BuildVoxelOctree()
 	world->EndCaptureProb();
 
 	// TEST
-	/*ScratchImage tempVol;
+	ScratchImage tempVol;
 	HRESULT dfgd = CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, tempVol);
 	string envTexNamevvvvv = world->GetWorldName() + "/gi_bricks" + EXT_TEXTURE;
 	SaveToDDSFile(tempVol.GetImages(), tempVol.GetImageCount(), tempVol.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamevvvvv).data());
-	*/
+	
 
 #ifndef _DEV
 	octreeArray.destroy();
@@ -779,7 +793,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		uint32_t brickID = uint32_t(bricks.size() - 1);
 
 		newBrick.bbox = bbox;
-		newBrick.depth = octreeDepth;
+		newBrick.depth = octree.depth - 1 - octreeDepth;
 		
 		Vector3 bboxMin = octreeHelper * (bbox.Center - octreeCorner - bbox.Extents);
 		Vector3 bboxMax = octreeHelper * (bbox.Center - octreeCorner + bbox.Extents);
@@ -800,7 +814,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		}
 		
 		// probs registration
-		for (int32_t i = 0; i < BKICK_RESOLUTION * BKICK_RESOLUTION * BKICK_RESOLUTION; i++)
+		for (int32_t i = 0; i < BRICK_RESOLUTION * BRICK_RESOLUTION * BRICK_RESOLUTION; i++)
 		{
 			Vector3 probPos;
 			int32_t count = 0;
@@ -827,7 +841,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.pos = probPos;
 				prob.adresses.destroy();
 				prob.copyCount = 1;
-				prob.maxDepth = octreeDepth;
+				prob.minDepth = newBrick.depth;
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
@@ -836,14 +850,14 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 			{
 				newBrick.probes[i] = probIt->second;
 
-				uint8_t& probMaxDepth = probesArray[probIt->second].maxDepth;
-				if (probMaxDepth == (uint8_t)octreeDepth)
+				uint8_t& probMinDepth = probesArray[probIt->second].minDepth;
+				if (probMinDepth == (uint8_t)newBrick.depth)
 				{
 					probesArray[probIt->second].copyCount++;
 				}
-				else if (probMaxDepth < (uint8_t)octreeDepth)
+				else if (probMinDepth > (uint8_t)newBrick.depth)
 				{
-					probMaxDepth = (uint8_t)octreeDepth;
+					probMinDepth = (uint8_t)newBrick.depth;
 					probesArray[probIt->second].copyCount = 1;
 				}		
 			}
@@ -860,13 +874,13 @@ Vector3 GIMgr::AdjustProbPos(Vector3& pos)
 #ifdef _DEV
 const Vector3 octreeColors[OCTREE_DEPTH] =
 {
-	{ 1.0f, 0.0f, 0.0f },
-	{ 1.0f, 1.0f, 0.0f },
-	{ 0.0f, 1.0f, 0.0f },
-	{ 0.0f, 1.0f, 1.0f },
-	{ 0.0f, 0.0f, 1.0f },
+	{ 0.0f, 0.0f, 0.0f },
 	{ 1.0f, 0.0f, 1.0f },
-	{ 0.0f, 0.0f, 0.0f }
+	{ 0.0f, 0.0f, 1.0f },
+	{ 0.0f, 1.0f, 1.0f },
+	{ 0.0f, 1.0f, 0.0f },
+	{ 1.0f, 1.0f, 0.0f },
+	{ 1.0f, 0.0f, 0.0f }
 };
 
 #define PUSH_BOX_TO_LINES \
@@ -904,7 +918,7 @@ void GIMgr::DebugSetState(DebugState state)
 			
 			for (auto& item : bricks)
 			{
-				if (item.depth >= OCTREE_DEPTH - 1)
+				if (item.depth == 0)
 					continue;
 
 				const Vector3& color = octreeColors[item.depth];
