@@ -972,7 +972,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
-	ID3D11ShaderResourceView* srvs[14];
+	ID3D11ShaderResourceView* srvs[16];
 	srvs[0] = m_MaterialBuffer.srv;
 	srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
 	srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
@@ -987,17 +987,21 @@ void ScenePipeline::OpaqueDefferedStage()
 	srvs[11] = rt_SSR->GetShaderResourceView(0);
 	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
 	srvs[13] = nullptr;
+	srvs[14] = nullptr;
+	srvs[15] = nullptr;
 	
 	if (!isLightweight)
 	{
-		srvs[13] = giMgr->GetGIVolumeSRV();
+		srvs[13] = giMgr->GetGIChunksSRV();
+		srvs[14] = giMgr->GetGILookupsSRV();
+		srvs[15] = giMgr->GetGIBricksSRV();
 
-		Render::CSSetShaderResources(0, 14, srvs);
+		Render::CSSetShaderResources(0, 16, srvs);
 
 		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		Render::CSSetShaderResources(14, 1, &shadowBuffer);
+		Render::CSSetShaderResources(16, 1, &shadowBuffer);
 
-		LoadLights(15, true);
+		LoadLights(17, true);
 	}
 	else
 	{

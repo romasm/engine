@@ -38,37 +38,39 @@ Texture2D <float4> SSRTexture : register(t11);
  
 Texture2D g_envbrdfLUT : register(t12);
 
-Texture3D g_giVolume : register(t13);
+Texture3D g_giChunks : register(t13);
+Texture3D g_giLookups : register(t14);
+Texture3D g_giBricks : register(t15);
 
-Texture2DArray <float> shadows: register(t14); 
+Texture2DArray <float> shadows: register(t16); 
 
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t15); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t16); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t17); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
+StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
+StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t19); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t18); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t19); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t20); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t20); 
+StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t21); 
+StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t22); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t21); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t22); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t23); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t23); 
+StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t24); 
+StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t25); 
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t24); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t25); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t26); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t26); 
+StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t27); 
+StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t27);     
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29);     
 
-StructuredBuffer<int> g_lightIDs : register(t28); 
+StructuredBuffer<int> g_lightIDs : register(t30); 
 
-TextureCubeArray <float4> g_hqEnvProbsArray: register(t29); 
-TextureCubeArray <float4> g_sqEnvProbsArray: register(t30); 
-TextureCubeArray <float4> g_lqEnvProbsArray: register(t31); 
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t31); 
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t32); 
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t33); 
 
-StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t32); 
-StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t33); 
-StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t34); 
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t34); 
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t35); 
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t36); 
 
 cbuffer configBuffer : register(b1)
 {
@@ -150,7 +152,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
 	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
 
-	float3 diffuse = (sgGI.rgb + envProbDiffuse.rgb) * configs.indirDiff + directLight.diffuse * configs.dirDiff;
+	float3 diffuse = (sgGI.rgb/* + envProbDiffuse.rgb*/) * configs.indirDiff + directLight.diffuse * configs.dirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec + directLight.specular * configs.dirSpec;
 
 	//diffuse = lerp(diffuse, g_lightCount.envProbsCountHQ, 0.999);

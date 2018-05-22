@@ -210,7 +210,7 @@ struct VolumeTraceData
 struct GISampleData
 {
 	float3 minCorner;
-	float worldSizeRcp;
+	float chunkSizeRcp;
 };
 
 struct GBufferData

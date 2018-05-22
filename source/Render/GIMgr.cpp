@@ -66,9 +66,10 @@ GIMgr::~GIMgr()
 bool GIMgr::InitBuffers()
 {
 	sampleDataGPU = Buffer::CreateConstantBuffer(Render::Device(), sizeof(GISampleData), true);
-	
-	sampleData.minCorner = Vector3(-5.0f, -5.0f, -5.0f);
-	sampleData.worldSizeRcp = 1.0f / 10.0f;
+
+	GISampleData sampleData;
+	sampleData.minCorner = Vector3(-voxelSize);
+	sampleData.chunkSizeRcp = Vector3(1.0f / chunkSize);
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 #ifdef _EDITOR
@@ -102,9 +103,28 @@ void GIMgr::DropGIData()
 	TEXTURE_DROP(sgVolume);
 }
 
-ID3D11ShaderResourceView* GIMgr::GetGIVolumeSRV()
+ID3D11ShaderResourceView* GIMgr::GetGIBricksSRV()
 {
-	return TEXTURE_GETPTR(sgVolume);
+	if (!bricksAtlasSRV)
+		return TexMgr::Get()->null_resource;
+
+	return bricksAtlasSRV;
+}
+
+ID3D11ShaderResourceView* GIMgr::GetGIChunksSRV()
+{
+	if (!chunksLookupSRV)
+		return TexMgr::Get()->null_resource;
+
+	return chunksLookupSRV;
+}
+
+ID3D11ShaderResourceView* GIMgr::GetGILookupsSRV()
+{
+	if (!bricksLookupSRV)
+		return TexMgr::Get()->null_resource;
+
+	return bricksLookupSRV;
 }
 
 void GIMgr::DeleteResources()
@@ -387,6 +407,11 @@ bool GIMgr::RecreateResources()
 
 	LOG_GOOD("Brick lookup size: %i kb", lookupArrayX * lookupArrayY * lookupMaxSize * sizeof(uint32_t) / 1024);
 
+	GISampleData sampleData;
+	sampleData.minCorner = worldBox.corner;
+	sampleData.chunkSizeRcp = Vector3(1.0f / chunkSize);
+	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+
 	return true;
 }
 
@@ -616,8 +641,8 @@ bool GIMgr::BuildVoxelOctree()
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
-		if (!prob.bake)
-			continue;
+		//if (!prob.bake)
+		//	continue;
 		
 		adresses.adressesCount.x = (float)prob.adresses.size();
 		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
@@ -636,17 +661,6 @@ bool GIMgr::BuildVoxelOctree()
 		cubemapToSH->Dispatch(groupsCount, groupsCount, 1);
 		cubemapToSH->UnbindUAV();
 
-		// TEST
-		if (bakedCount == 0)
-		{
-			ScratchImage tempCube;
-			ID3D11Resource* ggggg = nullptr;
-			probSRV->GetResource(&ggggg);
-			CaptureTexture(Render::Device(), Render::Context(), ggggg, tempCube);
-			string envTexNamerrrrrr = world->GetWorldName() + "/gi_cubemap" + EXT_TEXTURE;
-			SaveToDDSFile(tempCube.GetImages(), tempCube.GetImageCount(), tempCube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamerrrrrr).data());
-		}
-
 		bakedCount++;
 		if (bakedCount % 100 == 0)
 			DBG_SHORT("Baked: %i", bakedCount);
@@ -655,11 +669,11 @@ bool GIMgr::BuildVoxelOctree()
 	world->EndCaptureProb();
 
 	// TEST
-	ScratchImage tempVol;
+	/*ScratchImage tempVol;
 	HRESULT dfgd = CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, tempVol);
 	string envTexNamevvvvv = world->GetWorldName() + "/gi_bricks" + EXT_TEXTURE;
 	SaveToDDSFile(tempVol.GetImages(), tempVol.GetImageCount(), tempVol.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamevvvvv).data());
-
+	*/
 
 #ifndef _DEV
 	octreeArray.destroy();

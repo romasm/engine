@@ -24,7 +24,7 @@ namespace EngineCore
 	struct GISampleData
 	{
 		Vector3 minCorner;
-		float worldSizeRcp;
+		Vector3 chunkSizeRcp;
 	};
 
 	struct SHAdresses
@@ -108,7 +108,10 @@ namespace EngineCore
 		bool ReloadGIData();
 		void DropGIData();
 
-		ID3D11ShaderResourceView* GetGIVolumeSRV();
+		ID3D11ShaderResourceView* GetGIBricksSRV();
+		ID3D11ShaderResourceView* GetGIChunksSRV();
+		ID3D11ShaderResourceView* GetGILookupsSRV();
+
 		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
 
 		bool BuildVoxelOctree();
@@ -125,7 +128,6 @@ namespace EngineCore
 
 		uint32_t sgVolume;
 
-		GISampleData sampleData;
 		ID3D11Buffer* sampleDataGPU;
 
 		// editor gi resources
