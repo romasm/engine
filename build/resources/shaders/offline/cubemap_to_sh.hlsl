@@ -9,22 +9,22 @@ RWTexture3D <uint> bricksAtlas : register(u0);
 TextureCube <float4> cubemap : register(t0);
 SamplerState samplerBilinearWrap : register(s0);
 
-cbuffer configBuffer : register(b0)
+cbuffer adressBuffer : register(b0)
 {
-	float4 adressesCount;
 	float4 adresses[48];
 };
 
 #define CUBE_RES 64
 #define SH_MUL 1.0 / (CUBE_RES * CUBE_RES * 6)
 
-#define MAX_WAITING_CYCLES 100
+#define MAX_WAITING_CYCLES 100000
 void InterlockedFloatAdd(uint3 coords, float value)
 {
 	uint comp;
 	uint orig = bricksAtlas[coords];
 	int iter = 0;
 	[allow_uav_condition]
+	[loop]
 	do
 	{
 		comp = orig;
@@ -82,10 +82,10 @@ static const float3 cubeVectors[6][4] =
 		float3(1, 1, -1),
 		float3(-1, -1, -1),
 		float3(1, -1, -1)
-	},
-};
+	}, 
+}; 
 
-float3 GetCubeDir(float x, float y, uint face)
+float3 GetCubeDir(float x, float y, uint face) 
 {
 	float3 xVect0 = lerp(cubeVectors[face][0], cubeVectors[face][1], x);
 	float3 xVect1 = lerp(cubeVectors[face][2], cubeVectors[face][3], x);
@@ -98,7 +98,7 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 	float width, height;
 	cubemap.GetDimensions(width, height);
 	const float cubeResRpc = 1.0f / width;
-
+	   
 	[unroll]
 	for (int face = 0; face < 6; face++) 
 	{		
@@ -106,10 +106,10 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 		float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
 		float3 colorWeighed = color * SH_MUL;
-		SHcoef sh = CalculateSHCoefs(colorWeighed, dir);
+		SHcoef3 sh = CalculateSHCoefs(colorWeighed, dir);
 		
 		[loop]
-		for(int k = 0; k < (int)adressesCount.x; k++)
+		for(int k = 0; k < (int)adresses[0].w; k++)
 		{
 			uint3 coords = (uint3)adresses[k].xyz;
 

@@ -5,7 +5,7 @@
 #define BRICK_Y_MASK 0x00000fff
 #define BRICK_DEPTH_MASK 0xff000000
 
-float EvaluateSHIndirect(GBufferData gbuffer, out float3 diffuse)
+float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3 V, out float3 diffuse)
 {
 	float3 chunkPos = (gbuffer.wpos - g_giSampleData.minCorner) * g_giSampleData.chunkSizeRcp;
 	int4 chunkAdress = int4((int3)floor(chunkPos), 0);
@@ -36,7 +36,7 @@ float EvaluateSHIndirect(GBufferData gbuffer, out float3 diffuse)
 	uint2 brickOffset = uint2((rawBrickAdress & BRICK_X_MASK) >> BRICK_XY_BITS, rawBrickAdress & BRICK_Y_MASK);
 	uint brickDepth = ((rawBrickAdress & BRICK_DEPTH_MASK) >> BRICK_ADRESS_BITS); // 2 ^ depth
 	
-	float3 brickInOffset = floor(lookupPosRelative * brickDepth);
+	float3 brickInOffset = frac(lookupPosRelative * brickDepth);
 	brickInOffset *= g_giSampleData.brickSampleSize;
 
 	float3 brickSampleAdress = brickInOffset;
@@ -44,7 +44,7 @@ float EvaluateSHIndirect(GBufferData gbuffer, out float3 diffuse)
 
 	brickSampleAdress += g_giSampleData.halfBrickVoxelSize;
 
-	SHcoef sh;
+	SHcoef3 sh;
 	[unroll]
 	for (int i = 0; i < 9; i++)
 	{
@@ -52,9 +52,12 @@ float EvaluateSHIndirect(GBufferData gbuffer, out float3 diffuse)
 		brickSampleAdress.z += g_giSampleData.brickAtlasOffset.z;
 	}
 
-	float3 color = ReconstrucColor(sh, gbuffer.normal);
+	const float3 dominantN = getDiffuseDominantDir(gbuffer.normal, V, NoV, Roughness);
+	const float3 color = sh.L[0];// ReconstrucColor(sh, dominantN);
 
-	diffuse = color * gbuffer.albedo;
+	diffuse = color;// * gbuffer.albedo * gbuffer.ao;
+
+	//diffuse = lerp(diffuse, brickInOffset, 0.999);
 
 	return fading;
 }

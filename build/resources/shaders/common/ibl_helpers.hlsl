@@ -4,28 +4,6 @@
 
 #define MAX_MIP_LEVEL 8
 
-float computeSpecularOcclusion( float NoV, float AO, float R ) // ????
-{
-	return saturate( PowAbs( NoV + AO , R ) - 1 + AO );
-}
-
-float3 getSpecularDominantDir( float3 N, float3 Refl, float R, float NoV )
-{
-	float smoothness = saturate(1 - R );
-	float lerpFactor = smoothness * ( sqrt( smoothness ) + R );
-	
-	return lerp(N, Refl, lerpFactor );
-}
-
-float3 getDiffuseDominantDir( float3 N, float3 V, float NoV , float R )
-{
-	float a = 1.02341f * R - 1.51174f;
-	float b = -0.511705f * R + 0.755868f;
-	float lerpFactor = saturate(( NoV * a + b) * R );
-	// The result is not normalized as we fetch in a cubemap
-	return lerp(N, V, lerpFactor );
-}
-
 float3 calculateAnisotropicNormal(float2 R, float3 N, float3 B, float3 T, float3 V)
 {
 	if(R.x == R.y)
@@ -92,12 +70,14 @@ void BoxEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, Env
 	const float3 boxPointIntersection = intersections.y * localDir;
 	float3 localR = localPos + boxPointIntersection - data.offsetFade.xyz;
 
+	const float3 localN = mul(dominantN, (float3x3)data.invTransform);
+
 	const float localRoughness = computeDistanceBaseRoughness( length( boxPointIntersection ), length( localR ), Roughness );
 	localR = lerp( localR, dominantR, Roughness );
 		
 	sampleCubeArray(cubeSampler, cubeArray, localR, sqrt(localRoughness), data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, specular);
 
-	sampleCubeArrayDiffuse(cubeSampler, cubeArray, dominantN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
+	sampleCubeArrayDiffuse(cubeSampler, cubeArray, localN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
 }
 
 void SphereEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, EnvProbRenderData data, float4 wPos, float3 dominantR, float3 dominantN, float Roughness, inout float4 specular, inout float4 diffuse)
@@ -124,10 +104,12 @@ void SphereEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 
 	const float localRoughness = computeDistanceBaseRoughness( length( spherePointIntersection ), length( localR ), Roughness );
 	localR = lerp( localR, dominantR, Roughness );
-				
+
+	const float3 localN = mul(dominantN, (float3x3)data.invTransform);
+
 	sampleCubeArray(cubeSampler, cubeArray, localR, sqrt(localRoughness), data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, specular);
 
-	sampleCubeArrayDiffuse(cubeSampler, cubeArray, dominantN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
+	sampleCubeArrayDiffuse(cubeSampler, cubeArray, localN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
 }
 
 void SimpleEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, EnvProbRenderData data, float4 wPos, float3 dominantR, float3 dominantN, float RoughnessSqrt, inout float4 specular, inout float4 diffuse)
@@ -142,10 +124,12 @@ void SimpleEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 
 	const float distAlpha = saturate( distFade / data.offsetFade.w );
 	const float3 localR = mul( dominantR, (float3x3)data.invTransform );
+
+	const float3 localN = mul( dominantN, (float3x3)data.invTransform );
 	
 	sampleCubeArray(cubeSampler, cubeArray, localR, RoughnessSqrt, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, specular);
 
-	sampleCubeArrayDiffuse(cubeSampler, cubeArray, dominantN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
+	sampleCubeArrayDiffuse(cubeSampler, cubeArray, localN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
 }
 
 void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, float3 V, GBufferData gbuffer, float SO, 

@@ -37,8 +37,7 @@ namespace EngineCore
 
 	struct SHAdresses
 	{
-		Vector4 adressesCount;
-		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors
+		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count
 	};
 
 	struct VoxelizeSceneItem

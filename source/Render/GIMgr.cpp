@@ -242,9 +242,9 @@ bool GIMgr::RecreateResources()
 	volumeUAVDesc.Format = formatBricks;
 	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
 		return false;
-
+	 
 	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
-	
+	 
 	sampleData.brickAtlasOffset = Vector3(1.0f / bricksTexX, 1.0f / bricksTexY, 1.0f / BRICK_COEF_COUNT);
 	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / volumeDesc.Width, 1.0f / volumeDesc.Height, 1.0f / volumeDesc.Depth);
 	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
@@ -657,15 +657,15 @@ bool GIMgr::BuildVoxelOctree()
 	{
 		//if (!prob.bake)
 		//	continue;
-		
-		adresses.adressesCount.x = (float)prob.adresses.size();
+				
 		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
 		{
 			auto& adr = prob.adresses[i];
 			adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
 		}
+		adresses.adresses[0].w = (float)prob.adresses.size();
 
-		Render::UpdateDynamicResource(adressBuffer, &adresses, (prob.adresses.size() + 1) * sizeof(Vector4));
+		Render::UpdateDynamicResource(adressBuffer, &adresses, prob.adresses.size() * sizeof(Vector4));
 
 		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP, false );
 		

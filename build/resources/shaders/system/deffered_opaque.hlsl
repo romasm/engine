@@ -32,7 +32,7 @@ Texture2D <float2> gb_Depth : register(t9);
 
 #include "../common/common_helpers.hlsl"
 
-
+  
 Texture2D <float> DynamicAO : register(t10); 
 Texture2D <float4> SSRTexture : register(t11); 
  
@@ -115,7 +115,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	{  
 		diffuseOutput[threadID.xy] = float4(gbuffer.emissive, 0);
 		return; 
-	}
+	} 
 	    
 	gbuffer.subsurfTint = lerp(1.0, gbuffer.subsurf, materialParams.ssTint);  
 	      
@@ -125,33 +125,33 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	 
 	float3 ViewVector = g_CamPos - gbuffer.wpos;     
 	const float linDepth = length(ViewVector);
-	ViewVector = ViewVector / linDepth;   
+	ViewVector = ViewVector / linDepth;    
 	   
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);  
 	   
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);    
-	           
+	                
 	// DIRECT LIGHT                 
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
-	             
-	// IBL     	
-	float3 specularBrdf = 0;
-	float3 diffuseBrdf = 0;
+	               
+	// IBL     	 
+	float3 specularBrdf = 0; 
+	float3 diffuseBrdf = 0; 
 	float4 envProbSpecular = 0;
 	float4 envProbDiffuse = 0;
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
-
-	// SG
-	float3 shGI;
-	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, shGI);
+	 
+	// SG    
+	float3 shGI;      
+	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, mData.NoV, mData.minR, ViewVector, shGI);
 	
-	shGI = lerp(envProbDiffuse.rgb, shGI, lerpEnvProbSH);
-
-	// SSR 
+	shGI = lerp(envProbDiffuse.rgb, shGI * diffuseBrdf * 6, lerpEnvProbSH);
+	
+	// SSR    
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );
-	   
-	// OUTPUT  
-	// temp, move somewhere
+	    
+	// OUTPUT    
+	// temp, move somewhere 
 	float scatteringBlendFactor = saturate(luminance(gbuffer.albedo) + float(materialParams.ior == 0.0));
 
 	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
@@ -164,6 +164,6 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
-	specularSecondOutput[threadID.xy] = specularSecond.ba; 
+	specularSecondOutput[threadID.xy] = specularSecond.ba;  
 }                            
                                                                
