@@ -126,5 +126,9 @@ float4 CalcAO(PI_PosTex input) : SV_TARGET
 
 	float finalAO = 1.0 - saturate(strengthPerRay * totalOcclusion);
 	finalAO *= finalAO;
+
+	// discard
+	finalAO = saturate(finalAO + 0.9999);
+
 	return finalAO;
 }

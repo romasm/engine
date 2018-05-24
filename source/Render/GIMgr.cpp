@@ -17,6 +17,10 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	bricksAtlasSRV = nullptr;
 	bricksAtlasUAV = nullptr;
 
+	bricksTempAtlas = nullptr;
+	bricksTempAtlasSRV = nullptr;
+	bricksTempAtlasUAV = nullptr;
+
 	chunksLookup = nullptr;
 	chunksLookupSRV = nullptr;
 
@@ -31,6 +35,7 @@ GIMgr::GIMgr(BaseWorld* wrd)
 
 	cubemapToSH = nullptr;
 	adressBuffer = nullptr;
+	copyBricks = nullptr;
 
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
 	lookupMaxSize = (uint32_t)powf(2.0f, float(OCTREE_DEPTH - 1));
@@ -61,6 +66,7 @@ GIMgr::~GIMgr()
 
 	_DELETE(cubemapToSH);
 	_RELEASE(adressBuffer);
+	_DELETE(copyBricks);
 }
 
 bool GIMgr::InitBuffers()
@@ -80,8 +86,9 @@ bool GIMgr::InitBuffers()
 #ifdef _EDITOR
 
 	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
-
 	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(Vector4), true);
+
+	copyBricks = new Compute(SHADER_BRICKS_COPY);
 
 #endif
 
@@ -143,6 +150,10 @@ void GIMgr::DeleteResources()
 	_RELEASE(bricksAtlasUAV);
 	_RELEASE(bricksAtlasSRV);
 	_RELEASE(bricksAtlas);
+
+	_RELEASE(bricksTempAtlasUAV);
+	_RELEASE(bricksTempAtlasSRV);
+	_RELEASE(bricksTempAtlas);
 }
 
 bool GIMgr::CompareOctrees(Octree& first, Octree& second)
@@ -207,9 +218,8 @@ bool GIMgr::RecreateResources()
 	sampleData.minCorner = worldBox.corner;
 	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
 
-	// bricks atlas
-	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP ???
-	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+	// bricks atlas temp
+	const DXGI_FORMAT formatBricksTemp = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
@@ -221,8 +231,8 @@ bool GIMgr::RecreateResources()
 	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	volumeDesc.CPUAccessFlags = 0;
 	volumeDesc.MiscFlags = 0;
-	volumeDesc.Format = formatBricks;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksAtlas)))
+	volumeDesc.Format = formatBricksTemp;
+	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksTempAtlas)))
 		return false;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
@@ -230,8 +240,8 @@ bool GIMgr::RecreateResources()
 	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 	volumeSRVDesc.Texture3D.MipLevels = -1;
 	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
-	volumeSRVDesc.Format = formatBricks;
-	if (FAILED(Render::CreateShaderResourceView(bricksAtlas, &volumeSRVDesc, &bricksAtlasSRV)))
+	volumeSRVDesc.Format = formatBricksTemp;
+	if (FAILED(Render::CreateShaderResourceView(bricksTempAtlas, &volumeSRVDesc, &bricksTempAtlasSRV)))
 		return false;
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
@@ -239,15 +249,33 @@ bool GIMgr::RecreateResources()
 	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	volumeUAVDesc.Texture3D.MipSlice = 0;
 	volumeUAVDesc.Texture3D.WSize = volumeDesc.Depth;
-	volumeUAVDesc.Format = formatBricks;
-	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
+	volumeUAVDesc.Format = formatBricksTemp;
+	if (FAILED(Render::CreateUnorderedAccessView(bricksTempAtlas, &volumeUAVDesc, &bricksTempAtlasUAV)))
 		return false;
 	 
-	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
+	Render::ClearUnorderedAccessViewFloat(bricksTempAtlasUAV, Vector4(0, 0, 0, 0));
 	 
 	sampleData.brickAtlasOffset = Vector3(1.0f / bricksTexX, 1.0f / bricksTexY, 1.0f / BRICK_COEF_COUNT);
 	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / volumeDesc.Width, 1.0f / volumeDesc.Height, 1.0f / volumeDesc.Depth);
 	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
+
+	// brick atlas final
+	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP, DXGI_FORMAT_R11G11B10_FLOAT, DXGI_FORMAT_BC6H_UF16 ???
+	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+	volumeDesc.Format = formatBricks;
+	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksAtlas)))
+		return false;
+
+	volumeSRVDesc.Format = formatBricks;
+	if (FAILED(Render::CreateShaderResourceView(bricksAtlas, &volumeSRVDesc, &bricksAtlasSRV)))
+		return false;
+
+	volumeUAVDesc.Format = formatBricks;
+	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
+		return false;
+
+	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
 
 	LOG_GOOD("Brick atlas size: %i mb", volumeDesc.Width * volumeDesc.Height * volumeDesc.Depth * sizeof(Vector4Uint16) / 1048576);
 	// ----------------------------------------------------------------------
@@ -628,8 +656,7 @@ bool GIMgr::BuildVoxelOctree()
 	{
 		if(prob.bake)
 			prob.pos = AdjustProbPos(prob.pos);
-
-		
+				
 		// TODO: find interpalation locations
 	}
 
@@ -648,9 +675,12 @@ bool GIMgr::BuildVoxelOctree()
 	if (!probSRV)
 		return false;
 
-	const uint32_t groupsCount = captureResolution / 8;
+	uint32_t groupsCountX = captureResolution / 8;
+	uint32_t groupsCountY = captureResolution / 4;
+	uint32_t groupsCountZ = 1;
 
 	SHAdresses adresses;
+	float pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
 
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
@@ -664,6 +694,7 @@ bool GIMgr::BuildVoxelOctree()
 			adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
 		}
 		adresses.adresses[0].w = (float)prob.adresses.size();
+		adresses.adresses[1].w = pixelCountRcp;
 
 		Render::UpdateDynamicResource(adressBuffer, &adresses, prob.adresses.size() * sizeof(Vector4));
 
@@ -671,8 +702,8 @@ bool GIMgr::BuildVoxelOctree()
 		
 		Render::CSSetConstantBuffers(0, 1, &adressBuffer);
 		Render::CSSetShaderResources(0, 1, &probSRV);
-		cubemapToSH->BindUAV(bricksAtlasUAV);
-		cubemapToSH->Dispatch(groupsCount, groupsCount, 1);
+		cubemapToSH->BindUAV(bricksTempAtlasUAV);
+		cubemapToSH->Dispatch(groupsCountX, groupsCountY, groupsCountZ);
 		cubemapToSH->UnbindUAV();
 
 		bakedCount++;
@@ -682,12 +713,23 @@ bool GIMgr::BuildVoxelOctree()
 
 	world->EndCaptureProb();
 
+	// TODO: interpalate probes
+
+	// copy to scene
+	groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 4);
+	groupsCountY = (uint32_t)ceilf(float(bricksTexY * BRICK_RESOLUTION) / 4);
+	groupsCountZ = (uint32_t)ceilf(float(BRICK_RESOLUTION * BRICK_COEF_COUNT) / 2);
+	
+	Render::CSSetShaderResources(0, 1, &bricksTempAtlasSRV);
+	copyBricks->BindUAV(bricksAtlasUAV);
+	copyBricks->Dispatch(groupsCountX, groupsCountY, groupsCountZ);
+	copyBricks->UnbindUAV();
+
 	// TEST
 	ScratchImage tempVol;
 	HRESULT dfgd = CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, tempVol);
 	string envTexNamevvvvv = world->GetWorldName() + "/gi_bricks" + EXT_TEXTURE;
 	SaveToDDSFile(tempVol.GetImages(), tempVol.GetImageCount(), tempVol.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamevvvvv).data());
-	
 
 #ifndef _DEV
 	octreeArray.destroy();

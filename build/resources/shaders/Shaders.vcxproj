@@ -186,6 +186,7 @@
     <FxCompile Include="objects\editor\debug_common.hlsl" />
     <FxCompile Include="objects\editor\debug_lines_cull.hlsl" />
     <FxCompile Include="objects\editor\debug_probes.hlsl" />
+    <FxCompile Include="offline\bricks_copy.hlsl" />
     <FxCompile Include="offline\cubemap_to_sh.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

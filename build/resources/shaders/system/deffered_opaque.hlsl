@@ -127,7 +127,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	const float linDepth = length(ViewVector);
 	ViewVector = ViewVector / linDepth;    
 	   
-	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);  
+	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);   
 	   
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);    
 	                

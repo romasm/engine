@@ -2,7 +2,8 @@
 #include "../common/structs.hlsl"
 #include "../common/sh_helpers.hlsl"
 
-#define GROUP_THREAD_COUNT 8
+#define GROUP_THREAD_COUNT_X 8
+#define GROUP_THREAD_COUNT_Y 4
 
 RWTexture3D <uint> bricksAtlas : register(u0);
 
@@ -11,11 +12,10 @@ SamplerState samplerBilinearWrap : register(s0);
 
 cbuffer adressBuffer : register(b0)
 {
+	// adresses[0].w == count
+	// adresses[1].w == 1.0 / (CUBE_RES * CUBE_RES * 6)
 	float4 adresses[48];
 };
-
-#define CUBE_RES 64
-#define SH_MUL 1.0 / (CUBE_RES * CUBE_RES * 6)
 
 #define MAX_WAITING_CYCLES 100000
 void InterlockedFloatAdd(uint3 coords, float value)
@@ -92,7 +92,7 @@ float3 GetCubeDir(float x, float y, uint face)
 	return normalize(lerp(xVect0, xVect1, y));
 }
 
-[numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
+[numthreads( GROUP_THREAD_COUNT_X, GROUP_THREAD_COUNT_Y, 1 )]
 void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 {
 	float width, height;
@@ -105,7 +105,7 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID)
 		float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
 		float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
-		float3 colorWeighed = color * SH_MUL;
+		float3 colorWeighed = color * adresses[1].w;
 		SHcoef3 sh = CalculateSHCoefs(colorWeighed, dir);
 		
 		[loop]

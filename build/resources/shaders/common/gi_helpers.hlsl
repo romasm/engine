@@ -53,7 +53,7 @@ float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3
 	}
 
 	const float3 dominantN = getDiffuseDominantDir(gbuffer.normal, V, NoV, Roughness);
-	const float3 color = sh.L[0];// ReconstrucColor(sh, dominantN);
+	const float3 color = ReconstrucColor(sh, dominantN);
 
 	diffuse = color;// * gbuffer.albedo * gbuffer.ao;
 

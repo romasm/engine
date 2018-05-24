@@ -18,6 +18,7 @@
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
+#define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
 
 namespace EngineCore
 {
@@ -143,6 +144,10 @@ namespace EngineCore
 		ID3D11ShaderResourceView* bricksAtlasSRV;
 		ID3D11UnorderedAccessView* bricksAtlasUAV;
 
+		ID3D11Texture3D* bricksTempAtlas;
+		ID3D11ShaderResourceView* bricksTempAtlasSRV;
+		ID3D11UnorderedAccessView* bricksTempAtlasUAV;
+
 		ID3D11Texture3D* chunksLookup;
 		ID3D11ShaderResourceView* chunksLookupSRV;
 
@@ -161,6 +166,8 @@ namespace EngineCore
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
+
+		Compute* copyBricks;
 
 		float voxelSize;
 		float chunkSize;
