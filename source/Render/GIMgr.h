@@ -91,13 +91,37 @@ namespace EngineCore
 		uint32_t depth;
 	};
 
+	enum class ProbLocation : uint8_t
+	{
+		PROB_FACE = 0,
+		PROB_SIDE,
+		PROB_CORNER,
+		PROB_CENTER
+	};
+
+	enum class FacePlane : uint8_t
+	{
+		IP_X = 0,
+		IP_Y,
+		IP_Z
+	};
+
 	struct Prob
 	{
 		Vector3 pos;
 		bool bake;
 		uint8_t minDepth;
 		uint8_t copyCount;
+		uint8_t copiesFlags;
+		FacePlane facePlane;
+		ProbLocation location;
 		DArray<Vector3Uint32> adresses;
+	};
+
+	struct ProbBaked
+	{
+		Vector3 pos;
+		Vector3Uint32 adress;
 	};
 
 	class GIMgr
@@ -112,7 +136,7 @@ namespace EngineCore
 
 		GIMgr(class BaseWorld* wrd);
 		~GIMgr();
-				
+
 		bool ReloadGIData();
 		void DropGIData();
 
@@ -123,7 +147,7 @@ namespace EngineCore
 		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
 
 		bool BuildVoxelOctree();
-		
+
 		static bool CompareOctrees(Octree& first, Octree& second);
 		static void SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr);
 
@@ -153,14 +177,14 @@ namespace EngineCore
 
 		ID3D11Texture3D* bricksLookup;
 		ID3D11ShaderResourceView* bricksLookupSRV;
-		
+
 		uint32_t bricksTexX;
 		uint32_t bricksTexY;
 
 		// baking
 
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
-		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, 
+		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
 
@@ -194,11 +218,11 @@ namespace EngineCore
 
 #endif
 
-		#define BRICK_ADRESS_BITS 24
-		#define BRICK_XY_BITS 12
-		#define BRICK_X_MASK 0x00fff000
-		#define BRICK_Y_MASK 0x00000fff
-		#define BRICK_DEPTH_MASK 0xff000000
+#define BRICK_ADRESS_BITS 24
+#define BRICK_XY_BITS 12
+#define BRICK_X_MASK 0x00fff000
+#define BRICK_Y_MASK 0x00000fff
+#define BRICK_DEPTH_MASK 0xff000000
 
 		// lookup uint32: 8 bit = pow(2, depth), 12 bit = x, 12 bit = y
 		inline uint32_t SetLookupNode(uint32_t x, uint32_t y, uint32_t depth)
@@ -221,6 +245,47 @@ namespace EngineCore
 
 			return (((uint64_t)z) << 32) + (((uint64_t)y) << 16) + ((uint64_t)x);
 		}
-	};
 
+#define PROB_MIDDLE_ID 13
+
+#define PROB_FACE_ID_0 4
+#define PROB_FACE_ID_1 10
+#define PROB_FACE_ID_2 12
+#define PROB_FACE_ID_3 14
+#define PROB_FACE_ID_4 16
+#define PROB_FACE_ID_5 22
+
+		inline ProbLocation GetProbLocation(int32_t i)
+		{
+			if (i == PROB_MIDDLE_ID)
+				return ProbLocation::PROB_CENTER;
+			
+			if(i % 2 != 0)
+				return ProbLocation::PROB_SIDE;
+
+			if (i == PROB_FACE_ID_0 || i == PROB_FACE_ID_1 || i == PROB_FACE_ID_2 ||
+				i == PROB_FACE_ID_3 || i == PROB_FACE_ID_4 || i == PROB_FACE_ID_5)
+				return ProbLocation::PROB_FACE;
+
+			return ProbLocation::PROB_CORNER;
+		}
+
+		inline FacePlane GetProbFace(int32_t i)
+		{
+			switch (i)
+			{
+			case PROB_FACE_ID_0:
+			case PROB_FACE_ID_5:
+				return FacePlane::IP_Z;
+			case PROB_FACE_ID_1:
+			case PROB_FACE_ID_4:
+				return FacePlane::IP_Y;
+			case PROB_FACE_ID_2:
+			case PROB_FACE_ID_3:
+				return FacePlane::IP_X;
+			default:
+				return FacePlane::IP_X;
+			}
+		}
+	};
 }

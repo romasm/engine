@@ -201,15 +201,6 @@ const uint32_t probesOffset[27][3] =
 	{ 2,2,2 }
 };
 
-#define PROB_MIDDLE_ID 13
-
-#define PROB_FACE_ID_0 4
-#define PROB_FACE_ID_1 10
-#define PROB_FACE_ID_2 12
-#define PROB_FACE_ID_3 14
-#define PROB_FACE_ID_4 16
-#define PROB_FACE_ID_5 22
-
 bool GIMgr::RecreateResources()
 {
 	DeleteResources();
@@ -610,36 +601,6 @@ bool GIMgr::BuildVoxelOctree()
 		{
 			Prob& prob = probesArray[bricks[i].probes[k]];
 			prob.adresses.push_back(Vector3Uint32(x + probesOffset[k][0], y + probesOffset[k][1], probesOffset[k][2]));
-
-			// copies check
-			if (prob.minDepth == bricks[i].depth)
-			{
-				// TODO: force outter prob to bake (inverse depth?)
-
-				if (k == PROB_MIDDLE_ID) // center prob, always bake
-				{
-					prob.bake = true;
-				}
-				else
-				{
-					if (k % 2 != 0) // side prob, 4 copies for bake
-					{
-						prob.bake = (prob.copyCount >= 4);
-					}
-					else
-					{
-						if (k == PROB_FACE_ID_0 || k == PROB_FACE_ID_1 || k == PROB_FACE_ID_2 ||
-							k == PROB_FACE_ID_3 || k == PROB_FACE_ID_4 || k == PROB_FACE_ID_5) // face prob, 2 copies for bake
-						{
-							prob.bake = (prob.copyCount >= 2);
-						}
-						else // corner prob, 8 copies for bake
-						{
-							prob.bake = (prob.copyCount >= 8);
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -652,12 +613,95 @@ bool GIMgr::BuildVoxelOctree()
 	bricksLinks.clear();
 
 	// post process probes
+
+	// array of baked probes
+	RArray<ProbBaked> bakedArray;
+	bakedArray.create(probesArray.size());
 	for (auto& prob : probesArray)
 	{
-		if(prob.bake)
+		// copies check
+		// center prob & chunk outter prob: always bake
+		if (prob.location == ProbLocation::PROB_CENTER || prob.minDepth == 0)
+		{
+			prob.bake = true;
+		}
+		else
+		{
+			if (prob.location == ProbLocation::PROB_SIDE) // side prob, 4 copies for bake
+			{
+				prob.bake = (prob.copyCount >= 4);
+			}
+			else
+			{
+				if (prob.location == ProbLocation::PROB_FACE) // face prob, 2 copies for bake
+				{
+					prob.bake = (prob.copyCount >= 2);
+				}
+				else // corner prob, 8 copies for bake
+				{
+					prob.bake = (prob.copyCount >= 8);
+				}
+			}
+		}
+
+		if (!prob.bake)
+			continue;
+
+		ProbBaked* bakedProb = bakedArray.push_back();
+		bakedProb->pos = prob.pos;
+		bakedProb->adress = prob.adresses[0];
+	}
+	
+	for (auto& prob : probesArray)
+	{
+		if (prob.bake)
+		{
 			prob.pos = AdjustProbPos(prob.pos);
+		}
+		else
+		{
+			if (prob.location == ProbLocation::PROB_CORNER)
+				WRN("No min-depth-corners-prob should be here!");
+
+			// determine interpolation plane base on flags
+			switch (prob.location)
+			{
+			case ProbLocation::PROB_CORNER:
+				WRN("No min-depth-corners-prob should be here!");
+				break;
+			case ProbLocation::PROB_CENTER:
+				WRN("No center prob should be here!");
+				break;
+
+			case ProbLocation::PROB_SIDE: // TODO!!!
 				
-		// TODO: find interpalation locations
+				break;
+
+			case ProbLocation::PROB_FACE:
+				switch (prob.facePlane)
+				{
+				case FacePlane::IP_X:
+
+					break;
+				case FacePlane::IP_Y:
+
+					break;
+				case FacePlane::IP_Z:
+
+					break;
+				}
+				break;
+			}
+
+			// find interpolation locations
+			for (auto& bakedProb : bakedArray)
+			{
+				if (bakedProb.pos.x != prob.pos.x && bakedProb.pos.y != prob.pos.y && bakedProb.pos.z != prob.pos.z)
+					continue;
+
+
+			}
+		}
 	}
 
 	//return true;
@@ -713,7 +757,7 @@ bool GIMgr::BuildVoxelOctree()
 
 	world->EndCaptureProb();
 
-	// TODO: interpalate probes
+	// TODO: interpolate probes
 
 	// copy to scene
 	groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 4);
@@ -800,6 +844,8 @@ const int32_t brickPointsWeights[27][8] =
 	{ 0,0, 1,0, 0,0, 0,0 }
 };
 
+const int32_t probesFlag[27] = {7,6,6,3,2,2,3,2,2,5,4,4,1,-1,0,1,0,0,5,4,4,1,0,0,1,0,0};
+
 void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper, Vector3& octreeCorner)
 {
 	Vector3 corners[8];
@@ -885,6 +931,10 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.copyCount = 1;
 				prob.minDepth = newBrick.depth;
 
+				prob.copiesFlags = probesFlag[i] == -1 ? 0 : (1 << probesFlag[i]);
+				prob.location = GetProbLocation(i);
+				prob.facePlane = GetProbFace(i);
+
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
 			}
@@ -893,14 +943,23 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				newBrick.probes[i] = probIt->second;
 
 				uint8_t& probMinDepth = probesArray[probIt->second].minDepth;
+				uint8_t& probCopiesFlags = probesArray[probIt->second].copiesFlags;
 				if (probMinDepth == (uint8_t)newBrick.depth)
 				{
 					probesArray[probIt->second].copyCount++;
+
+					if(probesFlag[i] != -1)
+						probCopiesFlags = probCopiesFlags || (1 << probesFlag[i]);
 				}
 				else if (probMinDepth > (uint8_t)newBrick.depth)
 				{
-					probMinDepth = (uint8_t)newBrick.depth;
 					probesArray[probIt->second].copyCount = 1;
+					probMinDepth = (uint8_t)newBrick.depth;
+
+					probCopiesFlags = probesFlag[i] == -1 ? 0 : (1 << probesFlag[i]);
+
+					probesArray[probIt->second].location = GetProbLocation(i);
+					probesArray[probIt->second].facePlane = GetProbFace(i);
 				}		
 			}
 		}
