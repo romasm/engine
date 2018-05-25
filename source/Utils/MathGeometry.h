@@ -154,6 +154,7 @@ inline pointer _QS_partition(pointer begin, pointer end, compare compare_func, s
 	return i;
 }
 
+// compare_func result must be inverted compare to std::sort
 template<class pointer, class compare, class swapdata, class array_pointer>
 inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata swap_func, array_pointer p_array)
 {
@@ -183,6 +184,7 @@ inline pointer _QS_partition(pointer begin, pointer end, compare compare_func, s
 	return i;
 }
 
+// compare_func result must be inverted compare to std::sort
 template<class pointer, class compare, class swapdata, class first_array_pointer, class second_array_pointer>
 inline void QSortSwap(pointer begin, pointer end, compare compare_func, swapdata swap_func, first_array_pointer p_array, second_array_pointer q_array)
 {

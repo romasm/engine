@@ -11,7 +11,7 @@ BaseRenderMgr::BaseRenderMgr()
 
 bool BaseRenderMgr::CompareMeshes(RenderMesh& first, RenderMesh& second)
 {
-	return first.distanceSq <  second.distanceSq;
+	return first.distanceSq < second.distanceSq;
 }
 
 bool BaseRenderMgr::InvCompareMeshes(RenderMesh& first, RenderMesh& second)

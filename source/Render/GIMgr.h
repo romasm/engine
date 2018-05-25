@@ -112,16 +112,21 @@ namespace EngineCore
 		bool bake;
 		uint8_t minDepth;
 		uint8_t copyCount;
-		uint8_t copiesFlags;
-		FacePlane facePlane;
-		ProbLocation location;
 		DArray<Vector3Uint32> adresses;
+
+		uint32_t brickLastID;
+		int32_t brickLastPos;
 	};
 
-	struct ProbBaked
+	struct ProbInterpolation
 	{
-		Vector3 pos;
-		Vector3Uint32 adress;
+		int32_t probID;
+		uint8_t minDepth;
+
+		int32_t probInt0;
+		int32_t probInt1;
+		int32_t probInt2;
+		int32_t probInt3;
 	};
 
 	class GIMgr
@@ -150,6 +155,8 @@ namespace EngineCore
 
 		static bool CompareOctrees(Octree& first, Octree& second);
 		static void SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr);
+
+		static bool CompareInterpolationLinks(ProbInterpolation& first, ProbInterpolation& second);
 
 	private:
 		bool InitBuffers();
@@ -187,6 +194,7 @@ namespace EngineCore
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
+		void FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob);
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
@@ -248,12 +256,25 @@ namespace EngineCore
 
 #define PROB_MIDDLE_ID 13
 
-#define PROB_FACE_ID_0 4
-#define PROB_FACE_ID_1 10
-#define PROB_FACE_ID_2 12
-#define PROB_FACE_ID_3 14
-#define PROB_FACE_ID_4 16
-#define PROB_FACE_ID_5 22
+#define PROB_FACE_ID_Zm 4
+#define PROB_FACE_ID_Ym 10
+#define PROB_FACE_ID_Xm 12
+#define PROB_FACE_ID_Xp 14
+#define PROB_FACE_ID_Yp 16
+#define PROB_FACE_ID_Zp 22
+
+#define PROB_SIDE_ID_Ym_Zm 1
+#define PROB_SIDE_ID_Xm_Zm 3
+#define PROB_SIDE_ID_Xp_Zm 5
+#define PROB_SIDE_ID_Yp_Zm 7
+#define PROB_SIDE_ID_Xm_Ym 9
+#define PROB_SIDE_ID_Xp_Ym 11
+#define PROB_SIDE_ID_Xm_Yp 15
+#define PROB_SIDE_ID_Xp_Yp 17
+#define PROB_SIDE_ID_Ym_Zp 19
+#define PROB_SIDE_ID_Xm_Zp 21
+#define PROB_SIDE_ID_Xp_Zp 23
+#define PROB_SIDE_ID_Yp_Zp 25
 
 		inline ProbLocation GetProbLocation(int32_t i)
 		{
@@ -263,29 +284,64 @@ namespace EngineCore
 			if(i % 2 != 0)
 				return ProbLocation::PROB_SIDE;
 
-			if (i == PROB_FACE_ID_0 || i == PROB_FACE_ID_1 || i == PROB_FACE_ID_2 ||
-				i == PROB_FACE_ID_3 || i == PROB_FACE_ID_4 || i == PROB_FACE_ID_5)
+			if (i == PROB_FACE_ID_Zm || i == PROB_FACE_ID_Ym || i == PROB_FACE_ID_Xm ||
+				i == PROB_FACE_ID_Xp || i == PROB_FACE_ID_Yp || i == PROB_FACE_ID_Zp)
 				return ProbLocation::PROB_FACE;
 
 			return ProbLocation::PROB_CORNER;
 		}
-
+		/*
 		inline FacePlane GetProbFace(int32_t i)
 		{
 			switch (i)
 			{
-			case PROB_FACE_ID_0:
-			case PROB_FACE_ID_5:
+			case PROB_FACE_ID_Zm:
+			case PROB_FACE_ID_Zp:
 				return FacePlane::IP_Z;
-			case PROB_FACE_ID_1:
-			case PROB_FACE_ID_4:
+			case PROB_FACE_ID_Ym:
+			case PROB_FACE_ID_Yp:
 				return FacePlane::IP_Y;
-			case PROB_FACE_ID_2:
-			case PROB_FACE_ID_3:
+			case PROB_FACE_ID_Xm:
+			case PROB_FACE_ID_Xp:
 				return FacePlane::IP_X;
-			default:
+
+			case PROB_SIDE_ID_Ym_Zm:
+			case PROB_SIDE_ID_Yp_Zm:
+			case PROB_SIDE_ID_Ym_Zp:
+			case PROB_SIDE_ID_Yp_Zp:
 				return FacePlane::IP_X;
+			case PROB_SIDE_ID_Xm_Ym:
+			case PROB_SIDE_ID_Xp_Ym:
+			case PROB_SIDE_ID_Xm_Yp:
+			case PROB_SIDE_ID_Xp_Yp:
+				return FacePlane::IP_Z;
+			case PROB_SIDE_ID_Xm_Zm:
+			case PROB_SIDE_ID_Xp_Zm:
+			case PROB_SIDE_ID_Xm_Zp:
+			case PROB_SIDE_ID_Xp_Zp:
+				return FacePlane::IP_Y;
 			}
 		}
+
+		inline uint8_t SetProbFlag(int32_t f)
+		{
+			if (f < 0)
+				return 0;
+			return (1 << f);
+		}
+
+		inline uint8_t AddProbFlag(uint8_t flags, int32_t f)
+		{
+			if (f < 0)
+				return flags;
+			return (flags | (1 << f));
+		}
+
+		inline bool HasProbFlag(uint8_t flags, int32_t f)
+		{
+			if (f < 0)
+				return false;
+			return (flags & (1 << f)) > 0;
+		}*/
 	};
 }

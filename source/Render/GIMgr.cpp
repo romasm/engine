@@ -168,6 +168,11 @@ void GIMgr::SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int3
 	swap(*first, *second);
 }
 
+bool GIMgr::CompareInterpolationLinks(ProbInterpolation& first, ProbInterpolation& second)
+{
+	return first.minDepth < second.minDepth;
+}
+
 const uint32_t probesOffset[27][3] =
 {
 	{ 0,0,0 },
@@ -613,27 +618,24 @@ bool GIMgr::BuildVoxelOctree()
 	bricksLinks.clear();
 
 	// post process probes
-
-	// array of baked probes
-	RArray<ProbBaked> bakedArray;
-	bakedArray.create(probesArray.size());
 	for (auto& prob : probesArray)
 	{
 		// copies check
+		ProbLocation location = GetProbLocation(prob.brickLastPos);
 		// center prob & chunk outter prob: always bake
-		if (prob.location == ProbLocation::PROB_CENTER || prob.minDepth == 0)
+		if (location == ProbLocation::PROB_CENTER || prob.minDepth == 0)
 		{
 			prob.bake = true;
 		}
 		else
 		{
-			if (prob.location == ProbLocation::PROB_SIDE) // side prob, 4 copies for bake
+			if (location == ProbLocation::PROB_SIDE) // side prob, 4 copies for bake
 			{
 				prob.bake = (prob.copyCount >= 4);
 			}
 			else
 			{
-				if (prob.location == ProbLocation::PROB_FACE) // face prob, 2 copies for bake
+				if (location == ProbLocation::PROB_FACE) // face prob, 2 copies for bake
 				{
 					prob.bake = (prob.copyCount >= 2);
 				}
@@ -643,68 +645,31 @@ bool GIMgr::BuildVoxelOctree()
 				}
 			}
 		}
-
-		if (!prob.bake)
-			continue;
-
-		ProbBaked* bakedProb = bakedArray.push_back();
-		bakedProb->pos = prob.pos;
-		bakedProb->adress = prob.adresses[0];
 	}
-	
-	for (auto& prob : probesArray)
+
+	RArray<ProbInterpolation> interpolationArray;
+	interpolationArray.create(probesArray.size());
+
+	for (int32_t i = 0; i < (int32_t)probesArray.size(); i++)
 	{
+		auto& prob = probesArray[i];
+
 		if (prob.bake)
 		{
 			prob.pos = AdjustProbPos(prob.pos);
 		}
 		else
 		{
-			if (prob.location == ProbLocation::PROB_CORNER)
-				WRN("No min-depth-corners-prob should be here!");
+			ProbInterpolation* probInterp = interpolationArray.push_back();
+			probInterp->probID = i;
 
-			// determine interpolation plane base on flags
-			switch (prob.location)
-			{
-			case ProbLocation::PROB_CORNER:
-				WRN("No min-depth-corners-prob should be here!");
-				break;
-			case ProbLocation::PROB_CENTER:
-				WRN("No center prob should be here!");
-				break;
-
-			case ProbLocation::PROB_SIDE: // TODO!!!
-				
-				break;
-
-			case ProbLocation::PROB_FACE:
-				switch (prob.facePlane)
-				{
-				case FacePlane::IP_X:
-
-					break;
-				case FacePlane::IP_Y:
-
-					break;
-				case FacePlane::IP_Z:
-
-					break;
-				}
-				break;
-			}
-
-			// find interpolation locations
-			for (auto& bakedProb : bakedArray)
-			{
-				if (bakedProb.pos.x != prob.pos.x && bakedProb.pos.y != prob.pos.y && bakedProb.pos.z != prob.pos.z)
-					continue;
-
-
-			}
+			FindInterpolationLinks(probInterp, prob);			 
 		}
 	}
 
-	//return true;
+	// sort probes interpolation links
+	sort(interpolationArray.begin(), interpolationArray.end(), GIMgr::CompareInterpolationLinks);
+
 	// TEMP baking
 	const int32_t captureResolution = 64;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -757,7 +722,11 @@ bool GIMgr::BuildVoxelOctree()
 
 	world->EndCaptureProb();
 
-	// TODO: interpolate probes
+	// interpolate probes
+	for (auto& probInterp : interpolationArray)
+	{
+		// TODO
+	}
 
 	// copy to scene
 	groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 4);
@@ -930,10 +899,8 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.adresses.destroy();
 				prob.copyCount = 1;
 				prob.minDepth = newBrick.depth;
-
-				prob.copiesFlags = probesFlag[i] == -1 ? 0 : (1 << probesFlag[i]);
-				prob.location = GetProbLocation(i);
-				prob.facePlane = GetProbFace(i);
+				prob.brickLastID = brickID;
+				prob.brickLastPos = i;
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
@@ -943,23 +910,16 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				newBrick.probes[i] = probIt->second;
 
 				uint8_t& probMinDepth = probesArray[probIt->second].minDepth;
-				uint8_t& probCopiesFlags = probesArray[probIt->second].copiesFlags;
 				if (probMinDepth == (uint8_t)newBrick.depth)
 				{
 					probesArray[probIt->second].copyCount++;
-
-					if(probesFlag[i] != -1)
-						probCopiesFlags = probCopiesFlags || (1 << probesFlag[i]);
 				}
 				else if (probMinDepth > (uint8_t)newBrick.depth)
 				{
 					probesArray[probIt->second].copyCount = 1;
-					probMinDepth = (uint8_t)newBrick.depth;
-
-					probCopiesFlags = probesFlag[i] == -1 ? 0 : (1 << probesFlag[i]);
-
-					probesArray[probIt->second].location = GetProbLocation(i);
-					probesArray[probIt->second].facePlane = GetProbFace(i);
+					probMinDepth = (uint8_t)newBrick.depth;					
+					probesArray[probIt->second].brickLastID = brickID;
+					probesArray[probIt->second].brickLastPos = i;
 				}		
 			}
 		}
@@ -970,6 +930,110 @@ Vector3 GIMgr::AdjustProbPos(Vector3& pos)
 {
 	// TODO
 	return pos;
+}
+
+void GIMgr::FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob)
+{
+	probInterp->minDepth = prob.minDepth;
+
+	probInterp->probInt0 = -1;
+	probInterp->probInt1 = -1;
+	probInterp->probInt2 = -1;
+	probInterp->probInt3 = -1;
+
+	Brick& brick = bricks[prob.brickLastID];
+
+	switch (prob.brickLastPos)
+	{
+	case PROB_FACE_ID_Zm:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[2];
+		probInterp->probInt2 = (int32_t)brick.probes[6];
+		probInterp->probInt3 = (int32_t)brick.probes[8];
+		break;
+	case PROB_FACE_ID_Zp:
+		probInterp->probInt0 = (int32_t)brick.probes[18];
+		probInterp->probInt1 = (int32_t)brick.probes[20];
+		probInterp->probInt2 = (int32_t)brick.probes[24];
+		probInterp->probInt3 = (int32_t)brick.probes[26];
+		break;
+	case PROB_FACE_ID_Ym:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[2];
+		probInterp->probInt2 = (int32_t)brick.probes[18];
+		probInterp->probInt3 = (int32_t)brick.probes[20];
+		break;
+	case PROB_FACE_ID_Yp:
+		probInterp->probInt0 = (int32_t)brick.probes[6];
+		probInterp->probInt1 = (int32_t)brick.probes[8];
+		probInterp->probInt2 = (int32_t)brick.probes[24];
+		probInterp->probInt3 = (int32_t)brick.probes[26];
+		break;
+	case PROB_FACE_ID_Xm:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[6];
+		probInterp->probInt2 = (int32_t)brick.probes[18];
+		probInterp->probInt3 = (int32_t)brick.probes[24];
+		break;
+	case PROB_FACE_ID_Xp:
+		probInterp->probInt0 = (int32_t)brick.probes[2];
+		probInterp->probInt1 = (int32_t)brick.probes[8];
+		probInterp->probInt2 = (int32_t)brick.probes[20];
+		probInterp->probInt3 = (int32_t)brick.probes[26];
+		break;
+
+	case PROB_SIDE_ID_Ym_Zm:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[2];
+		break;
+	case PROB_SIDE_ID_Xm_Zm:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[6];
+		break;
+	case PROB_SIDE_ID_Xp_Zm:
+		probInterp->probInt0 = (int32_t)brick.probes[2];
+		probInterp->probInt1 = (int32_t)brick.probes[8];
+		break;
+	case PROB_SIDE_ID_Yp_Zm:
+		probInterp->probInt0 = (int32_t)brick.probes[6];
+		probInterp->probInt1 = (int32_t)brick.probes[8];
+		break;
+	case PROB_SIDE_ID_Xm_Ym:
+		probInterp->probInt0 = (int32_t)brick.probes[0];
+		probInterp->probInt1 = (int32_t)brick.probes[18];
+		break;
+	case PROB_SIDE_ID_Xp_Ym:
+		probInterp->probInt0 = (int32_t)brick.probes[2];
+		probInterp->probInt1 = (int32_t)brick.probes[20];
+		break;
+	case PROB_SIDE_ID_Xm_Yp:
+		probInterp->probInt0 = (int32_t)brick.probes[6];
+		probInterp->probInt1 = (int32_t)brick.probes[24];
+		break;
+	case PROB_SIDE_ID_Xp_Yp:
+		probInterp->probInt0 = (int32_t)brick.probes[8];
+		probInterp->probInt1 = (int32_t)brick.probes[26];
+		break;
+	case PROB_SIDE_ID_Ym_Zp:
+		probInterp->probInt0 = (int32_t)brick.probes[18];
+		probInterp->probInt1 = (int32_t)brick.probes[20];
+		break;
+	case PROB_SIDE_ID_Xm_Zp:
+		probInterp->probInt0 = (int32_t)brick.probes[18];
+		probInterp->probInt1 = (int32_t)brick.probes[24];
+		break;
+	case PROB_SIDE_ID_Xp_Zp:
+		probInterp->probInt0 = (int32_t)brick.probes[20];
+		probInterp->probInt1 = (int32_t)brick.probes[26];
+		break;
+	case PROB_SIDE_ID_Yp_Zp:
+		probInterp->probInt0 = (int32_t)brick.probes[24];
+		probInterp->probInt1 = (int32_t)brick.probes[26];
+		break;
+
+	default:
+		ERR("Prob interpolation went wrong!");
+	}
 }
 
 #ifdef _DEV
