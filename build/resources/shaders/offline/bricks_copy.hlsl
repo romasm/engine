@@ -1,9 +1,9 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 
-#define GROUP_THREAD_COUNT_X 4
-#define GROUP_THREAD_COUNT_Y 4
-#define GROUP_THREAD_COUNT_Z 2
+#define GROUP_THREAD_COUNT_X 8
+#define GROUP_THREAD_COUNT_Y 8
+#define GROUP_THREAD_COUNT_Z 4
 
 RWTexture3D <float4> bricksAtlas : register(u0);
 

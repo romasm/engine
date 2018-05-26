@@ -3,7 +3,7 @@
 #include "../common/sh_helpers.hlsl"
 
 #define GROUP_THREAD_COUNT_X 8
-#define GROUP_THREAD_COUNT_Y 4
+#define GROUP_THREAD_COUNT_Y 8
 
 RWTexture3D <uint> bricksAtlas : register(u0);
 

@@ -387,5 +387,8 @@
     <FxCompile Include="offline\bricks_copy.hlsl">
       <Filter>offline</Filter>
     </FxCompile>
+    <FxCompile Include="offline\interpolate_probes.hlsl">
+      <Filter>offline</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

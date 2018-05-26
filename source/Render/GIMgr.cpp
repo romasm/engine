@@ -36,6 +36,7 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	cubemapToSH = nullptr;
 	adressBuffer = nullptr;
 	copyBricks = nullptr;
+	interpolateProbes = nullptr;
 
 	voxelSize = DEFAULT_OCTREE_VOXEL_SIZE;
 	lookupMaxSize = (uint32_t)powf(2.0f, float(OCTREE_DEPTH - 1));
@@ -67,6 +68,7 @@ GIMgr::~GIMgr()
 	_DELETE(cubemapToSH);
 	_RELEASE(adressBuffer);
 	_DELETE(copyBricks);
+	_DELETE(interpolateProbes);
 }
 
 bool GIMgr::InitBuffers()
@@ -89,6 +91,8 @@ bool GIMgr::InitBuffers()
 	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(Vector4), true);
 
 	copyBricks = new Compute(SHADER_BRICKS_COPY);
+
+	interpolateProbes = new Compute(SHADER_INTERPOLATE_PROBES);
 
 #endif
 
@@ -667,9 +671,6 @@ bool GIMgr::BuildVoxelOctree()
 		}
 	}
 
-	// sort probes interpolation links
-	sort(interpolationArray.begin(), interpolationArray.end(), GIMgr::CompareInterpolationLinks);
-
 	// TEMP baking
 	const int32_t captureResolution = 64;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -685,7 +686,7 @@ bool GIMgr::BuildVoxelOctree()
 		return false;
 
 	uint32_t groupsCountX = captureResolution / 8;
-	uint32_t groupsCountY = captureResolution / 4;
+	uint32_t groupsCountY = captureResolution / 8;
 	uint32_t groupsCountZ = 1;
 
 	SHAdresses adresses;
@@ -694,8 +695,8 @@ bool GIMgr::BuildVoxelOctree()
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
-		//if (!prob.bake)
-		//	continue;
+		if (!prob.bake)
+			continue;
 				
 		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
 		{
@@ -722,16 +723,13 @@ bool GIMgr::BuildVoxelOctree()
 
 	world->EndCaptureProb();
 
-	// interpolate probes
-	for (auto& probInterp : interpolationArray)
-	{
-		// TODO
-	}
+	InterpolateProbes(interpolationArray);
+	interpolationArray.destroy();
 
 	// copy to scene
-	groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 4);
-	groupsCountY = (uint32_t)ceilf(float(bricksTexY * BRICK_RESOLUTION) / 4);
-	groupsCountZ = (uint32_t)ceilf(float(BRICK_RESOLUTION * BRICK_COEF_COUNT) / 2);
+	groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 8);
+	groupsCountY = (uint32_t)ceilf(float(bricksTexY * BRICK_RESOLUTION) / 8);
+	groupsCountZ = (uint32_t)ceilf(float(BRICK_RESOLUTION * BRICK_COEF_COUNT) / 4);
 	
 	Render::CSSetShaderResources(0, 1, &bricksTempAtlasSRV);
 	copyBricks->BindUAV(bricksAtlasUAV);
@@ -936,103 +934,166 @@ void GIMgr::FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob)
 {
 	probInterp->minDepth = prob.minDepth;
 
-	probInterp->probInt0 = -1;
-	probInterp->probInt1 = -1;
-	probInterp->probInt2 = -1;
-	probInterp->probInt3 = -1;
+	probInterp->probIntID[0] = -1;
+	probInterp->probIntID[1] = -1;
+	probInterp->probIntID[2] = -1;
+	probInterp->probIntID[3] = -1;
 
 	Brick& brick = bricks[prob.brickLastID];
 
 	switch (prob.brickLastPos)
 	{
 	case PROB_FACE_ID_Zm:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[2];
-		probInterp->probInt2 = (int32_t)brick.probes[6];
-		probInterp->probInt3 = (int32_t)brick.probes[8];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[2];
+		probInterp->probIntID[2] = (int32_t)brick.probes[6];
+		probInterp->probIntID[3] = (int32_t)brick.probes[8];
 		break;
 	case PROB_FACE_ID_Zp:
-		probInterp->probInt0 = (int32_t)brick.probes[18];
-		probInterp->probInt1 = (int32_t)brick.probes[20];
-		probInterp->probInt2 = (int32_t)brick.probes[24];
-		probInterp->probInt3 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[18];
+		probInterp->probIntID[1] = (int32_t)brick.probes[20];
+		probInterp->probIntID[2] = (int32_t)brick.probes[24];
+		probInterp->probIntID[3] = (int32_t)brick.probes[26];
 		break;
 	case PROB_FACE_ID_Ym:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[2];
-		probInterp->probInt2 = (int32_t)brick.probes[18];
-		probInterp->probInt3 = (int32_t)brick.probes[20];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[2];
+		probInterp->probIntID[2] = (int32_t)brick.probes[18];
+		probInterp->probIntID[3] = (int32_t)brick.probes[20];
 		break;
 	case PROB_FACE_ID_Yp:
-		probInterp->probInt0 = (int32_t)brick.probes[6];
-		probInterp->probInt1 = (int32_t)brick.probes[8];
-		probInterp->probInt2 = (int32_t)brick.probes[24];
-		probInterp->probInt3 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[6];
+		probInterp->probIntID[1] = (int32_t)brick.probes[8];
+		probInterp->probIntID[2] = (int32_t)brick.probes[24];
+		probInterp->probIntID[3] = (int32_t)brick.probes[26];
 		break;
 	case PROB_FACE_ID_Xm:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[6];
-		probInterp->probInt2 = (int32_t)brick.probes[18];
-		probInterp->probInt3 = (int32_t)brick.probes[24];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[6];
+		probInterp->probIntID[2] = (int32_t)brick.probes[18];
+		probInterp->probIntID[3] = (int32_t)brick.probes[24];
 		break;
 	case PROB_FACE_ID_Xp:
-		probInterp->probInt0 = (int32_t)brick.probes[2];
-		probInterp->probInt1 = (int32_t)brick.probes[8];
-		probInterp->probInt2 = (int32_t)brick.probes[20];
-		probInterp->probInt3 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[2];
+		probInterp->probIntID[1] = (int32_t)brick.probes[8];
+		probInterp->probIntID[2] = (int32_t)brick.probes[20];
+		probInterp->probIntID[3] = (int32_t)brick.probes[26];
 		break;
 
 	case PROB_SIDE_ID_Ym_Zm:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[2];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[2];
 		break;
 	case PROB_SIDE_ID_Xm_Zm:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[6];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[6];
 		break;
 	case PROB_SIDE_ID_Xp_Zm:
-		probInterp->probInt0 = (int32_t)brick.probes[2];
-		probInterp->probInt1 = (int32_t)brick.probes[8];
+		probInterp->probIntID[0] = (int32_t)brick.probes[2];
+		probInterp->probIntID[1] = (int32_t)brick.probes[8];
 		break;
 	case PROB_SIDE_ID_Yp_Zm:
-		probInterp->probInt0 = (int32_t)brick.probes[6];
-		probInterp->probInt1 = (int32_t)brick.probes[8];
+		probInterp->probIntID[0] = (int32_t)brick.probes[6];
+		probInterp->probIntID[1] = (int32_t)brick.probes[8];
 		break;
 	case PROB_SIDE_ID_Xm_Ym:
-		probInterp->probInt0 = (int32_t)brick.probes[0];
-		probInterp->probInt1 = (int32_t)brick.probes[18];
+		probInterp->probIntID[0] = (int32_t)brick.probes[0];
+		probInterp->probIntID[1] = (int32_t)brick.probes[18];
 		break;
 	case PROB_SIDE_ID_Xp_Ym:
-		probInterp->probInt0 = (int32_t)brick.probes[2];
-		probInterp->probInt1 = (int32_t)brick.probes[20];
+		probInterp->probIntID[0] = (int32_t)brick.probes[2];
+		probInterp->probIntID[1] = (int32_t)brick.probes[20];
 		break;
 	case PROB_SIDE_ID_Xm_Yp:
-		probInterp->probInt0 = (int32_t)brick.probes[6];
-		probInterp->probInt1 = (int32_t)brick.probes[24];
+		probInterp->probIntID[0] = (int32_t)brick.probes[6];
+		probInterp->probIntID[1] = (int32_t)brick.probes[24];
 		break;
 	case PROB_SIDE_ID_Xp_Yp:
-		probInterp->probInt0 = (int32_t)brick.probes[8];
-		probInterp->probInt1 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[8];
+		probInterp->probIntID[1] = (int32_t)brick.probes[26];
 		break;
 	case PROB_SIDE_ID_Ym_Zp:
-		probInterp->probInt0 = (int32_t)brick.probes[18];
-		probInterp->probInt1 = (int32_t)brick.probes[20];
+		probInterp->probIntID[0] = (int32_t)brick.probes[18];
+		probInterp->probIntID[1] = (int32_t)brick.probes[20];
 		break;
 	case PROB_SIDE_ID_Xm_Zp:
-		probInterp->probInt0 = (int32_t)brick.probes[18];
-		probInterp->probInt1 = (int32_t)brick.probes[24];
+		probInterp->probIntID[0] = (int32_t)brick.probes[18];
+		probInterp->probIntID[1] = (int32_t)brick.probes[24];
 		break;
 	case PROB_SIDE_ID_Xp_Zp:
-		probInterp->probInt0 = (int32_t)brick.probes[20];
-		probInterp->probInt1 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[20];
+		probInterp->probIntID[1] = (int32_t)brick.probes[26];
 		break;
 	case PROB_SIDE_ID_Yp_Zp:
-		probInterp->probInt0 = (int32_t)brick.probes[24];
-		probInterp->probInt1 = (int32_t)brick.probes[26];
+		probInterp->probIntID[0] = (int32_t)brick.probes[24];
+		probInterp->probIntID[1] = (int32_t)brick.probes[26];
 		break;
 
 	default:
 		ERR("Prob interpolation went wrong!");
+	}
+}
+
+void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
+{
+	// sort probes interpolation links
+	sort(interpolationArray.begin(), interpolationArray.end(), GIMgr::CompareInterpolationLinks);
+
+	RArray<ProbInterpolationGPU> lerpDataGPU;
+	lerpDataGPU.create(interpolationArray.size());
+
+	int32_t startProbe = 0;
+	int32_t currentProbe = 0;
+
+	while (currentProbe < (int32_t)interpolationArray.size())
+	{
+		uint8_t currentDepth = interpolationArray[startProbe].minDepth;
+		for (currentProbe = startProbe; currentProbe < (int32_t)interpolationArray.size(); currentProbe++)
+		{
+			if (currentDepth != interpolationArray[currentProbe].minDepth)
+			{
+				startProbe = currentProbe;
+				break;
+			}
+
+			auto& prob = probesArray[interpolationArray[currentProbe].probID];
+
+			auto gpuData = lerpDataGPU.push_back();
+
+			for (int32_t k = 0; k < (int32_t)prob.adresses.size(); k++)
+			{
+				auto& adr = prob.adresses[k];
+				gpuData->targetAdresses[k] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
+			}
+			gpuData->targetAdresses[0].w = (float)prob.adresses.size();
+
+			int32_t h;
+			for (h = 0; h < 4; h++)
+			{
+				int32_t probIntAdr = interpolationArray[currentProbe].probIntID[h];
+				if (probIntAdr < 0)
+					break;
+
+				auto& adr = probesArray[probIntAdr].adresses[0];
+				gpuData->lerpAdresses[h] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
+			}
+			gpuData->lerpAdresses[0].w = (float)h;
+		}
+
+		if (lerpDataGPU.empty())
+			continue;
+
+		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer(Render::Device(), (int32_t)lerpDataGPU.size(), sizeof(ProbInterpolationGPU), false, lerpDataGPU.data());
+
+		uint32_t groupsCountX = (uint32_t)ceilf(float(lerpDataGPU.size()) / 128);
+
+		Render::CSSetShaderResources(0, 1, &interpolationBuffer.srv);
+		interpolateProbes->BindUAV(bricksTempAtlasUAV);
+		interpolateProbes->Dispatch(groupsCountX, 1, 1);
+		interpolateProbes->UnbindUAV();
+
+		interpolationBuffer.Release();
+		lerpDataGPU.clear();
 	}
 }
 

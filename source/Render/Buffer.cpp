@@ -196,3 +196,44 @@ StructBuf Buffer::CreateStructedBuffer(ID3D11Device *device, int element_count, 
 
 	return res;
 }
+
+StructBuf Buffer::CreateStructedBuffer(ID3D11Device *device, int element_count, int element_size, bool dynamic, void* initData)
+{
+	StructBuf res;
+
+	D3D11_SUBRESOURCE_DATA data;
+	data.pSysMem = initData;
+	data.SysMemPitch = 0;
+	data.SysMemSlicePitch = 0;
+
+	D3D11_BUFFER_DESC bufferDesc;
+	bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	bufferDesc.ByteWidth = element_count * element_size;
+	bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	bufferDesc.StructureByteStride = element_size;
+	if (dynamic)
+	{
+		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	}
+	else
+	{
+		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bufferDesc.CPUAccessFlags = 0;
+	}
+
+	HRESULT hr = device->CreateBuffer(&bufferDesc, &data, &res.buf);
+	if (FAILED(hr))
+		return res;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+	ZeroMemory(&viewDesc, sizeof(viewDesc));
+	viewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	viewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	viewDesc.Buffer.NumElements = element_count;
+
+	if (FAILED(device->CreateShaderResourceView(res.buf, &viewDesc, &res.srv)))
+		return res;
+
+	return res;
+}

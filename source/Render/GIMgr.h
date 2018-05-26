@@ -19,6 +19,7 @@
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
 #define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
+#define SHADER_INTERPOLATE_PROBES PATH_SHADERS "offline/interpolate_probes", "Interpolate"
 
 namespace EngineCore
 {
@@ -38,7 +39,7 @@ namespace EngineCore
 
 	struct SHAdresses
 	{
-		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count
+		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count, adresses[1].w == 1.0 / (CUBE_RES * CUBE_RES * 6)
 	};
 
 	struct VoxelizeSceneItem
@@ -99,13 +100,6 @@ namespace EngineCore
 		PROB_CENTER
 	};
 
-	enum class FacePlane : uint8_t
-	{
-		IP_X = 0,
-		IP_Y,
-		IP_Z
-	};
-
 	struct Prob
 	{
 		Vector3 pos;
@@ -123,10 +117,13 @@ namespace EngineCore
 		int32_t probID;
 		uint8_t minDepth;
 
-		int32_t probInt0;
-		int32_t probInt1;
-		int32_t probInt2;
-		int32_t probInt3;
+		int32_t probIntID[4];
+	};
+
+	struct ProbInterpolationGPU
+	{
+		Vector4 lerpAdresses[4]; // lerpAdresses[0].w == count
+		Vector4 targetAdresses[48]; // targetAdresses[0].w == count
 	};
 
 	class GIMgr
@@ -195,11 +192,13 @@ namespace EngineCore
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
 		void FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob);
+		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
 
 		Compute* copyBricks;
+		Compute* interpolateProbes;
 
 		float voxelSize;
 		float chunkSize;
@@ -290,58 +289,5 @@ namespace EngineCore
 
 			return ProbLocation::PROB_CORNER;
 		}
-		/*
-		inline FacePlane GetProbFace(int32_t i)
-		{
-			switch (i)
-			{
-			case PROB_FACE_ID_Zm:
-			case PROB_FACE_ID_Zp:
-				return FacePlane::IP_Z;
-			case PROB_FACE_ID_Ym:
-			case PROB_FACE_ID_Yp:
-				return FacePlane::IP_Y;
-			case PROB_FACE_ID_Xm:
-			case PROB_FACE_ID_Xp:
-				return FacePlane::IP_X;
-
-			case PROB_SIDE_ID_Ym_Zm:
-			case PROB_SIDE_ID_Yp_Zm:
-			case PROB_SIDE_ID_Ym_Zp:
-			case PROB_SIDE_ID_Yp_Zp:
-				return FacePlane::IP_X;
-			case PROB_SIDE_ID_Xm_Ym:
-			case PROB_SIDE_ID_Xp_Ym:
-			case PROB_SIDE_ID_Xm_Yp:
-			case PROB_SIDE_ID_Xp_Yp:
-				return FacePlane::IP_Z;
-			case PROB_SIDE_ID_Xm_Zm:
-			case PROB_SIDE_ID_Xp_Zm:
-			case PROB_SIDE_ID_Xm_Zp:
-			case PROB_SIDE_ID_Xp_Zp:
-				return FacePlane::IP_Y;
-			}
-		}
-
-		inline uint8_t SetProbFlag(int32_t f)
-		{
-			if (f < 0)
-				return 0;
-			return (1 << f);
-		}
-
-		inline uint8_t AddProbFlag(uint8_t flags, int32_t f)
-		{
-			if (f < 0)
-				return flags;
-			return (flags | (1 << f));
-		}
-
-		inline bool HasProbFlag(uint8_t flags, int32_t f)
-		{
-			if (f < 0)
-				return false;
-			return (flags & (1 << f)) > 0;
-		}*/
 	};
 }

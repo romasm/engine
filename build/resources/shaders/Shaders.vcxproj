@@ -188,6 +188,7 @@
     <FxCompile Include="objects\editor\debug_probes.hlsl" />
     <FxCompile Include="offline\bricks_copy.hlsl" />
     <FxCompile Include="offline\cubemap_to_sh.hlsl" />
+    <FxCompile Include="offline\interpolate_probes.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
