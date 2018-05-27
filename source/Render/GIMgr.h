@@ -116,13 +116,15 @@ namespace EngineCore
 	{
 		int32_t probID;
 		uint8_t minDepth;
-
-		int32_t probIntID[4];
+		Vector3 offset;
+		//int32_t probIntID[4];
 	};
 
 	struct ProbInterpolationGPU
 	{
-		Vector4 lerpAdresses[4]; // lerpAdresses[0].w == count
+		//Vector4 lerpAdresses[4]; // lerpAdresses[0].w == count
+		Vector4 pos;
+		Vector4 offset;
 		Vector4 targetAdresses[48]; // targetAdresses[0].w == count
 	};
 
@@ -193,6 +195,7 @@ namespace EngineCore
 		Vector3 AdjustProbPos(Vector3& pos);
 		void FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob);
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
+		Vector3 GetProbOutterVector(int32_t i);
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;

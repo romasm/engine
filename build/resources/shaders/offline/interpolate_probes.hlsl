@@ -59,6 +59,8 @@ void WriteSH(SHcoef3 sh, uint3 coords)
 	}
 }
 
+// TODO: find links on GPU: do the delta step from brick center to outside -> 
+// find brick & sample with original pos
 [numthreads( GROUP_THREAD_COUNT_X, 1, 1 )]
 void Interpolate(uint3 threadID : SV_DispatchThreadID)
 {

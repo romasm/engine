@@ -666,8 +666,8 @@ bool GIMgr::BuildVoxelOctree()
 		{
 			ProbInterpolation* probInterp = interpolationArray.push_back();
 			probInterp->probID = i;
-
-			FindInterpolationLinks(probInterp, prob);			 
+			probInterp->minDepth = prob.minDepth;
+			probInterp->offset = GetProbOutterVector(prob.brickLastPos);
 		}
 	}
 
@@ -907,17 +907,18 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 			{
 				newBrick.probes[i] = probIt->second;
 
-				uint8_t& probMinDepth = probesArray[probIt->second].minDepth;
-				if (probMinDepth == (uint8_t)newBrick.depth)
+				Prob& prob = probesArray[probIt->second];
+
+				if (prob.minDepth == (uint8_t)newBrick.depth)
 				{
-					probesArray[probIt->second].copyCount++;
+					prob.copyCount++;
 				}
-				else if (probMinDepth > (uint8_t)newBrick.depth)
+				else if (prob.minDepth > (uint8_t)newBrick.depth)
 				{
-					probesArray[probIt->second].copyCount = 1;
-					probMinDepth = (uint8_t)newBrick.depth;					
-					probesArray[probIt->second].brickLastID = brickID;
-					probesArray[probIt->second].brickLastPos = i;
+					prob.copyCount = 1;
+					prob.minDepth = (uint8_t)newBrick.depth;
+					prob.brickLastID = brickID;
+					prob.brickLastPos = i;
 				}		
 			}
 		}
@@ -928,6 +929,11 @@ Vector3 GIMgr::AdjustProbPos(Vector3& pos)
 {
 	// TODO
 	return pos;
+}
+
+Vector3 GIMgr::GetProbOutterVector(int32_t i)
+{
+	// TODO
 }
 
 void GIMgr::FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob)
@@ -1034,13 +1040,14 @@ void GIMgr::FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob)
 	}
 }
 
+// TODO: find links on GPU: do the delta step from brick center to outside -> find brick & sample with original pos
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 {
 	// sort probes interpolation links
 	sort(interpolationArray.begin(), interpolationArray.end(), GIMgr::CompareInterpolationLinks);
 
-	RArray<ProbInterpolationGPU> lerpDataGPU;
-	lerpDataGPU.create(interpolationArray.size());
+	RArray<ProbInterpolationGPU> interpolationDataGPU;
+	interpolationDataGPU.create(interpolationArray.size());
 
 	int32_t startProbe = 0;
 	int32_t currentProbe = 0;
@@ -1050,15 +1057,17 @@ void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 		uint8_t currentDepth = interpolationArray[startProbe].minDepth;
 		for (currentProbe = startProbe; currentProbe < (int32_t)interpolationArray.size(); currentProbe++)
 		{
-			if (currentDepth != interpolationArray[currentProbe].minDepth)
+			auto& interpProb = interpolationArray[currentProbe];
+
+			if (currentDepth != interpProb.minDepth)
 			{
 				startProbe = currentProbe;
 				break;
 			}
 
-			auto& prob = probesArray[interpolationArray[currentProbe].probID];
+			auto& prob = probesArray[interpProb.probID];
 
-			auto gpuData = lerpDataGPU.push_back();
+			auto gpuData = interpolationDataGPU.push_back();
 
 			for (int32_t k = 0; k < (int32_t)prob.adresses.size(); k++)
 			{
@@ -1067,33 +1076,28 @@ void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 			}
 			gpuData->targetAdresses[0].w = (float)prob.adresses.size();
 
-			int32_t h;
-			for (h = 0; h < 4; h++)
-			{
-				int32_t probIntAdr = interpolationArray[currentProbe].probIntID[h];
-				if (probIntAdr < 0)
-					break;
-
-				auto& adr = probesArray[probIntAdr].adresses[0];
-				gpuData->lerpAdresses[h] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
-			}
-			gpuData->lerpAdresses[0].w = (float)h;
+			gpuData->pos = Vector4(prob.pos.x, prob.pos.y, prob.pos.z, 0.0f);
+			gpuData->offset = Vector4(interpProb.offset.x, interpProb.offset.y, interpProb.offset.z, 0.0f);
 		}
 
-		if (lerpDataGPU.empty())
+		if (interpolationDataGPU.empty())
 			continue;
 
-		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer(Render::Device(), (int32_t)lerpDataGPU.size(), sizeof(ProbInterpolationGPU), false, lerpDataGPU.data());
+		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer(Render::Device(), (int32_t)interpolationDataGPU.size(), sizeof(ProbInterpolationGPU), false, interpolationDataGPU.data());
 
-		uint32_t groupsCountX = (uint32_t)ceilf(float(lerpDataGPU.size()) / 128);
+		uint32_t groupsCountX = (uint32_t)ceilf(float(interpolationDataGPU.size()) / 128);
 
 		Render::CSSetShaderResources(0, 1, &interpolationBuffer.srv);
+		Render::CSSetShaderResources(1, 1, &chunksLookupSRV);
+		Render::CSSetShaderResources(2, 1, &bricksLookupSRV);
+		Render::CSSetConstantBuffers(0, 1, &sampleDataGPU);
+
 		interpolateProbes->BindUAV(bricksTempAtlasUAV);
 		interpolateProbes->Dispatch(groupsCountX, 1, 1);
 		interpolateProbes->UnbindUAV();
 
 		interpolationBuffer.Release();
-		lerpDataGPU.clear();
+		interpolationDataGPU.clear();
 	}
 }
 
@@ -1125,11 +1129,11 @@ const Vector3 octreeColors[OCTREE_DEPTH] =
 
 void GIMgr::DebugSetState(DebugState state)
 {
-	auto dbg = world->GetDebugDrawer();
-	if (!dbg || bricks.empty())
+	auto dbgDrawer = world->GetDebugDrawer();
+	if (!dbgDrawer || bricks.empty())
 		return;
 
-	dbg->DeleteGeometryHandle(debugGeomHandle);
+	dbgDrawer->DeleteGeometryHandle(debugGeomHandle);
 
 	switch (state)
 	{
@@ -1161,29 +1165,45 @@ void GIMgr::DebugSetState(DebugState state)
 
 			uint32_t vertsCount = (uint32_t)lines.size() * 2;
 
-			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
+			debugGeomHandle = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
 			if (debugGeomHandle < 0)
 				return;
 
-			dbg->UpdateGeometry(debugGeomHandle, lines.data(), vertsCount);
+			dbgDrawer->UpdateGeometry(debugGeomHandle, lines.data(), vertsCount);
 		}
 		break;
 
 	case DebugState::DS_PROBES:
 		{
-			RArray<Vector3> points;
+			struct ProbVertex
+			{
+				Vector3 pos;
+				Vector2 dbg;
+				ProbVertex() {}
+				ProbVertex(Vector3& p, Vector2& d) : pos(p), dbg(d) {}
+			};
+
+			RArray<ProbVertex> points;
 			points.create(probesArray.size());
+			Vector2 dbg;
+
 			for (auto& item : probesArray)
 			{
-				if(item.bake)
-					points.push_back(item.pos);
+				dbg.x = item.bake ? 0.0f : 1.0f;
+
+				// for additional debug
+				dbg.y = 0.0f;
+				//if(!item.bake && item.minDepth > 0 && GetProbLocation(item.brickLastPos) == ProbLocation::PROB_CORNER)
+				//	dbg.y = 1.0f;
+
+				points.push_back(ProbVertex(item.pos, dbg));
 			}
 
-			debugGeomHandle = dbg->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)points.size(), (uint32_t)sizeof(Vector3), true);
+			debugGeomHandle = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)points.size(), (uint32_t)sizeof(ProbVertex), true);
 			if (debugGeomHandle < 0)
 				return;
 
-			dbg->UpdateGeometry(debugGeomHandle, points.data(), (uint32_t)points.size());
+			dbgDrawer->UpdateGeometry(debugGeomHandle, points.data(), (uint32_t)points.size());
 		}
 		break;
 	}
