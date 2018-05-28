@@ -625,21 +625,20 @@ bool GIMgr::BuildVoxelOctree()
 	for (auto& prob : probesArray)
 	{
 		// copies check
-		ProbLocation location = GetProbLocation(prob.brickLastPos);
 		// center prob & chunk outter prob: always bake
-		if (location == ProbLocation::PROB_CENTER || prob.minDepth == 0)
+		if (prob.inBrickLocation == ProbLocation::PROB_CENTER || prob.minDepth == 0)
 		{
 			prob.bake = true;
 		}
 		else
 		{
-			if (location == ProbLocation::PROB_SIDE) // side prob, 4 copies for bake
+			if (prob.inBrickLocation == ProbLocation::PROB_SIDE) // side prob, 4 copies for bake
 			{
 				prob.bake = (prob.copyCount >= 4);
 			}
 			else
 			{
-				if (location == ProbLocation::PROB_FACE) // face prob, 2 copies for bake
+				if (prob.inBrickLocation == ProbLocation::PROB_FACE) // face prob, 2 copies for bake
 				{
 					prob.bake = (prob.copyCount >= 2);
 				}
@@ -667,7 +666,9 @@ bool GIMgr::BuildVoxelOctree()
 			ProbInterpolation* probInterp = interpolationArray.push_back();
 			probInterp->probID = i;
 			probInterp->minDepth = prob.minDepth;
-			probInterp->offset = GetProbOutterVector(prob.brickLastPos);
+			probInterp->offset = prob.offset;
+			probInterp->offset.Normalize();
+			probInterp->offset *= PROB_OFFSET_SIZE * voxelSize;
 		}
 	}
 
@@ -897,8 +898,8 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.adresses.destroy();
 				prob.copyCount = 1;
 				prob.minDepth = newBrick.depth;
-				prob.brickLastID = brickID;
-				prob.brickLastPos = i;
+				prob.inBrickLocation = GetProbLocation(i);
+				prob.offset = GetProbOutterVector(i);
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
@@ -912,13 +913,14 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				if (prob.minDepth == (uint8_t)newBrick.depth)
 				{
 					prob.copyCount++;
+					prob.offset += GetProbOutterVector(i);
 				}
 				else if (prob.minDepth > (uint8_t)newBrick.depth)
 				{
 					prob.copyCount = 1;
 					prob.minDepth = (uint8_t)newBrick.depth;
-					prob.brickLastID = brickID;
-					prob.brickLastPos = i;
+					prob.inBrickLocation = GetProbLocation(i);
+					prob.offset = GetProbOutterVector(i);
 				}		
 			}
 		}
@@ -933,114 +935,66 @@ Vector3 GIMgr::AdjustProbPos(Vector3& pos)
 
 Vector3 GIMgr::GetProbOutterVector(int32_t i)
 {
-	// TODO
-}
-
-void GIMgr::FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob)
-{
-	probInterp->minDepth = prob.minDepth;
-
-	probInterp->probIntID[0] = -1;
-	probInterp->probIntID[1] = -1;
-	probInterp->probIntID[2] = -1;
-	probInterp->probIntID[3] = -1;
-
-	Brick& brick = bricks[prob.brickLastID];
-
-	switch (prob.brickLastPos)
+	switch (i)
 	{
 	case PROB_FACE_ID_Zm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[2];
-		probInterp->probIntID[2] = (int32_t)brick.probes[6];
-		probInterp->probIntID[3] = (int32_t)brick.probes[8];
-		break;
+		return Vector3(0.0f, 0.0f, -1.0f);
 	case PROB_FACE_ID_Zp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[18];
-		probInterp->probIntID[1] = (int32_t)brick.probes[20];
-		probInterp->probIntID[2] = (int32_t)brick.probes[24];
-		probInterp->probIntID[3] = (int32_t)brick.probes[26];
-		break;
+		return Vector3(0.0f, 0.0f, 1.0f);
 	case PROB_FACE_ID_Ym:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[2];
-		probInterp->probIntID[2] = (int32_t)brick.probes[18];
-		probInterp->probIntID[3] = (int32_t)brick.probes[20];
-		break;
+		return Vector3(0.0f, -1.0f, 0.0f);
 	case PROB_FACE_ID_Yp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[6];
-		probInterp->probIntID[1] = (int32_t)brick.probes[8];
-		probInterp->probIntID[2] = (int32_t)brick.probes[24];
-		probInterp->probIntID[3] = (int32_t)brick.probes[26];
-		break;
+		return Vector3(0.0f, 1.0f, 0.0f);
 	case PROB_FACE_ID_Xm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[6];
-		probInterp->probIntID[2] = (int32_t)brick.probes[18];
-		probInterp->probIntID[3] = (int32_t)brick.probes[24];
-		break;
+		return Vector3(-1.0f, 0.0f, 0.0f);
 	case PROB_FACE_ID_Xp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[2];
-		probInterp->probIntID[1] = (int32_t)brick.probes[8];
-		probInterp->probIntID[2] = (int32_t)brick.probes[20];
-		probInterp->probIntID[3] = (int32_t)brick.probes[26];
-		break;
-
+		return Vector3(1.0f, 0.0f, 0.0f);
+		
 	case PROB_SIDE_ID_Ym_Zm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[2];
-		break;
+		return Vector3(0.0f, -1.0f, -1.0f);
 	case PROB_SIDE_ID_Xm_Zm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[6];
-		break;
+		return Vector3(-1.0f, 0.0f, -1.0f);
 	case PROB_SIDE_ID_Xp_Zm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[2];
-		probInterp->probIntID[1] = (int32_t)brick.probes[8];
-		break;
+		return Vector3(1.0f, 0.0f, -1.0f);
 	case PROB_SIDE_ID_Yp_Zm:
-		probInterp->probIntID[0] = (int32_t)brick.probes[6];
-		probInterp->probIntID[1] = (int32_t)brick.probes[8];
-		break;
+		return Vector3(0.0f, 1.0f, -1.0f);
 	case PROB_SIDE_ID_Xm_Ym:
-		probInterp->probIntID[0] = (int32_t)brick.probes[0];
-		probInterp->probIntID[1] = (int32_t)brick.probes[18];
-		break;
+		return Vector3(-1.0f, -1.0f, 0.0f);
 	case PROB_SIDE_ID_Xp_Ym:
-		probInterp->probIntID[0] = (int32_t)brick.probes[2];
-		probInterp->probIntID[1] = (int32_t)brick.probes[20];
-		break;
+		return Vector3(1.0f, -1.0f, 0.0f);
 	case PROB_SIDE_ID_Xm_Yp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[6];
-		probInterp->probIntID[1] = (int32_t)brick.probes[24];
-		break;
+		return Vector3(-1.0f, 1.0f, 0.0f);
 	case PROB_SIDE_ID_Xp_Yp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[8];
-		probInterp->probIntID[1] = (int32_t)brick.probes[26];
-		break;
+		return Vector3(1.0f, 1.0f, 0.0f);
 	case PROB_SIDE_ID_Ym_Zp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[18];
-		probInterp->probIntID[1] = (int32_t)brick.probes[20];
-		break;
+		return Vector3(0.0f, -1.0f, 1.0f);
 	case PROB_SIDE_ID_Xm_Zp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[18];
-		probInterp->probIntID[1] = (int32_t)brick.probes[24];
-		break;
+		return Vector3(-1.0f, 0.0f, 1.0f);
 	case PROB_SIDE_ID_Xp_Zp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[20];
-		probInterp->probIntID[1] = (int32_t)brick.probes[26];
-		break;
+		return Vector3(1.0f, 0.0f, 1.0f);
 	case PROB_SIDE_ID_Yp_Zp:
-		probInterp->probIntID[0] = (int32_t)brick.probes[24];
-		probInterp->probIntID[1] = (int32_t)brick.probes[26];
-		break;
+		return Vector3(0.0f, 1.0f, 1.0f);
 
-	default:
-		ERR("Prob interpolation went wrong!");
+	case PROB_CORNER_ID_Xm_Ym_Zm:
+		return Vector3(-1.0f, -1.0f, -1.0f);
+	case PROB_CORNER_ID_Xp_Ym_Zm:
+		return Vector3(1.0f, -1.0f, -1.0f);
+	case PROB_CORNER_ID_Xm_Yp_Zm:
+		return Vector3(-1.0f, 1.0f, -1.0f);
+	case PROB_CORNER_ID_Xp_Yp_Zm:
+		return Vector3(1.0f, 1.0f, -1.0f);
+	case PROB_CORNER_ID_Xm_Ym_Zp:
+		return Vector3(-1.0f, -1.0f, 1.0f);
+	case PROB_CORNER_ID_Xp_Ym_Zp:
+		return Vector3(1.0f, -1.0f, 1.0f);
+	case PROB_CORNER_ID_Xm_Yp_Zp:
+		return Vector3(-1.0f, 1.0f, 1.0f);
+	case PROB_CORNER_ID_Xp_Yp_Zp:
+		return Vector3(1.0f, 1.0f, 1.0f);
 	}
+	return Vector3::Zero;
 }
 
-// TODO: find links on GPU: do the delta step from brick center to outside -> find brick & sample with original pos
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 {
 	// sort probes interpolation links

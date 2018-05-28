@@ -5,38 +5,46 @@
 #define BRICK_Y_MASK 0x00000fff
 #define BRICK_DEPTH_MASK 0xff000000
 
-float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3 V, out float3 diffuse)
+void GetBrickAddres(float3 chunkPosFloor, float3 chunkPosFrac, out uint2 brickOffset, out uint brickDepth)
 {
-	float3 chunkPos = (gbuffer.wpos - g_giSampleData.minCorner) * g_giSampleData.chunkSizeRcp;
-	int4 chunkAdress = int4((int3)floor(chunkPos), 0);
-
-	diffuse = 0;
-
-	// check if outside
-	if (chunkAdress.x < 0 || chunkAdress.y < 0 || chunkAdress.z < 0 ||
-		chunkAdress.x >= (int)g_giSampleData.chunksCount.x || chunkAdress.y >= (int)g_giSampleData.chunksCount.y ||
-		chunkAdress.z >= (int)g_giSampleData.chunksCount.z)
-		return 0;
-
-	// TODO: half voxel size fading
-	float fading = 1.0;
-
-
-	uint4 lookupArrayAdress = g_giChunks.Load(chunkAdress); // .w - lookup resolution
+	uint4 lookupArrayAdress = g_giChunks.Load(int4((int3)chunkPosFloor, 0)); // .w - lookup resolution
 	uint lookupRes = lookupArrayAdress.w;
 
-	float3 lookupPosRelative = chunkPos - chunkAdress.xyz;
-	float3 lookupPos = lookupPosRelative * lookupRes;
+	float3 lookupPos = chunkPosFrac * lookupRes;
 	int3 lookupInOffset = (int3)floor(lookupPos);
 
 	int4 lookupAdress = int4(lookupInOffset + lookupArrayAdress.xyz, 0);
 
 	uint rawBrickAdress = g_giLookups.Load(lookupAdress);
 
-	uint2 brickOffset = uint2((rawBrickAdress & BRICK_X_MASK) >> BRICK_XY_BITS, rawBrickAdress & BRICK_Y_MASK);
-	uint brickDepth = ((rawBrickAdress & BRICK_DEPTH_MASK) >> BRICK_ADRESS_BITS); // 2 ^ depth
+	brickOffset = uint2((rawBrickAdress & BRICK_X_MASK) >> BRICK_XY_BITS, rawBrickAdress & BRICK_Y_MASK);
+	brickDepth = ((rawBrickAdress & BRICK_DEPTH_MASK) >> BRICK_ADRESS_BITS); // 2 ^ depth
+}
+
+#ifndef GI_HELPERS_ONLY
+float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3 V, out float3 diffuse)
+{
+	float3 chunkPos = (gbuffer.wpos - g_giSampleData.minCorner) * g_giSampleData.chunkSizeRcp;
+
+	diffuse = 0;
+
+	// check if outside
+	if (chunkPos.x < 0 || chunkPos.y < 0 || chunkPos.z < 0 ||
+		chunkPos.x >= g_giSampleData.chunksCount.x || chunkPos.y >= g_giSampleData.chunksCount.y ||
+		chunkPos.z >= g_giSampleData.chunksCount.z)
+		return 0;
+
+	// TODO: half voxel size fading
+	float fading = 1.0;
+
+	float3 chunkPosFloor = floor(chunkPos);
+	float3 chunkPosFrac = chunkPos - chunkPosFloor;
+
+	uint2 brickOffset;
+	uint brickDepth;
+	GetBrickAddres(chunkPosFloor, chunkPosFrac, brickOffset, brickDepth);
 	
-	float3 brickInOffset = frac(lookupPosRelative * brickDepth);
+	float3 brickInOffset = frac(chunkPosFrac * brickDepth);
 	brickInOffset *= g_giSampleData.brickSampleSize;
 
 	float3 brickSampleAdress = brickInOffset;
@@ -61,3 +69,4 @@ float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3
 
 	return fading;
 }
+#endif

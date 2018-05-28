@@ -9,6 +9,7 @@
 #define OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 #define OCTREE_INTERSECT_TOLERANCE 0.5f
+#define PROB_OFFSET_SIZE 0.1f
 
 #define BRICK_RESOLUTION 3
 #define BRICK_COEF_COUNT 9
@@ -109,7 +110,8 @@ namespace EngineCore
 		DArray<Vector3Uint32> adresses;
 
 		uint32_t brickLastID;
-		int32_t brickLastPos;
+		ProbLocation inBrickLocation;
+		Vector3 offset;
 	};
 
 	struct ProbInterpolation
@@ -193,7 +195,6 @@ namespace EngineCore
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
-		void FindInterpolationLinks(ProbInterpolation* probInterp, Prob& prob);
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		Vector3 GetProbOutterVector(int32_t i);
 
@@ -277,6 +278,15 @@ namespace EngineCore
 #define PROB_SIDE_ID_Xm_Zp 21
 #define PROB_SIDE_ID_Xp_Zp 23
 #define PROB_SIDE_ID_Yp_Zp 25
+
+#define PROB_CORNER_ID_Xm_Ym_Zm 0
+#define PROB_CORNER_ID_Xp_Ym_Zm 2
+#define PROB_CORNER_ID_Xm_Yp_Zm 6
+#define PROB_CORNER_ID_Xp_Yp_Zm 8
+#define PROB_CORNER_ID_Xm_Ym_Zp 18
+#define PROB_CORNER_ID_Xp_Ym_Zp 20
+#define PROB_CORNER_ID_Xm_Yp_Zp 24
+#define PROB_CORNER_ID_Xp_Yp_Zp 26
 
 		inline ProbLocation GetProbLocation(int32_t i)
 		{
