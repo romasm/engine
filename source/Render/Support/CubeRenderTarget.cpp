@@ -5,19 +5,20 @@ using namespace EngineCore;
 
 CubeRenderTarget::CubeRenderTarget()
 {
-	for(int32_t i = 0; i < 6; i++)
-		UAV[i] = nullptr;
-
+	UAV = nullptr;
 	faces = nullptr;
 	SRV = nullptr;
 	resolution = 0;
 	mipsCount = 0;
+	arraySize = 0;
 }
 
-bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain)
+bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain, uint32_t arrayCount)
 {
 	if(faces)
 		Close();
+
+	arraySize = max((uint32_t)1, arrayCount);
 
 	resolution = res;
 	
@@ -31,7 +32,7 @@ bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain)
 	textureDesc.Width = resolution;
 	textureDesc.Height = resolution;
 	textureDesc.MipLevels = mipsCount;
-	textureDesc.ArraySize = 6;
+	textureDesc.ArraySize = 6 * arraySize;
 	textureDesc.Format = fmt;
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
@@ -44,23 +45,35 @@ bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain)
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = fmt;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	shaderResourceViewDesc.ViewDimension = arraySize > 1 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE;
 	shaderResourceViewDesc.TextureCube.MipLevels = mipsCount;
 	shaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+
+	shaderResourceViewDesc.TextureCubeArray.MipLevels = mipsCount;
+	shaderResourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
+	shaderResourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
+	shaderResourceViewDesc.TextureCubeArray.NumCubes = arraySize;
+
 	if( FAILED(Render::CreateShaderResourceView(faces, &shaderResourceViewDesc, &SRV)) )
 		return false;
 
-	for(int32_t i = 0; i < 6; i++)
+	UAV = new ID3D11UnorderedAccessView*[6 * arraySize];
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC UAVdesc;
+	ZeroMemory(&UAVdesc, sizeof(UAVdesc));
+	UAVdesc.Format = fmt;
+	UAVdesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+	UAVdesc.Texture2DArray.MipSlice = 0;
+	UAVdesc.Texture2DArray.ArraySize = 1;
+
+	for (uint32_t k = 0; k < arraySize; k++)
 	{
-		D3D11_UNORDERED_ACCESS_VIEW_DESC UAVdesc;
-		ZeroMemory( &UAVdesc, sizeof(UAVdesc));
-		UAVdesc.Format = fmt;
-		UAVdesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-		UAVdesc.Texture2DArray.MipSlice = 0;
-		UAVdesc.Texture2DArray.ArraySize = 1;
-		UAVdesc.Texture2DArray.FirstArraySlice = i;
-		if( FAILED(Render::CreateUnorderedAccessView(faces, &UAVdesc, &UAV[i])) )
-			return false;
+		for (int32_t i = 0; i < 6; i++)
+		{
+			UAVdesc.Texture2DArray.FirstArraySlice = k * 6 + i;
+			if (FAILED(Render::CreateUnorderedAccessView(faces, &UAVdesc, &UAV[UAVdesc.Texture2DArray.FirstArraySlice])))
+				return false;
+		}
 	}
 
 	return true;
@@ -68,15 +81,26 @@ bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain)
 
 void CubeRenderTarget::Close()
 {
-	for(int32_t i = 0; i < 6; i++)
-		_RELEASE(UAV[i]);
+	if (UAV)
+	{
+		for (uint32_t i = 0; i < 6 * arraySize; i++)
+			_RELEASE(UAV[i]);
+		_DELETE_ARRAY(UAV);
+	}
 
 	_RELEASE(SRV);
 	_RELEASE(faces);
 }
 
-void CubeRenderTarget::ClearCube(float red, float green, float blue, float alpha)
+void CubeRenderTarget::ClearCube(uint32_t arrayID, float red, float green, float blue, float alpha)
 {
-	for(int32_t i = 0; i < 6; i++)
+	const uint32_t arrayID2D = arrayID * 6;
+	for(uint32_t i = arrayID2D; i < arrayID2D + 6; i++)
+		Render::ClearUnorderedAccessViewFloat(UAV[i], Vector4(red, green, blue, alpha));
+}
+
+void CubeRenderTarget::ClearCubeArray(float red, float green, float blue, float alpha)
+{
+	for (uint32_t i = 0; i < arraySize * 6; i++)
 		Render::ClearUnorderedAccessViewFloat(UAV[i], Vector4(red, green, blue, alpha));
 }

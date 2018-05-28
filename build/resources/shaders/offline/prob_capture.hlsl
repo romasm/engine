@@ -1,7 +1,7 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
 
-#define GROUP_THREAD_COUNT 8
+#define GROUP_THREAD_COUNT 16
 
 RWTexture2D <float4> probFace : register(u0);  
 
@@ -15,6 +15,9 @@ void Capture(uint3 threadID : SV_DispatchThreadID)
 
 	float width, height;
 	linColorAndDepth.GetDimensions(width, height);
+
+	if (pixelID.x >= (uint)width || pixelID.y >= (uint)height)
+		return;
 
 	const float2 uv = (float2(pixelID) + 0.5) / float2(width, height);
 

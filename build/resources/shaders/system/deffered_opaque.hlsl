@@ -76,9 +76,9 @@ cbuffer configBuffer : register(b1)
 {
 	ConfigParams configs;     
 };
-
+ 
 cbuffer lightsCount : register(b2)
-{
+{ 
 	LightsCount g_lightCount;
 };
 

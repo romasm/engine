@@ -556,7 +556,7 @@ bool BaseWorld::saveWorld(string& filename)
 	return true;
 }
 
-bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight)
+bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight, uint32_t arrayCount)
 {
 	if(probScene)
 		return probScene->Resize(resolution, resolution);
@@ -579,7 +579,7 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 		return false;
 	}
 	
-	if(!probTarget.Init(resolution, fmt, true))
+	if(!probTarget.Init(resolution, fmt, true, arrayCount))
 	{
 		EndCaptureProb();
 		return false;
@@ -588,7 +588,7 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 	return true;
 }
 
-ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip, bool genMips)
+ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID)
 {
 	if( !probScene || probCamera.isnull() || !probCaptureShader || probTarget.GetMipsCount() == 0 )
 		return nullptr;
@@ -607,8 +607,8 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		Vector3(0, XM_PI, 0)
 	};
 	
-	probTarget.ClearCube();
-	uint32_t groupCount = (uint32_t)ceil(float(probTarget.GetResolution()) / 8);
+	probTarget.ClearCube(arrayID);
+	uint32_t groupCount = (uint32_t)ceil(float(probTarget.GetResolution()) / 16);
 
 	Quaternion baseRotation = m_transformSystem->GetRotation_W(probCamera);
 
@@ -621,30 +621,31 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		
 		Snapshot(probScene);
 
-		auto uav = probTarget.GetUnorderedAccessView(i);
+		auto uav = probTarget.GetUnorderedAccessView(i, arrayID);
 		auto srv = probScene->GetLinearAndDepthSRV();
 		
-		// temp
-		/*ScratchImage tempCube;
-		ID3D11Resource* ggggg = nullptr;
-		srv->GetResource(&ggggg);
-		CaptureTexture(Render::Device(), Render::Context(), ggggg, tempCube);
-
-		string envTexNamerrrrrr = GetWorldName() + ENVPROBS_SUBFOLDER + RandomString(4) + "_raw" + EXT_TEXTURE;
-		SaveToDDSFile(tempCube.GetImages(), tempCube.GetImageCount(), tempCube.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamerrrrrr).data());*/
-		// temp
-
 		Render::CSSetShaderResources( 0, 1, &srv );
 
 		probCaptureShader->BindUAV( uav );
 		probCaptureShader->Dispatch( groupCount, groupCount, 1 );
 		probCaptureShader->UnbindUAV();
 	}
-
-	if(genMips)
-		probTarget.GenerateMips();
-
+	
 	return probTarget.GetShaderResourceView();
+}
+
+bool BaseWorld::CaptureProbMipGen()
+{
+	if (probTarget.GetMipsCount() == 0)
+		return false;
+
+	probTarget.GenerateMips();
+	return true;
+}
+
+void BaseWorld::CaptureProbClear()
+{
+	probTarget.ClearCubeArray();
 }
 
 void BaseWorld::EndCaptureProb()

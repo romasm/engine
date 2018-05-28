@@ -87,7 +87,7 @@ PO_Gbuffer ProbPS(PI_PosTexTBNProb input)
 	float3 nTangent = normalize(cross(normal, input.binormal));
 
 	const float3 albedo = 1.0;
-	const float3 albedoInterpolated = float3(0.0, 0.0, 1.0);
+	const float3 albedoInterpolated = float3(0.2, 0.2, 1.0);
 	const float3 albedoError = float3(1.0, 0.0, 0.0);
 	const float roughness = 0.8;
 

@@ -17,6 +17,8 @@
 #define PROB_CAPTURE_NEARCLIP 0.01f
 #define PROB_CAPTURE_FARCLIP 10000.0f
 
+#define PROB_CAPTURE_ARRAY 1
+
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
 #define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
@@ -40,7 +42,11 @@ namespace EngineCore
 
 	struct SHAdresses
 	{
-		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count, adresses[1].w == 1.0 / (CUBE_RES * CUBE_RES * 6)
+		float pixelCountRcp;
+		uint32_t probCount;
+		float _padding0;
+		float _padding1;
+		Vector4 adresses[48 * PROB_CAPTURE_ARRAY]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count
 	};
 
 	struct VoxelizeSceneItem

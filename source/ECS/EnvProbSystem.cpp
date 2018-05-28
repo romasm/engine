@@ -434,6 +434,7 @@ bool EnvProbSystem::Bake(Entity e)
 	worldTransform = localOffset * worldTransform;
 
 	ID3D11ShaderResourceView* cubemapSRV = world->CaptureProb(worldTransform, comp.nearClip, comp.farClip);
+	world->CaptureProbMipGen();
 
 	const uint32_t facesCount = 6 * mipNum;
 	RArray<ScratchImage> i_faces;

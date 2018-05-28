@@ -88,7 +88,7 @@ bool GIMgr::InitBuffers()
 #ifdef _EDITOR
 
 	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
-	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(Vector4), true);
+	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SHAdresses), true);
 
 	copyBricks = new Compute(SHADER_BRICKS_COPY);
 
@@ -676,7 +676,7 @@ bool GIMgr::BuildVoxelOctree()
 	const int32_t captureResolution = 64;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
+	if (!world->BeginCaptureProb(captureResolution, formatProb, false, PROB_CAPTURE_ARRAY))
 	{
 		ERR("Cant init prob capture");
 		return false;
@@ -688,16 +688,16 @@ bool GIMgr::BuildVoxelOctree()
 
 	uint32_t groupsCountX = captureResolution / 8;
 	uint32_t groupsCountY = captureResolution / 8;
-	uint32_t groupsCountZ = 1;
+	uint32_t groupsCountZ = 6;
 
 	SHAdresses adresses;
-	float pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
+	adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
 
 	int32_t bakedCount = 0;
 	for (auto& prob : probesArray)
 	{
-		if (!prob.bake)
-			continue;
+		//if (!prob.bake)
+		//	continue;
 				
 		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
 		{
@@ -705,12 +705,11 @@ bool GIMgr::BuildVoxelOctree()
 			adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
 		}
 		adresses.adresses[0].w = (float)prob.adresses.size();
-		adresses.adresses[1].w = pixelCountRcp;
-
-		Render::UpdateDynamicResource(adressBuffer, &adresses, prob.adresses.size() * sizeof(Vector4));
-
-		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP, false );
 		
+		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP );
+		
+		Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SHAdresses));
+
 		Render::CSSetConstantBuffers(0, 1, &adressBuffer);
 		Render::CSSetShaderResources(0, 1, &probSRV);
 		cubemapToSH->BindUAV(bricksTempAtlasUAV);
@@ -724,7 +723,7 @@ bool GIMgr::BuildVoxelOctree()
 
 	world->EndCaptureProb();
 
-	InterpolateProbes(interpolationArray);
+	//InterpolateProbes(interpolationArray);
 	interpolationArray.destroy();
 
 	// copy to scene

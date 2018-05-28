@@ -12,9 +12,11 @@ SamplerState samplerBilinearWrap : register(s0);
 
 cbuffer adressBuffer : register(b0)
 {
-	// adresses[0].w == count
-	// adresses[1].w == 1.0 / (CUBE_RES * CUBE_RES * 6)
-	float4 adresses[48];
+	float pixelCountRcp; //1.0 / (CUBE_RES * CUBE_RES * 6)
+	uint probCount;
+	float _padding0;
+	float _padding1;
+	float4 adresses[48]; // adresses[0].w == count
 };
 
 #define MAX_WAITING_CYCLES 100000
@@ -40,7 +42,7 @@ void AppendSHvalue(float3 value, uint3 coords)
 
 	InterlockedFloatAdd(coords, value.r);
 	coords.x += 1;
-	InterlockedFloatAdd(coords, value.g);
+	InterlockedFloatAdd(coords, value.g); 
 	coords.x += 1;
 	InterlockedFloatAdd(coords, value.b);
 }
@@ -92,33 +94,54 @@ float3 GetCubeDir(float x, float y, uint face)
 	return normalize(lerp(xVect0, xVect1, y));
 }
 
+groupshared SHcoef3 groupSH[GROUP_THREAD_COUNT_X * GROUP_THREAD_COUNT_Y];
+
 [numthreads( GROUP_THREAD_COUNT_X, GROUP_THREAD_COUNT_Y, 1 )]
-void ComputeSH(uint3 threadID : SV_DispatchThreadID)
+void ComputeSH(uint3 threadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
 {
 	float width, height;
 	cubemap.GetDimensions(width, height);
 	const float cubeResRpc = 1.0f / width;
 	   
-	[unroll]
-	for (int face = 0; face < 6; face++) 
-	{		
+	const int face = threadID.z;
+
+	//[unroll]
+	//for (int face = 0; face < 6; face++)
+	//{
 		float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
 		float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
-		float3 colorWeighed = color * adresses[1].w;
-		SHcoef3 sh = CalculateSHCoefs(colorWeighed, dir);
-		
-		[loop]
-		for(int k = 0; k < (int)adresses[0].w; k++)
-		{
-			uint3 coords = (uint3)adresses[k].xyz;
+		float3 colorWeighed = color * pixelCountRcp;
+		groupSH[groupIndex] = CalculateSHCoefs(colorWeighed, dir);
+	//}
 
-			[unroll]
-			for (int i = 0; i < 9; i++) 
-			{
-				AppendSHvalue(sh.L[i], coords);
-				coords.z += 3;
-			}
+	GroupMemoryBarrierWithGroupSync();
+
+	if (groupIndex != 0)
+		return;
+
+	SHcoef3 finalSH = (SHcoef3)0;
+	[loop]
+	for (int p = 0; p < GROUP_THREAD_COUNT_X * GROUP_THREAD_COUNT_Y; p++)
+	{
+		SHcoef3 sh = groupSH[p];
+		[unroll]
+		for (int j = 0; j < 9; j++)
+		{
+			finalSH.L[j] += sh.L[j];
+		}
+	}
+		
+	[loop]
+	for(int k = 0; k < (int)adresses[0].w; k++)
+	{
+		uint3 coords = (uint3)adresses[k].xyz;
+			
+		[unroll]
+		for (int i = 0; i < 9; i++) 
+		{
+			AppendSHvalue(finalSH.L[i], coords);
+			coords.z += 3;
 		}
 	}
 }

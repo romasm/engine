@@ -72,7 +72,7 @@ namespace EngineCore
 	{
 		friend TypeMgr;
 	public:
-		
+
 		// TODO: move editor camera to separete file in lua
 		struct WorldHeader
 		{
@@ -91,32 +91,34 @@ namespace EngineCore
 			LIVE,
 		};
 
-		BaseWorld( uint32_t id );
+		BaseWorld(uint32_t id);
 
 		bool Init(string filename);
 		bool Init();
-		
+
 		virtual void Snapshot(ScenePipeline* scene) = 0;
 		virtual void Frame() = 0;
 		virtual void Close();
-		
+
 		void SetDirty(Entity e);
 		void SetDirtyFromSceneGraph(Entity e);
-				
-		string GetWorldName() const {return world_name;}
-		uint32_t GetID() const {return ID;}
+
+		string GetWorldName() const { return world_name; }
+		uint32_t GetID() const { return ID; }
 
 		void AddScene(ScenePipeline* scene)
 		{
-			if(m_scenes.find(scene) == m_scenes.end())
+			if (m_scenes.find(scene) == m_scenes.end())
 				m_scenes.push_back(scene);
 		}
 
 		ScenePipeline* CreateScene(Entity cam, int w, int h, bool lightweight)
 		{
 			ScenePipeline* scene = new ScenePipeline();
-			if(!scene->Init(this, w, h, lightweight))
-			{_CLOSE(scene); return nullptr;}
+			if (!scene->Init(this, w, h, lightweight))
+			{
+				_CLOSE(scene); return nullptr;
+			}
 			m_cameraSystem->AssignScene(cam, scene);
 			m_scenes.push_back(scene);
 			return scene;
@@ -125,7 +127,7 @@ namespace EngineCore
 		bool DeleteScene(ScenePipeline* scene)
 		{
 			auto it = m_scenes.find(scene);
-			if(it != m_scenes.end())
+			if (it != m_scenes.end())
 			{
 				_CLOSE(scene);
 				m_scenes.erase(it);
@@ -134,29 +136,31 @@ namespace EngineCore
 			return false;
 		}
 
-	#ifdef _EDITOR
+#ifdef _EDITOR
 		inline void PostMeshesReload()
 		{
-			if(m_staticMeshSystem)
+			if (m_staticMeshSystem)
 				m_staticMeshSystem->FixBBoxes();
 		}
-	#endif
-				
+#endif
+
 		void RawInput(RawInputData& data)
 		{
 			m_controllerSystem->RawInput(data);
 		}
 
-		bool IsActive() const {return b_active;}
-		void SetActive(bool active) {b_active = active;}
+		bool IsActive() const { return b_active; }
+		void SetActive(bool active) { b_active = active; }
 
-		int32_t GetMode() const {return (int32_t)m_mode;}
-		void SetMode(int32_t m) {m_mode = (StateMode)m;}
+		int32_t GetMode() const { return (int32_t)m_mode; }
+		void SetMode(int32_t m) { m_mode = (StateMode)m; }
 
-		inline float GetDT() const {return m_dt;} 
+		inline float GetDT() const { return m_dt; }
 
-		bool BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight = false);
-		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip, bool genMips = true);
+		bool BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight = false, uint32_t arrayCount = 1);
+		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID = 0);
+		bool CaptureProbMipGen();
+		void CaptureProbClear();
 		void EndCaptureProb();
 
 		inline ID3D11ShaderResourceView* GetCaptureProbSRV()
