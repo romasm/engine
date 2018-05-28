@@ -399,7 +399,7 @@ bool GIMgr::RecreateResources()
 	sampleData.chunkSizeRcp = 1.0f / chunkSize;
 	sampleData.chunksCount = Vector3Uint32(chunksX, chunksY, chunksZ);
 
-	LOG_GOOD("Chunks lookup size: %i", chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
+	LOG_GOOD("Chunks lookup size: %i b", chunksX * chunksY * chunksZ * sizeof(Vector4Uint16));
 	// ----------------------------------------------
 
 	// fill lookups links
@@ -622,7 +622,7 @@ bool GIMgr::BuildVoxelOctree()
 	bricksLinks.clear();
 
 	// post process probes
-	for (auto& prob : probesArray)
+	for (auto& prob : probesArray) // TODO: this doesnt work
 	{
 		// copies check
 		// center prob & chunk outter prob: always bake
@@ -676,7 +676,7 @@ bool GIMgr::BuildVoxelOctree()
 	const int32_t captureResolution = 64;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-	if (!world->BeginCaptureProb(captureResolution, formatProb, false, PROB_CAPTURE_ARRAY))
+	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
 	{
 		ERR("Cant init prob capture");
 		return false;
@@ -686,14 +686,18 @@ bool GIMgr::BuildVoxelOctree()
 	if (!probSRV)
 		return false;
 
-	uint32_t groupsCountX = captureResolution / 8;
-	uint32_t groupsCountY = captureResolution / 8;
+	uint32_t groupsCountX = captureResolution / 16;
+	uint32_t groupsCountY = captureResolution / 16;
 	uint32_t groupsCountZ = 6;
 
 	SHAdresses adresses;
 	adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
 
+	double startTime = Timer::ForcedGetCurrentTime();
+	double currentTime = 0;
 	int32_t bakedCount = 0;
+	double prevTime = startTime;
+
 	for (auto& prob : probesArray)
 	{
 		//if (!prob.bake)
@@ -717,9 +721,16 @@ bool GIMgr::BuildVoxelOctree()
 		cubemapToSH->UnbindUAV();
 
 		bakedCount++;
-		if (bakedCount % 100 == 0)
+
+		currentTime = Timer::ForcedGetCurrentTime();
+		if (currentTime - prevTime >= 1000.0f)
+		{
+			prevTime = currentTime;
 			DBG_SHORT("Baked: %i", bakedCount);
+		}
 	}
+
+	LOG_GOOD("Baked with speed %f probes per second", 1000.0f * float(bakedCount) / float(currentTime - startTime));
 
 	world->EndCaptureProb();
 

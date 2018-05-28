@@ -2,8 +2,8 @@
 #include "../common/structs.hlsl"
 #include "../common/sh_helpers.hlsl"
 
-#define GROUP_THREAD_COUNT_X 8
-#define GROUP_THREAD_COUNT_Y 8
+#define GROUP_THREAD_COUNT_X 16
+#define GROUP_THREAD_COUNT_Y 16
 
 RWTexture3D <uint> bricksAtlas : register(u0);
 
@@ -13,9 +13,9 @@ SamplerState samplerBilinearWrap : register(s0);
 cbuffer adressBuffer : register(b0)
 {
 	float pixelCountRcp; //1.0 / (CUBE_RES * CUBE_RES * 6)
-	uint probCount;
 	float _padding0;
 	float _padding1;
+	float _padding2;
 	float4 adresses[48]; // adresses[0].w == count
 };
 
@@ -105,15 +105,11 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID, uint groupIndex : SV_GroupI
 	   
 	const int face = threadID.z;
 
-	//[unroll]
-	//for (int face = 0; face < 6; face++)
-	//{
-		float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
-		float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
+	float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
+	float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
-		float3 colorWeighed = color * pixelCountRcp;
-		groupSH[groupIndex] = CalculateSHCoefs(colorWeighed, dir);
-	//}
+	float3 colorWeighed = color * pixelCountRcp;
+	groupSH[groupIndex] = CalculateSHCoefs(colorWeighed, dir);
 
 	GroupMemoryBarrierWithGroupSync();
 
