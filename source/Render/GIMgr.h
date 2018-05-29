@@ -102,12 +102,8 @@ namespace EngineCore
 		Vector3 pos;
 		bool bake;
 		uint8_t minDepth;
-		//uint8_t copyCount;
 		uint8_t neighborFlags;
 		DArray<Vector3Uint32> adresses;
-
-		//ProbLocation inBrickLocation;
-		Vector3 offset;
 	};
 
 	struct ProbInterpolation
@@ -115,12 +111,10 @@ namespace EngineCore
 		int32_t probID;
 		uint8_t minDepth;
 		Vector3 offset;
-		//int32_t probIntID[4];
 	};
 
 	struct ProbInterpolationGPU
 	{
-		//Vector4 lerpAdresses[4]; // lerpAdresses[0].w == count
 		Vector4 pos;
 		Vector4 offset;
 		Vector4 targetAdresses[48]; // targetAdresses[0].w == count
@@ -192,8 +186,8 @@ namespace EngineCore
 			Vector3& octreeHelper, Vector3& octreeCorner);
 		Vector3 AdjustProbPos(Vector3& pos);
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
-		Vector3 GetProbOutterVector(int32_t i);
 		uint8_t GetNeighborFlag(int32_t i);
+		Vector3 GetOutterVectorFromNeighbors(uint8_t flags);
 		void CopyBricks();
 
 		Compute* cubemapToSH;
@@ -225,7 +219,6 @@ namespace EngineCore
 	private:
 		int32_t debugGeomHandleOctree;
 		int32_t debugGeomHandleProbes;
-		int32_t debugGeomHandleDirs;
 
 #endif
 

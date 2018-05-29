@@ -45,7 +45,6 @@ GIMgr::GIMgr(BaseWorld* wrd)
 #ifdef _DEV
 	debugGeomHandleOctree = -1;
 	debugGeomHandleProbes = -1;
-	debugGeomHandleDirs = -1;
 #endif
 
  	if(!InitBuffers())
@@ -62,7 +61,6 @@ GIMgr::~GIMgr()
 	{
 		dbg->DeleteGeometryHandle(debugGeomHandleOctree);
 		dbg->DeleteGeometryHandle(debugGeomHandleProbes);
-		dbg->DeleteGeometryHandle(debugGeomHandleDirs);
 	}
 #endif
 
@@ -669,9 +667,7 @@ bool GIMgr::BuildVoxelOctree()
 			ProbInterpolation* probInterp = interpolationArray.push_back();
 			probInterp->probID = i;
 			probInterp->minDepth = prob.minDepth;
-			probInterp->offset = prob.offset;
-			probInterp->offset.Normalize();
-			probInterp->offset *= PROB_OFFSET_SIZE * voxelSize;
+			probInterp->offset = GetOutterVectorFromNeighbors(prob.neighborFlags);
 		}
 	}
 
@@ -901,7 +897,6 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.pos = probPos;
 				prob.adresses.destroy();
 				prob.minDepth = newBrick.depth;
-				prob.offset = GetProbOutterVector(i);
 				prob.neighborFlags = GetNeighborFlag(i);
 
 				probesLookup.insert(make_pair(posForHash, probID));
@@ -913,7 +908,6 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 
 				Prob& prob = probesArray[probIt->second];
 				prob.neighborFlags = (prob.neighborFlags | GetNeighborFlag(i));
-				prob.offset += GetProbOutterVector(i);
 				prob.minDepth = min(prob.minDepth, (uint8_t)newBrick.depth);
 			}
 		}
@@ -1002,95 +996,31 @@ void GIMgr::CopyBricks()
 	copyBricks->UnbindUAV();
 }
 
-Vector3 GIMgr::GetProbOutterVector(int32_t i)
+const Vector3 heighborsDirs[8] = 
 {
-	Vector3 res;
-	switch (i)
-	{
-	case PROB_FACE_ID_Zm:
-		res = Vector3(0.0f, 0.0f, -1.0f);
-		break;
-	case PROB_FACE_ID_Zp:
-		res = Vector3(0.0f, 0.0f, 1.0f);
-		break;
-	case PROB_FACE_ID_Ym:
-		res = Vector3(0.0f, -1.0f, 0.0f);
-		break;
-	case PROB_FACE_ID_Yp:
-		res = Vector3(0.0f, 1.0f, 0.0f);
-		break;
-	case PROB_FACE_ID_Xm:
-		res = Vector3(-1.0f, 0.0f, 0.0f);
-		break;
-	case PROB_FACE_ID_Xp:
-		res = Vector3(1.0f, 0.0f, 0.0f);
-		break;
-		
-	case PROB_SIDE_ID_Ym_Zm:
-		res = Vector3(0.0f, -1.0f, -1.0f);
-		break;
-	case PROB_SIDE_ID_Xm_Zm:
-		res = Vector3(-1.0f, 0.0f, -1.0f);
-		break;
-	case PROB_SIDE_ID_Xp_Zm:
-		res = Vector3(1.0f, 0.0f, -1.0f);
-		break;
-	case PROB_SIDE_ID_Yp_Zm:
-		res = Vector3(0.0f, 1.0f, -1.0f);
-		break;
-	case PROB_SIDE_ID_Xm_Ym:
-		res = Vector3(-1.0f, -1.0f, 0.0f);
-		break;
-	case PROB_SIDE_ID_Xp_Ym:
-		res = Vector3(1.0f, -1.0f, 0.0f);
-		break;
-	case PROB_SIDE_ID_Xm_Yp:
-		res = Vector3(-1.0f, 1.0f, 0.0f);
-		break;
-	case PROB_SIDE_ID_Xp_Yp:
-		res = Vector3(1.0f, 1.0f, 0.0f);
-		break;
-	case PROB_SIDE_ID_Ym_Zp:
-		res = Vector3(0.0f, -1.0f, 1.0f);
-		break;
-	case PROB_SIDE_ID_Xm_Zp:
-		res = Vector3(-1.0f, 0.0f, 1.0f);
-		break;
-	case PROB_SIDE_ID_Xp_Zp:
-		res = Vector3(1.0f, 0.0f, 1.0f);
-		break;
-	case PROB_SIDE_ID_Yp_Zp:
-		res = Vector3(0.0f, 1.0f, 1.0f);
-		break;
+	{ -1.0f, -1.0f, -1.0f },
+	{ 1.0f, -1.0f, -1.0f },
+	{ -1.0f, 1.0f, -1.0f },
+	{ 1.0f, 1.0f, -1.0f },
+	{ -1.0f, -1.0f, 1.0f },
+	{ 1.0f, -1.0f, 1.0f },
+	{ -1.0f, 1.0f, 1.0f },
+	{ 1.0f, 1.0f, 1.0f },
+};
 
-	case PROB_CORNER_ID_Xm_Ym_Zm:
-		res = Vector3(-1.0f, -1.0f, -1.0f);
-		break;
-	case PROB_CORNER_ID_Xp_Ym_Zm:
-		res = Vector3(1.0f, -1.0f, -1.0f);
-		break;
-	case PROB_CORNER_ID_Xm_Yp_Zm:
-		res = Vector3(-1.0f, 1.0f, -1.0f);
-		break;
-	case PROB_CORNER_ID_Xp_Yp_Zm:
-		res = Vector3(1.0f, 1.0f, -1.0f);
-		break;
-	case PROB_CORNER_ID_Xm_Ym_Zp:
-		res = Vector3(-1.0f, -1.0f, 1.0f);
-		break;
-	case PROB_CORNER_ID_Xp_Ym_Zp:
-		res = Vector3(1.0f, -1.0f, 1.0f);
-		break;
-	case PROB_CORNER_ID_Xm_Yp_Zp:
-		res = Vector3(-1.0f, 1.0f, 1.0f);
-		break;
-	case PROB_CORNER_ID_Xp_Yp_Zp:
-		res = Vector3(1.0f, 1.0f, 1.0f);
-		break;
-	default:
-		return Vector3::Zero;
+Vector3 GIMgr::GetOutterVectorFromNeighbors(uint8_t flags)
+{
+	Vector3 res = Vector3::Zero;
+	for (int32_t i = 0; i < 8; i++)
+	{
+		if ((flags & (1 << i)) == 0)
+		{
+			res = heighborsDirs[i];
+			res.Normalize();
+			res *= voxelSize * PROB_OFFSET_SIZE;
+			break;
+		}
 	}
-	res.Normalize();
 	return res;
 }
 
@@ -1193,7 +1123,6 @@ void GIMgr::DebugSetState(DebugState state)
 	case DebugState::DS_NONE:
 		dbgDrawer->DeleteGeometryHandle(debugGeomHandleOctree);
 		dbgDrawer->DeleteGeometryHandle(debugGeomHandleProbes);
-		dbgDrawer->DeleteGeometryHandle(debugGeomHandleDirs);
 		break;
 
 	case DebugState::DS_OCTREE:
@@ -1234,12 +1163,7 @@ void GIMgr::DebugSetState(DebugState state)
 	case DebugState::DS_PROBES:
 		{
 			dbgDrawer->DeleteGeometryHandle(debugGeomHandleProbes);
-			dbgDrawer->DeleteGeometryHandle(debugGeomHandleDirs);
 			
-			RArray<DBGLine> dirs;
-			dirs.create(probesArray.size());
-			Vector3 dirColor(0.0f);
-
 			struct ProbVertex
 			{
 				Vector3 pos;
@@ -1262,25 +1186,12 @@ void GIMgr::DebugSetState(DebugState state)
 				//	dbg.y = 1.0f;
 
 				points.push_back(ProbVertex(item.pos, dbg));
-
-				if (!item.bake)
-				{
-					Vector3 offset = item.offset;
-					offset.Normalize();
-					dirs.push_back(DBGLine(item.pos, dirColor, item.pos + offset * voxelSize * 0.5f, dirColor));
-				}
 			}
 
 			debugGeomHandleProbes = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_PROBES), IA_TOPOLOGY::POINTLIST, (uint32_t)points.size(), (uint32_t)sizeof(ProbVertex), true);
 			if (debugGeomHandleProbes < 0)
 				return;
 			dbgDrawer->UpdateGeometry(debugGeomHandleProbes, points.data(), (uint32_t)points.size());
-
-			uint32_t vertsCount = (uint32_t)dirs.size() * 2;
-			debugGeomHandleDirs = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
-			if (debugGeomHandleDirs < 0)
-				return;
-			dbgDrawer->UpdateGeometry(debugGeomHandleDirs, dirs.data(), vertsCount);
 		}
 		break;
 	}
