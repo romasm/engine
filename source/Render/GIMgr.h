@@ -9,7 +9,7 @@
 #define OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 #define OCTREE_INTERSECT_TOLERANCE 0.5f
-#define PROB_OFFSET_SIZE 0.1f
+#define PROB_OFFSET_SIZE 0.0001f
 
 #define BRICK_RESOLUTION 3
 #define BRICK_COEF_COUNT 9
@@ -97,24 +97,16 @@ namespace EngineCore
 		uint32_t depth;
 	};
 
-	enum class ProbLocation : uint8_t
-	{
-		PROB_FACE = 0,
-		PROB_SIDE,
-		PROB_CORNER,
-		PROB_CENTER
-	};
-
 	struct Prob
 	{
 		Vector3 pos;
 		bool bake;
 		uint8_t minDepth;
-		uint8_t copyCount;
+		//uint8_t copyCount;
+		uint8_t neighborFlags;
 		DArray<Vector3Uint32> adresses;
 
-		uint32_t brickLastID;
-		ProbLocation inBrickLocation;
+		//ProbLocation inBrickLocation;
 		Vector3 offset;
 	};
 
@@ -201,6 +193,8 @@ namespace EngineCore
 		Vector3 AdjustProbPos(Vector3& pos);
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		Vector3 GetProbOutterVector(int32_t i);
+		uint8_t GetNeighborFlag(int32_t i);
+		void CopyBricks();
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
@@ -229,7 +223,9 @@ namespace EngineCore
 		void DebugSetState(DebugState state);
 
 	private:
-		int32_t debugGeomHandle;
+		int32_t debugGeomHandleOctree;
+		int32_t debugGeomHandleProbes;
+		int32_t debugGeomHandleDirs;
 
 #endif
 
@@ -291,20 +287,5 @@ namespace EngineCore
 #define PROB_CORNER_ID_Xp_Ym_Zp 20
 #define PROB_CORNER_ID_Xm_Yp_Zp 24
 #define PROB_CORNER_ID_Xp_Yp_Zp 26
-
-		inline ProbLocation GetProbLocation(int32_t i)
-		{
-			if (i == PROB_MIDDLE_ID)
-				return ProbLocation::PROB_CENTER;
-			
-			if(i % 2 != 0)
-				return ProbLocation::PROB_SIDE;
-
-			if (i == PROB_FACE_ID_Zm || i == PROB_FACE_ID_Ym || i == PROB_FACE_ID_Xm ||
-				i == PROB_FACE_ID_Xp || i == PROB_FACE_ID_Yp || i == PROB_FACE_ID_Zp)
-				return ProbLocation::PROB_FACE;
-
-			return ProbLocation::PROB_CORNER;
-		}
 	};
 }

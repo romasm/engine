@@ -21,6 +21,30 @@ void GetBrickAddres(float3 chunkPosFloor, float3 chunkPosFrac, out uint2 brickOf
 	brickDepth = ((rawBrickAdress & BRICK_DEPTH_MASK) >> BRICK_ADRESS_BITS); // 2 ^ depth
 }
 
+float3 GetGIAddres(float3 chunkPosFrac, uint2 brickOffset, uint brickDepth)
+{
+	float3 brickInOffset = frac(chunkPosFrac * brickDepth);
+	brickInOffset *= g_giSampleData.brickSampleSize;
+
+	float3 brickSampleAdress = brickInOffset;
+	brickSampleAdress.xy += brickOffset * g_giSampleData.brickAtlasOffset.xy;
+
+	brickSampleAdress += g_giSampleData.halfBrickVoxelSize;
+	return brickSampleAdress;
+}
+
+SHcoef3 ReadBrickSH(float3 brickSampleAdress)
+{
+	SHcoef3 sh;
+	[unroll]
+	for (int i = 0; i < 9; i++)
+	{
+		sh.L[i] = g_giBricks.SampleLevel(samplerBilinearVolumeClamp, brickSampleAdress, 0).rgb;
+		brickSampleAdress.z += g_giSampleData.brickAtlasOffset.z;
+	}
+	return sh;
+}
+
 #ifndef GI_HELPERS_ONLY
 float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3 V, out float3 diffuse)
 {
@@ -42,28 +66,14 @@ float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3
 
 	uint2 brickOffset;
 	uint brickDepth;
-	GetBrickAddres(chunkPosFloor, chunkPosFrac, brickOffset, brickDepth);
-	
-	float3 brickInOffset = frac(chunkPosFrac * brickDepth);
-	brickInOffset *= g_giSampleData.brickSampleSize;
-
-	float3 brickSampleAdress = brickInOffset;
-	brickSampleAdress.xy += brickOffset * g_giSampleData.brickAtlasOffset.xy;
-
-	brickSampleAdress += g_giSampleData.halfBrickVoxelSize;
-
-	SHcoef3 sh;
-	[unroll]
-	for (int i = 0; i < 9; i++)
-	{
-		sh.L[i] = g_giBricks.SampleLevel(samplerBilinearVolumeClamp, brickSampleAdress, 0).rgb;
-		brickSampleAdress.z += g_giSampleData.brickAtlasOffset.z;
-	}
+	GetBrickAddres(chunkPosFloor, chunkPosFrac, brickOffset, brickDepth);	
+	float3 brickSampleAdress = GetGIAddres(chunkPosFrac, brickOffset, brickDepth);
+	SHcoef3 sh = ReadBrickSH(brickSampleAdress);
 
 	const float3 dominantN = getDiffuseDominantDir(gbuffer.normal, V, NoV, Roughness);
 	const float3 color = ReconstrucColor(sh, dominantN);
 
-	diffuse = color;// * gbuffer.albedo * gbuffer.ao;
+	diffuse = color;
 
 	//diffuse = lerp(diffuse, brickInOffset, 0.999);
 
