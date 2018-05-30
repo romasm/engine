@@ -6,6 +6,13 @@
 
 namespace EngineCore
 {
+	enum TriClipping
+	{
+		TC_BOTH = 0,
+		TC_FRONT,
+		TC_BACK
+	};
+
 	class MeshMgr : public BaseMgr<MeshData, RESOURCE_MAX_COUNT>
 	{
 	public:
@@ -30,10 +37,13 @@ namespace EngineCore
 			something_reloaded = false;
 			return res;
 		}
+
+		static bool MeshBoxOverlap(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox);
+		static float MeshRayIntersect(uint32_t meshID, const Matrix& transform, const Vector3& origin, const Vector3& dirNormal, float maxDist, TriClipping triClipping);
 	#endif
 
 		inline static MeshMgr* Get(){return (MeshMgr*)BaseMgr<MeshData, RESOURCE_MAX_COUNT>::Get();}
-		
+
 	private:
 
 #ifdef _EDITOR

@@ -626,6 +626,8 @@ bool GIMgr::BuildVoxelOctree()
 	bricksLinks.clear();
 	
 	// post process probes
+	GenerateProbOffsetVectors();
+
 	Vector3 cornerMax = worldBox.corner + worldBox.size;
 
 	RArray<ProbInterpolation> interpolationArray;
@@ -659,7 +661,7 @@ bool GIMgr::BuildVoxelOctree()
 
 		if (prob.bake)
 		{
-			prob.pos = AdjustProbPos(prob.pos);
+			AdjustProbPos(staticScene, prob.pos);
 		}
 		else
 		{
@@ -667,7 +669,7 @@ bool GIMgr::BuildVoxelOctree()
 			ProbInterpolation* probInterp = interpolationArray.push_back();
 			probInterp->probID = i;
 			probInterp->minDepth = prob.minDepth;
-			probInterp->offset = GetOutterVectorFromNeighbors(prob.neighborFlags);
+			probInterp->lerpOffset = GetOutterVectorFromNeighbors(prob.neighborFlags);
 		}
 	}
 
@@ -762,11 +764,7 @@ bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBo
 	{
 		if (i.bbox.Intersects(extendedBBox))
 		{
-			auto mesh = MeshMgr::GetResourcePtr(i.meshID);
-			if (!mesh)
-				continue;
-
-			if (MeshLoader::MeshBoxOverlap(mesh, i.transform, extendedBBox))
+			if (MeshMgr::MeshBoxOverlap(i.meshID, i.transform, extendedBBox))
 				return true;
 		}
 	}
@@ -914,10 +912,40 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 	}
 }
 
-Vector3 GIMgr::AdjustProbPos(Vector3& pos)
+void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
 {
-	// TODO
-	return pos;
+	float checkDistance = voxelSize * PROB_CAPTURE_OFFSET_MAXSIZE;
+
+	BoundingBox probBox;
+	probBox.Center = pos;
+	probBox.Extents = Vector3(checkDistance);
+
+	Vector3 origin;
+	float maxDist = 0.0f;
+	int32_t dirID = -1;
+
+	for (auto& i : staticScene)
+	{
+		if (i.bbox.Intersects(probBox))
+		{
+			for(int32_t k = 0; k < (int32_t)probOffsetsArray.size(); k++)
+			{
+				origin = pos + probOffsetsArray[k] * checkDistance;
+				float dist = MeshMgr::MeshRayIntersect(i.meshID, i.transform, origin, -probOffsetsArray[k], checkDistance, TriClipping::TC_FRONT);
+			
+				if (dist != 0.0f && dist > maxDist)
+				{
+					maxDist = dist;
+					dirID = k;
+				}
+			}
+		}
+	}
+
+	if (dirID < 0)
+		return;
+
+	pos += probOffsetsArray[dirID] * (checkDistance - maxDist + PROB_CAPTURE_NEARCLIP * 1.5f);
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
@@ -959,7 +987,7 @@ void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 			gpuData->targetAdresses[0].w = (float)prob.adresses.size();
 
 			gpuData->pos = Vector4(prob.pos.x, prob.pos.y, prob.pos.z, 0.0f);
-			gpuData->offset = Vector4(interpProb.offset.x, interpProb.offset.y, interpProb.offset.z, 0.0f);
+			gpuData->offset = Vector4(interpProb.lerpOffset.x, interpProb.lerpOffset.y, interpProb.lerpOffset.z, 0.0f);
 		}
 
 		if (interpolationDataGPU.empty())
@@ -1017,11 +1045,31 @@ Vector3 GIMgr::GetOutterVectorFromNeighbors(uint8_t flags)
 		{
 			res = heighborsDirs[i];
 			res.Normalize();
-			res *= voxelSize * PROB_OFFSET_SIZE;
+			res *= voxelSize * PROB_INTERPOLATION_OFFSET_SIZE;
 			break;
 		}
 	}
 	return res;
+}
+
+void GIMgr::GenerateProbOffsetVectors()
+{
+	probOffsetsArray.clear();
+	probOffsetsArray.create(PROB_CAPTURE_OFFSET_VECTORS);
+
+	float inc = XM_PI * (3.0f - sqrtf(5.0f));
+	float off = 2.0f / PROB_CAPTURE_OFFSET_VECTORS;
+	for (uint32_t k = 0; k < PROB_CAPTURE_OFFSET_VECTORS; ++k)
+	{
+		float y = k * off - 1.0f + (off / 2.0f);
+		float r = sqrtf(1.0f - y * y);
+		float phi = k * inc;
+
+		Vector3 dir = Vector3(cosf(phi) * r, sinf(phi) * r, y);
+		dir.Normalize();
+
+		probOffsetsArray.push_back(dir);
+	}
 }
 
 uint8_t GIMgr::GetNeighborFlag(int32_t i)

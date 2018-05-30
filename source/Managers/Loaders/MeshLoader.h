@@ -190,11 +190,7 @@ namespace EngineCore
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);
 		void loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, 
 			unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, Vector3& posMin, Vector3& posMax, float& vertexOffset);
-
-#ifdef _EDITOR
-		bool MeshBoxOverlap(MeshData* mesh, Matrix& transform, BoundingBox& bbox);
-#endif
-
+		
 		inline uint32_t GetVertexSize(MeshVertexFormat format)
 		{
 			switch (format)

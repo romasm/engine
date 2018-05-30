@@ -616,7 +616,7 @@ if (x1>maxV) maxV = x1; \
 if (x2<minV) minV = x2; \
 if (x2>maxV) maxV = x2;
 
-inline bool TriBoxOverlap(BoundingBox& bbox, Vector3 vertecies[3])
+inline bool TriBoxOverlap(const BoundingBox& bbox, Vector3 vertecies[3])
 {
 	float minV, maxV, p0, p1, p2, rad;
 
@@ -675,4 +675,28 @@ inline bool TriBoxOverlap(BoundingBox& bbox, Vector3 vertecies[3])
 		return false;
 
 	return true;
+}
+
+// 0.0f - no intersection
+inline float TriRayIntersect(const Vector3& origin, const Vector3& dir, Vector3 vertecies[3], bool& isFront)
+{
+	isFront = false;
+
+	float dist;
+	XMVECTOR dirV = dir;
+	XMVECTOR v0 = vertecies[0];
+	XMVECTOR v1 = vertecies[1];
+	XMVECTOR v2 = vertecies[2];
+
+	bool isIntersect = TriangleTests::Intersects(XMVECTOR(origin), dirV, v0, v1, v2, dist);
+
+	if (!isIntersect)
+		return 0.0f;
+
+	XMVECTOR normalInv = XMVector3Cross(XMVectorSubtract(v1, v0), XMVectorSubtract(v2, v0));
+
+	if (XMVectorGetX(XMVector3Dot(normalInv, dir)) < 0.0)
+		isFront = true;
+	
+	return dist;
 }

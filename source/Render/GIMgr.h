@@ -9,13 +9,15 @@
 #define OCTREE_DEPTH 7
 #define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
 #define OCTREE_INTERSECT_TOLERANCE 0.5f
-#define PROB_OFFSET_SIZE 0.0001f
+#define PROB_INTERPOLATION_OFFSET_SIZE 0.0001f
 
 #define BRICK_RESOLUTION 3
 #define BRICK_COEF_COUNT 9
 
 #define PROB_CAPTURE_NEARCLIP 0.01f
 #define PROB_CAPTURE_FARCLIP 10000.0f
+#define PROB_CAPTURE_OFFSET_VECTORS 12
+#define PROB_CAPTURE_OFFSET_MAXSIZE 0.89f
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
@@ -110,7 +112,7 @@ namespace EngineCore
 	{
 		int32_t probID;
 		uint8_t minDepth;
-		Vector3 offset;
+		Vector3 lerpOffset;
 	};
 
 	struct ProbInterpolationGPU
@@ -184,11 +186,13 @@ namespace EngineCore
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
-		Vector3 AdjustProbPos(Vector3& pos);
+		void AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos);
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		uint8_t GetNeighborFlag(int32_t i);
 		Vector3 GetOutterVectorFromNeighbors(uint8_t flags);
 		void CopyBricks();
+
+		void GenerateProbOffsetVectors();
 
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
@@ -210,6 +214,8 @@ namespace EngineCore
 		// global temp data
 		unordered_map<uint64_t, uint32_t> probesLookup;
 		DArray<uint32_t> bricksLinks;
+
+		RArray<Vector3> probOffsetsArray;
 
 #ifdef _DEV
 

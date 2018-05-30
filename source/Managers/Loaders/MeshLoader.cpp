@@ -1495,30 +1495,3 @@ void MeshLoader::loadVerticesSkinnedLit(uint8_t* data, uint32_t count, uint32_t 
 		offset += vertexSize;
 	}
 }
-
-#ifdef _EDITOR
-bool MeshLoader::MeshBoxOverlap(MeshData* mesh, Matrix& transform, BoundingBox& bbox)
-{
-	Vector3 triVertecies[3];
-	for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
-	{
-		uint8_t* verts = mesh->vertices[i];
-		uint32_t* inds = mesh->indices[i];
-
-		for (uint32_t k = 0; k < (uint32_t)mesh->indexBuffers[i].count; k += 3)
-		{
-			triVertecies[0] = GetVertexPos(verts, inds[k], mesh->vertexFormat);
-			triVertecies[1] = GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
-			triVertecies[2] = GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
-
-			Vector3::Transform(triVertecies[0], transform, triVertecies[0]);
-			Vector3::Transform(triVertecies[1], transform, triVertecies[1]);
-			Vector3::Transform(triVertecies[2], transform, triVertecies[2]);
-
-			if (TriBoxOverlap(bbox, triVertecies))
-				return true;
-		}
-	}
-	return false;
-}
-#endif

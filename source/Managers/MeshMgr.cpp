@@ -30,3 +30,81 @@ void MeshMgr::OnLoad(uint32_t id, MeshData* data, ImportInfo& info, uint32_t& da
 	mesh_reloaded[id] = resource_array[id].refcount;
 #endif
 }
+
+#ifdef _EDITOR
+bool MeshMgr::MeshBoxOverlap(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox)
+{
+	auto mesh = MeshMgr::GetResourcePtr(meshID);
+	if (!mesh)
+		return false;
+
+	Vector3 triVertecies[3];
+	for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
+	{
+		uint8_t* verts = mesh->vertices[i];
+		uint32_t* inds = mesh->indices[i];
+
+		for (uint32_t k = 0; k < (uint32_t)mesh->indexBuffers[i].count; k += 3)
+		{
+			triVertecies[0] = MeshLoader::GetVertexPos(verts, inds[k], mesh->vertexFormat);
+			triVertecies[1] = MeshLoader::GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
+			triVertecies[2] = MeshLoader::GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
+
+			Vector3::Transform(triVertecies[0], transform, triVertecies[0]);
+			Vector3::Transform(triVertecies[1], transform, triVertecies[1]);
+			Vector3::Transform(triVertecies[2], transform, triVertecies[2]);
+
+			if (TriBoxOverlap(bbox, triVertecies))
+				return true;
+		}
+	}
+	return false;
+}
+
+float MeshMgr::MeshRayIntersect(uint32_t meshID, const Matrix& transform, const Vector3& origin, const Vector3& dirNormal, float maxDist, TriClipping triClipping)
+{
+	auto mesh = MeshMgr::GetResourcePtr(meshID);
+	if (!mesh)
+		return 0.0f;
+
+	float minDist = 99999990000.0f;
+	bool isIntersect = false;
+
+	Vector3 triVertecies[3];
+	for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
+	{
+		uint8_t* verts = mesh->vertices[i];
+		uint32_t* inds = mesh->indices[i];
+
+		for (uint32_t k = 0; k < (uint32_t)mesh->indexBuffers[i].count; k += 3)
+		{
+			triVertecies[0] = MeshLoader::GetVertexPos(verts, inds[k], mesh->vertexFormat);
+			triVertecies[1] = MeshLoader::GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
+			triVertecies[2] = MeshLoader::GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
+
+			Vector3::Transform(triVertecies[0], transform, triVertecies[0]);
+			Vector3::Transform(triVertecies[1], transform, triVertecies[1]);
+			Vector3::Transform(triVertecies[2], transform, triVertecies[2]);
+
+			bool isFront;
+			float dist = TriRayIntersect(origin, dirNormal, triVertecies, isFront);
+
+			if (dist == 0.0f || dist >= maxDist)
+				continue;
+
+			if (triClipping == TriClipping::TC_BOTH ||
+				(triClipping == TriClipping::TC_FRONT && isFront) ||
+				(triClipping == TriClipping::TC_BACK && !isFront))
+			{
+				minDist = min(minDist, dist);
+				isIntersect = true;
+			}
+		}
+	}
+
+	if (!isIntersect)
+		return 0.0f;
+
+	return minDist;
+}
+#endif
