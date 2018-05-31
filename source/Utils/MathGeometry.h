@@ -693,9 +693,9 @@ inline float TriRayIntersect(const Vector3& origin, const Vector3& dir, Vector3 
 	if (!isIntersect)
 		return 0.0f;
 
-	XMVECTOR normalInv = XMVector3Cross(XMVectorSubtract(v1, v0), XMVectorSubtract(v2, v0));
+	XMVECTOR normal = XMVector3Cross(XMVectorSubtract(v1, v0), XMVectorSubtract(v2, v0));
 
-	if (XMVectorGetX(XMVector3Dot(normalInv, dir)) < 0.0)
+	if (XMVectorGetX(XMVector3Dot(normal, dir)) < 0.0)
 		isFront = true;
 	
 	return dist;

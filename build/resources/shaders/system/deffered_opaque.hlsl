@@ -93,7 +93,7 @@ cbuffer giData : register(b3)
 #include "../common/ibl_helpers.hlsl"           
   
 // TEMP       
-#define TEMP_FAST_COMPILE     
+//#define TEMP_FAST_COMPILE     
    
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   

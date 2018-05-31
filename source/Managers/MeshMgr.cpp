@@ -61,7 +61,7 @@ bool MeshMgr::MeshBoxOverlap(uint32_t meshID, const Matrix& transform, const Bou
 	return false;
 }
 
-float MeshMgr::MeshRayIntersect(uint32_t meshID, const Matrix& transform, const Vector3& origin, const Vector3& dirNormal, float maxDist, TriClipping triClipping)
+float MeshMgr::MeshRayIntersect(uint32_t meshID, const Matrix& transform, const Vector3& origin, const Vector3& dirNormal, float maxDist, TriClipping triClipping, bool& isFront)
 {
 	auto mesh = MeshMgr::GetResourcePtr(meshID);
 	if (!mesh)
@@ -86,17 +86,21 @@ float MeshMgr::MeshRayIntersect(uint32_t meshID, const Matrix& transform, const 
 			Vector3::Transform(triVertecies[1], transform, triVertecies[1]);
 			Vector3::Transform(triVertecies[2], transform, triVertecies[2]);
 
-			bool isFront;
-			float dist = TriRayIntersect(origin, dirNormal, triVertecies, isFront);
+			bool isFrontTri;
+			float dist = TriRayIntersect(origin, dirNormal, triVertecies, isFrontTri);
 
 			if (dist == 0.0f || dist >= maxDist)
 				continue;
 
 			if (triClipping == TriClipping::TC_BOTH ||
-				(triClipping == TriClipping::TC_FRONT && isFront) ||
-				(triClipping == TriClipping::TC_BACK && !isFront))
+				(triClipping == TriClipping::TC_FRONT && isFrontTri) ||
+				(triClipping == TriClipping::TC_BACK && !isFrontTri))
 			{
-				minDist = min(minDist, dist);
+				if (dist < minDist)
+				{
+					minDist = dist;
+					isFront = isFrontTri;
+				}
 				isIntersect = true;
 			}
 		}

@@ -661,7 +661,12 @@ bool GIMgr::BuildVoxelOctree()
 
 		if (prob.bake)
 		{
-			AdjustProbPos(staticScene, prob.pos);
+			if (prob.geomCloseProbe)
+			{
+				int32_t offsetsIter = 0;
+				while (AdjustProbPos(staticScene, prob.pos) && offsetsIter < PROB_CAPTURE_OFFSETS_ITERATIONS)
+					offsetsIter++;
+			}
 		}
 		else
 		{
@@ -674,7 +679,7 @@ bool GIMgr::BuildVoxelOctree()
 	}
 
 	// baking
-	const int32_t captureResolution = 64;
+	const int32_t captureResolution = 256;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
@@ -896,6 +901,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				prob.adresses.destroy();
 				prob.minDepth = newBrick.depth;
 				prob.neighborFlags = GetNeighborFlag(i);
+				prob.geomCloseProbe = (octreeDepth == 0);
 
 				probesLookup.insert(make_pair(posForHash, probID));
 				newBrick.probes[i] = probID;
@@ -907,22 +913,28 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 				Prob& prob = probesArray[probIt->second];
 				prob.neighborFlags = (prob.neighborFlags | GetNeighborFlag(i));
 				prob.minDepth = min(prob.minDepth, (uint8_t)newBrick.depth);
+				prob.geomCloseProbe = prob.geomCloseProbe || (octreeDepth == 0);
 			}
 		}
 	}
 }
 
-void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
+bool GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
 {
 	float checkDistance = voxelSize * PROB_CAPTURE_OFFSET_MAXSIZE;
+	const float nearClipOffset = PROB_CAPTURE_NEARCLIP * 1.5f;
+	const float posBackOffset = 0.0001f;
 
 	BoundingBox probBox;
 	probBox.Center = pos;
 	probBox.Extents = Vector3(checkDistance);
 
 	Vector3 origin;
-	float maxDist = 0.0f;
+	bool isFront = false;
+
+	float minDist = 999999900000.0f;
 	int32_t dirID = -1;
+	bool isOffseted = false;
 
 	for (auto& i : staticScene)
 	{
@@ -930,22 +942,35 @@ void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
 		{
 			for(int32_t k = 0; k < (int32_t)probOffsetsArray.size(); k++)
 			{
-				origin = pos + probOffsetsArray[k] * checkDistance;
-				float dist = MeshMgr::MeshRayIntersect(i.meshID, i.transform, origin, -probOffsetsArray[k], checkDistance, TriClipping::TC_FRONT);
+				origin = pos - probOffsetsArray[k] * posBackOffset;
+				float dist = MeshMgr::MeshRayIntersect(i.meshID, i.transform, origin, probOffsetsArray[k], checkDistance, TriClipping::TC_BOTH, isFront);
 			
-				if (dist != 0.0f && dist > maxDist)
+				if (!isFront)
 				{
-					maxDist = dist;
-					dirID = k;
+					if (dist != 0.0f && dist < minDist)
+					{
+						minDist = dist;
+						dirID = k;
+						isOffseted = true;
+					}
+				}
+				else
+				{
+					float frontOffset = nearClipOffset - (dist - posBackOffset);
+					if (dist != 0.0f && frontOffset > 0.0f)
+					{
+						pos -= probOffsetsArray[k] * frontOffset;
+						isOffseted = true;
+					}
 				}
 			}
 		}
 	}
 
-	if (dirID < 0)
-		return;
+	if (dirID >= 0)
+		pos += probOffsetsArray[dirID] * (minDist - posBackOffset + nearClipOffset);
 
-	pos += probOffsetsArray[dirID] * (checkDistance - maxDist + PROB_CAPTURE_NEARCLIP * 1.5f);
+	return isOffseted;
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
