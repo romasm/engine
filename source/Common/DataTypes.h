@@ -150,6 +150,12 @@ struct BBox
 	};
 };
 
+struct BoxCornerSize
+{
+	Vector3 corner;
+	Vector3 size;
+};
+
 // -------------------------------------
 
 struct StmMatrixBuffer
@@ -217,8 +223,19 @@ struct Vector3Uint32
 	uint32_t z;
 
 	Vector3Uint32() : x(0), y(0), z(0) {}
-
 	Vector3Uint32(uint32_t xx, uint32_t yy, uint32_t zz) : x(xx), y(yy), z(zz) {}
+	Vector3Uint32(Vector3 v) : x((uint32_t)v.x), y((uint32_t)v.y), z((uint32_t)v.z) {}
+};
+
+struct Vector3Int32
+{
+	int32_t x;
+	int32_t y;
+	int32_t z;
+
+	Vector3Int32() : x(0), y(0), z(0) {}
+	Vector3Int32(int32_t xx, int32_t yy, int32_t zz) : x(xx), y(yy), z(zz) {}
+	Vector3Int32(Vector3 v) : x((int32_t)v.x), y((int32_t)v.y), z((int32_t)v.z) {}
 };
 
 struct Vector4Uint16
@@ -229,6 +246,125 @@ struct Vector4Uint16
 	uint16_t w;
 
 	Vector4Uint16() : x(0), y(0), z(0), w(0) {}
-
 	Vector4Uint16(uint16_t xx, uint16_t yy, uint16_t zz, uint16_t ww) : x(xx), y(yy), z(zz), w(ww) {}
 };
+
+static const uint8_t voxelGrowFlags[26] =
+{
+	0b00010101,
+	0b00000101,
+	0b00100101,
+	0b00010001,
+	0b00000001,
+	0b00100001,
+	0b00011001,
+	0b00001001,
+	0b00101001,
+
+	0b00010100,
+	0b00000100,
+	0b00100100,
+	0b00010000,
+	0b00100000,
+	0b00011000,
+	0b00001000,
+	0b00101000,
+
+	0b00010110,
+	0b00000110,
+	0b00100110,
+	0b00010010,
+	0b00000010,
+	0b00100010,
+	0b00011010,
+	0b00001010,
+	0b00101010
+};
+
+static const Vector3Int32 voxelGrowDirs[26] =
+{
+	{ -1, -1, -1 },
+	{ 0, -1, -1 },
+	{ 1, -1, -1 },
+	{ -1, 0, -1 },
+	{ 0, 0, -1 },
+	{ 1, 0, -1 },
+	{ -1, 1, -1 },
+	{ 0, 1, -1 },
+	{ 1, 1, -1 },
+
+	{ -1, -1, 0 },
+	{ 0, -1, 0 },
+	{ 1, -1, 0 },
+	{ -1, 0, 0 },
+	{ 1, 0, 0 },
+	{ -1, 1, 0 },
+	{ 0, 1, 0 },
+	{ 1, 1, 0 },
+
+	{ -1, -1, 1 },
+	{ 0, -1, 1 },
+	{ 1, -1, 1 },
+	{ -1, 0, 1 },
+	{ 0, 0, 1 },
+	{ 1, 0, 1 },
+	{ -1, 1, 1 },
+	{ 0, 1, 1 },
+	{ 1, 1, 1 }
+};
+
+template<uint32_t RES>
+class VoxelizedCube
+{
+public:
+	static const uint32_t resolution;
+	// x, y, z
+	uint8_t voxels[RES][RES][RES];
+	// 00 x+ x- y+ y- z+ z-
+
+	bool empty;
+
+	void Clear()
+	{
+		empty = true;
+		for (int32_t x = 0; x < RES; x++)
+			for (int32_t y = 0; y < RES; y++)
+				for (int32_t z = 0; z < RES; z++)
+					voxels[x][y][z] = 0;
+	}
+
+	void Grow()
+	{
+		for (int32_t i = 0; i < RES - 1; i++)
+		{
+			for (int32_t x = 0; x < RES; x++)
+				for (int32_t y = 0; y < RES; y++)
+					for (int32_t z = 0; z < RES; z++)
+					{
+						uint8_t value = voxels[x][y][z];
+
+						for (int32_t k = 0; k < 26; k++)
+						{
+							const Vector3Int32& dir = voxelGrowDirs[k];
+							int32_t nextX = x + dir.x;
+							int32_t nextY = y + dir.y;
+							int32_t nextZ = z + dir.z;
+
+							if (nextX < 0 || nextX >= RES ||
+								nextY < 0 || nextY >= RES ||
+								nextZ < 0 || nextZ >= RES)
+								continue;
+
+							uint8_t& nextValue = voxels[nextX][nextY][nextZ];
+
+							if ((value & voxelGrowFlags[k]) == voxelGrowFlags[k] &&
+								(value & (~voxelGrowFlags[k])) == 0 && (nextValue & (~voxelGrowFlags[k])) == 0)
+								nextValue |= value;
+						}
+					}
+		}
+	}
+};
+
+template<uint32_t RES>
+const uint32_t VoxelizedCube<RES>::resolution = RES;

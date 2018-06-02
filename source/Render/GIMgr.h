@@ -20,6 +20,8 @@
 #define PROB_CAPTURE_OFFSET_MAXSIZE 0.99f
 #define PROB_CAPTURE_OFFSETS_ITERATIONS 3
 
+#define PROB_CAPTURE_OFFSET_VOXEL_RES 11
+
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
 #define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
@@ -85,12 +87,6 @@ namespace EngineCore
 		{
 			_DELETE_ARRAY(lookup);
 		}
-	};
-
-	struct BoxCornerSize
-	{
-		Vector3 corner;
-		Vector3 size;
 	};
 
 	struct Brick
@@ -188,7 +184,10 @@ namespace EngineCore
 		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
 		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
-		bool AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos);
+
+		template<class voxelGrid>
+		void AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos, voxelGrid& voxels);
+		
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		uint8_t GetNeighborFlag(int32_t i);
 		Vector3 GetOutterVectorFromNeighbors(uint8_t flags);

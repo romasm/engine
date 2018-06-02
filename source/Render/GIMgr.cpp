@@ -633,6 +633,8 @@ bool GIMgr::BuildVoxelOctree()
 	RArray<ProbInterpolation> interpolationArray;
 	interpolationArray.create(probesArray.size());
 
+	VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCube;
+
 	for (int32_t i = 0; i < (int32_t)probesArray.size(); i++)
 	{
 		auto& prob = probesArray[i];
@@ -663,9 +665,10 @@ bool GIMgr::BuildVoxelOctree()
 		{
 			if (prob.geomCloseProbe)
 			{
-				int32_t offsetsIter = 0;
+				AdjustProbPos(staticScene, prob.pos, voxelsCube);
+				/*int32_t offsetsIter = 0;
 				while (AdjustProbPos(staticScene, prob.pos) && offsetsIter < PROB_CAPTURE_OFFSETS_ITERATIONS)
-					offsetsIter++;
+					offsetsIter++;*/
 			}
 		}
 		else
@@ -919,9 +922,54 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 	}
 }
 
-bool GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
+template<class voxelGrid>
+void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos, voxelGrid& voxels)
 {
-	float checkDistance = voxelSize * PROB_CAPTURE_OFFSET_MAXSIZE;
+	voxels.Clear();
+
+	BoundingBox voxelsBox;
+	voxelsBox.Center = pos;
+	voxelsBox.Extents = Vector3(voxelSize + voxelSize / voxels.resolution);
+
+	for (auto& i : staticScene)
+	{
+		if (i.bbox.Intersects(voxelsBox))
+			MeshMgr::MeshVoxelize(i.meshID, i.transform, voxelsBox, voxels);
+	}
+	
+	if (voxels.empty)
+		return;
+
+	voxels.Grow();
+
+	int32_t centerVoxel = voxels.resolution / 2;
+	int32_t minOffsetSq = 3 * voxels.resolution * voxels.resolution;
+	Vector3Int32 offset(0, 0, 0);
+
+	for (int32_t x = 0; x < (int32_t)voxels.resolution; x++)
+		for (int32_t y = 0; y < (int32_t)voxels.resolution; y++)
+			for (int32_t z = 0; z < (int32_t)voxels.resolution; z++)
+			{
+				if (voxels.voxels[x][y][z] != 0)
+					continue;
+
+				int32_t xOffset = x - centerVoxel;
+				int32_t yOffset = y - centerVoxel;
+				int32_t zOffset = z - centerVoxel;
+
+				int32_t offsetSq = xOffset * xOffset + yOffset * yOffset + zOffset * zOffset;
+				if (offsetSq < minOffsetSq)
+				{
+					minOffsetSq = offsetSq;
+					offset.x = xOffset;
+					offset.y = yOffset;
+					offset.z = zOffset;
+				}
+			}
+
+	pos += voxelsBox.Extents * Vector3((float)offset.x, (float)offset.y, (float)offset.z) * (2.0f / voxels.resolution);
+
+/*	float checkDistance = voxelSize * PROB_CAPTURE_OFFSET_MAXSIZE;
 	const float nearClipOffset = PROB_CAPTURE_NEARCLIP * 1.5f;
 	const float posBackOffset = 0.0001f;
 
@@ -970,7 +1018,7 @@ bool GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos)
 	if (dirID >= 0)
 		pos += probOffsetsArray[dirID] * (minDist - posBackOffset + nearClipOffset);
 
-	return isOffseted;
+	return isOffseted;*/
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
