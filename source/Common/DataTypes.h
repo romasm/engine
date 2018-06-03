@@ -281,6 +281,38 @@ static const uint8_t voxelGrowFlags[26] =
 	0b00101010
 };
 
+static const uint8_t voxelGrowFlagsInv[26] =
+{
+	0b00101010,
+	0b00001010,
+	0b00011010,
+	0b00100010,
+	0b00000010,
+	0b00010010,
+	0b00100110,
+	0b00000110,
+	0b00010110,
+
+	0b00101000,
+	0b00001000,
+	0b00011000,
+	0b00100000,
+	0b00010000,
+	0b00100100,
+	0b00000100,
+	0b00010100,
+
+	0b00101001,
+	0b00001001,
+	0b00011001,
+	0b00100001,
+	0b00000001,
+	0b00010001,
+	0b00100101,
+	0b00000101,
+	0b00010101
+};
+
 static const Vector3Int32 voxelGrowDirs[26] =
 {
 	{ -1, -1, -1 },
@@ -318,7 +350,7 @@ class VoxelizedCube
 {
 public:
 	static const uint32_t resolution;
-	// x, y, z
+	// inverse normal: x, y, z
 	uint8_t voxels[RES][RES][RES];
 	// 00 x+ x- y+ y- z+ z-
 
@@ -342,6 +374,8 @@ public:
 					for (int32_t z = 0; z < RES; z++)
 					{
 						uint8_t value = voxels[x][y][z];
+						if (value == 0)
+							continue;
 
 						for (int32_t k = 0; k < 26; k++)
 						{
@@ -357,8 +391,8 @@ public:
 
 							uint8_t& nextValue = voxels[nextX][nextY][nextZ];
 
-							if ((value & voxelGrowFlags[k]) == voxelGrowFlags[k] &&
-								(value & (~voxelGrowFlags[k])) == 0 && (nextValue & (~voxelGrowFlags[k])) == 0)
+							if ((value & voxelGrowFlags[k]) > 0 /*== voxelGrowFlags[k]*/ &&
+								(value & (voxelGrowFlagsInv[k])) == 0 && (nextValue & (voxelGrowFlagsInv[k])) == 0)
 								nextValue |= value;
 						}
 					}

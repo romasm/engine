@@ -12,6 +12,20 @@ namespace EngineCore
 		TC_FRONT,
 		TC_BACK
 	};
+
+	static const int32_t voxelizationVectorIDs[3][2] = 
+	{
+		{ 0, 1 },
+		{ 0, 2 },
+		{ 1, 2 }
+	};
+
+	static const float voxelizationVectorMuls[3][2] =
+	{
+		{ -1.0f, -1.0f },
+		{ 1.0f, -1.0f },
+		{ 1.0f, 1.0f }
+	};
 	
 	class SkeletonMgr : public BaseMgr<SkeletonData, RESOURCE_MAX_COUNT>
 	{
@@ -66,24 +80,24 @@ namespace EngineCore
 
 		static bool MeshBoxOverlap(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox);
 		static float MeshRayIntersect(uint32_t meshID, const Matrix& transform, const Vector3& origin, const Vector3& dirNormal, float maxDist, TriClipping triClipping, bool& isFront);
-	
-		#define VOXELIZE_TRI(XX,YY,ZZ)\
-			{int32_t minX = min(triVerteciesInt[0].XX, min(triVerteciesInt[1].XX, triVerteciesInt[2].XX));\
-			int32_t minY = min(triVerteciesInt[0].YY, min(triVerteciesInt[1].YY, triVerteciesInt[2].YY));\
-			int32_t maxX = max(triVerteciesInt[0].XX, max(triVerteciesInt[1].XX, triVerteciesInt[2].XX));\
-			int32_t maxY = max(triVerteciesInt[0].YY, max(triVerteciesInt[1].YY, triVerteciesInt[2].YY));\
+
+#define VOXELIZE_TRI(XX,YY,ZZ)\
+			{int32_t minX = (int32_t)(min(triVerteciesLocal[0].XX, min(triVerteciesLocal[1].XX, triVerteciesLocal[2].XX)));\
+			int32_t minY = (int32_t)(min(triVerteciesLocal[0].YY, min(triVerteciesLocal[1].YY, triVerteciesLocal[2].YY)));\
+			int32_t maxX = (int32_t)(max(triVerteciesLocal[0].XX, max(triVerteciesLocal[1].XX, triVerteciesLocal[2].XX)));\
+			int32_t maxY = (int32_t)(max(triVerteciesLocal[0].YY, max(triVerteciesLocal[1].YY, triVerteciesLocal[2].YY)));\
 			for (int32_t XX = max(0, minX); XX < min((int32_t)voxels.resolution, maxX + 1); XX++)\
 			for (int32_t YY = max(0, minY); YY < min((int32_t)voxels.resolution, maxY + 1); YY++){\
-				Vector3 vs0(float(triVerteciesInt[2].XX - triVerteciesInt[0].XX), float(triVerteciesInt[1].XX - triVerteciesInt[0].XX), float(triVerteciesInt[0].XX - XX));\
-				Vector3 vs1(float(triVerteciesInt[2].YY - triVerteciesInt[0].YY), float(triVerteciesInt[1].YY - triVerteciesInt[0].YY), float(triVerteciesInt[0].YY - YY));\
+				Vector3 vs0(triVerteciesLocal[2].XX - triVerteciesLocal[0].XX, triVerteciesLocal[1].XX - triVerteciesLocal[0].XX, triVerteciesLocal[0].XX - (float)XX);\
+				Vector3 vs1(triVerteciesLocal[2].YY - triVerteciesLocal[0].YY, triVerteciesLocal[1].YY - triVerteciesLocal[0].YY, triVerteciesLocal[0].YY - (float)YY);\
 				Vector3 u = vs0.Cross(vs1);\
 				if (abs(u.z) < 1.0f) continue;\
 				Vector3 barycentric(1.0f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);\
 				if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) continue;\
-				float depth = triVerteciesInt[0].ZZ * barycentric.x + triVerteciesInt[1].ZZ * barycentric.y + triVerteciesInt[2].ZZ * barycentric.z;\
-				int32_t ZZ = int32_t(depth);\
+				float depth = triVerteciesLocal[0].ZZ * barycentric.x + triVerteciesLocal[1].ZZ * barycentric.y + triVerteciesLocal[2].ZZ * barycentric.z;\
+				int32_t ZZ = int32_t(roundf(depth));\
 				if (ZZ < 0 || ZZ >= (int32_t)voxels.resolution) continue;\
-				voxels.voxels[x][y][z] |= voxelValue; voxels.empty = false;}}\
+				voxels.voxels[x][y][z] |= voxelValue; voxels.empty = false;}}
 
 		template<class voxelGrid>
 		static void MeshVoxelize(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox, voxelGrid& voxels)
@@ -93,10 +107,13 @@ namespace EngineCore
 				return;
 
 			Vector3 bboxCorner = bbox.Center - bbox.Extents;
-			Vector3 bboxSizeInv = Vector3(1.0f) / (2.0f * bbox.Extents);
+			Vector3 bboxSizeInv = Vector3((float)voxels.resolution) / (2.0f * bbox.Extents);
+			Vector3 offsetSize = Vector3(1.0f) / bboxSizeInv * 0.0f;
+			Vector3 offsetNormalSize = Vector3(1.0f) / bboxSizeInv * 0.25f;
 
 			Vector3 triVertecies[3];
-			Vector3Int32 triVerteciesInt[3];
+			Vector3 triVerteciesLocal[3];
+			Vector3 triVect[3];
 			for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
 			{
 				uint8_t* verts = mesh->vertices[i];
@@ -114,58 +131,44 @@ namespace EngineCore
 					if (!TriBoxOverlap(bbox, triVertecies))
 						continue;
 
-					Vector3 triVect0 = triVertecies[1] - triVertecies[0];
-					Vector3 triVect1 = triVertecies[2] - triVertecies[0];
-					Vector3 normal = triVect0.Cross(triVect1);
+					triVect[0] = triVertecies[1] - triVertecies[0];
+					triVect[1] = triVertecies[2] - triVertecies[0];
+					triVect[2] = triVertecies[2] - triVertecies[1];
+					for (int32_t h = 0; h < 3; h++)
+						triVect[h].Normalize();
+
+					Vector3 normal = triVect[0].Cross(triVect[1]);
+					normal.Normalize();
 
 					uint8_t voxelValue = 0;
 					if (normal.x != 0)
-						voxelValue |= normal.x > 0 ? 0b00100000 : 0b00010000;
+						voxelValue |= normal.x < 0 ? 0b00100000 : 0b00010000;
 					if (normal.y != 0)
-						voxelValue |= normal.y > 0 ? 0b00001000 : 0b00000100;
+						voxelValue |= normal.y < 0 ? 0b00001000 : 0b00000100;
 					if (normal.z != 0)
-						voxelValue |= normal.z > 0 ? 0b00000010 : 0b00000001;
+						voxelValue |= normal.z < 0 ? 0b00000010 : 0b00000001;
 
 					for (int32_t h = 0; h < 3; h++)
-						triVerteciesInt[h] = Vector3Int32((float)voxels.resolution * (triVertecies[h] - bboxCorner) * bboxSizeInv);
+					{
+						Vector3 vertexOffset = triVect[voxelizationVectorIDs[h][0]] * voxelizationVectorMuls[h][0] +
+							triVect[voxelizationVectorIDs[h][1]] * voxelizationVectorMuls[h][1];
+						vertexOffset.Normalize();
 
-					float maxNormal = max(normal.x, max(normal.y, normal.z));
-					if (maxNormal == normal.z)
+						triVerteciesLocal[h] = (triVertecies[h]/* + (vertexOffset * offsetSize + normal * offsetNormalSize)*/ - bboxCorner) * bboxSizeInv;
+						triVerteciesLocal[h].x = floorf(triVerteciesLocal[h].x);
+						triVerteciesLocal[h].y = floorf(triVerteciesLocal[h].y);
+						triVerteciesLocal[h].z = floorf(triVerteciesLocal[h].z);
+					}
+					
+					Vector3 normalAbs(abs(normal.x), abs(normal.y), abs(normal.z));
+
+					float maxNormal = max(normalAbs.x, max(normalAbs.y, normalAbs.z));
+					if (maxNormal == normalAbs.z)
 						VOXELIZE_TRI(x, y, z)
-					else if (maxNormal == normal.y)
+					else if (maxNormal == normalAbs.y)
 						VOXELIZE_TRI(x, z, y)
 					else
 						VOXELIZE_TRI(y, z, x)
-
-						/*int32_t minX = min(triVerteciesInt[0].x, min(triVerteciesInt[1].x, triVerteciesInt[2].x));
-						int32_t minY = min(triVerteciesInt[0].y, min(triVerteciesInt[1].y, triVerteciesInt[2].y));
-						int32_t maxX = max(triVerteciesInt[0].x, max(triVerteciesInt[1].x, triVerteciesInt[2].x));
-						int32_t maxY = max(triVerteciesInt[0].y, max(triVerteciesInt[1].y, triVerteciesInt[2].y));
-
-						for (int32_t x = max(0, minX); x < min((int32_t)voxels.resolution, maxX + 1); x++)
-						{
-						for (int32_t y = max(0, minY); y < min((int32_t)voxels.resolution, maxY + 1); y++)
-						{
-						Vector3 vs0(float(triVerteciesInt[2].x - triVerteciesInt[0].x), float(triVerteciesInt[1].x - triVerteciesInt[0].x), float(triVerteciesInt[0].x - x));
-						Vector3 vs1(float(triVerteciesInt[2].y - triVerteciesInt[0].y), float(triVerteciesInt[1].y - triVerteciesInt[0].y), float(triVerteciesInt[0].y - y));
-
-						Vector3 u = vs0.Cross(vs1);
-						if (abs(u.z) < 1.0f)
-						continue;
-
-						Vector3 barycentric(1.0f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
-						if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0)
-						continue;
-
-						float depth = triVerteciesInt[0].z * barycentric.x + triVerteciesInt[1].z * barycentric.y + triVerteciesInt[2].z * barycentric.z;
-
-						int32_t z = int32_t(normal.z > 0 ? ceilf(depth) : floor(depth));
-						if (z < 0 || z >= voxels.resolution)
-						continue;
-
-						voxels.voxels[x][y][z] |= voxelValue;
-						}
-						}*/
 				}
 			}
 		}

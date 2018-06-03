@@ -45,6 +45,7 @@ GIMgr::GIMgr(BaseWorld* wrd)
 #ifdef _DEV
 	debugGeomHandleOctree = -1;
 	debugGeomHandleProbes = -1;
+	debugGeomHandleVoxel = -1;
 #endif
 
  	if(!InitBuffers())
@@ -61,6 +62,7 @@ GIMgr::~GIMgr()
 	{
 		dbg->DeleteGeometryHandle(debugGeomHandleOctree);
 		dbg->DeleteGeometryHandle(debugGeomHandleProbes);
+		dbg->DeleteGeometryHandle(debugGeomHandleVoxel);
 	}
 #endif
 
@@ -466,6 +468,7 @@ bool GIMgr::BuildVoxelOctree()
 	chunks.destroy();
 	bricks.destroy();
 	probesArray.destroy();
+	staticScene.destroy();
 	
 	// collect static geometry
 	auto transformSys = world->GetTransformSystem();
@@ -473,7 +476,6 @@ bool GIMgr::BuildVoxelOctree()
 	auto meshSys = world->GetStaticMeshSystem();
 	
 	BoundingBox worldBBraw;
-	DArray<VoxelizeSceneItem> staticScene;
 	Vector3 corners[8];
 
 	string editorType(EDITOR_TYPE);
@@ -552,7 +554,7 @@ bool GIMgr::BuildVoxelOctree()
 				auto* octree = octreeArray.push_back();
 				octree->bbox = chunkBox;
 
-				if (SceneBoxIntersect(staticScene, chunkBox))
+				if (SceneBoxIntersect(chunkBox))
 				{
 					// TODO: configurate per chunk
 					octree->depth = OCTREE_DEPTH;
@@ -588,7 +590,7 @@ bool GIMgr::BuildVoxelOctree()
 		Vector3 octreeHelper = Vector3((float)octree.lookupRes) / (octree.bbox.Extents * 2.0f);
 		Vector3 octreeCorner = octree.bbox.Center - octree.bbox.Extents;
 
-		ProcessOctreeBranch(octree, staticScene, octree.bbox, octree.depth - 1, octreeHelper, octreeCorner);
+		ProcessOctreeBranch(octree, octree.bbox, octree.depth - 1, octreeHelper, octreeCorner);
 	}
 
 	probesLookup.clear();
@@ -665,10 +667,7 @@ bool GIMgr::BuildVoxelOctree()
 		{
 			if (prob.geomCloseProbe)
 			{
-				AdjustProbPos(staticScene, prob.pos, voxelsCube);
-				/*int32_t offsetsIter = 0;
-				while (AdjustProbPos(staticScene, prob.pos) && offsetsIter < PROB_CAPTURE_OFFSETS_ITERATIONS)
-					offsetsIter++;*/
+				AdjustProbPos(prob.pos, voxelsCube);
 			}
 		}
 		else
@@ -682,7 +681,7 @@ bool GIMgr::BuildVoxelOctree()
 	}
 
 	// baking
-	const int32_t captureResolution = 256;
+	const int32_t captureResolution = 32;
 	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
@@ -758,12 +757,13 @@ bool GIMgr::BuildVoxelOctree()
 	chunks.destroy();
 	bricks.destroy();
 	probesArray.destroy();
+	staticScene.destroy();
 #endif
 	
 	return true;
 }
 
-bool GIMgr::SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox)
+bool GIMgr::SceneBoxIntersect(BoundingBox& bbox)
 {
 	BoundingBox extendedBBox = bbox;
 	extendedBBox.Extents = extendedBBox.Extents + Vector3(voxelSize * OCTREE_INTERSECT_TOLERANCE);
@@ -820,7 +820,7 @@ const int32_t brickPointsWeights[27][8] =
 
 const int32_t probesFlag[27] = {7,6,6,3,2,2,3,2,2,5,4,4,1,-1,0,1,0,0,5,4,4,1,0,0,1,0,0};
 
-void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper, Vector3& octreeCorner)
+void GIMgr::ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octreeDepth, Vector3& octreeHelper, Vector3& octreeCorner)
 {
 	Vector3 corners[8];
 	bbox.GetCorners(corners);
@@ -834,9 +834,9 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 		{
 			BoundingBox::CreateFromPoints(leafBox, Vector3(bbox.Center), corners[i]);
 
-			if (SceneBoxIntersect(staticScene, leafBox))
+			if (SceneBoxIntersect(leafBox))
 			{
-				ProcessOctreeBranch(octree, staticScene, leafBox, octreeDepth - 1, octreeHelper, octreeCorner);
+				ProcessOctreeBranch(octree, leafBox, octreeDepth - 1, octreeHelper, octreeCorner);
 			}
 			else
 			{
@@ -923,13 +923,13 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& stati
 }
 
 template<class voxelGrid>
-void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos, voxelGrid& voxels)
+void GIMgr::AdjustProbPos(Vector3& pos, voxelGrid& voxels)
 {
 	voxels.Clear();
 
 	BoundingBox voxelsBox;
 	voxelsBox.Center = pos;
-	voxelsBox.Extents = Vector3(voxelSize + voxelSize / voxels.resolution);
+	voxelsBox.Extents = Vector3(voxelSize + voxelSize / (voxels.resolution - 1));
 
 	for (auto& i : staticScene)
 	{
@@ -966,59 +966,8 @@ void GIMgr::AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos, 
 					offset.z = zOffset;
 				}
 			}
-
+	
 	pos += voxelsBox.Extents * Vector3((float)offset.x, (float)offset.y, (float)offset.z) * (2.0f / voxels.resolution);
-
-/*	float checkDistance = voxelSize * PROB_CAPTURE_OFFSET_MAXSIZE;
-	const float nearClipOffset = PROB_CAPTURE_NEARCLIP * 1.5f;
-	const float posBackOffset = 0.0001f;
-
-	BoundingBox probBox;
-	probBox.Center = pos;
-	probBox.Extents = Vector3(checkDistance);
-
-	Vector3 origin;
-	bool isFront = false;
-
-	float minDist = 999999900000.0f;
-	int32_t dirID = -1;
-	bool isOffseted = false;
-
-	for (auto& i : staticScene)
-	{
-		if (i.bbox.Intersects(probBox))
-		{
-			for(int32_t k = 0; k < (int32_t)probOffsetsArray.size(); k++)
-			{
-				origin = pos - probOffsetsArray[k] * posBackOffset;
-				float dist = MeshMgr::MeshRayIntersect(i.meshID, i.transform, origin, probOffsetsArray[k], checkDistance, TriClipping::TC_BOTH, isFront);
-			
-				if (!isFront)
-				{
-					if (dist != 0.0f && dist < minDist)
-					{
-						minDist = dist;
-						dirID = k;
-						isOffseted = true;
-					}
-				}
-				else
-				{
-					float frontOffset = nearClipOffset - (dist - posBackOffset);
-					if (dist != 0.0f && frontOffset > 0.0f)
-					{
-						pos -= probOffsetsArray[k] * frontOffset;
-						isOffseted = true;
-					}
-				}
-			}
-		}
-	}
-
-	if (dirID >= 0)
-		pos += probOffsetsArray[dirID] * (minDist - posBackOffset + nearClipOffset);
-
-	return isOffseted;*/
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
@@ -1244,6 +1193,7 @@ void GIMgr::DebugSetState(DebugState state)
 	case DebugState::DS_NONE:
 		dbgDrawer->DeleteGeometryHandle(debugGeomHandleOctree);
 		dbgDrawer->DeleteGeometryHandle(debugGeomHandleProbes);
+		dbgDrawer->DeleteGeometryHandle(debugGeomHandleVoxel);
 		break;
 
 	case DebugState::DS_OCTREE:
@@ -1315,6 +1265,67 @@ void GIMgr::DebugSetState(DebugState state)
 			dbgDrawer->UpdateGeometry(debugGeomHandleProbes, points.data(), (uint32_t)points.size());
 		}
 		break;
+
+	case DebugState::DS_VOXELS:
+	{
+		dbgDrawer->DeleteGeometryHandle(debugGeomHandleVoxel);
+		
+		if (probesArray.empty())
+			return;
+
+		int32_t randProbeID;
+		int32_t itr = 0;
+		do
+		{
+			randProbeID = int32_t((probesArray.size() - 1) * float(rand()) / float(RAND_MAX));
+			itr++;
+
+		} while (!(probesArray[randProbeID].geomCloseProbe && probesArray[randProbeID].bake) && itr < 100000);
+
+		Vector3 voxelsCubeTempPos = probesArray[randProbeID].pos;
+		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCubeTemp;
+		voxelsCubeTemp.Clear();
+
+		AdjustProbPos(voxelsCubeTempPos, voxelsCubeTemp);
+
+		Vector3 bboxCorners[8];
+		RArray<DBGLine> lines;
+		lines.create(voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * 12);
+
+		Vector3 color;
+		int32_t centerVoxel = voxelsCubeTemp.resolution / 2;
+		float voxelSizeHalf = voxelSize / voxelsCubeTemp.resolution;
+
+		for (int32_t x = 0; x < (int32_t)voxelsCubeTemp.resolution; x++)
+			for (int32_t y = 0; y < (int32_t)voxelsCubeTemp.resolution; y++)
+				for (int32_t z = 0; z < (int32_t)voxelsCubeTemp.resolution; z++)
+				{
+					if (voxelsCubeTemp.voxels[x][y][z] == 0)
+						color = Vector3(0, 1.0f, 0);
+					else
+						color = Vector3(1.0f, 0, 0);
+					
+					BoundingBox bbox;
+					bbox.Center = voxelsCubeTempPos;
+					bbox.Center.x += (x - centerVoxel) * voxelSizeHalf * 2.0f;
+					bbox.Center.y += (y - centerVoxel) * voxelSizeHalf * 2.0f;
+					bbox.Center.z += (z - centerVoxel) * voxelSizeHalf * 2.0f;
+
+					bbox.Extents = Vector3(voxelSizeHalf);
+
+					bbox.GetCorners(bboxCorners);
+					PUSH_BOX_TO_LINES
+				}
+
+		uint32_t vertsCount = (uint32_t)lines.size() * 2;
+
+		debugGeomHandleVoxel = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
+		if (debugGeomHandleVoxel < 0)
+			return;
+
+		dbgDrawer->UpdateGeometry(debugGeomHandleVoxel, lines.data(), vertsCount);
+	}
+	break;
 	}
 }
 #endif

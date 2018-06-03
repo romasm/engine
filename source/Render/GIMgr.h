@@ -127,7 +127,8 @@ namespace EngineCore
 		{
 			DS_NONE = 0,
 			DS_OCTREE,
-			DS_PROBES
+			DS_PROBES,
+			DS_VOXELS
 		};
 
 		GIMgr(class BaseWorld* wrd);
@@ -181,12 +182,12 @@ namespace EngineCore
 
 		// baking
 
-		bool SceneBoxIntersect(DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox);
-		void ProcessOctreeBranch(Octree& octree, DArray<VoxelizeSceneItem>& staticScene, BoundingBox& bbox, int32_t octreeDepth,
+		bool SceneBoxIntersect(BoundingBox& bbox);
+		void ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octreeDepth,
 			Vector3& octreeHelper, Vector3& octreeCorner);
 
 		template<class voxelGrid>
-		void AdjustProbPos(DArray<VoxelizeSceneItem>& staticScene, Vector3& pos, voxelGrid& voxels);
+		void AdjustProbPos(Vector3& pos, voxelGrid& voxels);
 		
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		uint8_t GetNeighborFlag(int32_t i);
@@ -217,6 +218,7 @@ namespace EngineCore
 		DArray<uint32_t> bricksLinks;
 
 		RArray<Vector3> probOffsetsArray;
+		DArray<VoxelizeSceneItem> staticScene;
 
 #ifdef _DEV
 
@@ -226,6 +228,7 @@ namespace EngineCore
 	private:
 		int32_t debugGeomHandleOctree;
 		int32_t debugGeomHandleProbes;
+		int32_t debugGeomHandleVoxel;
 
 #endif
 
