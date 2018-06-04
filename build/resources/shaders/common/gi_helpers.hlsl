@@ -53,7 +53,7 @@ float EvaluateSHIndirect(GBufferData gbuffer, float NoV, float Roughness, float3
 	diffuse = 0;
 
 	// check if outside
-	if (chunkPos.x < 0 || chunkPos.y < 0 || chunkPos.z < 0 ||
+	if (chunkPos.x <= 0 || chunkPos.y <= 0 || chunkPos.z <= 0 ||
 		chunkPos.x >= (float)g_giSampleData.chunksCount.x || chunkPos.y >= (float)g_giSampleData.chunksCount.y ||
 		chunkPos.z >= (float)g_giSampleData.chunksCount.z)
 		return 0;

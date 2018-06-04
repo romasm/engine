@@ -30,7 +30,10 @@ GIMgr::GIMgr(BaseWorld* wrd)
 	bricksTexX = 0;
 	bricksTexY = 0;
 
-	sgVolume = TexMgr::nullres;
+	bricksAtlasResource = TexMgr::nullres;
+	bricksLookupsResource = TexMgr::nullres;
+	chunksResource = TexMgr::nullres;
+
 	sampleDataGPU = nullptr;
 
 	cubemapToSH = nullptr;
@@ -68,7 +71,10 @@ GIMgr::~GIMgr()
 
 	DeleteResources();
 
-	TEXTURE_DROP(sgVolume);
+	TEXTURE_DROP(bricksAtlasResource);
+	TEXTURE_DROP(bricksLookupsResource);
+	TEXTURE_DROP(chunksResource);
+
 	_RELEASE(sampleDataGPU);
 
 	_DELETE(cubemapToSH);
@@ -81,9 +87,8 @@ bool GIMgr::InitBuffers()
 {
 	sampleDataGPU = Buffer::CreateConstantBuffer(Render::Device(), sizeof(GISampleData), true);
 
-	GISampleData sampleData;
-	sampleData.minCorner = Vector3(-voxelSize);
-	sampleData.chunkSizeRcp = 1.0f / chunkSize;
+	sampleData.minCorner = Vector3(0.0f);
+	sampleData.chunkSizeRcp = 0.0f;
 	sampleData.chunksCount = Vector3Uint32(1, 1, 1);
 	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
 	sampleData.brickAtlasOffset = Vector3(1.0f, 1.0f, 1.0f / BRICK_COEF_COUNT);
@@ -97,7 +102,6 @@ bool GIMgr::InitBuffers()
 	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SHAdresses), true);
 
 	copyBricks = new Compute(SHADER_BRICKS_COPY);
-
 	interpolateProbes = new Compute(SHADER_INTERPOLATE_PROBES);
 
 #endif
@@ -105,30 +109,10 @@ bool GIMgr::InitBuffers()
 	return true;
 }
 
-bool GIMgr::ReloadGIData()
-{
-	DropGIData();
-
-	string giPath = world->GetWorldName() + GI_VOLUME;
-
-#ifdef _EDITOR
-	sgVolume = TexMgr::Get()->GetResource(giPath, true);
-#else
-	sgVolume = TexMgr::Get()->GetResource(giPath, false);
-#endif
-
-	return (sgVolume != TexMgr::nullres);
-}
-
-void GIMgr::DropGIData()
-{
-	TEXTURE_DROP(sgVolume);
-}
-
 ID3D11ShaderResourceView* GIMgr::GetGIBricksSRV()
 {
 	if (!bricksAtlasSRV)
-		return TexMgr::Get()->null_resource;
+		return TexMgr::GetResourcePtr(bricksAtlasResource);
 
 	return bricksAtlasSRV;
 }
@@ -136,7 +120,7 @@ ID3D11ShaderResourceView* GIMgr::GetGIBricksSRV()
 ID3D11ShaderResourceView* GIMgr::GetGIChunksSRV()
 {
 	if (!chunksLookupSRV)
-		return TexMgr::Get()->null_resource;
+		return TexMgr::GetResourcePtr(chunksResource);
 
 	return chunksLookupSRV;
 }
@@ -144,7 +128,7 @@ ID3D11ShaderResourceView* GIMgr::GetGIChunksSRV()
 ID3D11ShaderResourceView* GIMgr::GetGILookupsSRV()
 {
 	if (!bricksLookupSRV)
-		return TexMgr::Get()->null_resource;
+		return TexMgr::GetResourcePtr(bricksLookupsResource);
 
 	return bricksLookupSRV;
 }
@@ -175,7 +159,7 @@ void GIMgr::SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int3
 {
 	swap((*arr)[first->parentChunk.x][first->parentChunk.y][first->parentChunk.z], 
 		(*arr)[second->parentChunk.x][second->parentChunk.y][second->parentChunk.z]);
-	swap(*first, *second);
+	Octree::Swap(*first, *second);
 }
 
 bool GIMgr::CompareInterpolationLinks(ProbInterpolation& first, ProbInterpolation& second)
@@ -183,44 +167,77 @@ bool GIMgr::CompareInterpolationLinks(ProbInterpolation& first, ProbInterpolatio
 	return first.minDepth < second.minDepth;
 }
 
-const uint32_t probesOffset[27][3] =
+void GIMgr::LoadGIData(GISampleData& giData)
 {
-	{ 0,0,0 },
-	{ 1,0,0 },
-	{ 2,0,0 },
-	{ 0,1,0 },
-	{ 1,1,0 },
-	{ 2,1,0 },
-	{ 0,2,0 },
-	{ 1,2,0 },
-	{ 2,2,0 },
+	string bricksAtlasFile = world->GetWorldName() + GI_BRICKS_ATLAS_PATH;
+	string bricksLookupsFile = world->GetWorldName() + GI_BRICKS_LOOKUP_PATH;
+	string chunksFile = world->GetWorldName() + GI_CHUNKS_PATH;
 
-	{ 0,0,1 },
-	{ 1,0,1 },
-	{ 2,0,1 },
-	{ 0,1,1 },
-	{ 1,1,1 },
-	{ 2,1,1 },
-	{ 0,2,1 },
-	{ 1,2,1 },
-	{ 2,2,1 },
+	if (FileIO::IsExist(bricksAtlasFile))
+		bricksAtlasResource = TexMgr::Get()->GetResource(bricksAtlasFile, false);
+	if (FileIO::IsExist(bricksLookupsFile))
+		bricksLookupsResource = TexMgr::Get()->GetResource(bricksLookupsFile, false);
+	if (FileIO::IsExist(chunksFile))
+		chunksResource = TexMgr::Get()->GetResource(chunksFile, false);
 
-	{ 0,0,2 },
-	{ 1,0,2 },
-	{ 2,0,2 },
-	{ 0,1,2 },
-	{ 1,1,2 },
-	{ 2,1,2 },
-	{ 0,2,2 },
-	{ 1,2,2 },
-	{ 2,2,2 }
-};
+	sampleData = giData;
+	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+}
+
+GISampleData* GIMgr::SaveGIData()
+{
+	if (!bricksAtlas || !bricksLookup || !chunksLookup)
+	{
+		LOG("GI data not baked");
+		return &sampleData;
+	}
+
+	ScratchImage bricksAtlasVolume;
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, bricksAtlasVolume)))
+	{
+		ERR("Cant get GI bricks atlas");
+	}
+	else
+	{
+		string bricksAtlasFile = world->GetWorldName() + GI_BRICKS_ATLAS_PATH;
+		if (FAILED(SaveToDDSFile(bricksAtlasVolume.GetImages(), bricksAtlasVolume.GetImageCount(), bricksAtlasVolume.GetMetadata(),
+			DDS_FLAGS_NONE, StringToWstring(bricksAtlasFile).data())))
+			ERR("Cant write GI bricks atlas");
+	}
+
+	ScratchImage bricksLookupsVolume;
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), bricksLookup, bricksLookupsVolume)))
+	{
+		ERR("Cant get GI bricks lookups");
+	}
+	else
+	{
+		string bricksLookupsFile = world->GetWorldName() + GI_BRICKS_LOOKUP_PATH;
+		if (FAILED(SaveToDDSFile(bricksLookupsVolume.GetImages(), bricksLookupsVolume.GetImageCount(), bricksLookupsVolume.GetMetadata(),
+			DDS_FLAGS_NONE, StringToWstring(bricksLookupsFile).data())))
+			ERR("Cant write GI bricks lookups");
+	}
+
+	ScratchImage chunksVolume;
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), chunksLookup, chunksVolume)))
+	{
+		ERR("Cant get GI chunks");
+	}
+	else
+	{
+		string chunksFile = world->GetWorldName() + GI_CHUNKS_PATH;
+		if (FAILED(SaveToDDSFile(chunksVolume.GetImages(), chunksVolume.GetImageCount(), chunksVolume.GetMetadata(),
+			DDS_FLAGS_NONE, StringToWstring(chunksFile).data())))
+			ERR("Cant write GI chunks");
+	}
+
+	return &sampleData;
+}
 
 bool GIMgr::RecreateResources()
 {
 	DeleteResources();
 	
-	GISampleData sampleData;
 	sampleData.minCorner = worldBox.corner;
 	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
 
@@ -462,19 +479,55 @@ bool GIMgr::RecreateResources()
 	return true;
 }
 
-bool GIMgr::BuildVoxelOctree()
+static const int32_t captureResolutions[PROB_CAPTURE_BOUNCES] = 
+{ PROB_CAPTURE_RESOLUTION_B0, PROB_CAPTURE_RESOLUTION_B1, PROB_CAPTURE_RESOLUTION_B2, PROB_CAPTURE_RESOLUTION_B3 };
+
+const uint32_t probesOffset[27][3] =
+{
+	{ 0,0,0 },
+	{ 1,0,0 },
+	{ 2,0,0 },
+	{ 0,1,0 },
+	{ 1,1,0 },
+	{ 2,1,0 },
+	{ 0,2,0 },
+	{ 1,2,0 },
+	{ 2,2,0 },
+
+	{ 0,0,1 },
+	{ 1,0,1 },
+	{ 2,0,1 },
+	{ 0,1,1 },
+	{ 1,1,1 },
+	{ 2,1,1 },
+	{ 0,2,1 },
+	{ 1,2,1 },
+	{ 2,2,1 },
+
+	{ 0,0,2 },
+	{ 1,0,2 },
+	{ 2,0,2 },
+	{ 0,1,2 },
+	{ 1,1,2 },
+	{ 2,1,2 },
+	{ 0,2,2 },
+	{ 1,2,2 },
+	{ 2,2,2 }
+};
+
+bool GIMgr::BakeGI()
 {
 	octreeArray.destroy();
 	chunks.destroy();
 	bricks.destroy();
 	probesArray.destroy();
 	staticScene.destroy();
-	
+
 	// collect static geometry
 	auto transformSys = world->GetTransformSystem();
 	auto visibilitySys = world->GetVisibilitySystem();
 	auto meshSys = world->GetStaticMeshSystem();
-	
+
 	BoundingBox worldBBraw;
 	Vector3 corners[8];
 
@@ -519,13 +572,13 @@ bool GIMgr::BuildVoxelOctree()
 	chunkCount.z = ceilf(chunkCount.z);
 
 	worldBox.size = chunkCount * chunkSize;
-	
+
 	int32_t xSize = (int32_t)chunkCount.x;
 	int32_t ySize = (int32_t)chunkCount.y;
 	int32_t zSize = (int32_t)chunkCount.z;
 
 	chunks.create(xSize);
-	chunks.resize(xSize);	
+	chunks.resize(xSize);
 	for (int32_t x = 0; x < xSize; x++)
 	{
 		chunks[x].create(ySize);
@@ -626,10 +679,8 @@ bool GIMgr::BuildVoxelOctree()
 	}
 
 	bricksLinks.clear();
-	
-	// post process probes
-	GenerateProbOffsetVectors();
 
+	// post process probes
 	Vector3 cornerMax = worldBox.corner + worldBox.size;
 
 	RArray<ProbInterpolation> interpolationArray;
@@ -681,76 +732,79 @@ bool GIMgr::BuildVoxelOctree()
 	}
 
 	// baking
-	const int32_t captureResolution = 32;
-	const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
-
-	if (!world->BeginCaptureProb(captureResolution, formatProb, false))
+	for (int32_t b = 0; b < PROB_CAPTURE_BOUNCES; b++)
 	{
-		ERR("Cant init prob capture");
-		return false;
-	}
+		const int32_t captureResolution = captureResolutions[b];
+		const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-	ID3D11ShaderResourceView* probSRV = world->GetCaptureProbSRV();
-	if (!probSRV)
-		return false;
-	
-	SHAdresses adresses;
-	adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
-
-	uint32_t groupsCountXY = captureResolution / 16;
-	uint32_t groupsCountZ = 6;
-
-	double startTime = Timer::ForcedGetCurrentTime();
-	double currentTime = 0;
-	int32_t bakedCount = 0;
-	double prevTime = startTime;
-
-	for (auto& prob : probesArray)
-	{
-		if (!prob.bake)
-			continue;
-				
-		for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
+		if (!world->BeginCaptureProb(captureResolution, formatProb, false))
 		{
-			auto& adr = prob.adresses[i];
-			adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
+			ERR("Cant init prob capture");
+			return false;
 		}
-		adresses.adresses[0].w = (float)prob.adresses.size();
-		
-		world->CaptureProb( Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP );
-		
-		Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SHAdresses));
 
-		Render::CSSetConstantBuffers(0, 1, &adressBuffer);
-		Render::CSSetShaderResources(0, 1, &probSRV);
-		cubemapToSH->BindUAV(bricksTempAtlasUAV);
-		cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
-		cubemapToSH->UnbindUAV();
+		ID3D11ShaderResourceView* probSRV = world->GetCaptureProbSRV();
+		if (!probSRV)
+			return false;
 
-		bakedCount++;
+		SHAdresses adresses;
+		adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
 
-		currentTime = Timer::ForcedGetCurrentTime();
-		if (currentTime - prevTime >= 1000.0f)
+		uint32_t groupsCountXY = captureResolution / 16;
+		uint32_t groupsCountZ = 6;
+
+		double startTime = Timer::ForcedGetCurrentTime();
+		double currentTime = 0;
+		int32_t bakedCount = 0;
+		double prevTime = startTime;
+
+		for (auto& prob : probesArray)
 		{
-			prevTime = currentTime;
-			DBG_SHORT("Baked: %i", bakedCount);
-		}
-	}
+			if (!prob.bake)
+				continue;
 
-	world->EndCaptureProb();
-	LOG_GOOD("Baked with speed %f probes per second", 1000.0f * float(bakedCount) / float(currentTime - startTime));
+			for (int32_t i = 0; i < (int32_t)prob.adresses.size(); i++)
+			{
+				auto& adr = prob.adresses[i];
+				adresses.adresses[i] = Vector4((float)adr.x, (float)adr.y, (float)adr.z, 0);
+			}
+			adresses.adresses[0].w = (float)prob.adresses.size();
+
+			world->CaptureProb(Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);
+
+			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SHAdresses));
+
+			Render::CSSetConstantBuffers(0, 1, &adressBuffer);
+			Render::CSSetShaderResources(0, 1, &probSRV);
+			cubemapToSH->BindUAV(bricksTempAtlasUAV);
+			cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
+			cubemapToSH->UnbindUAV();
+
+			bakedCount++;
+
+			currentTime = Timer::ForcedGetCurrentTime();
+			if (currentTime - prevTime >= 1000.0f)
+			{
+				prevTime = currentTime;
+				DBG_SHORT("Baked: %i", bakedCount);
+			}
+		}
+
+		world->EndCaptureProb();
+		LOG("Baked with speed %f probes per second", 1000.0f * float(bakedCount) / float(currentTime - startTime));
+		LOG("Bounce %i baked", b);
+
+		// lerp probes
+		InterpolateProbes(interpolationArray);
+
+		CopyBricks();
+	}
 	
-	// lerp probes
-	InterpolateProbes(interpolationArray);
+	_RELEASE(bricksTempAtlasUAV);
+	_RELEASE(bricksTempAtlasSRV);
+	_RELEASE(bricksTempAtlas);
+
 	interpolationArray.destroy();
-
-	CopyBricks();
-
-	// TEST
-	ScratchImage tempVol;
-	HRESULT dfgd = CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, tempVol);
-	string envTexNamevvvvv = world->GetWorldName() + "/gi_bricks" + EXT_TEXTURE;
-	SaveToDDSFile(tempVol.GetImages(), tempVol.GetImageCount(), tempVol.GetMetadata(), DDS_FLAGS_NONE, StringToWstring(envTexNamevvvvv).data());
 
 #ifndef _DEV
 	octreeArray.destroy();
@@ -1073,7 +1127,7 @@ Vector3 GIMgr::GetOutterVectorFromNeighbors(uint8_t flags)
 	}
 	return res;
 }
-
+/*
 void GIMgr::GenerateProbOffsetVectors()
 {
 	probOffsetsArray.clear();
@@ -1093,7 +1147,7 @@ void GIMgr::GenerateProbOffsetVectors()
 		probOffsetsArray.push_back(dir);
 	}
 }
-
+*/
 uint8_t GIMgr::GetNeighborFlag(int32_t i)
 {
 	switch (i)

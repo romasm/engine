@@ -392,30 +392,20 @@ namespace EngineCore
 
 			if( handle.impInfo.filePath.empty() || handle.impInfo.filePath == it->first )
 			{
-				ResourceProcessor::Get()->QueueLoad(it->second, resType
-#ifdef _EDITOR
-					, handle.callbackUpdate
-#endif // _EDITOR
-				);
+				ResourceProcessor::Get()->QueueLoad(it->second, resType, handle.callbackUpdate);
 			}
 			else
 			{
 				auto rt = resType;
 				uint32_t resId = it->second;
 				onLoadCallback func = nullptr;
-#ifdef _EDITOR
 				func = handle.callbackUpdate;
-#endif // _EDITOR	
 
 				ResourceProcessor::Get()->QueueImport(handle.impInfo,
 					[rt, resId, func](const ImportInfo& info, bool status) -> void
 				{
 					if(status)
-						ResourceProcessor::Get()->QueueLoad(resId, rt
-#ifdef _EDITOR
-							, func
-#endif // _EDITOR						
-						);
+						ResourceProcessor::Get()->QueueLoad(resId, rt, func);
 				}, false);
 			}
 

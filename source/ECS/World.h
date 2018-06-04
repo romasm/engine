@@ -55,7 +55,7 @@
 
 #define SCENEGRAPH_SIZE ENTITY_COUNT * 4
 
-#define WORLD_FILE_VERSION 104
+#define WORLD_FILE_VERSION 105
 
 #define COPY_BUFFER_SIZE 512*1024
 
@@ -299,10 +299,10 @@ namespace EngineCore
 		
 		inline uint8_t* GetCopyBuffer() {return copyBuffer;}
 
-		bool BuildVoxelOctree()
+		bool BakeGI()
 		{
 #ifdef _EDITOR
-			return giMgr->BuildVoxelOctree();
+			return giMgr->BakeGI();
 #else
 			return false;
 #endif
@@ -376,7 +376,7 @@ namespace EngineCore
 
 					.addFunction("SetSceneGraphDebugDraw", &BaseWorld::SetSceneGraphDebugDraw)
 
-					.addFunction("BuildVoxelOctree", &BaseWorld::BuildVoxelOctree)
+					.addFunction("BakeGI", &BaseWorld::BakeGI)
 				.endClass();
 		}
 

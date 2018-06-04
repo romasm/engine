@@ -7,8 +7,8 @@
 #include "Compute.h"
 
 #define OCTREE_DEPTH 7
-#define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
-#define OCTREE_INTERSECT_TOLERANCE 0.5f
+#define DEFAULT_OCTREE_VOXEL_SIZE 0.1f
+#define OCTREE_INTERSECT_TOLERANCE 0.1f
 #define PROB_INTERPOLATION_OFFSET_SIZE 0.0001f
 
 #define BRICK_RESOLUTION 3
@@ -16,16 +16,24 @@
 
 #define PROB_CAPTURE_NEARCLIP 0.005f
 #define PROB_CAPTURE_FARCLIP 10000.0f
-#define PROB_CAPTURE_OFFSET_VECTORS 12
-#define PROB_CAPTURE_OFFSET_MAXSIZE 0.99f
-#define PROB_CAPTURE_OFFSETS_ITERATIONS 3
 
 #define PROB_CAPTURE_OFFSET_VOXEL_RES 11
+
+#define PROB_CAPTURE_BOUNCES 4
+
+#define PROB_CAPTURE_RESOLUTION_B0 128
+#define PROB_CAPTURE_RESOLUTION_B1 128
+#define PROB_CAPTURE_RESOLUTION_B2 128
+#define PROB_CAPTURE_RESOLUTION_B3 256
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
 #define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
 #define SHADER_INTERPOLATE_PROBES PATH_SHADERS "offline/interpolate_probes", "Interpolate"
+
+#define GI_BRICKS_ATLAS_PATH "/gi_bricks" EXT_TEXTURE
+#define GI_BRICKS_LOOKUP_PATH "/gi_lookups" EXT_TEXTURE
+#define GI_CHUNKS_PATH "/gi_chunks" EXT_TEXTURE
 
 namespace EngineCore
 {
@@ -83,6 +91,19 @@ namespace EngineCore
 			lookup = nullptr;
 		}
 
+		static void Swap(Octree& first, Octree& second)
+		{
+			swap(first.depth, second.depth);
+			swap(first.bbox, second.bbox);
+			swap(first.lookupRes, second.lookupRes);
+			swap(first.parentChunk, second.parentChunk);
+			swap(first.lookupAdress, second.lookupAdress);
+
+			int32_t* temp = first.lookup;
+			first.lookup = second.lookup;
+			second.lookup = temp;
+		}
+
 		~Octree()
 		{
 			_DELETE_ARRAY(lookup);
@@ -134,8 +155,8 @@ namespace EngineCore
 		GIMgr(class BaseWorld* wrd);
 		~GIMgr();
 
-		bool ReloadGIData();
-		void DropGIData();
+		void LoadGIData(GISampleData& giData);
+		GISampleData* SaveGIData();
 
 		ID3D11ShaderResourceView* GetGIBricksSRV();
 		ID3D11ShaderResourceView* GetGIChunksSRV();
@@ -143,8 +164,8 @@ namespace EngineCore
 
 		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
 
-		bool BuildVoxelOctree();
-
+		bool BakeGI();
+		
 		static bool CompareOctrees(Octree& first, Octree& second);
 		static void SwapOctrees(Octree* first, Octree* second, RArray<RArray<RArray<int32_t>>>* arr);
 
@@ -157,8 +178,11 @@ namespace EngineCore
 
 		BaseWorld* world;
 
-		uint32_t sgVolume;
+		uint32_t bricksAtlasResource;
+		uint32_t bricksLookupsResource;
+		uint32_t chunksResource;
 
+		GISampleData sampleData;
 		ID3D11Buffer* sampleDataGPU;
 
 		// editor gi resources
@@ -193,9 +217,7 @@ namespace EngineCore
 		uint8_t GetNeighborFlag(int32_t i);
 		Vector3 GetOutterVectorFromNeighbors(uint8_t flags);
 		void CopyBricks();
-
-		void GenerateProbOffsetVectors();
-
+		
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
 

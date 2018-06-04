@@ -248,7 +248,7 @@ struct Vector4Uint16
 	Vector4Uint16() : x(0), y(0), z(0), w(0) {}
 	Vector4Uint16(uint16_t xx, uint16_t yy, uint16_t zz, uint16_t ww) : x(xx), y(yy), z(zz), w(ww) {}
 };
-
+/*
 static const uint8_t voxelGrowFlags[26] =
 {
 	0b00010101,
@@ -278,6 +278,38 @@ static const uint8_t voxelGrowFlags[26] =
 	0b00100010,
 	0b00011010,
 	0b00001010,
+	0b00101010
+};*/
+
+static const uint8_t voxelGrowFlags[26] =
+{
+	0b00010101,
+	0b00011101,
+	0b00100101,
+	0b00011101,
+	0b00111101,
+	0b00101101,
+	0b00011001,
+	0b00111001,
+	0b00101001,
+
+	0b00010111,
+	0b00110111,
+	0b00100111,
+	0b00011111,
+	0b00101111,
+	0b00011011,
+	0b00111011,
+	0b00101011,
+
+	0b00010110,
+	0b00110110,
+	0b00100110,
+	0b00011110,
+	0b00111110,
+	0b00101110,
+	0b00011010,
+	0b00111010,
 	0b00101010
 };
 
@@ -352,7 +384,7 @@ public:
 	static const uint32_t resolution;
 	// inverse normal: x, y, z
 	uint8_t voxels[RES][RES][RES];
-	// 00 x+ x- y+ y- z+ z-
+	// 6bit: x+ x- y+ y- z+ z-
 
 	bool empty;
 
@@ -391,7 +423,7 @@ public:
 
 							uint8_t& nextValue = voxels[nextX][nextY][nextZ];
 
-							if ((value & voxelGrowFlags[k]) > 0 /*== voxelGrowFlags[k]*/ &&
+							if ((value & voxelGrowFlags[k]) > 0 &&
 								(value & (voxelGrowFlagsInv[k])) == 0 && (nextValue & (voxelGrowFlagsInv[k])) == 0)
 								nextValue |= value;
 						}

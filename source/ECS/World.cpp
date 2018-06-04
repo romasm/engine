@@ -83,9 +83,7 @@ bool BaseWorld::Init(string filename)
 	}
 	
 	m_world_timer.Start();
-
-	giMgr->ReloadGIData();
-	
+		
 	return true;
 }
 
@@ -104,9 +102,7 @@ bool BaseWorld::Init()
 	header.env_rot = XMVectorZero();
 	
 	m_world_timer.Start();
-
-	giMgr->ReloadGIData();
-
+	
 	return true;
 }
 
@@ -127,7 +123,6 @@ void BaseWorld::Close()
 	}
 	m_scenes.clear();
 	
-	giMgr->DropGIData();
 	_DELETE(giMgr);
 
 	_DELETE(m_staticMeshSystem);
@@ -319,6 +314,12 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 		ERR("World %s has wrong version!", filename.c_str());
 		return false;
 	}
+	
+	// GI
+	GISampleData giData;
+	memcpy_s(&giData, sizeof(GISampleData), t_data, sizeof(GISampleData));
+	t_data += sizeof(GISampleData);
+	giMgr->LoadGIData(giData);
 
 	m_transformSystem->PreLoad();
 
@@ -434,6 +435,10 @@ bool BaseWorld::saveWorld(string& filename)
 	}
 
 	file.write( (char*)&header, sizeof(WorldHeader) );
+
+	// GI
+	GISampleData* giData = giMgr->SaveGIData();
+	file.write((char*)giData, sizeof(GISampleData));
 
 	// entities
 	uint32_t entCount = m_entityMgr->GetEntityCount();
@@ -552,6 +557,8 @@ bool BaseWorld::saveWorld(string& filename)
 	string codeDataFile = filename + FILE_CODE_DATA;
 	codeMgr.DumpToFile(codeDataFile);
 #endif
+
+	LOG_GOOD("World %s saved", world_name.data());
 
 	return true;
 }

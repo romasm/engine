@@ -83,7 +83,7 @@ cbuffer lightsCount : register(b2)
 };
 
 #include "../common/sh_helpers.hlsl"   
-
+ 
 cbuffer giData : register(b3)
 {
 	GISampleData g_giSampleData;
