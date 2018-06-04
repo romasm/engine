@@ -732,7 +732,7 @@ bool GIMgr::BakeGI()
 	}
 
 	// baking
-	for (int32_t b = 0; b < PROB_CAPTURE_BOUNCES; b++)
+	for (int32_t b = 0; b < 1/*PROB_CAPTURE_BOUNCES*/; b++)
 	{
 		const int32_t captureResolution = captureResolutions[b];
 		const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -1222,6 +1222,13 @@ const Vector3 octreeColors[OCTREE_DEPTH] =
 	{ 1.0f, 0.0f, 0.0f }
 };
 
+const Vector3 voxelsColors[3] =
+{
+	{ 1.0f, 0.0f, 0.0f },
+	{ 0.0f, 1.0f, 0.0f },
+	{ 0.0f, 0.0f, 1.0f }
+};
+
 #define PUSH_BOX_TO_LINES \
 	lines.push_back(DBGLine(bboxCorners[0], color, bboxCorners[1], color));\
 	lines.push_back(DBGLine(bboxCorners[0], color, bboxCorners[3], color));\
@@ -1321,65 +1328,82 @@ void GIMgr::DebugSetState(DebugState state)
 		break;
 
 	case DebugState::DS_VOXELS:
-	{
-		dbgDrawer->DeleteGeometryHandle(debugGeomHandleVoxel);
-		
-		if (probesArray.empty())
-			return;
-
-		int32_t randProbeID;
-		int32_t itr = 0;
-		do
 		{
-			randProbeID = int32_t((probesArray.size() - 1) * float(rand()) / float(RAND_MAX));
-			itr++;
+			dbgDrawer->DeleteGeometryHandle(debugGeomHandleVoxel);
+		
+			auto scene = world->GetScene(0);
+			if (!scene)
+				return;
+		
+			auto camLink = scene->GetSceneCamera();
 
-		} while (!(probesArray[randProbeID].geomCloseProbe && probesArray[randProbeID].bake) && itr < 100000);
+			const float centerDist = 0.5f;
+			Vector3 voxelsCubeTempPos = camLink.sys->GetPos(camLink.e) + camLink.sys->GetLookDir(camLink.e) * centerDist;
+			voxelsCubeTempPos -= sampleData.minCorner;
+			voxelsCubeTempPos = voxelsCubeTempPos * (1.0f / voxelSize);
 
-		Vector3 voxelsCubeTempPos = probesArray[randProbeID].pos;
-		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCubeTemp;
-		voxelsCubeTemp.Clear();
+			voxelsCubeTempPos.x = floorf(voxelsCubeTempPos.x);
+			voxelsCubeTempPos.y = floorf(voxelsCubeTempPos.y);
+			voxelsCubeTempPos.z = floorf(voxelsCubeTempPos.z);
 
-		AdjustProbPos(voxelsCubeTempPos, voxelsCubeTemp);
+			voxelsCubeTempPos = voxelsCubeTempPos * voxelSize + sampleData.minCorner;
 
-		Vector3 bboxCorners[8];
-		RArray<DBGLine> lines;
-		lines.create(voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * 12);
+			VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCubeTemp;
+			voxelsCubeTemp.Clear();
 
-		Vector3 color;
-		int32_t centerVoxel = voxelsCubeTemp.resolution / 2;
-		float voxelSizeHalf = voxelSize / voxelsCubeTemp.resolution;
+			Vector3 boxCenter = voxelsCubeTempPos;
+			AdjustProbPos(voxelsCubeTempPos, voxelsCubeTemp);
 
-		for (int32_t x = 0; x < (int32_t)voxelsCubeTemp.resolution; x++)
-			for (int32_t y = 0; y < (int32_t)voxelsCubeTemp.resolution; y++)
-				for (int32_t z = 0; z < (int32_t)voxelsCubeTemp.resolution; z++)
-				{
-					if (voxelsCubeTemp.voxels[x][y][z] == 0)
-						color = Vector3(0, 1.0f, 0);
-					else
-						color = Vector3(1.0f, 0, 0);
+			Vector3 bboxCorners[8];
+			RArray<DBGLine> lines;
+			lines.create(voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * voxelsCubeTemp.resolution * 12);
+
+			Vector3 color;
+			int32_t centerVoxel = voxelsCubeTemp.resolution / 2;
+			float voxelSizeHalf = voxelSize / voxelsCubeTemp.resolution;
+
+			for (int32_t x = 0; x < (int32_t)voxelsCubeTemp.resolution; x++)
+				for (int32_t y = 0; y < (int32_t)voxelsCubeTemp.resolution; y++)
+					for (int32_t z = 0; z < (int32_t)voxelsCubeTemp.resolution; z++)
+					{
+						auto value = voxelsCubeTemp.voxels[x][y][z];
+						if (value == 0)
+						{
+							color = Vector3(0.25f);
+						}
+						else
+						{
+							color = Vector3::Zero;
+
+							if ((value & 0b00110000) > 0)
+								color += voxelsColors[0];
+							if ((value & 0b00001100) > 0)
+								color += voxelsColors[1];
+							if ((value & 0b00000011) > 0)
+								color += voxelsColors[2];
+						}
 					
-					BoundingBox bbox;
-					bbox.Center = voxelsCubeTempPos;
-					bbox.Center.x += (x - centerVoxel) * voxelSizeHalf * 2.0f;
-					bbox.Center.y += (y - centerVoxel) * voxelSizeHalf * 2.0f;
-					bbox.Center.z += (z - centerVoxel) * voxelSizeHalf * 2.0f;
+						BoundingBox bbox;
+						bbox.Center = boxCenter;
+						bbox.Center.x += (x - centerVoxel) * voxelSizeHalf * 2.0f;
+						bbox.Center.y += (y - centerVoxel) * voxelSizeHalf * 2.0f;
+						bbox.Center.z += (z - centerVoxel) * voxelSizeHalf * 2.0f;
 
-					bbox.Extents = Vector3(voxelSizeHalf);
+						bbox.Extents = Vector3(voxelSizeHalf) * 0.95f;
 
-					bbox.GetCorners(bboxCorners);
-					PUSH_BOX_TO_LINES
-				}
+						bbox.GetCorners(bboxCorners);
+						PUSH_BOX_TO_LINES
+					}
 
-		uint32_t vertsCount = (uint32_t)lines.size() * 2;
+			uint32_t vertsCount = (uint32_t)lines.size() * 2;
 
-		debugGeomHandleVoxel = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
-		if (debugGeomHandleVoxel < 0)
-			return;
+			debugGeomHandleVoxel = dbgDrawer->CreateGeometryHandle(string(DEBUG_MATERIAL_DEPTHCULL), IA_TOPOLOGY::LINELIST, vertsCount, (uint32_t)sizeof(DBGLine) / 2);
+			if (debugGeomHandleVoxel < 0)
+				return;
 
-		dbgDrawer->UpdateGeometry(debugGeomHandleVoxel, lines.data(), vertsCount);
-	}
-	break;
+			dbgDrawer->UpdateGeometry(debugGeomHandleVoxel, lines.data(), vertsCount);
+		}
+		break;
 	}
 }
 #endif

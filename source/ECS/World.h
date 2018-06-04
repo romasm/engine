@@ -136,6 +136,13 @@ namespace EngineCore
 			return false;
 		}
 
+		ScenePipeline* GetScene(int32_t i)
+		{
+			if (i >= m_scenes.size())
+				return nullptr;
+			return m_scenes[i];
+		}
+
 #ifdef _EDITOR
 		inline void PostMeshesReload()
 		{
