@@ -985,16 +985,21 @@ void GIMgr::AdjustProbPos(Vector3& pos, voxelGrid& voxels)
 	voxelsBox.Center = pos;
 	voxelsBox.Extents = Vector3(voxelSize + voxelSize / (voxels.resolution - 1));
 
+	voxelGrid meshVoxels;
 	for (auto& i : staticScene)
 	{
 		if (i.bbox.Intersects(voxelsBox))
-			MeshMgr::MeshVoxelize(i.meshID, i.transform, voxelsBox, voxels);
+		{
+			meshVoxels.Clear();
+			MeshMgr::MeshVoxelize(i.meshID, i.transform, voxelsBox, meshVoxels);
+			meshVoxels.Grow();
+
+			voxels.Integrate(meshVoxels.voxels);
+		}
 	}
 	
 	if (voxels.empty)
 		return;
-
-	voxels.Grow();
 
 	int32_t centerVoxel = voxels.resolution / 2;
 	int32_t minOffsetSq = 3 * voxels.resolution * voxels.resolution;

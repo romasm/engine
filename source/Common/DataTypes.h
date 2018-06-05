@@ -248,38 +248,6 @@ struct Vector4Uint16
 	Vector4Uint16() : x(0), y(0), z(0), w(0) {}
 	Vector4Uint16(uint16_t xx, uint16_t yy, uint16_t zz, uint16_t ww) : x(xx), y(yy), z(zz), w(ww) {}
 };
-/*
-static const uint8_t voxelGrowFlags[26] =
-{
-	0b00010101,
-	0b00000101,
-	0b00100101,
-	0b00010001,
-	0b00000001,
-	0b00100001,
-	0b00011001,
-	0b00001001,
-	0b00101001,
-
-	0b00010100,
-	0b00000100,
-	0b00100100,
-	0b00010000,
-	0b00100000,
-	0b00011000,
-	0b00001000,
-	0b00101000,
-
-	0b00010110,
-	0b00000110,
-	0b00100110,
-	0b00010010,
-	0b00000010,
-	0b00100010,
-	0b00011010,
-	0b00001010,
-	0b00101010
-};*/
 
 static const uint8_t voxelGrowFlags[26] =
 {
@@ -429,6 +397,19 @@ public:
 						}
 					}
 		}
+	}
+
+	void Integrate(uint8_t integrateVoxels[RES][RES][RES])
+	{
+		for (int32_t x = 0; x < RES; x++)
+			for (int32_t y = 0; y < RES; y++)
+				for (int32_t z = 0; z < RES; z++)
+				{
+					voxels[x][y][z] |= integrateVoxels[x][y][z];
+
+					if (integrateVoxels[x][y][z] != 0)
+						empty = false;
+				}
 	}
 };
 
