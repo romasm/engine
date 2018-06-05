@@ -7,7 +7,7 @@
 #include "Compute.h"
 
 #define OCTREE_DEPTH 7
-#define DEFAULT_OCTREE_VOXEL_SIZE 0.2f
+#define DEFAULT_OCTREE_VOXEL_SIZE 0.1f
 #define OCTREE_INTERSECT_TOLERANCE 0.1f
 #define PROB_INTERPOLATION_OFFSET_SIZE 0.0001f
 
@@ -20,6 +20,8 @@
 #define PROB_CAPTURE_OFFSET_VOXEL_RES 11
 
 #define PROB_CAPTURE_BOUNCES 4
+#define PROB_CAPTURE_AA 8
+#define PROB_CAPTURE_AA_OFFSET 0.5f
 
 #define PROB_CAPTURE_RESOLUTION_B0 128
 #define PROB_CAPTURE_RESOLUTION_B1 128
@@ -120,9 +122,11 @@ namespace EngineCore
 	struct Prob
 	{
 		Vector3 pos;
+		Vector3 posAA[PROB_CAPTURE_AA];
 		bool bake;
 		bool geomCloseProbe;
 		uint8_t minDepth;
+		uint8_t maxDepth;
 		uint8_t neighborFlags;
 		DArray<Vector3Uint32> adresses;
 	};
@@ -211,7 +215,7 @@ namespace EngineCore
 			Vector3& octreeHelper, Vector3& octreeCorner);
 
 		template<class voxelGrid>
-		void AdjustProbPos(Vector3& pos, voxelGrid& voxels);
+		void AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels);
 		
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		uint8_t GetNeighborFlag(int32_t i);

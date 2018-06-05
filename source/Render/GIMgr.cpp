@@ -686,53 +686,76 @@ bool GIMgr::BakeGI()
 	RArray<ProbInterpolation> interpolationArray;
 	interpolationArray.create(probesArray.size());
 
-	VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCube;
-
-	for (int32_t i = 0; i < (int32_t)probesArray.size(); i++)
 	{
-		auto& prob = probesArray[i];
+		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCube;
+		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> meshVoxelsCube;
 
-		// check is baking
-		if (prob.minDepth == 0 || prob.neighborFlags == 0xff)
-			prob.bake = true;
-		else
+		double startTime = Timer::ForcedGetCurrentTime();
+		double currentTime = 0;
+		int32_t adjustCount = 0;
+		double prevTime = startTime;
+
+		for (int32_t i = 0; i < (int32_t)probesArray.size(); i++)
 		{
-			Vector3 posCheckMin = prob.pos - worldBox.corner;
-			Vector3 posCheckMax = prob.pos - cornerMax;
+			auto& prob = probesArray[i];
 
-			posCheckMin.x = abs(posCheckMin.x);
-			posCheckMin.y = abs(posCheckMin.y);
-			posCheckMin.z = abs(posCheckMin.z);
-			posCheckMax.x = abs(posCheckMax.x);
-			posCheckMax.y = abs(posCheckMax.y);
-			posCheckMax.z = abs(posCheckMax.z);
-
-			posCheckMin.x = min(posCheckMin.x, min(posCheckMin.y, posCheckMin.z));
-			posCheckMax.x = min(posCheckMax.x, min(posCheckMax.y, posCheckMax.z));
-
-			if (min(posCheckMin.x, posCheckMax.x) < 0.001f)
+			// check is baking
+			if (prob.minDepth == 0 || prob.neighborFlags == 0xff)
 				prob.bake = true;
-		}
-
-		if (prob.bake)
-		{
-			if (prob.geomCloseProbe)
+			else
 			{
-				AdjustProbPos(prob.pos, voxelsCube);
+				Vector3 posCheckMin = prob.pos - worldBox.corner;
+				Vector3 posCheckMax = prob.pos - cornerMax;
+
+				posCheckMin.x = abs(posCheckMin.x);
+				posCheckMin.y = abs(posCheckMin.y);
+				posCheckMin.z = abs(posCheckMin.z);
+				posCheckMax.x = abs(posCheckMax.x);
+				posCheckMax.y = abs(posCheckMax.y);
+				posCheckMax.z = abs(posCheckMax.z);
+
+				posCheckMin.x = min(posCheckMin.x, min(posCheckMin.y, posCheckMin.z));
+				posCheckMax.x = min(posCheckMax.x, min(posCheckMax.y, posCheckMax.z));
+
+				if (min(posCheckMin.x, posCheckMax.x) < 0.001f)
+					prob.bake = true;
 			}
-		}
-		else
-		{
-			// prepare interpolation
-			ProbInterpolation* probInterp = interpolationArray.push_back();
-			probInterp->probID = i;
-			probInterp->minDepth = prob.minDepth;
-			probInterp->lerpOffset = GetOutterVectorFromNeighbors(prob.neighborFlags);
+
+			if (prob.bake)
+			{
+				BoundingBox aaBox;
+				aaBox.Extents = Vector3(PROB_CAPTURE_AA_OFFSET * voxelSize * pow(2.0f, float(OCTREE_DEPTH - 1 - prob.maxDepth)));
+				aaBox.Center = prob.pos;
+				// Only works for x8 AA
+				aaBox.GetCorners(prob.posAA);
+
+				if (prob.geomCloseProbe)
+				{
+					AdjustProbPos(prob, voxelsCube, meshVoxelsCube);
+
+					adjustCount++;
+
+					currentTime = Timer::ForcedGetCurrentTime();
+					if (currentTime - prevTime >= 1000.0f)
+					{
+						prevTime = currentTime;
+						DBG_SHORT("Adjusted prob pos: %i", adjustCount);
+					}
+				}
+			}
+			else
+			{
+				// prepare interpolation
+				ProbInterpolation* probInterp = interpolationArray.push_back();
+				probInterp->probID = i;
+				probInterp->minDepth = prob.minDepth;
+				probInterp->lerpOffset = GetOutterVectorFromNeighbors(prob.neighborFlags);
+			}
 		}
 	}
 
 	// baking
-	for (int32_t b = 0; b < 1/*PROB_CAPTURE_BOUNCES*/; b++)
+	for (int32_t b = 0; b < PROB_CAPTURE_BOUNCES; b++)
 	{
 		const int32_t captureResolution = captureResolutions[b];
 		const DXGI_FORMAT formatProb = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -749,6 +772,9 @@ bool GIMgr::BakeGI()
 
 		SHAdresses adresses;
 		adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
+		
+		if (b == PROB_CAPTURE_BOUNCES - 1)
+			adresses.pixelCountRcp /= float(PROB_CAPTURE_AA);
 
 		uint32_t groupsCountXY = captureResolution / 16;
 		uint32_t groupsCountZ = 6;
@@ -770,15 +796,25 @@ bool GIMgr::BakeGI()
 			}
 			adresses.adresses[0].w = (float)prob.adresses.size();
 
-			world->CaptureProb(Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);
-
 			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SHAdresses));
 
-			Render::CSSetConstantBuffers(0, 1, &adressBuffer);
-			Render::CSSetShaderResources(0, 1, &probSRV);
-			cubemapToSH->BindUAV(bricksTempAtlasUAV);
-			cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
-			cubemapToSH->UnbindUAV();
+			#define BAKE_SH(pos) \
+				world->CaptureProb(Matrix::CreateTranslation(pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);\
+				Render::CSSetConstantBuffers(0, 1, &adressBuffer);\
+				Render::CSSetShaderResources(0, 1, &probSRV);\
+				cubemapToSH->BindUAV(bricksTempAtlasUAV);\
+				cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);\
+				cubemapToSH->UnbindUAV();
+
+			if (b == PROB_CAPTURE_BOUNCES - 1)
+			{
+				for (int32_t i = 0; i < PROB_CAPTURE_AA; i++)
+					BAKE_SH(prob.posAA[i])
+			}
+			else
+			{
+				BAKE_SH(prob.pos)
+			}
 
 			bakedCount++;
 
@@ -957,6 +993,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octre
 				prob.pos = probPos;
 				prob.adresses.destroy();
 				prob.minDepth = newBrick.depth;
+				prob.maxDepth = newBrick.depth;
 				prob.neighborFlags = GetNeighborFlag(i);
 				prob.geomCloseProbe = (octreeDepth == 0);
 
@@ -970,6 +1007,7 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octre
 				Prob& prob = probesArray[probIt->second];
 				prob.neighborFlags = (prob.neighborFlags | GetNeighborFlag(i));
 				prob.minDepth = min(prob.minDepth, (uint8_t)newBrick.depth);
+				prob.maxDepth = max(prob.maxDepth, (uint8_t)newBrick.depth);
 				prob.geomCloseProbe = prob.geomCloseProbe || (octreeDepth == 0);
 			}
 		}
@@ -977,15 +1015,14 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octre
 }
 
 template<class voxelGrid>
-void GIMgr::AdjustProbPos(Vector3& pos, voxelGrid& voxels)
+void GIMgr::AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels)
 {
 	voxels.Clear();
 
 	BoundingBox voxelsBox;
-	voxelsBox.Center = pos;
+	voxelsBox.Center = prob.pos;
 	voxelsBox.Extents = Vector3(voxelSize + voxelSize / (voxels.resolution - 1));
 
-	voxelGrid meshVoxels;
 	for (auto& i : staticScene)
 	{
 		if (i.bbox.Intersects(voxelsBox))
@@ -1001,10 +1038,26 @@ void GIMgr::AdjustProbPos(Vector3& pos, voxelGrid& voxels)
 	if (voxels.empty)
 		return;
 
-	int32_t centerVoxel = voxels.resolution / 2;
-	int32_t minOffsetSq = 3 * voxels.resolution * voxels.resolution;
-	Vector3Int32 offset(0, 0, 0);
+	Vector3Int32 centerVoxel[PROB_CAPTURE_AA + 1];
+	Vector3Int32 offset[PROB_CAPTURE_AA + 1];
+	int32_t minOffsetSq[PROB_CAPTURE_AA + 1];
 
+	Vector3 boxExtentsInvRes = Vector3(float(voxels.resolution) * 0.5f) / voxelsBox.Extents;
+	int32_t halfVoxelRes = voxels.resolution / 2;
+	for (int32_t i = 0; i < PROB_CAPTURE_AA + 1; i++)
+	{		
+		if (i == 0)
+			centerVoxel[i] = Vector3Int32(halfVoxelRes, halfVoxelRes, halfVoxelRes);
+		else
+			centerVoxel[i] = Vector3Int32(Vector3((float)voxels.resolution * 0.5f) + (prob.posAA[i - 1] - voxelsBox.Center) * boxExtentsInvRes);
+		
+		offset[i].x = 0;
+		offset[i].y = 0;
+		offset[i].z = 0;
+
+		minOffsetSq[i] = 9999999;
+	} 
+	
 	for (int32_t x = 0; x < (int32_t)voxels.resolution; x++)
 		for (int32_t y = 0; y < (int32_t)voxels.resolution; y++)
 			for (int32_t z = 0; z < (int32_t)voxels.resolution; z++)
@@ -1012,21 +1065,33 @@ void GIMgr::AdjustProbPos(Vector3& pos, voxelGrid& voxels)
 				if (voxels.voxels[x][y][z] != 0)
 					continue;
 
-				int32_t xOffset = x - centerVoxel;
-				int32_t yOffset = y - centerVoxel;
-				int32_t zOffset = z - centerVoxel;
-
-				int32_t offsetSq = xOffset * xOffset + yOffset * yOffset + zOffset * zOffset;
-				if (offsetSq < minOffsetSq)
+				for (int32_t i = 0; i < PROB_CAPTURE_AA + 1; i++)
 				{
-					minOffsetSq = offsetSq;
-					offset.x = xOffset;
-					offset.y = yOffset;
-					offset.z = zOffset;
+					int32_t xOffset = x - centerVoxel[i].x;
+					int32_t yOffset = y - centerVoxel[i].y;
+					int32_t zOffset = z - centerVoxel[i].z;
+
+					int32_t offsetSq = xOffset * xOffset + yOffset * yOffset + zOffset * zOffset;
+					if (offsetSq < minOffsetSq[i])
+					{
+						minOffsetSq[i] = offsetSq;
+						offset[i].x = xOffset;
+						offset[i].y = yOffset;
+						offset[i].z = zOffset;
+					}
 				}
 			}
-	
-	pos += voxelsBox.Extents * Vector3((float)offset.x, (float)offset.y, (float)offset.z) * (2.0f / voxels.resolution);
+
+	Vector3 voxelResInvExtents = (voxelsBox.Extents * 2.0f) / Vector3(float(voxels.resolution));
+	for (int32_t i = 0; i < PROB_CAPTURE_AA + 1; i++)
+	{
+		Vector3 worldOffset = Vector3((float)offset[i].x, (float)offset[i].y, (float)offset[i].z) * voxelResInvExtents;
+
+		if (i == 0)
+			prob.pos += worldOffset;
+		else
+			prob.posAA[i - 1] += worldOffset;
+	}
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
@@ -1310,18 +1375,17 @@ void GIMgr::DebugSetState(DebugState state)
 			};
 
 			RArray<ProbVertex> points;
-			points.create(probesArray.size());
+			points.create(probesArray.size()/* * PROB_CAPTURE_AA*/);
 			Vector2 dbg;
 
 			for (auto& item : probesArray)
 			{
 				dbg.x = item.bake ? 0.0f : 1.0f;
-
 				// for additional debug
 				dbg.y = 0.0f;
-				//if(!item.bake && item.minDepth > 0 && GetProbLocation(item.brickLastPos) == ProbLocation::PROB_CORNER)
-				//	dbg.y = 1.0f;
 
+				//for(int32_t i = 0; i < PROB_CAPTURE_AA; i++)
+				//	points.push_back(ProbVertex(item.posAA[i], dbg));
 				points.push_back(ProbVertex(item.pos, dbg));
 			}
 
@@ -1354,10 +1418,17 @@ void GIMgr::DebugSetState(DebugState state)
 			voxelsCubeTempPos = voxelsCubeTempPos * voxelSize + sampleData.minCorner;
 
 			VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCubeTemp;
+			VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> meshVoxelsCubeTemp;
 			voxelsCubeTemp.Clear();
 
 			Vector3 boxCenter = voxelsCubeTempPos;
-			AdjustProbPos(voxelsCubeTempPos, voxelsCubeTemp);
+
+			Prob prob;
+			prob.pos = voxelsCubeTempPos;
+			for(int32_t i = 0; i < PROB_CAPTURE_AA; i++)
+				prob.posAA[i] = voxelsCubeTempPos;
+
+			AdjustProbPos(prob, voxelsCubeTemp, meshVoxelsCubeTemp);
 
 			Vector3 bboxCorners[8];
 			RArray<DBGLine> lines;

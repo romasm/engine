@@ -565,7 +565,7 @@ bool BaseWorld::saveWorld(string& filename)
 
 bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight, uint32_t arrayCount)
 {
-	if(probScene)
+	if (probScene)
 		return probScene->Resize(resolution, resolution);
 
 	probCamera = m_entityMgr->CreateEntity();
