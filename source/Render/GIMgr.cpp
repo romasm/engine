@@ -773,8 +773,8 @@ bool GIMgr::BakeGI()
 		SHAdresses adresses;
 		adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
 		
-		if (b == PROB_CAPTURE_BOUNCES - 1)
-			adresses.pixelCountRcp /= float(PROB_CAPTURE_AA);
+		//if (b == PROB_CAPTURE_BOUNCES - 1)
+		//	adresses.pixelCountRcp /= float(PROB_CAPTURE_AA);
 
 		uint32_t groupsCountXY = captureResolution / 16;
 		uint32_t groupsCountZ = 6;
@@ -806,15 +806,17 @@ bool GIMgr::BakeGI()
 				cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);\
 				cubemapToSH->UnbindUAV();
 
-			if (b == PROB_CAPTURE_BOUNCES - 1)
-			{
+			//if (b == PROB_CAPTURE_BOUNCES - 1)
+			/*{
 				for (int32_t i = 0; i < PROB_CAPTURE_AA; i++)
+				{
 					BAKE_SH(prob.posAA[i])
-			}
-			else
-			{
+				}
+			}*/
+			//else
+			//{
 				BAKE_SH(prob.pos)
-			}
+			//}
 
 			bakedCount++;
 
