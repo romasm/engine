@@ -677,6 +677,18 @@ inline bool TriBoxOverlap(const BoundingBox& bbox, Vector3 vertecies[3])
 	return true;
 }
 
+enum TriClipping
+{
+	TC_BOTH = 0,
+	TC_FRONT,
+	TC_BACK
+};
+
+struct TriExplicit
+{
+	Vector3 v[3];
+};
+
 // 0.0f - no intersection
 inline float TriRayIntersect(const Vector3& origin, const Vector3& dir, Vector3 vertecies[3], bool& isFront)
 {
@@ -699,4 +711,37 @@ inline float TriRayIntersect(const Vector3& origin, const Vector3& dir, Vector3 
 		isFront = true;
 	
 	return dist;
+}
+
+// 0.0f - no intersection
+inline float TrisArrayRayIntersect(const Vector3& origin, const Vector3& dir, DArray<TriExplicit>& tris, float maxDist, TriClipping triClipping, bool& isFront)
+{
+	float minDist = 99999990000.0f;
+	bool isIntersect = false;
+
+	for (auto& tri : tris)
+	{
+		bool isFrontTri;
+		float dist = TriRayIntersect(origin, dir, tri.v, isFrontTri);
+
+		if (dist == 0.0f || dist >= maxDist)
+			continue;
+
+		if (triClipping == TriClipping::TC_BOTH ||
+			(triClipping == TriClipping::TC_FRONT && isFrontTri) ||
+			(triClipping == TriClipping::TC_BACK && !isFrontTri))
+		{
+			if (dist < minDist)
+			{
+				minDist = dist;
+				isFront = isFrontTri;
+			}
+			isIntersect = true;
+		}
+	}
+
+	if (!isIntersect)
+		return 0.0f;
+
+	return minDist;
 }

@@ -479,7 +479,7 @@ bool GIMgr::RecreateResources()
 	return true;
 }
 
-static const int32_t captureResolutions[PROB_CAPTURE_BOUNCES] = 
+static const int32_t captureResolutions[4] = 
 { PROB_CAPTURE_RESOLUTION_B0, PROB_CAPTURE_RESOLUTION_B1, PROB_CAPTURE_RESOLUTION_B2, PROB_CAPTURE_RESOLUTION_B3 };
 
 const uint32_t probesOffset[27][3] =
@@ -681,6 +681,8 @@ bool GIMgr::BakeGI()
 	bricksLinks.clear();
 
 	// post process probes
+	GenerateProbOffsetVectors();
+
 	Vector3 cornerMax = worldBox.corner + worldBox.size;
 
 	RArray<ProbInterpolation> interpolationArray;
@@ -689,6 +691,9 @@ bool GIMgr::BakeGI()
 	{
 		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> voxelsCube;
 		VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> meshVoxelsCube;
+
+		DArray<TriExplicit> cubeTris;
+		cubeTris.reserve(2048);
 
 		double startTime = Timer::ForcedGetCurrentTime();
 		double currentTime = 0;
@@ -731,7 +736,7 @@ bool GIMgr::BakeGI()
 
 				if (prob.geomCloseProbe)
 				{
-					AdjustProbPos(prob, voxelsCube, meshVoxelsCube);
+					AdjustProbPos(prob, voxelsCube, meshVoxelsCube, cubeTris);
 
 					adjustCount++;
 
@@ -1023,9 +1028,10 @@ void GIMgr::ProcessOctreeBranch(Octree& octree, BoundingBox& bbox, int32_t octre
 }
 
 template<class voxelGrid>
-void GIMgr::AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels)
+void GIMgr::AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels, DArray<TriExplicit>& cubeTris)
 {
 	voxels.Clear();
+	cubeTris.clear();
 
 	BoundingBox voxelsBox;
 	voxelsBox.Center = prob.pos;
@@ -1036,7 +1042,7 @@ void GIMgr::AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels)
 		if (i.bbox.Intersects(voxelsBox))
 		{
 			meshVoxels.Clear();
-			MeshMgr::MeshVoxelize(i.meshID, i.transform, voxelsBox, meshVoxels);
+			MeshMgr::MeshVoxelize(i.meshID, i.transform, voxelsBox, meshVoxels, cubeTris);
 			meshVoxels.Grow();
 
 			voxels.Integrate(meshVoxels.voxels);
@@ -1100,6 +1106,23 @@ void GIMgr::AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels)
 		else
 			prob.posAA[i - 1] += worldOffset;
 	}
+		
+	const float maxTraceDist = voxelResInvExtents.x + PROB_CAPTURE_NEARCLIP * 2.0f;
+	bool isFront;
+	
+	Vector3 offsetFine(0.0f);
+	for (int32_t i = 0; i < PROB_CAPTURE_OFFSET_VECTORS; i++)
+	{
+		Vector3 origin = prob.pos - probOffsetsArray[i] * voxelResInvExtents.x;
+		float dist = TrisArrayRayIntersect(origin, probOffsetsArray[i], cubeTris, maxTraceDist, TriClipping::TC_FRONT, isFront);
+		if (dist == 0.0f)
+			continue;
+		
+		float offsetDist = maxTraceDist - dist;
+		offsetFine += -probOffsetsArray[i] * offsetDist;
+	}
+
+	prob.pos += offsetFine;
 }
 
 void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
@@ -1205,7 +1228,7 @@ Vector3 GIMgr::GetOutterVectorFromNeighbors(uint8_t flags)
 	}
 	return res;
 }
-/*
+
 void GIMgr::GenerateProbOffsetVectors()
 {
 	probOffsetsArray.clear();
@@ -1225,7 +1248,7 @@ void GIMgr::GenerateProbOffsetVectors()
 		probOffsetsArray.push_back(dir);
 	}
 }
-*/
+
 uint8_t GIMgr::GetNeighborFlag(int32_t i)
 {
 	switch (i)
@@ -1429,6 +1452,9 @@ void GIMgr::DebugSetState(DebugState state)
 			VoxelizedCube<PROB_CAPTURE_OFFSET_VOXEL_RES> meshVoxelsCubeTemp;
 			voxelsCubeTemp.Clear();
 
+			DArray<TriExplicit> cubeTris;
+			cubeTris.reserve(2048);
+
 			Vector3 boxCenter = voxelsCubeTempPos;
 
 			Prob prob;
@@ -1436,7 +1462,7 @@ void GIMgr::DebugSetState(DebugState state)
 			for(int32_t i = 0; i < PROB_CAPTURE_AA; i++)
 				prob.posAA[i] = voxelsCubeTempPos;
 
-			AdjustProbPos(prob, voxelsCubeTemp, meshVoxelsCubeTemp);
+			AdjustProbPos(prob, voxelsCubeTemp, meshVoxelsCubeTemp, cubeTris);
 
 			Vector3 bboxCorners[8];
 			RArray<DBGLine> lines;

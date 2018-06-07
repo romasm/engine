@@ -6,13 +6,6 @@
 
 namespace EngineCore
 {
-	enum TriClipping
-	{
-		TC_BOTH = 0,
-		TC_FRONT,
-		TC_BACK
-	};
-
 	static const int32_t voxelizationVectorIDs[3][2] = 
 	{
 		{ 0, 1 },
@@ -100,7 +93,7 @@ namespace EngineCore
 				voxels.voxels[x][y][z] |= voxelValue; voxels.empty = false;}}
 
 		template<class voxelGrid>
-		static void MeshVoxelize(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox, voxelGrid& voxels)
+		static void MeshVoxelize(uint32_t meshID, const Matrix& transform, const BoundingBox& bbox, voxelGrid& voxels, DArray<TriExplicit>& cubeTris)
 		{
 			auto mesh = MeshMgr::GetResourcePtr(meshID);
 			if (!mesh)
@@ -108,10 +101,10 @@ namespace EngineCore
 
 			Vector3 bboxCorner = bbox.Center - bbox.Extents;
 			Vector3 bboxSizeInv = Vector3((float)voxels.resolution) / (2.0f * bbox.Extents);
-			Vector3 offsetSize = Vector3(1.0f) / bboxSizeInv * 0.0f;
-			Vector3 offsetNormalSize = Vector3(1.0f) / bboxSizeInv * 0.25f;
+			Vector3 offsetSize = Vector3(1.0f) / bboxSizeInv * 1.0f;
+			Vector3 offsetNormalSize = Vector3(1.0f) / bboxSizeInv * 1.0f;
 
-			Vector3 triVertecies[3];
+			TriExplicit triVertecies;
 			Vector3 triVerteciesLocal[3];
 			Vector3 triVect[3];
 			for (int32_t i = 0; i < (int32_t)mesh->indices.size(); i++)
@@ -121,19 +114,21 @@ namespace EngineCore
 
 				for (uint32_t k = 0; k < (uint32_t)mesh->indexBuffers[i].count; k += 3)
 				{
-					triVertecies[0] = MeshLoader::GetVertexPos(verts, inds[k], mesh->vertexFormat);
-					triVertecies[1] = MeshLoader::GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
-					triVertecies[2] = MeshLoader::GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
-
+					triVertecies.v[0] = MeshLoader::GetVertexPos(verts, inds[k], mesh->vertexFormat);
+					triVertecies.v[1] = MeshLoader::GetVertexPos(verts, inds[k + 1], mesh->vertexFormat);
+					triVertecies.v[2] = MeshLoader::GetVertexPos(verts, inds[k + 2], mesh->vertexFormat);
+					
 					for (int32_t h = 0; h < 3; h++)
-						Vector3::Transform(triVertecies[h], transform, triVertecies[h]);
+						Vector3::Transform(triVertecies.v[h], transform, triVertecies.v[h]);
 
-					if (!TriBoxOverlap(bbox, triVertecies))
+					if (!TriBoxOverlap(bbox, triVertecies.v))
 						continue;
 
-					triVect[0] = triVertecies[1] - triVertecies[0];
-					triVect[1] = triVertecies[2] - triVertecies[0];
-					triVect[2] = triVertecies[2] - triVertecies[1];
+					cubeTris.push_back(triVertecies);
+
+					triVect[0] = triVertecies.v[1] - triVertecies.v[0];
+					triVect[1] = triVertecies.v[2] - triVertecies.v[0];
+					triVect[2] = triVertecies.v[2] - triVertecies.v[1];
 					for (int32_t h = 0; h < 3; h++)
 						triVect[h].Normalize();
 
@@ -154,7 +149,7 @@ namespace EngineCore
 							triVect[voxelizationVectorIDs[h][1]] * voxelizationVectorMuls[h][1];
 						vertexOffset.Normalize();
 
-						triVerteciesLocal[h] = (triVertecies[h]/* + (vertexOffset * offsetSize + normal * offsetNormalSize)*/ - bboxCorner) * bboxSizeInv;
+						triVerteciesLocal[h] = (triVertecies.v[h]/* + (vertexOffset * offsetSize + normal * offsetNormalSize)*/ - bboxCorner) * bboxSizeInv;
 						triVerteciesLocal[h].x = floorf(triVerteciesLocal[h].x);
 						triVerteciesLocal[h].y = floorf(triVerteciesLocal[h].y);
 						triVerteciesLocal[h].z = floorf(triVerteciesLocal[h].z);

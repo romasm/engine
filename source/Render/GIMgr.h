@@ -18,17 +18,18 @@
 #define PROB_CAPTURE_FARCLIP 10000.0f
 
 #define PROB_CAPTURE_OFFSET_VOXEL_RES 11
+#define PROB_CAPTURE_OFFSET_VECTORS 12
 
-#define PROB_CAPTURE_BOUNCES 4
+#define PROB_CAPTURE_BOUNCES 3
 
 #define PROB_CAPTURE_NO_AA 1
 #define PROB_CAPTURE_AA 8
 #define PROB_CAPTURE_AA_OFFSET 0.5f
 
 #define PROB_CAPTURE_RESOLUTION_B0 128
-#define PROB_CAPTURE_RESOLUTION_B1 128
-#define PROB_CAPTURE_RESOLUTION_B2 256
-#define PROB_CAPTURE_RESOLUTION_B3 512
+#define PROB_CAPTURE_RESOLUTION_B1 512
+#define PROB_CAPTURE_RESOLUTION_B2 512
+#define PROB_CAPTURE_RESOLUTION_B3 1024
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
 #define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
@@ -217,12 +218,14 @@ namespace EngineCore
 			Vector3& octreeHelper, Vector3& octreeCorner);
 
 		template<class voxelGrid>
-		void AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels);
+		void AdjustProbPos(Prob& prob, voxelGrid& voxels, voxelGrid& meshVoxels, DArray<TriExplicit>& cubeTris);
 		
 		void InterpolateProbes(RArray<ProbInterpolation>& interpolationArray);
 		uint8_t GetNeighborFlag(int32_t i);
 		Vector3 GetOutterVectorFromNeighbors(uint8_t flags);
 		void CopyBricks();
+
+		void GenerateProbOffsetVectors();
 		
 		Compute* cubemapToSH;
 		ID3D11Buffer* adressBuffer;
