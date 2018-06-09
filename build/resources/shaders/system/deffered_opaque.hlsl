@@ -89,21 +89,21 @@ cbuffer giData : register(b3)
 	GISampleData g_giSampleData;
 };   
 
-#include "../common/gi_helpers.hlsl"   
+#include "../common/gi_helpers.hlsl"       
 #include "../common/ibl_helpers.hlsl"           
   
 // TEMP       
-//#define TEMP_FAST_COMPILE     
+#define TEMP_FAST_COMPILE                    
    
 #include "../common/shadow_helpers.hlsl"
 #include "../system/direct_brdf.hlsl"   
-#define FULL_LIGHT
+#define FULL_LIGHT  
 #include "../common/light_helpers.hlsl"
  
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 {
-	const float2 coords = PixelCoordsFromThreadID(threadID.xy); 
+	const float2 coords = PixelCoordsFromThreadID(threadID.xy);     
 	[branch]
 	if(coords.x > 1.0f || coords.y > 1.0f)
 		return; 
@@ -117,21 +117,21 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 		return; 
 	} 
 	    
-	gbuffer.subsurfTint = lerp(1.0, gbuffer.subsurf, materialParams.ssTint);  
+	gbuffer.subsurfTint = lerp(1.0, gbuffer.subsurf, materialParams.ssTint);   
 	      
 	const float4 SSR = SSRTexture.SampleLevel(samplerPointClamp, coords, 0);
 	const float SceneAO = DynamicAO.SampleLevel(samplerPointClamp, coords, 0).r;
 	gbuffer.ao = min( SceneAO, gbuffer.ao );
 	 
 	float3 ViewVector = g_CamPos - gbuffer.wpos;     
-	const float linDepth = length(ViewVector);
-	ViewVector = ViewVector / linDepth;    
-	   
+	const float linDepth = length(ViewVector); 
+	ViewVector = ViewVector / linDepth;      
+	    
 	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);   
 	   
 	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);    
 	                
-	// DIRECT LIGHT                 
+	// DIRECT LIGHT                  
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
 	               
 	// IBL     	 
@@ -139,11 +139,11 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float3 diffuseBrdf = 0; 
 	float4 envProbSpecular = 0;
 	float4 envProbDiffuse = 0;
-	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData.NoV, mData.minR, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
+	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 	 
 	// SG    
 	float3 shGI;      
-	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, mData.NoV, mData.minR, ViewVector, shGI);
+	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, mData, ViewVector, shGI);
 	
 	shGI = lerp(envProbDiffuse.rgb, shGI * diffuseBrdf * 6, lerpEnvProbSH);
 	

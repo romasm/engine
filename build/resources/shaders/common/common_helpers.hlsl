@@ -56,22 +56,6 @@ MaterialParams ReadMaterialParams(uint2 pixelID)
 }
 #endif
 
-DataForLightCompute PrepareDataForLight(GBufferData gbuffer, float3 V)
-{
-	DataForLightCompute mData;
-	mData.R = gbuffer.roughness;
-	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
-	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
-	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
-	mData.minR = min(mData.R.x, mData.R.y);
-	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
-	mData.sqr_aGGX = Square( mData.aGGX );
-	mData.NoV = calculateNoV( gbuffer.normal, V );
-	mData.reflect = 2 * gbuffer.normal * mData.NoV - V; 
-
-	return mData;
-}
-
 float computeSpecularOcclusion(float NoV, float AO, float R) // ????
 {
 	return saturate(PowAbs(NoV + AO, R) - 1 + AO);
@@ -90,6 +74,23 @@ float3 getDiffuseDominantDir(float3 N, float3 V, float NoV, float R)
 	float a = 1.02341f * R - 1.51174f;
 	float b = -0.511705f * R + 0.755868f;
 	float lerpFactor = saturate((NoV * a + b) * R);
-	// The result is not normalized as we fetch in a cubemap
-	return lerp(N, V, lerpFactor);
+	
+	return normalize(lerp(N, V, lerpFactor));
+}
+
+DataForLightCompute PrepareDataForLight(GBufferData gbuffer, float3 V)
+{
+	DataForLightCompute mData;
+	mData.R = gbuffer.roughness;
+	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
+	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
+	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
+	mData.minR = min(mData.R.x, mData.R.y);
+	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
+	mData.sqr_aGGX = Square(mData.aGGX);
+	mData.NoV = calculateNoV(gbuffer.normal, V);
+	mData.reflect = 2 * gbuffer.normal * mData.NoV - V;
+	mData.dominantNormalDiffuse = getDiffuseDominantDir(gbuffer.normal, V, mData.NoV, mData.minR);
+
+	return mData;
 }

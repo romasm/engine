@@ -251,6 +251,7 @@ struct DataForLightCompute
 	float sqr_aGGX;
 	float NoV;
 	float3 reflect;
+	float3 dominantNormalDiffuse;
 };
 
 struct ConfigParams

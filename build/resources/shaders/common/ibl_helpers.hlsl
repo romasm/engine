@@ -132,15 +132,14 @@ void SimpleEnvProbSpec(sampler cubeSampler, TextureCubeArray<float4> cubeArray, 
 	sampleCubeArrayDiffuse(cubeSampler, cubeArray, localN, data.mipsTypeAdressPriority.x, data.mipsTypeAdressPriority.z, distAlpha, diffuse);
 }
 
-void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, float3 V, GBufferData gbuffer, float SO, 
+void EvaluateEnvProbSpecular(sampler cubeSampler, DataForLightCompute mData, float3 V, GBufferData gbuffer, float SO,
 	out float3 specularBrdf, out float3 diffuseBrdf, out float4 specularResult, out float4 diffuseResult)
 {
-	const float3 envBrdf = g_envbrdfLUT.SampleLevel(samplerBilinearClamp, float2(NoV, Roughness), 0).xyz;
+	const float3 envBrdf = g_envbrdfLUT.SampleLevel(samplerBilinearClamp, float2(mData.NoV, mData.minR), 0).xyz;
 	
 	const float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
 	const float3 refl = reflect(-V, specularNormal);
-	const float3 dominantR = normalize(getSpecularDominantDir(specularNormal, refl, Roughness, NoV ));
-	const float3 dominantN = getDiffuseDominantDir(gbuffer.normal, V, NoV, Roughness);
+	const float3 dominantR = normalize(getSpecularDominantDir(specularNormal, refl, mData.minR, mData.NoV));
 
 	specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
 		
@@ -150,7 +149,7 @@ void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, fl
 	diffuseBrdf = gbuffer.albedo * envBrdf.z * gbuffer.ao;
 
 	const float4 wPos = float4(gbuffer.wpos, 1.0);
-	const float RoughnessSqrt = sqrt(Roughness);
+	const float RoughnessSqrt = sqrt(mData.minR);
 
 	specularResult = 0;
 
@@ -163,14 +162,14 @@ void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, fl
 
 		[branch]
 		if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_NONE )
-			SimpleEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, dominantN, RoughnessSqrt, specularResult, diffuseResult);
+			SimpleEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, RoughnessSqrt, specularResult, diffuseResult);
 		else 
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SphereEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				SphereEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 			else
-				BoxEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				BoxEnvProbSpec(cubeSampler, g_lqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 		}
 		i++;
 	}
@@ -184,14 +183,14 @@ void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, fl
 
 		[branch]
 		if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_NONE )
-			SimpleEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, dominantN, RoughnessSqrt, specularResult, diffuseResult);
+			SimpleEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, RoughnessSqrt, specularResult, diffuseResult);
 		else
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SphereEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				SphereEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 			else
-				BoxEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				BoxEnvProbSpec(cubeSampler, g_sqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 		}
 		i++;
 	}
@@ -205,14 +204,14 @@ void EvaluateEnvProbSpecular(sampler cubeSampler, float NoV, float Roughness, fl
 
 		[branch]
 		if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_NONE )
-			SimpleEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, dominantN, RoughnessSqrt, specularResult, diffuseResult);
+			SimpleEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, RoughnessSqrt, specularResult, diffuseResult);
 		else
 		{
 			[branch]
 			if( int(envData.mipsTypeAdressPriority.y) == ENVPROBS_PARALLAX_SPHERE )
-				SphereEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				SphereEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 			else
-				BoxEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, dominantN, Roughness, specularResult, diffuseResult);
+				BoxEnvProbSpec(cubeSampler, g_hqEnvProbsArray, envData, wPos, dominantR, mData.dominantNormalDiffuse, mData.minR, specularResult, diffuseResult);
 		}
 		i++;
 	}

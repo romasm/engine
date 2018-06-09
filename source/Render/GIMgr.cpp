@@ -758,7 +758,7 @@ bool GIMgr::BakeGI()
 			}
 		}
 	}
-
+	
 	// baking
 	for (int32_t b = 0; b < PROB_CAPTURE_BOUNCES; b++)
 	{
@@ -869,7 +869,7 @@ bool GIMgr::BakeGI()
 bool GIMgr::SceneBoxIntersect(BoundingBox& bbox)
 {
 	BoundingBox extendedBBox = bbox;
-	extendedBBox.Extents = extendedBBox.Extents + Vector3(voxelSize * OCTREE_INTERSECT_TOLERANCE);
+	extendedBBox.Extents = extendedBBox.Extents * (1.0f + OCTREE_INTERSECT_TOLERANCE);
 
 	for (auto& i : staticScene)
 	{
