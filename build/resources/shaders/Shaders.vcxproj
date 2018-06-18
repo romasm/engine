@@ -182,6 +182,7 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="common\gi_helpers.hlsl" />
+    <FxCompile Include="common\sg_helpers.hlsl" />
     <FxCompile Include="common\sh_helpers.hlsl" />
     <FxCompile Include="objects\editor\debug_common.hlsl" />
     <FxCompile Include="objects\editor\debug_lines_cull.hlsl" />

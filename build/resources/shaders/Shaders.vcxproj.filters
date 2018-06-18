@@ -390,5 +390,8 @@
     <FxCompile Include="offline\interpolate_probes.hlsl">
       <Filter>offline</Filter>
     </FxCompile>
+    <FxCompile Include="common\sg_helpers.hlsl">
+      <Filter>common</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
