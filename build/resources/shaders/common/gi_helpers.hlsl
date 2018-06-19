@@ -92,20 +92,20 @@ float3 GetGIAddres(float3 chunkPosFrac, uint2 brickOffset, uint brickDepth)
 //	return brickSampleAdress;
 //}
 
-SHcoef3 ReadBrickSH(float3 brickSampleAdress)
+SGAmpl ReadBrickSG(float3 brickSampleAdress)
 {
-	SHcoef3 sh;
+	SGAmpl sg;
 	[unroll]
-	for (int i = 0; i < 9; i++)
+	for (int i = 0; i < SG_COUNT; i++)
 	{
-		sh.L[i] = g_giBricks.SampleLevel(samplerBilinearVolumeClamp, brickSampleAdress, 0).rgb;
+		sg.A[i] = g_giBricks.SampleLevel(samplerBilinearVolumeClamp, brickSampleAdress, 0).rgb;
 		brickSampleAdress.z += g_giSampleData.brickAtlasOffset.z;
 	}
-	return sh;
+	return sg;
 }
 
 #ifndef GI_HELPERS_ONLY
-float EvaluateSHIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 V, out float3 diffuse)
+float EvaluateSGIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 V, out float3 diffuse)
 {
 	float3 wposOffset = gbuffer.wpos + mData.dominantNormalDiffuse * g_giSampleData.minHalfVoxelSize;
 
@@ -129,12 +129,10 @@ float EvaluateSHIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 
 	uint brickDepth;
 	GetBrickAddres(chunkPosFloor, chunkPosFrac, brickOffset, brickDepth);	
 	float3 brickSampleAdress = GetGIAddres(chunkPosFrac, brickOffset, brickDepth);
-	SHcoef3 sh = ReadBrickSH(brickSampleAdress);
+	SGAmpl sg = ReadBrickSG(brickSampleAdress);
 
-	const float3 color = ReconstrucColor(sh, mData.dominantNormalDiffuse);
-
-	diffuse = color;
-
+	ComputeSGLighting(diffuse, mData.dominantNormalDiffuse, sg, g_giSampleData.sgBasis, g_giSampleData.sgHelpers0, g_giSampleData.sgHelpers1);
+	
 	//diffuse = lerp(diffuse, brickInOffset, 0.999);
 
 	return fading;

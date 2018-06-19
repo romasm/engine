@@ -82,10 +82,10 @@ cbuffer lightsCount : register(b2)
 	LightsCount g_lightCount;
 };
 
-#include "../common/sh_helpers.hlsl"   
+#include "../common/sg_helpers.hlsl"   
  
 cbuffer giData : register(b3)
-{
+{ 
 	GISampleData g_giSampleData;
 };   
 
@@ -134,22 +134,22 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	// DIRECT LIGHT                  
 	LightComponents directLight = ProcessLights(samplerPointClamp, shadows, gbuffer, mData, materialParams, ViewVector, linDepth);
 	               
-	// IBL     	 
+	// IBL     	  
 	float3 specularBrdf = 0; 
 	float3 diffuseBrdf = 0; 
-	float4 envProbSpecular = 0;
+	float4 envProbSpecular = 0; 
 	float4 envProbDiffuse = 0;
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 	 
-	// SG    
-	float3 shGI;      
-	float lerpEnvProbSH = EvaluateSHIndirect(gbuffer, mData, ViewVector, shGI);
+	// SG      
+	float3 sgGI;      
+	float lerpEnvProbSH = EvaluateSGIndirect(gbuffer, mData, ViewVector, sgGI);
 	
-	shGI = lerp(envProbDiffuse.rgb, shGI * diffuseBrdf * 6, lerpEnvProbSH);
+	sgGI = lerp(envProbDiffuse.rgb, sgGI * diffuseBrdf, lerpEnvProbSH);
 	
 	// SSR    
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );
-	    
+	     
 	// OUTPUT    
 	// temp, move somewhere 
 	float scatteringBlendFactor = saturate(luminance(gbuffer.albedo) + float(materialParams.ior == 0.0));
@@ -157,13 +157,13 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
 	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
 
-	float3 diffuse = shGI.rgb * configs.indirDiff + directLight.diffuse * configs.dirDiff;
+	float3 diffuse = sgGI.rgb * configs.indirDiff + directLight.diffuse * configs.dirDiff;
 	float3 specular = envProbSpecular.rgb * configs.indirSpec + directLight.specular * configs.dirSpec;
-
+	 
 	//diffuse = lerp(diffuse, g_lightCount.envProbsCountHQ, 0.999);
 
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba;  
-}                            
-                                                               
+}                             
+                                                                             

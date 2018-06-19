@@ -1,6 +1,6 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
-#include "../common/sh_helpers.hlsl"
+#include "../common/sg_helpers.hlsl"
 
 #define GROUP_THREAD_COUNT_X 16
 #define GROUP_THREAD_COUNT_Y 16
@@ -12,10 +12,13 @@ SamplerState samplerBilinearWrap : register(s0);
 
 cbuffer adressBuffer : register(b0)
 {
-	float pixelCountRcp; //1.0 / (CUBE_RES * CUBE_RES * 6)
+	float monteCarlo; // 2PI / (CUBE_RES * CUBE_RES * 6)
 	float _padding0;
 	float _padding1;
 	float _padding2;
+
+	float4 sgAxisSharpness[SG_COUNT];
+
 	float4 adresses[48]; // adresses[0].w == count
 };
 
@@ -36,7 +39,7 @@ void InterlockedFloatAdd(uint3 coords, float value)
 	} while (orig != comp && iter < MAX_WAITING_CYCLES);
 } 
 
-void AppendSHvalue(float3 value, uint3 coords)
+void AppendSGvalue(float3 value, uint3 coords)
 {
 	coords.x *= 4;
 
@@ -94,7 +97,7 @@ float3 GetCubeDir(float x, float y, uint face)
 	return normalize(lerp(xVect0, xVect1, y));
 }
 
-groupshared SHcoef3 groupSH[GROUP_THREAD_COUNT_X * GROUP_THREAD_COUNT_Y];
+groupshared SGAmpl groupSG[GROUP_THREAD_COUNT_X * GROUP_THREAD_COUNT_Y];
 
 [numthreads( GROUP_THREAD_COUNT_X, GROUP_THREAD_COUNT_Y, 1 )]
 void ComputeSH(uint3 threadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
@@ -108,23 +111,23 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID, uint groupIndex : SV_GroupI
 	float3 dir = GetCubeDir(threadID.x * cubeResRpc, threadID.y * cubeResRpc, face);
 	float3 color = cubemap.SampleLevel(samplerBilinearWrap, dir, 0).xyz;
 
-	float3 colorWeighed = color * pixelCountRcp;
-	groupSH[groupIndex] = CalculateSHCoefs(colorWeighed, dir);
+	float3 colorWeighed = color * monteCarlo;
+	groupSG[groupIndex] = IntegrateSampleToSGs(colorWeighed, dir, sgAxisSharpness);
 
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupIndex != 0)
+	if (groupIndex != 0) 
 		return;
 
-	SHcoef3 finalSH = (SHcoef3)0;
+	SGAmpl finalSG = (SGAmpl)0;
 	[loop]
 	for (int p = 0; p < GROUP_THREAD_COUNT_X * GROUP_THREAD_COUNT_Y; p++)
 	{
-		SHcoef3 sh = groupSH[p];
+		SGAmpl sg = groupSG[p];
 		[unroll]
 		for (int j = 0; j < 9; j++)
 		{
-			finalSH.L[j] += sh.L[j];
+			finalSG.A[j] += sg.A[j];
 		}
 	}
 		
@@ -136,7 +139,7 @@ void ComputeSH(uint3 threadID : SV_DispatchThreadID, uint groupIndex : SV_GroupI
 		[unroll]
 		for (int i = 0; i < 9; i++) 
 		{
-			AppendSHvalue(finalSH.L[i], coords);
+			AppendSGvalue(finalSG.A[i], coords);
 			coords.z += 3;
 		}
 	}

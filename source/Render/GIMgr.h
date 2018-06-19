@@ -13,6 +13,7 @@
 
 #define BRICK_RESOLUTION 3
 #define BRICK_COEF_COUNT 9
+#define SG_COUNT BRICK_COEF_COUNT
 
 #define PROB_CAPTURE_NEARCLIP 0.005f
 #define PROB_CAPTURE_FARCLIP 10000.0f
@@ -54,14 +55,21 @@ namespace EngineCore
 		float _padding1;
 		Vector3 brickSampleSize;
 		float _padding2;
+
+		Vector4 sgBasis[SG_COUNT]; // xyz - axis, w - sharpness
+		Vector4 sgHelpers0[SG_COUNT]; // x - x1, y - scale, z - bias, w - 2 Pi / sharpness
+		Vector4 sgHelpers1[SG_COUNT]; // x - x rcp
 	};
 
-	struct SHAdresses
+	struct SGAdresses
 	{
-		float pixelCountRcp;
+		float monteCarlo;
 		float _padding0;
 		float _padding1;
 		float _padding2;
+
+		Vector4 sgBasis[SG_COUNT]; // xyz - axis, w - sharpness
+
 		Vector4 adresses[48]; // 6 depth levels * 8 corner neighbors, adresses[0].w == count
 	};
 
@@ -183,6 +191,9 @@ namespace EngineCore
 		bool RecreateResources();
 		void DeleteResources();
 
+		void GenerateSGBasis();
+		static void CalcSGHelpers(Vector3 axis, float sharpness, Vector4& sgHelper0, Vector4& sgHelper1);
+
 		BaseWorld* world;
 
 		uint32_t bricksAtlasResource;
@@ -191,7 +202,7 @@ namespace EngineCore
 
 		GISampleData sampleData;
 		ID3D11Buffer* sampleDataGPU;
-
+		
 		// editor gi resources
 
 		ID3D11Texture3D* bricksAtlas;

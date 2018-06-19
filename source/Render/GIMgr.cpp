@@ -94,12 +94,15 @@ bool GIMgr::InitBuffers()
 	sampleData.brickAtlasOffset = Vector3(1.0f, 1.0f, 1.0f / BRICK_COEF_COUNT);
 	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / BRICK_RESOLUTION, 1.0f / BRICK_RESOLUTION, 1.0f / (BRICK_RESOLUTION * BRICK_COEF_COUNT));
 	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
+
+	GenerateSGBasis();
+
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 #ifdef _EDITOR
 
 	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
-	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SHAdresses), true);
+	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SGAdresses), true);
 
 	copyBricks = new Compute(SHADER_BRICKS_COPY);
 	interpolateProbes = new Compute(SHADER_INTERPOLATE_PROBES);
@@ -181,6 +184,7 @@ void GIMgr::LoadGIData(GISampleData& giData)
 		chunksResource = TexMgr::Get()->GetResource(chunksFile, false);
 
 	sampleData = giData;
+		
 	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
 }
 
@@ -240,6 +244,8 @@ bool GIMgr::RecreateResources()
 	
 	sampleData.minCorner = worldBox.corner;
 	sampleData.minHalfVoxelSize = voxelSize * 0.5f;
+	
+	GenerateSGBasis();
 
 	// bricks atlas temp
 	const DXGI_FORMAT formatBricksTemp = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -775,8 +781,11 @@ bool GIMgr::BakeGI()
 		if (!probSRV)
 			return false;
 
-		SHAdresses adresses;
-		adresses.pixelCountRcp = 1.0f / (captureResolution * captureResolution * 6);
+		SGAdresses adresses;
+		adresses.monteCarlo = (2.0f * XM_PI) / (captureResolution * captureResolution * 6);
+
+		for (uint32_t k = 0; k < SG_COUNT; k++)
+			adresses.sgBasis[k] = sampleData.sgBasis[k];
 		
 #if PROB_CAPTURE_NO_AA == 0
 		if (b == PROB_CAPTURE_BOUNCES - 1)
@@ -803,7 +812,7 @@ bool GIMgr::BakeGI()
 			}
 			adresses.adresses[0].w = (float)prob.adresses.size();
 
-			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SHAdresses));
+			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SGAdresses));
 
 			#define BAKE_SH(pos) \
 				world->CaptureProb(Matrix::CreateTranslation(pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);\
@@ -1249,6 +1258,54 @@ void GIMgr::GenerateProbOffsetVectors()
 	}
 }
 
+void GIMgr::GenerateSGBasis()
+{
+	Vector3 axis[SG_COUNT];
+
+	float inc = XM_PI * (3.0f - sqrtf(5.0f));
+	float off = 2.0f / SG_COUNT;
+	for (uint32_t k = 0; k < SG_COUNT; k++)
+	{
+		float y = k * off - 1.0f + (off / 2.0f);
+		float r = sqrtf(1.0f - y * y);
+		float phi = k * inc;
+		axis[k] = Vector3(cosf(phi) * r, sinf(phi) * r, y);
+		axis[k].Normalize();
+	}
+
+	Vector3 h = axis[1] + axis[0];
+	h.Normalize();
+	//float sharpness = (log(0.65f) * SG_COUNT) / (h.Dot(axis[0]) - 1.0f);
+	float sharpness = 5.75f;
+
+	for (uint32_t k = 0; k < SG_COUNT; k++)
+	{
+		sampleData.sgBasis[k] = Vector4(axis[k].x, axis[k].y, axis[k].z, sharpness);
+		CalcSGHelpers(axis[k], sharpness, sampleData.sgHelpers0[k], sampleData.sgHelpers1[k]);
+	}
+}
+
+void GIMgr::CalcSGHelpers(Vector3 axis, float sharpness, Vector4& sgHelper0, Vector4& sgHelper1)
+{
+	const float lambda = sharpness;
+
+	const float c0 = 0.36f;
+	const float c1 = 1.0f / (4.0f * c0);
+
+	float eml = exp(-lambda);
+	float em2l = eml * eml;
+	float rl = 1.0f / lambda;
+
+	float scale = 1.0f + 2.0f * em2l - rl;
+	float bias = (eml - em2l) * rl - em2l;
+
+	float x = sqrt(1.0f - scale);
+	float x1 = c1 * x;
+
+	sgHelper0 = Vector4(x1, scale, bias, (2.0f * XM_PI) / sharpness);
+	sgHelper1 = Vector4(1.0f / x, 0,0,0);
+}
+
 uint8_t GIMgr::GetNeighborFlag(int32_t i)
 {
 	switch (i)
@@ -1382,6 +1439,14 @@ void GIMgr::DebugSetState(DebugState state)
 				item.bbox.GetCorners(bboxCorners);
 				PUSH_BOX_TO_LINES
 			}
+			
+			/*lines.create(SG_COUNT);
+			for (int32_t i = 0; i < SG_COUNT; i++)
+			{
+				Vector3 vec = Vector3(sampleData.sgBasis[i].x, sampleData.sgBasis[i].y, sampleData.sgBasis[i].z);
+
+				lines.push_back(DBGLine(Vector3::Zero, octreeColors[1], vec, octreeColors[1]));
+			}*/
 
 			uint32_t vertsCount = (uint32_t)lines.size() * 2;
 

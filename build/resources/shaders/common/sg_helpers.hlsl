@@ -15,21 +15,28 @@ float3 IntegrateSampleToSingleSG(float3 color, float3 dir, float4 sgAxisSharpnes
 	return color * weight;
 }
 
-void IntegrateSampleToSGs(float3 color, float3 dir, float4 sgAxisSharpness[SG_COUNT], float monteCarlo, inout SGAmpl SG)
+SGAmpl IntegrateSampleToSGs(float3 color, float3 dir, float4 sgAxisSharpness[SG_COUNT])
 {
+	SGAmpl sg = (SGAmpl)0;
 	[unroll]
 	for (int i = 0; i < SG_COUNT; i++)
-		SG.A[i] += IntegrateSampleToSingleSG(color, dir, sgAxisSharpness[i]) * monteCarlo;
+		sg.A[i] += IntegrateSampleToSingleSG(color, dir, sgAxisSharpness[i]);
+	return sg;
 }
 
-float3 SGFitted(float3 sgA, float4 sgAxisSharpness, float3 dir)
+float3 EvaluateSG(float3 sgA, float3 dir, float4 sgAxisSharpness)
 {
-	const float muDotN = dot(sgAxisSharpness.xyz, dir);
+	return sgA * exp(sgAxisSharpness.w * (dot(dir, sgAxisSharpness.xyz) - 1.0f));
+}
 
-	// on CPU
-	const float lambda = lightingLobe.Sharpness;
+float3 SGFitted(float3 sgA, float3 dir, float4 sgAxisSharpness, float4 sgHelpers0, float4 sgHelpers1)
+{
+	const float ADotN = dot(sgAxisSharpness.xyz, dir);
 
 	const float c0 = 0.36f;
+	/* on CPU
+	const float lambda = sgAxisSharpness.w;
+
 	const float c1 = 1.0f / (4.0f * c0);
 
 	float eml = exp(-lambda);
@@ -40,29 +47,35 @@ float3 SGFitted(float3 sgA, float4 sgAxisSharpness, float3 dir)
 	float bias = (eml - em2l) * rl - em2l;
 
 	float x = sqrt(1.0f - scale);
-	//
-
-	float x0 = c0 * muDotN;
 	float x1 = c1 * x;
+	*/
+	// sgHelpers0: x - x1, y - scale, z - bias, w - 2 Pi / sharpness
+	// sgHelpers1: x - x rcp
 
+	const float x0 = c0 * ADotN;
+	float x1 = sgHelpers0.x;
 	float n = x0 + x1;
 
-	float y = (abs(x0) <= x1) ? n * n / x : saturate(muDotN);
+	const float xRcp = sgHelpers1.x;
+	float y = (abs(x0) <= x1) ? n * n * xRcp : saturate(ADotN);
 
+	const float scale = sgHelpers0.y;
+	const float bias = sgHelpers0.z;
 	float normalizedIrradiance = scale * y + bias;
 
-	return normalizedIrradiance * PI_MUL2 * (sgA / sgAxisSharpness.w);
+	return normalizedIrradiance * sgA * sgHelpers0.w;
 }
 
-void ComputeSGLighting(out float3 diffuseIrradiance, out float3 specularIrradiance, float3 dirDiffuse, float3 dirSpecular, 
-	SGAmpl sg, float4 sgAxisSharpness[SG_COUNT])
+void ComputeSGLighting(out float3 diffuseIrradiance/*, out float3 specularIrradiance*/, float3 dirDiffuse/*, float3 dirSpecular*/, 
+	SGAmpl sg, float4 sgBasis[SG_COUNT], float4 sgHelpers0[SG_COUNT], float4 sgHelpers1[SG_COUNT])
 {
 	diffuseIrradiance = 0;
-	specularIrradiance = 0;
+	//specularIrradiance = 0;
 	[unroll]
 	for (int i = 0; i < SG_COUNT; ++i)
 	{
-		diffuseIrradiance += SGFitted(sg.A[i], sgAxisSharpness[i], dirDiffuse);
-		specularIrradiance += ;
+		diffuseIrradiance += SGFitted(sg.A[i], dirDiffuse, sgBasis[i], sgHelpers0[i], sgHelpers1[i]);
+		//diffuseIrradiance += EvaluateSG(sg.A[i], dirDiffuse, sgBasis[i]);
+		//specularIrradiance += ;
 	}
 }

@@ -66,7 +66,7 @@ float3 getSpecularDominantDir(float3 N, float3 Refl, float R, float NoV)
 	float smoothness = saturate(1 - R);
 	float lerpFactor = smoothness * (sqrt(smoothness) + R);
 
-	return lerp(N, Refl, lerpFactor);
+	return normalize(lerp(N, Refl, lerpFactor));
 }
 
 float3 getDiffuseDominantDir(float3 N, float3 V, float NoV, float R)

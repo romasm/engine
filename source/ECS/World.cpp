@@ -319,6 +319,7 @@ bool BaseWorld::loadWorld(string& filename, WorldHeader& header)
 	GISampleData giData;
 	memcpy_s(&giData, sizeof(GISampleData), t_data, sizeof(GISampleData));
 	t_data += sizeof(GISampleData);
+
 	giMgr->LoadGIData(giData);
 
 	m_transformSystem->PreLoad();

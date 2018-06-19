@@ -279,4 +279,8 @@ struct GISampleData
 	float _padding1;
 	float3 brickSampleSize;
 	float _padding2;
+
+	float4 sgBasis[9];
+	float4 sgHelpers0[9];
+	float4 sgHelpers1[9];
 };
