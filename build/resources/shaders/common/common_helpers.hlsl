@@ -38,7 +38,7 @@ GBufferData ReadGBuffer(sampler gbufferSampler, float2 coords)
 	res.albedo = albedo_roughY_Sample.rgb;
 	res.reflectivity = spec_roughX_Sample.rgb;
 	res.emissive = emiss_vnZ_Sample.rgb;
-	res.subsurf = subsurf_thick_Sample.rgb;
+	res.subsurf = subsurf_thick_Sample.rgb; 
 	res.subsurfTint = 1.0;
 	res.thickness = subsurf_thick_Sample.a;
 	res.roughness = float2(spec_roughX_Sample.a, albedo_roughY_Sample.a);
@@ -47,7 +47,7 @@ GBufferData ReadGBuffer(sampler gbufferSampler, float2 coords)
 }
 
 MaterialParams ReadMaterialParams(uint2 pixelID)
-{
+{ 
 	const uint matID_objID = gb_MaterialObjectID.Load(int3(pixelID, 0));
 	const uint matID = GetMatID(matID_objID);
 	const uint objID = GetObjID(matID_objID);
@@ -73,7 +73,7 @@ float3 getDiffuseDominantDir(float3 N, float3 V, float NoV, float R)
 {
 	float a = 1.02341f * R - 1.51174f;
 	float b = -0.511705f * R + 0.755868f;
-	float lerpFactor = saturate((NoV * a + b) * R);
+	float lerpFactor = saturate((NoV * a + b) * R); 
 	
 	return normalize(lerp(N, V, lerpFactor));
 }

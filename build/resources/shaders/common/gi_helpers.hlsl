@@ -105,13 +105,15 @@ SGAmpl ReadBrickSG(float3 brickSampleAdress)
 }
 
 #ifndef GI_HELPERS_ONLY
-float EvaluateSGIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 V, out float3 diffuse)
+float EvaluateSGIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 V, out float3 diffuse, out float3 specular)
 {
-	float3 wposOffset = gbuffer.wpos + mData.dominantNormalDiffuse * g_giSampleData.minHalfVoxelSize;
+	// TODO: no offset for dynamic objects
+	float3 wposOffset = gbuffer.wpos + gbuffer.vertex_normal * g_giSampleData.minHalfVoxelSize;
 
 	float3 chunkPos = (wposOffset - g_giSampleData.minCorner) * g_giSampleData.chunkSizeRcp;
 
 	diffuse = 0;
+	specular = 0;
 
 	// check if outside
 	if (chunkPos.x <= 0 || chunkPos.y <= 0 || chunkPos.z <= 0 ||
@@ -131,7 +133,7 @@ float EvaluateSGIndirect(GBufferData gbuffer, DataForLightCompute mData, float3 
 	float3 brickSampleAdress = GetGIAddres(chunkPosFrac, brickOffset, brickDepth);
 	SGAmpl sg = ReadBrickSG(brickSampleAdress);
 
-	ComputeSGLighting(diffuse, mData.dominantNormalDiffuse, sg, g_giSampleData.sgBasis, g_giSampleData.sgHelpers0, g_giSampleData.sgHelpers1);
+	ComputeSGLighting(mData.dominantNormalDiffuse, sg, gbuffer, mData, V, g_giSampleData.sgBasis, g_giSampleData.sgHelpers0, g_giSampleData.sgHelpers1, diffuse, specular);
 	
 	//diffuse = lerp(diffuse, brickInOffset, 0.999);
 
