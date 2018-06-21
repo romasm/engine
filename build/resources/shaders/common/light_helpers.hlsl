@@ -181,7 +181,7 @@ bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedD
 	
 					results.diffuse = results.specular = colorIlluminance * NoL;
 					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-					results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+					results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 				}
 			}
 		}
@@ -269,7 +269,7 @@ bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedD
 					const float specVoH = saturate( dot(ViewVector, specH) );
 			
 					results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
-					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
 				}
 			}
@@ -361,7 +361,7 @@ bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedD
 					const float specVoH = saturate( dot(ViewVector, specH) );
 			
 					results.diffuse = results.specular = illuminance * lightData.ColorConeX.rgb;
-					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+					results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 					results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
 				}
 			}
@@ -408,7 +408,7 @@ bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared prepare
 	
 			results.diffuse = results.specular = colorIlluminance * NoL;
 			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-			results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+			results.specular *= directSpecularBRDF(gbuffer.reflectivity, mData.R, NoH, mData.NoV, NoL, VoH, H, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 		}
 	}
 	return exec;
@@ -475,7 +475,7 @@ bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared prepa
 	
 			results.diffuse = results.specular = illuminance * lightData.Color.rgb;
 			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
-			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 		}
 	}
 	return exec;
@@ -553,7 +553,7 @@ bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedD
 	
 			results.diffuse = results.specular = illuminance * lightData.Color.rgb;
 			results.diffuse *= directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, diffNoL, diffVoH);
-			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+			results.specular *= specEnergy * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 		}
 	}
 	return exec;
@@ -598,7 +598,7 @@ bool CalculateDirLight(sampler samp, Texture2DArray <float> shadowmap, in DirLig
 				colorLight *= lightAmount.x;
 
 				results.diffuse = colorLight * NoL * directDiffuseBRDF(gbuffer.albedo, mData.avgR, mData.NoV, NoL, VoH);
-				results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgR);	
+				results.specular = colorLight * specNoL * directSpecularBRDF(gbuffer.reflectivity, mData.R, specNoH, mData.NoV, specNoL, specVoH, specH, gbuffer.tangent, gbuffer.binormal, mData.avgRSq);
 			}
 		}
 	}

@@ -31,9 +31,9 @@ float3 Diffuse_Lambert( float3 DiffuseColor )
 
 // GGX / Trowbridge-Reitz
 // [Walter et al. 2007, "Microfacet models for refraction through rough surfaces"]
-float D_GGX( float Roughness, float NoH )
+float D_GGX( float a, float NoH )
 {
-	float a = Roughness * Roughness;	
+	//float a = Roughness * Roughness;	
 	float d = a / max(0.00000001, ( NoH * a * a - NoH ) * NoH + 1);
 	return INV_PI * d * d;		
 }
@@ -51,9 +51,9 @@ float D_GGXaniso( float RoughnessX, float RoughnessY, float NoH, float3 H, float
 }
 
 // Оптимизированный Smith GGX (Frostbyte)
-float G_SmithGGX( float NoL, float NoV, float Roughness)
+float G_SmithGGX( float NoL, float NoV, float a)
 {
-	float a = Roughness * Roughness;
+	//float a = Roughness * Roughness;
 	float a2 = a * a;
 	
 	// Caution : the " NoL *" and " NoV *" are explicitely inversed , this is not a mistake .
@@ -106,14 +106,14 @@ float IORtoR0( float IOR )
 	return R0;
 }
 
-float3 directSpecularBRDF(float3 S, float2 R, float NoH, float NoV, float NoL, float VoH, float3 H, float3 X, float3 Y, float avgR)
+float3 directSpecularBRDF(float3 S, float2 R, float NoH, float NoV, float NoL, float VoH, float3 H, float3 X, float3 Y, float avgRSq)
 {
 	float dGGX = 0;
 	if(R.x != R.y)
 		dGGX = D_GGXaniso( R.x, R.y, NoH, H, X, Y );
 	else
-		dGGX = D_GGX(avgR, NoH);	
-	return dGGX * G_SmithGGX(NoL, NoV, avgR) * F_Schlick(S, VoH);
+		dGGX = D_GGX(avgRSq, NoH);
+	return dGGX * G_SmithGGX(NoL, NoV, avgRSq) * F_Schlick(S, VoH);
 }
 
 float3 directDiffuseBRDF(float3 A, float R, float NoV, float NoL, float VoH)

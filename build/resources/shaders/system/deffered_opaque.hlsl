@@ -141,16 +141,16 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float4 envProbDiffuse = 0;
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 	 
-	// SG       
+	// SG         
 	float3 sgDiffuse;
 	float3 sgSpecular;
-	float lerpEnvProbSG = EvaluateSGIndirect(gbuffer, mData, ViewVector, sgDiffuse, sgSpecular);
-	
-	sgDiffuse *= diffuseBrdf;
+	float lerpEnvProbSG = ComputeSGIndirect(gbuffer, mData, ViewVector, diffuseBrdf, sgDiffuse, sgSpecular);
 
 	sgDiffuse = lerp(envProbDiffuse.rgb, sgDiffuse, lerpEnvProbSG); 
 	sgSpecular = lerp(envProbSpecular.rgb, sgSpecular, saturate((mData.avgR - 0.25) * 10.0));
 	sgSpecular = lerp(envProbSpecular.rgb, sgSpecular, lerpEnvProbSG);
+
+	sgSpecular *= SO;
 	
 	// SSR     
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );

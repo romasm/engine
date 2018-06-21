@@ -45,3 +45,25 @@ function Importer:ImportLoadMesh(sourceFile, callback, data)
         isSkinnedMesh = false,
     }, callback, data)
 end
+
+function Importer:OpenTextures(win)
+	local res = dlgOpenFilesMultiple(win:GetHWND(), "Import textures", self.filterTexture)
+	local size = res:Size()
+	if size == 0 then return true end
+
+	for i = 0, size - 1 do
+		local file = res:Get(i)
+
+		local point = file:find("%.", -4)
+		if point ~= nil then point = point - 1 end
+		local resource = file:sub(1, point)
+
+		Resource.ImportResource({
+			filePath = file,
+			resourceName = resource,
+			importTexture = true,
+			genMips = true,
+		})
+
+	end
+end

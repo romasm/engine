@@ -246,6 +246,7 @@ struct DataForLightCompute
 {
 	float2 R;
 	float avgR;
+	float avgRSq;
 	float minR;
 	float aGGX;
 	float sqr_aGGX;

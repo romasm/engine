@@ -139,12 +139,12 @@ void EvaluateEnvProbSpecular(sampler cubeSampler, DataForLightCompute mData, flo
 	
 	const float3 specularNormal = calculateAnisotropicNormal(gbuffer.roughness, gbuffer.normal, gbuffer.binormal, gbuffer.tangent, V);
 	const float3 refl = reflect(-V, specularNormal);
-	const float3 dominantR = normalize(getSpecularDominantDir(specularNormal, refl, mData.minR, mData.NoV));
+	const float3 dominantR = getSpecularDominantDir(specularNormal, refl, mData.minR, mData.NoV);
 
 	specularBrdf = gbuffer.reflectivity * envBrdf.x + saturate(50.0 * gbuffer.reflectivity.g) * envBrdf.y;
 		
-	const float surfaceFade = saturate(1.1 + dot(gbuffer.vertex_normal, normalize(dominantR)));
-	specularBrdf *= SO * surfaceFade;
+	const float surfaceFade = saturate(1.1 + dot(gbuffer.vertex_normal, dominantR));
+	specularBrdf *= surfaceFade;
 
 	diffuseBrdf = gbuffer.albedo * envBrdf.z * gbuffer.ao;
 

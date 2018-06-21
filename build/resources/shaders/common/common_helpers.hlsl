@@ -85,6 +85,7 @@ DataForLightCompute PrepareDataForLight(GBufferData gbuffer, float3 V)
 	mData.R.x = clamp(mData.R.x, 0.001f, 0.9999f);
 	mData.R.y = clamp(mData.R.y, 0.001f, 0.9999f);
 	mData.avgR = (mData.R.x + mData.R.y) * 0.5;
+	mData.avgRSq = mData.avgR * mData.avgR;
 	mData.minR = min(mData.R.x, mData.R.y);
 	mData.aGGX = max(mData.R.x * mData.R.y, 0.1);
 	mData.sqr_aGGX = Square(mData.aGGX);

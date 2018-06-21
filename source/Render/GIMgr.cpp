@@ -1276,7 +1276,7 @@ void GIMgr::GenerateSGBasis()
 	Vector3 h = axis[1] + axis[0];
 	h.Normalize();
 	//float sharpness = (log(0.65f) * SG_COUNT) / (h.Dot(axis[0]) - 1.0f);
-	float sharpness = 5.75f;
+	float sharpness = SG_SHARPNESS;
 
 	for (uint32_t k = 0; k < SG_COUNT; k++)
 	{

@@ -16,6 +16,32 @@ float computeDistanceBaseRoughness( float distInteresectionToShadedPoint, float 
 	return lerp( newLinearRoughness, linearRoughness, linearRoughness );
 }
 
+float3 skyEnvProbSpec(float3 N, float3 V, float NoV, float R, float mipR, float maxMip, TextureCube specularCube, TextureCube specularCubeLastMip, float3 VN)
+{
+	float3 Refl = reflect(-V, N);
+	float3 dominantR = getSpecularDominantDir(N, Refl, R, NoV);
+
+	float surfaceFade = saturate(1.1 + dot(VN, normalize(dominantR)));
+
+	float mipNum = mipR * maxMip;
+	float lastMipLerp = clamp(1 - (maxMip - mipNum), 0, 1);
+
+	float3 cubemap = specularCube.SampleLevel(samplerTrilinearWrap, dominantR, mipNum).rgb;
+	if (lastMipLerp != 0)
+	{
+		float3 diffCube = specularCubeLastMip.SampleLevel(samplerBilinearWrap, dominantR, 0).rgb;
+		cubemap = lerp(cubemap, diffCube, lastMipLerp);
+	}
+
+	return cubemap * surfaceFade;
+}
+
+float3 skyEnvProbDiff(float3 N, float3 V, float NoV, float R, TextureCube diffuseCube)
+{
+	float3 dominantN = getDiffuseDominantDir(N, V, NoV, R);
+	return diffuseCube.SampleLevel(samplerBilinearWrap, dominantN, 0).rgb;
+}
+
 /*
 float4 indirectDiffuseBRDF( float3 A, float3 N, float3 V, float NoV, float R, float mip, TextureCube diffuseCube )
 {
@@ -149,28 +175,3 @@ void simpleEnvProbSpec(float3 wp, EnvProbStructBuffer data, float3 S, float3 N, 
 	}
 }
 */
-float3 skyEnvProbSpec(float3 N, float3 V, float NoV , float R, float mipR, float maxMip, TextureCube specularCube, TextureCube specularCubeLastMip, float3 VN)
-{
-	float3 Refl = reflect(-V, N);
-	float3 dominantR = getSpecularDominantDir(N, Refl, R, NoV );
-
-	float surfaceFade = saturate(1.1 + dot(VN, normalize(dominantR)));
-
-	float mipNum = mipR * maxMip;
-	float lastMipLerp = clamp(1 - (maxMip - mipNum), 0, 1);		
-
-	float3 cubemap = specularCube.SampleLevel( samplerTrilinearWrap, dominantR, mipNum ).rgb;
-	if(lastMipLerp != 0)
-	{
-		float3 diffCube = specularCubeLastMip.SampleLevel( samplerBilinearWrap, dominantR, 0 ).rgb;
-		cubemap = lerp(cubemap, diffCube, lastMipLerp);
-	}
-	
-	return cubemap * surfaceFade;
-}
-
-float3 skyEnvProbDiff(float3 N, float3 V, float NoV , float R, TextureCube diffuseCube)
-{
-	float3 dominantN = getDiffuseDominantDir(N, V, NoV, R );
-	return diffuseCube.SampleLevel( samplerBilinearWrap, dominantN, 0 ).rgb;
-}
