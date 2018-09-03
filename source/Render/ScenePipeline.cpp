@@ -66,13 +66,12 @@ ScenePipeline::ScenePipeline()
 	giMgr = nullptr;
 	render_mgr = nullptr;
 		
-	m_CamMoveBuffer = nullptr;
-	m_SharedBuffer = nullptr;
+	sharedBuffer = nullptr;
 	m_AOBuffer = nullptr;
 
 	ZeroMemory(&lightsIDs, sizeof(LightsIDs));
 
-	lightsPerTileCount = nullptr;
+	lightsPerClusterCount = nullptr;
 	ZeroMemory(&lightsCount, sizeof(lightsCount));
 
 	codemgr = nullptr;
@@ -111,28 +110,19 @@ void ScenePipeline::Close()
 	_RELEASE(defferedConfigBuffer);
 
 	lightSpotBuffer.Release();
-	lightDiskBuffer.Release();
-	lightRectBuffer.Release();
 	lightPointBuffer.Release();
-	lightSphereBuffer.Release();
-	lightTubeBuffer.Release();
 	lightDirBuffer.Release();
 
 	casterSpotBuffer.Release();
-	casterDiskBuffer.Release();
-	casterRectBuffer.Release();
 	casterPointBuffer.Release();
-	casterSphereBuffer.Release();
-	casterTubeBuffer.Release();
 
 	lightsPerTile.Release();
 
-	_RELEASE(lightsPerTileCount);
+	_RELEASE(lightsPerClusterCount);
 
 	m_MaterialBuffer.Release();
 
-	_RELEASE(m_SharedBuffer);
-	_RELEASE(m_CamMoveBuffer);
+	_RELEASE(sharedBuffer);
 	_RELEASE(m_AOBuffer);
 
 	giMgr = nullptr;
@@ -195,41 +185,31 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_Antialiased[2]);
 }
 
-bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, bool lightweight)
+bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitConfig config)
 {
-	isLightweight = lightweight;
+	initConfig = config;
 
 	giMgr = wrd->GetGIMgr();
 
 	codemgr = ShaderCodeMgr::Get();
 	
-	render_mgr = new SceneRenderMgr(isLightweight);
+	render_mgr = new SceneRenderMgr(initConfig.lightweight);
 	
-	m_SharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
-
-	m_CamMoveBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
-		
-	if(!isLightweight)
+	sharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
+			
+	if(!initConfig.lightweight)
 	{
 		lightSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_FRAME_MAX, sizeof(SpotLightBuffer), true);
-		lightDiskBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_DISK_FRAME_MAX, sizeof(DiskLightBuffer), true);
-		lightRectBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_RECT_FRAME_MAX, sizeof(RectLightBuffer), true);
 		lightPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_FRAME_MAX, sizeof(PointLightBuffer), true);
-		lightSphereBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_SPHERE_FRAME_MAX, sizeof(SphereLightBuffer), true);
-		lightTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_TUBE_FRAME_MAX, sizeof(TubeLightBuffer), true);
 		lightDirBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_DIR_FRAME_MAX, sizeof(DirLightBuffer), true);
 
 		casterSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_FRAME_MAX, sizeof(SpotCasterBuffer), true);
-		casterDiskBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_DISK_FRAME_MAX, sizeof(DiskCasterBuffer), true);
-		casterRectBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_RECT_FRAME_MAX, sizeof(RectCasterBuffer), true);
 		casterPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_FRAME_MAX, sizeof(PointCasterBuffer), true);
-		casterSphereBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_SPHERE_FRAME_MAX, sizeof(SphereCasterBuffer), true);
-		casterTubeBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_TUBE_FRAME_MAX, sizeof(TubeCasterBuffer), true);
-
+		
 		lightsPerTile = Buffer::CreateStructedBuffer(Render::Device(), TOTAL_LIGHT_COUNT, sizeof(int32_t), true);
 	}
 
-	lightsPerTileCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
+	lightsPerClusterCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
 
 	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;
@@ -237,7 +217,7 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, bool lightwe
 	Materials[0].asymmetry = 0.0f;
 	Materials[0].attenuation = 0.0f;
 	
-	if(!isLightweight)
+	if(!initConfig.lightweight)
 		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_FULL );
 	else
 		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
@@ -642,12 +622,14 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 
 	sharedconst.perspParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
 
-	Render::UpdateDynamicResource(m_SharedBuffer, (void*)&sharedconst, sizeof(sharedconst));
-	Render::PSSetConstantBuffers(0, 1, &m_SharedBuffer); 
-	Render::VSSetConstantBuffers(0, 1, &m_SharedBuffer); 
-	Render::HSSetConstantBuffers(0, 1, &m_SharedBuffer); 
-	Render::DSSetConstantBuffers(0, 1, &m_SharedBuffer); 
-	Render::GSSetConstantBuffers(0, 1, &m_SharedBuffer); 
+	sharedconst.viewProjInv_ViewProjPrev = XMMatrixTranspose(current_camera->prevViewProj) * sharedconst.invViewProjection;
+
+	Render::UpdateDynamicResource(sharedBuffer, (void*)&sharedconst, sizeof(sharedconst));
+	Render::PSSetConstantBuffers(0, 1, &sharedBuffer); 
+	Render::VSSetConstantBuffers(0, 1, &sharedBuffer); 
+	Render::HSSetConstantBuffers(0, 1, &sharedBuffer); 
+	Render::DSSetConstantBuffers(0, 1, &sharedBuffer); 
+	Render::GSSetConstantBuffers(0, 1, &sharedBuffer); 
 	
 	// remove
 	float projParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
@@ -657,17 +639,14 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	maxDistSqr *= maxDistSqr;
 	sp_AO->SetFloat(maxDistSqr, 4);
 #endif*/
-
-	XMMATRIX camMove = XMMatrixTranspose(current_camera->prevViewProj) * sharedconst.invViewProjection;
-	Render::UpdateDynamicResource(m_CamMoveBuffer, (void*)&camMove, sizeof(XMMATRIX));
 	
 	// TEMP
 	defferedConfigData.dirDiff = renderConfig.analyticLightDiffuse;
 	defferedConfigData.dirSpec = renderConfig.analyticLightSpecular;
 	defferedConfigData.indirDiff = renderConfig.ambientLightDiffuse;
 	defferedConfigData.indirSpec = renderConfig.ambientLightSpecular;
+	defferedConfigData.albedoWhite = renderConfig.albedoWhite;
 
-	defferedConfigData.isLightweight = isLightweight ? 1.0f : 0.0f;
 	Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
 
 	render_mgr->envProbMgr->PrepareEnvProbs();
@@ -711,8 +690,7 @@ void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 	rt_OpaqueForward->SetRenderTarget();
 	Materials_Count = 1;
 
-	render_mgr->DrawOpaque(this);
-	render_mgr->DrawAlphatest(this);
+	render_mgr->DrawOpaque();
 	
 	if(dbgDrawer)
 		dbgDrawer->RenderOpaque();
@@ -732,7 +710,7 @@ void ScenePipeline::TransparentForwardStage()
 	rt_TransparentPrepass->ClearRenderTargets(true);
 	rt_TransparentPrepass->SetRenderTarget();
 
-	render_mgr->PrepassTransparent(this);
+	render_mgr->PrepassTransparent();
 
 	Render::OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -749,135 +727,71 @@ void ScenePipeline::TransparentForwardStage()
 		
 	Render::PSSetShaderResources(0, srvs_size, srvs);
 
-	if(!isLightweight)
+	if(!initConfig.lightweight)
 		LoadLights(srvs_size, false);
 	
 	Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
 
-	if(!isLightweight)
-		Render::PSSetConstantBuffers(4, 1, &lightsPerTileCount);
+	if(!initConfig.lightweight)
+		Render::PSSetConstantBuffers(4, 1, &lightsPerClusterCount);
 
-	render_mgr->DrawTransparent(this);
+	render_mgr->DrawTransparent();
 }
 
 uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
 {
-	size_t spot_size, disk_size, rect_size, point_size, sphere_size, tube_size, dir_size;
+	size_t spot_size, point_size, dir_size;
 	void* spot_data = (void*)render_mgr->GetSpotLightDataPtr(&spot_size);
-	void* disk_data = (void*)render_mgr->GetSpotLightDiskDataPtr(&disk_size);
-	void* rect_data = (void*)render_mgr->GetSpotLightRectDataPtr(&rect_size);
 	void* point_data = (void*)render_mgr->GetPointLightDataPtr(&point_size);
-	void* sphere_data = (void*)render_mgr->GetPointLightSphereDataPtr(&sphere_size);
-	void* tube_data = (void*)render_mgr->GetPointLightTubeDataPtr(&tube_size);
 	void* dir_data = (void*)render_mgr->GetDirLightDataPtr(&dir_size);
 
-	size_t caster_spot_size, caster_disk_size, caster_rect_size, caster_point_size, caster_sphere_size, caster_tube_size;
+	size_t caster_spot_size, caster_point_size;
 	void* caster_spot_data = (void*)render_mgr->GetSpotCasterDataPtr(&caster_spot_size);
-	void* caster_disk_data = (void*)render_mgr->GetSpotCasterDiskDataPtr(&caster_disk_size);
-	void* caster_rect_data = (void*)render_mgr->GetSpotCasterRectDataPtr(&caster_rect_size);
 	void* caster_point_data = (void*)render_mgr->GetPointCasterDataPtr(&caster_point_size);
-	void* caster_sphere_data = (void*)render_mgr->GetPointCasterSphereDataPtr(&caster_sphere_size);
-	void* caster_tube_data = (void*)render_mgr->GetPointCasterTubeDataPtr(&caster_tube_size);
 
 	uint32_t structed_offset = startOffset;
 
-	ID3D11ShaderResourceView* srvs[13];
+	ID3D11ShaderResourceView* srvs[5];
 
 	if(spot_size > 0)
 		Render::UpdateDynamicResource(lightSpotBuffer.buf, spot_data, sizeof(SpotLightBuffer) * spot_size);
 	srvs[0] = lightSpotBuffer.srv; 
 	structed_offset++;
 
-	if(disk_size > 0)
-		Render::UpdateDynamicResource(lightDiskBuffer.buf, disk_data, sizeof(DiskLightBuffer) * disk_size);
-	srvs[1] = lightDiskBuffer.srv; 
-	structed_offset++;
-
-	if(rect_size > 0)
-		Render::UpdateDynamicResource(lightRectBuffer.buf, rect_data, sizeof(RectLightBuffer) * rect_size);
-	srvs[2] = lightRectBuffer.srv; 
-	structed_offset++;
-
 	if(caster_spot_size > 0)
 		Render::UpdateDynamicResource(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);
-	srvs[3] = casterSpotBuffer.srv; 
-	structed_offset++;
-
-	if(caster_disk_size > 0)
-		Render::UpdateDynamicResource(casterDiskBuffer.buf, caster_disk_data, sizeof(DiskCasterBuffer) * caster_disk_size);
-	srvs[4] = casterDiskBuffer.srv; 
-	structed_offset++;
-
-	if(caster_rect_size > 0)
-		Render::UpdateDynamicResource(casterRectBuffer.buf, caster_rect_data, sizeof(RectCasterBuffer) * caster_rect_size);
-	srvs[5] = casterRectBuffer.srv; 
+	srvs[1] = casterSpotBuffer.srv; 
 	structed_offset++;
 	
 	if(point_size > 0)
 		Render::UpdateDynamicResource(lightPointBuffer.buf, point_data, sizeof(PointLightBuffer) * point_size);
-	srvs[6] = lightPointBuffer.srv; 
-	structed_offset++;
-	
-	if(sphere_size > 0)
-		Render::UpdateDynamicResource(lightSphereBuffer.buf, sphere_data, sizeof(SphereLightBuffer) * sphere_size);
-	srvs[7] = lightSphereBuffer.srv; 
-	structed_offset++;
-	
-	if(tube_size > 0)
-		Render::UpdateDynamicResource(lightTubeBuffer.buf, tube_data, sizeof(TubeLightBuffer) * tube_size);
-	srvs[8] = lightTubeBuffer.srv; 
+	srvs[2] = lightPointBuffer.srv; 
 	structed_offset++;
 
 	if(caster_point_size > 0)
 		Render::UpdateDynamicResource(casterPointBuffer.buf, caster_point_data, sizeof(PointCasterBuffer) * caster_point_size);
-	srvs[9] = casterPointBuffer.srv; 
-	structed_offset++;
-
-	if(caster_sphere_size > 0)
-		Render::UpdateDynamicResource(casterSphereBuffer.buf, caster_sphere_data, sizeof(SphereCasterBuffer) * caster_sphere_size);
-	srvs[10] = casterSphereBuffer.srv; 
-	structed_offset++;
-
-	if(caster_tube_size > 0)
-		Render::UpdateDynamicResource(casterTubeBuffer.buf, caster_tube_data, sizeof(TubeCasterBuffer) * caster_tube_size);
-	srvs[11] = casterTubeBuffer.srv; 
+	srvs[3] = casterPointBuffer.srv; 
 	structed_offset++;
 
 	if(dir_size > 0)
 		Render::UpdateDynamicResource(lightDirBuffer.buf, dir_data, sizeof(DirLightBuffer) * dir_size);
-	srvs[12] = lightDirBuffer.srv; 
+	srvs[4] = lightDirBuffer.srv; 
 	structed_offset++;
 
 	if(isCS)
-		Render::CSSetShaderResources(startOffset, 13, srvs);
+		Render::CSSetShaderResources(startOffset, 5, srvs);
 	else
-		Render::PSSetShaderResources(startOffset, 13, srvs);
+		Render::PSSetShaderResources(startOffset, 5, srvs);
 		
 		// TEMP
 		for(uint16_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
 			lightsIDs[SPOT_L_ID(i)] = i;
-		for(uint16_t i = 0; i < LIGHT_SPOT_DISK_FRAME_MAX; i++)
-			lightsIDs[DISK_L_ID(i)] = i;
-		for(uint16_t i = 0; i < LIGHT_SPOT_RECT_FRAME_MAX; i++)
-			lightsIDs[RECT_L_ID(i)] = i;
 		for(uint16_t i = 0; i < CASTER_SPOT_FRAME_MAX; i++)
 			lightsIDs[SPOT_C_ID(i)] = i;
-		for(uint16_t i = 0; i < CASTER_SPOT_DISK_FRAME_MAX; i++)
-			lightsIDs[DISK_C_ID(i)] = i;
-		for(uint16_t i = 0; i < CASTER_SPOT_RECT_FRAME_MAX; i++)
-			lightsIDs[RECT_C_ID(i)] = i;
 		for(uint16_t i = 0; i < LIGHT_POINT_FRAME_MAX; i++)
 			lightsIDs[POINT_L_ID(i)] = i;
-		for(uint16_t i = 0; i < LIGHT_POINT_SPHERE_FRAME_MAX; i++)
-			lightsIDs[SPHERE_L_ID(i)] = i;
-		for(uint16_t i = 0; i < LIGHT_POINT_TUBE_FRAME_MAX; i++)
-			lightsIDs[TUBE_L_ID(i)] = i;
 		for(uint16_t i = 0; i < CASTER_POINT_FRAME_MAX; i++)
 			lightsIDs[POINT_C_ID(i)] = i;
-		for(uint16_t i = 0; i < CASTER_POINT_SPHERE_FRAME_MAX; i++)
-			lightsIDs[SPHERE_C_ID(i)] = i;
-		for(uint16_t i = 0; i < CASTER_POINT_TUBE_FRAME_MAX; i++)
-			lightsIDs[TUBE_C_ID(i)] = i;
 		for(uint16_t i = 0; i < LIGHT_DIR_FRAME_MAX; i++)
 			lightsIDs[DIR_ID(i)] = i;
 
@@ -890,22 +804,14 @@ uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
 	structed_offset++;
 
 	lightsCount.spot_count = (int32_t)spot_size;
-	lightsCount.disk_count = (int32_t)disk_size;
-	lightsCount.rect_count = (int32_t)rect_size;
 	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
-	lightsCount.caster_disk_count = (int32_t)caster_disk_size;
-	lightsCount.caster_rect_count = (int32_t)caster_rect_size;
 	lightsCount.point_count = (int32_t)point_size;
-	lightsCount.sphere_count = (int32_t)sphere_size;
-	lightsCount.tube_count = (int32_t)tube_size;
 	lightsCount.caster_point_count = (int32_t)caster_point_size;
-	lightsCount.caster_sphere_count = (int32_t)caster_sphere_size;
-	lightsCount.caster_tube_count = (int32_t)caster_tube_size;
 	lightsCount.dir_count = (int32_t)dir_size;
 
 	render_mgr->envProbMgr->BindEnvProbs(isCS, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
 
-	Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
+	Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
 
 	return structed_offset;
 }
@@ -945,7 +851,6 @@ void ScenePipeline::OpaqueDefferedStage()
 	memcpy(mappedResourceM.pData, (void*)Materials, Materials_Count * sizeof(MaterialParamsStructBuffer));
 	Render::Unmap(m_MaterialBuffer.buf, 0);
 
-	Render::PSSetConstantBuffers(1, 1, &m_CamMoveBuffer); 
 	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
 	
 	//sp_SSR->Draw();
@@ -990,7 +895,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	srvs[14] = nullptr;
 	srvs[15] = nullptr;
 	
-	if (!isLightweight)
+	if (!initConfig.lightweight)
 	{
 		srvs[13] = giMgr->GetGIChunksSRV();
 		srvs[14] = giMgr->GetGILookupsSRV();
@@ -1012,15 +917,15 @@ void ScenePipeline::OpaqueDefferedStage()
 		uint32_t structed_offset = 13;
 		render_mgr->envProbMgr->BindEnvProbs(true, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
 
-		Render::UpdateDynamicResource(lightsPerTileCount, &lightsCount, sizeof(LightsCount));
+		Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
 	}
 	
-	Render::CSSetConstantBuffers(0, 1, &m_SharedBuffer); 
+	Render::CSSetConstantBuffers(0, 1, &sharedBuffer); 
 	Render::CSSetConstantBuffers(1, 1, &defferedConfigBuffer); 
 
-	Render::CSSetConstantBuffers(2, 1, &lightsPerTileCount);
+	Render::CSSetConstantBuffers(2, 1, &lightsPerClusterCount);
 
-	if (!isLightweight)
+	if (!initConfig.lightweight)
 	{
 		auto giSampleData = giMgr->GetGISampleData();
 		Render::CSSetConstantBuffers(3, 1, &giSampleData);

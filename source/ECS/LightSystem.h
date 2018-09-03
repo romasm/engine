@@ -46,7 +46,10 @@ namespace EngineCore
 		Vector3 dir_side;
 
 		Vector4 hdr_color;
+
+		// currently unused, use in case of low accuracity computation
 		Vector4 nonAreaColor;
+		
 		float rangeInvSqr;
 		Vector2 cone_data;
 
@@ -54,7 +57,7 @@ namespace EngineCore
 
 		// spot disk: x - radius
 		// spot rect: x, y, z - length, width/2, length/2
-		// point sphere: x - radius
+		// point sphere: x - radius, y - radius*radius
 		// point tube: x - radius, y - length
 		Vector3 area_data; 
 

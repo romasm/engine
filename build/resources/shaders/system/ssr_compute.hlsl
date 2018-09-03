@@ -23,12 +23,6 @@ SamplerState samplerPointClamp : register(s0);
 SamplerState samplerTrilinearClamp : register(s1);
 SamplerState samplerBilinearClamp : register(s2);
 
-cbuffer CamMove : register(b1)
-{
-	float4x4 viewProjInv_ViewProjPrev;
-};
-
-
 #define MIN_REFL_DEPTH 0.00002
 #define MAX_DEPTH_OFFSET 0.005
 #define RAY_ITERATOR 128
@@ -47,7 +41,7 @@ float3 GetPrevPos(float3 pos) // screen space
 	curr_pos.y = -curr_pos.y;
 	curr_pos.z = pos.z;
 	
-	float4 prevHomog = mul(curr_pos, viewProjInv_ViewProjPrev);
+	float4 prevHomog = mul(curr_pos, g_viewProjInv_ViewProjPrev);
 	prevHomog.xyz = prevHomog.xyz / prevHomog.w;
 	
 	float3 res = float3(prevHomog.xy * float2(0.5f, -0.5f) + float2(0.5f,0.5f), prevHomog.z);

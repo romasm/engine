@@ -138,7 +138,7 @@ float getAngleAtt( float3 normalizedLightVector, float3 lightDir, float lightAng
 LightPrepared PrepareSpotLight(in SpotLightBuffer lightData, in GBufferData gbuffer)
 {		
 	LightPrepared result = (LightPrepared)0;
-	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
+	result.unnormL = lightData.VirtposAreaZ.xyz - gbuffer.wpos;
 	result.L = normalize(result.unnormL);
 	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
 	return result;
@@ -189,16 +189,7 @@ bool CalculateSpotLight(in SpotLightBuffer lightData, in LightPrepared preparedD
 	return exec;
 }
 
-LightPrepared PrepareDiskLight(in DiskLightBuffer lightData, in GBufferData gbuffer)
-{		
-	LightPrepared result = (LightPrepared)0;
-	result.unnormL = lightData.VirtposEmpty.xyz - gbuffer.wpos;
-	result.L = normalize(result.unnormL);
-	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
-	return result;
-}
-
-bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
+bool CalculateDiskLight(in SpotLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData,
 						in MaterialParams materialParams, float3 ViewVector, float lightAmount, bool scatter, out LightComponents results)
 {
 	results = (LightComponents)0;
@@ -230,16 +221,16 @@ bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedD
 				const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
 				const float3 newL = planeRay - lightData.PosRange.xyz;
 		
-				const float SphereAngle = clamp( -e * lightData.AreaInfoEmpty.x / max(sqrt( sqrDist ), lightData.AreaInfoEmpty.x), 0, 0.5 );
+				const float SphereAngle = clamp( -e * lightData.DirUpAreaX.w / max(sqrt( sqrDist ), lightData.DirUpAreaX.w), 0, 0.5 );
 				const float specEnergy = Square( mData.aGGX / saturate( mData.aGGX + SphereAngle ) );
 		
-				const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, lightData.AreaInfoEmpty.x));
+				const float3 specL = normalize(unnormL + normalize(newL) * clamp(length(newL), 0, lightData.DirUpAreaX.w));
 				
 				//diffuse
-				const float3 diffL = normalize(unnormL + gbuffer.normal * lightData.AreaInfoEmpty.x * (1 - saturate(NoL)));	
+				const float3 diffL = normalize(unnormL + gbuffer.normal * lightData.DirUpAreaX.w * (1 - saturate(NoL)));
 			
 				// Disk evaluation
-				const float sinSigmaSqr = lightData.AreaInfoEmpty.y / (lightData.AreaInfoEmpty.y + max(sqrDist, lightData.AreaInfoEmpty.y));
+				const float sinSigmaSqr = lightData.DirSideAreaY.w / (lightData.DirSideAreaY.w + max(sqrDist, lightData.DirSideAreaY.w));
 				float noDirIlluminance;
 				float illuminance = illuminanceSphereOrDisk( NoL, sinSigmaSqr, noDirIlluminance );
 		
@@ -278,16 +269,7 @@ bool CalculateDiskLight(in DiskLightBuffer lightData, in LightPrepared preparedD
 	return exec;
 }
 
-LightPrepared PrepareRectLight(in RectLightBuffer lightData, in GBufferData gbuffer)
-{		
-	LightPrepared result = (LightPrepared)0;
-	result.unnormL = lightData.VirtposAreaZ.xyz - gbuffer.wpos;
-	result.L = normalize(result.unnormL);
-	result.DoUL = dot(lightData.DirConeY.xyz, -result.unnormL);
-	return result;
-}
-
-bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
+bool CalculateRectLight(in SpotLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData,
 						in MaterialParams materialParams, float3 ViewVector, float lightAmount, bool scatter, out LightComponents results)
 {
 	results = (LightComponents)0;
@@ -313,7 +295,7 @@ bool CalculateRectLight(in RectLightBuffer lightData, in LightPrepared preparedD
 				coneFalloff *= smoothFalloff;
 					
 				// specular				
-				const float RLengthL = rcp( max(sqrt( sqrDist ), lightData.DirUpAreaX.x) );
+				const float RLengthL = rcp( max(sqrt( sqrDist ), lightData.DirUpAreaX.w) );
 		
 				const float e = clamp(dot(lightData.DirConeY.xyz, mData.reflect), -1, -0.0001f);
 				const float3 planeRay = gbuffer.wpos - mData.reflect * DoUL / e;
@@ -414,15 +396,7 @@ bool CalculatePointLight(in PointLightBuffer lightData, in LightPrepared prepare
 	return exec;
 }
 
-LightPrepared PrepareSphereLight(in SphereLightBuffer lightData, in GBufferData gbuffer)
-{		
-	LightPrepared result = (LightPrepared)0;
-	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(result.unnormL);
-	return result;
-}
-
-bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
+bool CalculateSphereLight(in PointLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData,
 						in MaterialParams materialParams, float3 ViewVector, float lightAmount, bool scatter, out LightComponents results)
 {	
 	results = (LightComponents)0;
@@ -481,15 +455,7 @@ bool CalculateSphereLight(in SphereLightBuffer lightData, in LightPrepared prepa
 	return exec;
 }
 
-LightPrepared PrepareTubeLight(in TubeLightBuffer lightData, in GBufferData gbuffer)
-{		
-	LightPrepared result = (LightPrepared)0;
-	result.unnormL = lightData.PosRange.xyz - gbuffer.wpos;
-	result.L = normalize(result.unnormL);
-	return result;
-}
-
-bool CalculateTubeLight(in TubeLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
+bool CalculateTubeLight(in PointLightBuffer lightData, in LightPrepared preparedData, in GBufferData gbuffer, in DataForLightCompute mData, 
 						in MaterialParams materialParams, float3 ViewVector, float lightAmount, bool scatter, out LightComponents results)
 {	
 	results = (LightComponents)0;
@@ -638,10 +604,17 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PrepareSpotLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSpotLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
+		bool exec = false;
+
+		if (int(lightData.Type.x) == LIGHT_TYPE_SPOT)
+			exec = CalculateSpotLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+		else if (int(lightData.Type.x) == LIGHT_TYPE_DISK)
+			exec = CalculateDiskLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+		else
+			exec = CalculateRectLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+
+		if(exec)
+			directLight.Append(lightResult);
 	}
 #endif// TEMP_FAST_COMPILE 
 	[loop] // caster spot
@@ -658,81 +631,19 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculateSpotLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
+		bool exec = false;
+
+		if (int(lightDataShort.Type.x) == LIGHT_TYPE_SPOT)
+			exec = CalculateSpotLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
+		else if (int(lightDataShort.Type.x) == LIGHT_TYPE_DISK)
+			exec = CalculateDiskLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
+		else
+			exec = CalculateRectLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
+
+		if (exec)
+			directLight.AppendShadowed(lightResult, lightAmount.x);
 	}
 #ifndef TEMP_FAST_COMPILE 
-	[loop] // disk
-	for(int i_disk=0; i_disk < g_lightCount.disk_count; i_disk++)
-	{
-		DiskLightBuffer lightData = g_diskLightBuffer[ g_lightIDs[DISK_L_ID(i_disk)] ];
-		LightPrepared prepared = PrepareDiskLight(lightData, gbuffer);
-
-		LightComponents lightResult;
-		[branch] if( !CalculateDiskLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
-	}
-	
-	[loop] // caster disk
-	for(int ic_disk=0; ic_disk < g_lightCount.caster_disk_count; ic_disk++)
-	{
-		DiskCasterBuffer lightData = g_diskCasterBuffer[ g_lightIDs[DISK_C_ID(ic_disk)] ];
-		DiskLightBuffer lightDataShort = (DiskLightBuffer)0;
-		lightDataShort.Construct(lightData);
-
-		LightPrepared prepared = PrepareDiskLight(lightDataShort, gbuffer);
-
-		SpotCasterBuffer lightDataShadow = (SpotCasterBuffer)0;
-		lightDataShadow.ConstructDisk(lightData);
-		float2 lightAmount = SpotlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix, scatter);
-		[branch] if( lightAmount.x == 0 && lightAmount.y == 0 )
-			continue;
-
-		LightComponents lightResult;
-		[branch] if( !CalculateDiskLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
-	}
-	
-	[loop] // rect
-	for(int i_rect=0; i_rect < g_lightCount.rect_count; i_rect++)
-	{
-		RectLightBuffer lightData = g_rectLightBuffer[ g_lightIDs[RECT_L_ID(i_rect)] ];
-		LightPrepared prepared = PrepareRectLight(lightData, gbuffer);
-
-		LightComponents lightResult;
-		[branch] if( !CalculateRectLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
-	}
-	
-	[loop] // caster rect
-	for(int ic_rect=0; ic_rect < g_lightCount.caster_rect_count; ic_rect++)
-	{
-		RectCasterBuffer lightData = g_rectCasterBuffer[ g_lightIDs[RECT_C_ID(ic_rect)] ];
-		RectLightBuffer lightDataShort = (RectLightBuffer)0;
-		lightDataShort.Construct(lightData);
-
-		LightPrepared prepared = PrepareRectLight(lightDataShort, gbuffer);
-		
-		SpotCasterBuffer lightDataShadow = (SpotCasterBuffer)0;
-		lightDataShadow.ConstructRect(lightData);
-		float2 lightAmount = SpotlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix, scatter);
-		[branch] if( lightAmount.x == 0 && lightAmount.y == 0 )
-			continue;
-
-		LightComponents lightResult;
-		[branch] if( !CalculateRectLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
-	}
 	
 	[loop] // point
 	for(int i_p=0; i_p < g_lightCount.point_count; i_p++)
@@ -741,17 +652,23 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 		LightPrepared prepared = PreparePointLight(lightData, gbuffer);
 
 		LightComponents lightResult;
-		[branch] if( !CalculatePointLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
+		bool exec = false;
+
+		if (int(lightData.Type.x) == LIGHT_TYPE_POINT)
+			exec = CalculatePointLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+		else if (int(lightData.Type.x) == LIGHT_TYPE_SPHERE)
+			exec = CalculateSphereLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+		else
+			exec = CalculateTubeLight(lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult);
+
+		if(exec)
+			directLight.Append(lightResult);
 	}
-#endif// TEMP_FAST_COMPILE 
+
 	[loop] // caster point
 	for(int ic_p=0; ic_p < g_lightCount.caster_point_count; ic_p++)
 	{
 		PointCasterBuffer lightData = g_pointCasterBuffer[ g_lightIDs[POINT_C_ID(ic_p)] ];
-		//PointCasterBuffer lightData = g_pointCasterBuffer[ ic_p ];
 		PointLightBuffer lightDataShort = (PointLightBuffer)0;
 		lightDataShort.Construct(lightData);
 
@@ -762,80 +679,17 @@ LightComponents ProcessLights(sampler samp, Texture2DArray <float> shadowmap, in
 			continue;
 
 		LightComponents lightResult;
-		[branch] if( !CalculatePointLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
-	}
-#ifndef TEMP_FAST_COMPILE 
-	[loop] // sphere
-	for(int i_sph=0; i_sph < g_lightCount.sphere_count; i_sph++)
-	{
-		SphereLightBuffer lightData = g_sphereLightBuffer[ g_lightIDs[SPHERE_L_ID(i_sph)] ];
-		LightPrepared prepared = PrepareSphereLight(lightData, gbuffer);
+		bool exec = false;
 
-		LightComponents lightResult;
-		[branch] if( !CalculateSphereLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
-	}
-	
-	[loop] // caster sphere
-	for(int ic_sph=0; ic_sph < g_lightCount.caster_sphere_count; ic_sph++)
-	{
-		SphereCasterBuffer lightData = g_sphereCasterBuffer[ g_lightIDs[SPHERE_C_ID(ic_sph)] ];
-		SphereLightBuffer lightDataShort = (SphereLightBuffer)0;
-		lightDataShort.Construct(lightData);
+		if (int(lightDataShort.Type.x) == LIGHT_TYPE_POINT)
+			exec = CalculatePointLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
+		else if (int(lightDataShort.Type.x) == LIGHT_TYPE_SPHERE)
+			exec = CalculateSphereLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
+		else
+			exec = CalculateTubeLight(lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult);
 
-		LightPrepared prepared = PrepareSphereLight(lightDataShort, gbuffer);
-		
-		PointCasterBuffer lightDataShadow = (PointCasterBuffer)0;
-		lightDataShadow.ConstructSphere(lightData);
-		float2 lightAmount = PointlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix, scatter);
-		[branch] if( lightAmount.x == 0 && lightAmount.y == 0 )
-			continue;
-
-		LightComponents lightResult;
-		[branch] if( !CalculateSphereLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
-	}
-	
-	[loop] // tube
-	for(int i_tube=0; i_tube < g_lightCount.tube_count; i_tube++)
-	{
-		TubeLightBuffer lightData = g_tubeLightBuffer[ g_lightIDs[TUBE_L_ID(i_tube)] ];
-		LightPrepared prepared = PrepareTubeLight(lightData, gbuffer);
-
-		LightComponents lightResult;
-		[branch] if( !CalculateTubeLight( lightData, prepared, gbuffer, mData, materialParams, ViewVector, lightAmountFake, scatter, lightResult ) )
-			continue;
-		
-		directLight.Append(lightResult);
-	}
-	
-	[loop] // caster tube
-	for(int ic_tube=0; ic_tube < g_lightCount.caster_tube_count; ic_tube++)
-	{
-		TubeCasterBuffer lightData = g_tubeCasterBuffer[ g_lightIDs[TUBE_C_ID(ic_tube)] ];
-		TubeLightBuffer lightDataShort = (TubeLightBuffer)0;
-		lightDataShort.Construct(lightData);
-
-		LightPrepared prepared = PrepareTubeLight(lightDataShort, gbuffer);
-		
-		PointCasterBuffer lightDataShadow = (PointCasterBuffer)0;
-		lightDataShadow.ConstructTube(lightData);
-		float2 lightAmount = PointlightShadow(samp, shadowmap, prepared, lightDataShadow, gbuffer, shadowDepthFix, scatter);
-		[branch] if( lightAmount.x == 0 && lightAmount.y == 0 )
-			continue;
-
-		LightComponents lightResult;
-		[branch] if( !CalculateTubeLight( lightDataShort, prepared, gbuffer, mData, materialParams, ViewVector, lightAmount.y, scatter, lightResult ) )
-			continue;
-		
-		directLight.AppendShadowed(lightResult, lightAmount.x);
+		if(exec)		
+			directLight.AppendShadowed(lightResult, lightAmount.x);
 	}
 	
 	[loop] // dir

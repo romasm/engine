@@ -45,32 +45,22 @@ Texture3D<float4> g_giBricks : register(t15);
 Texture2DArray <float> shadows: register(t16); 
 
 StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
-StructuredBuffer<DiskLightBuffer> g_diskLightBuffer : register(t18); 
-StructuredBuffer<RectLightBuffer> g_rectLightBuffer : register(t19); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t18); 
 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t20); 
-StructuredBuffer<DiskCasterBuffer> g_diskCasterBuffer : register(t21); 
-StructuredBuffer<RectCasterBuffer> g_rectCasterBuffer : register(t22); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t19); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t20); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t23); 
-StructuredBuffer<SphereLightBuffer> g_sphereLightBuffer : register(t24); 
-StructuredBuffer<TubeLightBuffer> g_tubeLightBuffer : register(t25); 
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t21);     
 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t26); 
-StructuredBuffer<SphereCasterBuffer> g_sphereCasterBuffer : register(t27); 
-StructuredBuffer<TubeCasterBuffer> g_tubeCasterBuffer : register(t28); 
+StructuredBuffer<int> g_lightIDs : register(t22); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t29);     
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t23); 
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t24); 
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t25); 
 
-StructuredBuffer<int> g_lightIDs : register(t30); 
-
-TextureCubeArray <float4> g_hqEnvProbsArray: register(t31); 
-TextureCubeArray <float4> g_sqEnvProbsArray: register(t32); 
-TextureCubeArray <float4> g_lqEnvProbsArray: register(t33); 
-
-StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t34); 
-StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t35); 
-StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t36); 
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t26); 
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t27); 
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t28); 
 
 cbuffer configBuffer : register(b1)
 {
@@ -85,7 +75,7 @@ cbuffer lightsCount : register(b2)
 #include "../system/direct_brdf.hlsl"   
 #include "../common/sg_helpers.hlsl"   
  
-cbuffer giData : register(b3)
+cbuffer giData : register(b3)  
 { 
 	GISampleData g_giSampleData;
 };   

@@ -1,5 +1,7 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
+
+#define SG_OFFLINE
 #include "../common/sg_helpers.hlsl"
 
 #define GROUP_THREAD_COUNT_X 16

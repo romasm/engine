@@ -4,6 +4,8 @@ shared cbuffer SharedBuffer : register(b0)
 	matrix g_invViewProj;
 	matrix g_view;
 	matrix g_proj;
+
+	matrix g_viewProjInv_ViewProjPrev;
 	
 	float3 g_CamPos;
 	int g_screenW;

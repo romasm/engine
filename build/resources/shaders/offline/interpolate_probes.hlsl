@@ -1,6 +1,8 @@
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
-#include "../common/sh_helpers.hlsl"
+
+#define SG_OFFLINE
+#include "../common/sg_helpers.hlsl"
 
 #define GROUP_THREAD_COUNT_X 128
 #define EPCILON 0.001
@@ -51,7 +53,7 @@ void Interpolate(uint3 threadID : SV_DispatchThreadID)
 	uint brickDepth;
 	GetBrickAddres(chunkPosFloor, chunkPosFrac, brickOffset, brickDepth);
 	float3 brickSampleAdress = GetGIAddres(chunkPosFrac, brickOffset, brickDepth);	
-	SHcoef3 sh = ReadBrickSH(brickSampleAdress);
+	SGAmpl sg = ReadBrickSG(brickSampleAdress);
 	
 	// write 
 	[loop]
@@ -62,7 +64,7 @@ void Interpolate(uint3 threadID : SV_DispatchThreadID)
 		[unroll]
 		for (int i = 0; i < 9; i++)
 		{
-			bricksAtlas[coords] = float4(sh.L[i], 0);
+			bricksAtlas[coords] = float4(sg.A[i], 0);
 			coords.z += 3;
 		}
 	}

@@ -1,61 +1,27 @@
 
-#define LIGHT_SPOT_FRAME_MAX 64
-#define LIGHT_SPOT_DISK_FRAME_MAX 64
-#define LIGHT_SPOT_RECT_FRAME_MAX 64
-#define LIGHT_POINT_FRAME_MAX 64
-#define LIGHT_POINT_SPHERE_FRAME_MAX 64
-#define LIGHT_POINT_TUBE_FRAME_MAX 64
+#define LIGHT_TYPE_POINT	0
+#define LIGHT_TYPE_SPHERE	1
+#define LIGHT_TYPE_TUBE		2
+#define LIGHT_TYPE_SPOT		3
+#define LIGHT_TYPE_DISK		4
+#define LIGHT_TYPE_RECT		5
+
+#define LIGHT_SPOT_FRAME_MAX 1024
+#define LIGHT_POINT_FRAME_MAX 1024
+
 #define LIGHT_DIR_FRAME_MAX 8
 #define LIGHT_DIR_NUM_CASCADES 4
 
-#define CASTER_SPOT_FRAME_MAX 64
-#define CASTER_SPOT_DISK_FRAME_MAX 64
-#define CASTER_SPOT_RECT_FRAME_MAX 64
-#define CASTER_POINT_FRAME_MAX 32
-#define CASTER_POINT_SPHERE_FRAME_MAX 32
-#define CASTER_POINT_TUBE_FRAME_MAX 32
+#define CASTER_SPOT_FRAME_MAX 256
+#define CASTER_POINT_FRAME_MAX 128
 
-#define TOTAL_LIGHT_COUNT (LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX + LIGHT_POINT_TUBE_FRAME_MAX + \
-							CASTER_POINT_FRAME_MAX + CASTER_POINT_SPHERE_FRAME_MAX + CASTER_POINT_TUBE_FRAME_MAX + \
-							LIGHT_DIR_FRAME_MAX)
+#define TOTAL_LIGHT_COUNT (LIGHT_SPOT_FRAME_MAX + CASTER_SPOT_FRAME_MAX + LIGHT_POINT_FRAME_MAX + CASTER_POINT_FRAME_MAX + LIGHT_DIR_FRAME_MAX)
 
 #define SPOT_L_ID(i) (i + 0)
-#define DISK_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX)
-#define RECT_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX)
-
-#define SPOT_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX)
-#define DISK_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX)
-#define RECT_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX)
-
-#define POINT_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX)
-#define SPHERE_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX)
-#define TUBE_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX)
-
-#define POINT_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX + LIGHT_POINT_TUBE_FRAME_MAX)
-#define SPHERE_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX + LIGHT_POINT_TUBE_FRAME_MAX + \
-							CASTER_POINT_FRAME_MAX)
-#define TUBE_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX + LIGHT_POINT_TUBE_FRAME_MAX + \
-							CASTER_POINT_FRAME_MAX + CASTER_POINT_SPHERE_FRAME_MAX)
-
-#define DIR_ID(i) (i + LIGHT_SPOT_FRAME_MAX + LIGHT_SPOT_DISK_FRAME_MAX + LIGHT_SPOT_RECT_FRAME_MAX + \
-							CASTER_SPOT_FRAME_MAX + CASTER_SPOT_DISK_FRAME_MAX + CASTER_SPOT_RECT_FRAME_MAX + \
-							LIGHT_POINT_FRAME_MAX + LIGHT_POINT_SPHERE_FRAME_MAX + LIGHT_POINT_TUBE_FRAME_MAX + \
-							CASTER_POINT_FRAME_MAX + CASTER_POINT_SPHERE_FRAME_MAX + CASTER_POINT_TUBE_FRAME_MAX)
+#define SPOT_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX)
+#define POINT_L_ID(i) (i + LIGHT_SPOT_FRAME_MAX + CASTER_SPOT_FRAME_MAX)
+#define POINT_C_ID(i) (i + LIGHT_SPOT_FRAME_MAX + CASTER_SPOT_FRAME_MAX + LIGHT_POINT_FRAME_MAX)
+#define DIR_ID(i) (i + LIGHT_SPOT_FRAME_MAX + CASTER_SPOT_FRAME_MAX + LIGHT_POINT_FRAME_MAX + CASTER_POINT_FRAME_MAX)
 
 #define SHADOW_NEARCLIP 0.01
 
@@ -104,122 +70,34 @@ typedef int LightsIDs[TOTAL_LIGHT_COUNT];
 struct LightsCount
 {
 	int spot_count;
-	int disk_count;
-	int rect_count;
 	int point_count;
-
-	int sphere_count;
-	int tube_count;
-	int dir_count;
 	int caster_spot_count;
-
-	int caster_disk_count;
-	int caster_rect_count;
 	int caster_point_count;
-	int caster_sphere_count;
 
-	int caster_tube_count;
+	int dir_count;
 	int envProbsCountHQ;
 	int envProbsCountSQ;
 	int envProbsCountLQ;
 };
 
 // for deffered
-
-struct DiskCasterBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-	float4 AreaInfoEmpty;
-	float4 VirtposEmpty;
-	float4 ShadowmapAdress;
-	float4 ShadowmapParams;
-	float4 farNear;
-	matrix matViewProj;
-};
-
-struct RectCasterBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-	float4 DirUpAreaX;
-	float4 DirSideAreaY;
-	float4 VirtposAreaZ;
-	float4 ShadowmapAdress;
-	float4 ShadowmapParams;
-	float4 farNear;
-	matrix matViewProj;
-};
-
 struct SpotCasterBuffer
 {
 	float4 PosRange;
 	float4 ColorConeX;
 	float4 DirConeY;
+	float4 DirUpAreaX;
+	float4 DirSideAreaY;
+	float4 VirtposAreaZ;
 	float4 ShadowmapAdress;
-	float4 ShadowmapParams;
+	float4 ShadowmapParamsType;
 	float4 farNear;
 	matrix matViewProj;
-
-	void ConstructDisk(in DiskCasterBuffer shapeData)
-	{
-		PosRange = shapeData.PosRange;
-		ColorConeX = shapeData.ColorConeX;
-		DirConeY = shapeData.DirConeY;
-		ShadowmapAdress = shapeData.ShadowmapAdress;
-		ShadowmapParams = shapeData.ShadowmapParams;
-		farNear = shapeData.farNear;
-		matViewProj = shapeData.matViewProj;
-	}
-
-	void ConstructRect(in RectCasterBuffer shapeData)
-	{
-		PosRange = shapeData.PosRange;
-		ColorConeX = shapeData.ColorConeX;
-		DirConeY = shapeData.DirConeY;
-		ShadowmapAdress = shapeData.ShadowmapAdress;
-		ShadowmapParams = shapeData.ShadowmapParams;
-		farNear = shapeData.farNear;
-		matViewProj = shapeData.matViewProj;
-	}
 };
 
 struct SpotLightBuffer
 {
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-
-	void Construct(in SpotCasterBuffer longData)
-	{
-		PosRange = longData.PosRange;
-		ColorConeX = longData.ColorConeX;
-		DirConeY = longData.DirConeY;
-	}
-};
-
-struct DiskLightBuffer
-{
-	float4 PosRange;
-	float4 ColorConeX;
-	float4 DirConeY;
-	float4 AreaInfoEmpty;
-	float4 VirtposEmpty;
-
-	void Construct(in DiskCasterBuffer longData)
-	{
-		PosRange = longData.PosRange;
-		ColorConeX = longData.ColorConeX;
-		DirConeY = longData.DirConeY;
-		AreaInfoEmpty = longData.AreaInfoEmpty;
-		VirtposEmpty = longData.VirtposEmpty;
-	}
-};
-
-struct RectLightBuffer
-{
+	float4 Type;
 	float4 PosRange;
 	float4 ColorConeX;
 	float4 DirConeY;
@@ -227,8 +105,9 @@ struct RectLightBuffer
 	float4 DirSideAreaY;
 	float4 VirtposAreaZ;
 
-	void Construct(in RectCasterBuffer longData)
+	void Construct(in SpotCasterBuffer longData)
 	{
+		Type.x = longData.ShadowmapParamsType.w;
 		PosRange = longData.PosRange;
 		ColorConeX = longData.ColorConeX;
 		DirConeY = longData.DirConeY;
@@ -238,49 +117,14 @@ struct RectLightBuffer
 	}
 };
 
-struct SphereCasterBuffer
-{
-	float4 PosRange;
-	float4 ColorShParams;
-	float4 AreaInfo;
-	float4 ShadowmapParams0;
-	float4 ShadowmapParams1;
-	float4 ShadowmapAdress0;
-	float4 ShadowmapAdress1;
-	float4 ShadowmapAdress2;
-	float4 ShadowmapAdress3;
-	float4 ShadowmapAdress4;
-	float4 ShadowmapAdress5;
-	float4 farNear;
-	matrix matProj;
-	matrix matView;
-};
-
-struct TubeCasterBuffer
-{
-	float4 PosRange;
-	float4 ColorShParams;
-	float4 AreaInfo;
-	float4 DirAreaA;
-	float4 ShadowmapParams0;
-	float4 ShadowmapParams1;
-	float4 ShadowmapAdress0;
-	float4 ShadowmapAdress1;
-	float4 ShadowmapAdress2;
-	float4 ShadowmapAdress3;
-	float4 ShadowmapAdress4;
-	float4 ShadowmapAdress5;
-	float4 farNear;
-	matrix matProj;
-	matrix matView;
-};
-
 struct PointCasterBuffer
 {
 	float4 PosRange;
 	float4 ColorShParams;
+	float4 AreaInfo;
+	float4 DirAreaA;
 	float4 ShadowmapParams0;
-	float4 ShadowmapParams1;
+	float4 ShadowmapParams1Type;
 	float4 ShadowmapAdress0;
 	float4 ShadowmapAdress1;
 	float4 ShadowmapAdress2;
@@ -290,77 +134,19 @@ struct PointCasterBuffer
 	float4 farNear;
 	matrix matProj;
 	matrix matView;
-
-	void ConstructSphere(in SphereCasterBuffer shapeData)
-	{
-		PosRange = shapeData.PosRange;
-		ColorShParams = shapeData.ColorShParams;
-		ShadowmapParams0 = shapeData.ShadowmapParams0;
-		ShadowmapParams1 = shapeData.ShadowmapParams1;
-		ShadowmapAdress0 = shapeData.ShadowmapAdress0;
-		ShadowmapAdress1 = shapeData.ShadowmapAdress1;
-		ShadowmapAdress2 = shapeData.ShadowmapAdress2;
-		ShadowmapAdress3 = shapeData.ShadowmapAdress3;
-		ShadowmapAdress4 = shapeData.ShadowmapAdress4;
-		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
-		farNear = shapeData.farNear;
-		matProj = shapeData.matProj;
-		matView = shapeData.matView;
-	}
-
-	void ConstructTube(in TubeCasterBuffer shapeData)
-	{
-		PosRange = shapeData.PosRange;
-		ColorShParams = shapeData.ColorShParams;
-		ShadowmapParams0 = shapeData.ShadowmapParams0;
-		ShadowmapParams1 = shapeData.ShadowmapParams1;
-		ShadowmapAdress0 = shapeData.ShadowmapAdress0;
-		ShadowmapAdress1 = shapeData.ShadowmapAdress1;
-		ShadowmapAdress2 = shapeData.ShadowmapAdress2;
-		ShadowmapAdress3 = shapeData.ShadowmapAdress3;
-		ShadowmapAdress4 = shapeData.ShadowmapAdress4;
-		ShadowmapAdress5 = shapeData.ShadowmapAdress5;
-		farNear = shapeData.farNear;
-		matProj = shapeData.matProj;
-		matView = shapeData.matView;
-	}
 };
 
 struct PointLightBuffer
 {
-	float4 PosRange;
-	float4 Color;
-
-	void Construct(in PointCasterBuffer longData)
-	{
-		PosRange = longData.PosRange;
-		Color = longData.ColorShParams;
-	}
-};
-
-struct SphereLightBuffer
-{
-	float4 PosRange;
-	float4 Color;
-	float4 AreaInfo;
-
-	void Construct(in SphereCasterBuffer longData)
-	{
-		PosRange = longData.PosRange;
-		Color = longData.ColorShParams;
-		AreaInfo = longData.AreaInfo;
-	}
-};
-
-struct TubeLightBuffer
-{
+	float4 Type;
 	float4 PosRange;
 	float4 Color;
 	float4 AreaInfo;
 	float4 DirAreaA;
 
-	void Construct(in TubeCasterBuffer longData)
+	void Construct(in PointCasterBuffer longData)
 	{
+		Type.x = longData.ShadowmapParams1Type.z;
 		PosRange = longData.PosRange;
 		Color = longData.ColorShParams;
 		AreaInfo = longData.AreaInfo;

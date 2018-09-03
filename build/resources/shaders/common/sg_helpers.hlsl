@@ -120,6 +120,8 @@ SG DistributionTermSG(in float3 normal, in float a)
 	return distribution;
 }
 
+#ifndef SG_OFFLINE
+
 ASG WarpDistributionASG(in SG ndf, in float3 view, in float3 refl, in float NoV, in float roughness)
 {
 	ASG warp;
@@ -178,3 +180,5 @@ void ComputeSGLighting(in float3 dirDiffuse, in SGAmpl sg, in GBufferData gbuffe
 
 	specularIrradiance *= surfaceFade;
 }
+
+#endif //SG_OFFLINE

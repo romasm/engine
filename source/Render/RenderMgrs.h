@@ -23,7 +23,7 @@ namespace EngineCore
 			ID3D11Buffer* vertexBuffer; 
 			ID3D11Buffer* indexBuffer; 
 			void* gpuMatrixBuffer;
-			bool isSkinned;
+			uint32_t isSkinned;
 			uint32_t vertexSize;
 			Material* material;
 			IA_TOPOLOGY topo;
@@ -35,7 +35,7 @@ namespace EngineCore
 				vertexBuffer = nullptr;
 				indexBuffer = nullptr;
 				gpuMatrixBuffer = nullptr;
-				isSkinned = false;
+				isSkinned = 0;
 				vertexSize = 0;
 				material = nullptr;
 				topo = IA_TOPOLOGY::TRISLIST;
@@ -88,7 +88,6 @@ namespace EngineCore
 		void UpdateCamera(Vector3& pos) {cameraPosition = pos;}
 		
 		void DrawOpaque();
-		void DrawAlphatest();
 		void DrawTransparent();
 
 		void ClearAll() {BaseRenderMgr::ClearAll();}
@@ -123,32 +122,27 @@ namespace EngineCore
 		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
-		bool RegSpotLight(Vector4& color, float range, Vector2& cone, Vector3& pos, Vector3& dir);
-		bool RegSpotLightDisk(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& virtpos);
-		bool RegSpotLightRect(Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos);
-
-		bool RegPointLight(Vector4& color, float range, Vector3& pos);
-		bool RegPointLightSphere(Vector4& color, float range, Vector3& area, Vector3& pos);
-		bool RegPointLightTube(Vector4& color, float range, Vector3& area, Vector3& pos, Vector3& dir);
+		bool RegSpotLight(uint8_t type, Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, 
+			Vector3& up, Vector3& side, Vector3& virtpos);
+		bool RegPointLight(uint8_t type, Vector4& color, float range, Vector3& area, Vector3& pos, Vector3& dir);
 
 		bool RegDirLight(Vector4& color, Vector2& area, Vector3& dir, XMMATRIX* view_proj, Vector3* pos, uint64_t id);
-		
-		bool RegSpotCaster(Vector4& color, Vector4& nonAreaColor, float range, Vector2& cone, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
-		bool RegSpotCasterDisk(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& virtpos, Vector4& farNear, 
-			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
-		bool RegSpotCasterRect(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos, Vector4& farNear,
-			CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
 
-		bool RegPointCaster(Vector4& color, Vector4& nonAreaColor, float range, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
-		bool RegPointCasterSphere(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector4& farNear, CXMMATRIX proj, uint64_t id);
-		bool RegPointCasterTube(Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
+		bool RegSpotCaster(uint8_t type, Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector2& cone, Vector3& pos, 
+			Vector3& dir, Vector3& up, Vector3& side, Vector3& virtpos, Vector4& farNear, CXMMATRIX vp, CXMMATRIX proj, uint64_t id);
+		bool RegPointCaster(uint8_t type, Vector4& color, Vector4& nonAreaColor, float range, Vector3& area, Vector3& pos, Vector3& dir, 
+			Vector4& farNear, CXMMATRIX proj, CXMMATRIX view, uint64_t id);
 		
 		void RegEnvProb(const EnvProbData& data);
 
-		void DrawOpaque(ScenePipeline* scene);
-		void DrawAlphatest(ScenePipeline* scene);
-		void PrepassTransparent(ScenePipeline* scene);
-		void DrawTransparent(ScenePipeline* scene);
+		void PrepassOpaque();
+		void DrawOpaque();
+
+		void PrepassTransparent();
+		void DrawTransparent();
+
+		//void DrawAlpha(); // TODO
+
 		void DrawHud();
 		void DrawOvHud();
 
@@ -163,43 +157,25 @@ namespace EngineCore
 
 		void UpdateCamera(CameraComponent* cam);
 		
-		inline CameraComponent* GetCurrentCamera() const {return current_cam;} 
+		inline CameraComponent* GetCurrentCamera() const {return currentCamera;} 
 		
 		inline SpotLightBuffer* GetSpotLightDataPtr(size_t* size) 
 		{*size = lightSpot_count; return lightSpot_array;}
-		inline DiskLightBuffer* GetSpotLightDiskDataPtr(size_t* size) 
-		{*size = lightSpotDisk_count; return lightSpotDisk_array;}
-		inline RectLightBuffer* GetSpotLightRectDataPtr(size_t* size) 
-		{*size = lightSpotRect_count; return lightSpotRect_array;}
 
 		inline PointLightBuffer* GetPointLightDataPtr(size_t* size) 
 		{*size = lightPoint_count; return lightPoint_array;}
-		inline SphereLightBuffer* GetPointLightSphereDataPtr(size_t* size) 
-		{*size = lightPointSphere_count; return lightPointSphere_array;}
-		inline TubeLightBuffer* GetPointLightTubeDataPtr(size_t* size) 
-		{*size = lightPointTube_count; return lightPointTube_array;}
 
 		inline DirLightBuffer* GetDirLightDataPtr(size_t* size) 
 		{*size = lightDir_count; return lightDir_array;}
 
 		inline SpotCasterBuffer* GetSpotCasterDataPtr(size_t* size) 
 		{*size = casterSpot_count; return casterSpot_array;}
-		inline DiskCasterBuffer* GetSpotCasterDiskDataPtr(size_t* size) 
-		{*size = casterSpotDisk_count; return casterSpotDisk_array;}
-		inline RectCasterBuffer* GetSpotCasterRectDataPtr(size_t* size) 
-		{*size = casterSpotRect_count; return casterSpotRect_array;}
 		
 		inline PointCasterBuffer* GetPointCasterDataPtr(size_t* size) 
 		{*size = casterPoint_count; return casterPoint_array;}
-		inline SphereCasterBuffer* GetPointCasterSphereDataPtr(size_t* size) 
-		{*size = casterPointSphere_count; return casterPointSphere_array;}
-		inline TubeCasterBuffer* GetPointCasterTubeDataPtr(size_t* size) 
-		{*size = casterPointTube_count; return casterPointTube_array;}
 		
 		ShadowsRenderer* shadowsRenderer;
 		EnvProbMgr* envProbMgr;
-
-		ALIGNED_ALLOCATION
 
 	private:
 		void cleanRenderArrayLights();
@@ -209,35 +185,17 @@ namespace EngineCore
 		
 		SpotLightBuffer* lightSpot_array;
 		size_t lightSpot_count;
-		DiskLightBuffer* lightSpotDisk_array;
-		size_t lightSpotDisk_count;
-		RectLightBuffer* lightSpotRect_array;
-		size_t lightSpotRect_count;
-
 		PointLightBuffer* lightPoint_array;
 		size_t lightPoint_count;
-		SphereLightBuffer* lightPointSphere_array;
-		size_t lightPointSphere_count;
-		TubeLightBuffer* lightPointTube_array;
-		size_t lightPointTube_count;
 
 		DirLightBuffer* lightDir_array;
 		size_t lightDir_count;
 
 		SpotCasterBuffer* casterSpot_array;
 		size_t casterSpot_count;
-		DiskCasterBuffer* casterSpotDisk_array;
-		size_t casterSpotDisk_count;
-		RectCasterBuffer* casterSpotRect_array;
-		size_t casterSpotRect_count;
-
 		PointCasterBuffer* casterPoint_array;
 		size_t casterPoint_count;
-		SphereCasterBuffer* casterPointSphere_array;
-		size_t casterPointSphere_count;
-		TubeCasterBuffer* casterPointTube_array;
-		size_t casterPointTube_count;
 		
-		CameraComponent* current_cam;
+		CameraComponent* currentCamera;
 	};
 }

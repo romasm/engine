@@ -37,8 +37,10 @@ bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID
 	if( !material || gpuMatrixBuffer == nullptr || topo != IA_TOPOLOGY::TRISLIST || indexCount == 0 )
 		return false;
 
+	uint32_t skinned = isSkinned ? 1 : 0;
+
 	bool has_tq = false;
-	const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (isSkinned ? 1 : 0));
+	const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + skinned);
 	auto queue = material->GetTechQueue(tech, &has_tq);
 	if(!has_tq)
 		return false;
@@ -50,8 +52,8 @@ bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID
 	RenderMesh* mesh_new = nullptr;
 	switch(queue)
 	{
-	case SC_TRANSPARENT:
 	case SC_ALPHA:
+	case SC_TRANSPARENT:
 		mesh_new = transparent_array.push_back();
 		break;
 	case SC_OPAQUE:
@@ -68,7 +70,7 @@ bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID
 	mesh_new->vertexBuffer = vertexBuffer;
 	mesh_new->indexBuffer = indexBuffer;
 	mesh_new->gpuMatrixBuffer = gpuMatrixBuffer;
-	mesh_new->isSkinned = isSkinned;
+	mesh_new->isSkinned = skinned;
 	mesh_new->vertexSize = vertexSize;
 	mesh_new->material = material;
 	mesh_new->topo = topo;
@@ -79,38 +81,34 @@ bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID
 
 void ShadowRenderMgr::DrawOpaque()
 {
-	sort(opaque_array.begin(), opaque_array.end(), BaseRenderMgr::CompareMeshes );
-
 	const unsigned int offset = 0;
-	
+
+	sort(opaque_array.begin(), opaque_array.end(), BaseRenderMgr::CompareMeshes );
+		
 	for(auto cur: opaque_array)
 	{
-		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + cur.isSkinned);
 
 		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
 		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		cur.material->Set(tech);
 
 		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
 	}
-}
 
-void ShadowRenderMgr::DrawAlphatest()
-{
-	sort(alphatest_array.begin(), alphatest_array.end(), BaseRenderMgr::CompareMeshes );
-
-	const unsigned int offset = 0;
-
-	for(auto cur: alphatest_array)
+	// alphatest
+	sort(alphatest_array.begin(), alphatest_array.end(), BaseRenderMgr::CompareMeshes);
+	
+	for (auto cur : alphatest_array)
 	{
-		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + cur.isSkinned);
 
 		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
 		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		cur.material->Set(tech);
 
 		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
@@ -125,12 +123,12 @@ void ShadowRenderMgr::DrawTransparent()
 
 	for(auto cur: transparent_array)
 	{
-		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + (cur.isSkinned ? 1 : 0));
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_SHADOW + cur.isSkinned);
 
 		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
 		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned);
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		cur.material->Set(tech);
 
 		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);

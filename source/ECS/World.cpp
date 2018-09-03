@@ -749,7 +749,7 @@ void World::Snapshot(ScenePipeline* scene)
 	m_lightSystem->RegShadowMaps();
 	m_globalLightSystem->RegShadowMaps();
 
-	if(!scene->IsLighweight())
+	if(!scene->InitConfig().lightweight)
 		scene->ResolveShadowmaps();
 
 	m_envProbSystem->RegToScene();
@@ -773,8 +773,9 @@ void World::Snapshot(ScenePipeline* scene)
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
-		scene->EndFrame();
 	}
+
+	scene->EndFrame();
 
 #ifdef _DEV
 	if(profiler_state)
@@ -847,14 +848,14 @@ void World::Frame()
 
 	for(auto it: m_scenes)
 	{
-		if(it->IsLighweight())
+		if(it->InitConfig().lightweight)
 			continue;
 		it->ResolveShadowmaps();
 	}
 
 	m_envProbSystem->RegToScene();
 	m_lightSystem->RegToScene();
-	m_globalLightSystem->RegToScene(); // TODO: now all RegToScene fill render queues endless if no scenes
+	m_globalLightSystem->RegToScene(); // TODO: now all RegToScene fill render queues endless if no scenes??? (check)
 
 	m_visibilitySystem->CheckVisibility();
 
@@ -895,9 +896,9 @@ void World::Frame()
 			
 			PERF_GPU_TIMESTAMP(_SCENE_LDR);
 			it->HDRtoLDRStage();
-
-			it->EndFrame();
 		}
+
+		it->EndFrame();
 	}
 
 	dbgDrawer.Drop();
@@ -990,8 +991,9 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
 		scene->HDRtoLDRStage();
-		scene->EndFrame();
 	}
+
+	scene->EndFrame();
 
 #ifdef _DEV
 	if(profiler_state)
@@ -1066,9 +1068,9 @@ void SmallWorld::Frame()
 				it->UIOverlayStage();
 			
 				it->HDRtoLDRStage();
-
-				it->EndFrame();
 			}
+
+			it->EndFrame();
 		}
 	}
 

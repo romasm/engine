@@ -26,7 +26,7 @@ float2 SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 	const float4 wpos = float4(gbuffer.wpos, 1.0);
 	float4 lightViewProjPos = mul(wpos, lightData.matViewProj);
 	float normalOffsetScale = clamp(1 - VNoL, depthFix.y, 1);
-	float shadowMapTexelSize = lightData.ShadowmapParams.x * prepared.DoUL * lightData.ShadowmapParams.y;
+	float shadowMapTexelSize = lightData.ShadowmapParamsType.x * prepared.DoUL * lightData.ShadowmapParamsType.y;
 	float4 shadowOffset = float4(gbuffer.vertex_normal * normalShadowOffsetSpot * normalOffsetScale * shadowMapTexelSize * depthFix.x, 0);
 	
 	float4 correctedWpos = wpos + shadowOffset;
@@ -48,10 +48,10 @@ float2 SpotlightShadow(sampler samp, Texture2DArray <float> shadowmap, in LightP
 		shadowmapCoords.xy = lightData.ShadowmapAdress.xy + reprojCoords.xy * lightData.ShadowmapAdress.z;
 		shadowmapCoords.z = lightData.ShadowmapAdress.w;
 	
-		lightViewProjPos.z -= shadowBiasSpotArea * lightData.ShadowmapParams.z * depthFix.z;
+		lightViewProjPos.z -= shadowBiasSpotArea * lightData.ShadowmapParamsType.z * depthFix.z;
 		float depthView = lightViewProjPos.z * lvp_rcp;
 
-		/*const float resBiasScale = max(2, (lightData.ShadowmapParams.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
+		/*const float resBiasScale = max(2, (lightData.ShadowmapParamsType.x * SHADOWS_RES_BIAS_SCALE) * 0.2); 
 		lightViewProjPos.z -= shadowBiasSpot * min(10, depthFix.z * resBiasScale);
 		float depthView = lightViewProjPos.z * lvp_rcp;*/
 	
@@ -133,7 +133,7 @@ float2 PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in Light
 		if(zInLSq[2]>0)
 		{
 			pil = float4(posInLight.z,posInLight.x,posInLight.y,1);
-			const float shadowMapTexelSize = lightData.ColorShParams.w * lightData.ShadowmapParams1.r * pil.z;
+			const float shadowMapTexelSize = lightData.ColorShParams.w * lightData.ShadowmapParams1Type.r * pil.z;
 			float3 shadowOffset = gbuffer.vertex_normal * normalShadowOffsetPoint * normalOffsetScale * shadowMapTexelSize * depthFix.x;
 			corWpos = float4((gbuffer.wpos + shadowOffset) - lightData.PosRange.xyz, 1);
 			corWpos = float4(corWpos.z,corWpos.x,corWpos.y, 1);
@@ -142,7 +142,7 @@ float2 PointlightShadow(sampler samp, Texture2DArray <float> shadowmap, in Light
 		else
 		{
 			pil = float4(posInLight.z,-posInLight.x,-posInLight.y,1);
-			const float shadowMapTexelSize = lightData.ColorShParams.w * lightData.ShadowmapParams1.g * pil.z;
+			const float shadowMapTexelSize = lightData.ColorShParams.w * lightData.ShadowmapParams1Type.g * pil.z;
 			float3 shadowOffset = gbuffer.vertex_normal * normalShadowOffsetPoint * normalOffsetScale * shadowMapTexelSize * depthFix.x;
 			corWpos = float4((gbuffer.wpos + shadowOffset) - lightData.PosRange.xyz, 1);
 			corWpos = float4(corWpos.z,-corWpos.x,-corWpos.y, 1);

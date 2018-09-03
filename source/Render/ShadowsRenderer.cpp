@@ -298,13 +298,12 @@ void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* sh
 	Render::VSSetConstantBuffers(0, 1, &vp);
 
 	shadow_mgr->DrawOpaque();
-	shadow_mgr->DrawAlphatest();
 
-	/*if(shadow_mgr->IsTranparentShadows())
+	if(shadow_mgr->IsTranparentShadows())
 	{
-		// transparent render target
+		// TODO: transparent render target
 		shadow_mgr->DrawTransparent();
-	}*/
+	}
 
 	Render::OMSetRenderTargets(0, nullptr, nullptr);
 }

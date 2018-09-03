@@ -56,6 +56,46 @@ namespace EngineCore
 #define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
 #define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque", "DefferedLighting"
 	
+	struct RenderInitConfig
+	{
+		bool probTech;
+		bool ssr;
+		bool ssao;
+		bool postprocess;
+		bool lightweight;
+		
+		RenderInitConfig()
+		{
+			probTech = false;
+			ssr = true;
+			ssao = true;
+			postprocess = true;
+			lightweight = false;
+		}
+
+#define RI_ADD_LUA_PROPERTY_FUNC(type, name) inline type get_##name() const {return name;} \
+	inline void set_##name(type value){name = value;}
+#define RI_ADD_LUA_PROPERTY_DEF(type, name) .addProperty(#name, &RenderInitConfig::get_##name, &RenderInitConfig::set_##name)
+		
+		RI_ADD_LUA_PROPERTY_FUNC(bool, probTech)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, ssr)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, ssao)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, postprocess)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, lightweight)
+
+		static void RegLuaClass()
+		{
+			getGlobalNamespace(LSTATE)
+				.beginClass<RenderInitConfig>("RenderInitConfig")
+				RI_ADD_LUA_PROPERTY_DEF(bool, probTech)
+				RI_ADD_LUA_PROPERTY_DEF(bool, ssr)
+				RI_ADD_LUA_PROPERTY_DEF(bool, ssao)
+				RI_ADD_LUA_PROPERTY_DEF(bool, postprocess)
+				RI_ADD_LUA_PROPERTY_DEF(bool, lightweight)
+				.endClass();
+		}
+	};
+
 	struct RenderConfig
 	{
 		uint32_t bufferViewMode;
@@ -68,6 +108,7 @@ namespace EngineCore
 		float analyticLightSpecular;
 		float ambientLightDiffuse;
 		float ambientLightSpecular;
+		bool albedoWhite;
 		bool editorGuiEnable;
 		bool active;
 
@@ -85,6 +126,7 @@ namespace EngineCore
 			analyticLightSpecular = 1.0f;
 			ambientLightDiffuse = 1.0f;
 			ambientLightSpecular = 1.0f;
+			albedoWhite = false;
 			editorGuiEnable = true;
 			active = true;
 
@@ -105,6 +147,7 @@ namespace EngineCore
 		RC_ADD_LUA_PROPERTY_FUNC(float, analyticLightSpecular)
 		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightDiffuse)
 		RC_ADD_LUA_PROPERTY_FUNC(float, ambientLightSpecular)
+		RC_ADD_LUA_PROPERTY_FUNC(bool, albedoWhite)
 		RC_ADD_LUA_PROPERTY_FUNC(bool, editorGuiEnable)
 		RC_ADD_LUA_PROPERTY_FUNC(bool, active)
 
@@ -122,6 +165,7 @@ namespace EngineCore
 				RC_ADD_LUA_PROPERTY_DEF(float, analyticLightSpecular)
 				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightDiffuse)
 				RC_ADD_LUA_PROPERTY_DEF(float, ambientLightSpecular)
+				RC_ADD_LUA_PROPERTY_DEF(bool, albedoWhite)
 				RC_ADD_LUA_PROPERTY_DEF(bool, editorGuiEnable)
 				RC_ADD_LUA_PROPERTY_DEF(bool, active)
 				.endClass();
@@ -136,6 +180,8 @@ namespace EngineCore
 			XMMATRIX invViewProjection;
 			XMMATRIX view;
 			XMMATRIX projection;
+
+			XMMATRIX viewProjInv_ViewProjPrev; // camera move
 
 			Vector3 CamPos;
 			int screenW;
@@ -178,7 +224,7 @@ namespace EngineCore
 			float indirDiff;
 			float indirSpec;
 			
-			float isLightweight;
+			float albedoWhite;
 			float _padding0;
 			float _padding1;
 			float _padding2;
@@ -192,8 +238,6 @@ namespace EngineCore
 		{
 			render_mgr->shadowsRenderer->ResolveShadowMaps();
 		}
-
-		inline bool IsLighweight() {return isLightweight;}
 		
 		bool UIStage();
 		void UIOverlayStage();
@@ -203,7 +247,6 @@ namespace EngineCore
 
 		void OpaqueDefferedStage();
 		void HDRtoLDRStage();
-		//void AllCombineStage();
 
 		void LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp);
 		ID3D11ShaderResourceView* GetLinearAndDepthSRV();
@@ -259,7 +302,7 @@ namespace EngineCore
 
 		void Close();
 
-		bool Init(BaseWorld* wrd, int t_width, int t_height, bool lightweight);
+		bool Init(BaseWorld* wrd, int t_width, int t_height, RenderInitConfig config);
 
 		bool Resize(int t_width, int t_height);
 
@@ -285,7 +328,8 @@ namespace EngineCore
 		static void RegLuaClass()
 		{
 			RenderConfig::RegLuaClass();
-
+			RenderInitConfig::RegLuaClass();
+			
 			getGlobalNamespace(LSTATE)
 				.beginClass<ScenePipeline>("ScenePipeline")
 				.addFunction("Resize", &ScenePipeline::Resize)
@@ -302,6 +346,8 @@ namespace EngineCore
 				.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
 				.endClass();
 		}
+
+		inline const RenderInitConfig& InitConfig() const { return initConfig; }
 
 		RenderTarget *rt_OpaqueForward;
 		RenderTarget *rt_AO;
@@ -347,33 +393,22 @@ namespace EngineCore
 
 		SceneRenderMgr* render_mgr;
 
-		ID3D11Buffer* m_CamMoveBuffer;
-
 		ID3D11Buffer* m_AOBuffer;
 		//AOBuffer aoBuffer;
 
-		ID3D11Buffer* m_SharedBuffer;
+		ID3D11Buffer* sharedBuffer;
 		SharedBuffer sharedconst;
 
 		StructBuf lightSpotBuffer;
-		StructBuf lightDiskBuffer;
-		StructBuf lightRectBuffer;
 		StructBuf lightPointBuffer;
-		StructBuf lightSphereBuffer;
-		StructBuf lightTubeBuffer;
 		StructBuf lightDirBuffer;
-
 		StructBuf casterSpotBuffer;
-		StructBuf casterDiskBuffer;
-		StructBuf casterRectBuffer;
 		StructBuf casterPointBuffer;
-		StructBuf casterSphereBuffer;
-		StructBuf casterTubeBuffer;
 
 		StructBuf lightsPerTile;
 		LightsIDs lightsIDs;
 
-		ID3D11Buffer* lightsPerTileCount;
+		ID3D11Buffer* lightsPerClusterCount;
 		LightsCount lightsCount;
 
 		StructBuf m_MaterialBuffer;
@@ -411,8 +446,8 @@ namespace EngineCore
 		int32_t width_pow2;
 		int32_t height_pow2;
 		
-		bool isLightweight;
 		RenderConfig renderConfig;
+		RenderInitConfig initConfig;
 
 		ShaderCodeMgr* codemgr;
 	};

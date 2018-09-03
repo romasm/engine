@@ -90,49 +90,7 @@ void LightSystem::RegToScene()
 		switch (i.type)
 		{
 		case LIGHT_TYPE_SPOT:
-			{
-				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-				auto bits = earlyVisComponent->inFrust;
-				if(bits == 0)
-					break;
-
-				if(i.cast_shadows)
-				{
-					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.cone_data, i.pos, i.dir, i.farNearData, 
-							shadowComp->view_proj, shadowComp->proj, i.get_id());
-					)
-				}
-				else
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotLight(i.hdr_color, i.rangeInvSqr, i.cone_data, i.pos, i.dir);
-					)
-			}
-			break;
-
 		case LIGHT_TYPE_DISK:
-			{
-				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-				auto bits = earlyVisComponent->inFrust;
-				if(bits == 0)
-					break;
-
-				if(i.cast_shadows)
-				{
-					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterDisk(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.virt_pos, 
-							i.farNearData, shadowComp->view_proj, shadowComp->proj, i.get_id());
-					)
-				}
-				else
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotLightDisk(i.hdr_color, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.virt_pos);
-					)
-			}
-			break;
-
 		case LIGHT_TYPE_RECT:
 			{
 				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
@@ -144,59 +102,19 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotCasterRect(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos, 
-							i.farNearData, shadowComp->view_proj, shadowComp->proj, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegSpotCaster(i.type, i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, 
+							i.dir_side, i.virt_pos, i.farNearData, shadowComp->view_proj, shadowComp->proj, i.get_id());
 					)
 				}
 				else
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegSpotLightRect(i.hdr_color, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos);
+						((SceneRenderMgr*)f->rendermgr)->RegSpotLight(i.type, i.hdr_color, i.rangeInvSqr, i.area_data, i.cone_data, i.pos, i.dir, i.dir_up, i.dir_side, i.virt_pos);
 					)
 			}
 			break;
 
 		case LIGHT_TYPE_POINT:
-			{
-				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-				auto bits = earlyVisComponent->inFrust;	
-				if(bits == 0)
-					break;
-
-				if(i.cast_shadows)
-				{
-					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.pos, i.farNearData, shadowComp->proj, i.get_id());
-					)
-				}
-				else
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointLight(i.hdr_color, i.rangeInvSqr, i.pos);
-					)
-			}
-			break;
-
 		case LIGHT_TYPE_SPHERE:
-			{
-				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
-				auto bits = earlyVisComponent->inFrust;	
-				if(bits == 0)
-					break;
-
-				if(i.cast_shadows)
-				{
-					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterSphere(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.farNearData, shadowComp->proj, i.get_id());
-					)
-				}
-				else
-					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointLightSphere(i.hdr_color, i.rangeInvSqr, i.area_data, i.pos);
-					)
-			}
-			break;
-
 		case LIGHT_TYPE_TUBE:
 			{
 				EarlyVisibilityComponent* earlyVisComponent = earlyVisibilitySys->GetComponent(i.get_entity());
@@ -208,12 +126,12 @@ void LightSystem::RegToScene()
 				{
 					ShadowComponent* shadowComp = shadowSystem->GetComponent(i.get_entity());
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointCasterTube(i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.dir, i.farNearData, shadowComp->proj, shadowComp->view, i.get_id());
+						((SceneRenderMgr*)f->rendermgr)->RegPointCaster(i.type, i.hdr_color, i.nonAreaColor, i.rangeInvSqr, i.area_data, i.pos, i.dir, i.farNearData, shadowComp->proj, shadowComp->view, i.get_id());
 					)
 				}
 				else
 					ITERATE_FRUSTUMS(
-						((SceneRenderMgr*)f->rendermgr)->RegPointLightTube(i.hdr_color, i.rangeInvSqr, i.area_data, i.pos, i.dir);
+						((SceneRenderMgr*)f->rendermgr)->RegPointLight(i.type, i.hdr_color, i.rangeInvSqr, i.area_data, i.pos, i.dir);
 					)
 			}
 			break;
@@ -699,6 +617,7 @@ XMMATRIX LightSystem::GetView(Entity e, uint8_t num, Vector3* pos)
 
 	case LIGHT_TYPE_POINT:
 	case LIGHT_TYPE_SPHERE:
+	case LIGHT_TYPE_TUBE:
 		{
 			Vector3 dir, up;
 			switch (num)
@@ -732,7 +651,7 @@ XMMATRIX LightSystem::GetView(Entity e, uint8_t num, Vector3* pos)
 			*pos = comp.pos;
 			return XMMatrixLookAtLH( comp.pos, comp.pos + dir, up );
 		}
-	case LIGHT_TYPE_TUBE: // TODO: broked in voxels
+	/*case LIGHT_TYPE_TUBE: // TODO?
 		{
 			Vector3 dir = comp.dir;
 			Vector3 up = comp.dir_up;
@@ -773,7 +692,7 @@ XMMATRIX LightSystem::GetView(Entity e, uint8_t num, Vector3* pos)
 
 			*pos = comp.pos;
 			return XMMatrixLookAtLH( comp.pos, comp.pos + dir, up );
-		}
+		}*/
 	}
 	return XMMatrixIdentity();
 }

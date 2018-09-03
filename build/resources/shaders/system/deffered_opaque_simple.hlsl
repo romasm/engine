@@ -79,18 +79,17 @@ void DefferedLightingIBL(uint3 threadID : SV_DispatchThreadID)
 	gbuffer.ao = min( SceneAO, gbuffer.ao );
 	
 	float3 ViewVector = normalize(g_CamPos - gbuffer.wpos);
-	float NoV = calculateNoV( gbuffer.normal, ViewVector );
-	float Roughness = clamp( min(gbuffer.roughness.x, gbuffer.roughness.y), 0.0001f, 0.9999f);
+	DataForLightCompute mData = PrepareDataForLight(gbuffer, ViewVector);
 
-	float SO = computeSpecularOcclusion(NoV, gbuffer.ao, Roughness);
+	float SO = computeSpecularOcclusion(mData.NoV, gbuffer.ao, mData.minR);
 
 	// IBL     	
 	float3 specularBrdf = 0;
 	float3 diffuseBrdf = 0;
 	float4 envProbSpecular = 0;
 	float4 envProbDiffuse = 0;
-	EvaluateEnvProbSpecular(samplerTrilinearWrap, NoV, Roughness, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
-	
+	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
+
 	// SSR
 	float4 specularSecond = float4( SSR.rgb * SO * SSR.a, 1 - SSR.a );
 	specularSecond.rgb *= specularBrdf;
