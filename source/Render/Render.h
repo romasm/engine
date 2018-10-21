@@ -19,7 +19,7 @@ namespace EngineCore
 
 	//static const float blendFactor[4] = {0.0f};
 
-	enum IA_TOPOLOGY 
+	enum IA_TOPOLOGY
 	{
 		POINTLIST = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
 		LINELIST = D3D11_PRIMITIVE_TOPOLOGY_LINELIST,

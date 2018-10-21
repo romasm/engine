@@ -53,8 +53,8 @@ namespace EngineCore
 
 #define SP_SHADER_SCREENSHOT PATH_SHADERS "system/scene_to_color_alpha"
 
-#define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple", "DefferedLightingIBL"
-#define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque", "DefferedLighting"
+#define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple#DefferedLightingIBL#"
+#define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque#DefferedLighting#"
 	
 	struct RenderInitConfig
 	{

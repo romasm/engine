@@ -59,9 +59,11 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		{
 			auto del = technique.pixelShader.rfind(' ');
 			if(del == string::npos)
-				technique.pixelShader = shaderPath + "_" + technique.pixelShader;
+				technique.pixelShader = shaderPath + SHADER_NAME_DEL + technique.pixelShader;
 			else
-				technique.pixelShader[del] = '_';
+				technique.pixelShader[del] = SHADER_NAME_DEL;
+
+			technique.pixelShader += SHADER_NAME_DEL + techSource.ReadString("PixelShaderDefines", it.second.node);
 		}
 
 		technique.vertexShader = techSource.ReadString("VertexShader", it.second.node);
@@ -69,9 +71,11 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		{
 			auto del = technique.vertexShader.rfind(' ');
 			if(del == string::npos)
-				technique.vertexShader = shaderPath + "_" + technique.vertexShader;
+				technique.vertexShader = shaderPath + SHADER_NAME_DEL + technique.vertexShader;
 			else
-				technique.vertexShader[del] = '_';
+				technique.vertexShader[del] = SHADER_NAME_DEL;
+
+			technique.vertexShader += SHADER_NAME_DEL + techSource.ReadString("VertexShaderDefines", it.second.node);
 		}
 
 		technique.hullShader = techSource.ReadString("HullShader", it.second.node);
@@ -82,9 +86,11 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		{
 			auto del = technique.hullShader.rfind(' ');
 			if(del == string::npos)
-				technique.hullShader = shaderPath + "_" + technique.hullShader;
+				technique.hullShader = shaderPath + SHADER_NAME_DEL + technique.hullShader;
 			else
-				technique.hullShader[del] = '_';
+				technique.hullShader[del] = SHADER_NAME_DEL;
+
+			technique.hullShader += SHADER_NAME_DEL + techSource.ReadString("HullShaderDefines", it.second.node);
 		}
 
 		technique.domainShader = techSource.ReadString("DomainShader", it.second.node);
@@ -95,9 +101,11 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		{
 			auto del = technique.domainShader.rfind(' ');
 			if(del == string::npos)
-				technique.domainShader = shaderPath + "_" + technique.domainShader;
+				technique.domainShader = shaderPath + SHADER_NAME_DEL + technique.domainShader;
 			else
-				technique.domainShader[del] = '_';
+				technique.domainShader[del] = SHADER_NAME_DEL;
+
+			technique.domainShader += SHADER_NAME_DEL + techSource.ReadString("DomainShaderDefines", it.second.node);
 		}
 
 		technique.geometryShader = techSource.ReadString("GeometryShader", it.second.node);
@@ -108,9 +116,11 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 		{
 			auto del = technique.geometryShader.rfind(' ');
 			if(del == string::npos)
-				technique.geometryShader = shaderPath + "_" + technique.geometryShader;
+				technique.geometryShader = shaderPath + SHADER_NAME_DEL + technique.geometryShader;
 			else
-				technique.geometryShader[del] = '_';
+				technique.geometryShader[del] = SHADER_NAME_DEL;
+
+			technique.geometryShader += SHADER_NAME_DEL + techSource.ReadString("GeometryShaderDefines", it.second.node);
 		}
 
 		// D3D11_DEPTH_STENCIL_DESC

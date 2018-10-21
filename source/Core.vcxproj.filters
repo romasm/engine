@@ -302,6 +302,9 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="System\GraphicAPI.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -494,6 +497,9 @@
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ECS\DebugDrawer.cpp">
       <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="System\GraphicAPI.cpp">
+      <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

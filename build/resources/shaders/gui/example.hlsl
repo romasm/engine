@@ -131,6 +131,7 @@ TECHNIQUE_DEFAULT
 
 	VertexShader = "../resources/shaders/tech/screen_plane_hud VS";
 	PixelShader = PS;
+	PixelShaderDefines = "EXAMPLE_DEF[]VALUE_DEF[10]";
 
 	HullShader = NULL; // default
 	DomainShader = NULL; // default

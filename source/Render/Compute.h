@@ -11,8 +11,8 @@ namespace EngineCore
 	class Compute
 	{
 	public:
-		Compute(string& shader, string& function) {	Init(shader, function); }
-		Compute(char* shader, char* function) { Init(string(shader), string(function)); }
+		Compute(string& shader) {	Init(shader); }
+		Compute(char* shader) { Init(string(shader)); }
 
 		~Compute()
 		{
@@ -20,11 +20,11 @@ namespace EngineCore
 			shaderID = SHADER_NULL;
 		}
 
-		static void Preload(string& shader, string& function)
+		static void Preload(string& shader)
 		{
-			auto res = ShaderCodeMgr::Get()->GetShaderCode(shader + "_" + function, SHADER_CS);
+			auto res = ShaderCodeMgr::Get()->GetShaderCode(shader, SHADER_CS);
 			if( res != SHADER_NULL )
-				LOG("Compute shader %s with entry %s preloaded", shader.c_str(), function.c_str());
+				LOG("Compute shader %s preloaded", shader.c_str());
 		}
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)
@@ -55,12 +55,12 @@ namespace EngineCore
 		}
 
 	private:
-		void Init(string& shader, string& function)
+		void Init(string& shader)
 		{
 			uavs_count = 0;
-			shaderID = ShaderCodeMgr::Get()->GetShaderCode(shader + "_" + function, SHADER_CS);
+			shaderID = ShaderCodeMgr::Get()->GetShaderCode(shader, SHADER_CS);
 			if(shaderID == SHADER_NULL)
-				ERR("Cant init compute shader %s with entry point %s !", shader.c_str(), function.c_str());
+				ERR("Cant init compute shader %s !", shader.c_str());
 		}
 
 		uint16_t shaderID;

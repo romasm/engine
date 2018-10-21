@@ -618,19 +618,7 @@ void ResourceProcessor::Preload(string& filename, ResourceType type)
 		shaderMgr->GetResource(filename, true);
 		break;
 	case EngineCore::COMPUTE:
-		{
-			auto del = filename.find("@");
-			if( del == string::npos )
-			{
-				ERR("Wrong compute shader path@entry!");
-			}
-			else
-			{
-				string file = filename.substr(0, del);
-				string entry = filename.substr(del + 1);
-				Compute::Preload( file, entry );
-			}
-		}
+		Compute::Preload(filename);
 		break;
 	case EngineCore::FONT:
 		fontMgr->GetFont(filename);

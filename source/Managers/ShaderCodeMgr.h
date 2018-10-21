@@ -14,6 +14,10 @@
 
 #define SHADER_COMPILE_TARGET "5_0"
 
+#define SHADER_NAME_DEL '#'
+#define SHADER_DEFINE_BEG '['
+#define SHADER_DEFINE_END ']'
+
 namespace EngineCore
 {
 #define REGISTER_NULL 255
@@ -96,8 +100,12 @@ namespace EngineCore
 	private:
 
 	#ifdef _DEV
-		ID3DBlob* CompileShader(string& file, string& binFile, string& entryPoint, uint8_t type, uint32_t* date = nullptr);
+		ID3DBlob* CompileShader(string& file, string& binFile, string& entryPoint, string& defines, uint8_t type, uint32_t* date = nullptr);
 	#endif
+
+		bool SpreadShaderName(const string& shaderName, string& outFile, string& outEntry, string& outDefines);
+		D3D_SHADER_MACRO* ConstructDefinesArray(const string& defines, uint32_t& outCount);
+		void DeleteDefinesArray(D3D_SHADER_MACRO* definesArray, uint32_t count);
 
 		uint16_t AddShaderToList(string& name, uint8_t type);
 		uint16_t FindShaderInList(string& name, uint8_t type);

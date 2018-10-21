@@ -59,7 +59,7 @@
 
 #define COPY_BUFFER_SIZE 512*1024
 
-#define SHADER_PROB_CAPTURTE PATH_SHADERS "offline/prob_capture", "Capture"
+#define SHADER_PROB_CAPTURTE PATH_SHADERS "offline/prob_capture#Capture#"
 
 #define FILE_WORLD_DATA "/world"
 #define FILE_CODE_DATA "/code"

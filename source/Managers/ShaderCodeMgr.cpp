@@ -127,19 +127,16 @@ uint16_t ShaderCodeMgr::AddShaderToList(string& name, uint8_t type)
 	string bcFilename = name + EXT_SHADER_BYTECODE;
 	
 #ifdef _DEV
-	auto del = name.rfind('_');
-	if(del == string::npos || del == name.size() - 1)
+	string srcFilename, entryPoint, defines;
+	if (!SpreadShaderName(name, srcFilename, entryPoint, defines))
 	{
 		ERR("Wrong shader path %s !", name.c_str());
 		return SHADER_NULL;
 	}
-
-	string srcFilename = name.substr(0, del) + EXT_SHADER_SOURCE;
-	string entryPoint = name.substr(del+1);
-
+	
 	if(!FileIO::IsExist(bcFilename) || FileIO::GetDateModifRaw(bcFilename) < FileIO::GetDateModifRaw(srcFilename))
 	{
-		s_blob = CompileShader(srcFilename, bcFilename, entryPoint, type, &file_date);
+		s_blob = CompileShader(srcFilename, bcFilename, entryPoint, defines, type, &file_date);
 		if(!s_blob)
 			return SHADER_NULL;
 		data_code = (uint8_t*)s_blob->GetBufferPointer();
@@ -218,14 +215,13 @@ void ShaderCodeMgr::CheckForReload()
 		{
 			auto& handle = shader_array[it->second];
 
-			auto del = it->first.rfind('_');
-			if(del == string::npos)
+			string srcFilename, entryPoint, defines;
+			if(!SpreadShaderName(it->first, srcFilename, entryPoint, defines))
 			{
 				ERR("Wrong shader path %s !", it->first.c_str());
 				it++;
 				continue;
 			}
-			string srcFilename = it->first.substr(0, del) + EXT_SHADER_SOURCE;
 
 			uint32_t last_date = FileIO::GetDateModifRaw(srcFilename);
 			if(last_date == handle.filedate)
@@ -236,11 +232,10 @@ void ShaderCodeMgr::CheckForReload()
 			
 			handle.filedate = last_date;
 
-			string entryPoint = it->first.substr(del+1);
 			string bcFilename = it->first + EXT_SHADER_BYTECODE;
 
 			uint32_t date = 0;
-			auto blob = CompileShader(srcFilename, bcFilename, entryPoint, type, &date);
+			auto blob = CompileShader(srcFilename, bcFilename, entryPoint, defines, type, &date);
 			if(!blob)
 			{
 				it++;
@@ -273,7 +268,7 @@ void ShaderCodeMgr::CheckForReload()
 	}
 }
 
-ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& entryPoint, uint8_t type, uint32_t* date)
+ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& entryPoint, string& defines, uint8_t type, uint32_t* date)
 {
 	if(file.size() <= 3)
 	{
@@ -374,14 +369,13 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 	ID3DBlob* code_compiled = nullptr;
 	ID3DBlob* code_errors = nullptr;
 
-	const D3D_SHADER_MACRO defines[] = 
-    {
-        //"EXAMPLE_DEFINE", "1",
-        NULL, NULL
-    };
-	
-	HRESULT hr = D3DCompile(pure_code, pure_code_size, file.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, 
+	uint32_t definesCount;
+	D3D_SHADER_MACRO* definesArray = ConstructDefinesArray(defines, definesCount);
+		
+	HRESULT hr = D3DCompile(pure_code, pure_code_size, file.c_str(), definesArray, D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		entryPoint.c_str(), target.c_str(), 0, 0, &code_compiled, &code_errors);
+
+	DeleteDefinesArray(definesArray, definesCount);
 
 	bool has_warnings = false;
 	if( FAILED(hr) )
@@ -562,6 +556,74 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 	}
 
 	return true;
+}
+
+bool ShaderCodeMgr::SpreadShaderName(const string& shaderName, string& outFile, string& outEntry, string& outDefines)
+{
+	auto delEntry = shaderName.find(SHADER_NAME_DEL);
+	auto delDefines = shaderName.rfind(SHADER_NAME_DEL);
+	if (delEntry == string::npos)
+		return false;
+
+	outFile = shaderName.substr(0, delEntry) + EXT_SHADER_SOURCE;
+	outEntry = shaderName.substr(delEntry + 1, delDefines - delEntry - 1);
+	outDefines = shaderName.substr(delDefines + 1);
+
+	return true;
+}
+
+D3D_SHADER_MACRO* ShaderCodeMgr::ConstructDefinesArray(const string& defines, uint32_t& outCount)
+{
+	uint32_t definesCount = 0;
+	size_t pos = 0;
+	while ((pos = defines.find(SHADER_DEFINE_BEG, pos)) != string::npos)
+	{
+		definesCount++;
+		pos++;
+	}
+
+	outCount = definesCount + 1;
+
+	D3D_SHADER_MACRO* definesArray = new D3D_SHADER_MACRO[outCount];
+
+	pos = 0;
+	for(uint32_t i = 0; i < definesCount; i++)
+	{
+		auto defineBeg = defines.find(SHADER_DEFINE_BEG, pos);
+		auto defineEnd = defines.find(SHADER_DEFINE_END, pos);
+
+		string name = defines.substr(pos, defineBeg - pos);
+		string value = defines.substr(defineBeg + 1, defineEnd - defineBeg - 1);
+
+		char* namePtr = new char[name.length() + 1];
+		char* valuePtr = new char[value.length() + 1];
+
+		memcpy(namePtr, name.data(), name.length());
+		memcpy(valuePtr, value.data(), value.length());
+
+		namePtr[name.length()] = 0;
+		valuePtr[value.length()] = 0;
+
+		definesArray[i].Name = namePtr;
+		definesArray[i].Definition = valuePtr;
+
+		pos = defineEnd + 1;
+	}
+	
+	definesArray[definesCount].Name = nullptr;
+	definesArray[definesCount].Definition = nullptr;
+
+	return definesArray;
+}
+
+void ShaderCodeMgr::DeleteDefinesArray(D3D_SHADER_MACRO* definesArray, uint32_t count)
+{
+	for (uint32_t i = 0; i < count; i++)
+	{
+		_DELETE_ARRAY(definesArray[i].Name);
+		_DELETE_ARRAY(definesArray[i].Definition);
+	}
+	_DELETE_ARRAY(definesArray);
 }
 
 // LAYOUT ----------------------

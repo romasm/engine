@@ -35,9 +35,9 @@
 #define PROB_CAPTURE_RESOLUTION_B3 1024
 
 #define DEBUG_MATERIAL_PROBES "$" PATH_SHADERS "objects/editor/debug_probes"
-#define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh", "ComputeSH"
-#define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy", "Copy3D"
-#define SHADER_INTERPOLATE_PROBES PATH_SHADERS "offline/interpolate_probes", "Interpolate"
+#define SHADER_CUBEMAP_TO_SH PATH_SHADERS "offline/cubemap_to_sh#ComputeSH#"
+#define SHADER_BRICKS_COPY PATH_SHADERS "offline/bricks_copy#Copy3D#"
+#define SHADER_INTERPOLATE_PROBES PATH_SHADERS "offline/interpolate_probes#Interpolate#"
 
 #define GI_BRICKS_ATLAS_PATH "/gi_bricks" EXT_TEXTURE
 #define GI_BRICKS_LOOKUP_PATH "/gi_lookups" EXT_TEXTURE

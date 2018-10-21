@@ -31,13 +31,23 @@ workspace "Engine"
 			"thirdparty/DirectXTK/Inc" ,
 			"thirdparty/DirectXTex/Inc" ,
 			"thirdparty/BulletPhysics/src" ,
+			"thirdparty/DirectX12/Inc" ,
+			
+			-- dx12
+			"$(WindowsSdkDir_10)Include/$(WindowsTargetPlatformVersion)/shared",
+			"$(WindowsSdkDir_10)Include/$(WindowsTargetPlatformVersion)/um",
 		}
 		
 		libdirs {			
 			"thirdparty/Assimp/lib/Release",
 			"thirdparty/BulletPhysics/lib",
+			
+			--dx12
+			"$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64",
 		}
 		
+		--systemversion "10.0.17134.0"
+			
 		filter "platforms:x64"
 			targetdir "build/bin"
 			debugdir "build/bin"

@@ -35,6 +35,7 @@
 #include <windows.h>
 //#include <windowsx.h>
 #include <wrl/client.h>
+#include <wrl.h>
 
 #include <Shellapi.h>	
 #include <Shlobj.h>	
@@ -42,6 +43,15 @@
 
 #include <Dwmapi.h>
 #pragma comment(lib, "Dwmapi.lib")
+
+/*#include <d3d12.h>
+#include <dxgi1_6.h>
+
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
+
+#include <d3dx12.h>
+*/
 
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
@@ -106,3 +116,4 @@ using namespace DirectX;
 using namespace SimpleMath;
 using namespace std;
 using namespace luabridge;
+using namespace Microsoft::WRL;
