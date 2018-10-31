@@ -592,6 +592,8 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 		EndCaptureProb();
 		return false;
 	}
+
+	probCaptureShader->AttachResource( (uint8_t)0, probScene->GetLinearAndDepthSRV());
 	
 	return true;
 }
@@ -628,15 +630,9 @@ ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float ne
 		m_transformSystem->SetRotation_W(probCamera, faceRotation);
 		
 		Snapshot(probScene);
-
-		auto uav = probTarget.GetUnorderedAccessView(i, arrayID);
-		auto srv = probScene->GetLinearAndDepthSRV();
 		
-		Render::CSSetShaderResources( 0, 1, &srv );
-
-		probCaptureShader->BindUAV( uav );
+		probCaptureShader->AttachRWResource( (uint8_t)0, probTarget.GetUnorderedAccessView(i, arrayID));
 		probCaptureShader->Dispatch( groupCount, groupCount, 1 );
-		probCaptureShader->UnbindUAV();
 	}
 	
 	return probTarget.GetShaderResourceView();
@@ -660,6 +656,9 @@ void BaseWorld::EndCaptureProb()
 {
 	if(!probScene)
 		return;
+
+	probCaptureShader->DetachResource();
+	probCaptureShader->DetachRWResource();
 	
 	probTarget.Close();
 	DeleteScene(probScene);

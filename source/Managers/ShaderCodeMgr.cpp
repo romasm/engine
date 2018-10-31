@@ -78,9 +78,7 @@ void ShaderCodeMgr::DeleteShaderCode(uint16_t id, uint8_t type)
 			handle.code = nullptr;
 		}
 
-		handle.input.layout = nullptr;
-		handle.input.samplers.destroy();
-		handle.input = CodeInput();
+		handle.input.Reset();
 
 		handle.refcount = 0;
 
@@ -418,7 +416,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 }
 #endif
 
-bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size, uint8_t type)
+bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t size, uint8_t type)
 {
 	ID3D11ShaderReflection* reflector = nullptr; 
 	D3D11Reflect(data, size, &reflector);
@@ -440,6 +438,76 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 			continue;
 
 		string bufName = desc.Name;
+
+		int32_t cbMaxBind = -1;
+		int32_t resMaxBind = -1;
+		int32_t rwMaxBind = -1;
+
+		switch (desc.Type)
+		{
+		case D3D_SIT_CBUFFER:
+			cbMaxBind = max(cbMaxBind, (int32_t)desc.BindPoint);
+			HInput.constantBuffers.insert(make_pair(desc.Name, (uint8_t)desc.BindPoint));
+			break;
+
+		case D3D_SIT_TBUFFER:
+		case D3D_SIT_TEXTURE:
+		case D3D_SIT_STRUCTURED:
+		case D3D_SIT_BYTEADDRESS:
+			resMaxBind = max(resMaxBind, (int32_t)desc.BindPoint);
+			HInput.resourceBuffers.insert(make_pair(desc.Name, (uint8_t)desc.BindPoint));
+			break;
+
+		case D3D_SIT_UAV_RWTYPED:
+		case D3D_SIT_UAV_RWSTRUCTURED:
+		case D3D_SIT_UAV_RWBYTEADDRESS:
+		case D3D_SIT_UAV_APPEND_STRUCTURED:
+		case D3D_SIT_UAV_CONSUME_STRUCTURED:
+		case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+			rwMaxBind = max(rwMaxBind, (int32_t)desc.BindPoint);
+			HInput.rwBuffers.insert(make_pair(desc.Name, (uint8_t)desc.BindPoint));
+			break;
+
+		case D3D_SIT_SAMPLER:
+		{
+			if (desc.BindPoint != samplersOrder)
+			{
+				ERR("Wrong samplers order for %s !", desc.Name);
+				return false;
+			}
+
+			auto sampler = SamplerStateMgr::GetSampler(bufName);
+			if (!sampler)
+			{
+				ERR("Wrong sampler name %s !", desc.Name);
+				return false;
+			}
+
+			HInput.samplers.push_back(sampler);
+			samplersOrder++;
+		}
+		break;
+		}
+
+		if (cbMaxBind >= 0 && cbMaxBind != HInput.constantBuffers.size() - 1)
+		{
+			ERR("Wrong constant buffers order");
+			return false;
+		}
+
+		if (resMaxBind >= 0 && resMaxBind != HInput.resourceBuffers.size() - 1)
+		{
+			ERR("Wrong resource buffers order");
+			return false;
+		}
+
+		if (rwMaxBind >= 0 && rwMaxBind != HInput.rwBuffers.size() - 1)
+		{
+			ERR("Wrong rw buffers order");
+			return false;
+		}
+
+		// material parameters
 		switch (desc.Type)
 		{
 		case D3D_SIT_CBUFFER:
@@ -495,25 +563,6 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 			else if(bufName == "matrixBuffer")
 				HInput.matrixBuf_Register = (uint8_t)desc.BindPoint;
 			break;
-		case D3D_SIT_SAMPLER:
-			{
-				if(desc.BindPoint != samplersOrder)
-				{
-					ERR("Wrong samplers order for %s !", desc.Name);
-					return false;
-				}
-
-				auto sampler = SamplerStateMgr::GetSampler(bufName);
-				if(!sampler)
-				{
-					ERR("Wrong sampler name %s !", desc.Name);
-					return false;
-				}
-
-				HInput.samplers.push_back(sampler);
-				samplersOrder++;
-			}
-			break;
 		case D3D_SIT_TEXTURE:
 			{
 				if(HInput.matTextures_Count == 0)
@@ -531,7 +580,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 				HInput.matTextures_Count++;
 			}
 			break;
-			case D3D_SIT_STRUCTURED:
+		case D3D_SIT_STRUCTURED:
 				if(bufName == "skinnedMatrixBuffer")
 				{
 					if(HInput.matTextures_Count != 0)
@@ -544,7 +593,7 @@ bool ShaderCodeMgr::GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size
 		}
 	}
 
-	// LAYOUT
+	// layout
 	if(type == SHADER_VS)
 	{
 		HInput.layout = GetVertexLayout(data, size);

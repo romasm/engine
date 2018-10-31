@@ -101,12 +101,13 @@ void ScenePipeline::Close()
 		tempCam.sys->AssignScene(tempCam.e, nullptr);
 	}
 
+	_DELETE(defferedOpaqueCompute);
+
 	CloseRts();
 	CloseAvgRt();
 	
 	TEXTURE_DROP(textureIBLLUT);
 
-	_DELETE(defferedOpaqueCompute);
 	_RELEASE(defferedConfigBuffer);
 
 	lightSpotBuffer.Release();
@@ -252,6 +253,10 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	if( width == t_width && height == t_height )
 		return true;
 
+	defferedOpaqueCompute->DetachResource();
+	defferedOpaqueCompute->DetachRWResource();
+	defferedOpaqueCompute->DetachConstantBuffer();
+
 	CloseRts();
 
 	width = t_width;
@@ -284,6 +289,55 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 		sharedconst.mipCount = 0.0f;
 
 	ApplyConfig();
+
+	// construct dependencies
+
+	defferedOpaqueCompute->AttachResource("gb_MaterialParamsBuffer", m_MaterialBuffer.srv);
+	defferedOpaqueCompute->AttachResource("gb_AlbedoRoughnesY", rt_OpaqueForward->GetShaderResourceView(0));
+	defferedOpaqueCompute->AttachResource("gb_TBN", rt_OpaqueForward->GetShaderResourceView(1));
+	defferedOpaqueCompute->AttachResource("gb_VertexNormalXY", rt_OpaqueForward->GetShaderResourceView(2));
+	defferedOpaqueCompute->AttachResource("gb_ReflectivityRoughnessX", rt_OpaqueForward->GetShaderResourceView(3));
+	defferedOpaqueCompute->AttachResource("gb_EmissiveVertexNormalZ", rt_OpaqueForward->GetShaderResourceView(4));
+	defferedOpaqueCompute->AttachResource("gb_MaterialObjectID", rt_OpaqueForward->GetShaderResourceView(5));
+	defferedOpaqueCompute->AttachResource("gb_SubsurfaceThickness", rt_OpaqueForward->GetShaderResourceView(6));
+	defferedOpaqueCompute->AttachResource("gb_AmbientOcclusion", rt_OpaqueForward->GetShaderResourceView(7));
+	defferedOpaqueCompute->AttachResource("gb_Depth", rt_HiZDepth->GetShaderResourceView(0));
+	defferedOpaqueCompute->AttachResource("DynamicAO", rt_AO->GetShaderResourceView(0));
+	defferedOpaqueCompute->AttachResource("SSRTexture", rt_SSR->GetShaderResourceView(0));
+	defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TEXTURE_GETPTR(textureIBLLUT));
+
+	if (!initConfig.lightweight)
+	{
+		defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
+		defferedOpaqueCompute->AttachResource("g_giLookups", giMgr->GetGILookupsSRV());
+		defferedOpaqueCompute->AttachResource("g_giBricks", giMgr->GetGIBricksSRV());
+		defferedOpaqueCompute->AttachResource("shadows", render_mgr->shadowsRenderer->GetShadowBuffer());
+		
+		defferedOpaqueCompute->AttachResource("g_spotLightBuffer", lightSpotBuffer.srv);
+		defferedOpaqueCompute->AttachResource("g_spotCasterBuffer", casterSpotBuffer.srv);
+		defferedOpaqueCompute->AttachResource("g_pointLightBuffer", lightPointBuffer.srv);
+		defferedOpaqueCompute->AttachResource("g_pointCasterBuffer", casterPointBuffer.srv);
+		defferedOpaqueCompute->AttachResource("g_dirLightBuffer", lightDirBuffer.srv);
+		
+		defferedOpaqueCompute->AttachResource("g_lightIDs", lightsPerTile.srv);
+
+		defferedOpaqueCompute->AttachConstantBuffer("giData", giMgr->GetGISampleData());
+	}
+
+	defferedOpaqueCompute->AttachResource("g_hqEnvProbsArray", render_mgr->envProbMgr->hqProbArraySRV);
+	defferedOpaqueCompute->AttachResource("g_sqEnvProbsArray", render_mgr->envProbMgr->sqProbArraySRV);
+	defferedOpaqueCompute->AttachResource("g_lqEnvProbsArray", render_mgr->envProbMgr->lqProbArraySRV);
+	defferedOpaqueCompute->AttachResource("g_hqEnvProbsData", render_mgr->envProbMgr->hqProbsBufferGPU.srv);
+	defferedOpaqueCompute->AttachResource("g_sqEnvProbsData", render_mgr->envProbMgr->sqProbsBufferGPU.srv);
+	defferedOpaqueCompute->AttachResource("g_lqEnvProbsData", render_mgr->envProbMgr->lqProbsBufferGPU.srv);
+
+	defferedOpaqueCompute->AttachConstantBuffer("SharedBuffer", sharedBuffer);
+	defferedOpaqueCompute->AttachConstantBuffer("configBuffer", defferedConfigBuffer);
+	defferedOpaqueCompute->AttachConstantBuffer("lightsCount", lightsPerClusterCount);
+
+	defferedOpaqueCompute->AttachRWResource("diffuseOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(0));
+	defferedOpaqueCompute->AttachRWResource("specularFirstOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(1));
+	defferedOpaqueCompute->AttachRWResource("specularSecondOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(2));
 
 	return true;
 }
@@ -707,7 +761,7 @@ void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 void ScenePipeline::TransparentForwardStage()
 {
 	// PREPASS
-	rt_TransparentPrepass->ClearRenderTargets(true);
+	/*rt_TransparentPrepass->ClearRenderTargets(true);
 	rt_TransparentPrepass->SetRenderTarget();
 
 	render_mgr->PrepassTransparent();
@@ -735,10 +789,10 @@ void ScenePipeline::TransparentForwardStage()
 	if(!initConfig.lightweight)
 		Render::PSSetConstantBuffers(4, 1, &lightsPerClusterCount);
 
-	render_mgr->DrawTransparent();
+	render_mgr->DrawTransparent();*/
 }
 
-uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
+void ScenePipeline::LoadLights()
 {
 	size_t spot_size, point_size, dir_size;
 	void* spot_data = (void*)render_mgr->GetSpotLightDataPtr(&spot_size);
@@ -748,41 +802,18 @@ uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
 	size_t caster_spot_size, caster_point_size;
 	void* caster_spot_data = (void*)render_mgr->GetSpotCasterDataPtr(&caster_spot_size);
 	void* caster_point_data = (void*)render_mgr->GetPointCasterDataPtr(&caster_point_size);
-
-	uint32_t structed_offset = startOffset;
-
-	ID3D11ShaderResourceView* srvs[5];
-
+	
 	if(spot_size > 0)
 		Render::UpdateDynamicResource(lightSpotBuffer.buf, spot_data, sizeof(SpotLightBuffer) * spot_size);
-	srvs[0] = lightSpotBuffer.srv; 
-	structed_offset++;
-
 	if(caster_spot_size > 0)
-		Render::UpdateDynamicResource(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);
-	srvs[1] = casterSpotBuffer.srv; 
-	structed_offset++;
-	
+		Render::UpdateDynamicResource(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);	
 	if(point_size > 0)
 		Render::UpdateDynamicResource(lightPointBuffer.buf, point_data, sizeof(PointLightBuffer) * point_size);
-	srvs[2] = lightPointBuffer.srv; 
-	structed_offset++;
-
 	if(caster_point_size > 0)
 		Render::UpdateDynamicResource(casterPointBuffer.buf, caster_point_data, sizeof(PointCasterBuffer) * caster_point_size);
-	srvs[3] = casterPointBuffer.srv; 
-	structed_offset++;
-
 	if(dir_size > 0)
 		Render::UpdateDynamicResource(lightDirBuffer.buf, dir_data, sizeof(DirLightBuffer) * dir_size);
-	srvs[4] = lightDirBuffer.srv; 
-	structed_offset++;
 
-	if(isCS)
-		Render::CSSetShaderResources(startOffset, 5, srvs);
-	else
-		Render::PSSetShaderResources(startOffset, 5, srvs);
-		
 		// TEMP
 		for(uint16_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
 			lightsIDs[SPOT_L_ID(i)] = i;
@@ -796,24 +827,12 @@ uint32_t ScenePipeline::LoadLights(uint32_t startOffset, bool isCS)
 			lightsIDs[DIR_ID(i)] = i;
 
 	Render::UpdateDynamicResource(lightsPerTile.buf, &lightsIDs, sizeof(LightsIDs));
-
-	if(isCS)
-		Render::CSSetShaderResources(structed_offset, 1, &lightsPerTile.srv); 
-	else
-		Render::PSSetShaderResources(structed_offset, 1, &lightsPerTile.srv);
-	structed_offset++;
-
+	
 	lightsCount.spot_count = (int32_t)spot_size;
 	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
 	lightsCount.point_count = (int32_t)point_size;
 	lightsCount.caster_point_count = (int32_t)caster_point_size;
 	lightsCount.dir_count = (int32_t)dir_size;
-
-	render_mgr->envProbMgr->BindEnvProbs(isCS, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
-
-	Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
-
-	return structed_offset;
 }
 
 void ScenePipeline::HiZMips()
@@ -877,70 +896,22 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
-	ID3D11ShaderResourceView* srvs[16];
-	srvs[0] = m_MaterialBuffer.srv;
-	srvs[1] = rt_OpaqueForward->GetShaderResourceView(0);
-	srvs[2] = rt_OpaqueForward->GetShaderResourceView(1);
-	srvs[3] = rt_OpaqueForward->GetShaderResourceView(2);
-	srvs[4] = rt_OpaqueForward->GetShaderResourceView(3);
-	srvs[5] = rt_OpaqueForward->GetShaderResourceView(4);
-	srvs[6] = rt_OpaqueForward->GetShaderResourceView(5);
-	srvs[7] = rt_OpaqueForward->GetShaderResourceView(6);
-	srvs[8] = rt_OpaqueForward->GetShaderResourceView(7);
-	srvs[9] = rt_HiZDepth->GetShaderResourceView(0);
-	srvs[10] = rt_AO->GetShaderResourceView(0);
-	srvs[11] = rt_SSR->GetShaderResourceView(0);
-	srvs[12] = TEXTURE_GETPTR(textureIBLLUT);
-	srvs[13] = nullptr;
-	srvs[14] = nullptr;
-	srvs[15] = nullptr;
-	
-	if (!initConfig.lightweight)
-	{
-		srvs[13] = giMgr->GetGIChunksSRV();
-		srvs[14] = giMgr->GetGILookupsSRV();
-		srvs[15] = giMgr->GetGIBricksSRV();
-
-		Render::CSSetShaderResources(0, 16, srvs);
-
-		auto shadowBuffer = render_mgr->shadowsRenderer->GetShadowBuffer();
-		Render::CSSetShaderResources(16, 1, &shadowBuffer);
-
-		LoadLights(17, true);
-	}
-	else
-	{
-		Render::CSSetShaderResources(0, 13, srvs);
-
-		ZeroMemory(&lightsCount, sizeof(lightsCount));
-
-		uint32_t structed_offset = 13;
-		render_mgr->envProbMgr->BindEnvProbs(true, structed_offset, lightsCount.envProbsCountHQ, lightsCount.envProbsCountSQ, lightsCount.envProbsCountLQ);
-
-		Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
-	}
-	
-	Render::CSSetConstantBuffers(0, 1, &sharedBuffer); 
-	Render::CSSetConstantBuffers(1, 1, &defferedConfigBuffer); 
-
-	Render::CSSetConstantBuffers(2, 1, &lightsPerClusterCount);
+	ZeroMemory(&lightsCount, sizeof(lightsCount));
 
 	if (!initConfig.lightweight)
-	{
-		auto giSampleData = giMgr->GetGISampleData();
-		Render::CSSetConstantBuffers(3, 1, &giSampleData);
-	}
-		
-	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(0) );
-	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(1) );
-	defferedOpaqueCompute->BindUAV( rt_OpaqueDefferedDirect->GetUnorderedAccessView(2) );
+		LoadLights();
+
+	lightsCount.envProbsCountHQ = (int32_t)render_mgr->envProbMgr->hqProbsBuffer.size();
+	lightsCount.envProbsCountSQ = (int32_t)render_mgr->envProbMgr->sqProbsBuffer.size();
+	lightsCount.envProbsCountLQ = (int32_t)render_mgr->envProbMgr->lqProbsBuffer.size();
+
+	Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
 
 	//temp
 	uint16_t group_count_x = (uint16_t)ceil(float(width) / 8);
 	uint16_t group_count_y = (uint16_t)ceil(float(height) / 8);
 
 	defferedOpaqueCompute->Dispatch(group_count_x, group_count_y, 1);
-	defferedOpaqueCompute->UnbindUAV();
 	
 	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
 	// final 

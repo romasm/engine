@@ -40,6 +40,10 @@ namespace EngineCore
 		static ID3D11Buffer* QuadIndex;
 		static ID3D11Buffer* TriangVertex;
 		static ID3D11Buffer* TriangIndex;
+
+		static ID3D11Buffer* nullCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+		static ID3D11ShaderResourceView* nullRESs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+		static ID3D11UnorderedAccessView* nullRWs[D3D11_1_UAV_SLOT_COUNT];
 	};
 
 //------------------------------------------------------------------

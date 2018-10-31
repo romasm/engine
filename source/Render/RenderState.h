@@ -51,8 +51,6 @@ namespace EngineCore
 		unordered_map<string, uint16_t> rast_map;
 	};
 
-	typedef ID3D11SamplerState* sampler_ptr;
-
 	class SamplerStateMgr
 	{
 	public:

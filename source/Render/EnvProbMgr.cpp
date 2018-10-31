@@ -273,29 +273,3 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 	swap(regedProbs, regedProbsPrev);
 	envProbs.clear();
 }
-
-void EnvProbMgr::BindEnvProbs(bool isCS, uint32_t& srvLocation, int32_t& hqCount, int32_t& sqCount, int32_t& lqCount)
-{
-	ID3D11ShaderResourceView* srvs[6];
-	srvs[0] = hqProbArraySRV;
-	srvs[1] = sqProbArraySRV;
-	srvs[2] = lqProbArraySRV;
-	srvs[3] = hqProbsBufferGPU.srv;
-	srvs[4] = sqProbsBufferGPU.srv;
-	srvs[5] = lqProbsBufferGPU.srv;
-
-	if(isCS)
-	{
-		Render::CSSetShaderResources(srvLocation, 6, srvs);
-	}
-	else
-	{
-		Render::PSSetShaderResources(srvLocation, 6, srvs);
-	}
-
-	srvLocation += 6;
-
-	hqCount = (int32_t)hqProbsBuffer.size();
-	sqCount = (int32_t)sqProbsBuffer.size();
-	lqCount = (int32_t)lqProbsBuffer.size();
-}

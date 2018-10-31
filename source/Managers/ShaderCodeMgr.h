@@ -21,9 +21,16 @@
 namespace EngineCore
 {
 #define REGISTER_NULL 255
-
-	struct CodeInput
+	
+	struct ShaderInput
 	{
+		unordered_map<string, uint8_t> constantBuffers;
+		unordered_map<string, uint8_t> resourceBuffers;
+		unordered_map<string, uint8_t> rwBuffers;
+
+		DArray<ID3D11SamplerState*> samplers;
+
+		// material data
 		uint8_t matInfo_Register;
 		uint8_t matInfo_FloatCount;
 		unordered_map<string, uint8_t> matFloatMap;
@@ -37,16 +44,19 @@ namespace EngineCore
 
 		uint8_t matId_Register;
 
+		// mesh data
 		uint8_t matrixBuf_Register;
 		uint8_t matrixBoneBuf_Register;
 
-		DArray<sampler_ptr> samplers;
-
 		ID3D11InputLayout* layout;
-
-		CodeInput()
+		
+		void Reset()
 		{
-			layout = nullptr;
+			constantBuffers.clear();
+			resourceBuffers.clear();
+			rwBuffers.clear();
+			samplers.destroy();
+
 			matInfo_Register = REGISTER_NULL;
 			matInfo_FloatCount = 0;
 			matInfo_VectorCount = 0;
@@ -55,6 +65,13 @@ namespace EngineCore
 			matrixBoneBuf_Register = REGISTER_NULL;
 			matTextures_StartRegister = REGISTER_NULL;
 			matTextures_Count = 0;
+
+			layout = nullptr;
+		}
+
+		ShaderInput()
+		{
+			Reset();
 		}
 	};
 
@@ -66,7 +83,7 @@ namespace EngineCore
 
 		string name;
 
-		CodeInput input;
+		ShaderInput input;
 
 		CodeHandle()
 		{
@@ -112,7 +129,7 @@ namespace EngineCore
 
 		inline DXGI_FORMAT GetInputFormat(D3D_REGISTER_COMPONENT_TYPE component, BYTE mask);
 		
-		bool GetInputData(CodeInput& HInput, uint8_t* data, uint32_t size, uint8_t type);
+		bool GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t size, uint8_t type);
 		ID3D11InputLayout* GetVertexLayout(uint8_t* data, uint32_t size);
 
 		static ShaderCodeMgr *instance;

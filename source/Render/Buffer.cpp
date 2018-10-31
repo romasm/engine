@@ -9,6 +9,10 @@ ID3D11Buffer* Buffer::QuadIndex = nullptr;
 ID3D11Buffer* Buffer::TriangVertex = nullptr;
 ID3D11Buffer* Buffer::TriangIndex = nullptr;
 
+ID3D11Buffer* Buffer::nullCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+ID3D11ShaderResourceView* Buffer::nullRESs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+ID3D11UnorderedAccessView* Buffer::nullRWs[D3D11_1_UAV_SLOT_COUNT];
+
 Buffer::Buffer()
 {
 	UnlitVertex vertices_quad[4];
@@ -53,6 +57,13 @@ Buffer::Buffer()
 	_RELEASE(TriangIndex);
 	TriangVertex = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex)*3, false, &vertices_tris);
 	TriangIndex = Buffer::CreateIndexBuffer(DEVICE, sizeof(unsigned short)*3, false, &indices_tris);
+
+	for (int32_t i = 0; i < _countof(nullCBs); i++)
+		nullCBs[i] = nullptr;
+	for (int32_t i = 0; i < _countof(nullRESs); i++)
+		nullRESs[i] = nullptr;
+	for (int32_t i = 0; i < _countof(nullRWs); i++)
+		nullRWs[i] = nullptr;
 }
 
 Buffer::~Buffer()

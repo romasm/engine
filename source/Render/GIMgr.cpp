@@ -101,11 +101,15 @@ bool GIMgr::InitBuffers()
 
 #ifdef _EDITOR
 
-	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
 	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SGAdresses), true);
 
+	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
+	cubemapToSH->AttachConstantBuffer((uint8_t)0, adressBuffer);
+
 	copyBricks = new Compute(SHADER_BRICKS_COPY);
+
 	interpolateProbes = new Compute(SHADER_INTERPOLATE_PROBES);
+	interpolateProbes->AttachConstantBuffer((uint8_t)0, sampleDataGPU);
 
 #endif
 
@@ -766,6 +770,16 @@ bool GIMgr::BakeGI()
 	}
 	
 	// baking
+	cubemapToSH->AttachRWResource((uint8_t)0, bricksTempAtlasUAV);
+	
+	copyBricks->AttachResource((uint8_t)0, bricksTempAtlasSRV);
+	copyBricks->AttachRWResource((uint8_t)0, bricksAtlasUAV);
+	
+	interpolateProbes->AttachResource("g_giChunks", chunksLookupSRV);
+	interpolateProbes->AttachResource("g_giLookups", bricksLookupSRV);
+	interpolateProbes->AttachResource("g_giBricks", bricksAtlasSRV);
+	interpolateProbes->AttachRWResource((uint8_t)0, bricksTempAtlasUAV);
+
 	for (int32_t b = 0; b < PROB_CAPTURE_BOUNCES; b++)
 	{
 		const int32_t captureResolution = captureResolutions[b];
@@ -780,6 +794,8 @@ bool GIMgr::BakeGI()
 		ID3D11ShaderResourceView* probSRV = world->GetCaptureProbSRV();
 		if (!probSRV)
 			return false;
+
+		cubemapToSH->AttachResource((uint8_t)0, probSRV);
 
 		SGAdresses adresses;
 		adresses.monteCarlo = (2.0f * XM_PI) / (captureResolution * captureResolution * 6);
@@ -813,29 +829,24 @@ bool GIMgr::BakeGI()
 			adresses.adresses[0].w = (float)prob.adresses.size();
 
 			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SGAdresses));
-
-			#define BAKE_SH(pos) \
-				world->CaptureProb(Matrix::CreateTranslation(pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);\
-				Render::CSSetConstantBuffers(0, 1, &adressBuffer);\
-				Render::CSSetShaderResources(0, 1, &probSRV);\
-				cubemapToSH->BindUAV(bricksTempAtlasUAV);\
-				cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);\
-				cubemapToSH->UnbindUAV();
-			
+						
 #if PROB_CAPTURE_NO_AA == 0
 			if (b == PROB_CAPTURE_BOUNCES - 1)
 			{
 				for (int32_t i = 0; i < PROB_CAPTURE_AA; i++)
 				{
-					BAKE_SH(prob.posAA[i])
+					world->CaptureProb(Matrix::CreateTranslation(prob.posAA[i]), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);
+					cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
 				}
 			}
 			else
 			{
-				BAKE_SH(prob.pos)
+				world->CaptureProb(Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);
+				cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
 			}
 #else
-			BAKE_SH(prob.pos)
+			world->CaptureProb(Matrix::CreateTranslation(prob.pos), PROB_CAPTURE_NEARCLIP, PROB_CAPTURE_FARCLIP);
+			cubemapToSH->Dispatch(groupsCountXY, groupsCountXY, groupsCountZ);
 #endif
 
 			bakedCount++;
@@ -848,6 +859,8 @@ bool GIMgr::BakeGI()
 			}
 		}
 
+		cubemapToSH->DetachResource();
+
 		world->EndCaptureProb();
 		LOG("Baked with speed %f probes per second", 1000.0f * float(bakedCount) / float(currentTime - startTime));
 		LOG("Bounce %i baked", b);
@@ -858,6 +871,14 @@ bool GIMgr::BakeGI()
 		CopyBricks();
 	}
 	
+	cubemapToSH->DetachRWResource();
+
+	copyBricks->DetachResource();
+	copyBricks->DetachRWResource();
+
+	interpolateProbes->DetachRWResource();
+	interpolateProbes->DetachResource();
+
 	_RELEASE(bricksTempAtlasUAV);
 	_RELEASE(bricksTempAtlasSRV);
 	_RELEASE(bricksTempAtlas);
@@ -1182,16 +1203,11 @@ void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer(Render::Device(), (int32_t)interpolationDataGPU.size(), sizeof(ProbInterpolationGPU), false, interpolationDataGPU.data());
 
 		uint32_t groupsCountX = (uint32_t)ceilf(float(interpolationDataGPU.size()) / 128);
-
-		Render::CSSetShaderResources(0, 1, &interpolationBuffer.srv);
-		Render::CSSetShaderResources(1, 1, &chunksLookupSRV);
-		Render::CSSetShaderResources(2, 1, &bricksLookupSRV);
-		Render::CSSetShaderResources(3, 1, &bricksAtlasSRV);
-		Render::CSSetConstantBuffers(0, 1, &sampleDataGPU);
-
-		interpolateProbes->BindUAV(bricksTempAtlasUAV);
+		uint8_t interpolationBufferSlot = interpolateProbes->AttachResource("probes", interpolationBuffer.srv);
+		
 		interpolateProbes->Dispatch(groupsCountX, 1, 1);
-		interpolateProbes->UnbindUAV();
+
+		interpolateProbes->DetachResource(interpolationBufferSlot);
 
 		interpolationBuffer.Release();
 		interpolationDataGPU.clear();
@@ -1203,11 +1219,8 @@ void GIMgr::CopyBricks()
 	uint32_t groupsCountX = (uint32_t)ceilf(float(bricksTexX * BRICK_RESOLUTION) / 8);
 	uint32_t groupsCountY = (uint32_t)ceilf(float(bricksTexY * BRICK_RESOLUTION) / 8);
 	uint32_t groupsCountZ = (uint32_t)ceilf(float(BRICK_RESOLUTION * BRICK_COEF_COUNT) / 4);
-
-	Render::CSSetShaderResources(0, 1, &bricksTempAtlasSRV);
-	copyBricks->BindUAV(bricksAtlasUAV);
+	
 	copyBricks->Dispatch(groupsCountX, groupsCountY, groupsCountZ);
-	copyBricks->UnbindUAV();
 }
 
 const Vector3 heighborsDirs[8] = 
