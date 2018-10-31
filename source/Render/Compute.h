@@ -18,6 +18,10 @@ namespace EngineCore
 		{
 			SHADERCODE_DROP(shaderID, SHADER_CS);
 			shaderID = SHADER_NULL;
+
+			rwAttachments.assign(nullptr);
+			resAttachments.assign(nullptr);
+			cbAttachments.assign(nullptr);
 		}
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)
@@ -49,7 +53,7 @@ namespace EngineCore
 		uint8_t AttachRWResource(uint8_t slotId, ID3D11UnorderedAccessView* rw)
 		{
 #ifdef _DEV
-			if ((size_t)slotId < rwAttachments.size())
+			if ((size_t)slotId >= rwAttachments.size())
 			{
 				ERR("Wrong rw buffer attachment id %u", (uint32_t)slotId);
 				return REGISTER_NULL;
@@ -108,7 +112,7 @@ namespace EngineCore
 		uint8_t AttachConstantBuffer(uint8_t slotId, ID3D11Buffer* cb)
 		{
 #ifdef _DEV
-			if ((size_t)slotId < cbAttachments.size())
+			if ((size_t)slotId >= cbAttachments.size())
 			{
 				ERR("Wrong constant buffer attachment id %u", (uint32_t)slotId);
 				return REGISTER_NULL;
@@ -178,7 +182,7 @@ namespace EngineCore
 		uint8_t AttachResource(uint8_t slotId, ID3D11ShaderResourceView* res)
 		{
 #ifdef _DEV
-			if ((size_t)slotId < resAttachments.size())
+			if ((size_t)slotId >= resAttachments.size())
 			{
 				ERR("Wrong resource buffer attachment id %u", (uint32_t)slotId);
 				return REGISTER_NULL;

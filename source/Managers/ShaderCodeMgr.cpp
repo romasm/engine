@@ -430,6 +430,15 @@ bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t si
 	HInput.matTextures_StartRegister = 0;
 	HInput.matTextures_Count = 0;
 
+	HInput.constantBuffers.clear();
+	HInput.resourceBuffers.clear();
+	HInput.rwBuffers.clear();
+	HInput.samplers.clear();
+
+	int32_t cbMaxBind = -1;
+	int32_t resMaxBind = -1;
+	int32_t rwMaxBind = -1;
+
 	for(uint32_t i = 0; i < shader_desc.BoundResources; i++)
 	{
 		D3D11_SHADER_INPUT_BIND_DESC desc;
@@ -438,10 +447,6 @@ bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t si
 			continue;
 
 		string bufName = desc.Name;
-
-		int32_t cbMaxBind = -1;
-		int32_t resMaxBind = -1;
-		int32_t rwMaxBind = -1;
 
 		switch (desc.Type)
 		{
@@ -487,24 +492,6 @@ bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t si
 			samplersOrder++;
 		}
 		break;
-		}
-
-		if (cbMaxBind >= 0 && cbMaxBind != HInput.constantBuffers.size() - 1)
-		{
-			ERR("Wrong constant buffers order");
-			return false;
-		}
-
-		if (resMaxBind >= 0 && resMaxBind != HInput.resourceBuffers.size() - 1)
-		{
-			ERR("Wrong resource buffers order");
-			return false;
-		}
-
-		if (rwMaxBind >= 0 && rwMaxBind != HInput.rwBuffers.size() - 1)
-		{
-			ERR("Wrong rw buffers order");
-			return false;
 		}
 
 		// material parameters
@@ -591,6 +578,39 @@ bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t si
 				}
 			break;
 		}
+	}
+
+	if (cbMaxBind >= 0 && cbMaxBind != HInput.constantBuffers.size() - 1)
+	{
+		// TEMP !!!!!!!!!!!!!!!!!!!!!!!!
+		int32_t temp = cbMaxBind - ((int32_t)HInput.constantBuffers.size() - 1);
+		for (int32_t i = 0; i < temp; i++)
+			HInput.constantBuffers.insert(make_pair(RandomString(6), 0));
+
+		//ERR("Wrong constant buffers order");
+		//return false;
+	}
+
+	if (resMaxBind >= 0 && resMaxBind != HInput.resourceBuffers.size() - 1)
+	{
+		// TEMP !!!!!!!!!!!!!!!!!!!!!!!!
+		int32_t temp = resMaxBind - ((int32_t)HInput.resourceBuffers.size() - 1);
+		for (int32_t i = 0; i < temp; i++)
+			HInput.resourceBuffers.insert(make_pair(RandomString(6), 0));
+
+		//ERR("Wrong resource buffers order");
+		//return false;
+	}
+
+	if (rwMaxBind >= 0 && rwMaxBind != HInput.rwBuffers.size() - 1)
+	{
+		// TEMP !!!!!!!!!!!!!!!!!!!!!!!!
+		int32_t temp = rwMaxBind - ((int32_t)HInput.rwBuffers.size() - 1);
+		for (int32_t i = 0; i < temp; i++)
+			HInput.rwBuffers.insert(make_pair(RandomString(6), 0));
+
+		//ERR("Wrong rw buffers order");
+		//return false;
 	}
 
 	// layout

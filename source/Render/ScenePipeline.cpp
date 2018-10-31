@@ -291,7 +291,7 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	ApplyConfig();
 
 	// construct dependencies
-
+	
 	defferedOpaqueCompute->AttachResource("gb_MaterialParamsBuffer", m_MaterialBuffer.srv);
 	defferedOpaqueCompute->AttachResource("gb_AlbedoRoughnesY", rt_OpaqueForward->GetShaderResourceView(0));
 	defferedOpaqueCompute->AttachResource("gb_TBN", rt_OpaqueForward->GetShaderResourceView(1));
@@ -305,7 +305,7 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	defferedOpaqueCompute->AttachResource("DynamicAO", rt_AO->GetShaderResourceView(0));
 	defferedOpaqueCompute->AttachResource("SSRTexture", rt_SSR->GetShaderResourceView(0));
 	defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TEXTURE_GETPTR(textureIBLLUT));
-
+	
 	if (!initConfig.lightweight)
 	{
 		defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
@@ -323,14 +323,14 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 
 		defferedOpaqueCompute->AttachConstantBuffer("giData", giMgr->GetGISampleData());
 	}
-
+	
 	defferedOpaqueCompute->AttachResource("g_hqEnvProbsArray", render_mgr->envProbMgr->hqProbArraySRV);
 	defferedOpaqueCompute->AttachResource("g_sqEnvProbsArray", render_mgr->envProbMgr->sqProbArraySRV);
 	defferedOpaqueCompute->AttachResource("g_lqEnvProbsArray", render_mgr->envProbMgr->lqProbArraySRV);
 	defferedOpaqueCompute->AttachResource("g_hqEnvProbsData", render_mgr->envProbMgr->hqProbsBufferGPU.srv);
 	defferedOpaqueCompute->AttachResource("g_sqEnvProbsData", render_mgr->envProbMgr->sqProbsBufferGPU.srv);
 	defferedOpaqueCompute->AttachResource("g_lqEnvProbsData", render_mgr->envProbMgr->lqProbsBufferGPU.srv);
-
+	
 	defferedOpaqueCompute->AttachConstantBuffer("SharedBuffer", sharedBuffer);
 	defferedOpaqueCompute->AttachConstantBuffer("configBuffer", defferedConfigBuffer);
 	defferedOpaqueCompute->AttachConstantBuffer("lightsCount", lightsPerClusterCount);
@@ -338,7 +338,7 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	defferedOpaqueCompute->AttachRWResource("diffuseOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(0));
 	defferedOpaqueCompute->AttachRWResource("specularFirstOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(1));
 	defferedOpaqueCompute->AttachRWResource("specularSecondOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(2));
-
+	
 	return true;
 }
 
@@ -895,6 +895,16 @@ void ScenePipeline::OpaqueDefferedStage()
 	Render::OMUnsetRenderTargets();
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
+
+	// TEMP !!!!!!!!!!!!!!!!!!!! TODO: attach on texture loading
+	defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TEXTURE_GETPTR(textureIBLLUT));
+	if (!initConfig.lightweight)
+	{
+		defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
+		defferedOpaqueCompute->AttachResource("g_giLookups", giMgr->GetGILookupsSRV());
+		defferedOpaqueCompute->AttachResource("g_giBricks", giMgr->GetGIBricksSRV());
+	}
+
 
 	ZeroMemory(&lightsCount, sizeof(lightsCount));
 
