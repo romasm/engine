@@ -28,7 +28,7 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		lightDir_array = nullptr;
 		casterSpot_array = nullptr;
 		casterPoint_array = nullptr;		
-
+		
 		shadowsRenderer = nullptr;
 		envProbMgr = new EnvProbMgr(true);
 	}
@@ -39,6 +39,9 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 		lightDir_array = new DirLightBuffer[LIGHT_DIR_FRAME_MAX];
 		casterSpot_array = new SpotCasterBuffer[CASTER_SPOT_FRAME_MAX];
 		casterPoint_array = new PointCasterBuffer[CASTER_POINT_FRAME_MAX];
+
+		globalLightBuffer.create(LIGHT_PROB_FRAME_MAX);
+		lightGeometryBuffer.create(LIGHT_PROB_FRAME_MAX);
 
 		shadowsRenderer = new ShadowsRenderer(this);
 		envProbMgr = new EnvProbMgr(false);
@@ -69,6 +72,9 @@ void SceneRenderMgr::cleanRenderArrayLights()
 	casterSpot_count = 0;
 	casterPoint_count = 0;
 	
+	globalLightBuffer.clear();
+	lightGeometryBuffer.clear();
+
 	if(shadowsRenderer)
 		shadowsRenderer->ClearPerFrame();
 }

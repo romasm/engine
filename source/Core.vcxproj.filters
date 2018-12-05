@@ -305,6 +305,9 @@
     <ClInclude Include="System\GraphicAPI.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="Render\LightFrameMgr.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -500,6 +503,9 @@
     </ClCompile>
     <ClCompile Include="System\GraphicAPI.cpp">
       <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LightFrameMgr.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
