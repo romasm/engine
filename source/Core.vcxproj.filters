@@ -308,6 +308,9 @@
     <ClInclude Include="Render\RayTraceScene.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\LightFrameMgr.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -505,6 +508,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="Render\RayTraceScene.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LightFrameMgr.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

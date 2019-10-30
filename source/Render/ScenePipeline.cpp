@@ -905,17 +905,18 @@ void ScenePipeline::OpaqueDefferedStage()
 		defferedOpaqueCompute->AttachResource("g_giBricks", giMgr->GetGIBricksSRV());
 	}
 
+	{
+		ZeroMemory(&lightsCount, sizeof(lightsCount));
 
-	ZeroMemory(&lightsCount, sizeof(lightsCount));
+		if (!initConfig.lightweight)
+			LoadLights();
 
-	if (!initConfig.lightweight)
-		LoadLights();
+		lightsCount.envProbsCountHQ = (int32_t)render_mgr->envProbMgr->hqProbsBuffer.size();
+		lightsCount.envProbsCountSQ = (int32_t)render_mgr->envProbMgr->sqProbsBuffer.size();
+		lightsCount.envProbsCountLQ = (int32_t)render_mgr->envProbMgr->lqProbsBuffer.size();
 
-	lightsCount.envProbsCountHQ = (int32_t)render_mgr->envProbMgr->hqProbsBuffer.size();
-	lightsCount.envProbsCountSQ = (int32_t)render_mgr->envProbMgr->sqProbsBuffer.size();
-	lightsCount.envProbsCountLQ = (int32_t)render_mgr->envProbMgr->lqProbsBuffer.size();
-
-	Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
+		Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
+	}
 
 	//temp
 	uint16_t group_count_x = (uint16_t)ceil(float(width) / 8);
