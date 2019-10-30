@@ -67,10 +67,13 @@
   <ItemGroup>
     <None Include="common\PCF.hlsl" />
     <None Include="common\common_helpers.hlsl" />
+    <None Include="common\gi_helpers.hlsl" />
     <None Include="common\ibl_helpers.hlsl" />
     <None Include="common\light_helpers.hlsl" />
     <None Include="common\light_structs.hlsl" />
     <None Include="common\math.hlsl" />
+    <None Include="common\sg_helpers.hlsl" />
+    <None Include="common\sh_helpers.hlsl" />
     <None Include="common\shadow_helpers.hlsl" />
     <None Include="common\shared.hlsl" />
     <None Include="common\structs.hlsl" />
@@ -97,7 +100,10 @@
     <None Include="objects\alphatest_main.hlsl" />
     <None Include="objects\editor\3d_hud.hlsl" />
     <None Include="objects\editor\3d_hud_alpha.hlsl" />
+    <None Include="objects\editor\debug_common.hlsl" />
     <None Include="objects\editor\debug_lines.hlsl" />
+    <None Include="objects\editor\debug_lines_cull.hlsl" />
+    <None Include="objects\editor\debug_probes.hlsl" />
     <None Include="objects\editor\line_geometry.hlsl" />
     <None Include="objects\editor\line_geometry_sphere.hlsl" />
     <None Include="objects\editor\tools_mesh.hlsl" />
@@ -110,10 +116,13 @@
     <None Include="objects\transparency.hlsl" />
     <None Include="objects\transparent_medium.hlsl" />
     <None Include="objects\voxelization.hlsl" />
+    <None Include="offline\bricks_copy.hlsl" />
+    <None Include="offline\cubemap_to_sh.hlsl" />
     <None Include="offline\envmap_diffgen.hlsl" />
     <None Include="offline\envmap_mipcopy.hlsl" />
     <None Include="offline\envmap_mipgen.hlsl" />
     <None Include="offline\envmap_render.hlsl" />
+    <None Include="offline\interpolate_probes.hlsl" />
     <None Include="offline\noise2d.hlsl" />
     <None Include="offline\offline_ibl.hlsl" />
     <None Include="offline\prob_capture.hlsl" />
@@ -179,17 +188,6 @@
     <None Include="system\voxel_downsample.hlsl" />
     <None Include="system\voxel_light_inject.hlsl" />
     <None Include="system\voxel_light_propagate.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="common\gi_helpers.hlsl" />
-    <FxCompile Include="common\sg_helpers.hlsl" />
-    <FxCompile Include="common\sh_helpers.hlsl" />
-    <FxCompile Include="objects\editor\debug_common.hlsl" />
-    <FxCompile Include="objects\editor\debug_lines_cull.hlsl" />
-    <FxCompile Include="objects\editor\debug_probes.hlsl" />
-    <FxCompile Include="offline\bricks_copy.hlsl" />
-    <FxCompile Include="offline\cubemap_to_sh.hlsl" />
-    <FxCompile Include="offline\interpolate_probes.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

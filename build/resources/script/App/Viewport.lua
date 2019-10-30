@@ -136,8 +136,10 @@ function Viewport:SetWorld(WLD)
     EditorCamera:Init( WLD.world )
     TransformControls:Init( WLD.world )
 
-    local vp_rect = self.viewport.entity:GetRectAbsolute()
-    WLD.scenepl = WLD.world:CreateScene(EditorCamera.cameraEntity, vp_rect.w, vp_rect.h, false)
+	local vp_rect = self.viewport.entity:GetRectAbsolute()
+
+	local initVolumeRenderConfig = RenderInitConfig()
+	WLD.scenepl = WLD.world:CreateScene(EditorCamera.cameraEntity, vp_rect.w, vp_rect.h, initVolumeRenderConfig)
 
     local srv = WLD.scenepl:GetSRV()
     self.viewport.rect_mat:SetShaderResourceByID(srv, 0, SHADERS.PS)

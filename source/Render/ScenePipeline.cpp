@@ -761,7 +761,7 @@ void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 void ScenePipeline::TransparentForwardStage()
 {
 	// PREPASS
-	/*rt_TransparentPrepass->ClearRenderTargets(true);
+	rt_TransparentPrepass->ClearRenderTargets(true);
 	rt_TransparentPrepass->SetRenderTarget();
 
 	render_mgr->PrepassTransparent();
@@ -779,17 +779,17 @@ void ScenePipeline::TransparentForwardStage()
 	srvs[2] = transparencyDepthSRV;
 	srvs[3] = rt_TransparentPrepass->GetShaderResourceView(0);
 		
-	Render::PSSetShaderResources(0, srvs_size, srvs);
+	//Render::PSSetShaderResources(0, srvs_size, srvs);
 
-	if(!initConfig.lightweight)
-		LoadLights(srvs_size, false);
+	//if(!initConfig.lightweight)
+	//	LoadLights(srvs_size, false);
 	
 	Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
 
 	if(!initConfig.lightweight)
 		Render::PSSetConstantBuffers(4, 1, &lightsPerClusterCount);
 
-	render_mgr->DrawTransparent();*/
+	render_mgr->DrawTransparent();
 }
 
 void ScenePipeline::LoadLights()

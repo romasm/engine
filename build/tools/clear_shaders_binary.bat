@@ -8,12 +8,12 @@ echo.
 echo.
 
 For /r %%I In (*.bc) Do (
-	del %%I
+	del "%%I"
 	echo Delete %%I
 )
 
 For /r %%I In (*.tq) Do (
-	del %%I
+	del "%%I"
 	echo Delete %%I
 )
 

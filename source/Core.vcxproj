@@ -19,6 +19,7 @@
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Core</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -56,21 +57,21 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\build\bin\</OutDir>
+    <OutDir>..\VolumePainter\bin\</OutDir>
     <IntDir>obj\x64\Debug\</IntDir>
     <TargetName>core_d</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\build\bin\</OutDir>
+    <OutDir>..\VolumePainter\bin\</OutDir>
     <IntDir>obj\x64\Development\</IntDir>
     <TargetName>core_dev</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\build\bin\</OutDir>
+    <OutDir>..\VolumePainter\bin\</OutDir>
     <IntDir>obj\x64\Release\</IntDir>
     <TargetName>core</TargetName>
     <TargetExt>.exe</TargetExt>
@@ -83,15 +84,15 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;_DEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\SDK\sutil;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64;..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;optix.6.0.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -104,7 +105,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_EDITOR;WIN64;_DEV;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\SDK\sutil;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -117,8 +118,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64;..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;optix.6.0.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -131,7 +132,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_EDITOR;WIN64;NDEBUG;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Common;Config;ECS;GUI;Input;Managers;Managers\Loaders;Render;Render\Support;System;Utils;.;..\thirdparty\Dirent;..\thirdparty\Assimp\include;..\thirdparty\Lua\LuaBridge;..\thirdparty\Lua\LuaJIT\src;..\thirdparty\DirectXTK\Inc;..\thirdparty\DirectXTex\Inc;..\thirdparty\BulletPhysics\src;..\thirdparty\DirectX12\Inc;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\SDK\sutil;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\shared;$(WindowsSdkDir_10)Include\$(WindowsTargetPlatformVersion)\um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -142,8 +143,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64;..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;optix.6.0.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
@@ -184,8 +185,8 @@
     <ClInclude Include="GUI\HDefines.h" />
     <ClInclude Include="GUI\HEntity.h" />
     <ClInclude Include="GUI\HVisuals.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="GUI\Hud.h" />
@@ -215,6 +216,7 @@
     <ClInclude Include="Render\Frustum.h" />
     <ClInclude Include="Render\GIMgr.h" />
     <ClInclude Include="Render\Material.h" />
+    <ClInclude Include="Render\RayTraceScene.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Render\RenderMgrs.h" />
     <ClInclude Include="Render\RenderState.h" />
@@ -278,8 +280,8 @@
     <ClCompile Include="GUI\Font.cpp" />
     <ClCompile Include="GUI\HEntity.cpp" />
     <ClCompile Include="GUI\HVisuals.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GUI\Hud.cpp" />
@@ -301,6 +303,7 @@
     <ClCompile Include="Render\EnvProbMgr.cpp" />
     <ClCompile Include="Render\GIMgr.cpp" />
     <ClCompile Include="Render\Material.cpp" />
+    <ClCompile Include="Render\RayTraceScene.cpp" />
     <ClCompile Include="Render\Render.cpp" />
     <ClCompile Include="Render\RenderMgrs.cpp" />
     <ClCompile Include="Render\RenderState.cpp" />

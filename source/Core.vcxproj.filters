@@ -262,6 +262,9 @@
     <ClInclude Include="System\FileIO.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="System\GraphicAPI.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="System\JobSystem.h">
       <Filter>System</Filter>
     </ClInclude>
@@ -302,8 +305,8 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="System\GraphicAPI.h">
-      <Filter>System</Filter>
+    <ClInclude Include="Render\RayTraceScene.h">
+      <Filter>Render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -317,6 +320,9 @@
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\ControllerSystem.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\DebugDrawer.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\EarlyVisibilitySystem.cpp">
@@ -472,6 +478,9 @@
     <ClCompile Include="System\FileIO.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="System\GraphicAPI.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
     <ClCompile Include="System\JobSystem.cpp">
       <Filter>System</Filter>
     </ClCompile>
@@ -495,11 +504,8 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="ECS\DebugDrawer.cpp">
-      <Filter>ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="System\GraphicAPI.cpp">
-      <Filter>System</Filter>
+    <ClCompile Include="Render\RayTraceScene.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

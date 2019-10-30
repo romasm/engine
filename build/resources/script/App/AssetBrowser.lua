@@ -387,8 +387,12 @@ function AssetBrowser:InitPreviewWorld()
     self.screenshotCamera:SetFar(100.0)
     
     local width = GUI_PREVIEW_SIZE.X * GUI_PREVIEW_SIZE.PREVIEW_SS
-    local height = GUI_PREVIEW_SIZE.Y * GUI_PREVIEW_SIZE.PREVIEW_SS
-    self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width, height, true)
+	local height = GUI_PREVIEW_SIZE.Y * GUI_PREVIEW_SIZE.PREVIEW_SS
+
+	local initRenderConfig = RenderInitConfig()
+	initRenderConfig.lightweight = true
+
+	self.screenshotScene = self.previewWorld:CreateScene(self.screenshotCamera.ent, width, height, initRenderConfig)
 
     local renderConfig = self.screenshotScene:GetConfig()
     renderConfig.cameraAdoptEnable = false
@@ -415,8 +419,11 @@ function AssetBrowser:InitPreviewWorld()
     self.previewCamera:SetPosition_L3F(0.0, 0.0, -1.3)
     self.previewCamera:Attach(self.previewNode)
     self.previewCamera:SetFov(0.5)
-    
-    self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, GUI_PREVIEW_SIZE.LIVE_X, GUI_PREVIEW_SIZE.LIVE_Y, true)
+    	
+	local initRenderConfig = RenderInitConfig()
+	initRenderConfig.lightweight = true
+
+	self.previewScene = self.previewWorld:CreateScene(self.previewCamera.ent, GUI_PREVIEW_SIZE.LIVE_X, GUI_PREVIEW_SIZE.LIVE_Y, initRenderConfig)
         
     local renderConfig = self.previewScene:GetConfig()
     renderConfig.cameraAdoptEnable = false

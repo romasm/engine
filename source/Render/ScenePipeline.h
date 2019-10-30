@@ -58,40 +58,56 @@ namespace EngineCore
 	
 	struct RenderInitConfig
 	{
-		bool probTech;
+		bool forceProbTech;
 		bool ssr;
 		bool ssao;
 		bool postprocess;
 		bool lightweight;
+
+		// TODO: make it work
+		bool defferedPipeline;
+		bool forwardPipeline;
+		bool uiPipeline;
 		
 		RenderInitConfig()
 		{
-			probTech = false;
+			forceProbTech = false;
 			ssr = true;
 			ssao = true;
 			postprocess = true;
 			lightweight = false;
+
+			defferedPipeline = true;
+			forwardPipeline = false;
+			uiPipeline = true;
 		}
 
 #define RI_ADD_LUA_PROPERTY_FUNC(type, name) inline type get_##name() const {return name;} \
 	inline void set_##name(type value){name = value;}
 #define RI_ADD_LUA_PROPERTY_DEF(type, name) .addProperty(#name, &RenderInitConfig::get_##name, &RenderInitConfig::set_##name)
 		
-		RI_ADD_LUA_PROPERTY_FUNC(bool, probTech)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, forceProbTech)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, ssr)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, ssao)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, postprocess)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, lightweight)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, defferedPipeline)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, forwardPipeline)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, uiPipeline)
 
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<RenderInitConfig>("RenderInitConfig")
-				RI_ADD_LUA_PROPERTY_DEF(bool, probTech)
+				RI_ADD_LUA_PROPERTY_DEF(bool, forceProbTech)
 				RI_ADD_LUA_PROPERTY_DEF(bool, ssr)
 				RI_ADD_LUA_PROPERTY_DEF(bool, ssao)
 				RI_ADD_LUA_PROPERTY_DEF(bool, postprocess)
 				RI_ADD_LUA_PROPERTY_DEF(bool, lightweight)
+				RI_ADD_LUA_PROPERTY_DEF(bool, defferedPipeline)
+				RI_ADD_LUA_PROPERTY_DEF(bool, forwardPipeline)
+				RI_ADD_LUA_PROPERTY_DEF(bool, uiPipeline)
+				.addConstructor<void(*)(void)>()
 				.endClass();
 		}
 	};
@@ -325,6 +341,9 @@ namespace EngineCore
 		bool ApplyConfig();
 		bool IsActive() const {return renderConfig.active;}
 
+		inline const RenderInitConfig& InitConfig() const { return initConfig; }
+		RenderInitConfig GetInitConfigCopy() { return initConfig; }
+
 		static void RegLuaClass()
 		{
 			RenderConfig::RegLuaClass();
@@ -333,6 +352,9 @@ namespace EngineCore
 			getGlobalNamespace(LSTATE)
 				.beginClass<ScenePipeline>("ScenePipeline")
 				.addFunction("Resize", &ScenePipeline::Resize)
+				.addFunction("GetConfig", &ScenePipeline::GetConfig)
+				.addFunction("GetInitConfigCopy", &ScenePipeline::GetInitConfigCopy)
+
 				.addFunction("GetCamera", &ScenePipeline::GetSceneCamera)
 				.addFunction("GetSRV", &ScenePipeline::GetSRV)
 				.addFunction("GetShadowSRV", &ScenePipeline::GetShadowSRV)
@@ -342,12 +364,10 @@ namespace EngineCore
 				.addFunction("GetNormalSRV", &ScenePipeline::GetNormalSRV)
 				.addFunction("GetSpecularSRV", &ScenePipeline::GetSpecularSRV)
 				.addFunction("GetSubsurfaceSRV", &ScenePipeline::GetSubsurfaceSRV)
-				.addFunction("GetConfig", &ScenePipeline::GetConfig)
+
 				.addFunction("SaveScreenshot", &ScenePipeline::SaveScreenshot)
 				.endClass();
 		}
-
-		inline const RenderInitConfig& InitConfig() const { return initConfig; }
 
 		RenderTarget *rt_OpaqueForward;
 		RenderTarget *rt_AO;

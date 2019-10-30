@@ -5,6 +5,8 @@
 #include "Text.h"
 #include "Common.h"
 
+#include "RayTraceScene.h"
+
 using namespace EngineCore;
 
 Hud *Hud::instance = nullptr;
@@ -147,9 +149,22 @@ static void SetTitle(string title)
 	SetConsoleTitle( StringToWstring(title).data() );
 }
 
+// TEST
+static void RTTest()
+{
+	auto scene = RayTraceScene(nullptr);
+}
+// TEST
+
 void Hud::RegLuaClass()
 {	
 	getGlobalNamespace(LSTATE)
+		// TEST
+		.beginNamespace("Test")
+			.addFunction("RT", &RTTest)
+		.endNamespace()
+		// TEST
+
 		.beginNamespace("CoreGui")
 			.beginNamespace("ConsoleWin")
 				.addFunction("Clear", &ClearLogWindow)

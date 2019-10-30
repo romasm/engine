@@ -578,7 +578,9 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 	m_cameraSystem->SetFov(probCamera, XM_PIDIV2);
 
 	// TODO
-	probScene = CreateScene(probCamera, resolution, resolution, isLightweight);
+	RenderInitConfig initConfig;
+	initConfig.lightweight = isLightweight;
+	probScene = CreateScene(probCamera, resolution, resolution, initConfig);
 
 	if(!probScene)
 	{

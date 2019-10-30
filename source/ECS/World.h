@@ -112,14 +112,11 @@ namespace EngineCore
 				m_scenes.push_back(scene);
 		}
 
-		ScenePipeline* CreateScene(Entity cam, int w, int h, bool lightweight)
+		ScenePipeline* CreateScene(Entity cam, int w, int h, RenderInitConfig initConfig)
 		{
 			ScenePipeline* scene = new ScenePipeline();
-
-			RenderInitConfig initCfg;
-			initCfg.lightweight = lightweight;
-
-			if (!scene->Init(this, w, h, initCfg))
+			
+			if (!scene->Init(this, w, h, initConfig))
 			{
 				_CLOSE(scene); return nullptr;
 			}

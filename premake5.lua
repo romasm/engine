@@ -33,6 +33,11 @@ workspace "Engine"
 			"thirdparty/BulletPhysics/src" ,
 			"thirdparty/DirectX12/Inc" ,
 			
+			-- optix
+			"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/include",
+			"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/SDK/sutil",
+			"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include",
+			
 			-- dx12
 			"$(WindowsSdkDir_10)Include/$(WindowsTargetPlatformVersion)/shared",
 			"$(WindowsSdkDir_10)Include/$(WindowsTargetPlatformVersion)/um",
@@ -41,6 +46,10 @@ workspace "Engine"
 		libdirs {			
 			"thirdparty/Assimp/lib/Release",
 			"thirdparty/BulletPhysics/lib",
+			
+			-- optix
+			"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/lib64",
+			--"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/lib/x64",
 			
 			--dx12
 			"$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64",
@@ -93,7 +102,14 @@ workspace "Engine"
 		
 		filter {}
 		
-		links { "assimp-vc140-mt", "lua51" }
+		links { 
+			"assimp-vc140-mt", 
+			"lua51", 
+			
+			-- optix
+			"optix.6.0.0",
+			--"nvrtc"
+		}
 		
 		files {
 			"source/Common/*.h", 

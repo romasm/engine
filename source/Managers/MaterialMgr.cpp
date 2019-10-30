@@ -59,7 +59,7 @@ Material* MaterialMgr::AddMaterialToList(string& name)
 		_DELETE(handle.material);
 		return nullptr;
 	}
-	LOG("Material loaded %s", name.c_str());
+	LOG("Material asset added %s", name.c_str());
 
 	handle.name = name;
 	handle.refcount = 1;
