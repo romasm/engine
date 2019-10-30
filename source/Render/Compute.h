@@ -246,7 +246,6 @@ namespace EngineCore
 		}
 
 	private:
-
 		void Init(string& shader)
 		{
 			shaderID = ShaderCodeMgr::Get()->GetShaderCode(shader, SHADER_CS);

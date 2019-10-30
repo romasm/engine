@@ -215,7 +215,6 @@
     <ClInclude Include="Render\EnvProbMgr.h" />
     <ClInclude Include="Render\Frustum.h" />
     <ClInclude Include="Render\GIMgr.h" />
-    <ClInclude Include="Render\LightFrameMgr.h" />
     <ClInclude Include="Render\Material.h" />
     <ClInclude Include="Render\RayTraceScene.h" />
     <ClInclude Include="Render\Render.h" />
@@ -303,7 +302,6 @@
     <ClCompile Include="Render\Buffer.cpp" />
     <ClCompile Include="Render\EnvProbMgr.cpp" />
     <ClCompile Include="Render\GIMgr.cpp" />
-    <ClCompile Include="Render\LightFrameMgr.cpp" />
     <ClCompile Include="Render\Material.cpp" />
     <ClCompile Include="Render\RayTraceScene.cpp" />
     <ClCompile Include="Render\Render.cpp" />

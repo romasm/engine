@@ -4,6 +4,10 @@
 #include "LightBuffers.h"
 #include "ECS\Entity.h"
 
+#define SHADOWS_BUF_RES 4096
+#define SHADOWS_BUF_RES_RCP 1.0f / SHADOWS_BUF_RES
+#define SHADOWS_BUF_MIPS 8 // min - 16
+
 #define SHADOWS_BUF_SIZE 4
 #define SHADOWMAPS_COUNT 1024
 

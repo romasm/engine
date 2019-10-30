@@ -195,9 +195,6 @@ namespace EngineCore
 		size_t casterSpot_count;
 		PointCasterBuffer* casterPoint_array;
 		size_t casterPoint_count;
-
-		RArray<UnifiedDataPackage> globalLightBuffer;
-		RArray<LightGeometry> lightGeometryBuffer;
 		
 		CameraComponent* currentCamera;
 	};
