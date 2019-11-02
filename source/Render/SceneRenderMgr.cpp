@@ -15,6 +15,7 @@ SceneRenderMgr::SceneRenderMgr(bool lightweight) : BaseRenderMgr()
 	opaque_array.create(lightweight ? (OPAQUE_FRAME_MAX / 16) : OPAQUE_FRAME_MAX);
 	alphatest_array.create(lightweight ? (OPAQUE_FRAME_ALPHATEST_MAX / 16) : OPAQUE_FRAME_ALPHATEST_MAX);
 	transparent_array.create(lightweight ? (TRANSPARENT_FRAME_MAX / 16) : TRANSPARENT_FRAME_MAX);
+	forward_array.create(lightweight ? (FORWARD_FRAME_MAX / 16) : FORWARD_FRAME_MAX);
 
 	hud_array.create(lightweight ? (HUD_FRAME_MAX / 16) : HUD_FRAME_MAX);
 	ovhud_array.create(lightweight ? (OV_HUD_FRAME_MAX / 16) : OV_HUD_FRAME_MAX);
@@ -94,8 +95,8 @@ bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3
 	RenderMesh* mesh_new = nullptr;
 	switch(queue)
 	{
-	case SC_ALPHA:
-		ERR("TODO: SC_ALPHA");
+	case SC_FORWARD:
+		mesh_new = forward_array.push_back();
 		break;
 	case SC_TRANSPARENT:
 		mesh_new = transparent_array.push_back();
@@ -387,6 +388,28 @@ void SceneRenderMgr::DrawOpaque()
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		
+		cur.material->Set(tech);
+		Render::SetTopology(cur.topo);
+
+		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+	}
+}
+
+void SceneRenderMgr::DrawForward()
+{
+	sort(forward_array.begin(), forward_array.end(), BaseRenderMgr::CompareMeshes);
+
+	const unsigned int offset = 0;
+
+	for (auto cur : forward_array)
+	{
+		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
+
+		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
+		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
+
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 

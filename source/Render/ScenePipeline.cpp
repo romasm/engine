@@ -45,7 +45,6 @@ ScenePipeline::ScenePipeline()
 	sp_OpaqueDepthCopy = nullptr;
 
 	sp_AO = nullptr;
-	sp_FinalOpaque = nullptr;
 	sp_HDRtoLDR = nullptr;
 	//sp_3DHud = nullptr;
 
@@ -78,8 +77,11 @@ ScenePipeline::ScenePipeline()
 	
 	current_camera = nullptr;
 
+	combineSceneCompute = nullptr;
+
 	defferedOpaqueCompute = nullptr;
 	defferedConfigBuffer = nullptr;
+
 
 	width = 0;
 	height = 0;
@@ -102,6 +104,7 @@ void ScenePipeline::Close()
 	}
 
 	_DELETE(defferedOpaqueCompute);
+	_DELETE(combineSceneCompute);
 
 	CloseRts();
 	CloseAvgRt();
@@ -171,7 +174,6 @@ void ScenePipeline::CloseRts()
 	_DELETE(sp_OpaqueDepthCopy);
 
 	_DELETE(sp_AO);
-	_DELETE(sp_FinalOpaque);
 	_DELETE(sp_HDRtoLDR);
 
 	_DELETE(sp_HiZ);
@@ -226,6 +228,8 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitCo
 	defferedConfigBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(DefferedConfigData), true);
 	ZeroMemory(&defferedConfigData, sizeof(DefferedConfigData));
 
+	combineSceneCompute = new Compute(SHADER_COMBINE);
+
 	textureIBLLUT = TEXTURE(string(TEX_PBSENVLUT));
 
 	if(!InitAvgRt())
@@ -256,6 +260,9 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	defferedOpaqueCompute->DetachResource();
 	defferedOpaqueCompute->DetachRWResource();
 	defferedOpaqueCompute->DetachConstantBuffer();
+
+	combineSceneCompute->DetachResource();
+	combineSceneCompute->DetachRWResource();
 
 	CloseRts();
 
@@ -338,7 +345,19 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	defferedOpaqueCompute->AttachRWResource("diffuseOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(0));
 	defferedOpaqueCompute->AttachRWResource("specularFirstOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(1));
 	defferedOpaqueCompute->AttachRWResource("specularSecondOutput", rt_OpaqueDefferedDirect->GetUnorderedAccessView(2));
-	
+
+
+	combineSceneCompute->AttachConstantBuffer("SharedBuffer", sharedBuffer);
+
+	combineSceneCompute->AttachResource("diffuseRT", rt_OpaqueDefferedDirect->GetShaderResourceView(0));
+	combineSceneCompute->AttachResource("specularRT", rt_OpaqueDefferedDirect->GetShaderResourceView(1));
+	combineSceneCompute->AttachResource("specularMoreRT", rt_OpaqueDefferedDirect->GetShaderResourceView(2));
+	combineSceneCompute->AttachResource("depthGB", rt_HiZDepth->GetShaderResourceView(0));
+	combineSceneCompute->AttachResource("forwardRT", rt_TransparentForward->GetShaderResourceView(0));
+
+	combineSceneCompute->AttachRWResource("sceneCombinedRW", rt_OpaqueFinal->GetUnorderedAccessView(0));
+	combineSceneCompute->AttachRWResource("sceneForNextFrameRW", rt_OpaqueFinal->GetUnorderedAccessView(1));
+
 	return true;
 }
 
@@ -462,8 +481,8 @@ bool ScenePipeline::InitRts()
 	rt_OpaqueFinal = new RenderTarget;
 	if(!rt_OpaqueFinal->Init(width, height))return false;
 	rt_OpaqueFinal->SetMipmappingMaterial(SP_MATERIAL_OPAQUE_BLUR);
-	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0))return false;
-	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT, 0))return false;
+	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R32G32B32A32_FLOAT, 0, true))return false;
+	if(!rt_OpaqueFinal->AddRT(DXGI_FORMAT_R16G16B16A16_FLOAT, 0, true))return false;
 
 	// TRANSPARENT	
 	rt_TransparentForward = new RenderTarget;
@@ -522,13 +541,6 @@ bool ScenePipeline::InitRts()
 	sp_AO->SetFloat(CONFIG(float, ao_hieght_bias), 2);
 	sp_AO->SetFloat(CONFIG(float, ao_hiz_mip_scaler), 3);
 	sp_AO->SetFloat(CONFIG(float, ao_max_dist_sqr), 4);
-	
-	sp_FinalOpaque = new ScreenPlane(SP_MATERIAL_COMBINE);
-	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(0), 0);
-	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(1), 1);
-	sp_FinalOpaque->SetTexture(rt_OpaqueDefferedDirect->GetShaderResourceView(2), 2);
-	//sp_FinalOpaque->SetTexture(rt_OpaqueForward->GetShaderResourceView(5), 3);
-	sp_FinalOpaque->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 3);
 
 	sp_AvgLum->SetTexture(rt_OpaqueFinal->GetShaderResourceView(1), 0);
 	sp_AvgLum->SetFloat(float(rt_OpaqueFinal->GetMipsCountInFullChain() - 2), 0);
@@ -541,20 +553,19 @@ bool ScenePipeline::InitRts()
 
 	sp_HDRtoLDR = new ScreenPlane(SP_MATERIAL_HDR);
 	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
-	sp_HDRtoLDR->SetTexture(rt_TransparentForward->GetShaderResourceView(0), 1);
-	sp_HDRtoLDR->SetTexture(rt_3DHud->GetShaderResourceView(0), 2);
-	sp_HDRtoLDR->SetTexture(rt_AvgLum->GetShaderResourceView(0), 3);
-	sp_HDRtoLDR->SetTexture(rt_Bloom->GetShaderResourceView(0), 4);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 5);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 6);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 7);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 8);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 9);
-	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 10);
-	sp_HDRtoLDR->SetTexture(rt_AO->GetShaderResourceView(0), 11);
-	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 12);
+	sp_HDRtoLDR->SetTexture(rt_3DHud->GetShaderResourceView(0), 1);
+	sp_HDRtoLDR->SetTexture(rt_AvgLum->GetShaderResourceView(0), 2);
+	sp_HDRtoLDR->SetTexture(rt_Bloom->GetShaderResourceView(0), 3);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(0), 4);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(1), 5);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(3), 6);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(4), 7);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(6), 8);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueForward->GetShaderResourceView(7), 9);
+	sp_HDRtoLDR->SetTexture(rt_AO->GetShaderResourceView(0), 10);
+	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 11);
 	// debug
-	sp_HDRtoLDR->SetTexture(rt_SSR->GetShaderResourceView(0), 13);
+	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 12);
 
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_strength), 1);
@@ -760,35 +771,31 @@ void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 
 void ScenePipeline::TransparentForwardStage()
 {
+	// FORWARD
+	rt_TransparentForward->ClearRenderTargets(false);
+	rt_TransparentForward->SetRenderTarget();
+
+	render_mgr->DrawForward();
+
+	// DEPTH COPY
+	CONTEXT->CopyResource(transparencyDepth, sceneDepth);
+
 	// PREPASS
-	rt_TransparentPrepass->ClearRenderTargets(true);
+	/*rt_TransparentPrepass->ClearRenderTargets(true);
 	rt_TransparentPrepass->SetRenderTarget();
 
 	render_mgr->PrepassTransparent();
 
 	Render::OMSetRenderTargets(0, nullptr, nullptr);
+	*/
 
 	// RENDER 
-	rt_TransparentForward->ClearRenderTargets(false);
 	rt_TransparentForward->SetRenderTarget();
 
-	const uint32_t srvs_size = 4;
-	ID3D11ShaderResourceView* srvs[srvs_size];
-	srvs[0] = TEXTURE_GETPTR(textureIBLLUT);
-	srvs[1] = rt_OpaqueFinal->GetShaderResourceView(0);
-	srvs[2] = transparencyDepthSRV;
-	srvs[3] = rt_TransparentPrepass->GetShaderResourceView(0);
-		
-	//Render::PSSetShaderResources(0, srvs_size, srvs);
-
-	//if(!initConfig.lightweight)
-	//	LoadLights(srvs_size, false);
+	Render::PSSetShaderResources(0, 1, &transparencyDepthSRV);
 	
-	Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
-
-	if(!initConfig.lightweight)
-		Render::PSSetConstantBuffers(4, 1, &lightsPerClusterCount);
-
+	//Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
+	
 	render_mgr->DrawTransparent();
 }
 
@@ -926,8 +933,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
 	// final 
 	rt_OpaqueFinal->ClearRenderTargets();
-	rt_OpaqueFinal->SetRenderTarget();
-	sp_FinalOpaque->Draw();
+	combineSceneCompute->Dispatch(group_count_x, group_count_y, 1);
 
 	// blur
 	rt_OpaqueFinal->GenerateMipmaps(this); // !!!!!!!!!!!!!! TODO: separete blur

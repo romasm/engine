@@ -142,13 +142,17 @@ namespace EngineCore
 		Vector3 GetPosition_L(Entity e);
 		Quaternion GetRotation_L(Entity e);
 		Vector3 GetRotationPYR_L(Entity e);
-		Vector3 GetDirection_L(Entity e);
+		Vector3 GetForward_L(Entity e);
+		Vector3 GetUpward_L(Entity e);
+		Vector3 GetRightward_L(Entity e);
 		Vector3 GetScale_L(Entity e);
 
 		Vector3 GetPosition_W(Entity e);
 		Quaternion GetRotation_W(Entity e);
 		Vector3 GetRotationPYR_W(Entity e);
-		Vector3 GetDirection_W(Entity e);
+		Vector3 GetForward_W(Entity e);
+		Vector3 GetUpward_W(Entity e);
+		Vector3 GetRightward_W(Entity e);
 		Vector3 GetScale_W(Entity e);
 
 		const XMMATRIX& GetTransform_LInternal(Entity e);
@@ -213,12 +217,16 @@ namespace EngineCore
 					.addFunction("GetPosition_L", &TransformSystem::GetPosition_L)
 					.addFunction("GetRotationPYR_L", &TransformSystem::GetRotationPYR_L)
 					.addFunction("GetRotation_L", &TransformSystem::GetRotation_L)
-					.addFunction("GetDirection_L", &TransformSystem::GetDirection_L)
+					.addFunction("GetForward_L", &TransformSystem::GetForward_L)
+					.addFunction("GetUpward_L", &TransformSystem::GetUpward_L)
+					.addFunction("GetRightward_L", &TransformSystem::GetRightward_L)
 					.addFunction("GetScale_L", &TransformSystem::GetScale_L)
 					.addFunction("GetPosition_W", &TransformSystem::GetPosition_W)
 					.addFunction("GetRotationPYR_W", &TransformSystem::GetRotationPYR_W)
 					.addFunction("GetRotation_W", &TransformSystem::GetRotation_W)
-					.addFunction("GetDirection_W", &TransformSystem::GetDirection_W)
+					.addFunction("GetForward_W", &TransformSystem::GetForward_W)
+					.addFunction("GetUpward_W", &TransformSystem::GetUpward_W)
+					.addFunction("GetRightward_W", &TransformSystem::GetRightward_W)
 					.addFunction("GetScale_W", &TransformSystem::GetScale_W)
 					.addFunction("GetTransform_L", &TransformSystem::GetTransform_L)
 					.addFunction("GetTransform_W", &TransformSystem::GetTransform_W)

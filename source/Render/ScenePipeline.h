@@ -35,7 +35,8 @@ namespace EngineCore
 #endif
 
 #define SP_MATERIAL_HDR PATH_SHADERS "system/hdr" 
-#define SP_MATERIAL_COMBINE PATH_SHADERS "system/combine"
+
+#define SHADER_COMBINE PATH_SHADERS "system/combine#Combine#"
 
 #define SP_MATERIAL_HIZ_DEPTH PATH_SHADERS "system/hiz_depth" 
 #define SP_MATERIAL_OPAQUE_BLUR PATH_SHADERS "system/opaque_blur" 
@@ -394,7 +395,9 @@ namespace EngineCore
 		ScreenPlane *sp_OpaqueDepthCopy;
 
 		ScreenPlane *sp_AO;
-		ScreenPlane *sp_FinalOpaque;
+
+		Compute* combineSceneCompute;
+
 		ScreenPlane *sp_HDRtoLDR;
 		//ScreenPlane *sp_3DHud;
 

@@ -46,16 +46,16 @@ bool ShadowRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID
 		return false;
 	if( queue == GUI_2D || queue == GUI_2D_FONT || queue == GUI_3D || queue == GUI_3D_OVERLAY )
 		return false;
-	if( !IsTranparentShadows() && (queue == SC_TRANSPARENT || queue == SC_ALPHA) )
+	if( !IsTranparentShadows() && (queue == SC_TRANSPARENT) )
 		return false;
 
 	RenderMesh* mesh_new = nullptr;
 	switch(queue)
 	{
-	case SC_ALPHA:
 	case SC_TRANSPARENT:
 		mesh_new = transparent_array.push_back();
 		break;
+	case SC_FORWARD:
 	case SC_OPAQUE:
 		mesh_new = opaque_array.push_back();
 		break;

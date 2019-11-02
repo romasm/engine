@@ -413,8 +413,7 @@ bool Material::IsTransparent()
 		return false;
 
 	auto shaderPtr = (Shader*) ShaderMgr::Get()->GetResourcePtr(shaderID);
-	bool tansparent = shaderPtr->GetQueue() == RENDER_QUEUES::SC_ALPHA ||
-				shaderPtr->GetQueue() == RENDER_QUEUES::SC_ALPHATEST ||
+	bool tansparent = shaderPtr->GetQueue() == RENDER_QUEUES::SC_ALPHATEST ||
 				shaderPtr->GetQueue() == RENDER_QUEUES::SC_TRANSPARENT;
 	return tansparent;
 }

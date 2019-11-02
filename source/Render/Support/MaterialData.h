@@ -21,7 +21,7 @@ namespace EngineCore
 
 		SC_OPAQUE,
 		SC_ALPHATEST,
-		SC_ALPHA,
+		SC_FORWARD,
 		SC_TRANSPARENT,
 	};
 

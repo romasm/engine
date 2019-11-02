@@ -771,8 +771,8 @@ void World::Snapshot(ScenePipeline* scene)
 	if(scene->StartFrame(&tempTimer))
 	{
 		scene->OpaqueForwardStage();
-		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
+		scene->OpaqueDefferedStage();
 		scene->HDRtoLDRStage();
 	}
 
@@ -883,11 +883,11 @@ void World::Frame()
 			PERF_GPU_TIMESTAMP(_SCENE_FORWARD);
 			it->OpaqueForwardStage(&dbgDrawer);
 
-			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
-			it->OpaqueDefferedStage();
-			
 			PERF_GPU_TIMESTAMP(_SCENE_APLHA);
 			it->TransparentForwardStage();
+
+			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
+			it->OpaqueDefferedStage();
 			
 			PERF_GPU_TIMESTAMP(_SCENE_UI);
 			if( it->UIStage() )
@@ -989,8 +989,8 @@ void SmallWorld::Snapshot(ScenePipeline* scene)
 	if(scene->StartFrame(&tempTimer))
 	{
 		scene->OpaqueForwardStage();
-		scene->OpaqueDefferedStage();
 		scene->TransparentForwardStage();
+		scene->OpaqueDefferedStage();
 		scene->HDRtoLDRStage();
 	}
 
@@ -1061,9 +1061,9 @@ void SmallWorld::Frame()
 			{
 				it->OpaqueForwardStage();
 
-				it->OpaqueDefferedStage();
-			
 				it->TransparentForwardStage();
+
+				it->OpaqueDefferedStage();			
 
 				it->UIStage();
 				it->UIOverlayStage();

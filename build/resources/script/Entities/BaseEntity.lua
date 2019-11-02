@@ -213,8 +213,8 @@ function EntityTypes.BaseEntity:GetRotationPYR_W()
     return self.transformSys:GetRotationPYR_W(self.ent)
 end
 
-function EntityTypes.BaseEntity:GetDirection_W()
-    return self.transformSys:GetDirection_W(self.ent)
+function EntityTypes.BaseEntity:GetForward_W()
+	return self.transformSys:GetForward_W(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetScale_W()
@@ -233,8 +233,8 @@ function EntityTypes.BaseEntity:GetRotationPYR_L()
     return self.transformSys:GetRotationPYR_L(self.ent)
 end
 
-function EntityTypes.BaseEntity:GetDirection_L()
-    return self.transformSys:GetDirection_L(self.ent)
+function EntityTypes.BaseEntity:GetForward_L()
+	return self.transformSys:GetForward_L(self.ent)
 end
 
 function EntityTypes.BaseEntity:GetScale_L()

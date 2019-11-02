@@ -103,6 +103,7 @@ namespace EngineCore
 #define OPAQUE_FRAME_MAX 8096
 #define OPAQUE_FRAME_ALPHATEST_MAX 4096
 #define TRANSPARENT_FRAME_MAX 4096
+#define FORWARD_FRAME_MAX 2048
 #define HUD_FRAME_MAX 2048
 #define OV_HUD_FRAME_MAX 512
 
@@ -138,6 +139,8 @@ namespace EngineCore
 		void PrepassOpaque();
 		void DrawOpaque();
 
+		void DrawForward();
+
 		void PrepassTransparent();
 		void DrawTransparent();
 
@@ -148,7 +151,8 @@ namespace EngineCore
 
 		void ClearAll()
 		{
-			BaseRenderMgr::ClearAll();
+			BaseRenderMgr::ClearAll(); 
+			forward_array.clear();
 			ovhud_array.clear();
 			hud_array.clear();
 
@@ -180,6 +184,7 @@ namespace EngineCore
 	private:
 		void cleanRenderArrayLights();
 
+		RArray<RenderMesh> forward_array;
 		RArray<RenderMesh> hud_array;
 		RArray<RenderMesh> ovhud_array;
 		

@@ -97,6 +97,8 @@ namespace EngineCore
 		void SetVector(Vector4& vect, uint8_t id, uint8_t shaderType);
 		void SetFloat(float f, uint8_t id, uint8_t shaderType);
 		void SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType);
+		void SetVector3WithSlotName(Vector3& vect, string slot, uint8_t shaderType)
+		{SetVectorWithSlotName(Vector4(vect.x, vect.y, vect.z, 0), slot, shaderType);}
 		void SetFloatWithSlotName(float f, string slot, uint8_t shaderType);
 
 		Vector4 GetVector(uint8_t id, uint8_t shader);
@@ -129,6 +131,7 @@ namespace EngineCore
 				.beginClass<Material>("Material")
 					.addFunction("SetVectorByID", &Material::SetVector)
 					.addFunction("SetVector", &Material::SetVectorWithSlotName)
+					.addFunction("SetVector3", &Material::SetVector3WithSlotName)
 					.addFunction("SetFloatByID", &Material::SetFloat)
 					.addFunction("SetFloat", &Material::SetFloatWithSlotName)
 					.addFunction("GetVectorByID", &Material::GetVector)
@@ -219,6 +222,8 @@ namespace EngineCore
 
 		void SetVector(Vector4& vect, uint8_t id);
 		void SetVectorWithSlotName(Vector4& vect, string slot);
+		void SetVector3WithSlotName(Vector3& vect, string slot)
+		{SetVectorWithSlotName(Vector4(vect.x, vect.y, vect.z, 0), slot);}
 		void SetFloat(float f, uint8_t id);
 		void SetFloatWithSlotName(float f, string slot);
 
@@ -236,6 +241,7 @@ namespace EngineCore
 				.beginClass<SimpleShaderInst>("SimpleShaderInst")
 					.addFunction("SetVectorByID", &SimpleShaderInst::SetVector)
 					.addFunction("SetVector", &SimpleShaderInst::SetVectorWithSlotName)
+					.addFunction("SetVector3", &SimpleShaderInst::SetVector3WithSlotName)
 					.addFunction("SetFloatByID", &SimpleShaderInst::SetFloat)
 					.addFunction("SetFloat", &SimpleShaderInst::SetFloatWithSlotName)
 					.addFunction("GetVectorByID", &SimpleShaderInst::GetVector)
