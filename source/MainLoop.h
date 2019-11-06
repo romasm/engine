@@ -11,6 +11,9 @@
 #include "JobSystem.h"
 #include "WorldMgr.h"
 
+// external classes
+#include "VolumePainter.h"
+
 #include "Utils\Profiler.h"
 
 class MainLoop
@@ -57,6 +60,9 @@ public:
 			ERR("Unable to initialize Gui");
 			return;
 		}
+
+		// reg additional Lua classes
+		VolumePainter::RegLuaClass();
 
 		// Lua
 		if(!LuaVM::Get()->LoadScript(string(LUA_SCRIPT_LOADER)) || !LuaVM::Get()->LoadScript(string(LUA_SCRIPT_CLASS)))
