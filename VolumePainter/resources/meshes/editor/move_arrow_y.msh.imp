@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = '../resources/meshes/editor/move_arrow_y'
+}
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/editor/move_arrow_y.fbx'
+}

@@ -1,0 +1,10 @@
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/null_mesh.fbx'
+}
+animation
+{
+	resourceName = '../resources/meshes/null_mesh'
+}

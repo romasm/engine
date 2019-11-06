@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EFAC8DF2-5B8C-0C8E-64A4-9764D00273EF}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Shaders</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>bin\x64\Release\</OutDir>
+    <IntDir>obj\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="common\PCF.hlsl" />
+    <None Include="common\common_helpers.hlsl" />
+    <None Include="common\gi_helpers.hlsl" />
+    <None Include="common\ibl_helpers.hlsl" />
+    <None Include="common\light_helpers.hlsl" />
+    <None Include="common\light_structs.hlsl" />
+    <None Include="common\math.hlsl" />
+    <None Include="common\sg_helpers.hlsl" />
+    <None Include="common\sh_helpers.hlsl" />
+    <None Include="common\shadow_helpers.hlsl" />
+    <None Include="common\shared.hlsl" />
+    <None Include="common\structs.hlsl" />
+    <None Include="common\transparency_helpers.hlsl" />
+    <None Include="common\voxel_helpers.hlsl" />
+    <None Include="gui\color.hlsl" />
+    <None Include="gui\example.hlsl" />
+    <None Include="gui\font_default.hlsl" />
+    <None Include="gui\font_vs.hlsl" />
+    <None Include="gui\group_arrow.hlsl" />
+    <None Include="gui\h_picker.hlsl" />
+    <None Include="gui\rect.hlsl" />
+    <None Include="gui\rect_color_icon_alpha.hlsl" />
+    <None Include="gui\rect_icon.hlsl" />
+    <None Include="gui\rect_icon_bg.hlsl" />
+    <None Include="gui\rendered_preview.hlsl" />
+    <None Include="gui\shadow.hlsl" />
+    <None Include="gui\sv_picker.hlsl" />
+    <None Include="gui\t_picker.hlsl" />
+    <None Include="gui\texture_preview.hlsl" />
+    <None Include="gui\viewport.hlsl" />
+    <None Include="gui\viewport_2darr.hlsl" />
+    <None Include="gui\viewport_cube.hlsl" />
+    <None Include="objects\alphatest_main.hlsl" />
+    <None Include="objects\editor\3d_hud.hlsl" />
+    <None Include="objects\editor\3d_hud_alpha.hlsl" />
+    <None Include="objects\editor\debug_common.hlsl" />
+    <None Include="objects\editor\debug_lines.hlsl" />
+    <None Include="objects\editor\debug_lines_cull.hlsl" />
+    <None Include="objects\editor\debug_probes.hlsl" />
+    <None Include="objects\editor\line_geometry.hlsl" />
+    <None Include="objects\editor\line_geometry_sphere.hlsl" />
+    <None Include="objects\editor\tools_mesh.hlsl" />
+    <None Include="objects\editor\unit_plane.hlsl" />
+    <None Include="objects\opaque_main.hlsl" />
+    <None Include="objects\opaque_vertex.hlsl" />
+    <None Include="objects\pixel.hlsl" />
+    <None Include="objects\pixel_input.hlsl" />
+    <None Include="objects\sky_sphere.hlsl" />
+    <None Include="objects\transparency.hlsl" />
+    <None Include="objects\transparent_medium.hlsl" />
+    <None Include="objects\voxelization.hlsl" />
+    <None Include="offline\bricks_copy.hlsl" />
+    <None Include="offline\cubemap_to_sh.hlsl" />
+    <None Include="offline\envmap_diffgen.hlsl" />
+    <None Include="offline\envmap_mipcopy.hlsl" />
+    <None Include="offline\envmap_mipgen.hlsl" />
+    <None Include="offline\envmap_render.hlsl" />
+    <None Include="offline\interpolate_probes.hlsl" />
+    <None Include="offline\noise2d.hlsl" />
+    <None Include="offline\offline_ibl.hlsl" />
+    <None Include="offline\prob_capture.hlsl" />
+    <None Include="offline\scep_diff_dfg.hlsl" />
+    <None Include="samplers.hlsl" />
+    <None Include="system\3dhud.hlsl" />
+    <None Include="system\aa_blend.hlsl" />
+    <None Include="system\aa_edge.hlsl" />
+    <None Include="system\aa_final.hlsl" />
+    <None Include="system\avglum.hlsl" />
+    <None Include="system\bloom_find.hlsl" />
+    <None Include="system\brdf.hlsl" />
+    <None Include="system\combine.hlsl" />
+    <None Include="system\deffered_opaque.hlsl" />
+    <None Include="system\deffered_opaque_simple.hlsl" />
+    <None Include="system\depth_copy_hiz.hlsl" />
+    <None Include="system\direct_brdf.hlsl" />
+    <None Include="system\gblur\gblur.hlsl" />
+    <None Include="system\gblur\kernel15h.hlsl" />
+    <None Include="system\gblur\kernel15h_dd.hlsl" />
+    <None Include="system\gblur\kernel15v.hlsl" />
+    <None Include="system\gblur\kernel15v_dd.hlsl" />
+    <None Include="system\gblur\kernel21h.hlsl" />
+    <None Include="system\gblur\kernel21h_dd.hlsl" />
+    <None Include="system\gblur\kernel21v.hlsl" />
+    <None Include="system\gblur\kernel21v_dd.hlsl" />
+    <None Include="system\gblur\kernel31h.hlsl" />
+    <None Include="system\gblur\kernel31h_dd.hlsl" />
+    <None Include="system\gblur\kernel31v.hlsl" />
+    <None Include="system\gblur\kernel31v_dd.hlsl" />
+    <None Include="system\gblur\kernel3h.hlsl" />
+    <None Include="system\gblur\kernel3h_dd.hlsl" />
+    <None Include="system\gblur\kernel3v.hlsl" />
+    <None Include="system\gblur\kernel3v_dd.hlsl" />
+    <None Include="system\gblur\kernel5h.hlsl" />
+    <None Include="system\gblur\kernel5h_dd.hlsl" />
+    <None Include="system\gblur\kernel5v.hlsl" />
+    <None Include="system\gblur\kernel5v_dd.hlsl" />
+    <None Include="system\gblur\kernel7h.hlsl" />
+    <None Include="system\gblur\kernel7h_dd.hlsl" />
+    <None Include="system\gblur\kernel7v.hlsl" />
+    <None Include="system\gblur\kernel7v_dd.hlsl" />
+    <None Include="system\gblur\kernel9h.hlsl" />
+    <None Include="system\gblur\kernel9h_dd.hlsl" />
+    <None Include="system\gblur\kernel9v.hlsl" />
+    <None Include="system\gblur\kernel9v_dd.hlsl" />
+    <None Include="system\hbao.hlsl" />
+    <None Include="system\hbao_perspective_correct.hlsl" />
+    <None Include="system\hdr.hlsl" />
+    <None Include="system\hiz_depth.hlsl" />
+    <None Include="system\ibl_brdf.hlsl" />
+    <None Include="system\indirect_brdf.hlsl" />
+    <None Include="system\light_calc.hlsl" />
+    <None Include="system\light_constants.hlsl" />
+    <None Include="system\null_shader.hlsl" />
+    <None Include="system\old_deffered_opaque_indirect.hlsl" />
+    <None Include="system\opaque_blur.hlsl" />
+    <None Include="system\scene_to_color_alpha.hlsl" />
+    <None Include="system\screen_plane.hlsl" />
+    <None Include="system\ssr.hlsl" />
+    <None Include="system\ssr_compute.hlsl" />
+    <None Include="system\tonemapping.hlsl" />
+    <None Include="system\voxel_downsample.hlsl" />
+    <None Include="system\voxel_light_inject.hlsl" />
+    <None Include="system\voxel_light_propagate.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="objects\volume_cube.hlsl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

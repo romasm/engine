@@ -220,7 +220,13 @@ namespace EngineCore
 			handle.callbackUpdate = callbackUpdate;
 #endif // _EDITOR
 
-		if(!FileIO::IsExist(name))
+		bool fileExist = FileIO::IsExist(name);
+		/*
+#ifdef _DEV
+		fileExist ||= FileIO::IsExist(ReplaceFirstSubstring(name, string(PATH_ROOT), string(PATH_COMMON)));
+#endif*/
+
+		if(!fileExist)
 		{
 #ifdef _EDITOR
 			WRN("File %s doesn\'t exist, creation expected in future.", name.data());
@@ -376,11 +382,22 @@ namespace EngineCore
 			
 			if( handle.reloadStatus != ReloadingType::RELOAD_ONCE )
 			{
+				string fileToCheck;
 				uint32_t last_date;
+
 				if( handle.impInfo.filePath.empty() )
-					last_date = FileIO::GetDateModifRaw((string&)it->first);
+					fileToCheck = it->first;
 				else
-					last_date = FileIO::GetDateModifRaw(handle.impInfo.filePath);
+					fileToCheck = handle.impInfo.filePath;
+/*
+#ifdef _DEV
+				if (!FileIO::IsExist(fileToCheck))
+				{
+					fileToCheck = ReplaceFirstSubstring(fileToCheck, string(PATH_ROOT), string(PATH_COMMON));
+				}
+#endif*/
+
+				last_date = FileIO::GetDateModifRaw(fileToCheck);
 
 				if( last_date == handle.filedate || last_date == 0 )
 				{	

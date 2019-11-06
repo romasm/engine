@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = '../resources/meshes/sky_shpere'
+}
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/sky_shpere.fbx'
+}

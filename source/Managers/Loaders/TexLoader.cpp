@@ -21,7 +21,7 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 		hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
 		_DELETE_ARRAY(data);
 	}
-
+	
 	if(FAILED(hr))
 	{
 		ERR("Cant load DDS texture %s !", resName.c_str());

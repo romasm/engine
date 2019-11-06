@@ -1,0 +1,44 @@
+shader = "../resources/shaders/objects/opaque_main"
+
+deffered
+{
+	unlit = 1
+	subscattering = 0
+	ss_distortion = 0.1
+	ss_direct_translucency = 0.1
+	ss_direct_pow = 1.0
+	ss_indirect_translucency = 0.1
+}
+
+
+ps
+{
+	emissiveTexture = "../resources/textures/editor_hud/alpha_bg.dds"
+
+	albedoColor = "1.0 1.0 1.0 0.0"
+	reflectivityColor = "0.23 0.23 0.23 0.0"
+	emissiveColor = "1.0 1.0 1.0 0.0"
+	subsurfaceColor = "0.0 0.0 0.0 0.0"
+
+	hasAlbedoTexture = 0
+	hasNormalTexture = 0
+	normalMapInvertY = 0
+	objectSpaceNormalMap = 0
+	hasRoughnessTexture = 0
+	roughnessAnisotropic = 0
+	roughnessX = 0.5
+	roughnessY = 0.5
+	isGlossiness = 0
+	hasReflectivityTexture = 0
+	isMetalPipeline = 1
+	metalnessValue = 0
+	hasAlphaTexture = 0
+	alphaValue = 0.5
+	hasEmissiveTexture = 1
+	emissiveIntensity = 1
+	hasAOTexture = 0
+	aoPower = 1.0
+	hasSubsurfTexture = 0
+	hasThicknessTexture = 0
+	thicknessValue = 0
+}

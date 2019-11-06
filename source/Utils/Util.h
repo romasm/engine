@@ -103,6 +103,14 @@ inline string RandomString( size_t length )
 	return str;
 }
 
+inline string ReplaceFirstSubstring(string& str, const string& oldStr, const string& newStr)
+{
+	size_t pos = str.find(oldStr);
+	if (pos == string::npos)
+		return str;
+	return str.replace(pos, oldStr.length(), newStr);
+}
+
 inline wstring StringToWstring( const string& s )
 {
 	int len;

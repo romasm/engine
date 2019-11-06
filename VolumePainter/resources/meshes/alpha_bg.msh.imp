@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = '../resources/meshes/alpha_bg'
+}
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/alpha_bg.fbx'
+}

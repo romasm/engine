@@ -1,0 +1,8 @@
+shader = "../resources/shaders/objects/editor/3d_hud"
+
+ps
+{
+	dcolor = "0.0 0.0 0.9 1.0"
+	useTexture = 1
+	colorTex = "../resources/textures/editor_hud/3d_rot.dds"
+}

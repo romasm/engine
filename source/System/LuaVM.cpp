@@ -184,8 +184,17 @@ void LuaVM::HandleError()
 bool LuaVM::LoadScript(string& filename)
 {  
 	string scriptFile = filename + EXT_SCRIPT_COMPILED;
-	if( !FileIO::IsExist(scriptFile) )
+
+#ifdef _DEV
+	if (!FileIO::IsExist(scriptFile))
+	{
 		scriptFile = filename + EXT_SCRIPT;
+		/*if (!FileIO::IsExist(scriptFile))
+		{
+			scriptFile = ReplaceFirstSubstring(scriptFile, string(PATH_ROOT), string(PATH_COMMON));
+		}*/
+	}
+#endif
 
 	int error = luaL_dofile(L, scriptFile.data());
     if(error)

@@ -1,0 +1,7 @@
+shader = "../resources/shaders/objects/editor/tools_mesh"
+
+ps
+{
+	useTexture = 0
+	colorMul = "1.0 0.0 0.0 1.0"
+}

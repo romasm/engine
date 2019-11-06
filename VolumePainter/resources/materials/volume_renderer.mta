@@ -1,0 +1,14 @@
+shader = "../resources/shaders/objects/volume_cube"
+
+ps
+{
+	textureVolume = "../resources/textures/test_volume.dds"
+	textureNoise = "../resources/textures/bluenoise.dds"
+	
+	cutPlaneOriginL = "0.0 0.0 0.0 0.0"
+	cutPlaneNormal = "1.0 0.0 0.0 0.0"
+	volumeScale = "1.0 1.0 1.0 0.0"
+	volumeScaleInv = "1.0 1.0 1.0 0.0"
+	
+	cutPlaneFade = 1.0
+}

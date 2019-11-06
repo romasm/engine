@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = '../resources/meshes/mat_sphere'
+}
+import
+{
+	fileDate = '1523711406'
+	version = '101'
+	filePath = '../resources/meshes/mat_sphere.fbx'
+}

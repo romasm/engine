@@ -1,0 +1,6 @@
+shader = "../resources/shaders/objects/editor/unit_plane"
+
+ps
+{
+	colorTex = "../resources/textures/editor/unit_plane.dds"
+}

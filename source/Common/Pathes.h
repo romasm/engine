@@ -3,6 +3,7 @@
 #define PATH_BIN "bin/"
 
 #define PATH_ROOT "../"
+#define PATH_COMMON "../../common/"
 
 #define EXT_MATERIAL ".mtb"
 #define EXT_MESH ".msh"
