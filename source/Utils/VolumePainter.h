@@ -14,6 +14,24 @@ namespace EngineCore
 {
 	class VolumePainter
 	{
+		struct BrushInfo
+		{
+			Vector3 position;
+			float radius;
+		};
+
+		struct VolumeInfo
+		{
+			Vector3 minCorner;
+			float _padding0;
+
+			Vector3 sizeInv;
+			float _padding1;
+
+			Vector3 size;
+			float _padding2;
+		};
+
 	public:
 
 		VolumePainter();
@@ -21,21 +39,20 @@ namespace EngineCore
 
 		bool Init(uint32_t width, uint32_t height, uint32_t depth);
 
-		luaSRV GetSRV()
-		{
-			luaSRV res;
-			res.srv = volumeTextureSRV;
-			return res;
-		}
+		luaSRV GetSRV()	{ return luaSRV(volumeTextureSRV); }
 
-		bool ImportTexture(string textureName);
+		void ImportTexture(string textureName);
+		void DrawBrush(Vector3& position, float radius);
 
 		static void RegLuaClass()
 		{
 			getGlobalNamespace(LSTATE)
 				.beginClass<VolumePainter>("VolumePainter")
+				.addConstructor<void(*)(void)>()
 				.addFunction("Init", &VolumePainter::Init)
 				.addFunction("GetSRV", &VolumePainter::GetSRV)
+				.addFunction("ImportTexture", &VolumePainter::ImportTexture)
+				.addFunction("DrawBrush", &VolumePainter::DrawBrush)
 				.endClass();
 		}
 
@@ -51,5 +68,8 @@ namespace EngineCore
 
 		Compute* computeImportTexture;
 		Compute* computeDrawBrush;
+
+		ID3D11Buffer* brushInfoBuffer;
+		ID3D11Buffer* volumeInfoBuffer;
 	};
 }

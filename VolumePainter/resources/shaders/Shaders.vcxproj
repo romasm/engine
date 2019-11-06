@@ -156,7 +156,10 @@
     <None Include="system\voxel_light_propagate.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="objects\volume_cube.hlsl" />
+    <FxCompile Include="volume\common_volume.hlsl" />
+    <FxCompile Include="volume\draw_brush.hlsl" />
+    <FxCompile Include="volume\import_texture.hlsl" />
+    <FxCompile Include="volume\volume_cube.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

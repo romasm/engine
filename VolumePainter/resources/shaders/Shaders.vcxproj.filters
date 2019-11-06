@@ -22,6 +22,9 @@
     <Filter Include="system\gblur">
       <UniqueIdentifier>{958D9069-81F0-1F0E-2A76-58C416B8EB90}</UniqueIdentifier>
     </Filter>
+    <Filter Include="volume">
+      <UniqueIdentifier>{9bb5acc4-617b-4f98-ad0d-b192203204e5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="common\PCF.hlsl">
@@ -393,8 +396,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="objects\volume_cube.hlsl">
-      <Filter>objects</Filter>
+    <FxCompile Include="volume\import_texture.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
+    <FxCompile Include="volume\volume_cube.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
+    <FxCompile Include="volume\draw_brush.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
+    <FxCompile Include="volume\common_volume.hlsl">
+      <Filter>volume</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

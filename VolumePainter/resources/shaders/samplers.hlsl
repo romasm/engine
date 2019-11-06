@@ -130,6 +130,14 @@ samplerAnisotropic16Wrap
 	MaxAnisotropy = 16;
 };
 
+samplerPointVolumeClamp
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
 samplerBilinearVolumeClamp
 {
     Filter = MIN_MAG_LINEAR_MIP_POINT;

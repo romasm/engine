@@ -467,8 +467,8 @@ function Viewport:onMouseDown(eventData)
 		
 		if self.tc_hover then
 			self.tc_action = true
-			
-            self.history.transform_type = TransformControls.mode
+
+			self.history.transform_type = TransformControls.mode
             if self.history.transform_type == TRANSFORM_MODE.MOVE then
 			    for i, ent in ipairs(self.selection_set) do
 				    self.history.transform_old[i] = self.volumeWorld.coreWorld.transform:GetPosition_L(ent)
@@ -488,6 +488,11 @@ function Viewport:onMouseDown(eventData)
 		else		
 			self.selection_mode = SELECTION_MODE.SIMPLE
 			self:Select(eventData.coords)
+
+			-- test brush
+			local mcoords = self:GetMouseInVP(eventData.coords)
+			local ray = self.volumeWorld.coreWorld.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+			self.volumeWorld:Test(EditorCamera:GetPosition(), ray)
 		end
         return true
     end

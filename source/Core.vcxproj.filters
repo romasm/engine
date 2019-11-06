@@ -308,6 +308,9 @@
     <ClInclude Include="Render\RayTraceScene.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\VolumePainter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -506,6 +509,9 @@
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="Render\RayTraceScene.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\VolumePainter.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

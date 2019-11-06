@@ -6,11 +6,24 @@ function VolumeWorld:init(path)
 		self.path = ""
 		self.unsave = true
 			
-		self.volumeScale = Vector3(5.0, 2.5, 5.0)
+		self.volumeResolutionX = 256
+		self.volumeResolutionY = 128
+		self.volumeResolutionZ = 512
+
+		self.maxVolumeRes = math.max(math.max(self.volumeResolutionX, self.volumeResolutionY), self.volumeResolutionZ)		
+		self.volumeScale = Vector3(self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
 		self.planeFade = 2.0
+
+		self.volumeCore = VolumePainter()
+		if not self.volumeCore:Init(self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
+			return false
+		end
 
 		self:InitVolumeWorld()
 		self:CreateVolumeRenderer()
+		
+		-- test
+		self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
 	else
 		self.coreWorld = GetWorldMgr():OpenWorld(path)
 		self.path = path
@@ -107,6 +120,9 @@ function VolumeWorld:CreateVolumeRenderer()
 			local volumeScaleInv = Vector3(1.0, 1.0, 1.0) / self.volumeScale
 			self.volumeMaterial:SetVector3(volumeScaleInv, "volumeScaleInv", SHADERS.PS)
 			self.volumeMaterial:SetFloat(self.planeFade, "cutPlaneFade", SHADERS.PS)
+
+			self.volumeMaterial:SetShaderResource(self.volumeCore:GetSRV(), "textureVolume", SHADERS.PS)
+		
 		end
 	end
 end
@@ -142,12 +158,26 @@ function VolumeWorld:InitVolumeWorld()
 			self.coreWorld.staticMesh:SetMesh(self.planeEnt, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MESH)
 			self.coreWorld.staticMesh:SetMaterial(self.planeEnt, 0, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MATERIAL)
 
-			self.coreWorld.transform:SetScale_L3F (self.planeEnt, 10.0, 10.0, 10.0)
-			self.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, 0.0, 0.0, math.pi * 0.5)
+			self.coreWorld.transform:SetScale_L3F(self.planeEnt, 10.0, 10.0, 10.0)
+			self.coreWorld.transform:SetRotationPYR_L3F(self.planeEnt, 0.0, 0.0, math.pi * 0.5)
 		end
 	end
 	
 	self.planeOrigin = Vector3(0.0, 0.0, 0.0)
 	self.planeNormal = Vector3(1.0, 0.0, 0.0)
 
+end
+
+function VolumeWorld:Test(pos, ray)
+	local plane = Vector4.CreatePlane (self.planeOrigin, self.planeNormal)
+	local brushPos = Vector4.PlaneLineCollide (plane, pos, ray)
+
+	self:DrawBrush (brushPos, 0.3)
+end
+
+function VolumeWorld:DrawBrush(position, radius)
+	local volumePosition = (position - self.volumeScale * Vector3(0.5, 0.5, 0.5)) * Vector3(self.maxVolumeRes, self.maxVolumeRes, self.maxVolumeRes)
+	local volumeRadius = radius * self.maxVolumeRes
+
+	self.volumeCore:DrawBrush (volumePosition, volumeRadius)
 end
