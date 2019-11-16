@@ -6,13 +6,13 @@ function VolumeWorld:init(path)
 		self.path = ""
 		self.unsave = true
 			
-		self.volumeResolutionX = 256
-		self.volumeResolutionY = 128
+		self.volumeResolutionX = 512
+		self.volumeResolutionY = 512
 		self.volumeResolutionZ = 512
 
 		self.maxVolumeRes = math.max(math.max(self.volumeResolutionX, self.volumeResolutionY), self.volumeResolutionZ)		
 		self.volumeScale = Vector3(self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
-		self.planeFade = 2.0
+		self.planeFade = 20.0
 
 		self.volumeCore = VolumePainter()
 		if not self.volumeCore:Init(self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
@@ -23,7 +23,7 @@ function VolumeWorld:init(path)
 		self:CreateVolumeRenderer()
 		
 		-- test
-		self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
+		--self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
 	else
 		self.coreWorld = GetWorldMgr():OpenWorld(path)
 		self.path = path
@@ -170,13 +170,27 @@ end
 
 function VolumeWorld:Test(pos, ray)
 	local plane = Vector4.CreatePlane (self.planeOrigin, self.planeNormal)
-	local brushPos = Vector4.PlaneLineCollide (plane, pos, ray)
+	--local brushPos = Vector4.PlaneLineCollide (plane, pos, ray)
+	
+	local denom = self.planeNormal:Dot (ray)
+	if math.abs(denom)> 0.00001 then
+		local rayToPlane = self.planeOrigin - pos
+		local t = rayToPlane:Dot (self.planeNormal) / denom
 
-	self:DrawBrush (brushPos, 0.3)
+		local brushPos = pos + ray * Vector3(t, t, t)
+
+		print (brushPos.x)
+		print (brushPos.y)
+		print (brushPos.z)
+
+		self:DrawBrush (brushPos, 0.05)
+	end
 end
 
-function VolumeWorld:DrawBrush(position, radius)
-	local volumePosition = (position - self.volumeScale * Vector3(0.5, 0.5, 0.5)) * Vector3(self.maxVolumeRes, self.maxVolumeRes, self.maxVolumeRes)
+function VolumeWorld:DrawBrush (position, radius)
+	print("Draw brush")
+
+	local volumePosition = (position + self.volumeScale * Vector3(0.5, 0.5, 0.5)) * Vector3(self.maxVolumeRes, self.maxVolumeRes, self.maxVolumeRes)
 	local volumeRadius = radius * self.maxVolumeRes
 
 	self.volumeCore:DrawBrush (volumePosition, volumeRadius)

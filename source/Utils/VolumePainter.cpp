@@ -125,20 +125,36 @@ void VolumePainter::DrawBrush(Vector3& position, float radius)
 	minCorner.y = floorf(minCorner.y);
 	minCorner.z = floorf(minCorner.z);
 
-	// TODO check box outside volume
+	if (minCorner.x >= float(volumeResolutionX) || minCorner.y >= float(volumeResolutionY) || minCorner.z >= float(volumeResolutionZ))
+		return;
+
+	Vector3 boxSize = Vector3(floorf(radius * 2.0f));
+
+	Vector3 negativeCorner;
+	Vector3::Min(minCorner, Vector3(0.0), negativeCorner);
+	boxSize = boxSize + negativeCorner;
+	if (boxSize.x <= 0 || boxSize.y <= 0 || boxSize.z <= 0)
+		return;
 
 	Vector3::Max(minCorner, Vector3(0.0), minCorner);
+	Vector3 maxCorner = minCorner + boxSize;
 
-	float size = floorf(radius * 2.0f);
+	Vector3 positiveCorner = maxCorner - Vector3(float(volumeResolutionX), float(volumeResolutionY), float(volumeResolutionZ));
+	Vector3::Max(positiveCorner, Vector3(0.0), positiveCorner);
+	boxSize = boxSize - positiveCorner;
+	if (boxSize.x <= 0 || boxSize.y <= 0 || boxSize.z <= 0)
+		return;
 
 	VolumeInfo volumeInfo;
 	volumeInfo.minCorner = minCorner;
-	volumeInfo.size = Vector3(size);
+	volumeInfo.size = boxSize;
 	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
 
-	uint32_t groupCountX = (uint32_t)ceil(size / COPMUTE_TREADS_X);
-	uint32_t groupCountY = (uint32_t)ceil(size / COPMUTE_TREADS_Y);
-	uint32_t groupCountZ = (uint32_t)ceil(size / COPMUTE_TREADS_Z);
+	uint32_t groupCountX = (uint32_t)ceil(boxSize.x / COPMUTE_TREADS_X);
+	uint32_t groupCountY = (uint32_t)ceil(boxSize.y / COPMUTE_TREADS_Y);
+	uint32_t groupCountZ = (uint32_t)ceil(boxSize.z / COPMUTE_TREADS_Z);
+
+	LOG("%u %u %u = %i %i %i", groupCountX, groupCountY, groupCountZ, int32_t(minCorner.x), int32_t(minCorner.y), int32_t(minCorner.z));
 
 	computeDrawBrush->Dispatch(groupCountX, groupCountY, groupCountZ);
 }

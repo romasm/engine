@@ -406,19 +406,19 @@ Vector3 TransformSystem::GetRotationPYR_L(Entity e)
 Vector3 TransformSystem::GetForward_L(Entity e)
 {
 	GET_COMPONENT(Vector3())
-	return XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetLocalTransformation(comp.nodeID));
+	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetLocalTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetUpward_L(Entity e)
 {
 	GET_COMPONENT(Vector3())
-		return XMVector3TransformNormal(XMVectorSet(0, 1.0f, 0, 0), *sceneGraph->GetLocalTransformation(comp.nodeID));
+		return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 1.0f, 0, 0), *sceneGraph->GetLocalTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetRightward_L(Entity e)
 {
 	GET_COMPONENT(Vector3())
-		return XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetLocalTransformation(comp.nodeID));
+		return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetLocalTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetScale_L(Entity e)
@@ -462,19 +462,19 @@ Vector3 TransformSystem::GetRotationPYR_W(Entity e)
 Vector3 TransformSystem::GetForward_W(Entity e)
 {
 	GET_COMPONENT(Vector3())
-	return XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetWorldTransformation(comp.nodeID));
+	return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(1.0f, 0, 0, 0), *sceneGraph->GetWorldTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetUpward_W(Entity e)
 {
 	GET_COMPONENT(Vector3())
-		return XMVector3TransformNormal(XMVectorSet(0, 1.0f, 0, 0), *sceneGraph->GetWorldTransformation(comp.nodeID));
+		return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 1.0f, 0, 0), *sceneGraph->GetWorldTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetRightward_W(Entity e)
 {
 	GET_COMPONENT(Vector3())
-		return XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetWorldTransformation(comp.nodeID));
+		return XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 0, 1.0f, 0), *sceneGraph->GetWorldTransformation(comp.nodeID)));
 }
 
 Vector3 TransformSystem::GetScale_W(Entity e)

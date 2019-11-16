@@ -30,12 +30,13 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 	
 	uint3 volumeCoords = threadID + uint3(volumeMinCorner);
 
-	//float4 data = volumeRW.Load(volumeCoords);
+	float4 data = volumeRW.Load(volumeCoords);
 
 	float brushValue = length(brushPosition - volumeCoords) / brushRadius;
 	brushValue = 1.0f - clamp(brushValue, 0.0f, 1.0f);
 
-	//data += brushValue;
+	data += brushValue;
+	data = clamp(data, 0.0f, 1.0f);
 
-	volumeRW[volumeCoords] = 1.0;
+	volumeRW[volumeCoords] = data;
 }

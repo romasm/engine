@@ -488,11 +488,6 @@ function Viewport:onMouseDown(eventData)
 		else		
 			self.selection_mode = SELECTION_MODE.SIMPLE
 			self:Select(eventData.coords)
-
-			-- test brush
-			local mcoords = self:GetMouseInVP(eventData.coords)
-			local ray = self.volumeWorld.coreWorld.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
-			self.volumeWorld:Test(EditorCamera:GetPosition(), ray)
 		end
         return true
     end
@@ -520,12 +515,12 @@ function Viewport:onMouseUp(eventData)
         return true
     end
 
-    if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
-        if self.tc_action == true and TransformControls.mode == TRANSFORM_MODE.SCALE then
+	if eventData.key == KEYBOARD_CODES.KEY_LBUTTON then
+		if self.tc_action == true and TransformControls.mode == TRANSFORM_MODE.SCALE then
             self:PostScaleSelection()
-        end
+		end
 
-        self.window.entity:SetHierarchyFocusOnMe(false)
+		self.window.entity:SetHierarchyFocusOnMe(false)
 		self.tc_action = false
         self.selection_mode = SELECTION_MODE.NONE
         self.tc_copied = false
@@ -646,6 +641,11 @@ function Viewport:onMouseMove(eventData)
     
 	local mcoords = self:GetMouseInVP(mouse_pos)
 	local ray_dir = self.volumeWorld.coreWorld.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
+		
+	-- test brush	
+	if TransformControls.mode == TRANSFORM_MODE.NONE and self.selection_mode > SELECTION_MODE.NONE then
+		self.volumeWorld:Test(EditorCamera:GetPosition(), ray_dir)
+	end
 	
 	if self.tc_action then
         if is_ctrl and not self.tc_copied then
