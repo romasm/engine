@@ -147,9 +147,6 @@
     <None Include="gui\ComponentsGui\TransformCallback.lua">
       <Filter>gui\ComponentsGui</Filter>
     </None>
-    <None Include="gui\EntityProps.lua">
-      <Filter>gui</Filter>
-    </None>
     <None Include="gui\Localization\en.lua">
       <Filter>gui\Localization</Filter>
     </None>
@@ -440,6 +437,9 @@
     </None>
     <None Include="script\App\VolumeWorld.lua">
       <Filter>script\App</Filter>
+    </None>
+    <None Include="gui\ToolProperties.lua">
+      <Filter>gui</Filter>
     </None>
   </ItemGroup>
 </Project>

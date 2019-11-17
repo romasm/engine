@@ -4,7 +4,8 @@ if not GuiButton then GuiButton = class(GuiEntity) end
 
 -- public
 function GuiButton:init(props)
-    self.holded = false
+	self.holded = false
+	self.stay_holded = false
 
     self.hover_only = false
     
@@ -139,7 +140,8 @@ end
 function GuiButton:ApplyProps(props)
     self._base.ApplyProps(self, props)
 
-    if props.holded ~= nil then self.holded = props.holded end
+	if props.holded ~= nil then self.holded = props.holded end
+	if props.stay_holded ~= nil then self.stay_holded = props.stay_holded end
     if props.hover_only ~= nil then self.hover_only = props.hover_only end
     if props.cursor ~= nil then self.cursor = props.cursor end
     if props.alt ~= nil then self.alt = props.alt end
@@ -284,16 +286,18 @@ function GuiButton:callback(eventData)
 
             res.entity = self.entity
             
-            if self.holded and self.state_press then
-                -- set hover color
-                self:ApplyHover()
-                self.anim_go = 0 
-                self.anim_progress = 1
+			if self.holded and self.state_press then
+				if not self.stay_holded then
+					-- set hover color
+					self:ApplyHover()
+					self.anim_go = 0 
+					self.anim_progress = 1
 
-                self.state_hover = true
-                self.state_press = false
-                res.event = GUI_EVENTS.BUTTON_UNPRESSED
-            else
+					self.state_hover = true
+					self.state_press = false
+					res.event = GUI_EVENTS.BUTTON_UNPRESSED
+				end
+			else
                 -- set pressed color
                 self:ApplyPress()
                 self.anim_go = 0

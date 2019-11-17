@@ -19,6 +19,7 @@ cbuffer brushInfo : register(b1)
 {
 	float3 brushPosition;
 	float brushRadius;
+	float4 brushColorOpacity;
 };
 
 [numthreads(GROUP_TREADS_X, GROUP_TREADS_Y, GROUP_TREADS_Z)]
@@ -35,7 +36,7 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 	float brushValue = length(brushPosition - volumeCoords) / brushRadius;
 	brushValue = 1.0f - clamp(brushValue, 0.0f, 1.0f);
 
-	data += brushValue;
+	data += brushColorOpacity * brushValue;
 	data = clamp(data, 0.0f, 1.0f);
 
 	volumeRW[volumeCoords] = data;

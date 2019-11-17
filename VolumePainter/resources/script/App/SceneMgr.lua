@@ -10,7 +10,7 @@ function SceneMgr:Init()
 end
 
 function SceneMgr:IsWorld()
-    return #self.worlds > 0
+    return (#self.worlds > 0)
 end
 
 function SceneMgr:IsUnsave()
@@ -19,6 +19,9 @@ function SceneMgr:IsUnsave()
 end
 
 -- one world at a time for now
+function SceneMgr:GetWorld()
+	return self.worlds[1]
+end
 
 function SceneMgr:Tick(dt)
 	for i = 1, #self.worlds do
@@ -46,11 +49,12 @@ end
 function SceneMgr:InitWorld(newWorld)      
 	--Resource.ForceResourceReload()
 
-	Viewport:SetWorld(newWorld)
-
 	self.worlds[#self.worlds + 1] = newWorld
 	self.current_world = #self.worlds
-    return self.current_world
+
+	Viewport:SetWorld(newWorld)
+
+	return self.current_world
 end
 
 function SceneMgr:CloseWorld(id)

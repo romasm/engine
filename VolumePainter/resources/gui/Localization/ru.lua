@@ -7,7 +7,7 @@ lcl = {
     reset = "Сбросить",
     pickcolor = "Выбрать цвет", 
 
-    property_header = "Свойства энтити",
+    property_header = "Настройки инструмента",
 
     add_comp = "+ Компонент",
     add_comp_help = "Добавить компонент выделеным энтитям",
@@ -22,5 +22,8 @@ lcl = {
     comp_envprob = "Env Prob",
     comp_script = "Script",
 
-    no_entity_select = "Не выделено энтить",
+	no_entity_select = "Инструмент не выбран",
+	
+	brush_size = "Brush size",
+	brush_opacity = "Brush opacity",
 }

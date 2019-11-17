@@ -25,6 +25,22 @@ SHADERS = {
     GS = 4,
 }
 
+TOOL_MODE = {
+    BRUSH = 0,
+	MESH = 1,
+	PLANE = 2,
+	SELECTION_MODE= 3,
+	HEIGHT = 4,
+	MASK = 5,
+}
+
+CUT_PLANE_STATE = {
+	VIS_UNCUT = 0,
+	VIS_CUT = 1,
+	INVIS_CUT = 2,
+	INVIS_UNCUT = 3,
+}
+
 SELECTION_MODE = {
     NONE = 0,
     SIMPLE = 1,

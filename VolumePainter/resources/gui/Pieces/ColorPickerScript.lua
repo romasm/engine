@@ -137,7 +137,7 @@ function ColorPicker:SendEnd()
     local eventData = HEvent()
     eventData.event = GUI_EVENTS.COLOR_PICKED
     eventData.entity = self.window.entity
-    self.caller:callback(eventData)
+	self.caller:callback(eventData)
 end
 
 function ColorPicker:SetH(h)

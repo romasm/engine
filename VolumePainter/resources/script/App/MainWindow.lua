@@ -59,7 +59,7 @@ function MainWindow:Init()
     self.colorsWindow = nil
 
     Tools:Init()
-    --Properties:Init()
+    Properties:Init()
     --MaterialProps:Init()
     --AssetBrowser:Init()
     --SceneBrowser:Init()

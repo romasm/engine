@@ -15,11 +15,15 @@ function Tools.reloadToolbar()
     local top_rect = MainWindow.window.entity:GetCorners()
     Tools.window.entity.top = Tools.window.entity.top + top_rect.b
         
-    local tool_none = Tools.window.entity:GetChildById('tool_none')
-    if tool_none:is_null() then error("Require tool_none button!") end
-    Tools.tool_none = tool_none:GetInherited()
+	local tool_brush = Tools.window.entity:GetChildById('tool_brush')
+	if tool_brush:is_null() then error("Require tool_brush button!") end
+	Tools.tool_brush = tool_brush:GetInherited()
+	
+	local tool_plane = Tools.window.entity:GetChildById('tool_plane')
+	if tool_plane:is_null() then error("Require tool_plane button!") end
+	Tools.tool_plane = tool_plane:GetInherited()
 
-    local tool_move = Tools.window.entity:GetChildById('tool_move')
+	local tool_move = Tools.window.entity:GetChildById('tool_move')
     if tool_move:is_null() then error("Require tool_move button!") end
     Tools.tool_move = tool_move:GetInherited()
 
@@ -106,51 +110,140 @@ function Tools:Init()
     self.reloadSideArea()
         
     loader.require("ToolBar", Tools.reloadToolbar)
-    self.reloadToolbar()
-end
+	self.reloadToolbar()
 
-function Tools:UnpressAll(exclude)
-    if not exclude then
-        self.tool_none:SetPressed(false)
-        self.tool_move:SetPressed(false)
-        self.tool_rot:SetPressed(false)
-        self.tool_scale:SetPressed(false)
-        return
-    end
-    
-    if not exclude:is_eq(self.tool_none.entity) then
-        self.tool_none:SetPressed(false) end
-    if not exclude:is_eq(self.tool_move.entity) then
-        self.tool_move:SetPressed(false) end
-    if not exclude:is_eq(self.tool_rot.entity) then
-        self.tool_rot:SetPressed(false) end
-    if not exclude:is_eq(self.tool_scale.entity) then
-        self.tool_scale:SetPressed(false) end
+	self.toolMode = TOOL_MODE.BRUSH
+	self.cutPlaneState = CUT_PLANE_STATE.VIS_UNCUT
+
+	self.transformEntity = nil
+	self.transformInAction = false
+	self.transformHover = false
+	self.transformPrevRay = Vector3(0,0,0)
+
+	self.brushInAction = false
 end
 
 function Tools:DeactivateAll()
-    self.tool_none.entity:Deactivate()
-    self.tool_move.entity:Deactivate()
-    self.tool_rot.entity:Deactivate()
-    self.tool_scale.entity:Deactivate()
+	self.tool_brush.entity:Deactivate()
+	self.tool_plane.entity:Deactivate()
+
+	self:TransformDeactivateAll()
 end
 
 function Tools:ActivateAll()
-    self.tool_none.entity:Activate()
-    self.tool_move.entity:Activate()
-    self.tool_rot.entity:Activate()
-    self.tool_scale.entity:Activate()
+	self.tool_brush.entity:Activate()
+	self.tool_plane.entity:Activate()
+
+	self:SetToolMode(TOOL_MODE.BRUSH)
 end
 
-function Tools:SetTransform(mode, exclude)
-    Tools:UnpressAll(exclude)
-    if mode == TRANSFORM_MODE.NONE then
-        Tools.tool_none:SetPressed(true)
-    elseif mode == TRANSFORM_MODE.MOVE then
-        Tools.tool_move:SetPressed(true)
-    elseif mode == TRANSFORM_MODE.ROT then
-        Tools.tool_rot:SetPressed(true)
-    elseif mode == TRANSFORM_MODE.SCALE then
-        Tools.tool_scale:SetPressed(true)
-    end
+-- MODES
+function Tools:SetToolMode(mode)
+	if not SceneMgr:IsWorld() then return end
+	self:ModeUnpressAll()
+	
+	self.toolMode = mode
+	if self.toolMode == TOOL_MODE.BRUSH then
+		self.transformEntity = nil
+		self:SetTransform(TRANSFORM_MODE.NONE)
+		self.tool_brush:SetPressed(true)
+		self:TransformDeactivateAll()	
+		
+	else
+		local world = SceneMgr:GetWorld()
+		if self.toolMode == TOOL_MODE.PLANE then
+			self.transformEntity = world.planeEnt
+			self.tool_plane:SetPressed(true)
+		end
+		
+		self:TransformActivateAll()	
+		self:SetTransform(TRANSFORM_MODE.MOVE)
+	end
+end
+
+function Tools:ModeUnpressAll()
+	self.tool_brush:SetPressed(false)
+	self.tool_plane:SetPressed(false)
+end
+
+-- BRUSH
+function Tools:BrushStart(rayPos, rayDir)
+	if self.toolMode ~= TOOL_MODE.BRUSH then return end
+	self.brushInAction = true
+	self:BrushAction(rayPos, rayDir)
+end
+
+function Tools:BrushStop()
+	self.brushInAction = false
+end
+
+function Tools:BrushAction(rayPos, rayDir)
+	if self.brushInAction == false then return end
+
+	local world = SceneMgr:GetWorld()
+	world:Test(rayPos, rayDir)
+end
+
+-- TRANSFORM
+function Tools:SetTransform(mode)
+	TransformControls:SetTransform(mode, {self.transformEntity})
+	if self.toolMode == TOOL_MODE.BRUSH then return end
+	
+	self:TransformUnpressAll()
+
+	if not self.transformEntity then return end
+
+	if mode == TRANSFORM_MODE.MOVE then
+		self.tool_move:SetPressed(true)
+	elseif mode == TRANSFORM_MODE.ROT then
+		self.tool_rot:SetPressed(true)
+	elseif mode == TRANSFORM_MODE.SCALE then
+		self.tool_scale:SetPressed(true)
+	end
+end
+
+function Tools:TransformStart(ray)
+	if self.transformHover then
+		self.transformInAction = true
+		self.transformPrevRay = ray
+	end
+end
+
+function Tools:TransformStop()
+	self.transformInAction = false
+end
+
+function Tools:TransformAction(rayDir)
+	if not self.transformEntity then return end
+
+	if self.transformInAction then
+		TransformControls:ApplyTransform(rayDir, self.transformPrevRay, {self.transformEntity})
+		self.transformPrevRay = rayDir
+	else
+		self.transformHover = TransformControls:CheckHover(rayDir)
+	end
+end
+
+function Tools:TransformUnhover()
+	TransformControls:Unhover()
+	self.transformHover = false
+	self.transformInAction = false
+end
+
+function Tools:TransformUnpressAll()
+	self.tool_move:SetPressed(false)
+	self.tool_rot:SetPressed(false)
+	self.tool_scale:SetPressed(false)
+end
+
+function Tools:TransformActivateAll()
+	self.tool_move.entity:Activate()
+	self.tool_rot.entity:Activate()
+	self.tool_scale.entity:Activate()
+end
+
+function Tools:TransformDeactivateAll()
+	self.tool_move.entity:Deactivate()
+	self.tool_rot.entity:Deactivate()
+	self.tool_scale.entity:Deactivate()
 end

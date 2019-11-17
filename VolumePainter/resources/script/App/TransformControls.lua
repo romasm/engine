@@ -145,11 +145,7 @@ function TransformControls:Tick(camEnt)
 end
 
 function TransformControls:UpdateTransform(selectionSet)
-    if selectionSet == nil then 
-		self:Deactivate()
-		return
-	end
-    if #selectionSet == 0 then 
+	if selectionSet == nil or #selectionSet == 0 then 
 		self:Deactivate()
 		return
 	end
@@ -627,4 +623,28 @@ function TransformControls:SetMode(m)
         self.MeshSy:SetMaterial(self.Ccontrol, 0, self.CenterMatPath)
         
     end
+end
+
+function TransformControls:SetTransform(mode, selectionSet)
+	if mode == TRANSFORM_MODE.NONE then
+		self:SetMode(TRANSFORM_MODE.NONE)
+
+	elseif mode == TRANSFORM_MODE.MOVE then
+		if self.mode == TRANSFORM_MODE.MOVE and self.active == true then
+			self:SetMoveLocal((not self.isMoveLocal))
+		else
+			self:SetMode(TRANSFORM_MODE.MOVE)
+		end
+
+	elseif mode == TRANSFORM_MODE.ROT then
+		if self.mode == TRANSFORM_MODE.ROT and self.active == true then
+			self:SetRotLocal((not self.isRotLocal))
+		else
+			self:SetMode(TRANSFORM_MODE.ROT)
+		end
+
+	elseif mode == TRANSFORM_MODE.SCALE then
+		self:SetMode(TRANSFORM_MODE.SCALE)
+	end
+	self:UpdateTransform(selectionSet)
 end

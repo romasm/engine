@@ -61,7 +61,7 @@
     <None Include="gui\ComponentsGui\StaticMeshCallback.lua" />
     <None Include="gui\ComponentsGui\Transform.lua" />
     <None Include="gui\ComponentsGui\TransformCallback.lua" />
-    <None Include="gui\EntityProps.lua" />
+    <None Include="gui\ToolProperties.lua" />
     <None Include="gui\Localization\en.lua" />
     <None Include="gui\Localization\ru.lua" />
     <None Include="gui\MaterialGui\AO.lua" />

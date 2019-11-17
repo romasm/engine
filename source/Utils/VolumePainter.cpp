@@ -112,11 +112,12 @@ void VolumePainter::ImportTexture(string textureName)
 	TexMgr::Get()->GetResource(textureName, false, copyCallback);
 }
 
-void VolumePainter::DrawBrush(Vector3& position, float radius)
+void VolumePainter::DrawBrush(Vector3& position, float radius, Vector4& colorOpacity)
 {
 	BrushInfo brushInfo;
 	brushInfo.position = position;
 	brushInfo.radius = radius;
+	brushInfo.colorOpacity = colorOpacity;
 	Render::UpdateDynamicResource(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
 
 	Vector3 minCorner = position;
@@ -154,7 +155,7 @@ void VolumePainter::DrawBrush(Vector3& position, float radius)
 	uint32_t groupCountY = (uint32_t)ceil(boxSize.y / COPMUTE_TREADS_Y);
 	uint32_t groupCountZ = (uint32_t)ceil(boxSize.z / COPMUTE_TREADS_Z);
 
-	LOG("%u %u %u = %i %i %i", groupCountX, groupCountY, groupCountZ, int32_t(minCorner.x), int32_t(minCorner.y), int32_t(minCorner.z));
+	//LOG("%u %u %u = %i %i %i", groupCountX, groupCountY, groupCountZ, int32_t(minCorner.x), int32_t(minCorner.y), int32_t(minCorner.z));
 
 	computeDrawBrush->Dispatch(groupCountX, groupCountY, groupCountZ);
 }

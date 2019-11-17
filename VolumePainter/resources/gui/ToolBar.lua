@@ -16,7 +16,8 @@ return GuiRect({
 
     id = "toolbar_window",
 
-    GuiButton({
+	-- TOOLS
+	GuiButton({
         styles = {
             GuiStyles.tool_button,
         },
@@ -25,29 +26,44 @@ return GuiRect({
 
         icon = {material = GuiMaterials.select_icon},
 
-        id = 'tool_none',
-        alt = "Select  ( Q )",
+		id = 'tool_brush',
+        alt = "Brush  ( 1 )",
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                Tools:UnpressAll(self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.NONE)
-                return true 
-            end,
-            [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                Tools:SetTransform(TRANSFORM_MODE.NONE, self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.NONE)
-                return true 
+				Tools:SetToolMode(TOOL_MODE.BRUSH)
+				return true 
             end,
         },
     }),
+		
+	GuiButton({
+		styles = {
+			GuiStyles.tool_button,
+		},
 
-    GuiButton({
+		left = 48,
+
+		icon = {material = GuiMaterials.select_icon},
+
+		id = 'tool_plane',
+		alt = "Working plane  ( 2 )",
+
+		events = {
+			[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+				Tools:SetToolMode(TOOL_MODE.PLANE)
+				return true 
+			end,
+		},
+	}),
+	
+	-- TRANSFORM
+	GuiButton({
         styles = {
             GuiStyles.tool_button,
         },
 
-        left = 48,
+        left = 148,
 
         icon = {material = GuiMaterials.move_icon},
 
@@ -56,14 +72,8 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                Tools:UnpressAll(self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.MOVE)
-                return true 
-            end,
-            [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                Tools:SetTransform(TRANSFORM_MODE.NONE, self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.NONE)
-                return true 
+				Tools:SetTransform(TRANSFORM_MODE.MOVE, self.entity)
+				return true 
             end,
         },
     }),
@@ -73,7 +83,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        left = 92,
+        left = 192,
 
         icon = {material = GuiMaterials.rotate_icon},
 
@@ -82,14 +92,8 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                Tools:UnpressAll(self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.ROT)
-                return true 
-            end,
-            [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                Tools:SetTransform(TRANSFORM_MODE.NONE, self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.NONE)
-                return true 
+				Tools:SetTransform(TRANSFORM_MODE.ROT, self.entity)
+				return true 
             end,
         },
     }),
@@ -99,7 +103,7 @@ return GuiRect({
             GuiStyles.tool_button,
         },
 
-        left = 136,
+        left = 236,
 
         icon = {material = GuiMaterials.scale_icon},
 
@@ -108,13 +112,7 @@ return GuiRect({
 
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
-                Tools:UnpressAll(self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.SCALE)
-                return true 
-            end,
-            [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
-                Tools:SetTransform(TRANSFORM_MODE.NONE, self.entity)
-                Viewport:SetTransform(TRANSFORM_MODE.NONE)
+				Tools:SetTransform(TRANSFORM_MODE.SCALE, self.entity)
                 return true 
             end,
         },

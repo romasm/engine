@@ -14,6 +14,9 @@ function VolumeWorld:init(path)
 		self.volumeScale = Vector3(self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
 		self.planeFade = 20.0
 
+		self.brushSize = 10.0
+		self.brushColor = Vector4(1, 1, 1, 1)
+
 		self.volumeCore = VolumePainter()
 		if not self.volumeCore:Init(self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
 			return false
@@ -168,6 +171,22 @@ function VolumeWorld:InitVolumeWorld()
 
 end
 
+-- TEMP
+
+function VolumeWorld:SetBrushSize (size)
+	self.brushSize = size
+end
+
+function VolumeWorld:SetBrushOpacity (opacity)
+	self.brushColor.w = opacity
+end
+
+function VolumeWorld:SetBrushColor (color)
+	self.brushColor.x = color.x
+	self.brushColor.y = color.y
+	self.brushColor.z = color.z
+end
+
 function VolumeWorld:Test(pos, ray)
 	local plane = Vector4.CreatePlane (self.planeOrigin, self.planeNormal)
 	--local brushPos = Vector4.PlaneLineCollide (plane, pos, ray)
@@ -178,20 +197,14 @@ function VolumeWorld:Test(pos, ray)
 		local t = rayToPlane:Dot (self.planeNormal) / denom
 
 		local brushPos = pos + ray * Vector3(t, t, t)
-
-		print (brushPos.x)
-		print (brushPos.y)
-		print (brushPos.z)
-
-		self:DrawBrush (brushPos, 0.05)
+		
+		self:DrawBrush (brushPos, self.brushSize)
 	end
 end
 
 function VolumeWorld:DrawBrush (position, radius)
-	print("Draw brush")
-
 	local volumePosition = (position + self.volumeScale * Vector3(0.5, 0.5, 0.5)) * Vector3(self.maxVolumeRes, self.maxVolumeRes, self.maxVolumeRes)
-	local volumeRadius = radius * self.maxVolumeRes
+	local volumeRadius = radius * 0.5--self.maxVolumeRes
 
-	self.volumeCore:DrawBrush (volumePosition, volumeRadius)
+	self.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor)
 end

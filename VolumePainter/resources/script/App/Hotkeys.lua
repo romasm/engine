@@ -45,20 +45,21 @@ function Hotkeys:Process(eventData, root)
         History:Redo()
         resEvent.event = GUI_EVENTS.NULL
 
-    elseif eventData.key == KEYBOARD_CODES.KEY_Q then 
-        Viewport:SetTransform(TRANSFORM_MODE.NONE, true)
-        resEvent.event = GUI_EVENTS.NULL
-    elseif eventData.key == KEYBOARD_CODES.KEY_W then 
-        Viewport:SetTransform(TRANSFORM_MODE.MOVE, true)
+	elseif eventData.key == KEYBOARD_CODES.KEY_1 then 
+		Tools:SetToolMode(TOOL_MODE.BRUSH)
+		resEvent.event = GUI_EVENTS.NULL
+	elseif eventData.key == KEYBOARD_CODES.KEY_2 then
+		Tools:SetToolMode (TOOL_MODE.PLANE)
+		resEvent.event = GUI_EVENTS.NULL
+
+	elseif eventData.key == KEYBOARD_CODES.KEY_W then 
+		Tools:SetTransform(TRANSFORM_MODE.MOVE)
         resEvent.event = GUI_EVENTS.NULL
     elseif eventData.key == KEYBOARD_CODES.KEY_E then 
-        Viewport:SetTransform(TRANSFORM_MODE.ROT, true)
+		Tools:SetTransform(TRANSFORM_MODE.ROT)
         resEvent.event = GUI_EVENTS.NULL
     elseif eventData.key == KEYBOARD_CODES.KEY_R then 
-        Viewport:SetTransform(TRANSFORM_MODE.SCALE, true)
-        resEvent.event = GUI_EVENTS.NULL
-    elseif eventData.key == KEYBOARD_CODES.KEY_SPACE then 
-        Viewport:SwitchTransform()
+		Tools:SetTransform(TRANSFORM_MODE.SCALE)
         resEvent.event = GUI_EVENTS.NULL
         
     elseif eventData.key == KEYBOARD_CODES.KEY_F and CoreGui.Keys.Alt() then 

@@ -110,7 +110,8 @@ GuiStyles.tool_button = {
         GuiStyles.common_button,
     },
 
-    holded = true,
+	holded = true,
+	stay_holded = true,
 
     height = 40,
     width = 40,

@@ -65,16 +65,11 @@ float SchlickPhase(float3 viewDir, float3 lightDir, float asymmetry)
 	return phase;
 }
 
-void AddTraceStep(inout float3 lightAcc, inout float transmittanceAcc, float3 samplePos, float3 light, float density)
+float CalcFadeFactor(float3 samplePos)
 {
 	float3 samplePlanePos = (samplePos - cutPlaneOriginL.xyz) * volumeScale.xyz;
 	float fadeFactor = 1.0f - saturate(dot(samplePlanePos, cutPlaneNormal.xyz) * cutPlaneFade);
-	
-	light *= fadeFactor;
-	density *= fadeFactor;
-
-	lightAcc += light;
-	transmittanceAcc *= 1.0f - density;
+	return fadeFactor;
 }
 
 float4 VolumeTrace(int stepsCount, int shadowStepsCount, float density, float3 absorptionShadow, float3 lightDir, float3 lightColor,
@@ -143,50 +138,56 @@ float4 VolumeTrace(int stepsCount, int shadowStepsCount, float density, float3 a
 	float3 lightAcc = 0;
 
 	float lightDensitySample = 0;
-	float densitySample = 0;
+	float4 colorDensitySample = 0;
 	for (int i = 0; i < maxStepsCount; i++)
 	{
-		densitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, currentPos, 0).r;
-
-		// determine shadow
-		if (densitySample > discardLightLevel)
+		float fadeFactor = CalcFadeFactor(currentPos);
+		if (fadeFactor > 0)
 		{
-			float3 volumePos = currentPos;
+			colorDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, currentPos, 0);
 
-			// shadow search
-			float shadowAcc = 0;
-			for (int s = 0; s < shadowStepsCount; s++)
+			// determine shadow
+			if (colorDensitySample.a > discardLightLevel)
 			{
-				volumePos += lightDir;
-				lightDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				float3 volumePos = currentPos;
 
-				// early termination
-				float3 boxTest = floor((abs(volumePos - 0.5f)) + 0.5f);
-				if ((boxTest.x + boxTest.y + boxTest.z) >= 1.0f || shadowAcc > shadowSearchDist)
+				// shadow search
+				float shadowAcc = 0;
+				for (int s = 0; s < shadowStepsCount; s++)
+				{
+					volumePos += lightDir;
+					lightDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).a;
+
+					// early termination
+					float3 boxTest = floor((abs(volumePos - 0.5f)) + 0.5f);
+					if ((boxTest.x + boxTest.y + boxTest.z) >= 1.0f || shadowAcc > shadowSearchDist)
+						break;
+
+					shadowAcc += lightDensitySample;
+				}
+
+				// beer-lambert law & fake ambient shadowing
+				float finalDensity = saturate(colorDensitySample.a * density);
+				float3 finalLight = lightColor * colorDensitySample.rgb * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
+
+				//Sky Lighting
+				shadowAcc = 0;
+
+				volumePos = currentPos + float3(0, 0.05, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				volumePos = currentPos + float3(0, 0.1, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				volumePos = currentPos + float3(0, 0.2, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+
+				finalLight += skyColor * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
+
+				lightAcc += finalLight * fadeFactor;
+				transmittanceAcc *= 1.0f - finalDensity * fadeFactor;
+
+				if (transmittanceAcc < discardLightLevel)
 					break;
-
-				shadowAcc += lightDensitySample;
 			}
-
-			// beer-lambert law & fake ambient shadowing
-			float finalDensity = saturate(densitySample * density);
-			float3 finalLight = lightColor * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
-
-			//Sky Lighting
-			shadowAcc = 0;
-
-			volumePos = currentPos + float3(0, 0.05, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-			volumePos = currentPos + float3(0, 0.1, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-			volumePos = currentPos + float3(0, 0.2, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-
-			finalLight += skyColor * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
-			
-			AddTraceStep(lightAcc, transmittanceAcc, currentPos, finalLight, finalDensity);
-			if (transmittanceAcc < discardLightLevel)
-				break;
 		}
 
 		currentPos -= viewDirLocal;
@@ -198,42 +199,48 @@ float4 VolumeTrace(int stepsCount, int shadowStepsCount, float density, float3 a
 	{
 		// fractional step close to geometry
 		currentPos += viewDirLocal  * (1.0f - lastStepSize);
-		densitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, currentPos, 0).r;
 
-		if (densitySample > discardLightLevel)
+		float fadeFactor = CalcFadeFactor(currentPos);
+		if (fadeFactor > 0)
 		{
-			float3 volumePos = currentPos;
+			colorDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, currentPos, 0);
 
-			float shadowAcc = 0;
-			for (int s = 0; s < shadowStepsCount; s++)
+			if (colorDensitySample.a > discardLightLevel)
 			{
-				volumePos += lightDir;
-				lightDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				float3 volumePos = currentPos;
 
-				float3 boxTest = floor((abs(volumePos - 0.5f)) + 0.5f);
-				if ((boxTest.x + boxTest.y + boxTest.z) >= 1.0f || shadowAcc > shadowSearchDist)
-					break;
+				float shadowAcc = 0;
+				for (int s = 0; s < shadowStepsCount; s++)
+				{
+					volumePos += lightDir;
+					lightDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).a;
 
-				shadowAcc += lightDensitySample;
+					float3 boxTest = floor((abs(volumePos - 0.5f)) + 0.5f);
+					if ((boxTest.x + boxTest.y + boxTest.z) >= 1.0f || shadowAcc > shadowSearchDist)
+						break;
+
+					shadowAcc += lightDensitySample;
+				}
+
+				// scale down last sample because of fractional step
+				float finalDensity = saturate(colorDensitySample.a * density * lastStepSize);
+				float3 finalLight = lightColor * colorDensitySample.rgb * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
+
+				//Sky Lighting
+				shadowAcc = 0;
+
+				volumePos = currentPos + float3(0, 0.05, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				volumePos = currentPos + float3(0, 0.1, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+				volumePos = currentPos + float3(0, 0.2, 0);
+				shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
+
+				finalLight += skyColor * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
+
+				lightAcc += finalLight * fadeFactor;
+				transmittanceAcc *= 1.0f - finalDensity * fadeFactor;
 			}
-
-			// scale down last sample because of fractional step
-			float finalDensity = saturate(densitySample * density * lastStepSize);
-			float3 finalLight = lightColor * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
-
-			//Sky Lighting
-			shadowAcc = 0;
-
-			volumePos = currentPos + float3(0, 0.05, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-			volumePos = currentPos + float3(0, 0.1, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-			volumePos = currentPos + float3(0, 0.2, 0);
-			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
-
-			finalLight += skyColor * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
-
-			AddTraceStep(lightAcc, transmittanceAcc, currentPos, finalLight, finalDensity);
 		}
 	}
 
@@ -264,9 +271,7 @@ float4 VolumeCubePS(PI_ToolMesh input) : SV_TARGET
 	float2 noiseUV = float2(input.position.xy) / float2(noiseW, noiseH);
 
 	float4 volumeVis = VolumeTrace(64, 32, 70.0f, absorptionShadow, lightDir, lightColorPhase, skyColor, absorptionSky, viewDir, g_CamPos, noiseUV, screenUV);
-
-	volumeVis.rgb *= float3(0.7, 0.8, 0.6);
-
+	
 	return float4(volumeVis.rgb * volumeVis.a, volumeVis.a);
 }
 

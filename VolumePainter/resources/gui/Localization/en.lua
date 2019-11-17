@@ -7,7 +7,7 @@ lcl = {
     reset = "Reset",
     pickcolor = "Pick color",
 
-    property_header = "Entity properties",
+    property_header = "Tool settings",
 
     add_comp = "+ Ñomponent",
     add_comp_help = "Add component to selected entities",
@@ -22,5 +22,9 @@ lcl = {
     comp_envprob = "Env Prob",
     comp_script = "Script",
 
-    no_entity_select = "No entities selected",
+	no_entity_select = "No tool selected",
+
+	brush_size = "Brush size",
+	brush_opacity = "Brush opacity",
+	brush_color = "Brush color",
 }
