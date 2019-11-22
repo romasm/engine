@@ -23,9 +23,9 @@ function Viewport.reload()
     local tool_rect = Tools.window.entity:GetCorners()
     Viewport.window.entity.top = tool_rect.b + Viewport.window.entity.top
 
-    local side_rect = Tools.right_side_area.entity:GetRectAbsolute()
-    Viewport.window.entity.right = Grect.w - (side_rect.l - Grect.l)
-    side_rect = Tools.left_side_area.entity:GetRectAbsolute()
+    --side_rect = Tools.right_side_area.entity:GetRectAbsolute()
+    Viewport.window.entity.right = 0 --Grect.w - (side_rect.l - Grect.l)
+	local side_rect = Tools.left_side_area.entity:GetRectAbsolute()
     Viewport.window.entity.left = side_rect.l - Grect.l + side_rect.w
 
     Viewport.window.entity:UpdatePosSize()
@@ -142,6 +142,7 @@ function Viewport:ClearWorld()
 
     MainWindow:SetCaption()
 	Tools:DeactivateAll()
+	Properties:Disable()
 end
 
 function Viewport:OpenRenderConfig(btn)

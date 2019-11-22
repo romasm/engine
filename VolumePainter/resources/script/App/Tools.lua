@@ -1,5 +1,11 @@
 if not Tools then Tools = {} end
 
+loader.require("App.Properties")
+loader.require ("App.VisualizationSettings")
+
+loader.require("App.Brush")
+loader.require("App.WorkingPlane")
+
 function Tools.reloadToolbar()
     local root = CoreGui.GetMainRoot()
 
@@ -49,14 +55,14 @@ function Tools.reloadToolbar()
         Tools.window.entity.left = leftRect.l - Grect.l + leftRect.w
     end
 
-    if Tools.right_side_area then
+   --[[ if Tools.right_side_area then
         Tools.right_side_area.entity.top = top_rect.b
         Tools.right_side_area.entity:UpdatePosSize()
 
         local rightRect = Tools.right_side_area.entity:GetRectAbsolute()
         Tools.window.entity.right = Grect.w - (rightRect.l - Grect.l)
     end
-    
+    --]]
     Tools.window.entity:UpdatePosSize()
 end
 
@@ -64,47 +70,47 @@ function Tools.reloadSideArea()
     local root = CoreGui.GetMainRoot()
 
     local reloadProps = false
-    local reloadMats = false
+    local reloadVis = false
 
-    if Tools.left_side_area and Tools.right_side_area then
-        root:DetachChild(Tools.left_side_area.entity)
+	if Tools.left_side_area then -- and Tools.right_side_area
+		root:DetachChild(Tools.left_side_area.entity)
         Tools.left_side_area.entity:Destroy()
         Tools.left_side_area = nil
 
-        root:DetachChild(Tools.right_side_area.entity)
-        Tools.right_side_area.entity:Destroy()
-        Tools.right_side_area = nil
+        --root:DetachChild(Tools.right_side_area.entity)
+        --Tools.right_side_area.entity:Destroy()
+        --Tools.right_side_area = nil
         
         if Properties.window then reloadProps = true end
-        if MaterialProps.window then reloadMats = true end
+		if VisualizationSettings.window then reloadVis = true end
 
         Properties.window = nil
-        MaterialProps.window = nil
+		VisualizationSettings.window = nil
     end
 
     Tools.left_side_area = Gui.SideArea(true)
     root:AttachChild(Tools.left_side_area.entity)
 
-    Tools.right_side_area = Gui.SideArea(false)
-    root:AttachChild(Tools.right_side_area.entity)
+    --Tools.right_side_area = Gui.SideArea(false)
+    --root:AttachChild(Tools.right_side_area.entity)
     
     local top_rect = MainWindow.window.entity:GetCorners()
     Tools.left_side_area.entity.top = top_rect.b
-    Tools.right_side_area.entity.top = top_rect.b
+    --Tools.right_side_area.entity.top = top_rect.b
 
     if reloadProps then Properties.reload() end
-    if reloadMats then MaterialProps.reload() end
+	if reloadVis then VisualizationSettings.reload() end
 
     CoreGui.UpdateLuaFuncs()
 
     Tools.left_side_area.entity:UpdatePosSize()
-    Tools.right_side_area.entity:UpdatePosSize()
+    --Tools.right_side_area.entity:UpdatePosSize()
 end
 
 function Tools:Init()
     print("Tools:Init") 
     
-    self.side_area_separator = {500, 600}
+    self.side_area_separator = {500, 400}
 
     loader.require("SideArea", Tools.reloadSideArea)
     self.reloadSideArea()
@@ -148,17 +154,19 @@ function Tools:SetToolMode(mode)
 		self:SetTransform(TRANSFORM_MODE.NONE)
 		self.tool_brush:SetPressed(true)
 		self:TransformDeactivateAll()	
+		Properties:EnableBrush()
 		
 	else
-		local world = SceneMgr:GetWorld()
 		if self.toolMode == TOOL_MODE.PLANE then
-			self.transformEntity = world.planeEnt
+			self.transformEntity = WorkingPlane.planeEnt
 			self.tool_plane:SetPressed(true)
+			Properties:EnablePlane()
 		end
 		
 		self:TransformActivateAll()	
 		self:SetTransform(TRANSFORM_MODE.MOVE)
 	end
+
 end
 
 function Tools:ModeUnpressAll()
@@ -180,8 +188,7 @@ end
 function Tools:BrushAction(rayPos, rayDir)
 	if self.brushInAction == false then return end
 
-	local world = SceneMgr:GetWorld()
-	world:Test(rayPos, rayDir)
+	Brush:DrawBrushFromViewport(rayPos, rayDir)
 end
 
 -- TRANSFORM

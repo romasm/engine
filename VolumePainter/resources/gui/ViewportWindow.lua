@@ -56,7 +56,7 @@ return GuiEntity({
             GuiStyles.string_70_l,
         },
 
-        str = "No scene loaded",
+        str = "No volume loaded",
 
         static = true,
 

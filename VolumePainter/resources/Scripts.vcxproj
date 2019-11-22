@@ -107,14 +107,16 @@
     <None Include="gui\ToolBar.lua" />
     <None Include="gui\TopBar.lua" />
     <None Include="gui\ViewportWindow.lua" />
+    <None Include="gui\VisualizationWindow.lua" />
     <None Include="script\App\AssetBrowser.lua" />
+    <None Include="script\App\Brush.lua" />
     <None Include="script\App\DevConsole.lua" />
     <None Include="script\App\EditorCamera.lua" />
     <None Include="script\App\History.lua" />
     <None Include="script\App\Hotkeys.lua" />
     <None Include="script\App\Importer.lua" />
     <None Include="script\App\MainWindow.lua" />
-    <None Include="script\App\MaterialProps.lua" />
+    <None Include="script\App\VisualizationSettings.lua" />
     <None Include="script\App\Profiler.lua" />
     <None Include="script\App\Properties.lua" />
     <None Include="script\App\SceneBrowser.lua" />
@@ -124,6 +126,7 @@
     <None Include="script\App\Viewport.lua" />
     <None Include="script\App\const_Defines.lua" />
     <None Include="script\App\VolumeWorld.lua" />
+    <None Include="script\App\WorkingPlane.lua" />
     <None Include="script\Entities\BaseEntity.lua" />
     <None Include="script\Entities\Camera.lua" />
     <None Include="script\Entities\EnvProb.lua" />

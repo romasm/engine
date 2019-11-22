@@ -19,7 +19,7 @@ return GuiWindow({
     
     header = {
         styles = {
-            GuiStyles.window_header,
+			GuiStyles.window_header_dynamic,
         },
         str = lcl.property_header,
     },
@@ -70,7 +70,7 @@ return GuiWindow({
 				left = 4,
 				right = 4,
 
-				enable = true,
+				enable = false,
         
 				id = "brush_settings",
 
@@ -102,19 +102,19 @@ return GuiWindow({
 
 					events = {
 							[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
-								Viewport.volumeWorld:SetBrushSize(self:GetValue())
+								Brush:SetBrushSize(self:GetValue())
 								return true 
 							end,
 							[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
-								Viewport.volumeWorld:SetBrushSize(self:GetValue())
+								Brush:SetBrushSize(self:GetValue())
 								return true 
 							end,
 							[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
-								Viewport.volumeWorld:SetBrushSize(self:GetValue())
+								Brush:SetBrushSize(self:GetValue())
 								return true 
 							end,
 							[GUI_EVENTS.UPDATE] = function(self, ev)
-								self:SetValue(Viewport.volumeWorld.brushSize)
+								self:SetValue(Brush.brushSize)
 								return true 
 							end,
 						},
@@ -147,19 +147,19 @@ return GuiWindow({
 
 					events = {
 						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
-							Viewport.volumeWorld:SetBrushOpacity(self:GetValue())
+							Brush:SetBrushOpacity(self:GetValue())
 							return true 
 						end,
 						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
-							Viewport.volumeWorld:SetBrushOpacity(self:GetValue())
+							Brush:SetBrushOpacity(self:GetValue())
 							return true 
 						end,
 						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
-							Viewport.volumeWorld:SetBrushOpacity(self:GetValue())
+							Brush:SetBrushOpacity(self:GetValue())
 							return true 
 						end,
 						[GUI_EVENTS.UPDATE] = function(self, ev)
-							self:SetValue(Viewport.volumeWorld.brushColor.w)
+							self:SetValue(Brush.brushColor.w)
 							return true 
 						end,
 					},
@@ -196,15 +196,14 @@ return GuiWindow({
 								return true end,
 						[GUI_EVENTS.COLOR_PICKING]  = function(self, ev) 
 								local color = ColorPicker:GetColor()
-								Viewport.volumeWorld:SetBrushColor(color)
+								Brush:SetBrushColor(color)
 								return true 
 							end,
 						[GUI_EVENTS.COLOR_PICKED]  = function(self, ev) 
 								return true 
 							end,
 						[GUI_EVENTS.UPDATE] = function(self, ev) 
-								local color = Viewport.volumeWorld.brushColor
-								self.background.color = Vector4(color.x, color.y, color.z, 1)
+								self.background.color = Vector4(Brush.brushColor.x, Brush.brushColor.y, Brush.brushColor.z, 1)
 								self.background.color_hover = self.background.color
 								self.background.color_press = self.background.color
 								self:UpdateProps()
@@ -215,6 +214,121 @@ return GuiWindow({
 
 			}),
 
+			GuiDumb({
+				styles = {
+					GuiStyles.live_ghost,
+				},
+
+				top = 10,
+				height = 100,
+        
+				align = GUI_ALIGN.BOTH,
+				left = 4,
+				right = 4,
+
+				enable = false,
+        
+				id = "plane_settings",
+					
+				-- enable fade
+				GuiCheck({
+					styles = {GuiStyles.props_check,},
+					left = 120,
+					top = 0,
+					width = 150,
+					height = 18,
+					text = { str = lcl.plane_visible },
+					alt = lcl.plane_visible,
+
+					events = {
+						[GUI_EVENTS.CB_CHECKED] = function(self, ev) 
+							WorkingPlane:SetPlaneVisible (true)
+							return true 
+						end,
+						[GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
+							WorkingPlane:SetPlaneVisible (false)
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev) 
+							self:SetCheck(WorkingPlane.planeVisible)
+							return true 
+						end,
+					}
+				}),
+
+				-- enable fade
+				GuiCheck({
+					styles = {GuiStyles.props_check,},
+					left = 120,
+					top = 30,
+					width = 120,
+					height = 18,
+					text = { str = lcl.plane_fade_enable },
+					alt = lcl.plane_fade_enable_alt,
+
+					events = {
+							[GUI_EVENTS.CB_CHECKED] = function(self, ev) 
+								WorkingPlane:SetPlaneFadeEnable (true)
+								return true 
+							end,
+							[GUI_EVENTS.CB_UNCHECKED] = function(self, ev) 
+								WorkingPlane:SetPlaneFadeEnable (false)
+								return true 
+							end,
+							[GUI_EVENTS.UPDATE] = function(self, ev) 
+								self:SetCheck(WorkingPlane.planeFadeEnable == 1)
+								return true 
+							end,
+					}
+				}),
+
+				-- plane fade
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.plane_fade,
+					left = 10,
+					top = 60, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 60,
+
+					data = {
+						min = 0,
+						max = 100,
+						decimal = 0,
+						overflow_max = true,
+					},
+					alt = lcl.brush_size,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							WorkingPlane:SetPlaneFade(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							WorkingPlane:SetPlaneFade(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							WorkingPlane:SetPlaneFade(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(WorkingPlane.planeFade)
+							return true 
+						end,
+					},
+				}),
+
+			}),
 		}),
     }),
 })

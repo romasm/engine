@@ -4,14 +4,14 @@ GuiStyles.group_button = {
     },
     
     background = {
-        color = 'bg_01_v3',
+		color = 'bg_08',
         color_hover = 'act_01',
         color_press = 'act_01',
         color_nonactive = 'bg_03',
     },
 
     icon = {
-        color = 'text_01',
+		color = 'text_06',
         color_hover = 'act_03',
         color_press = 'act_03',
         color_nonactive = 'text_02',
@@ -24,9 +24,9 @@ GuiStyles.group_button = {
         center = { x = false, y = true },
         str = "Group",
         font = "../resources/fonts/opensans_normal_18px",
-        color = 'act_03',
-        color_hover = 'act_03',
-        color_press = 'act_03',
+		color = 'text_06',
+		color_hover = 'act_03',
+		color_press = 'act_03',
         color_nonactive = 'text_02'
     },
 }

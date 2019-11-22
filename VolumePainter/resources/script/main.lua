@@ -70,11 +70,6 @@ loader.require("App.Viewport")
 loader.require("App.Tools")
 loader.require("App.Importer")
 
-loader.require("App.Properties")
---loader.require("App.MaterialProps")
---loader.require("App.AssetBrowser")
---loader.require("App.SceneBrowser")
-
 loader.require("App.Profiler")
 loader.require("App.DevConsole")
 

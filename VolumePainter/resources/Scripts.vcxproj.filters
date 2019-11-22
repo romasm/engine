@@ -303,9 +303,6 @@
     <None Include="script\App\MainWindow.lua">
       <Filter>script\App</Filter>
     </None>
-    <None Include="script\App\MaterialProps.lua">
-      <Filter>script\App</Filter>
-    </None>
     <None Include="script\App\Profiler.lua">
       <Filter>script\App</Filter>
     </None>
@@ -439,6 +436,18 @@
       <Filter>script\App</Filter>
     </None>
     <None Include="gui\ToolProperties.lua">
+      <Filter>gui</Filter>
+    </None>
+    <None Include="script\App\Brush.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="script\App\WorkingPlane.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="script\App\VisualizationSettings.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="gui\VisualizationWindow.lua">
       <Filter>gui</Filter>
     </None>
   </ItemGroup>

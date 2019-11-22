@@ -1,6 +1,6 @@
 if not VolumeWorld then VolumeWorld = class () end
 
-function VolumeWorld:init(path)
+function VolumeWorld:init (path)
 	if path == nil then
 		self.coreWorld = GetWorldMgr():CreateWorld()
 		self.path = ""
@@ -12,11 +12,7 @@ function VolumeWorld:init(path)
 
 		self.maxVolumeRes = math.max(math.max(self.volumeResolutionX, self.volumeResolutionY), self.volumeResolutionZ)		
 		self.volumeScale = Vector3(self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
-		self.planeFade = 20.0
-
-		self.brushSize = 10.0
-		self.brushColor = Vector4(1, 1, 1, 1)
-
+		
 		self.volumeCore = VolumePainter()
 		if not self.volumeCore:Init(self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
 			return false
@@ -37,6 +33,10 @@ function VolumeWorld:init(path)
 			return false
 		end
 	end
+
+	WorkingPlane:Init (self)
+	Brush:Init (self)
+
 	return true
 end
 
@@ -57,16 +57,7 @@ function VolumeWorld:Close()
 end
 
 function VolumeWorld:Tick(dt)
-	if not self.planeEnt then return end
-
-	self.planeOrigin = self.coreWorld.transform:GetPosition_W(self.planeEnt)
-	self.planeNormal = self.coreWorld.transform:GetUpward_W(self.planeEnt)
-
-	--transform to local
-	self.planeOriginLocal = self.planeOrigin / self.volumeScale + Vector3(0.5, 0.5, 0.5)
-
-	self.volumeMaterial:SetVector3(self.planeOriginLocal, "cutPlaneOriginL", SHADERS.PS)
-	self.volumeMaterial:SetVector3(self.planeNormal, "cutPlaneNormal", SHADERS.PS)
+	WorkingPlane:Tick(dt)
 end
 
 function VolumeWorld:SaveAs(path)
@@ -122,7 +113,6 @@ function VolumeWorld:CreateVolumeRenderer()
 			self.volumeMaterial:SetVector3(self.volumeScale, "volumeScale", SHADERS.PS)
 			local volumeScaleInv = Vector3(1.0, 1.0, 1.0) / self.volumeScale
 			self.volumeMaterial:SetVector3(volumeScaleInv, "volumeScaleInv", SHADERS.PS)
-			self.volumeMaterial:SetFloat(self.planeFade, "cutPlaneFade", SHADERS.PS)
 
 			self.volumeMaterial:SetShaderResource(self.volumeCore:GetSRV(), "textureVolume", SHADERS.PS)
 		
@@ -131,9 +121,6 @@ function VolumeWorld:CreateVolumeRenderer()
 end
 
 function VolumeWorld:InitVolumeWorld()
---if not self.volumeMaterial then return end
---self.volumeMaterial:SetTextureName (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE, "textureVolume", SHADERS.PS)
-
 	self.environment = self.coreWorld:CreateEntity()
 	if not self.environment:IsNull() then
 		self.coreWorld:SetEntityType(self.environment, EDITOR_VARS.TYPE)
@@ -147,64 +134,5 @@ function VolumeWorld:InitVolumeWorld()
 			self.coreWorld.staticMesh:SetMaterial(self.environment, 0, materialName)
 			self.coreWorld.transform:SetScale_L3F(self.environment, 5000.0, 5000.0, 5000.0)
 		end
-
-
 	end
-	
-	self.planeEnt = self.coreWorld:CreateEntity()
-	if not self.planeEnt:IsNull() then
-		self.coreWorld:SetEntityType(self.planeEnt, "Node")
-		self.coreWorld.transform:AddComponent(self.planeEnt)
-		self.coreWorld.visibility:AddComponent(self.planeEnt)
-
-		if self.coreWorld.staticMesh:AddComponent(self.planeEnt) then
-			self.coreWorld.staticMesh:SetMesh(self.planeEnt, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MESH)
-			self.coreWorld.staticMesh:SetMaterial(self.planeEnt, 0, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MATERIAL)
-
-			self.coreWorld.transform:SetScale_L3F(self.planeEnt, 10.0, 10.0, 10.0)
-			self.coreWorld.transform:SetRotationPYR_L3F(self.planeEnt, 0.0, 0.0, math.pi * 0.5)
-		end
-	end
-	
-	self.planeOrigin = Vector3(0.0, 0.0, 0.0)
-	self.planeNormal = Vector3(1.0, 0.0, 0.0)
-
-end
-
--- TEMP
-
-function VolumeWorld:SetBrushSize (size)
-	self.brushSize = size
-end
-
-function VolumeWorld:SetBrushOpacity (opacity)
-	self.brushColor.w = opacity
-end
-
-function VolumeWorld:SetBrushColor (color)
-	self.brushColor.x = color.x
-	self.brushColor.y = color.y
-	self.brushColor.z = color.z
-end
-
-function VolumeWorld:Test(pos, ray)
-	local plane = Vector4.CreatePlane (self.planeOrigin, self.planeNormal)
-	--local brushPos = Vector4.PlaneLineCollide (plane, pos, ray)
-	
-	local denom = self.planeNormal:Dot (ray)
-	if math.abs(denom)> 0.00001 then
-		local rayToPlane = self.planeOrigin - pos
-		local t = rayToPlane:Dot (self.planeNormal) / denom
-
-		local brushPos = pos + ray * Vector3(t, t, t)
-		
-		self:DrawBrush (brushPos, self.brushSize)
-	end
-end
-
-function VolumeWorld:DrawBrush (position, radius)
-	local volumePosition = (position + self.volumeScale * Vector3(0.5, 0.5, 0.5)) * Vector3(self.maxVolumeRes, self.maxVolumeRes, self.maxVolumeRes)
-	local volumeRadius = radius * 0.5--self.maxVolumeRes
-
-	self.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor)
 end

@@ -679,8 +679,8 @@ end
 
 function GuiWindow:SetHeader(str)
     if self.header_str then
-        self.header_str:SetString(str)
-    end
+		self.header_str:SetString(str)
+	end
 
     if self.independent == true then
         self.sys_win.caption_text = str

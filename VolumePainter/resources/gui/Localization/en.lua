@@ -6,25 +6,28 @@ lcl = {
     save = "Save",
     reset = "Reset",
     pickcolor = "Pick color",
+	
+	vis_header = "Visualization settings",
 
-    property_header = "Tool settings",
-
-    add_comp = "+ Ñomponent",
-    add_comp_help = "Add component to selected entities",
-
-    comp_transform = "Transform",
-    comp_vis = "Visibility",
-    comp_earlyvis = "Early Visibility",
-    comp_mesh = "Mesh",
-    comp_collision = "Collision",
-    comp_light = "Light",
-    comp_glight = "Global Light",
-    comp_envprob = "Env Prob",
-    comp_script = "Script",
+	property_header = "Tool settings",
+	brush_header = "Brush settings",
+	plane_header = "Working plane settings",
 
 	no_entity_select = "No tool selected",
 
-	brush_size = "Brush size",
-	brush_opacity = "Brush opacity",
-	brush_color = "Brush color",
+	brush_size = "Size (voxels)",
+	brush_opacity = "Opacity",
+	brush_color = "Color",
+	
+	plane_visible = "Visualize working plane",
+
+	plane_fade_enable = "Enable cutoff",
+	plane_fade_enable_alt = "Cutoff of the volume in front of working plane",
+
+	plane_fade = "Cutoff hardness",
+
+	volume_vis = "Volume visualization",
+	lighting_settings = "Lighting & Background",
+	rendering_quality = "Rendering quality",
+
 }

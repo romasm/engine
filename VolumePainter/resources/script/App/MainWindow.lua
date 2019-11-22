@@ -60,10 +60,8 @@ function MainWindow:Init()
 
     Tools:Init()
     Properties:Init()
-    --MaterialProps:Init()
-    --AssetBrowser:Init()
-    --SceneBrowser:Init()
-    Viewport:Init()
+	VisualizationSettings:Init()
+	Viewport:Init()
 
     --Resource.WaitLoadingComplete()
 
