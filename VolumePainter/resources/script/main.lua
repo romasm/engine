@@ -65,7 +65,7 @@ loader.require("App.MainWindow")
 loader.require("App.History")
 loader.require("App.Hotkeys")
 
-loader.require("App.SceneMgr")
+loader.require("App.VolumeWorld")
 loader.require("App.Viewport")
 loader.require("App.Tools")
 loader.require("App.Importer")
@@ -87,7 +87,6 @@ function Main:Start()
     MainWindow:Init()
     History:Init()
     Hotkeys:Init()
-    SceneMgr:Init()
 end
 
 function Main:onTick(dt) 
@@ -98,7 +97,7 @@ function Main:onTick(dt)
 	--------
 
 	MainWindow:Tick(dt)
-	SceneMgr:Tick(dt)
+	VolumeWorld:Tick(dt)
 
 	return true
 end

@@ -312,9 +312,6 @@
     <None Include="script\App\SceneBrowser.lua">
       <Filter>script\App</Filter>
     </None>
-    <None Include="script\App\SceneMgr.lua">
-      <Filter>script\App</Filter>
-    </None>
     <None Include="script\App\Tools.lua">
       <Filter>script\App</Filter>
     </None>

@@ -142,12 +142,12 @@ function MainWindow:MenuPress(ent, menu)
     self.menus[menu]:Open(corners.l, corners.b)
 
     if menu == "file" then
-        if not SceneMgr:IsWorld() then
+		if not VolumeWorld.initialized then
 		    self.menus[menu]:SetItemState("tb_save", false)
             self.menus[menu]:SetItemState("tb_saveas", false)
             self.menus[menu]:SetItemState("tb_close", false)
         end
-	    if not SceneMgr:IsUnsave() then
+		if not VolumeWorld.unsave then
 		    self.menus[menu]:SetItemState("tb_save", false)
 	    end
     elseif menu == "asset" then
@@ -175,7 +175,7 @@ end
 
 function MainWindow:MenuSubOpen(ev)
     if ev.id == "dev_sub_menu" then 
-        if not SceneMgr:IsWorld() then
+		if not VolumeWorld.initialized then
             local sub = ev.entity:GetInherited()
 		    sub:SetItemState("tb_dev_skyrebake", false)
             sub:SetItemState("tb_dev_convert", false)
@@ -189,31 +189,31 @@ function MainWindow:FileMenuClick(btn, ev)
     self:MenuClose(btn, "file")
     
     if ev.id == "tb_create" then
-        if SceneMgr:CreateWorld() == 0 then
+        if VolumeWorld:CreateWorld() == 0 then
             error("Unable to create scene!")
         end
 
     elseif ev.id == "tb_open" then
 		local res = dlgOpenFolder(self.mainwin:GetHWND(), "Open scene") -- self.filterOpen
 		if res == "" then return true end
-        SceneMgr:LoadWorld(res)
+		VolumeWorld:LoadWorld(res)
 
     elseif ev.id == "tb_save" then
-        if SceneMgr.worlds[SceneMgr.current_world].path:len() == 0 then
+		if VolumeWorld.path:len() == 0 then
             local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
             if res == "" then return true end
-            SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
+			VolumeWorld:SaveAsWorld(res)
         else
-            SceneMgr:SaveWorld(SceneMgr.current_world)
+			VolumeWorld:SaveWorld()
         end
 
     elseif ev.id == "tb_saveas" then
         local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
         if res == "" then return true end
-        SceneMgr:SaveAsWorld(SceneMgr.current_world, res)
+		VolumeWorld:SaveAsWorld(res)
 
     elseif ev.id == "tb_close" then
-        SceneMgr:CloseWorld(SceneMgr.current_world)
+		VolumeWorld:Close()
 
     elseif ev.id == "tb_exit" then
         self:Exit()

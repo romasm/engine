@@ -7,7 +7,7 @@ GuiStyles.group_button = {
 		color = 'bg_08',
         color_hover = 'act_01',
         color_press = 'act_01',
-        color_nonactive = 'bg_03',
+		color_nonactive = 'bg_08',
     },
 
     icon = {
@@ -58,7 +58,7 @@ GuiStyles.common_group = {
     background = {
         color = 'bg_01',
         color_closed = 'act_01',
-        color_nonactive = 'bg_03',
+		color_nonactive = 'bg_01',
     },
 
     border = {

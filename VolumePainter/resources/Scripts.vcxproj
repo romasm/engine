@@ -120,7 +120,6 @@
     <None Include="script\App\Profiler.lua" />
     <None Include="script\App\Properties.lua" />
     <None Include="script\App\SceneBrowser.lua" />
-    <None Include="script\App\SceneMgr.lua" />
     <None Include="script\App\Tools.lua" />
     <None Include="script\App\TransformControls.lua" />
     <None Include="script\App\Viewport.lua" />

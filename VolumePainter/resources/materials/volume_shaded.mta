@@ -2,7 +2,6 @@ shader = "../resources/shaders/volume/volume_cube"
 
 ps
 {
-	//textureVolume = "../resources/textures/test_volume.dds"
 	textureNoise = "../resources/textures/bluenoise.dds"
 	
 	cutPlaneOriginL = "0.0 0.0 0.0 0.0"

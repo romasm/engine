@@ -17,8 +17,8 @@ TECHNIQUE_DEFAULT
 	DestBlendAlpha = ONE;
 
 	CullMode = BACK;
-
+	
 	VertexShader = "../resources/shaders/volume/volume_raymatch VolumeCubeVS";
 	PixelShader = "../resources/shaders/volume/volume_raymatch VolumeCubePS";
-	PixelShaderDefines = "VOLUME_SHADED[]";
+	PixelShaderDefines = "";
 }

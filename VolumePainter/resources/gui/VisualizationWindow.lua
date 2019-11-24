@@ -67,7 +67,38 @@ return GuiWindow({
 
 				height = 140,
     
-				
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_vis_type,
+					left = 10,
+					top = 30,
+				}),
+
+				GuiCombo({
+					styles = {GuiStyles.props_combo,},   
+					allow_none = false,
+					left = 120,
+					top = 30,
+					width = 155,
+					height = 21,
+					list = {
+							lcl.volume_vis_shaded,
+							lcl.volume_vis_color,
+							lcl.volume_vis_solid,
+						},
+						alt = lcl.volume_vis_alt,
+
+					events = {
+							[GUI_EVENTS.COMBO_SELECT] = function(self, ev) 
+								VolumeWorld:SetVisualizationType(self:GetSelected()) 
+								return true 
+							end,
+							[GUI_EVENTS.UPDATE] = function(self, ev) 
+								self:SetSelected(VolumeWorld.visualizationType)
+								return true 
+							end,
+					},
+				}),
 			}),
 
 			GuiGroup({

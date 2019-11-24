@@ -1,10 +1,12 @@
 if not Brush then Brush = {} end
 
-function Brush:Init(world)
-	self.world = world
-
+function Brush:Init()
 	self.brushSize = 10.0
 	self.brushColor = Vector4(1, 1, 1, 1)	
+end
+
+function Brush:Close()
+
 end
 
 function Brush:SetBrushSize (size)
@@ -34,10 +36,10 @@ function Brush:DrawBrushFromViewport(pos, ray)
 end
 
 function Brush:DrawBrushSpherical (position, radius)
-	local maxVolumeRes = Vector3(self.world.maxVolumeRes, self.world.maxVolumeRes, self.world.maxVolumeRes)
+	local maxVolumeRes = Vector3(VolumeWorld.maxVolumeRes, VolumeWorld.maxVolumeRes, VolumeWorld.maxVolumeRes)
 
-	local volumePosition = (position + self.world.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
+	local volumePosition = (position + VolumeWorld.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
 	local volumeRadius = radius * 0.5
 
-	self.world.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor)
+	VolumeWorld.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor)
 end

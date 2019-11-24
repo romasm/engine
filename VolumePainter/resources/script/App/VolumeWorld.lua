@@ -1,41 +1,52 @@
-if not VolumeWorld then VolumeWorld = class () end
+if not VolumeWorld then VolumeWorld = {} end
 
-function VolumeWorld:init (path)
-	if path == nil then
-		self.coreWorld = GetWorldMgr():CreateWorld()
-		self.path = ""
-		self.unsave = true
-			
-		self.volumeResolutionX = 512
-		self.volumeResolutionY = 512
-		self.volumeResolutionZ = 512
+function VolumeWorld:LoadWorld(path)
+	if self.initialized then VolumeWorld:Close () end
 
-		self.maxVolumeRes = math.max(math.max(self.volumeResolutionX, self.volumeResolutionY), self.volumeResolutionZ)		
-		self.volumeScale = Vector3(self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
+	self.path = path
+	self.unsave = false
+
+	--Gui.DialogOk (MainWindow.mainWinRoot.entity, "Scene file is not found or file version is outdated")
+end
+
+function VolumeWorld:CreateWorld()
+	if self.initialized then VolumeWorld:Close() end
 		
-		self.volumeCore = VolumePainter()
-		if not self.volumeCore:Init(self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
-			return false
-		end
+	self.path = ""
+	self.unsave = true
 
-		self:InitVolumeWorld()
-		self:CreateVolumeRenderer()
-		
-		-- test
-		--self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
-	else
-		self.coreWorld = GetWorldMgr():OpenWorld(path)
-		self.path = path
-		self.unsave = false
+	self.volumeResolutionX = 512
+	self.volumeResolutionY = 512
+	self.volumeResolutionZ = 512
 
-		if self.coreWorld == nil then
-			Gui.DialogOk (MainWindow.mainWinRoot.entity, "Scene file is not found or file version is outdated")
-			return false
-		end
+	VolumeWorld:Init ()
+
+	-- test
+	--self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
+end
+
+function VolumeWorld:Init()
+	self.initialized = true
+
+	self.coreWorld = GetWorldMgr ():CreateWorld ()
+
+	self.maxVolumeRes = math.max (math.max (self.volumeResolutionX, self.volumeResolutionY), self.volumeResolutionZ)
+	self.volumeScale = Vector3 (self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
+
+	self.volumeCore = VolumePainter ()
+	if not self.volumeCore:Init (self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
+		return false
 	end
 
-	WorkingPlane:Init (self)
-	Brush:Init (self)
+	self:CreateEnvironment ()
+	self:CreateVolumeRenderer ()
+
+	WorkingPlane:Init ()
+	Brush:Init ()
+
+	self.visualizationType = 1
+
+	Viewport:SetWorld (self)
 
 	return true
 end
@@ -47,13 +58,18 @@ function VolumeWorld:Close()
 	self.environment = nil
 	self.sceneRenderer = nil
 
-	if self.volumeMaterial then
-		Resource.DropMaterial(self.volumeMaterial:GetName())
-		self.volumeMaterial = nil
-	end
-	
+	Resource.DropMaterial (self.materialVolume:GetName())
+	self.materialVolume = nil
+
+	WorkingPlane:Close ()
+	Brush:Close ()
+
+	Viewport:ClearWorld ()
+
 	GetWorldMgr():CloseWorld(self.coreWorld)
 	self.coreWorld = nil
+	
+	self.initialized = false
 end
 
 function VolumeWorld:Tick(dt)
@@ -61,12 +77,14 @@ function VolumeWorld:Tick(dt)
 end
 
 function VolumeWorld:SaveAs(path)
-	if self.coreWorld == nil then return false end
+	if not self.initialized then return false end
 
 	local newPath = path
 	if newPath == nil then
 		newPath = self.path
 		if self.unsave == false then return true end
+	else
+		MainWindow:SetCaption (newPath)
 	end
 	
 	if self.path:len() == 0 then return false end
@@ -94,7 +112,16 @@ function VolumeWorld:ResizeViewport(width, height)
 	return self.sceneRenderer:GetSRV()
 end
 
-function VolumeWorld:CreateVolumeRenderer()
+function VolumeWorld:CreateVolumeRenderer ()
+
+	local materialVolumeName = PATH.SYS_MATS .. "volume_shaded" .. EXT.MATERIAL
+	self.materialVolume = Resource.GetMaterial (materialVolumeName)
+		
+	local volumeScaleInv = Vector3 (1.0, 1.0, 1.0) / self.volumeScale
+	self.materialVolume:SetVector3 (self.volumeScale, "volumeScale", SHADERS.PS)
+	self.materialVolume:SetVector3 (volumeScaleInv, "volumeScaleInv", SHADERS.PS)
+	self.materialVolume:SetShaderResource (self.volumeCore:GetSRV (), "textureVolume", SHADERS.PS)
+
 	self.volumeCube = self.coreWorld:CreateEntity()
 	if not self.volumeCube:IsNull() then
 		self.coreWorld:SetEntityType(self.volumeCube, EDITOR_VARS.TYPE)
@@ -103,24 +130,13 @@ function VolumeWorld:CreateVolumeRenderer()
 
 		if self.coreWorld.staticMesh:AddComponent(self.volumeCube) then
 			self.coreWorld.staticMesh:SetMesh(self.volumeCube, PATH.SYS_MESHES .. "invert_cube" .. EXT.MESH)
-			
-			local materialName = PATH.SYS_MATS .. "volume_renderer" .. EXT.MATERIAL
-			self.volumeMaterial = Resource.GetMaterial(materialName)
-			self.coreWorld.staticMesh:SetMaterial(self.volumeCube, 0, materialName)
-			
-			self.coreWorld.transform:SetScale_L(self.volumeCube, self.volumeScale)
-
-			self.volumeMaterial:SetVector3(self.volumeScale, "volumeScale", SHADERS.PS)
-			local volumeScaleInv = Vector3(1.0, 1.0, 1.0) / self.volumeScale
-			self.volumeMaterial:SetVector3(volumeScaleInv, "volumeScaleInv", SHADERS.PS)
-
-			self.volumeMaterial:SetShaderResource(self.volumeCore:GetSRV(), "textureVolume", SHADERS.PS)
-		
+			self.coreWorld.staticMesh:SetMaterial (self.volumeCube, 0, materialVolumeName)
+			self.coreWorld.transform:SetScale_L(self.volumeCube, self.volumeScale)		
 		end
 	end
 end
 
-function VolumeWorld:InitVolumeWorld()
+function VolumeWorld:CreateEnvironment ()
 	self.environment = self.coreWorld:CreateEntity()
 	if not self.environment:IsNull() then
 		self.coreWorld:SetEntityType(self.environment, EDITOR_VARS.TYPE)
@@ -135,4 +151,16 @@ function VolumeWorld:InitVolumeWorld()
 			self.coreWorld.transform:SetScale_L3F(self.environment, 5000.0, 5000.0, 5000.0)
 		end
 	end
+end
+
+function VolumeWorld:SetVisualizationType (type)
+	if type == 1 then
+		self.materialVolume:SetShader ("../resources/shaders/volume/volume_cube")
+	elseif type == 2 then
+		self.materialVolume:SetShader ("../resources/shaders/volume/volume_cube_color")
+	elseif type == 3 then
+		self.materialVolume:SetShader ("../resources/shaders/volume/volume_cube_solid")
+	end
+
+	self.visualizationType = type
 end

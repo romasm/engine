@@ -67,8 +67,8 @@ return GuiWindow({
 				height = 100,
         
 				align = GUI_ALIGN.BOTH,
-				left = 4,
-				right = 4,
+				left = 0,
+				right = 0,
 
 				enable = false,
         
@@ -223,8 +223,8 @@ return GuiWindow({
 				height = 100,
         
 				align = GUI_ALIGN.BOTH,
-				left = 4,
-				right = 4,
+				left = 0,
+				right = 0,
 
 				enable = false,
         

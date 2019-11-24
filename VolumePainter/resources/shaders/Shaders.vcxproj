@@ -160,6 +160,9 @@
     <FxCompile Include="volume\draw_brush.hlsl" />
     <FxCompile Include="volume\import_texture.hlsl" />
     <FxCompile Include="volume\volume_cube.hlsl" />
+    <FxCompile Include="volume\volume_cube_color.hlsl" />
+    <FxCompile Include="volume\volume_cube_solid.hlsl" />
+    <FxCompile Include="volume\volume_raymatch.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

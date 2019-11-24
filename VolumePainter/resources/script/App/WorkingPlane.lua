@@ -1,20 +1,18 @@
 if not WorkingPlane then WorkingPlane = {} end
 
-function WorkingPlane:Init (world)
-	self.world = world
-
-	self.planeEnt = self.world.coreWorld:CreateEntity ()
+function WorkingPlane:Init ()
+	self.planeEnt = VolumeWorld.coreWorld:CreateEntity ()
 	if not self.planeEnt:IsNull () then
-		self.world.coreWorld:SetEntityType (self.planeEnt, "Node")
-		self.world.coreWorld.transform:AddComponent (self.planeEnt)
-		self.world.coreWorld.visibility:AddComponent (self.planeEnt)
+		VolumeWorld.coreWorld:SetEntityType (self.planeEnt, "Node")
+		VolumeWorld.coreWorld.transform:AddComponent (self.planeEnt)
+		VolumeWorld.coreWorld.visibility:AddComponent (self.planeEnt)
 
-		if self.world.coreWorld.staticMesh:AddComponent (self.planeEnt) then
-			self.world.coreWorld.staticMesh:SetMesh (self.planeEnt, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MESH)
-			self.world.coreWorld.staticMesh:SetMaterial (self.planeEnt, 0, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MATERIAL)
+		if VolumeWorld.coreWorld.staticMesh:AddComponent (self.planeEnt) then
+			VolumeWorld.coreWorld.staticMesh:SetMesh (self.planeEnt, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MESH)
+			VolumeWorld.coreWorld.staticMesh:SetMaterial (self.planeEnt, 0, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MATERIAL)
 
-			self.world.coreWorld.transform:SetScale_L3F (self.planeEnt, 5.0, 5.0, 5.0)
-			self.world.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, 0.0, 0.0, math.pi * 0.5)
+			VolumeWorld.coreWorld.transform:SetScale_L3F (self.planeEnt, 5.0, 5.0, 5.0)
+			VolumeWorld.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, 0.0, 0.0, math.pi * 0.5)
 		end
 	end
 
@@ -26,15 +24,19 @@ function WorkingPlane:Init (world)
 	self:SetPlaneVisible (true)
 end
 
+function WorkingPlane:Close ()
+	self.planeEnt = nil
+end
+
 function WorkingPlane:SetPlaneVisible (visible)
 	self.planeVisible = visible
-	self.world.coreWorld:SetEntityEditorVisible (self.planeEnt, self.planeVisible)
+	VolumeWorld.coreWorld:SetEntityEditorVisible (self.planeEnt, self.planeVisible)
 end
 
 function WorkingPlane:SetPlaneFade (fade)
 	self.planeFade = fade
 
-	self.world.volumeMaterial:SetFloat (self.planeFade * self.planeFadeEnable, "cutPlaneFade", SHADERS.PS)
+	VolumeWorld.materialVolume:SetFloat (self.planeFade * self.planeFadeEnable, "cutPlaneFade", SHADERS.PS)
 end
 
 function WorkingPlane:SetPlaneFadeEnable (enable)
@@ -44,18 +46,18 @@ function WorkingPlane:SetPlaneFadeEnable (enable)
 		self.planeFadeEnable = 0
 	end
 
-	self.world.volumeMaterial:SetFloat (self.planeFade * self.planeFadeEnable, "cutPlaneFade", SHADERS.PS)
+	VolumeWorld.materialVolume:SetFloat (self.planeFade * self.planeFadeEnable, "cutPlaneFade", SHADERS.PS)
 end
 
 function WorkingPlane:Tick (dt)
 	if not self.planeEnt then return end
 
-	self.planeOrigin = self.world.coreWorld.transform:GetPosition_W (self.planeEnt)
-	self.planeNormal = self.world.coreWorld.transform:GetUpward_W (self.planeEnt)
+	self.planeOrigin = VolumeWorld.coreWorld.transform:GetPosition_W (self.planeEnt)
+	self.planeNormal = VolumeWorld.coreWorld.transform:GetUpward_W (self.planeEnt)
 
 	--transform to local
-	self.planeOriginLocal = self.planeOrigin / self.world.volumeScale + Vector3 (0.5, 0.5, 0.5)
+	self.planeOriginLocal = self.planeOrigin / VolumeWorld.volumeScale + Vector3 (0.5, 0.5, 0.5)
 
-	self.world.volumeMaterial:SetVector3 (self.planeOriginLocal, "cutPlaneOriginL", SHADERS.PS)
-	self.world.volumeMaterial:SetVector3 (self.planeNormal, "cutPlaneNormal", SHADERS.PS)
+	VolumeWorld.materialVolume:SetVector3 (self.planeOriginLocal, "cutPlaneOriginL", SHADERS.PS)
+	VolumeWorld.materialVolume:SetVector3 (self.planeNormal, "cutPlaneNormal", SHADERS.PS)
 end

@@ -145,7 +145,7 @@ end
 
 -- MODES
 function Tools:SetToolMode(mode)
-	if not SceneMgr:IsWorld() then return end
+	if not VolumeWorld.initialized then return end
 	self:ModeUnpressAll()
 	
 	self.toolMode = mode

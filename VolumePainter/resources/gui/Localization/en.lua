@@ -27,6 +27,12 @@ lcl = {
 	plane_fade = "Cutoff hardness",
 
 	volume_vis = "Volume visualization",
+	volume_vis_type = "Visualization type",
+	volume_vis_shaded = "Shaded",
+	volume_vis_color = "Color only",
+	volume_vis_solid = "Solid",
+	volume_vis_alt = "Type of volume visualization",
+
 	lighting_settings = "Lighting & Background",
 	rendering_quality = "Rendering quality",
 

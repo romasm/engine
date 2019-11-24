@@ -408,5 +408,14 @@
     <FxCompile Include="volume\common_volume.hlsl">
       <Filter>volume</Filter>
     </FxCompile>
+    <FxCompile Include="volume\volume_cube_solid.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
+    <FxCompile Include="volume\volume_cube_color.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
+    <FxCompile Include="volume\volume_raymatch.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

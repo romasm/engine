@@ -125,9 +125,10 @@ function Viewport:SetWorld(world)
 	self.window.entity:UpdatePosSize()
 	
 	MainWindow:SetCaption(self.volumeWorld.path)
-    Tools:ActivateAll()
+	Tools:ActivateAll()
+	VisualizationSettings:Activate()
 	
-    self.overlay_gui.enable = true	
+	self.overlay_gui.enable = true	
 end
 
 function Viewport:ClearWorld()
@@ -143,6 +144,7 @@ function Viewport:ClearWorld()
     MainWindow:SetCaption()
 	Tools:DeactivateAll()
 	Properties:Disable()
+	VisualizationSettings:Deactivate()
 end
 
 function Viewport:OpenRenderConfig(btn)
@@ -472,7 +474,7 @@ function Viewport:onItemDroped(eventData)
         
         local worldPath = CoreGui.DragDrop.GetItem(0)
         if string.find(worldPath, ".mls") ~= nil then
-            SceneMgr:LoadWorld(worldPath)
+			VolumeWorld:LoadWorld(worldPath)
         end
     else
         local entities = {}
