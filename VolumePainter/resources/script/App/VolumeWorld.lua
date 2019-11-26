@@ -44,7 +44,13 @@ function VolumeWorld:Init()
 	WorkingPlane:Init ()
 	Brush:Init ()
 
+	-- TODO: serialization
 	self.visualizationType = 1
+	self:SetDensityScale (50.0)
+	self:SetAbsorptionColor (Vector3 (0.5, 0.5, 0.5))
+	self:SetAsymmetry (0.2)
+	self:SetAbsorptionScale (30.0)
+	self:SetSolidThreshold (0.5)
 
 	Viewport:SetWorld (self)
 
@@ -164,3 +170,29 @@ function VolumeWorld:SetVisualizationType (type)
 
 	self.visualizationType = type
 end
+
+function VolumeWorld:SetDensityScale (scale)
+	self.densityScale = scale	
+	self.materialVolume:SetFloat (self.densityScale, "densityScale", SHADERS.PS)
+end
+
+function VolumeWorld:SetAbsorptionColor (color)
+	self.absorptionColor = Vector3 (color.x, color.y, color.z)
+	self.materialVolume:SetVector3 (self.absorptionColor, "absorptionColor", SHADERS.PS)
+end
+
+function VolumeWorld:SetAbsorptionScale (scale)
+	self.absorptionScale = scale
+	self.materialVolume:SetFloat (self.absorptionScale, "absorptionScale", SHADERS.PS)
+end
+
+function VolumeWorld:SetAsymmetry (asymmetry)
+	self.asymmetry = asymmetry
+	self.materialVolume:SetFloat (self.asymmetry, "asymmetry", SHADERS.PS)
+end
+
+function VolumeWorld:SetSolidThreshold (threshold)
+	self.solidThreshold = threshold
+	self.materialVolume:SetFloat (self.solidThreshold, "solidThreshold", SHADERS.PS)
+end
+

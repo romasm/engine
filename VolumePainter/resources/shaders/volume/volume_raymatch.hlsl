@@ -25,11 +25,17 @@ cbuffer materialBuffer : register(b2)
 	float4 cutPlaneNormal;
 	float4 volumeScale;
 	float4 volumeScaleInv;
+	float4 absorptionColor;
 
 	float cutPlaneFade;
-	float _padding1;
-	float _padding2;
-	float _padding3;
+	float densityScale;
+	float asymmetry;
+	float absorptionScale;
+
+	float pad;
+	float padd;
+	float paddd;
+	float solidThreshold;
 };
 
 // Schlick phase function
@@ -52,7 +58,7 @@ float CalcFadeFactor(float3 samplePos)
 #define SHADOW_STEPS_COUNT 32
 
 bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float stepDensity, float3 currentPos, float shadowSearchDist, 
-	float3 lightDir, float3 absorptionShadow, float3 lightColor, float3 skyColor, float3 absorptionSky)
+	float3 lightDir, float3 absorptionShadow, float3 lightColor, float3 skyColor, float3 absorptionSky, float random)
 {
 	float lightDensitySample = 0;
 	float4 colorDensitySample = 0;
@@ -73,6 +79,8 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 			float3 volumePos = currentPos;
 
 			// shadow search
+			//volumePos += lightDir * random;
+
 			float shadowAcc = 0;
 			for (int s = 0; s < SHADOW_STEPS_COUNT; s++)
 			{
@@ -108,7 +116,7 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 #endif
 			
 #ifdef VOLUME_SOLID
-			if (finalDensity * fadeFactor > 0.5f)
+			if (colorDensitySample.a * fadeFactor > solidThreshold)
 			{
 				finalDensity = 1.0f;
 				fadeFactor = 1.0f;
@@ -199,7 +207,7 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 	for (int i = 0; i < maxStepsCount; i++)
 	{
 		if (!DoVolumeStep(transmittanceAcc, lightAcc, stepDensity, currentPos, shadowSearchDist, 
-			lightDir, absorptionShadow, lightColor, skyColor, absorptionSky))
+			lightDir, absorptionShadow, lightColor, skyColor, absorptionSky, random))
 			break;
 
 		currentPos -= viewDirLocal;
@@ -213,7 +221,8 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 		currentPos += viewDirLocal  * (1.0f - lastStepSize);
 		stepDensity *= lastStepSize;
 
-		DoVolumeStep(transmittanceAcc, lightAcc, stepDensity, currentPos, shadowSearchDist, lightDir, absorptionShadow, lightColor, skyColor, absorptionSky);
+		DoVolumeStep(transmittanceAcc, lightAcc, stepDensity, currentPos, shadowSearchDist, 
+			lightDir, absorptionShadow, lightColor, skyColor, absorptionSky, random);
 	}
 	
 	return float4(lightAcc, 1.0f - transmittanceAcc);
@@ -225,13 +234,10 @@ float4 VolumeCubePS(PI_ToolMesh input) : SV_TARGET
 	const float3 lightColor = float3(0.9, 0.8, 0.3) * 8.0;
 	const float3 skyColor = float3(0.03, 0.03, 0.04) * 1.0;
 
-	const float3 absorptionColor = float3(0.7, 0.2, 0.02);
-	const float absorptionScale = 30.0f;
-	const float absorptionSkyScale = 2.0f;
-	const float asymmetry = 0.2f;
+	const float absorptionSkyScale = 0.1f;
 
-	float3 absorptionShadow = (1.0f - absorptionColor) * absorptionScale;
-	float3 absorptionSky = (1.0f - absorptionColor) * absorptionSkyScale;
+	float3 absorptionShadow = (1.0f - absorptionColor.rgb) * absorptionScale;
+	float3 absorptionSky = absorptionShadow * absorptionSkyScale;
 
 	float2 screenUV = input.position.xy * g_PixSize;
 	float3 viewDir = normalize( - GetCameraVector(screenUV));
@@ -242,7 +248,7 @@ float4 VolumeCubePS(PI_ToolMesh input) : SV_TARGET
 	textureNoise.GetDimensions(noiseW, noiseH);
 	float2 noiseUV = float2(input.position.xy) / float2(noiseW, noiseH);
 
-	float4 volumeVis = VolumeTrace(64, 70.0f, absorptionShadow, lightDir, lightColorPhase, skyColor, absorptionSky, viewDir, g_CamPos, noiseUV, screenUV);
+	float4 volumeVis = VolumeTrace(64, densityScale, absorptionShadow, lightDir, lightColorPhase, skyColor, absorptionSky, viewDir, g_CamPos, noiseUV, screenUV);
 	
 	return float4(volumeVis.rgb * volumeVis.a, volumeVis.a);
 }

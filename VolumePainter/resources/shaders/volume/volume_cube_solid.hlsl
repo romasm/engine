@@ -20,5 +20,5 @@ TECHNIQUE_DEFAULT
 
 	VertexShader = "../resources/shaders/volume/volume_raymatch VolumeCubeVS";
 	PixelShader = "../resources/shaders/volume/volume_raymatch VolumeCubePS";
-	PixelShaderDefines = "VOLUME_SOLID[]";
+	PixelShaderDefines = "VOLUME_SHADED[]VOLUME_SOLID[]";
 }

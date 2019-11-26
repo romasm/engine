@@ -32,6 +32,12 @@ lcl = {
 	volume_vis_color = "Color only",
 	volume_vis_solid = "Solid",
 	volume_vis_alt = "Type of volume visualization",
+	volume_vis_density = "Density scale",
+	volume_vis_solid_thresh = "Solid threshold",
+	volume_vis_solid_alt = "Threshold for solid visualization",
+	volume_vis_absorp = "Absorption color",
+	volume_vis_absorp_scale = "Absorption scale",
+	volume_vis_asymmerty = "Phase asymmetry",
 
 	lighting_settings = "Lighting & Background",
 	rendering_quality = "Rendering quality",
