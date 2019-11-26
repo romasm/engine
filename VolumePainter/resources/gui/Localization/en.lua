@@ -39,6 +39,17 @@ lcl = {
 	volume_vis_absorp_scale = "Absorption scale",
 	volume_vis_asymmerty = "Phase asymmetry",
 
+	volume_lit_color = "Light color",
+	volume_lit_intens = "Light intensity",
+	volume_lit_pitch = "Light pitch",
+	volume_lit_yaw = "Light yaw",
+	volume_env_tex = "Environment texture",
+	volume_env_color = "Environment color",
+	volume_env_opacity = "Env texture opacity",
+
+	volume_perf_steps = "Ray match steps",
+	volume_perf_shadow = "Shadow steps",
+
 	lighting_settings = "Lighting & Background",
 	rendering_quality = "Rendering quality",
 

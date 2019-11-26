@@ -14,6 +14,24 @@ function CMath.LinToGamma(color)
     return math.pow(color, 1.0 / 2.2)
 end
 
+function CMath.Color4GammaToLin(color)
+	local result = color
+	result.x = math.pow(result.x, 2.2)
+	result.y = math.pow(result.y, 2.2)
+	result.z = math.pow(result.z, 2.2)
+	result.w = math.pow(result.w, 2.2)
+	return result
+end
+
+function CMath.Color4LinToGamma(color)
+	local result = color
+	result.x = math.pow(result.x, 0.454545)
+	result.y = math.pow(result.y, 0.454545)
+	result.z = math.pow(result.z, 0.454545)
+	result.w = math.pow(result.w, 0.454545)
+	return result
+end
+
 function CMath.ColorNormalize(color)
     local m = math.max( math.max(color.x, color.y), color.z )
     local res = Vector4(0,0,0,0)
@@ -51,6 +69,13 @@ function CMath.IsEven(value)
     return value - math.floor(value / 2) * 2 == 0
 end
 
+function CMath.DegToRad(value)
+	return value * math.pi / 180.0
+end
+
+function CMath.RadToDeg(value)
+	return value * 180.0 / math.pi
+end
 
 if not CStr then CStr = {} end
 

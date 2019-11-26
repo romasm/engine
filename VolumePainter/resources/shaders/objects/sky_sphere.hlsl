@@ -25,7 +25,12 @@ SamplerState samplerAnisotropicClamp : register(s0);
 
 cbuffer materialBuffer : register(b1)
 {
-	float4 color;
+	float4 skyColor;
+
+	float skyTexOpacity;
+	float pad0;
+	float pad1;
+	float pad2;
 };
 
 cbuffer materialId : register(b2)
@@ -51,7 +56,7 @@ PO_Gbuffer hdrSkyPS(PIsky input)
 {
 	PO_Gbuffer res;
 
-	float3 sky = skyTexture.Sample(samplerAnisotropicClamp, input.tex).rgb * color.rgb;
+	float3 sky = lerp(skyColor.rgb, skyTexture.Sample(samplerAnisotropicClamp, input.tex).rgb, skyTexOpacity);
 
 	res.albedo_roughY = 0;
 	res.tbn = 0;

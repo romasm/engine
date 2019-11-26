@@ -43,14 +43,22 @@ function VolumeWorld:Init()
 
 	WorkingPlane:Init ()
 	Brush:Init ()
-
+	
 	-- TODO: serialization
 	self.visualizationType = 1
-	self:SetDensityScale (50.0)
+	self:SetDensityScale (70.0)
 	self:SetAbsorptionColor (Vector3 (0.5, 0.5, 0.5))
 	self:SetAsymmetry (0.2)
 	self:SetAbsorptionScale (30.0)
 	self:SetSolidThreshold (0.5)
+	self:SetLightPitchYaw (30, 0)
+	self:SetLightColor (Vector3 (1.0, 1.0, 1.0))
+	self:SetLightIntensity (8.0)
+	self:SetShadowStepsCount (20)
+	self:SetStepsCount (60)
+
+	self:SeEnvColor (Vector3 (0.02, 0.02, 0.02))
+	self:SetEnvOpacity(0.5)
 
 	Viewport:SetWorld (self)
 
@@ -66,6 +74,9 @@ function VolumeWorld:Close()
 
 	Resource.DropMaterial (self.materialVolume:GetName())
 	self.materialVolume = nil
+	
+	Resource.DropMaterial (self.materialEnv:GetName())
+	self.materialEnv = nil
 
 	WorkingPlane:Close ()
 	Brush:Close ()
@@ -143,6 +154,9 @@ function VolumeWorld:CreateVolumeRenderer ()
 end
 
 function VolumeWorld:CreateEnvironment ()
+	local materialEnvName = PATH.ENVS .. "default" .. EXT.MATERIAL
+	self.materialEnv = Resource.GetMaterial (materialEnvName)
+
 	self.environment = self.coreWorld:CreateEntity()
 	if not self.environment:IsNull() then
 		self.coreWorld:SetEntityType(self.environment, EDITOR_VARS.TYPE)
@@ -150,10 +164,7 @@ function VolumeWorld:CreateEnvironment ()
 
 		if self.coreWorld.staticMesh:AddComponent(self.environment) then
 			self.coreWorld.staticMesh:SetMesh(self.environment, PATH.SYS_MESHES .. "sky_shpere" .. EXT.MESH)
-
-			local materialName = PATH.ENVS .. "default" .. EXT.MATERIAL
-
-			self.coreWorld.staticMesh:SetMaterial(self.environment, 0, materialName)
+			self.coreWorld.staticMesh:SetMaterial (self.environment, 0, materialEnvName)
 			self.coreWorld.transform:SetScale_L3F(self.environment, 5000.0, 5000.0, 5000.0)
 		end
 	end
@@ -196,3 +207,47 @@ function VolumeWorld:SetSolidThreshold (threshold)
 	self.materialVolume:SetFloat (self.solidThreshold, "solidThreshold", SHADERS.PS)
 end
 
+function VolumeWorld:SetStepsCount (count)
+	self.stepsCount = count
+	self.materialVolume:SetFloat (self.stepsCount, "stepsCount", SHADERS.PS)
+end
+
+function VolumeWorld:SetShadowStepsCount (count)
+	self.shadowStepsCount = count
+	self.materialVolume:SetFloat (self.shadowStepsCount, "shadowStepsCount", SHADERS.PS)
+end
+
+function VolumeWorld:SetLightColor (color)
+	self.lightColor = Vector3 (color.x, color.y, color.z)
+	self.materialVolume:SetVector3 (self.lightColor, "lightColor", SHADERS.PS)
+end
+
+function VolumeWorld:SetLightIntensity (intensity)
+	self.lightIntensity = intensity
+	self.materialVolume:SetFloat (self.lightIntensity, "lightIntensity", SHADERS.PS)
+end
+
+function VolumeWorld:SetLightPitchYaw (pitch, yaw)
+	self.lightPitch = pitch
+	self.lightYaw = yaw
+
+	local rotMatrix = Matrix.CreateRotationYPR (CMath.DegToRad(self.lightYaw), 0, CMath.DegToRad(self.lightPitch))
+	self.lightDir = Vector3.Transform (Vector3.UnitX, rotMatrix)
+	self.lightDir:Normalize()
+
+	self.materialVolume:SetVector3 (self.lightDir, "lightDirection", SHADERS.PS)
+end
+
+function VolumeWorld:SetEnvTexture (texture)
+	self.materialEnv:SetTextureName (texture, "skyTexture", SHADERS.PS)
+end
+
+function VolumeWorld:SeEnvColor (color)
+	self.envColor = Vector3 (color.x, color.y, color.z)
+	self.materialEnv:SetVector3 (self.envColor, "skyColor", SHADERS.PS)
+end
+
+function VolumeWorld:SetEnvOpacity(opacity)
+	self.envMapOpacity = opacity
+	self.materialEnv:SetFloat (self.envMapOpacity, "skyTexOpacity", SHADERS.PS)
+end

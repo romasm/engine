@@ -26,15 +26,17 @@ cbuffer materialBuffer : register(b2)
 	float4 volumeScale;
 	float4 volumeScaleInv;
 	float4 absorptionColor;
+	float4 lightColor;
+	float4 lightDirection;
 
 	float cutPlaneFade;
 	float densityScale;
 	float asymmetry;
 	float absorptionScale;
 
-	float pad;
-	float padd;
-	float paddd;
+	float stepsCount;
+	float shadowStepsCount;
+	float lightIntensity;
 	float solidThreshold;
 };
 
@@ -58,7 +60,7 @@ float CalcFadeFactor(float3 samplePos)
 #define SHADOW_STEPS_COUNT 32
 
 bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float stepDensity, float3 currentPos, float shadowSearchDist, 
-	float3 lightDir, float3 absorptionShadow, float3 lightColor, float3 skyColor, float3 absorptionSky, float random)
+	float3 lightDir, float3 absorptionShadow, float3 lightColorPhase, float3 skyColor, float3 absorptionSky, float random)
 {
 	float lightDensitySample = 0;
 	float4 colorDensitySample = 0;
@@ -82,7 +84,7 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 			//volumePos += lightDir * random;
 
 			float shadowAcc = 0;
-			for (int s = 0; s < SHADOW_STEPS_COUNT; s++)
+			for (int s = 0; s < int(shadowStepsCount); s++)
 			{
 				volumePos += lightDir;
 				lightDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).a;
@@ -96,7 +98,7 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 			}
 
 			// beer-lambert law & fake ambient shadowing
-			float3 finalLight = lightColor * colorDensitySample.rgb * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
+			float3 finalLight = lightColorPhase * colorDensitySample.rgb * exp(-shadowAcc * absorptionShadow) * finalDensity * transmittanceAcc;
 #else
 			float3 finalLight = colorDensitySample.rgb * finalDensity * transmittanceAcc;
 #endif
@@ -139,7 +141,7 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 	return res;
 }
 
-float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float3 lightDir, float3 lightColor,
+float4 VolumeTrace(float density, float3 absorptionShadow, float3 lightDir, float3 lightColorPhase,
 	float3 skyColor, float3 absorptionSky, float3 viewDir, float3 cameraPos, float2 noiseUV, float2 screenUV)
 {
 	float3 viewDirLocal = normalize(viewDir * volumeScaleInv.xyz);
@@ -182,7 +184,7 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 	int maxStepsCount = int(clamp(floor(thickness), 0, 512.0));
 	float lastStepSize = frac(thickness);
 
-	float shadowStepSize = 1.0f / SHADOW_STEPS_COUNT;
+	float shadowStepSize = 1.0f / shadowStepsCount;
 	lightDir *= shadowStepSize * 0.5;
 	absorptionShadow *= shadowStepSize;
 
@@ -207,7 +209,7 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 	for (int i = 0; i < maxStepsCount; i++)
 	{
 		if (!DoVolumeStep(transmittanceAcc, lightAcc, stepDensity, currentPos, shadowSearchDist, 
-			lightDir, absorptionShadow, lightColor, skyColor, absorptionSky, random))
+			lightDir, absorptionShadow, lightColorPhase, skyColor, absorptionSky, random))
 			break;
 
 		currentPos -= viewDirLocal;
@@ -222,7 +224,7 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 		stepDensity *= lastStepSize;
 
 		DoVolumeStep(transmittanceAcc, lightAcc, stepDensity, currentPos, shadowSearchDist, 
-			lightDir, absorptionShadow, lightColor, skyColor, absorptionSky, random);
+			lightDir, absorptionShadow, lightColorPhase, skyColor, absorptionSky, random);
 	}
 	
 	return float4(lightAcc, 1.0f - transmittanceAcc);
@@ -230,8 +232,6 @@ float4 VolumeTrace(int stepsCount, float density, float3 absorptionShadow, float
 
 float4 VolumeCubePS(PI_ToolMesh input) : SV_TARGET
 {
-	const float3 lightDir = normalize(float3(1, 2, 1));
-	const float3 lightColor = float3(0.9, 0.8, 0.3) * 8.0;
 	const float3 skyColor = float3(0.03, 0.03, 0.04) * 1.0;
 
 	const float absorptionSkyScale = 0.1f;
@@ -242,13 +242,13 @@ float4 VolumeCubePS(PI_ToolMesh input) : SV_TARGET
 	float2 screenUV = input.position.xy * g_PixSize;
 	float3 viewDir = normalize( - GetCameraVector(screenUV));
 
-	float3 lightColorPhase = lightColor * SchlickPhase(viewDir, lightDir, asymmetry);
+	float3 lightColorPhase = lightColor.rgb * lightIntensity * SchlickPhase(viewDir, lightDirection.xyz, asymmetry);
 
 	float noiseW, noiseH;
 	textureNoise.GetDimensions(noiseW, noiseH);
 	float2 noiseUV = float2(input.position.xy) / float2(noiseW, noiseH);
 
-	float4 volumeVis = VolumeTrace(64, densityScale, absorptionShadow, lightDir, lightColorPhase, skyColor, absorptionSky, viewDir, g_CamPos, noiseUV, screenUV);
+	float4 volumeVis = VolumeTrace(densityScale, absorptionShadow, lightDirection.xyz, lightColorPhase, skyColor, absorptionSky, viewDir, g_CamPos, noiseUV, screenUV);
 	
 	return float4(volumeVis.rgb * volumeVis.a, volumeVis.a);
 }

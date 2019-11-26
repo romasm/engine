@@ -65,7 +65,7 @@ return GuiWindow({
 				width = 100,
 				width_percent = true,
 
-				height = 200,
+				height = 230,
     
 				GuiString({
 					styles = {GuiStyles.string_props_03,},
@@ -104,7 +104,7 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.volume_vis_density,
 					left = 10,
-					top = 60, 
+					top = 70, 
 				}),
 
 				GuiDataSlider({
@@ -115,7 +115,7 @@ return GuiWindow({
 					left = 120,
 					width = 155,
 					height = 20,
-					top = 60,
+					top = 70,
 
 					data = {
 						min = 0.0,
@@ -149,7 +149,7 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.volume_vis_solid_thresh,
 					left = 10,
-					top = 90, 
+					top = 100, 
 				}),
 
 				GuiDataSlider({
@@ -160,7 +160,7 @@ return GuiWindow({
 					left = 120,
 					width = 155,
 					height = 20,
-					top = 90,
+					top = 100,
 
 					data = {
 						min = 0.0,
@@ -194,13 +194,13 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.volume_vis_absorp,
 					left = 10,
-					top = 120, 
+					top = 140, 
 				}),
 
 				GuiButton({
 					styles = {GuiStyles.color_button,},
 					left = 120,
-					top = 120,
+					top = 140,
 					width = 155,
 					alt = lcl.volume_vis_absorp,
 
@@ -239,7 +239,7 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.volume_vis_absorp_scale,
 					left = 10,
-					top = 150, 
+					top = 170, 
 				}),
 
 				GuiDataSlider({
@@ -250,7 +250,7 @@ return GuiWindow({
 					left = 120,
 					width = 155,
 					height = 20,
-					top = 150,
+					top = 170,
 
 					data = {
 						min = 0.0,
@@ -284,7 +284,7 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.volume_vis_asymmerty,
 					left = 10,
-					top = 180, 
+					top = 200, 
 				}),
 
 				GuiDataSlider({
@@ -295,7 +295,7 @@ return GuiWindow({
 					left = 120,
 					width = 155,
 					height = 20,
-					top = 180,
+					top = 200,
 
 					data = {
 						min = -0.6,
@@ -352,10 +352,303 @@ return GuiWindow({
 				width = 100,
 				width_percent = true,
 
-				height = 140,
+				height = 330,
     
-				
-			}),
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_lit_color,
+					left = 10,
+					top = 30, 
+				}),
+
+				GuiButton({
+					styles = {GuiStyles.color_button,},
+					left = 120,
+					top = 30,
+					width = 155,
+					alt = lcl.volume_lit_color,
+
+					background = {
+						color_nonactive = 'bg_03',
+					},
+
+					events = {
+						[GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) 
+							if self.picker then 
+								self.picker = false
+								return true
+							else
+								ColorPicker:Show(self, self.background.color, true)
+								self.picker = true
+							end
+							return true end,
+						[GUI_EVENTS.COLOR_PICKING]  = function(self, ev) 
+							VolumeWorld:SetLightColor(CMath.Color4GammaToLin(ColorPicker:GetColor()))
+							return true 
+						end,
+						[GUI_EVENTS.COLOR_PICKED]  = function(self, ev) 
+							return true 
+						end,
+							[GUI_EVENTS.UPDATE] = function(self, ev) 
+							self.background.color = CMath.Color4LinToGamma(Vector4(VolumeWorld.lightColor.x, VolumeWorld.lightColor.y, VolumeWorld.lightColor.z, 1))
+							self.background.color_hover = self.background.color
+							self.background.color_press = self.background.color
+							self:UpdateProps()
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_lit_intens,
+					left = 10,
+					top = 60, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 60,
+
+					data = {
+						min = 0.0,
+						max = 20.0,
+						decimal = 2,
+						overflow_max = true,
+					},
+					alt = lcl.volume_lit_intens,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightIntensity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightIntensity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightIntensity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.lightIntensity)
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_lit_pitch,
+					left = 10,
+					top = 90, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 90,
+
+					data = {
+						min = -90.0,
+						max = 90.0,
+						decimal = 1,
+						overflow_max = false,
+					},
+					alt = lcl.volume_lit_pitch,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(self:GetValue(), VolumeWorld.lightYaw)
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(self:GetValue(), VolumeWorld.lightYaw)
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(self:GetValue(), VolumeWorld.lightYaw)
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.lightPitch)
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_lit_yaw,
+					left = 10,
+					top = 120, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 120,
+
+					data = {
+						min = 0.0,
+						max = 360.0,
+						decimal = 1,
+						overflow_max = false,
+					},
+					alt = lcl.volume_lit_yaw,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(VolumeWorld.lightPitch, self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(VolumeWorld.lightPitch, self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetLightPitchYaw(VolumeWorld.lightPitch, self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.lightYaw)
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_env_color,
+					left = 10,
+					top = 160, 
+				}),
+
+				GuiButton({
+					styles = {GuiStyles.color_button,},
+					left = 120,
+					top = 160,
+					width = 155,
+					alt = lcl.volume_env_color,
+
+					background = {
+						color_nonactive = 'bg_03',
+					},
+
+					events = {
+						[GUI_EVENTS.BUTTON_PRESSED]  = function(self, ev) 
+							if self.picker then 
+								self.picker = false
+								return true
+							else
+								ColorPicker:Show(self, self.background.color, true)
+								self.picker = true
+							end
+							return true end,
+						[GUI_EVENTS.COLOR_PICKING]  = function(self, ev) 
+							VolumeWorld:SeEnvColor(CMath.Color4GammaToLin(ColorPicker:GetColor()))
+							return true 
+						end,
+						[GUI_EVENTS.COLOR_PICKED]  = function(self, ev) 
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev) 
+							self.background.color = CMath.Color4LinToGamma(Vector4(VolumeWorld.envColor.x, VolumeWorld.envColor.y, VolumeWorld.envColor.z, 1))
+							self.background.color_hover = self.background.color
+							self.background.color_press = self.background.color
+							self:UpdateProps()
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_env_opacity,
+					left = 10,
+					top = 190, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 190,
+
+					data = {
+						min = 0.00,
+						max = 1.00,
+						decimal = 2,
+						overflow_max = false,
+					},
+					alt = lcl.volume_env_opacity,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetEnvOpacity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetEnvOpacity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetEnvOpacity(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.envMapOpacity)
+							return true 
+						end,
+					},
+				}),
+
+				Gui.Texture({
+					width = 265,
+					top = 220,
+					left = 10,
+					id = 'env_texture',
+					allow_autoreload = false,
+					str = lcl.volume_env_tex,
+
+					events = {
+							[GUI_EVENTS.TEXTURE_SET] = function(self, ev) 
+								VolumeWorld:SetEnvTexture (self:GetTexture()) 
+								return true
+							end,
+							[GUI_EVENTS.TEXTURE_DELETE] = function(self, ev) 
+								VolumeWorld:SetEnvTexture (self:GetTexture()) 
+								return true
+							end,
+							[GUI_EVENTS.UPDATE] = function(self, ev) 
+								self:SetTexture( VolumeWorld.materialEnv:GetTextureName("skyTexture", SHADERS.PS) ) 
+								return true
+							end,
+					}
+				}),
+
+				}),
 
 			GuiGroup({
 				styles = {
@@ -384,7 +677,97 @@ return GuiWindow({
 
 				height = 140,
     
-				
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_perf_steps,
+					left = 10,
+					top = 30, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 30,
+
+					data = {
+						min = 20,
+						max = 100,
+						decimal = 0,
+						step = 1,
+						overflow_max = false,
+					},
+					alt = lcl.volume_perf_steps,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.stepsCount)
+							return true 
+						end,
+					},
+				}),
+
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.volume_perf_shadow,
+					left = 10,
+					top = 60, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 60,
+
+					data = {
+						min = 5,
+						max = 40,
+						decimal = 0,
+						step = 1,
+						overflow_max = false,
+					},
+					alt = lcl.volume_perf_shadow,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							VolumeWorld:SetShadowStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							VolumeWorld:SetShadowStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							VolumeWorld:SetShadowStepsCount(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(VolumeWorld.shadowStepsCount)
+							return true 
+						end,
+					},
+				}),
 			}),
 		}),
     }),

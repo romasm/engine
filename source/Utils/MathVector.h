@@ -213,7 +213,8 @@ inline void RegLuaMath()
 		.addStaticData("UnitY", &v3UnitY, false)
 		.addStaticData("UnitZ", &v3UnitZ, false)
 		.addStaticFunction("Lerp", static_cast<Vector3 (*)(const Vector3&, const Vector3&, float)>(&Vector3::Lerp))
-		.addStaticFunction("Rotate", static_cast<Vector3 (*)(const Vector3&, const Quaternion&)>(&Vector3::Transform))
+		.addStaticFunction("Rotate", static_cast<Vector3(*)(const Vector3&, const Quaternion&)>(&Vector3::Transform))
+		.addStaticFunction("Transform", static_cast<Vector3 (*)(const Vector3&, const Matrix&)>(&Vector3::Transform))
 
 		// REMOVE
 		.addStaticFunction("Add", &Vector3Add)
@@ -251,6 +252,7 @@ inline void RegLuaMath()
 		.addStaticData("UnitW", &v4UnitW, false)
 		.addStaticFunction("Lerp", static_cast<Vector4 (*)(const Vector4&, const Vector4&, float)>(&Vector4::Lerp))
 		.addStaticFunction("Rotate", static_cast<Vector4 (*)(const Vector4&, const Quaternion&)>(&Vector4::Transform))
+		.addStaticFunction("Transform", static_cast<Vector4(*)(const Vector4&, const Matrix&)>(&Vector4::Transform))
 
 		// REMOVE
 		.addStaticFunction("Add", &Vector4Add)
