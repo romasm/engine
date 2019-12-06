@@ -16,6 +16,7 @@ lcl = {
 	no_entity_select = "No tool selected",
 
 	brush_size = "Size (voxels)",
+	brush_hardness = "Hardness",
 	brush_opacity = "Opacity",
 	brush_color = "Color",
 	
@@ -51,6 +52,6 @@ lcl = {
 	volume_perf_shadow = "Shadow steps",
 
 	lighting_settings = "Lighting & Background",
-	rendering_quality = "Rendering quality",
+	rendering_quality = "Quality & Performance",
 
 }

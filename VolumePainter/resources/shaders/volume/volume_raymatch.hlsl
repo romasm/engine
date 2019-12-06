@@ -171,7 +171,7 @@ float4 VolumeTrace(float density, float3 absorptionShadow, float3 lightDir, floa
 		intersections.y = min(furthestPlaneIntersect.x, min(furthestPlaneIntersect.y, furthestPlaneIntersect.z));
 
 		float startOffset = 1.0f - frac((intersections.x - length(cameraPosLocal - 0.5f)) * stepsCount);
-		intersections.x += startOffset * stepSize;
+		//intersections.x += startOffset * stepSize;
 
 		intersections.x = max(0, intersections.x);
 		intersections.y = min(intersections.y, sceneDepth);

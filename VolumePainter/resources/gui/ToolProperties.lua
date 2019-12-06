@@ -64,7 +64,7 @@ return GuiWindow({
 				},
 
 				top = 10,
-				height = 100,
+				height = 130,
         
 				align = GUI_ALIGN.BOTH,
 				left = 0,
@@ -120,10 +120,9 @@ return GuiWindow({
 						},
 				}),
 
-				-- brush opacity
 				GuiString({
 					styles = {GuiStyles.string_props_03,},
-					str = lcl.brush_opacity,
+					str = lcl.brush_hardness,
 					left = 10,
 					top = 30, 
 				}),
@@ -137,6 +136,52 @@ return GuiWindow({
 					width = 155,
 					height = 20,
 					top = 30,
+
+					data = {
+						min = 0.0,
+						max = 1.0,
+						decimal = 2,
+						overflow_max = false,
+					},
+					alt = lcl.brush_hardness,
+
+					events = {
+						[GUI_EVENTS.SLIDER_START_DRAG]  = function(self, ev)
+							Brush:SetBrushHardness(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_DRAG]  = function(self, ev)
+							Brush:SetBrushHardness(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.SLIDER_END_DRAG]  = function(self, ev)
+							Brush:SetBrushHardness(self:GetValue())
+							return true 
+						end,
+						[GUI_EVENTS.UPDATE] = function(self, ev)
+							self:SetValue(Brush.brushHardness)
+							return true 
+						end,
+					},
+				}),
+
+				-- brush opacity
+				GuiString({
+					styles = {GuiStyles.string_props_03,},
+					str = lcl.brush_opacity,
+					left = 10,
+					top = 60, 
+				}),
+
+				GuiDataSlider({
+					styles = {
+						GuiStyles.common_dataslider,
+					},
+
+					left = 120,
+					width = 155,
+					height = 20,
+					top = 60,
 
 					data = {
 						min = 0.001,
@@ -170,13 +215,13 @@ return GuiWindow({
 					styles = {GuiStyles.string_props_03,},
 					str = lcl.brush_color,
 					left = 10,
-					top = 60, 
+					top = 90, 
 				}),
 
 				GuiButton({
 					styles = {GuiStyles.color_button,},
 					left = 120,
-					top = 60,
+					top = 90,
 					width = 155,
 					alt = lcl.brush_color,
 

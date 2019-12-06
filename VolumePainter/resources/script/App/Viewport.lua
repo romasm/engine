@@ -375,10 +375,14 @@ function Viewport:onKeyUp(eventData)
     return true
 end
 
+function Viewport:onMouseOut(eventData)
+	CoreGui.SetHCursor(SYSTEM_CURSORS.ARROW)
+end
+
 function Viewport:onMouseMove(eventData)
     if not self.volumeWorld then return true end
     
-    local mouse_pos = {x = eventData.coords.x, y = eventData.coords.y}
+	local mouse_pos = {x = eventData.coords.x, y = eventData.coords.y}
 
     if self.rmouse_down then
         self.rmouse_down = false
@@ -387,11 +391,17 @@ function Viewport:onMouseMove(eventData)
 
         local corners = self.window.entity:GetCorners()
         mouse_pos.x = (corners.l + corners.r) / 2
-        mouse_pos.y = (corners.t + corners.b) / 2
-    end
+		mouse_pos.y = (corners.t + corners.b) / 2
+	else
+		if Tools.toolMode == TOOL_MODE.BRUSH then
+			CoreGui.SetHCursor(SYSTEM_CURSORS.CROSS)
+		else
+			CoreGui.SetHCursor(SYSTEM_CURSORS.ARROW)
+		end
+	end
 
     local is_ctrl = CoreGui.Keys.Ctrl()
-	    
+	
 	local mcoords = self:GetMouseInVP(mouse_pos)
 	local ray = self.volumeWorld.coreWorld.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)
 	

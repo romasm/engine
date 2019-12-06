@@ -20,6 +20,11 @@ namespace EngineCore
 			float radius;
 
 			Vector4 colorOpacity;
+
+			float hardness;
+			float _pad1;
+			float _pad2;
+			float _pad3;
 		};
 
 		struct VolumeInfo
@@ -44,7 +49,7 @@ namespace EngineCore
 		luaSRV GetSRV()	{ return luaSRV(volumeTextureSRV); }
 
 		void ImportTexture(string textureName);
-		void DrawBrush(Vector3& position, float radius, Vector4& colorOpacity);
+		void DrawBrush(Vector3& position, float radius, Vector4& colorOpacity, float hardness);
 
 		static void RegLuaClass()
 		{

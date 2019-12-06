@@ -112,12 +112,13 @@ void VolumePainter::ImportTexture(string textureName)
 	TexMgr::Get()->GetResource(textureName, false, copyCallback);
 }
 
-void VolumePainter::DrawBrush(Vector3& position, float radius, Vector4& colorOpacity)
+void VolumePainter::DrawBrush(Vector3& position, float radius, Vector4& colorOpacity, float hardness)
 {
 	BrushInfo brushInfo;
 	brushInfo.position = position;
 	brushInfo.radius = radius;
 	brushInfo.colorOpacity = colorOpacity;
+	brushInfo.hardness = min(hardness, 0.999f);
 	Render::UpdateDynamicResource(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
 
 	Vector3 minCorner = position;

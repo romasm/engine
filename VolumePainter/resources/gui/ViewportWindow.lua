@@ -37,7 +37,8 @@ return GuiEntity({
         [GUI_EVENTS.KEY_DOWN] = function(self, ev) return Viewport:onKeyDown(ev) end,
         [GUI_EVENTS.KEY_UP] = function(self, ev) return Viewport:onKeyUp(ev) end,
         [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
-        [GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
+		[GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
+		[GUI_EVENTS.MOUSE_OUT] = function(self, ev) return Viewport:onMouseOut(ev) end,
         [GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
 
         [GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
@@ -78,10 +79,11 @@ return GuiEntity({
         width = 100,
         height = 100,
 
-        events = {
+		events = {
             [GUI_EVENTS.SYS_RESIZE] = function(self, ev) return Viewport:onResize() end,
-        },
-    }),
+		},
+
+	}),
 
     GuiDumb({
         styles = {

@@ -2,6 +2,7 @@ if not Brush then Brush = {} end
 
 function Brush:Init()
 	self.brushSize = 10.0
+	self.brushHardness = 0.0
 	self.brushColor = Vector4(1, 1, 1, 1)	
 end
 
@@ -11,6 +12,10 @@ end
 
 function Brush:SetBrushSize (size)
 	self.brushSize = size
+end
+
+function Brush:SetBrushHardness (hardness)
+	self.brushHardness = hardness
 end
 
 function Brush:SetBrushOpacity (opacity)
@@ -41,5 +46,5 @@ function Brush:DrawBrushSpherical (position, radius)
 	local volumePosition = (position + VolumeWorld.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
 	local volumeRadius = radius * 0.5
 
-	VolumeWorld.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor)
+	VolumeWorld.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor, self.brushHardness)
 end

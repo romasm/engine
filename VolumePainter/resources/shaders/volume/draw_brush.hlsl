@@ -19,7 +19,13 @@ cbuffer brushInfo : register(b1)
 {
 	float3 brushPosition;
 	float brushRadius;
+
 	float4 brushColorOpacity;
+
+	float brushHardness;
+	float _pad1;
+	float _pad2;
+	float _pad3;
 };
 
 [numthreads(GROUP_TREADS_X, GROUP_TREADS_Y, GROUP_TREADS_Z)]
@@ -33,11 +39,16 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 
 	float4 data = volumeRW.Load(volumeCoords);
 
-	float brushValue = length(brushPosition - volumeCoords) / brushRadius;
-	brushValue = 1.0f - clamp(brushValue, 0.0f, 1.0f);
+	float brushValue = clamp(length(brushPosition - volumeCoords) / brushRadius, 0.0f, 1.0f);
+	brushValue = (brushValue - brushHardness) / (1.0f - brushHardness);
 
-	data += brushColorOpacity * brushValue;
-	data = clamp(data, 0.0f, 1.0f);
+	brushValue = (sin((0.5f - brushValue) * PI) + 1.0f) * 0.5f;
+
+	float4 topClapm = lerp(data, brushColorOpacity, brushValue);
+	topClapm.a = 1.0f;
+
+	data += brushColorOpacity * brushValue;	
+	data = clamp(data, 0.0f, topClapm);
 
 	volumeRW[volumeCoords] = data;
 }
