@@ -383,13 +383,13 @@ function Viewport:onMouseMove(eventData)
     if not self.volumeWorld then return true end
     
 	local mouse_pos = {x = eventData.coords.x, y = eventData.coords.y}
-
-    if self.rmouse_down then
+	
+	if self.rmouse_down then
         self.rmouse_down = false
         self.window.entity:SetHierarchyFocusOnMe(true)
         self:SetFreelook(true)
-
-        local corners = self.window.entity:GetCorners()
+		
+		local corners = self.window.entity:GetCorners()
         mouse_pos.x = (corners.l + corners.r) / 2
 		mouse_pos.y = (corners.t + corners.b) / 2
 	else
@@ -398,9 +398,13 @@ function Viewport:onMouseMove(eventData)
 		else
 			CoreGui.SetHCursor(SYSTEM_CURSORS.ARROW)
 		end
-	end
 
-    local is_ctrl = CoreGui.Keys.Ctrl()
+		if self.freelook then
+			CoreGui.ShowCursor(false)
+		end
+	end
+	
+	local is_ctrl = CoreGui.Keys.Ctrl()
 	
 	local mcoords = self:GetMouseInVP(mouse_pos)
 	local ray = self.volumeWorld.coreWorld.camera:GetVectorFromScreen(EditorCamera.cameraEntity, mcoords.x, mcoords.y, mcoords.w, mcoords.h)

@@ -15,7 +15,10 @@ function WorkingPlane:Init ()
 			VolumeWorld.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, 0.0, 0.0, math.pi * 0.5)
 		end
 	end
-
+	
+	local planeMat = VolumeWorld.coreWorld.staticMesh:GetMaterialObject (self.planeEnt, 0)
+	planeMat:SetVector3 (VolumeWorld.volumeScale * Vector3 (0.5, 0.5, 0.5), "boxExtents", SHADERS.PS)
+	
 	self.planeOrigin = Vector3 (0.0, 0.0, 0.0)
 	self.planeNormal = Vector3 (1.0, 0.0, 0.0)
 

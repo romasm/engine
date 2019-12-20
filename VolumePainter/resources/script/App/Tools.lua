@@ -183,6 +183,8 @@ end
 
 function Tools:BrushStop()
 	self.brushInAction = false
+
+	Brush:StopDraw()
 end
 
 function Tools:BrushAction(rayPos, rayDir)

@@ -162,6 +162,7 @@
     <FxCompile Include="volume\volume_cube.hlsl" />
     <FxCompile Include="volume\volume_cube_color.hlsl" />
     <FxCompile Include="volume\volume_cube_solid.hlsl" />
+    <FxCompile Include="volume\volume_frame.hlsl" />
     <FxCompile Include="volume\volume_raymatch.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

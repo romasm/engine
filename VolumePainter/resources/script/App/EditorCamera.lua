@@ -97,7 +97,7 @@ function EditorCamera:onMoveSpeed(up_down)
         self.movespeed = math.min(self.movespeed, 2.0)
     else
         self.movespeed = self.movespeed * 0.75
-        self.movespeed = math.max(self.movespeed, 0.0001)
+        self.movespeed = math.max(self.movespeed, 0.00001)
     end
 
 end

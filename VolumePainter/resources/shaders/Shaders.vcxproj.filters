@@ -417,5 +417,8 @@
     <FxCompile Include="volume\volume_raymatch.hlsl">
       <Filter>volume</Filter>
     </FxCompile>
+    <FxCompile Include="volume\volume_frame.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

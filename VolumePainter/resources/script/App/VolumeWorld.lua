@@ -151,6 +151,22 @@ function VolumeWorld:CreateVolumeRenderer ()
 			self.coreWorld.transform:SetScale_L(self.volumeCube, self.volumeScale)		
 		end
 	end
+
+
+
+	self.volumeFrame = self.coreWorld:CreateEntity ()
+	if not self.volumeFrame:IsNull () then
+		self.coreWorld:SetEntityType (self.volumeFrame, EDITOR_VARS.TYPE)
+		self.coreWorld.transform:AddComponent (self.volumeFrame)
+		self.coreWorld.visibility:AddComponent (self.volumeFrame)
+
+		if self.coreWorld.staticMesh:AddComponent (self.volumeFrame) then
+			self.coreWorld.staticMesh:SetMesh (self.volumeFrame, PATH.SYS_MESHES .. "invert_cube" .. EXT.MESH)
+			self.coreWorld.staticMesh:SetMaterial (self.volumeFrame, 0, PATH.SYS_MATS .. "volume_frame" .. EXT.MATERIAL)
+			self.coreWorld.transform:SetScale_L (self.volumeFrame, self.volumeScale)
+		end
+	end
+
 end
 
 function VolumeWorld:CreateEnvironment ()

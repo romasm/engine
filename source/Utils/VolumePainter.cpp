@@ -112,16 +112,17 @@ void VolumePainter::ImportTexture(string textureName)
 	TexMgr::Get()->GetResource(textureName, false, copyCallback);
 }
 
-void VolumePainter::DrawBrush(Vector3& position, float radius, Vector4& colorOpacity, float hardness)
+void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness)
 {
 	BrushInfo brushInfo;
 	brushInfo.position = position;
+	brushInfo.prevPosition = prevPosition;
 	brushInfo.radius = radius;
 	brushInfo.colorOpacity = colorOpacity;
 	brushInfo.hardness = min(hardness, 0.999f);
 	Render::UpdateDynamicResource(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
 
-	Vector3 minCorner = position;
+	Vector3 minCorner = Vector3::Min(position, prevPosition);
 	minCorner -= Vector3(radius);
 	minCorner.x = floorf(minCorner.x);
 	minCorner.y = floorf(minCorner.y);
@@ -130,20 +131,19 @@ void VolumePainter::DrawBrush(Vector3& position, float radius, Vector4& colorOpa
 	if (minCorner.x >= float(volumeResolutionX) || minCorner.y >= float(volumeResolutionY) || minCorner.z >= float(volumeResolutionZ))
 		return;
 
-	Vector3 boxSize = Vector3(floorf(radius * 2.0f));
+	Vector3 maxCorner = Vector3::Max(position, prevPosition);
+	maxCorner += Vector3(radius);
+	maxCorner.x = ceilf(maxCorner.x);
+	maxCorner.y = ceilf(maxCorner.y);
+	maxCorner.z = ceilf(maxCorner.z);
 
-	Vector3 negativeCorner;
-	Vector3::Min(minCorner, Vector3(0.0), negativeCorner);
-	boxSize = boxSize + negativeCorner;
-	if (boxSize.x <= 0 || boxSize.y <= 0 || boxSize.z <= 0)
+	if (maxCorner.x <= 0 || maxCorner.y <= 0 || maxCorner.z <= 0)
 		return;
 
-	Vector3::Max(minCorner, Vector3(0.0), minCorner);
-	Vector3 maxCorner = minCorner + boxSize;
+	minCorner = Vector3::Max(minCorner, Vector3(0.0));
+	maxCorner = Vector3::Min(maxCorner, Vector3(float(volumeResolutionX), float(volumeResolutionY), float(volumeResolutionZ)));
 
-	Vector3 positiveCorner = maxCorner - Vector3(float(volumeResolutionX), float(volumeResolutionY), float(volumeResolutionZ));
-	Vector3::Max(positiveCorner, Vector3(0.0), positiveCorner);
-	boxSize = boxSize - positiveCorner;
+	Vector3 boxSize = maxCorner - minCorner;
 	if (boxSize.x <= 0 || boxSize.y <= 0 || boxSize.z <= 0)
 		return;
 

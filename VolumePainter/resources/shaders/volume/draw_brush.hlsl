@@ -23,10 +23,16 @@ cbuffer brushInfo : register(b1)
 	float4 brushColorOpacity;
 
 	float brushHardness;
-	float _pad1;
-	float _pad2;
-	float _pad3;
+	float3 brushPrevPosition;
 };
+
+float CalcBrushValue(float value)
+{
+	float brushValue = value / brushRadius;
+	brushValue = clamp((brushValue - brushHardness) / (1.0f - brushHardness), 0.0f, 1.0f);
+	brushValue = (sin((0.5f - brushValue) * PI) + 1.0f) * 0.5f;
+	return brushValue;
+}
 
 [numthreads(GROUP_TREADS_X, GROUP_TREADS_Y, GROUP_TREADS_Z)]
 void Draw(uint3 threadID : SV_DispatchThreadID)
@@ -39,16 +45,35 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 
 	float4 data = volumeRW.Load(volumeCoords);
 
-	float brushValue = clamp(length(brushPosition - volumeCoords) / brushRadius, 0.0f, 1.0f);
-	brushValue = (brushValue - brushHardness) / (1.0f - brushHardness);
+	float3 vToPrev = volumeCoords - brushPrevPosition;
+	float3 prevToCurr = brushPosition - brushPrevPosition;
+	float prevToCurrLen = length(prevToCurr);
 
-	brushValue = (sin((0.5f - brushValue) * PI) + 1.0f) * 0.5f;
+	float vDist;
+	float valueReductor = 0;
+	if (prevToCurrLen == 0)
+	{
+		vDist = length(vToPrev);
+	}
+	else
+	{
+		float3 prevToCurrNorm = prevToCurr / prevToCurrLen;
 
-	float4 topClapm = lerp(data, brushColorOpacity, brushValue);
-	topClapm.a = 1.0f;
+		float3 vProj = prevToCurrNorm * clamp(dot(vToPrev, prevToCurrNorm), 0, prevToCurrLen);
+		vDist = length(vToPrev - vProj);
 
-	data += brushColorOpacity * brushValue;	
-	data = clamp(data, 0.0f, topClapm);
+		valueReductor = CalcBrushValue(length(vToPrev));
+	}
 
+	float brushValue = CalcBrushValue(vDist);
+
+	float4 topClapm = 1;
+	topClapm.rgb = lerp(data.rgb, brushColorOpacity.rgb, brushValue);
+
+	brushValue = max(0, brushValue - valueReductor);
+
+	data += brushColorOpacity * brushValue;
+	data = clamp(data, 0.0f, topClapm); 
+	
 	volumeRW[volumeCoords] = data;
-}
+} 

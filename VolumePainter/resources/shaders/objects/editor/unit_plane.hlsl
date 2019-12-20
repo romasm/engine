@@ -35,15 +35,22 @@ cbuffer matrixBuffer : register(b2)
 	matrix normalMatrix;
 };
 
+cbuffer materialBuffer : register(b3)
+{
+	float4 boxExtents;
+};
+
 // config
 static const float lineAlpha = 1.0;
-static const float lineContrast = 1.5;
-static const float lineBrightness[2] = {0.1, 1.0};
+static const float lineContrast = 1.0;
+static const float lineBrightness[2] = {0.03, 0.1};
 static const float lineHardness = 1000.0;
 
 static const float lineThickness = 0.01;
 static const float lineNearClip = 0.1;
 static const float lineNearFade = 0.1;
+
+static const float boxOutsideFade = 0.15;
 
 static const float tile = 10.0;
 
@@ -64,8 +71,8 @@ float4 GridCascade(float2 wpos, int i)
 	
 	float alpha = max(edge.x, edge.y);
 
-	float3 color = float3(edge.y, 0.0, edge.x);
-	color = lerp(float3(1,1,1), color, lineContrast) * lineBrightness[i];
+	float3 color = lineBrightness[i];// float3(edge.y, 0.0, edge.x);
+	//color = lerp(float3(1,1,1), color, lineContrast) * lineBrightness[i];
 
 	return float4(color, alpha);
 }
@@ -93,6 +100,10 @@ float4 PlanePS(PI_DrawPlane input) : SV_TARGET
 	cascade0.a *= distFadeNear;
 
 	cascade0 = saturate(cascade0);
+
+	float3 boxTest = max(0, abs(input.worldPos.xyz) - boxExtents.xyz);
+	if (boxTest.x + boxTest.y + boxTest.z > 0.0)
+		cascade0.a *= boxOutsideFade;
 
 	return float4(cascade0.rgb, cascade0.a);
 }

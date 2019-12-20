@@ -28,6 +28,10 @@ function Brush:SetBrushColor (color)
 	self.brushColor.z = color.z
 end
 
+function Brush:StopDraw()
+	self.prevBrushPos = nil
+end
+
 function Brush:DrawBrushFromViewport(pos, ray)
 	local denom = WorkingPlane.planeNormal:Dot (ray)
 	if math.abs(denom)> 0.00001 then
@@ -45,6 +49,13 @@ function Brush:DrawBrushSpherical (position, radius)
 
 	local volumePosition = (position + VolumeWorld.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
 	local volumeRadius = radius * 0.5
+		
+	local prevVolumePosition = volumePosition
+	if self.prevBrushPos then
+		prevVolumePosition = self.prevBrushPos
+	end
 
-	VolumeWorld.volumeCore:DrawBrush (volumePosition, volumeRadius, self.brushColor, self.brushHardness)
+	VolumeWorld.volumeCore:DrawBrush (prevVolumePosition, volumePosition, volumeRadius, self.brushColor, self.brushHardness)
+	
+	self.prevBrushPos = volumePosition
 end
