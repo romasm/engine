@@ -1,7 +1,7 @@
 if not Brush then Brush = {} end
 
 function Brush:Init()
-	self.brushSize = 10.0
+	self.brushSize = 30.0
 	self.brushHardness = 0.0
 	self.brushColor = Vector4(1, 1, 1, 1)	
 end

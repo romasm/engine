@@ -54,4 +54,13 @@ lcl = {
 	lighting_settings = "Lighting & Background",
 	rendering_quality = "Quality & Performance",
 
+	file_import = "Import texture",
+	file_export = "Export texture",
+	file_create = "Create new volume",
+	file_open = "Open volume",
+	file_save = "Save volume",
+	file_saveas = "Save volume as...",
+	file_close = "Close volume",
+	file_quit = "Quit",
+
 }

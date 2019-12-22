@@ -20,9 +20,6 @@ function VolumeWorld:CreateWorld()
 	self.volumeResolutionZ = 512
 
 	VolumeWorld:Init ()
-
-	-- test
-	--self.volumeCore:ImportTexture (PATH.SYS_TEXTURES .. "test_volume" .. EXT.TEXTURE)
 end
 
 function VolumeWorld:Init()
@@ -91,6 +88,14 @@ end
 
 function VolumeWorld:Tick(dt)
 	WorkingPlane:Tick(dt)
+end
+
+function VolumeWorld:ImportTexture(filepath)
+	self.volumeCore:ImportTexture(filepath)
+end
+
+function VolumeWorld:ExportTexture(filepath)
+	self.volumeCore:ExportTexture (filepath, 0, 0)
 end
 
 function VolumeWorld:SaveAs(path)

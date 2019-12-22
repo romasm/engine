@@ -86,7 +86,7 @@ function Main:Start()
     Importer:Init()
     MainWindow:Init()
     History:Init()
-    Hotkeys:Init()
+	Hotkeys:Init ()
 end
 
 function Main:onTick(dt) 

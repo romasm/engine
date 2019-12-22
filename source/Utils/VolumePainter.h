@@ -47,6 +47,7 @@ namespace EngineCore
 		luaSRV GetSRV()	{ return luaSRV(volumeTextureSRV); }
 
 		void ImportTexture(string textureName);
+		void ExportTexture(string textureName, int32_t packingType, int32_t storageType);
 		void DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness);
 
 		static void RegLuaClass()
@@ -57,6 +58,7 @@ namespace EngineCore
 				.addFunction("Init", &VolumePainter::Init)
 				.addFunction("GetSRV", &VolumePainter::GetSRV)
 				.addFunction("ImportTexture", &VolumePainter::ImportTexture)
+				.addFunction("ExportTexture", &VolumePainter::ExportTexture)
 				.addFunction("DrawBrush", &VolumePainter::DrawBrush)
 				.endClass();
 		}

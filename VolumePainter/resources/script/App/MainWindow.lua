@@ -27,6 +27,15 @@ function MainWindow:Init()
 
     self.filterSave = dlgFilter()
 	self.filterSave:Add("Scene", "*.mls")
+
+	self.filterTexture = dlgFilter()
+	self.filterTexture:Add("Direct3D/DDS", "*.dds")
+	self.filterTexture:Add("Targa/TGA", "*.tga")
+	self.filterTexture:Add("JPEG", "*.jpg")
+	self.filterTexture:Add("PNG", "*.png")
+	self.filterTexture:Add("TIFF", "*.tif")
+	self.filterTexture:Add("BMP", "*.bmp")
+	self.filterTexture:Add("All files", "*.*")
     
 	self.mainwin = CoreGui.SysWindows.Create()
     
@@ -63,7 +72,7 @@ function MainWindow:Init()
 	VisualizationSettings:Init()
 	Viewport:Init()
 
-    --Resource.WaitLoadingComplete()
+	--Resource.WaitLoadingComplete()
 
 	self.mainwin:Show(true)
 end
@@ -143,20 +152,25 @@ function MainWindow:MenuPress(ent, menu)
 
     if menu == "file" then
 		if not VolumeWorld.initialized then
-		    self.menus[menu]:SetItemState("tb_save", false)
-            self.menus[menu]:SetItemState("tb_saveas", false)
-            self.menus[menu]:SetItemState("tb_close", false)
+			self.menus[menu]:SetItemState("tb_save", false)
+			self.menus[menu]:SetItemState("tb_saveas", false)
+			self.menus[menu]:SetItemState("tb_close", false)
         end
 		if not VolumeWorld.unsave then
 		    self.menus[menu]:SetItemState("tb_save", false)
-	    end
-    elseif menu == "asset" then
+		end
+
+		--TEMP
+		self.menus[menu]:SetItemState("tb_open", false)
+		self.menus[menu]:SetItemState("tb_save", false)
+		self.menus[menu]:SetItemState("tb_saveas", false)
+	elseif menu == "asset" then
         
     elseif menu == "sets" then
         
-    end
+    end	
 
-    return true
+	return true
 end
 
 function MainWindow:MenuHover(ent, menu)
@@ -211,8 +225,18 @@ function MainWindow:FileMenuClick(btn, ev)
         local res = dlgSaveFile(self.mainwin:GetHWND(), "Save scene", self.filterSave)
         if res == "" then return true end
 		VolumeWorld:SaveAsWorld(res)
+		
+	elseif ev.id == "tb_import" then
+		local res = dlgOpenFile(self.mainwin:GetHWND(), lcl.file_import, self.filterTexture)
+		if res == "" then return true end
+		VolumeWorld:ImportTexture(res)
+		
+	elseif ev.id == "tb_export" then
+		local res = dlgSaveFile(self.mainwin:GetHWND(), lcl.file_export, self.filterTexture)
+		if res == "" then return true end
+		VolumeWorld:ExportTexture(res)
 
-    elseif ev.id == "tb_close" then
+	elseif ev.id == "tb_close" then
 		VolumeWorld:Close()
 
     elseif ev.id == "tb_exit" then

@@ -10,9 +10,17 @@ function EditorCamera:Init( world )
     if nodeEnt:IsNull() then 
         self.cameraNode = EntityTypes.Node(self.world)
         self.world:RenameEntity(self.cameraNode.ent, nodeName)
-        self.cameraNode:SetPosition_L3F(0.0, 1.0, 0.0)
     else
         self.cameraNode = EntityTypes.wrap(self.world, nodeEnt)
+	end
+	
+	local worldNodeName = EDITOR_VARS.INVIS.."WorldNode"
+	local worldNodeEnt = self.world:GetEntityByName(worldNodeName)
+	if worldNodeEnt:IsNull() then 
+        self.worldNode = EntityTypes.Node(self.world)
+		self.world:RenameEntity(self.worldNode.ent, worldNodeName)
+	else
+		self.worldNode = EntityTypes.wrap(self.world, worldNodeEnt)
     end
     
     self.camera = EntityTypes.Camera(self.world)
@@ -22,14 +30,17 @@ function EditorCamera:Init( world )
     self.camera:SetFar(10000.0)
     self.camera:SetNear(0.1)
 
-    self.cameraEntity = self.camera.ent
-    
-    -- from config
-    self.movespeed = 0.005
-    self.rotspeed = 0.01
+	self.cameraEntity = self.camera.ent
+		
+	-- from config
+	self.movespeed = 0.005
+	self.rotspeed = 0.01
 
-    -- private
-    self.rot_coords = {pitch = 0, yaw = 0}
+	self.orbitRotSpeed = 0.004
+	self.orbitZoomSpeed = 0.1
+
+	-- private
+	self.rot_coords = {pitch = 0, yaw = 0}
 
     self.states = {
         forward = false,
@@ -38,7 +49,28 @@ function EditorCamera:Init( world )
         right = false,
         up = false,
         down = false,
-    }
+	}
+
+	self.orbitZoom = 1.5 
+	   
+	self:SwitchMode(0)
+end
+
+function EditorCamera:SwitchMode(mode) -- 0 - orbit, 1 - free
+	self.mode = mode
+
+	if self.mode == 0 then
+		self.camera:Attach(self.worldNode)
+		self.camera:SetPosition_L3F(0.0, 0.0, -self.orbitZoom)
+		self.worldNode:SetRotationPYR_L3F(0.68, -2.34, 0.0)
+	else
+		self.camera:Attach(self.cameraNode)
+		self.camera:SetPosition_L3F(0.0, 0.0, 0.0)
+		self.cameraNode:SetPosition_L3F(1.0, 1.0, 1.0)
+		self.cameraNode:SetRotationPYR_L3F(0.68, -2.34, 0.0)
+	end
+
+
 end
 
 function EditorCamera:GetPosition()
@@ -53,11 +85,14 @@ function EditorCamera:Close()
     self.world = nil
     self.cameraEntity = nil
     self.camera = nil
-    self.cameraNode = nil
+	self.cameraNode = nil
+	self.worldNode = nil
 end
 
 function EditorCamera:onStartMove(key)
-    if key == KEYBOARD_CODES.KEY_W then self.states.forward = true
+	if self.mode == 0 then return end
+
+	if key == KEYBOARD_CODES.KEY_W then self.states.forward = true
     elseif key == KEYBOARD_CODES.KEY_S then self.states.backward = true
     elseif key == KEYBOARD_CODES.KEY_A then self.states.left = true
     elseif key == KEYBOARD_CODES.KEY_D then self.states.right = true
@@ -67,7 +102,9 @@ function EditorCamera:onStartMove(key)
 end
 
 function EditorCamera:onStopMove(key)
-    if key == nil then
+	if self.mode == 0 then return end
+
+	if key == nil then
         self.states.forward = false
         self.states.backward = false
         self.states.left = false
@@ -87,42 +124,56 @@ function EditorCamera:onStopMove(key)
 end
 
 function EditorCamera:onDeltaRot(dx, dy)
-    self.rot_coords.yaw = dx
-    self.rot_coords.pitch = dy
+	self.rot_coords.yaw = dx
+	self.rot_coords.pitch = dy
 end
 
-function EditorCamera:onMoveSpeed(up_down)
-    if up_down > 0 then
-        self.movespeed = self.movespeed * 1.25
-        self.movespeed = math.min(self.movespeed, 2.0)
-    else
-        self.movespeed = self.movespeed * 0.75
-        self.movespeed = math.max(self.movespeed, 0.00001)
-    end
-
+function EditorCamera:onWheel(up_down)
+	if self.mode == 0 then
+		self.orbitZoom = self.orbitZoom + up_down * self.orbitZoomSpeed
+		self.orbitZoom = math.max( 0.1, math.min( self.orbitZoom, 3.0 ) )
+		self.camera:SetPosition_L3F( 0.0, 0.0, -self.orbitZoom )
+	else
+		if up_down > 0 then
+			self.movespeed = self.movespeed * 1.25
+			self.movespeed = math.min(self.movespeed, 2.0)
+		else
+			self.movespeed = self.movespeed * 0.75
+			self.movespeed = math.max(self.movespeed, 0.00001)
+		end
+	end
 end
 
 function EditorCamera:Tick(dt)
-    local move_dist = dt * self.movespeed
+	if self.mode == 0 then
+		local rotation = self.worldNode:GetRotationPYR_L()
+		rotation.x = rotation.x - self.rot_coords.pitch * self.orbitRotSpeed
+		rotation.y = rotation.y + self.rot_coords.yaw * self.orbitRotSpeed
+		rotation.x = math.max( -math.pi * 0.49, math.min( rotation.x, math.pi * 0.49 ) )
 
-    local move_z = (self.states.forward and move_dist or 0.0) - (self.states.backward and move_dist or 0.0)
-    local move_y = (self.states.up and move_dist or 0.0) - (self.states.down and move_dist or 0.0)
-    local move_x = (self.states.right and move_dist or 0.0) - (self.states.left and move_dist or 0.0)
+		self.worldNode:SetRotationPYR_L( rotation )
+	else
+		local move_dist = dt * self.movespeed
 
-    local transformMat = self.cameraNode:GetTransform_L()
-    local rotation = self.cameraNode:GetRotationPYR_L()
+		local move_z = (self.states.forward and move_dist or 0.0) - (self.states.backward and move_dist or 0.0)
+		local move_y = (self.states.up and move_dist or 0.0) - (self.states.down and move_dist or 0.0)
+		local move_x = (self.states.right and move_dist or 0.0) - (self.states.left and move_dist or 0.0)
 
-    local moveMat = Matrix.CreateTranslation(Vector3(move_x, move_y, move_z))
-    moveMat = Matrix.Mul(moveMat, transformMat)
+		local transformMat = self.cameraNode:GetTransform_L()
+		local rotation = self.cameraNode:GetRotationPYR_L()
 
-    self.cameraNode:SetTransform_L(moveMat)
+		local moveMat = Matrix.CreateTranslation(Vector3(move_x, move_y, move_z))
+		moveMat = Matrix.Mul(moveMat, transformMat)
 
-    rotation.x = rotation.x - self.rot_coords.pitch * self.rotspeed
-    rotation.y = rotation.y + self.rot_coords.yaw * self.rotspeed
-    rotation.x = math.max( -math.pi * 0.49, math.min( rotation.x, math.pi * 0.49 ) )
+		self.cameraNode:SetTransform_L(moveMat)
 
-    self.cameraNode:SetRotationPYR_L( rotation )
+		rotation.x = rotation.x - self.rot_coords.pitch * self.rotspeed
+		rotation.y = rotation.y + self.rot_coords.yaw * self.rotspeed
+		rotation.x = math.max( -math.pi * 0.49, math.min( rotation.x, math.pi * 0.49 ) )
 
-    self.rot_coords.yaw = 0
+		self.cameraNode:SetRotationPYR_L( rotation )
+	end
+	
+	self.rot_coords.yaw = 0
     self.rot_coords.pitch = 0
 end

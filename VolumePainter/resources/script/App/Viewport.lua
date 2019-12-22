@@ -387,11 +387,13 @@ function Viewport:onMouseMove(eventData)
 	if self.rmouse_down then
         self.rmouse_down = false
         self.window.entity:SetHierarchyFocusOnMe(true)
-        self:SetFreelook(true)
-		
-		local corners = self.window.entity:GetCorners()
-        mouse_pos.x = (corners.l + corners.r) / 2
-		mouse_pos.y = (corners.t + corners.b) / 2
+		self:SetFreelook(true)
+
+		if EditorCamera.mode == 1 then
+			local corners = self.window.entity:GetCorners()
+			mouse_pos.x = (corners.l + corners.r) / 2
+			mouse_pos.y = (corners.t + corners.b) / 2
+		end
 	else
 		if Tools.toolMode == TOOL_MODE.BRUSH then
 			CoreGui.SetHCursor(SYSTEM_CURSORS.CROSS)
@@ -399,7 +401,7 @@ function Viewport:onMouseMove(eventData)
 			CoreGui.SetHCursor(SYSTEM_CURSORS.ARROW)
 		end
 
-		if self.freelook then
+		if self.freelook and EditorCamera.mode == 1 then
 			CoreGui.ShowCursor(false)
 		end
 	end
@@ -415,7 +417,7 @@ function Viewport:onMouseMove(eventData)
     if self.freelook then
 		Tools:TransformUnhover()
 		
-		if self.hidemouse then
+		if self.hidemouse and EditorCamera.mode == 1 then
             local rect = self.window.entity:GetCorners()
             local center_x = (rect.l + rect.r) / 2
             local center_y = (rect.t + rect.b) / 2  
@@ -443,7 +445,7 @@ function Viewport:onMouseWheel(eventData)
     if not self.volumeWorld then return true end
 
     if self.freelook then
-        EditorCamera:onMoveSpeed(eventData.coords.x)
+		EditorCamera:onWheel(eventData.coords.x)
     end
     return true
 end
@@ -525,14 +527,10 @@ function Viewport:SetFreelook(look)
     if self.gamemode == true then return end
 
     self.freelook = look
-    if self.hidemouse then
-        self:SetMouseVis(not self.freelook)
+	if self.hidemouse and EditorCamera.mode == 1 then
+		self:CenterMouse()
+		CoreGui.ShowCursor(not self.freelook)
     end
-end
-
-function Viewport:SetMouseVis(show)
-    self:CenterMouse()
-    CoreGui.ShowCursor(show)
 end
 
 function Viewport:CenterMouse()

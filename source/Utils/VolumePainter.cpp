@@ -112,6 +112,13 @@ void VolumePainter::ImportTexture(string textureName)
 	TexMgr::Get()->GetResource(textureName, false, copyCallback);
 }
 
+void VolumePainter::ExportTexture(string textureName, int32_t packingType, int32_t storageType)
+{
+	// TODO: rerender texture
+
+	TexLoader::SaveTexture(textureName, volumeTextureSRV);
+}
+
 void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness)
 {
 	BrushInfo brushInfo;
