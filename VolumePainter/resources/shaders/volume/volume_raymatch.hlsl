@@ -73,9 +73,14 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 		colorDensitySample = textureVolume.SampleLevel(samplerBilinearVolumeClamp, currentPos, 0);
 		float finalDensity = saturate(colorDensitySample.a * stepDensity);
 		
+
 		// determine shadow
 		if (colorDensitySample.a > DISCARD_LIGHT_LEVEL)
 		{
+#ifdef VOLUME_SOLID
+			colorDensitySample.rgb = colorDensitySample.rgb / colorDensitySample.a;
+#endif
+
 #ifdef VOLUME_SHADED
 		
 			float3 volumePos = currentPos;
@@ -114,7 +119,7 @@ bool DoVolumeStep(inout float transmittanceAcc, inout float3 lightAcc, float ste
 			volumePos = currentPos + float3(0, 0.2, 0);
 			shadowAcc += textureVolume.SampleLevel(samplerBilinearVolumeClamp, volumePos, 0).r;
 
-			finalLight += skyColor * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
+			finalLight += skyColor * colorDensitySample.rgb * exp(-shadowAcc * absorptionSky) * finalDensity * transmittanceAcc;
 #endif
 			
 #ifdef VOLUME_SOLID

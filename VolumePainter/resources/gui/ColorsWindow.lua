@@ -52,11 +52,14 @@ local window = GuiWindow({
     },
     
     GuiButton({
-        styles = {GuiStyles.colorwin_button,},
+        styles = {GuiStyles.action_button,},
         top = 10,
         id = 'save_btn',
-        text = {str = lcl.save,},
-        events = {
+		text = {str = lcl.save,},
+		right = 10,
+		width = 100,
+		height = 30,
+		events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
                 local preset = Config.GetColorsPresetName()
                 Config.SaveColors(preset)
@@ -66,10 +69,13 @@ local window = GuiWindow({
     }),
 
     GuiButton({
-        styles = {GuiStyles.colorwin_button,},
+        styles = {GuiStyles.action_button,},
         top = 50,
         id = 'reset_btn',
         text = {str = lcl.reset,},
+		right = 10,
+		width = 100,
+		height = 30,
         events = {
             [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
                 local preset = Config.GetColorsPresetName()

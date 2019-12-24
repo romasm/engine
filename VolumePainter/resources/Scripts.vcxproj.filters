@@ -216,9 +216,6 @@
     <None Include="gui\Menus\Material.lua">
       <Filter>gui\Menus</Filter>
     </None>
-    <None Include="gui\Menus\TB_Asset.lua">
-      <Filter>gui\Menus</Filter>
-    </None>
     <None Include="gui\Menus\TB_File.lua">
       <Filter>gui\Menus</Filter>
     </None>
@@ -445,6 +442,9 @@
       <Filter>script\App</Filter>
     </None>
     <None Include="gui\VisualizationWindow.lua">
+      <Filter>gui</Filter>
+    </None>
+    <None Include="gui\CreateWindow.lua">
       <Filter>gui</Filter>
     </None>
   </ItemGroup>

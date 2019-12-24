@@ -27,7 +27,7 @@ return GuiRect({
         left = 10,
         width = 64,
 
-        text = {str = "File"},
+        text = {str = lcl.file_title},
         id = 'tb_file',
 
         events = {
@@ -44,30 +44,10 @@ return GuiRect({
             GuiStyles.topmenu_button,
         },
 
-        left = 84,
+		left = 84,
         width = 64,
 
-        text = {str = "Asset"},
-        id = 'tb_asset',
-
-        events = {
-            [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return MainWindow:MenuPress(ev.entity, "asset") end,
-            [GUI_EVENTS.BUTTON_HOVER] = function(self, ev) return MainWindow:MenuHover(ev.entity, "asset") end,
-
-            [GUI_EVENTS.MENU_CLOSE] = function(self, ev) return MainWindow:MenuClose(self, "asset") end,
-            [GUI_EVENTS.MENU_CLICK] = function(self, ev) return MainWindow:AssetMenuClick(self, ev) end, 
-        },
-    }),
-
-    GuiButton({
-        styles = {
-            GuiStyles.topmenu_button,
-        },
-
-        left = 158,
-        width = 64,
-
-        text = {str = "Config"},
+        text = {str = lcl.settings_title},
         id = 'tb_settings',
 
         events = {

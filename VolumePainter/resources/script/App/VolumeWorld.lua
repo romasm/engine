@@ -9,15 +9,15 @@ function VolumeWorld:LoadWorld(path)
 	--Gui.DialogOk (MainWindow.mainWinRoot.entity, "Scene file is not found or file version is outdated")
 end
 
-function VolumeWorld:CreateWorld()
+function VolumeWorld:CreateWorld(resX, resY, resZ)
 	if self.initialized then VolumeWorld:Close() end
 		
 	self.path = ""
 	self.unsave = true
 
-	self.volumeResolutionX = 512
-	self.volumeResolutionY = 512
-	self.volumeResolutionZ = 512
+	self.volumeResolutionX = resX
+	self.volumeResolutionY = resY
+	self.volumeResolutionZ = resZ
 
 	VolumeWorld:Init ()
 end
@@ -41,6 +41,8 @@ function VolumeWorld:Init()
 	WorkingPlane:Init ()
 	Brush:Init ()
 	
+	self:SetToolsVisibility (true)
+
 	-- TODO: serialization
 	self.visualizationType = 1
 	self:SetDensityScale (70.0)
@@ -157,8 +159,6 @@ function VolumeWorld:CreateVolumeRenderer ()
 		end
 	end
 
-
-
 	self.volumeFrame = self.coreWorld:CreateEntity ()
 	if not self.volumeFrame:IsNull () then
 		self.coreWorld:SetEntityType (self.volumeFrame, EDITOR_VARS.TYPE)
@@ -189,6 +189,20 @@ function VolumeWorld:CreateEnvironment ()
 			self.coreWorld.transform:SetScale_L3F(self.environment, 5000.0, 5000.0, 5000.0)
 		end
 	end
+end
+
+function VolumeWorld:SetToolsVisibility (visible)
+	self.toolsVisibility = visible
+
+	self.coreWorld:SetEntityEditorVisible (self.volumeFrame, visible)
+
+	WorkingPlane:SetToolsVisibility (visible)
+	Brush:SetToolsVisibility (visible)
+
+	if self.sceneRenderer then
+		self.sceneRenderer:GetConfig().editorGuiEnable = visible
+	end
+
 end
 
 function VolumeWorld:SetVisualizationType (type)

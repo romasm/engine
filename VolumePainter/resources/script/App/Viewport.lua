@@ -53,7 +53,6 @@ end
 function Viewport:Init()
     print("Viewport:Init") 
     
-    loader.require("RenderConfig")
     loader.require("ViewportWindow", Viewport.reload)
     self.reload()
 
@@ -129,6 +128,14 @@ function Viewport:SetWorld(world)
 	VisualizationSettings:Activate()
 	
 	self.overlay_gui.enable = true	
+
+	Viewport:UpdateData()
+end
+
+function Viewport:UpdateData()
+	local ev = HEvent()
+	ev.event = GUI_EVENTS.UPDATE
+	self.window.entity:SendEvent(ev)  
 end
 
 function Viewport:ClearWorld()
@@ -145,48 +152,6 @@ function Viewport:ClearWorld()
 	Tools:DeactivateAll()
 	Properties:Disable()
 	VisualizationSettings:Deactivate()
-end
-
-function Viewport:OpenRenderConfig(btn)
-    if self.renderConfig ~= nil then return true end
-
-    self.renderConfig = Gui.RenderConfig()
-    
-    local root = self.window.entity:GetRoot()
-    root:AttachChild(self.renderConfig.entity)
-
-    local rect = btn.entity:GetRectAbsolute()
-    self.renderConfig.entity.top = rect.t + rect.h + 4
-    self.renderConfig.entity.left = rect.l + rect.w - self.renderConfig.entity.width
-    self.renderConfig.entity:UpdatePosSize()
-    root:SetHierarchyFocus(self.renderConfig.entity)
-    
-    local ev = HEvent()
-    ev.event = GUI_EVENTS.UPDATE
-    self.renderConfig.entity:SendEvent(ev)
-    return true
-end
-
-function Viewport:CloseRenderConfig()
-    if self.renderConfig == nil then return true end
-    
-    local root = self.window.entity:GetRoot()
-    root:DetachChild(self.renderConfig.entity)
-    self.renderConfig.entity:Destroy()
-    self.renderConfig = nil
-
-    local cursor = CoreGui.GetCursorPos()
-    if not self.rendercfg_btn.entity:IsCollide(cursor.x, cursor.y) then 
-        self.rendercfg_btn:SetPressed(false)
-    end
-    return true
-end
-
-function Viewport:MoveCameraToSelection()
-    if #self.selection_set == 0 then return end
-
-    pos = self.volumeWorld.coreWorld.transform:GetPosition_W(self.selection_set[1])
-    EditorCamera.cameraNode:SetPosition_L3F(pos.x, pos.y, pos.z)
 end
 
 function Viewport:ToggleFullscreen()

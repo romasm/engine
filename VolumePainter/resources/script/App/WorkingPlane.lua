@@ -31,9 +31,14 @@ function WorkingPlane:Close ()
 	self.planeEnt = nil
 end
 
+function WorkingPlane:SetToolsVisibility (visible)
+	self.toolsVisibility = visible
+	VolumeWorld.coreWorld:SetEntityEditorVisible (self.planeEnt, self.toolsVisibility and self.planeVisible)
+end
+
 function WorkingPlane:SetPlaneVisible (visible)
 	self.planeVisible = visible
-	VolumeWorld.coreWorld:SetEntityEditorVisible (self.planeEnt, self.planeVisible)
+	VolumeWorld.coreWorld:SetEntityEditorVisible (self.planeEnt, self.toolsVisibility and self.planeVisible)
 end
 
 function WorkingPlane:SetPlaneFade (fade)

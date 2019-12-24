@@ -61,6 +61,7 @@
     <None Include="gui\ComponentsGui\StaticMeshCallback.lua" />
     <None Include="gui\ComponentsGui\Transform.lua" />
     <None Include="gui\ComponentsGui\TransformCallback.lua" />
+    <None Include="gui\CreateWindow.lua" />
     <None Include="gui\ToolProperties.lua" />
     <None Include="gui\Localization\en.lua" />
     <None Include="gui\Localization\ru.lua" />
@@ -85,7 +86,6 @@
     <None Include="gui\Menus\AddComp.lua" />
     <None Include="gui\Menus\Asset.lua" />
     <None Include="gui\Menus\Material.lua" />
-    <None Include="gui\Menus\TB_Asset.lua" />
     <None Include="gui\Menus\TB_File.lua" />
     <None Include="gui\Menus\TB_Sets.lua" />
     <None Include="gui\Menus\Textfield.lua" />

@@ -18,6 +18,23 @@ GuiStyles.vp_perf = {
     color = 'act_02',
 }
 
+GuiStyles.vp_button = {
+	styles = {
+		GuiStyles.solid_button,
+		GuiStyles.vp_header_colors,
+	},
+
+	holded = true,
+            
+	width = 30,
+	height = 30,
+	
+	align = GUI_ALIGN.RIGHT,
+
+	cursor = SYSTEM_CURSORS.ARROW,
+}
+
+
 function Gui.ViewportWindow()
 return GuiEntity({
     styles = {
@@ -30,25 +47,6 @@ return GuiEntity({
     bottom = 4,
 
     id = "viewport_window",
-    
-    events = {            
-        [GUI_EVENTS.MOUSE_DOWN] = function(self, ev) return Viewport:onMouseDown(ev) end,
-        [GUI_EVENTS.MOUSE_UP] = function(self, ev) return Viewport:onMouseUp(ev) end,
-        [GUI_EVENTS.KEY_DOWN] = function(self, ev) return Viewport:onKeyDown(ev) end,
-        [GUI_EVENTS.KEY_UP] = function(self, ev) return Viewport:onKeyUp(ev) end,
-        [GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
-		[GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
-		[GUI_EVENTS.MOUSE_OUT] = function(self, ev) return Viewport:onMouseOut(ev) end,
-        [GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
-
-        [GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
-        [GUI_EVENTS.ITEMS_DRAG_ENTER] = function(self, ev) return Viewport:onItemStartDrag(ev) end,
-        [GUI_EVENTS.ITEMS_DRAG_LEAVE] = function(self, ev) return Viewport:onItemStopDrag(ev) end,
-        [GUI_EVENTS.ITEMS_DRAG_MOVE] = function(self, ev) return Viewport:onItemDrag(ev) end,
-
-        [GUI_EVENTS.MENU_CLOSE] = function(self, ev) Viewport:MenuClose(self) end,
-        [GUI_EVENTS.MENU_CLICK] = function(self, ev) Viewport:MenuClick(self, ev) end, 
-    },
 
     GuiString({
         styles = {
@@ -78,20 +76,37 @@ return GuiEntity({
 
         width = 100,
         height = 100,
+		
+		events = {            
+			[GUI_EVENTS.MOUSE_DOWN] = function(self, ev) return Viewport:onMouseDown(ev) end,
+			[GUI_EVENTS.MOUSE_UP] = function(self, ev) return Viewport:onMouseUp(ev) end,
+			[GUI_EVENTS.KEY_DOWN] = function(self, ev) return Viewport:onKeyDown(ev) end,
+			[GUI_EVENTS.KEY_UP] = function(self, ev) return Viewport:onKeyUp(ev) end,
+			[GUI_EVENTS.MOUSE_MOVE] = function(self, ev) return Viewport:onMouseMove(ev) end,
+			[GUI_EVENTS.MOUSE_HOVER] = function(self, ev) return Viewport:onMouseMove(ev) end,
+			[GUI_EVENTS.MOUSE_OUT] = function(self, ev) return Viewport:onMouseOut(ev) end,
+			[GUI_EVENTS.MOUSE_WHEEL] = function(self, ev) return Viewport:onMouseWheel(ev) end,
 
-		events = {
-            [GUI_EVENTS.SYS_RESIZE] = function(self, ev) return Viewport:onResize() end,
+			[GUI_EVENTS.ITEMS_DROPED] = function(self, ev) return Viewport:onItemDroped(ev) end,
+			[GUI_EVENTS.ITEMS_DRAG_ENTER] = function(self, ev) return Viewport:onItemStartDrag(ev) end,
+			[GUI_EVENTS.ITEMS_DRAG_LEAVE] = function(self, ev) return Viewport:onItemStopDrag(ev) end,
+			[GUI_EVENTS.ITEMS_DRAG_MOVE] = function(self, ev) return Viewport:onItemDrag(ev) end,
+
+			[GUI_EVENTS.MENU_CLOSE] = function(self, ev) Viewport:MenuClose(self) end,
+			[GUI_EVENTS.MENU_CLICK] = function(self, ev) Viewport:MenuClick(self, ev) end, 
+
+			[GUI_EVENTS.SYS_RESIZE] = function(self, ev) return Viewport:onResize() end,
 		},
 
 	}),
 
     GuiDumb({
         styles = {
-            GuiStyles.live_ghost,
+            GuiStyles.live,
         },
 
         top = 4,
-        height = 25,
+        height = 30,
         
         align = GUI_ALIGN.BOTH,
         left = 4,
@@ -99,36 +114,88 @@ return GuiEntity({
 
         enable = false,
         
-        id = "vp_overlay_gui",
+		id = "vp_overlay_gui",
+			
+		GuiButton({
+			styles = {
+				GuiStyles.vp_button,
+			},
+
+			id = "vp_tools_vis",
+			text = {
+				str = "H",
+			},
+			alt = lcl.tools_vis,            
+			right = 0,
+
+			events = {
+				[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+					VolumeWorld:SetToolsVisibility (true)
+					return true 
+				end,
+				[GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev)
+					VolumeWorld:SetToolsVisibility (false)
+					return true 
+				end,
+				[GUI_EVENTS.UPDATE] = function(self, ev)
+					self:SetPressed(VolumeWorld.toolsVisibility)
+					return true 
+				end,
+			},
+		}),
+
+		GuiButton({
+            styles = {
+				GuiStyles.vp_button,
+            },
+
+            id = "vp_cam_orbit",
+			text = {
+                str = "O",
+            },
+            alt = lcl.cam_orbit,            
+			right = 40,
+			stay_holded = true,
+
+            events = {
+					[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev)
+						local freeButton = self.entity:GetParent():GetChildById('vp_cam_free'):GetInherited()
+						freeButton:SetPressed(false)
+						EditorCamera:SwitchMode(0)
+						return true 
+					end,
+					[GUI_EVENTS.UPDATE] = function(self, ev)
+						self:SetPressed(EditorCamera.mode == 0)
+						return true 
+					end,
+				},
+        }),
 
         GuiButton({
             styles = {
-                GuiStyles.solid_button,
-                GuiStyles.vp_header_colors,
+				GuiStyles.vp_button,
             },
 
-            id = "vp_rendercfg",
-            holded = true,
-        
-            text = {
-                str = "Debug",
+            id = "vp_cam_free",
+			text = {
+                str = "F",
             },
-            alt = "Rendering configuration",
-            
-            width = 100,
-            height = 100,
-            height_percent = true,
-
-            align = GUI_ALIGN.RIGHT,
+            alt = lcl.cam_free,
+			right = 74,
+			stay_holded = true,
 
             events = {
-                [GUI_EVENTS.MOUSE_UP] = function(self, ev) 
-                    if Viewport.renderConfig ~= nil then return true
-                    else return false end 
-                end,
-                [GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) return Viewport:OpenRenderConfig(self) end,
-                [GUI_EVENTS.BUTTON_UNPRESSED] = function(self, ev) return Viewport:CloseRenderConfig() end,
-            },
+					[GUI_EVENTS.BUTTON_PRESSED] = function(self, ev) 
+						local orbitButton = self.entity:GetParent():GetChildById('vp_cam_orbit'):GetInherited()
+						orbitButton:SetPressed(false)
+						EditorCamera:SwitchMode(1)
+						return true 
+					end,
+					[GUI_EVENTS.UPDATE] = function(self, ev)
+						self:SetPressed(EditorCamera.mode == 1)
+						return true 
+					end,
+				},
         }),
 
         GuiRect({
@@ -143,12 +210,6 @@ return GuiEntity({
 
             height = 100,
             height_percent = true,
-
-            events = {
-                [GUI_EVENTS.MOUSE_DOWN] = function(self, ev)
-                    return true
-                end,
-            },
 
             GuiString({
                 styles = {

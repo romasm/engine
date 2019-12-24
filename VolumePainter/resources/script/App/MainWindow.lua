@@ -59,15 +59,17 @@ function MainWindow:Init()
     self.menu_just_closed = nil
 
     loader.require("Menus.TB_File")
-    loader.require("Menus.TB_Asset")
     loader.require("Menus.TB_Sets")
     loader.require("TopBar", MainWindow.reloadTopBar)
     self.reloadTopBar()
     
-    loader.require("ColorsWindow", MainWindow.reloadColors)
-    self.colorsWindow = nil
+    loader.require("ColorsWindow")
+	self.colorsWindow = nil
+    
+	loader.require("CreateWindow")
+	self.createWindow = nil
 
-    Tools:Init()
+	Tools:Init()
     Properties:Init()
 	VisualizationSettings:Init()
 	Viewport:Init()
@@ -115,19 +117,20 @@ function MainWindow:SetCaption(world_path)
     MainWindow.mainwin.caption_text = caption
 end
 
-function MainWindow.reloadColors()
-    if MainWindow.colorsWindow == nil then return end
-    MainWindow.colorsWindow:Close()
-    MainWindow.colorsWindow = nil
-    MainWindow.OpenColorsWindow()
+function MainWindow:OpenColorsWindow()
+	local x = self.mainwin:GetLeft() + self.mainwin:GetWidth() / 2
+	local y = self.mainwin:GetTop() + self.mainwin:GetHeight() / 2
+
+	self.colorsWindow = Gui.ColorsWindow(x, y)
+	self.colorsWindow.entity:UpdatePosSize() 
 end
 
-function MainWindow.OpenColorsWindow()
-    local x = MainWindow.mainwin:GetLeft() + MainWindow.mainwin:GetWidth() / 2
-    local y = MainWindow.mainwin:GetTop() + MainWindow.mainwin:GetHeight() / 2
+function MainWindow:OpenCreateWindow()
+	local x = self.mainwin:GetLeft() + self.mainwin:GetWidth() / 2
+	local y = self.mainwin:GetTop() + self.mainwin:GetHeight() / 2
 
-    MainWindow.colorsWindow = Gui.ColorsWindow(x, y)
-    MainWindow.colorsWindow.entity:UpdatePosSize() 
+	self.createWindow = Gui.CreateWindow(x, y)
+	self.createWindow.entity:UpdatePosSize() 
 end
 
 ---- menu buttons
@@ -155,6 +158,7 @@ function MainWindow:MenuPress(ent, menu)
 			self.menus[menu]:SetItemState("tb_save", false)
 			self.menus[menu]:SetItemState("tb_saveas", false)
 			self.menus[menu]:SetItemState("tb_close", false)
+			self.menus[menu]:SetItemState("tb_export", false)
         end
 		if not VolumeWorld.unsave then
 		    self.menus[menu]:SetItemState("tb_save", false)
@@ -164,8 +168,6 @@ function MainWindow:MenuPress(ent, menu)
 		self.menus[menu]:SetItemState("tb_open", false)
 		self.menus[menu]:SetItemState("tb_save", false)
 		self.menus[menu]:SetItemState("tb_saveas", false)
-	elseif menu == "asset" then
-        
     elseif menu == "sets" then
         
     end	
@@ -202,10 +204,10 @@ end
 function MainWindow:FileMenuClick(btn, ev)
     self:MenuClose(btn, "file")
     
-    if ev.id == "tb_create" then
-        if VolumeWorld:CreateWorld() == 0 then
-            error("Unable to create scene!")
-        end
+	if ev.id == "tb_create" then
+		if self.createWindow == nil then
+			self:OpenCreateWindow()
+		end
 
     elseif ev.id == "tb_open" then
 		local res = dlgOpenFolder(self.mainwin:GetHWND(), "Open scene") -- self.filterOpen
@@ -245,19 +247,6 @@ function MainWindow:FileMenuClick(btn, ev)
     return true
 end
 
-function MainWindow:AssetMenuClick(btn, ev)
-    self:MenuClose(btn, "asset")
-    
-    if ev.id == "tb_import_mesh" then
-        Importer:OpenMeshes(self.mainwin)
-
-	elseif ev.id == "tb_import_tex" then
-		Importer:OpenTextures(self.mainwin)        
-
-	end
-    return true
-end
-
 function MainWindow:SetsMenuClick(btn, ev)
     self:MenuClose(btn, "sets")
     
@@ -265,8 +254,8 @@ function MainWindow:SetsMenuClick(btn, ev)
         print("Opening configuration")
 
     elseif ev.id == "tb_colors" then
-        if MainWindow.colorsWindow == nil then
-            MainWindow.OpenColorsWindow()
+		if self.colorsWindow == nil then
+			self:OpenColorsWindow()
         end
         
     elseif ev.id == "tb_dev_skyrebake" then

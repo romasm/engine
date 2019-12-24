@@ -53,9 +53,10 @@ function GuiWindow:init(props)
     self.closeable = true
     self.dragable = true
 
-    self.independent = false
+	self.independent = false
+	self.independent_mini = false
 
-    self.header_size = 25
+	self.header_size = 25
 
     self.cleintarea_padding = { l = 2, r = 2, t = 2, b = 2 }
 
@@ -93,12 +94,15 @@ function GuiWindow:init(props)
         -- TODO: win params
         self.sys_win:HideWinBorder(not self.dragable)
         self.dragable = false
-        self.closeable = self.closeable and not self.dragable
-        
-        --self.sys_win:SetMinMaxBox(false)
-        --self.sys_win:SetPopup(true)
+		self.closeable = self.closeable and not self.dragable
 
-        self.sys_win:SetCaptionRect(0, self.header_size, 0, self.header_size)
+		self.sys_win:SetMinMaxBox(not self.independent_mini)
+		self.sys_win:SetSysMenu(not self.independent_mini)
+        
+		--self.sys_win:SetMinMaxBox(false)
+		--self.sys_win:SetPopup(true)
+
+		self.sys_win:SetCaptionRect(0, self.header_size, 0, self.header_size)
         self.sys_win:SetBorderSize(4)
         self.sys_win:SetIcons("../resources/textures/icons/main_icon.ico", "../resources/textures/icons/main_icon.ico")
         
@@ -239,7 +243,8 @@ function GuiWindow:ApplyProps(props)
     if props.closeable ~= nil then self.closeable = props.closeable end
     if props.header_size ~= nil then self.header_size = props.header_size end
     if props.dragable ~= nil then self.dragable = props.dragable end
-    if props.independent ~= nil then self.independent = props.independent end
+	if props.independent ~= nil then self.independent = props.independent end
+	if props.independent_mini ~= nil then self.independent_mini = props.independent_mini end
     if props.cleintarea_padding ~= nil then 
         if props.cleintarea_padding.l ~= nil then self.cleintarea_padding.l = props.cleintarea_padding.l end
         if props.cleintarea_padding.r ~= nil then self.cleintarea_padding.r = props.cleintarea_padding.r end

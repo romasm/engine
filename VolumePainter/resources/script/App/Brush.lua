@@ -10,6 +10,10 @@ function Brush:Close()
 
 end
 
+function Brush:SetToolsVisibility (visible)
+
+end
+
 function Brush:SetBrushSize (size)
 	self.brushSize = size
 end

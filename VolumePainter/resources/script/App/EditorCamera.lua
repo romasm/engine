@@ -5,26 +5,9 @@ function EditorCamera:Init( world )
     
     self.world = world
 
-    local nodeName = EDITOR_VARS.INVIS.."CameraNode"
-    local nodeEnt = self.world:GetEntityByName(nodeName)
-    if nodeEnt:IsNull() then 
-        self.cameraNode = EntityTypes.Node(self.world)
-        self.world:RenameEntity(self.cameraNode.ent, nodeName)
-    else
-        self.cameraNode = EntityTypes.wrap(self.world, nodeEnt)
-	end
-	
-	local worldNodeName = EDITOR_VARS.INVIS.."WorldNode"
-	local worldNodeEnt = self.world:GetEntityByName(worldNodeName)
-	if worldNodeEnt:IsNull() then 
-        self.worldNode = EntityTypes.Node(self.world)
-		self.world:RenameEntity(self.worldNode.ent, worldNodeName)
-	else
-		self.worldNode = EntityTypes.wrap(self.world, worldNodeEnt)
-    end
-    
+    self.cameraNode = EntityTypes.Node(self.world)
+	self.worldNode = EntityTypes.Node(self.world)
     self.camera = EntityTypes.Camera(self.world)
-    self.world:RenameEntity(self.camera.ent, EDITOR_VARS.TYPE.."Camera")
     self.camera:Attach(self.cameraNode)
     self.camera:SetFov(1.0)
     self.camera:SetFar(10000.0)
@@ -50,16 +33,17 @@ function EditorCamera:Init( world )
         up = false,
         down = false,
 	}
-
-	self.orbitZoom = 1.5 
-	   
+		  
 	self:SwitchMode(0)
 end
 
 function EditorCamera:SwitchMode(mode) -- 0 - orbit, 1 - free
+	if self.mode == mode then return end
+
 	self.mode = mode
 
 	if self.mode == 0 then
+		self.orbitZoom = 1.5 
 		self.camera:Attach(self.worldNode)
 		self.camera:SetPosition_L3F(0.0, 0.0, -self.orbitZoom)
 		self.worldNode:SetRotationPYR_L3F(0.68, -2.34, 0.0)
@@ -69,8 +53,6 @@ function EditorCamera:SwitchMode(mode) -- 0 - orbit, 1 - free
 		self.cameraNode:SetPosition_L3F(1.0, 1.0, 1.0)
 		self.cameraNode:SetRotationPYR_L3F(0.68, -2.34, 0.0)
 	end
-
-
 end
 
 function EditorCamera:GetPosition()
@@ -87,6 +69,8 @@ function EditorCamera:Close()
     self.camera = nil
 	self.cameraNode = nil
 	self.worldNode = nil
+
+	self.mode = nil
 end
 
 function EditorCamera:onStartMove(key)

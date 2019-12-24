@@ -54,6 +54,7 @@ lcl = {
 	lighting_settings = "Lighting & Background",
 	rendering_quality = "Quality & Performance",
 
+	file_title = "File",
 	file_import = "Import texture",
 	file_export = "Export texture",
 	file_create = "Create new volume",
@@ -62,5 +63,16 @@ lcl = {
 	file_saveas = "Save volume as...",
 	file_close = "Close volume",
 	file_quit = "Quit",
+
+	settings_title = "Settings",
+
+	cam_orbit = "Orbit camera",
+	cam_free = "Free(WASD) camera",
+	tools_vis = "Hide tools",
+
+	create_header = "Create volume",
+	create_button = "Create",
+	cancel_button = "Cancel",
+	cancel_resolution = "Volume resolution",
 
 }
