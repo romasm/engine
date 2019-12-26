@@ -18,6 +18,7 @@ function VolumeWorld:CreateWorld(resX, resY, resZ)
 	self.volumeResolutionX = resX
 	self.volumeResolutionY = resY
 	self.volumeResolutionZ = resZ
+	self.historySize = 8 * 1024 * 1024 * 1024
 
 	VolumeWorld:Init ()
 end
@@ -31,7 +32,7 @@ function VolumeWorld:Init()
 	self.volumeScale = Vector3 (self.volumeResolutionX / self.maxVolumeRes, self.volumeResolutionY / self.maxVolumeRes, self.volumeResolutionZ / self.maxVolumeRes)
 
 	self.volumeCore = VolumePainter ()
-	if not self.volumeCore:Init (self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ) then
+	if not self.volumeCore:Init (self.volumeResolutionX, self.volumeResolutionY, self.volumeResolutionZ, self.historySize) then
 		return false
 	end
 

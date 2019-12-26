@@ -11,7 +11,9 @@
 
 #define RENDER Render::Get()
 #define DEVICE RENDER->m_pd3dDevice
+#define DEVICE3 RENDER->m_pd3dDevice3
 #define CONTEXT RENDER->m_pImmediateContext
+#define CONTEXT3 RENDER->m_pImmediateContext3
 
 namespace EngineCore
 {
@@ -67,8 +69,10 @@ namespace EngineCore
 		GlobalColor gl_color;
 
 		ID3D11Device *m_pd3dDevice;
+		ID3D11Device3 *m_pd3dDevice3;
 		ID3D11DeviceContext *m_pImmediateContext;
-
+		ID3D11DeviceContext3 *m_pImmediateContext3;
+		
 		IDXGIDevice* m_pDXGIDevice;
 		IDXGIAdapter1* m_pDxgiAdapter;
 		IDXGIFactory2* m_pDxgiFactory;

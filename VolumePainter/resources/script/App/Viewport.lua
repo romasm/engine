@@ -37,7 +37,6 @@ function Viewport.reload()
     Viewport.overlay_gui = Viewport.window.entity:GetChildById('vp_overlay_gui')
     Viewport.fps_string = Viewport.overlay_gui:GetChildById('vp_fps'):GetInherited()
     Viewport.ms_string = Viewport.overlay_gui:GetChildById('vp_ms'):GetInherited()
-    Viewport.rendercfg_btn = Viewport.overlay_gui:GetChildById('vp_rendercfg'):GetInherited()
 
     local vp_rect = Viewport.window.entity:GetRectAbsolute()
     Viewport.viewport.entity.width = vp_rect.w + vp_rect.w % 2

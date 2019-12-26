@@ -35,10 +35,12 @@ namespace EngineCore
 		{
 			m_instance = this;
 			m_pd3dDevice = nullptr;
+			m_pd3dDevice3 = nullptr;
 			m_pDXGIDevice = nullptr;
 			m_pDxgiAdapter = nullptr;
 			m_pDxgiFactory = nullptr;
 			m_pImmediateContext = nullptr;
+			m_pImmediateContext3 = nullptr;
 			renderStateMgr = nullptr;
 			samplerStateMgr = nullptr;
 			bufferMgr = nullptr;
@@ -123,6 +125,13 @@ namespace EngineCore
 		if( FAILED(hr) )
 			return false;	
 
+		hr = m_pd3dDevice->QueryInterface(__uuidof(ID3D11Device3), reinterpret_cast<void**>(&m_pd3dDevice3));
+		if (FAILED(hr))
+			return false;
+		hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11DeviceContext3), reinterpret_cast<void**>(&m_pImmediateContext3));
+		if (FAILED(hr))
+			return false;
+
 		hr = m_pd3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&m_pDXGIDevice));
 		if( FAILED(hr) )
 			return false;	
@@ -151,7 +160,9 @@ namespace EngineCore
 		_DELETE(bufferMgr);
 
 		_RELEASE(m_pImmediateContext);
+		_RELEASE(m_pImmediateContext3);
 		_RELEASE(m_pd3dDevice);
+		_RELEASE(m_pd3dDevice3);
 		_RELEASE(m_pDXGIDevice);
 		_RELEASE(m_pDxgiAdapter);
 		_RELEASE(m_pDxgiFactory);

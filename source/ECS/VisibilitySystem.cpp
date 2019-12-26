@@ -65,7 +65,10 @@ void VisibilitySystem::collide_ray(Vector3 origin, Vector3 ray, int frust_id, Ve
 	{
 		if((i.inFrust & f.bit) == f.bit)
 		{
-			float dist = RayOrientedBoxIntersect(origin, ray, i.worldBox);
+			float dist;
+			if (!i.worldBox.Intersects(origin, XMVector3Normalize(ray), dist))
+				dist = -1.0f;
+
 			if(dist > 0 && dist < min_dist)
 			{
 				min_dist = dist;
@@ -97,7 +100,11 @@ float VisibilitySystem::CollideRaySingleEntity(Entity e, Vector3 origin, Vector3
 	if( (comp.inFrust & f.bit) != f.bit )
 		return -1.0f;
 
-	return RayOrientedBoxIntersect(origin, ray, comp.worldBox);
+	float dist;
+	if (!comp.worldBox.Intersects(origin, XMVector3Normalize(ray), dist))
+		return -1.0f;
+	else
+		return dist;
 }
 
 bool VisibilitySystem::IsDirty(Entity e)

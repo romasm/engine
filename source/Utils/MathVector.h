@@ -201,6 +201,9 @@ inline void RegLuaMath()
 		.addFunction("Length", &Vector2::Length)
 		.addFunction("LengthSq", &Vector2::LengthSquared)
 		.addStaticFunction("AngleBetween", &Vector2AngleBetween)
+
+		.addStaticFunction("Min", static_cast<Vector2(*)(const Vector2& v1, const Vector2& v2)>(&Vector2::Min))
+		.addStaticFunction("Max", static_cast<Vector2(*)(const Vector2& v1, const Vector2& v2)>(&Vector2::Max))
 		.endClass()
 
 		.beginClass<Vector3>("Vector3")
@@ -230,13 +233,16 @@ inline void RegLuaMath()
 		.addOperatorGlobal("__div", static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(&operator/))
 		.addFunction("__unm", &Vector3::operator-)
 		.addFunction("__eq", &Vector3::operator==)
-
+			
 		.addFunction("Normalize", static_cast<void (Vector3::*)(void)>(&Vector3::Normalize))
 		.addFunction("Dot", &Vector3::Dot)
 		.addFunction("Length", &Vector3::Length)
 		.addFunction("LengthSq", &Vector3::LengthSquared)
 		.addFunction("Cross", static_cast<Vector3 (Vector3::*)(const Vector3&) const>(&Vector3::Cross))
 		.addStaticFunction("AngleBetween", &Vector3AngleBetween)
+
+		.addStaticFunction("Min", static_cast<Vector3(*)(const Vector3& v1, const Vector3& v2)>(&Vector3::Min))
+		.addStaticFunction("Max", static_cast<Vector3(*)(const Vector3& v1, const Vector3& v2)>(&Vector3::Max))
 		.endClass()
 
 		.beginClass<Vector4>("Vector4")
@@ -278,6 +284,9 @@ inline void RegLuaMath()
 		.addStaticFunction("CreatePlane", &Vector4CreatePlane)
 		.addStaticFunction("PlaneLineCollide", &Vector4PlaneLineCollide)
 		.addStaticFunction("AngleBetween", &Vector4AngleBetween)
+			
+		.addStaticFunction("Min", static_cast<Vector4(*)(const Vector4& v1, const Vector4& v2)>(&Vector4::Min))
+		.addStaticFunction("Max", static_cast<Vector4(*)(const Vector4& v1, const Vector4& v2)>(&Vector4::Max))
 		.endClass()
 
 		.beginClass<MLRECT>("Rect")

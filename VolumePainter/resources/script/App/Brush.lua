@@ -4,6 +4,9 @@ function Brush:Init()
 	self.brushSize = 30.0
 	self.brushHardness = 0.0
 	self.brushColor = Vector4(1, 1, 1, 1)	
+
+	self.minCorner = Vector3(VolumeWorld.volumeResolutionX, VolumeWorld.volumeResolutionY, VolumeWorld.volumeResolutionZ)
+	self.maxCorner = Vector3(0, 0, 0)
 end
 
 function Brush:Close()
@@ -33,7 +36,11 @@ function Brush:SetBrushColor (color)
 end
 
 function Brush:StopDraw()
+	VolumeWorld.volumeCore:PushDifference(self.minCorner, self.maxCorner)
+
 	self.prevBrushPos = nil
+	self.minCorner = Vector3(VolumeWorld.volumeResolutionX, VolumeWorld.volumeResolutionY, VolumeWorld.volumeResolutionZ)
+	self.maxCorner = Vector3(0, 0, 0)
 end
 
 function Brush:DrawBrushFromViewport(pos, ray)
@@ -54,6 +61,10 @@ function Brush:DrawBrushSpherical (position, radius)
 	local volumePosition = (position + VolumeWorld.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
 	local volumeRadius = radius * 0.5
 		
+	local volumeRadiusVector = Vector3(volumeRadius, volumeRadius, volumeRadius)
+	self.minCorner = Vector3.Min(self.minCorner, volumePosition - volumeRadiusVector)
+	self.maxCorner = Vector3.Max(self.maxCorner, volumePosition + volumeRadiusVector)
+
 	local prevVolumePosition = volumePosition
 	if self.prevBrushPos then
 		prevVolumePosition = self.prevBrushPos

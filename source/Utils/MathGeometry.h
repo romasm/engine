@@ -301,14 +301,14 @@ inline float RayBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, BoundingBox 
 		return dist;
 }
 
-inline float RayOrientedBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, BoundingOrientedBox box)
+/*inline float RayOrientedBoxIntersect(XMVECTOR ray_origin, XMVECTOR ray_dir, BoundingOrientedBox box)
 {
 	float dist;
 	if(!box.Intersects(ray_origin, XMVector3Normalize(ray_dir), dist))
 		return -1.0f;
 	else
 		return dist;
-}
+}*/
 
 inline XMMATRIX TransformationFromViewPos(CXMMATRIX view, Vector3 pos)
 {

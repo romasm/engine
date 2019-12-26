@@ -2,6 +2,7 @@
 #include "common_volume.hlsl"
 
 RWTexture3D <unorm float4> volumeRW : register(u0);
+RWTexture3D <unorm float4> volumeDiff : register(u1);
 
 cbuffer volumeInfo : register(b0)
 {
@@ -72,8 +73,11 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 
 	brushValue = max(0, brushValue - valueReductor);
 
-	data += brushColorOpacity * brushValue;
-	data = clamp(data, 0.0f, topClapm); 
-	
-	volumeRW[volumeCoords] = data;
+	float4 newData = data + brushColorOpacity * brushValue;
+	newData = clamp(newData, 0.0f, topClapm);
+
+	float4 difference = volumeDiff.Load(volumeCoords);
+	volumeDiff[volumeCoords] = difference + (newData - data);
+
+	volumeRW[volumeCoords] = newData;
 } 

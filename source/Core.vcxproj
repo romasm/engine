@@ -19,7 +19,7 @@
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Core</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -122,6 +122,7 @@
       <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -216,7 +217,11 @@
     <ClInclude Include="Render\Frustum.h" />
     <ClInclude Include="Render\GIMgr.h" />
     <ClInclude Include="Render\Material.h" />
-    <ClInclude Include="Render\RayTraceScene.h" />
+    <ClInclude Include="Render\RayTraceScene.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Render\RenderMgrs.h" />
     <ClInclude Include="Render\RenderState.h" />
@@ -304,7 +309,11 @@
     <ClCompile Include="Render\EnvProbMgr.cpp" />
     <ClCompile Include="Render\GIMgr.cpp" />
     <ClCompile Include="Render\Material.cpp" />
-    <ClCompile Include="Render\RayTraceScene.cpp" />
+    <ClCompile Include="Render\RayTraceScene.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Render\Render.cpp" />
     <ClCompile Include="Render\RenderMgrs.cpp" />
     <ClCompile Include="Render\RenderState.cpp" />

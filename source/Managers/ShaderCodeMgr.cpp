@@ -419,7 +419,7 @@ ID3DBlob* ShaderCodeMgr::CompileShader(string& file, string& binFile, string& en
 bool ShaderCodeMgr::GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t size, uint8_t type)
 {
 	ID3D11ShaderReflection* reflector = nullptr; 
-	D3D11Reflect(data, size, &reflector);
+	D3DReflect(data, size, IID_ID3D11ShaderReflection, (void**)&reflector);
 
 	D3D11_SHADER_DESC shader_desc;
 	HRESULT hr = reflector->GetDesc(&shader_desc);
@@ -700,7 +700,7 @@ void ShaderCodeMgr::DeleteDefinesArray(D3D_SHADER_MACRO* definesArray, uint32_t 
 ID3D11InputLayout* ShaderCodeMgr::GetVertexLayout(uint8_t* data, uint32_t size)
 {
 	ID3D11ShaderReflection* reflector = nullptr; 
-	D3D11Reflect(data, size, &reflector);
+	D3DReflect(data, size, IID_ID3D11ShaderReflection, (void**)&reflector);
 
 	D3D11_SHADER_DESC shader_desc;
 	HRESULT hr = reflector->GetDesc(&shader_desc);
