@@ -389,7 +389,7 @@ namespace EngineCore
 		case WM_MOUSEWHEEL: 
 			Hud::Get()->MouseWheel(MouseEventWheel((short)GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA, mouseX, mouseY), this);
 			return 0;
-		case WM_KEYDOWN: case WM_KEYUP:
+		case WM_KEYDOWN: case WM_KEYUP: case WM_SYSKEYDOWN: case WM_SYSKEYUP:
 			{
 				eKeyCodes keyIndex = static_cast<eKeyCodes>(wParam);
 				BYTE lpKeyState[256];
@@ -397,7 +397,7 @@ namespace EngineCore
 				GetKeyboardState(lpKeyState);
 				ToUnicode((uint32_t)wParam, HIWORD(lParam)&0xFF, lpKeyState, &buffer, 1, 0);
 
-				Hud::Get()->KeyPressed(KeyEvent(buffer, keyIndex), nMsg == WM_KEYDOWN, this);
+				Hud::Get()->KeyPressed(KeyEvent(buffer, keyIndex), nMsg == WM_KEYDOWN || nMsg == WM_SYSKEYDOWN, this);
 				return 0;
 			}
 		case WM_LBUTTONUP:

@@ -70,7 +70,8 @@ function Brush:DrawBrushSpherical (position, radius)
 		prevVolumePosition = self.prevBrushPos
 	end
 
-	VolumeWorld.volumeCore:DrawBrush (prevVolumePosition, volumePosition, volumeRadius, self.brushColor, self.brushHardness)
+	local eraseBrush = CoreGui.Keys.Alt()
+	VolumeWorld.volumeCore:DrawBrush (prevVolumePosition, volumePosition, volumeRadius, self.brushColor, self.brushHardness, eraseBrush)
 	
 	self.prevBrushPos = volumePosition
 end

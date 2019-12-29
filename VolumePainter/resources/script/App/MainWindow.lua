@@ -82,9 +82,6 @@ end
 function MainWindow:Tick(dt)
     self.menu_just_closed = false
 
-    --Properties:Tick(dt)
-    --MaterialProps:Tick(dt)
-
     Viewport:Tick(dt, self.mainwin:IsActive())
 end
 

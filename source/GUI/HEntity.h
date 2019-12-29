@@ -107,6 +107,8 @@ public:
 	bool double_click;
 	bool ignore_events;
 
+	float autoupdate_interval;
+
 	// methods
 	HEntity();
 
@@ -359,6 +361,8 @@ protected:
 	
 	float dclick_time;
 
+	float update_time;
+
 	HChild* first_child;
 	HChild* last_child;
 	unordered_map<string, HChild*>* named_children;
@@ -578,6 +582,7 @@ public:
 	ADD_LUA_PROPERTY_FUNC(bool, ignore_events)
 	ADD_LUA_PROPERTY_FUNC(bool, collide_through)
 	ADD_LUA_PROPERTY_FUNC(uint16_t, focus_mode)
+	ADD_LUA_PROPERTY_FUNC(float, autoupdate_interval)
 
 	inline bool is_eq(HEntityWraper e){return e.ID == ID;}
 	inline bool is_null(){return ID == GUI_ENTITY_COUNT;}
@@ -608,6 +613,7 @@ public:
 				ADD_LUA_PROPERTY_DEF(bool, ignore_events)
 				ADD_LUA_PROPERTY_DEF(bool, collide_through)
 				ADD_LUA_PROPERTY_DEF(uint16_t, focus_mode)
+				ADD_LUA_PROPERTY_DEF(float, autoupdate_interval)			
 				
 				.addFunction("is_eq", &HEntityWraper::is_eq)
 				.addFunction("is_null", &HEntityWraper::is_null)

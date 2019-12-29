@@ -25,6 +25,9 @@ cbuffer brushInfo : register(b1)
 
 	float brushHardness;
 	float3 brushPrevPosition;
+	
+	float brushErase;
+	float3 padding;
 };
 
 float CalcBrushValue(float value)
@@ -73,8 +76,19 @@ void Draw(uint3 threadID : SV_DispatchThreadID)
 
 	brushValue = max(0, brushValue - valueReductor);
 
-	float4 newData = data + brushColorOpacity * brushValue;
-	newData = clamp(newData, 0.0f, topClapm);
+	if (brushValue == 0)
+		return;
+
+	float4 newData;
+	if (brushErase < 0.5f)
+	{
+		newData = data + brushColorOpacity * brushValue;
+		newData = clamp(newData, 0.0f, topClapm);
+	}
+	else
+	{
+		newData = data * (1.0f - brushValue);
+	}
 
 	float4 difference = volumeDiff.Load(volumeCoords);
 	volumeDiff[volumeCoords] = difference + (newData - data);

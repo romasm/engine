@@ -11,7 +11,7 @@ function WorkingPlane:Init ()
 			VolumeWorld.coreWorld.staticMesh:SetMesh (self.planeEnt, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MESH)
 			VolumeWorld.coreWorld.staticMesh:SetMaterial (self.planeEnt, 0, PATH.EDITOR_MESHES .. "unit_plane" .. EXT.MATERIAL)
 
-			VolumeWorld.coreWorld.transform:SetScale_L3F (self.planeEnt, 5.0, 5.0, 5.0)
+			VolumeWorld.coreWorld.transform:SetScale_L3F (self.planeEnt, 2.5, 2.5, 2.5)
 			VolumeWorld.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, 0.0, 0.0, math.pi * 0.5)
 		end
 	end
@@ -25,10 +25,40 @@ function WorkingPlane:Init ()
 	self.planeFadeEnable = 0
 	self:SetPlaneFade (50.0)
 	self:SetPlaneVisible (true)
+
+	self.positioningType = 0
+	self.attachDistance = 1.0
 end
 
 function WorkingPlane:Close ()
 	self.planeEnt = nil
+end
+
+function WorkingPlane:SetPositioning (type)
+	if self.positioningType == type then return end
+
+	self.positioningType = type
+
+	if self.positioningType == 0 then
+		local tranasform = VolumeWorld.coreWorld.transform:GetTransform_W (self.planeEnt)
+		VolumeWorld.coreWorld.transform:Detach (self.planeEnt)
+		VolumeWorld.coreWorld.transform:SetTransform_L (self.planeEnt, tranasform)
+
+		TransformControls:Activate ()
+		TransformControls:UpdateTransform ( { Tools.transformEntity })
+	else
+		VolumeWorld.coreWorld.transform:Attach (self.planeEnt, EditorCamera.cameraEntity)
+		VolumeWorld.coreWorld.transform:SetScale_L3F (self.planeEnt, 2.5, 2.5, 2.5)
+		VolumeWorld.coreWorld.transform:SetRotationPYR_L3F (self.planeEnt, math.pi * 0.5, 0.0, 0.0)
+		VolumeWorld.coreWorld.transform:SetPosition_L3F (self.planeEnt, 0, 0, self.attachDistance)
+
+		TransformControls:Deactivate ()
+	end
+end
+
+function WorkingPlane:SetAttachDist (dist)
+	self.attachDistance = dist
+	VolumeWorld.coreWorld.transform:SetPosition_L3F (self.planeEnt, 0, 0, self.attachDistance)
 end
 
 function WorkingPlane:SetToolsVisibility (visible)

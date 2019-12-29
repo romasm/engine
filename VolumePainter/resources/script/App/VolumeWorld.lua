@@ -18,7 +18,7 @@ function VolumeWorld:CreateWorld(resX, resY, resZ)
 	self.volumeResolutionX = resX
 	self.volumeResolutionY = resY
 	self.volumeResolutionZ = resZ
-	self.historySize = 2 * 1024
+	self.historySize = 4 * 1024
 
 	VolumeWorld:Init ()
 end

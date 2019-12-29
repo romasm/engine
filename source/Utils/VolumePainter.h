@@ -12,8 +12,8 @@
 #define COPMUTE_TREADS_Y 4
 #define COPMUTE_TREADS_Z 2
 
-#define VOXEL_DATA_SIZE 4
-#define HISTORY_LENGTH 128
+#define VOXEL_DIFF_SIZE 8
+#define HISTORY_LENGTH 256
 
 namespace EngineCore
 {
@@ -28,6 +28,9 @@ namespace EngineCore
 
 			float hardness;
 			Vector3 prevPosition;
+
+			float erase;
+			Vector3 padding;
 		};
 
 		struct VolumeInfo
@@ -44,7 +47,7 @@ namespace EngineCore
 		
 		struct VolumeDiff
 		{
-#define AREA_ALIGMENT_X (64 / VOXEL_DATA_SIZE)
+#define AREA_ALIGMENT_X (64 / VOXEL_DIFF_SIZE)
 #define AREA_ALIGMENT_Y 2
 
 			int32_t minX, minY, minZ;
@@ -55,7 +58,7 @@ namespace EngineCore
 
 			inline int64_t GetVoxelsSize()
 			{
-				return resX * resY * resZ * VOXEL_DATA_SIZE;
+				return resX * resY * resZ * VOXEL_DIFF_SIZE;
 			}
 
 			inline D3D11_BOX GetD3DBox()
@@ -127,7 +130,7 @@ namespace EngineCore
 
 		void ImportTexture(string textureName);
 		void ExportTexture(string textureName, int32_t packingType, int32_t storageType);
-		void DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness);
+		void DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness, bool erase);
 
 		void PushDifference(Vector3& minCorner, Vector3& maxCorner);
 		void HistoryStepBack();

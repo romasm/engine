@@ -317,7 +317,7 @@ GuiStyles.common_textfield = {
 GuiStyles.float_textfield = {
     data = {
         d_type = GUI_TEXTFIELD.FLOAT,
-        decimal = 2,
+        decimal = 3,
         min = -10000000,
         max = 10000000,
     },
@@ -639,6 +639,19 @@ GuiStyles.common_filefield = {
         text = {str = "X",},
         alt = "Clean",
     },
+}
+
+GuiStyles.angle_textfield = {
+	styles = {
+		GuiStyles.props_textfield,
+		GuiStyles.float_textfield,
+	},
+
+	data = {
+		decimal = 2,
+		min = - 360,
+		max = 360,
+	},
 }
 
 -- color styles

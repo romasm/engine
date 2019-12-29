@@ -63,7 +63,9 @@ function GuiEntity:ApplyProps(props)
     if props.collide_through ~= nil then self.entity.collide_through = props.collide_through end
 
     if props.double_click ~= nil then self.entity.double_click = props.double_click end
-    if props.ignore_events ~= nil then self.entity.ignore_events = props.ignore_events end
+	if props.ignore_events ~= nil then self.entity.ignore_events = props.ignore_events end
+
+	if props.autoupdate_interval ~= nil then self.entity.autoupdate_interval = props.autoupdate_interval end
 end
 
 function GuiEntity:ApplyCallbacks(props)

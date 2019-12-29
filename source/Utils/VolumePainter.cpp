@@ -64,6 +64,7 @@ bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32
 		return false;
 	}
 
+	volumeDesc.Format = DXGI_FORMAT_R16G16B16A16_SNORM;
 	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 	volumeDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
 	if (FAILED(DEVICE3->CreateTexture3D(&volumeDesc, NULL, &volumeDifference)))
@@ -84,6 +85,7 @@ bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32
 		return false;
 	}
 
+	volumeUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_SNORM;
 	if (FAILED(Render::CreateUnorderedAccessView(volumeDifference, &volumeUAVDesc, &volumeDifferenceUAV)))
 	{
 		ERR("VolumePainter -> volume difference CreateUnorderedAccessView failed");
@@ -165,7 +167,7 @@ void VolumePainter::ExportTexture(string textureName, int32_t packingType, int32
 	TexLoader::SaveTexture(textureName, volumeTextureSRV);
 }
 
-void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness)
+void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness, bool erase)
 {
 	BrushInfo brushInfo;
 	brushInfo.position = position;
@@ -173,6 +175,7 @@ void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float ra
 	brushInfo.radius = radius;
 	brushInfo.colorOpacity = colorOpacity;
 	brushInfo.hardness = min(hardness, 0.999f);
+	brushInfo.erase = erase ? 1.0f : 0.0f;
 	Render::UpdateDynamicResource(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
 
 	Vector3 minCorner = Vector3::Min(position, prevPosition);
@@ -253,7 +256,7 @@ void VolumePainter::PushDifference(Vector3& minCorner, Vector3& maxCorner)
 	}
 
 	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
-	uint32_t rowPitch = volumeArea.resX * VOXEL_DATA_SIZE;
+	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
 	
 	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_READ, 0, NULL)))
@@ -265,7 +268,7 @@ void VolumePainter::PushDifference(Vector3& minCorner, Vector3& maxCorner)
 	DEVICE3->ReadFromSubresource(volumeArea.data, rowPitch, depthPitch, volumeDifference, 0, &volumeBox);	
 	CONTEXT3->Unmap(volumeDifference, 0);
 
-	Render::ClearUnorderedAccessViewFloat(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
+	Render::ClearUnorderedAccessViewUint(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
 
 	LOG("Difference pushed, history size = %i MB", int32_t(historySize / (1024 * 1024)));
 }
@@ -279,8 +282,10 @@ void VolumePainter::HistoryStepBack()
 	VolumeDiff& volumeArea = history[historyMark - 1];
 
 	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
-	uint32_t rowPitch = volumeArea.resX * VOXEL_DATA_SIZE;
+	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
+
+	Render::ClearUnorderedAccessViewUint(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
 
 	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
 	{
@@ -335,8 +340,10 @@ void VolumePainter::HistoryStepForward()
 		VolumeDiff& volumeAreaNext = history[historyMark];
 
 		D3D11_BOX volumeBox = volumeAreaNext.GetD3DBox();
-		uint32_t rowPitch = volumeAreaNext.resX * VOXEL_DATA_SIZE;
+		uint32_t rowPitch = volumeAreaNext.resX * VOXEL_DIFF_SIZE;
 		uint32_t depthPitch = rowPitch * volumeAreaNext.resY;
+
+		Render::ClearUnorderedAccessViewUint(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
 
 		if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
 		{

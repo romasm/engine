@@ -443,12 +443,18 @@ bool Hud::KeyPressed(const KeyEvent &arg, bool pressed, Window* win)
 	switch (arg.code)
 	{
 	case KEY_SHIFT:
+	case KEY_LSHIFT:
+	case KEY_RSHIFT:
 		KeyState.shift = pressed;
 		break;
 	case KEY_CONTROL:
+	case KEY_LCONTROL:
+	case KEY_RCONTROL:
 		KeyState.ctrl = pressed;
 		break;
 	case KEY_ALT:
+	case KEY_LALT:
+	case KEY_RALT:
 		KeyState.alt = pressed;
 		break;
 	}

@@ -21,11 +21,16 @@ lcl = {
 	brush_color = "Color",
 	
 	plane_visible = "Visualize working plane",
-
 	plane_fade_enable = "Enable cutoff",
 	plane_fade_enable_alt = "Cutoff of the volume in front of working plane",
-
 	plane_fade = "Cutoff hardness",
+	plane_pos_type = "Positioning",
+	plane_pos_abs = "Absolute",
+	plane_pos_cam = "Attach to camera",
+	plane_attach_dist = "Attach distance",
+	plane_pos = "Position",
+	plane_rot = "Rotation",
+	plane_scale = "Scale",
 
 	volume_vis = "Volume visualization",
 	volume_vis_type = "Visualization type",

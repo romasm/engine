@@ -65,6 +65,9 @@ HEntity::HEntity() : lua_class(LSTATE)
 	last_child = nullptr;
 	trueTop = nullptr;
 
+	autoupdate_interval = -1.0f;
+	update_time = 0;
+
 	ZeroEntity();
 }
 
@@ -139,6 +142,11 @@ bool HEntity::Init(string id, LuaRef classRef)
 	texts = new DArray<Text>;
 
 	ID = id;
+
+	if (autoupdate_interval >= 0)
+	{
+		update_time = float(double(rand()) / RAND_MAX) * autoupdate_interval;
+	}
 
 	return SetLuaClass(classRef);
 }
@@ -230,6 +238,21 @@ void HEntity::Update(float dt)
 				break;
 			ent->Update(dt);
 		}
+
+	if (autoupdate_interval >= 0 && GET_HENTITY(GetParent())->GetFocus() != sys_ID)
+	{
+		update_time += dt;
+		if (update_time > autoupdate_interval)
+		{
+			update_time = 0;
+
+			HEvent ev;
+			ev.event_id = GuiEvents::GE_UPDATE;
+			ev.object_sysid = sys_ID;
+			ev.object_id = ID;
+			SendEvent(ev);
+		}
+	}
 
 	if(tick_func)
 		LUA_CALL((*tick_func)(lua_class, dt),);
