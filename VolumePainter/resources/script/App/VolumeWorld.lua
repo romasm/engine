@@ -18,7 +18,7 @@ function VolumeWorld:CreateWorld(resX, resY, resZ)
 	self.volumeResolutionX = resX
 	self.volumeResolutionY = resY
 	self.volumeResolutionZ = resZ
-	self.historySize = 8 * 1024 * 1024 * 1024
+	self.historySize = 2 * 1024
 
 	VolumeWorld:Init ()
 end
@@ -89,6 +89,18 @@ function VolumeWorld:Close()
 	self.initialized = false
 end
 
+function VolumeWorld:Undo()
+	if not self.initialized then return end
+
+	self.volumeCore:HistoryStepBack()
+end
+
+function VolumeWorld:Redo()
+	if not self.initialized then return end
+	
+	self.volumeCore:HistoryStepForward()
+end
+
 function VolumeWorld:Tick(dt)
 	WorkingPlane:Tick(dt)
 end
@@ -124,7 +136,7 @@ function VolumeWorld:AttachViewport(cameraEntity, width, height)
 	if self.sceneRenderer then return nil end
 
 	local initVolumeRenderConfig = RenderInitConfig()
-	--initVolumeRenderConfig.
+	--initVolumeRenderConfig.lightweight = true
 
 	self.sceneRenderer = self.coreWorld:CreateScene(cameraEntity, width, height, initVolumeRenderConfig)
 	return self.sceneRenderer:GetSRV()

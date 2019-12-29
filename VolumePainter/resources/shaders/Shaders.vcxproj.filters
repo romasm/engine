@@ -420,5 +420,8 @@
     <FxCompile Include="volume\volume_frame.hlsl">
       <Filter>volume</Filter>
     </FxCompile>
+    <FxCompile Include="volume\history_steps.hlsl">
+      <Filter>volume</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

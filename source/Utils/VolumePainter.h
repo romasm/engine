@@ -5,6 +5,8 @@
 
 #define COMPUTE_IMPORT_TEXTURE PATH_SHADERS "volume/import_texture#Copy#"
 #define COMPUTE_DRAW_BRUSH PATH_SHADERS "volume/draw_brush#Draw#"
+#define COMPUTE_HISTORY_STEP_BACK PATH_SHADERS "volume/history_steps#StepBack#"
+#define COMPUTE_HISTORY_STEP_FORWARD PATH_SHADERS "volume/history_steps#StepForward#"
 
 #define COPMUTE_TREADS_X 8
 #define COPMUTE_TREADS_Y 4
@@ -39,19 +41,33 @@ namespace EngineCore
 			Vector3 size;
 			float _padding2;
 		};
-
-
+		
 		struct VolumeDiff
 		{
+#define AREA_ALIGMENT_X (64 / VOXEL_DATA_SIZE)
+#define AREA_ALIGMENT_Y 2
+
 			int32_t minX, minY, minZ;
 			int32_t maxX, maxY, maxZ;
 			int32_t resX, resY, resZ;
 
-			uint16_t* data;
+			uint8_t* data;
 
-			inline int32_t GetVoxelsSize()
+			inline int64_t GetVoxelsSize()
 			{
 				return resX * resY * resZ * VOXEL_DATA_SIZE;
+			}
+
+			inline D3D11_BOX GetD3DBox()
+			{
+				D3D11_BOX volumeBox;
+				volumeBox.left = minX;
+				volumeBox.top = minY;
+				volumeBox.front = minZ;
+				volumeBox.right = maxX;
+				volumeBox.bottom = maxY;
+				volumeBox.back = maxZ;
+				return volumeBox;
 			}
 
 			VolumeDiff()
@@ -64,12 +80,15 @@ namespace EngineCore
 
 			void Init(const Vector3& minCorner, const Vector3& maxCorner)
 			{
-				minX = (int32_t)roundf(minCorner.x);
-				minY = (int32_t)roundf(minCorner.y);
-				minZ = (int32_t)roundf(minCorner.z);
-				maxX = (int32_t)roundf(maxCorner.x);
-				maxY = (int32_t)roundf(maxCorner.y);
-				maxZ = (int32_t)roundf(maxCorner.z);
+				Clear();
+
+				minX = (int32_t)floor(minCorner.x / AREA_ALIGMENT_X) * AREA_ALIGMENT_X;
+				minY = (int32_t)floor(minCorner.y / AREA_ALIGMENT_Y) * AREA_ALIGMENT_Y;
+				minZ = (int32_t)floor(minCorner.z);
+
+				maxX = (int32_t)ceil(maxCorner.x / AREA_ALIGMENT_X) * AREA_ALIGMENT_X;
+				maxY = (int32_t)ceil(maxCorner.y / AREA_ALIGMENT_Y) * AREA_ALIGMENT_Y;
+				maxZ = (int32_t)ceil(maxCorner.z);
 
 				resX = maxX - minX;
 				resY = maxY - minY;
@@ -78,8 +97,8 @@ namespace EngineCore
 				if (resX <= 0 || resY <= 0 || resZ <= 0)
 					ERR("VolumeArea wrong size");
 
-				int32_t voxelsSize = GetVoxelsSize();
-				data = new uint16_t[voxelsSize];
+				int64_t voxelsSize = GetVoxelsSize();
+				data = new uint8_t[voxelsSize];
 			}
 
 			void Clear()
@@ -102,7 +121,7 @@ namespace EngineCore
 		VolumePainter();
 		~VolumePainter();
 
-		bool Init(uint32_t width, uint32_t height, uint32_t depth, uint32_t historyMaxSize);
+		bool Init(uint32_t width, uint32_t height, uint32_t depth, uint32_t historyBufferSizeMB);
 
 		luaSRV GetSRV()	{ return luaSRV(volumeTextureSRV); }
 
@@ -111,7 +130,8 @@ namespace EngineCore
 		void DrawBrush(Vector3& prevPosition, Vector3& position, float radius, Vector4& colorOpacity, float hardness);
 
 		void PushDifference(Vector3& minCorner, Vector3& maxCorner);
-		void StoreDifference(VolumeDiff& area, uint8_t* difference);
+		void HistoryStepBack();
+		void HistoryStepForward();
 
 		static void RegLuaClass()
 		{
@@ -124,6 +144,8 @@ namespace EngineCore
 				.addFunction("ExportTexture", &VolumePainter::ExportTexture)
 				.addFunction("DrawBrush", &VolumePainter::DrawBrush)
 				.addFunction("PushDifference", &VolumePainter::PushDifference)
+				.addFunction("HistoryStepBack", &VolumePainter::HistoryStepBack)
+				.addFunction("HistoryStepForward", &VolumePainter::HistoryStepForward)
 				.endClass();
 		}
 
@@ -143,13 +165,15 @@ namespace EngineCore
 		Compute* computeImportTexture;
 		Compute* computeDrawBrush;
 
+		Compute* computeHistoryStepBack;
+		Compute* computeHistoryStepForward;
+
 		ID3D11Buffer* brushInfoBuffer;
 		ID3D11Buffer* volumeInfoBuffer;
-
-		//uint8_t* volumeData;
-
+		
 		RDeque<VolumeDiff> history;
-		uint32_t historySize;
-		uint32_t historyMaxSize;
+		int64_t historySize;
+		int64_t historyMaxSize;
+		int32_t historyMark;
 	};
 }

@@ -18,7 +18,8 @@ VolumePainter::VolumePainter()
 	computeImportTexture = nullptr;
 	computeDrawBrush = nullptr;
 
-	//volumeData = nullptr;
+	computeHistoryStepBack = nullptr;
+	computeHistoryStepForward = nullptr;
 
 	historySize = 0;
 	historyMaxSize = 0;
@@ -36,18 +37,16 @@ VolumePainter::~VolumePainter()
 	_DELETE(computeImportTexture);
 	_DELETE(computeDrawBrush);
 
-	//_DELETE_ARRAY(volumeData);
+	_DELETE(computeHistoryStepBack);
+	_DELETE(computeHistoryStepForward);
 }
 
-bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32_t historyBufferSize)
+bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32_t historyBufferSizeMB)
 {
 	volumeResolutionX = width;
 	volumeResolutionY = height;
 	volumeResolutionZ = depth;
-
-	//int32_t volumeSize = volumeResolutionX * volumeResolutionY * volumeResolutionZ * VOXEL_DATA_SIZE;
-	//volumeData = new uint8_t[volumeSize];
-
+	
 	D3D11_TEXTURE3D_DESC volumeDesc;
 	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
 	volumeDesc.Width = volumeResolutionX;
@@ -118,9 +117,20 @@ bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32
 	computeDrawBrush->AttachConstantBuffer("volumeInfo", volumeInfoBuffer);
 	computeDrawBrush->AttachConstantBuffer("brushInfo", brushInfoBuffer);
 
+	computeHistoryStepBack = new Compute(COMPUTE_HISTORY_STEP_BACK);
+	computeHistoryStepBack->AttachRWResource("volumeRW", volumeTextureUAV);
+	computeHistoryStepBack->AttachRWResource("volumeDiff", volumeDifferenceUAV);
+	computeHistoryStepBack->AttachConstantBuffer("volumeInfo", volumeInfoBuffer);
+	
+	computeHistoryStepForward = new Compute(COMPUTE_HISTORY_STEP_FORWARD);
+	computeHistoryStepForward->AttachRWResource("volumeRW", volumeTextureUAV);
+	computeHistoryStepForward->AttachRWResource("volumeDiff", volumeDifferenceUAV);
+	computeHistoryStepForward->AttachConstantBuffer("volumeInfo", volumeInfoBuffer);
+	
 	history.create(HISTORY_LENGTH);
-	historyMaxSize = historyBufferSize;
+	historyMaxSize = (int64_t)historyBufferSizeMB * 1024 * 1024;
 	historySize = 0;
+	historyMark = 0;
 
 	return true;
 }
@@ -199,64 +209,144 @@ void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float ra
 	uint32_t groupCountY = (uint32_t)ceil(boxSize.y / COPMUTE_TREADS_Y);
 	uint32_t groupCountZ = (uint32_t)ceil(boxSize.z / COPMUTE_TREADS_Z);
 
-	//LOG("%u %u %u = %i %i %i", groupCountX, groupCountY, groupCountZ, int32_t(minCorner.x), int32_t(minCorner.y), int32_t(minCorner.z));
-
 	computeDrawBrush->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
 void VolumePainter::PushDifference(Vector3& minCorner, Vector3& maxCorner)
 {
+	Vector3 minCornerClamped = Vector3::Max(minCorner, Vector3(0, 0, 0));
+	Vector3 maxCornerClamped = Vector3::Min(maxCorner, Vector3((float)volumeResolutionX, (float)volumeResolutionY, (float)volumeResolutionZ));
+
+	Vector3 checkArea = maxCornerClamped - minCornerClamped;
+	if (checkArea.x <= 0 || checkArea.y <= 0 || checkArea.z <= 0)
+		return;
+	
+	// if historyMark not last, erase all history after historyMark
+	while (historyMark < (int32_t)history.size())
+	{
+		VolumeDiff& dropedArea = history.back();
+
+		historySize -= dropedArea.GetVoxelsSize();
+		historySize = max((int64_t)0, historySize);
+
+		dropedArea.Clear();
+		history.erase(history.size() - 1);
+	}
+			
 	VolumeDiff& volumeArea = history.push_back();
-	volumeArea.Init(minCorner, maxCorner);
+	volumeArea.Init(minCornerClamped, maxCornerClamped);
 
-	int32_t voxelsSize = volumeArea.GetVoxelsSize();
+	historyMark = (int32_t)history.size();
 
+	uint64_t voxelsSize = volumeArea.GetVoxelsSize();
+	
 	historySize += voxelsSize;
-	if (historySize > historyMaxSize && history.size() > 1)
+	while (historySize > historyMaxSize && history.size() > 1)
 	{
 		VolumeDiff& dropedArea = history.front();
 
 		historySize -= dropedArea.GetVoxelsSize();
+		historySize = max((int64_t)0, historySize);
 
 		dropedArea.Clear();
 		history.pop_front();
 	}
 
-	//CONTEXT->CopyResource(volumeDifferenceCopy, volumeDifference);
-
-	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL/*&mappedVolume*/)))
+	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
+	uint32_t rowPitch = volumeArea.resX * VOXEL_DATA_SIZE;
+	uint32_t depthPitch = rowPitch * volumeArea.resY;
+	
+	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_READ, 0, NULL)))
 	{
 		ERR("Cant map volume difference to CPU");
 		return;
 	}
 
-	//DEVICE3->ReadFromSubresource();
-
-	//StoreDifference(volumeArea, (uint8_t*)mappedVolume.pData);
-	
+	DEVICE3->ReadFromSubresource(volumeArea.data, rowPitch, depthPitch, volumeDifference, 0, &volumeBox);	
 	CONTEXT3->Unmap(volumeDifference, 0);
 
 	Render::ClearUnorderedAccessViewFloat(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
+
+	LOG("Difference pushed, history size = %i MB", int32_t(historySize / (1024 * 1024)));
 }
 
-void VolumePainter::StoreDifference(VolumeDiff& area, uint8_t* difference)
+void VolumePainter::HistoryStepBack() 
 {
-	int32_t offsetSource = area.minZ * (volumeResolutionX * volumeResolutionY) + area.minY * volumeResolutionX + area.minX;
-	int32_t offsetArea = 0;
+	if (history.empty() || historyMark == 0)
+		return;
 
-	int32_t copySize = area.resX * VOXEL_DATA_SIZE;
+	// send diff to gpu
+	VolumeDiff& volumeArea = history[historyMark - 1];
 
-	for (int32_t z = area.minZ; z <= area.maxZ; z++)
+	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
+	uint32_t rowPitch = volumeArea.resX * VOXEL_DATA_SIZE;
+	uint32_t depthPitch = rowPitch * volumeArea.resY;
+
+	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
 	{
-		int32_t offsetSourceZ = offsetSource + z * (volumeResolutionX * volumeResolutionY);
-
-		for (int32_t y = area.minY; y <= area.maxY; y++)
-		{
-			int32_t offsetSourceZY = offsetSourceZ + y * volumeResolutionX;
-
-			memcpy(area.data + offsetArea * VOXEL_DATA_SIZE, difference + offsetSourceZY * VOXEL_DATA_SIZE, copySize);
-
-			offsetArea += area.resX;
-		}
+		ERR("Cant map volume difference to CPU");
+		return;
 	}
+
+	DEVICE3->WriteToSubresource(volumeDifference, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
+	CONTEXT3->Unmap(volumeDifference, 0);
+
+	// execute compute to do step back
+	VolumeInfo volumeInfo;
+	volumeInfo.minCorner = Vector3((float)volumeArea.minX, (float)volumeArea.minY, (float)volumeArea.minZ);
+	volumeInfo.size = Vector3((float)volumeArea.resX, (float)volumeArea.resY, (float)volumeArea.resZ);
+	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+
+	uint32_t groupCountX = (uint32_t)ceil(volumeInfo.size.x / COPMUTE_TREADS_X);
+	uint32_t groupCountY = (uint32_t)ceil(volumeInfo.size.y / COPMUTE_TREADS_Y);
+	uint32_t groupCountZ = (uint32_t)ceil(volumeInfo.size.z / COPMUTE_TREADS_Z);
+
+	computeHistoryStepBack->Dispatch(groupCountX, groupCountY, groupCountZ);
+
+	historyMark--;
+
+	LOG("History changed to %i", historyMark);
+}
+
+void VolumePainter::HistoryStepForward()
+{
+	if (historyMark == (int32_t)history.size())
+		return;
+
+	// execute compute to do step forward
+	VolumeDiff& volumeArea = history[historyMark];
+
+	VolumeInfo volumeInfo;
+	volumeInfo.minCorner = Vector3((float)volumeArea.minX, (float)volumeArea.minY, (float)volumeArea.minZ);
+	volumeInfo.size = Vector3((float)volumeArea.resX, (float)volumeArea.resY, (float)volumeArea.resZ);
+	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+
+	uint32_t groupCountX = (uint32_t)ceil(volumeInfo.size.x / COPMUTE_TREADS_X);
+	uint32_t groupCountY = (uint32_t)ceil(volumeInfo.size.y / COPMUTE_TREADS_Y);
+	uint32_t groupCountZ = (uint32_t)ceil(volumeInfo.size.z / COPMUTE_TREADS_Z);
+
+	computeHistoryStepForward->Dispatch(groupCountX, groupCountY, groupCountZ);
+	
+	historyMark++;
+
+	// if not last step - send next diff to gpu
+	if (historyMark < (int32_t)history.size())
+	{
+		VolumeDiff& volumeAreaNext = history[historyMark];
+
+		D3D11_BOX volumeBox = volumeAreaNext.GetD3DBox();
+		uint32_t rowPitch = volumeAreaNext.resX * VOXEL_DATA_SIZE;
+		uint32_t depthPitch = rowPitch * volumeAreaNext.resY;
+
+		if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
+		{
+			ERR("Cant map volume difference to CPU");
+			return;
+		}
+
+		DEVICE3->WriteToSubresource(volumeDifference, 0, &volumeBox, volumeAreaNext.data, rowPitch, depthPitch);
+		CONTEXT3->Unmap(volumeDifference, 0);
+	}
+
+	LOG("History changed to %i", historyMark);
 }

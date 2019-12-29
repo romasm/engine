@@ -158,6 +158,7 @@
   <ItemGroup>
     <FxCompile Include="volume\common_volume.hlsl" />
     <FxCompile Include="volume\draw_brush.hlsl" />
+    <FxCompile Include="volume\history_steps.hlsl" />
     <FxCompile Include="volume\import_texture.hlsl" />
     <FxCompile Include="volume\volume_cube.hlsl" />
     <FxCompile Include="volume\volume_cube_color.hlsl" />

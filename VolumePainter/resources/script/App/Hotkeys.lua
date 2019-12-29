@@ -39,11 +39,13 @@ function Hotkeys:Process(eventData, root)
         resEvent.event = GUI_EVENTS.NULL
 
     elseif eventData.key == KEYBOARD_CODES.KEY_Z and CoreGui.Keys.Ctrl() then 
-        History:Undo()
-        resEvent.event = GUI_EVENTS.NULL
+		--History:Undo()
+		VolumeWorld:Undo()
+		resEvent.event = GUI_EVENTS.NULL
     elseif eventData.key == KEYBOARD_CODES.KEY_Y and CoreGui.Keys.Ctrl() then 
-        History:Redo()
-        resEvent.event = GUI_EVENTS.NULL
+		--History:Redo()
+		VolumeWorld:Redo()
+		resEvent.event = GUI_EVENTS.NULL
 
 	elseif eventData.key == KEYBOARD_CODES.KEY_1 then 
 		Tools:SetToolMode(TOOL_MODE.BRUSH)
