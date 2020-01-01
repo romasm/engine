@@ -178,6 +178,9 @@ end
 function Tools:BrushStart(rayPos, rayDir)
 	if self.toolMode ~= TOOL_MODE.BRUSH then return end
 	self.brushInAction = true
+		
+	self.brushEraseMode = CoreGui.Keys.Alt()
+
 	self:BrushAction(rayPos, rayDir)
 end
 
@@ -190,7 +193,7 @@ end
 function Tools:BrushAction(rayPos, rayDir)
 	if self.brushInAction == false then return end
 
-	Brush:DrawBrushFromViewport(rayPos, rayDir)
+	Brush:DrawBrushFromViewport(rayPos, rayDir, self.brushEraseMode)
 end
 
 -- TRANSFORM

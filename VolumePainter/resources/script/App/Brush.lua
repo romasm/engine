@@ -43,7 +43,7 @@ function Brush:StopDraw()
 	self.maxCorner = Vector3(0, 0, 0)
 end
 
-function Brush:DrawBrushFromViewport(pos, ray)
+function Brush:DrawBrushFromViewport(pos, ray, isErase)
 	local denom = WorkingPlane.planeNormal:Dot (ray)
 	if math.abs(denom)> 0.00001 then
 		local rayToPlane = WorkingPlane.planeOrigin - pos
@@ -51,11 +51,11 @@ function Brush:DrawBrushFromViewport(pos, ray)
 
 		local brushPos = pos + ray * Vector3(t, t, t)
 		
-		self:DrawBrushSpherical (brushPos, self.brushSize)
+		self:DrawBrushSpherical (brushPos, self.brushSize, isErase)
 	end
 end
 
-function Brush:DrawBrushSpherical (position, radius)
+function Brush:DrawBrushSpherical (position, radius, isErase)
 	local maxVolumeRes = Vector3(VolumeWorld.maxVolumeRes, VolumeWorld.maxVolumeRes, VolumeWorld.maxVolumeRes)
 
 	local volumePosition = (position + VolumeWorld.volumeScale * Vector3(0.5, 0.5, 0.5)) * maxVolumeRes
@@ -70,8 +70,7 @@ function Brush:DrawBrushSpherical (position, radius)
 		prevVolumePosition = self.prevBrushPos
 	end
 
-	local eraseBrush = CoreGui.Keys.Alt()
-	VolumeWorld.volumeCore:DrawBrush (prevVolumePosition, volumePosition, volumeRadius, self.brushColor, self.brushHardness, eraseBrush)
+	VolumeWorld.volumeCore:DrawBrush (prevVolumePosition, volumePosition, volumeRadius, self.brushColor, self.brushHardness, isErase)
 	
 	self.prevBrushPos = volumePosition
 end
