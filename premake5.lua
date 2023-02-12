@@ -34,9 +34,9 @@ workspace "Engine"
 			"thirdparty/DirectX12/Inc" ,
 			
 			-- optix
-			"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/include",
-			"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/SDK/sutil",
-			"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include",
+			--"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/include",
+			--"C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0/SDK/sutil",
+			--"C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v10.1/include",
 			
 			-- dx12
 			"$(WindowsSdkDir_10)Include/$(WindowsTargetPlatformVersion)/shared",
@@ -55,7 +55,7 @@ workspace "Engine"
 			"$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64",
 		}
 		
-		--systemversion "10.0.17134.0"
+		systemversion "10.0.20348.0"
 			
 		filter "platforms:x64"
 			targetdir "build/bin"
@@ -65,7 +65,7 @@ workspace "Engine"
 		filter "configurations:Debug"
 			defines { "_EDITOR", "WIN64", "_DEV", "_DEBUG;" }
 			flags{ "FatalWarnings" }
-			disablewarnings { "4099" }
+			disablewarnings { "4099", "4244" }
 			symbols "On"
 			optimize "Off"
 			targetname "core_d"		
@@ -78,7 +78,7 @@ workspace "Engine"
 		filter "configurations:Development"
 			defines { "_EDITOR", "WIN64", "_DEV", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
-			disablewarnings { "4099" }
+			disablewarnings { "4099", "4244" }
 			symbols "On"
 			optimize "Speed"
 			targetname "core_dev"	
@@ -91,7 +91,7 @@ workspace "Engine"
 		filter "configurations:Release"
 			defines { "_EDITOR", "WIN64", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
-			disablewarnings { "4099" }
+			disablewarnings { "4099", "4244" }
 			optimize "Speed"
 			targetname "core"	
 			libdirs {			
@@ -107,7 +107,7 @@ workspace "Engine"
 			"lua51", 
 			
 			-- optix
-			"optix.6.0.0",
+			--"optix.6.0.0",
 			--"nvrtc"
 		}
 		

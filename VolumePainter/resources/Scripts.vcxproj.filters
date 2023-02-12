@@ -1,17 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="..">
       <UniqueIdentifier>{61705900-4DFC-870B-B6AA-880BA255880B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="..\bin">
-      <UniqueIdentifier>{892D8876-75CF-B24C-5E8A-C6A04ACB399D}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="..\bin\lua">
-      <UniqueIdentifier>{BA6AA1B2-A622-E3FF-0F2A-BC5BFB007EF0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="..\bin\lua\jit">
-      <UniqueIdentifier>{70CE87A6-5C9C-7BAC-4530-ECD2319D5711}</UniqueIdentifier>
     </Filter>
     <Filter Include="..\config">
       <UniqueIdentifier>{66A84365-D212-F8DB-1B51-A98187FAD530}</UniqueIdentifier>
@@ -25,14 +16,8 @@
     <Filter Include="gui">
       <UniqueIdentifier>{8A78880B-F681-887C-7FFD-9E7CEB05947C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="gui\ComponentsGui">
-      <UniqueIdentifier>{8428C7F4-F03E-C58A-39B6-50ACA50B9612}</UniqueIdentifier>
-    </Filter>
     <Filter Include="gui\Localization">
       <UniqueIdentifier>{A2516797-8E4A-86E9-B77C-6B6EA3D465F5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gui\MaterialGui">
-      <UniqueIdentifier>{EDE699D0-5972-0795-6283-8A89CE8D6395}</UniqueIdentifier>
     </Filter>
     <Filter Include="gui\Menus">
       <UniqueIdentifier>{215234D0-8DBC-E846-D6FA-99EC42A4C69B}</UniqueIdentifier>
@@ -57,39 +42,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\lua\jit\bc.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\bcsave.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_arm.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_mips.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_mipsel.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_ppc.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_x64.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dis_x86.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\dump.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\v.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
-    <None Include="..\bin\lua\jit\vmdef.lua">
-      <Filter>..\bin\lua\jit</Filter>
-    </None>
     <None Include="..\config\colors_default.cfg">
       <Filter>..\config</Filter>
     </None>
@@ -114,98 +66,14 @@
     <None Include="gui\ColorsWindow.lua">
       <Filter>gui</Filter>
     </None>
-    <None Include="gui\ComponentsGui\Collision.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\EnvProb.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\GlobalLight.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\GlobalLightCallback.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\Light.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\LightCallback.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\Script.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\StaticMesh.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\StaticMeshCallback.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\Transform.lua">
-      <Filter>gui\ComponentsGui</Filter>
-    </None>
-    <None Include="gui\ComponentsGui\TransformCallback.lua">
-      <Filter>gui\ComponentsGui</Filter>
+    <None Include="gui\CreateWindow.lua">
+      <Filter>gui</Filter>
     </None>
     <None Include="gui\Localization\en.lua">
       <Filter>gui\Localization</Filter>
     </None>
     <None Include="gui\Localization\ru.lua">
       <Filter>gui\Localization</Filter>
-    </None>
-    <None Include="gui\MaterialGui\AO.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\AOCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Albedo.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Alphatest.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Emissive.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\MediumRoughness.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Normal.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\NormalCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Opacity.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Reflectivity.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\ReflectivityCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Roughness.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\RoughnessCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Scattering.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\ScatteringCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Thickness.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\Transmittance.lua">
-      <Filter>gui\MaterialGui</Filter>
-    </None>
-    <None Include="gui\MaterialGui\TransmittanceCallback.lua">
-      <Filter>gui\MaterialGui</Filter>
     </None>
     <None Include="gui\Menus\AddComp.lua">
       <Filter>gui\Menus</Filter>
@@ -273,13 +141,22 @@
     <None Include="gui\ToolBar.lua">
       <Filter>gui</Filter>
     </None>
+    <None Include="gui\ToolProperties.lua">
+      <Filter>gui</Filter>
+    </None>
     <None Include="gui\TopBar.lua">
       <Filter>gui</Filter>
     </None>
     <None Include="gui\ViewportWindow.lua">
       <Filter>gui</Filter>
     </None>
+    <None Include="gui\VisualizationWindow.lua">
+      <Filter>gui</Filter>
+    </None>
     <None Include="script\App\AssetBrowser.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="script\App\Brush.lua">
       <Filter>script\App</Filter>
     </None>
     <None Include="script\App\DevConsole.lua">
@@ -318,6 +195,15 @@
     <None Include="script\App\Viewport.lua">
       <Filter>script\App</Filter>
     </None>
+    <None Include="script\App\VisualizationSettings.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="script\App\VolumeWorld.lua">
+      <Filter>script\App</Filter>
+    </None>
+    <None Include="script\App\WorkingPlane.lua">
+      <Filter>script\App</Filter>
+    </None>
     <None Include="script\App\const_Defines.lua">
       <Filter>script\App</Filter>
     </None>
@@ -346,12 +232,6 @@
       <Filter>script\Entities</Filter>
     </None>
     <None Include="script\Entities\StaticModel.lua">
-      <Filter>script\Entities</Filter>
-    </None>
-    <None Include="script\Entities\TestEnt.lua">
-      <Filter>script\Entities</Filter>
-    </None>
-    <None Include="script\Entities\TestPlayer.lua">
       <Filter>script\Entities</Filter>
     </None>
     <None Include="script\Entities\const_EntityDefines.lua">
@@ -425,27 +305,6 @@
     </None>
     <None Include="script\script_loader.lua">
       <Filter>script</Filter>
-    </None>
-    <None Include="script\App\VolumeWorld.lua">
-      <Filter>script\App</Filter>
-    </None>
-    <None Include="gui\ToolProperties.lua">
-      <Filter>gui</Filter>
-    </None>
-    <None Include="script\App\Brush.lua">
-      <Filter>script\App</Filter>
-    </None>
-    <None Include="script\App\WorkingPlane.lua">
-      <Filter>script\App</Filter>
-    </None>
-    <None Include="script\App\VisualizationSettings.lua">
-      <Filter>script\App</Filter>
-    </None>
-    <None Include="gui\VisualizationWindow.lua">
-      <Filter>gui</Filter>
-    </None>
-    <None Include="gui\CreateWindow.lua">
-      <Filter>gui</Filter>
     </None>
   </ItemGroup>
 </Project>

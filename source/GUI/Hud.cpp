@@ -5,7 +5,7 @@
 #include "Text.h"
 #include "Common.h"
 
-#include "RayTraceScene.h"
+//#include "RayTraceScene.h"
 
 using namespace EngineCore;
 
@@ -150,19 +150,19 @@ static void SetTitle(string title)
 }
 
 // TEST
-static void RTTest()
+/*static void RTTest()
 {
 	auto scene = RayTraceScene(nullptr);
-}
+}*/
 // TEST
 
 void Hud::RegLuaClass()
 {	
 	getGlobalNamespace(LSTATE)
 		// TEST
-		.beginNamespace("Test")
+		/*.beginNamespace("Test")
 			.addFunction("RT", &RTTest)
-		.endNamespace()
+		.endNamespace()*/
 		// TEST
 
 		.beginNamespace("CoreGui")

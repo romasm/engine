@@ -154,17 +154,15 @@
     <None Include="system\voxel_downsample.hlsl" />
     <None Include="system\voxel_light_inject.hlsl" />
     <None Include="system\voxel_light_propagate.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="volume\common_volume.hlsl" />
-    <FxCompile Include="volume\draw_brush.hlsl" />
-    <FxCompile Include="volume\history_steps.hlsl" />
-    <FxCompile Include="volume\import_texture.hlsl" />
-    <FxCompile Include="volume\volume_cube.hlsl" />
-    <FxCompile Include="volume\volume_cube_color.hlsl" />
-    <FxCompile Include="volume\volume_cube_solid.hlsl" />
-    <FxCompile Include="volume\volume_frame.hlsl" />
-    <FxCompile Include="volume\volume_raymatch.hlsl" />
+    <None Include="volume\common_volume.hlsl" />
+    <None Include="volume\draw_brush.hlsl" />
+    <None Include="volume\history_steps.hlsl" />
+    <None Include="volume\import_texture.hlsl" />
+    <None Include="volume\volume_cube.hlsl" />
+    <None Include="volume\volume_cube_color.hlsl" />
+    <None Include="volume\volume_cube_solid.hlsl" />
+    <None Include="volume\volume_frame.hlsl" />
+    <None Include="volume\volume_raymatch.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

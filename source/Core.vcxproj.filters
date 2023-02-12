@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Common">
@@ -138,9 +138,6 @@
     <ClInclude Include="GUI\HEntity.h">
       <Filter>GUI</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\HVisuals.h">
-      <Filter>GUI</Filter>
-    </ClInclude>
     <ClInclude Include="GUI\Hud.h">
       <Filter>GUI</Filter>
     </ClInclude>
@@ -256,13 +253,7 @@
     <ClInclude Include="Render\Support\ScreenPlane.h">
       <Filter>Render\Support</Filter>
     </ClInclude>
-    <ClInclude Include="Render\VoxelRenderer.h">
-      <Filter>Render</Filter>
-    </ClInclude>
     <ClInclude Include="System\FileIO.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="System\GraphicAPI.h">
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="System\JobSystem.h">
@@ -301,16 +292,13 @@
     <ClInclude Include="Utils\Util.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\VolumePainter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="Utils\WinAPIDialogs.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Render\RayTraceScene.h">
-      <Filter>Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\VolumePainter.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -380,9 +368,6 @@
       <Filter>GUI</Filter>
     </ClCompile>
     <ClCompile Include="GUI\HEntity.cpp">
-      <Filter>GUI</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\HVisuals.cpp">
       <Filter>GUI</Filter>
     </ClCompile>
     <ClCompile Include="GUI\Hud.cpp">
@@ -475,13 +460,7 @@
     <ClCompile Include="Render\Support\ScreenPlane.cpp">
       <Filter>Render\Support</Filter>
     </ClCompile>
-    <ClCompile Include="Render\VoxelRenderer.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="System\FileIO.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="System\GraphicAPI.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="System\JobSystem.cpp">
@@ -505,13 +484,10 @@
     <ClCompile Include="Utils\Profiler.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="Render\RayTraceScene.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\VolumePainter.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
 </Project>
