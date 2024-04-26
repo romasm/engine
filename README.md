@@ -3,10 +3,12 @@ Engine project
 
 ![repoimg](https://github.com/romasm/engine/blob/master/repo_img.png?raw=true)
 
-How to
+Run
 --------
 Just run **engine\build\launch_dev.bat** 
 
+Compile
+--------
 To compile the project you need Visual Studio and CMake.
 
 First compile the thirdparty projects.
