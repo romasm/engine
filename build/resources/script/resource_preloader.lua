@@ -52,7 +52,6 @@ PreloadList = {
     { PATH.SHADERS .."system/hbao", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."system/hbao_perspective_correct", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."system/hdr", RESOURCE_TYPE.GUI_SHADER },
-    { PATH.SHADERS .."system/combine", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."system/hiz_depth", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."system/opaque_blur", RESOURCE_TYPE.GUI_SHADER },
     { PATH.SHADERS .."system/avglum", RESOURCE_TYPE.GUI_SHADER },
@@ -94,6 +93,7 @@ PreloadList = {
     { PATH.SHADERS .."system/deffered_opaque_simple#DefferedLightingIBL#", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."system/deffered_opaque#DefferedLighting#", RESOURCE_TYPE.COMPUTE },
     { PATH.SHADERS .."offline/prob_capture#Capture#", RESOURCE_TYPE.COMPUTE },
+	{ PATH.SHADERS .. "system/combine#Combine#", RESOURCE_TYPE.COMPUTE },
 }
 
 function PreloadList:PreloadResources()

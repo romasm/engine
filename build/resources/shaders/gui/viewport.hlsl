@@ -41,6 +41,7 @@ float4 Viewport(PI_PosTex input) : SV_TARGET
 		discard;
 		
 	float4 color = shaderTexture.Sample(samplerPointClamp, input.tex);
+	
 	if(outAlpha > 0)
 		color.rgb = color.a;
 

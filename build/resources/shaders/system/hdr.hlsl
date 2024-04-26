@@ -9,21 +9,21 @@ TECHNIQUE_DEFAULT
 #include "../common/shared.hlsl"
 
 Texture2D opaqueTex : register(t0); 
-Texture2D transparentTex : register(t1); 
-Texture2D hudTex : register(t2); 
-Texture2D lumTex : register(t3); 
-Texture2D bloomTex : register(t4); 
+//Texture2D transparentTex : register(t1); 
+Texture2D hudTex : register(t1); 
+Texture2D lumTex : register(t2); 
+Texture2D bloomTex : register(t3); 
 
-Texture2D <float4> gb_albedo_roughY : register(t5); 
-Texture2D <float4> gb_tbn : register(t6); 
-Texture2D <float4> gb_spec_roughX : register(t7); 
-Texture2D <float4> gb_emiss_vnZ : register(t8); 
-Texture2D <float4> gb_subs_thick : register(t9); 
-Texture2D <float> gb_ao : register(t10); 
-Texture2D <float> dynamicAO : register(t11); 
-Texture2D <float2> gb_depth : register(t12);
+Texture2D <float4> gb_albedo_roughY : register(t4); 
+Texture2D <float4> gb_tbn : register(t5); 
+Texture2D <float4> gb_spec_roughX : register(t6); 
+Texture2D <float4> gb_emiss_vnZ : register(t7); 
+Texture2D <float4> gb_subs_thick : register(t8); 
+Texture2D <float> gb_ao : register(t9); 
+Texture2D <float> dynamicAO : register(t10); 
+Texture2D <float2> gb_depth : register(t11);
 // debug
-Texture2D <float4> ssrTex : register(t13); 
+Texture2D <float4> ssrTex : register(t12);  
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -106,7 +106,7 @@ PO_LDR HDRLDR(PI_PosTex input)
 {
 	PO_LDR res;
 	
-	float4 combinedScene = Combine(opaqueTex, transparentTex, input.tex);
+	float4 combinedScene = opaqueTex.Sample(samplerPointClamp, input.tex); //Combine(opaqueTex, transparentTex, input.tex);
 	float3 lin = combinedScene.rgb;
 	
 	const float2 lum_coords = float2(0.5f, 0.5f);

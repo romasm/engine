@@ -1,8 +1,3 @@
-TECHNIQUE_DEFAULT
-{
-	VertexShader = "../resources/shaders/system/screen_plane Main";
-	PixelShader = "Combine";
-}
 
 #include "../common/math.hlsl"
 #include "../common/structs.hlsl"
@@ -10,36 +5,50 @@ TECHNIQUE_DEFAULT
 
 #include "../common/light_structs.hlsl"
 
-Texture2D diffuse : register(t0); 
-Texture2D specular : register(t1); 
-Texture2D specularMore : register(t2); 
+#define GROUP_THREAD_COUNT 8
+
+RWTexture2D <float4> sceneCombinedRW : register(u0);
+RWTexture2D <float4> sceneForNextFrameRW : register(u1);
+
+Texture2D diffuseRT : register(t0);
+Texture2D specularRT : register(t1);
+Texture2D specularMoreRT : register(t2);
 //Texture2D gb_matID_objID : register(t3); 
-Texture2D gb_depth : register(t3); 
+Texture2D depthGB : register(t3);
+Texture2D forwardRT : register(t4);
 
 SamplerState samplerPointClamp : register(s0);
 
-struct PO_opaque
+[numthreads(GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1)]
+void Combine(uint3 threadID : SV_DispatchThreadID)
 {
-	float4 opaque : SV_TARGET0;
-	float4 forNextFrame : SV_TARGET1;
-};
+	const float2 coords = PixelCoordsFromThreadID(threadID.xy);
 
-PO_opaque Combine(PI_PosTex input)
-{
-	PO_opaque res;
-	
-	float4 diffSample = diffuse.Sample(samplerPointClamp, input.tex);
-	float4 specSample = specular.Sample(samplerPointClamp, input.tex);
-	float2 specSecondSample = specularMore.Sample(samplerPointClamp, input.tex).rg;
+	[branch]
+	if (coords.x > 1.0f || coords.y > 1.0f)
+		return;
+		
+	float4 diffuseSample = diffuseRT.SampleLevel(samplerPointClamp, coords, 0);
+	float4 specularSample = specularRT.SampleLevel(samplerPointClamp, coords, 0);
+	float2 specularSecondSample = specularMoreRT.SampleLevel(samplerPointClamp, coords, 0).rg;
 
-	float d = gb_depth.Sample(samplerPointClamp, UVforSamplePow2(input.tex)).r;
+	float4 forwardSample = forwardRT.SampleLevel(samplerPointClamp, coords, 0);
+
+	float depth = depthGB.SampleLevel(samplerPointClamp, UVforSamplePow2(coords), 0).r;
 	
 	// ss blur: TODO
-	res.forNextFrame.rgb = diffSample.rgb + specSample.rgb;
-	res.forNextFrame.a = d; 
 
-	res.opaque.rgb = diffSample.rgb + specSample.rgb * specSecondSample.g + float3(diffSample.a, specSample.a, specSecondSample.r);
-	res.opaque.a = d;
+	float4 sceneForNextFrame, sceneCombined;
+
+	sceneForNextFrame.rgb = diffuseSample.rgb + specularSample.rgb;
+	sceneForNextFrame.a = depth;
+
+	sceneCombined.rgb = diffuseSample.rgb + specularSample.rgb * specularSecondSample.g + float3(diffuseSample.a, specularSample.a, specularSecondSample.r);
+	sceneCombined.a = depth;
 	
-	return res;
+	// forwardSample.rgb must be premultiplied
+	sceneCombined.rgb = sceneCombined.rgb * (1.0f - min(forwardSample.a, 1.0f)) + forwardSample.rgb;
+
+	sceneCombinedRW[threadID.xy] = sceneCombined;//float4(coords,0,1);//
+	sceneForNextFrameRW[threadID.xy] = sceneForNextFrame;
 }
