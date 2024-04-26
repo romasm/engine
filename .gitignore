@@ -1,0 +1,36 @@
+# Visual Studio 2015 user specific files
+.vs/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+*.mod
+
+*.xcodeproj
+*.xcworkspace
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+*.bak
+*.pdb
+*.exp
+
+# engine compiled files
+*.tq
+*.bc
+
+*.msh
+*.mtb
+*.skl
+*.ani
+
+*.log
