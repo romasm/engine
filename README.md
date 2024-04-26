@@ -5,6 +5,7 @@ Engine project
 
 How to
 --------
+Just run **engine\build\launch_dev.bat** 
 
 To compile the project you need Visual Studio and CMake.
 
