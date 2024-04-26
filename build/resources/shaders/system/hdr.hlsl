@@ -107,6 +107,8 @@ PO_LDR HDRLDR(PI_PosTex input)
 	PO_LDR res;
 	
 	float4 combinedScene = opaqueTex.Sample(samplerPointClamp, input.tex); //Combine(opaqueTex, transparentTex, input.tex);
+	combinedScene.a = combinedScene.a < 1.0 ? 1 : 0;
+	
 	float3 lin = combinedScene.rgb;
 	
 	const float2 lum_coords = float2(0.5f, 0.5f);
