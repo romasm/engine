@@ -151,9 +151,18 @@ void StaticMeshSystem::RegToDraw()
 				}
 				else
 				{
-					for(int32_t mat_i = 0; mat_i < partCount; mat_i++)
-						((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer, 
-						meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
+					if (!f.is_volume)
+					{
+						for (int32_t mat_i = 0; mat_i < partCount; mat_i++)
+							((SceneRenderMgr*)f.rendermgr)->RegMesh(meshPtr->indexBuffers[mat_i].count, meshPtr->indexBuffers[mat_i].buffer,
+								meshPtr->vertexBuffers[mat_i].buffer, vertexSize, isSkinned, matrixBuf, i.materials[mat_i], i.center);
+					}
+					else if (visComponent && !skeleton)		// voxelize, temp skeleton mesh disabled
+					{
+						for (int32_t mat_i = 0; mat_i < partCount; mat_i++)
+							((SceneRenderMgr*)f.rendermgr)->voxelRenderer->RegMeshForVCT(meshPtr->indexBuffers[mat_i], meshPtr->vertexBuffers[mat_i],
+								meshPtr->vertexFormat, i.materials[mat_i], i.matrixBuffer, visComponent->worldBox);
+					}
 				}
 
 				bits &= ~f.bit;

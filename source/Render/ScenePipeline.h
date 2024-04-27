@@ -56,6 +56,7 @@ namespace EngineCore
 
 #define SHADER_DEFFERED_OPAQUE_IBL PATH_SHADERS "system/deffered_opaque_simple#DefferedLightingIBL#"
 #define SHADER_DEFFERED_OPAQUE_FULL PATH_SHADERS "system/deffered_opaque#DefferedLighting#"
+#define SHADER_DEFFERED_OPAQUE_FULL_STATIC_GI PATH_SHADERS "system/deffered_opaque_static_gi#DefferedLighting#"
 	
 	struct RenderInitConfig
 	{
@@ -64,6 +65,8 @@ namespace EngineCore
 		bool ssao;
 		bool postprocess;
 		bool lightweight;
+
+		bool staticGI;
 
 		// TODO: make it work
 		bool defferedPipeline;
@@ -77,6 +80,8 @@ namespace EngineCore
 			ssao = true;
 			postprocess = true;
 			lightweight = false;
+
+			staticGI = false;
 
 			defferedPipeline = true;
 			forwardPipeline = false;
@@ -92,6 +97,7 @@ namespace EngineCore
 		RI_ADD_LUA_PROPERTY_FUNC(bool, ssao)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, postprocess)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, lightweight)
+		RI_ADD_LUA_PROPERTY_FUNC(bool, staticGI)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, defferedPipeline)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, forwardPipeline)
 		RI_ADD_LUA_PROPERTY_FUNC(bool, uiPipeline)
@@ -105,6 +111,7 @@ namespace EngineCore
 				RI_ADD_LUA_PROPERTY_DEF(bool, ssao)
 				RI_ADD_LUA_PROPERTY_DEF(bool, postprocess)
 				RI_ADD_LUA_PROPERTY_DEF(bool, lightweight)
+				RI_ADD_LUA_PROPERTY_DEF(bool, staticGI)
 				RI_ADD_LUA_PROPERTY_DEF(bool, defferedPipeline)
 				RI_ADD_LUA_PROPERTY_DEF(bool, forwardPipeline)
 				RI_ADD_LUA_PROPERTY_DEF(bool, uiPipeline)

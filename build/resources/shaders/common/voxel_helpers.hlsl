@@ -102,9 +102,9 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 					  VolumeTraceData volumeTraceData, Texture3D <float4> volumeEmittance, SamplerState volumeSampler)
 {
 	const float apertureDouble = 2.0f * aperture;
-
+	
 	uint startLevel;
-	//float startLevelFade = 1.0;
+	float startLevelFade = 1.0;
 	[unroll]
 	for(startLevel = 0; startLevel < volumeTraceData.clipmapCount; startLevel++)
 	{
@@ -115,21 +115,24 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		[branch]
 		if(maxStartCoord <= 1.0f && minStartCoord >= 0.0f)
 		{
-			//startLevelFade = saturate(min(1 - maxStartCoord, minStartCoord) * volumeData[startLevel].volumeRes);
+			startLevelFade = saturate(min(1 - maxStartCoord, minStartCoord) * volumeData[startLevel].volumeRes * 1.0f);
 			break;
 		}
 	}
 	if( startLevel == volumeTraceData.clipmapCount )
 		return 0;
-
+	
 	// TODO: ???
-	float3 coneStart = origin + surfaceNormal * volumeData[startLevel].voxelSize;
+    //uint nextLevel = min(startLevel + 1, volumeTraceData.maxLevel);	
+    float voxelSizeBlended = volumeData[startLevel].voxelSize;// lerp(volumeData[nextLevel].voxelSize, volumeData[startLevel].voxelSize, startLevelFade);
+	
+    float3 coneStart = origin + surfaceNormal * voxelSizeBlended * 2.0f;
 
-	float distance = volumeData[startLevel].voxelSize;
+    float distance = voxelSizeBlended;	
 	float4 coneColor = 0;
 		
 	int i = 0;
-	float currentLevel = (float)startLevel;
+    float currentLevel = (float) startLevel;
 	[loop]
 	while(coneColor.a < VOXEL_VIS_THRESH && i <= VOXEL_CONE_TRACING_MAX_STEPS && uint(currentLevel) < volumeTraceData.levelsCount)
     {
@@ -156,7 +159,8 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
         float diameter = apertureDouble * distance;
         float level = log2(diameter * volumeData[0].voxelSizeRcp);
 		currentLevel = clamp(level, currentLevel, volumeTraceData.maxLevel);
-		 
+		
+		 /*
 		float levelUpDown[2];
 		levelUpDown[0] = floor(currentLevel);
 		levelUpDown[1] = ceil(currentLevel);
@@ -178,7 +182,7 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 		uint iUpLevel = (uint)levelUpDown[1];
 		sampleCoords[1] = (currentConePos - volumeData[iUpLevel].cornerOffset) * volumeData[iUpLevel].worldSizeRcp;
 		
-		float levelLerp = 0.0;//frac(currentLevel);
+		float levelLerp = frac(currentLevel);
 				
 		float4 voxelSample[2];
 		[unroll]
@@ -191,8 +195,20 @@ float4 VoxelConeTrace(float3 origin, float3 direction, float aperture, float3 su
 			voxelSample[voxelLevel] = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, coordsLevel, 0));
 		}
 		
-		const float4 finalColor = lerp(voxelSample[0], voxelSample[1], levelLerp);
+        const float4 finalColor = lerp(voxelSample[0], voxelSample[1], 0);// levelLerp);
+		*/
+		//////
 		
+        uint iDownLevel = (uint) floor(currentLevel);
+		
+        float3 coordsLevel = (currentConePos - volumeData[iDownLevel].cornerOffset) * volumeData[iDownLevel].worldSizeRcp;		
+		coordsLevel.x *= volumeTraceData.xVolumeSizeRcp;
+        coordsLevel.xy += volumeData[iDownLevel].levelOffsetTex;
+
+        //float levelFade = lerp(startLevelFade, 1.0f, saturate(iDownLevel - startLevel));
+		
+        float4 finalColor = DecodeVoxelData(volumeEmittance.SampleLevel(volumeSampler, coordsLevel, 0));// * levelFade;
+        
 		const float occluded = 1.0f - coneColor.a;
 		coneColor.rgb += finalColor.rgb * occluded * finalColor.a;// * emissiveFalloff;
 		coneColor.a += finalColor.a * occluded;

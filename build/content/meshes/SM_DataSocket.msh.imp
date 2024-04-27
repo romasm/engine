@@ -1,0 +1,11 @@
+mesh
+{
+	isSkinnedMesh = 'false'
+	resourceName = 'C:\Users\roman\Dropbox\GameEngine\build\content\meshes\SM_DataSocket'
+}
+import
+{
+	fileDate = '1701107070'
+	version = '101'
+	filePath = 'C:\Users\roman\Dropbox\GameEngine\build\content\meshes\SM_DataSocket.FBX'
+}

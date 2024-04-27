@@ -226,6 +226,7 @@
     <ClInclude Include="Render\Support\LightBuffers.h" />
     <ClInclude Include="Render\Support\MaterialData.h" />
     <ClInclude Include="Render\Support\ScreenPlane.h" />
+    <ClInclude Include="Render\VoxelRenderer.h" />
     <ClInclude Include="System\FileIO.h" />
     <ClInclude Include="System\JobSystem.h" />
     <ClInclude Include="System\LocalTimer.h" />
@@ -297,6 +298,7 @@
     <ClCompile Include="Render\Support\CubeRenderTarget.cpp" />
     <ClCompile Include="Render\Support\GaussianBlur.cpp" />
     <ClCompile Include="Render\Support\ScreenPlane.cpp" />
+    <ClCompile Include="Render\VoxelRenderer.cpp" />
     <ClCompile Include="System\FileIO.cpp" />
     <ClCompile Include="System\JobSystem.cpp" />
     <ClCompile Include="System\LocalTimer.cpp" />

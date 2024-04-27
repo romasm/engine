@@ -157,9 +157,12 @@ void EnvProbMgr::AddEnvProb(const EnvProbData& data, const Vector3& camPos)
 
 void EnvProbMgr::ForceUpdate(uint32_t probId)
 {
-	hqRegedProbsPrev.erase(probId);
-	sqRegedProbsPrev.erase(probId);
-	lqRegedProbsPrev.erase(probId);
+	if(!hqRegedProbsPrev.empty())
+		hqRegedProbsPrev.erase(probId);
+	if (!sqRegedProbsPrev.empty())
+		sqRegedProbsPrev.erase(probId);
+	if (!lqRegedProbsPrev.empty())
+		lqRegedProbsPrev.erase(probId);
 }
 
 bool CompareEnvProbs(EnvProbData& first, EnvProbData& second)

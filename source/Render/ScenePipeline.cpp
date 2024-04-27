@@ -220,8 +220,13 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitCo
 	Materials[0].asymmetry = 0.0f;
 	Materials[0].attenuation = 0.0f;
 	
-	if(!initConfig.lightweight)
-		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_FULL );
+	if (!initConfig.lightweight)
+	{
+		if(initConfig.staticGI)
+			defferedOpaqueCompute = new Compute(SHADER_DEFFERED_OPAQUE_FULL_STATIC_GI);
+		else
+			defferedOpaqueCompute = new Compute(SHADER_DEFFERED_OPAQUE_FULL);
+	}
 	else
 		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
 
@@ -229,8 +234,6 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitCo
 	ZeroMemory(&defferedConfigData, sizeof(DefferedConfigData));
 
 	combineSceneCompute = new Compute(SHADER_COMBINE);
-
-	textureIBLLUT = TEXTURE(string(TEX_PBSENVLUT));
 
 	if(!InitAvgRt())
 		return false;
@@ -311,13 +314,35 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 	defferedOpaqueCompute->AttachResource("gb_Depth", rt_HiZDepth->GetShaderResourceView(0));
 	defferedOpaqueCompute->AttachResource("DynamicAO", rt_AO->GetShaderResourceView(0));
 	defferedOpaqueCompute->AttachResource("SSRTexture", rt_SSR->GetShaderResourceView(0));
-	defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TEXTURE_GETPTR(textureIBLLUT));
 	
+	textureIBLLUT = TexMgr::Get()->GetResource(string(TEX_PBSENVLUT), false,
+		[this](uint32_t id, bool status) -> void {
+			defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TexMgr::GetResourcePtr(id));
+		});
+
 	if (!initConfig.lightweight)
 	{
-		defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
-		defferedOpaqueCompute->AttachResource("g_giLookups", giMgr->GetGILookupsSRV());
-		defferedOpaqueCompute->AttachResource("g_giBricks", giMgr->GetGIBricksSRV());
+		if (initConfig.staticGI)
+		{
+			defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
+			defferedOpaqueCompute->AttachResource("g_giLookups", giMgr->GetGILookupsSRV());
+			defferedOpaqueCompute->AttachResource("g_giBricks", giMgr->GetGIBricksSRV());
+		}
+		else
+		{
+			auto volumeLight = render_mgr->voxelRenderer->GetVoxelLightSRV();
+			defferedOpaqueCompute->AttachResource("volumeLight", volumeLight);
+
+			auto volumeEmittance = render_mgr->voxelRenderer->GetVoxelEmittanceSRV();
+			defferedOpaqueCompute->AttachResource("volumeEmittance", volumeEmittance);
+
+			auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
+			defferedOpaqueCompute->AttachConstantBuffer("volumeBuffer", volumeBuffer);
+
+			auto volumeTraceBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
+			defferedOpaqueCompute->AttachConstantBuffer("volumeTraceBuffer", volumeTraceBuffer);
+		}
+
 		defferedOpaqueCompute->AttachResource("shadows", render_mgr->shadowsRenderer->GetShadowBuffer());
 		
 		defferedOpaqueCompute->AttachResource("g_spotLightBuffer", lightSpotBuffer.srv);
@@ -553,6 +578,7 @@ bool ScenePipeline::InitRts()
 
 	sp_HDRtoLDR = new ScreenPlane(SP_MATERIAL_HDR);
 	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 0);
+	//sp_HDRtoLDR->SetTexture(rt_TransparentForward->GetShaderResourceView(0), 1);
 	sp_HDRtoLDR->SetTexture(rt_3DHud->GetShaderResourceView(0), 1);
 	sp_HDRtoLDR->SetTexture(rt_AvgLum->GetShaderResourceView(0), 2);
 	sp_HDRtoLDR->SetTexture(rt_Bloom->GetShaderResourceView(0), 3);
@@ -566,6 +592,12 @@ bool ScenePipeline::InitRts()
 	sp_HDRtoLDR->SetTexture(rt_HiZDepth->GetShaderResourceView(0), 11);
 	// debug
 	sp_HDRtoLDR->SetTexture(rt_OpaqueFinal->GetShaderResourceView(0), 12);
+
+	if (!initConfig.lightweight)
+	{
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelLightSRV(), 13);
+		sp_HDRtoLDR->SetTexture(render_mgr->voxelRenderer->GetVoxelEmittanceSRV(), 14);
+	}
 
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_shoulder_strength), 0);
 	sp_HDRtoLDR->SetFloat(CONFIG(float, tonemap_linear_strength), 1);
@@ -749,6 +781,21 @@ void ScenePipeline::UIOverlayStage()
 
 void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 {
+	if (!initConfig.lightweight)
+	{
+		PERF_CPU_BEGIN(_VOXELIZATION);
+		PERF_GPU_TIMESTAMP(_VOXELIZATION);
+
+		render_mgr->voxelRenderer->VoxelizeScene();
+		PERF_CPU_END(_VOXELIZATION);
+
+		PERF_CPU_BEGIN(_VOXELLIGHT);
+		PERF_GPU_TIMESTAMP(_VOXELLIGHT);
+
+		render_mgr->voxelRenderer->ProcessEmittance();
+		PERF_CPU_END(_VOXELLIGHT);
+	}
+
 	PERF_GPU_TIMESTAMP(_GEOMETRY);
 
 	rt_OpaqueForward->ClearRenderTargets();
@@ -904,8 +951,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
 	// TEMP !!!!!!!!!!!!!!!!!!!! TODO: attach on texture loading
-	defferedOpaqueCompute->AttachResource("g_envbrdfLUT", TEXTURE_GETPTR(textureIBLLUT));
-	if (!initConfig.lightweight)
+	if (!initConfig.lightweight && initConfig.staticGI)
 	{
 		defferedOpaqueCompute->AttachResource("g_giChunks", giMgr->GetGIChunksSRV());
 		defferedOpaqueCompute->AttachResource("g_giLookups", giMgr->GetGILookupsSRV());
@@ -979,6 +1025,15 @@ void ScenePipeline::HDRtoLDRStage()
 	// combine opaque and transparent, hdr, tonemap
 	rt_FinalLDR->ClearRenderTargets();
 	rt_FinalLDR->SetRenderTarget();
+
+	if (!initConfig.lightweight)
+	{
+		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
+		Render::PSSetConstantBuffers(2, 1, &volumeBuffer);
+
+		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
+		Render::PSSetConstantBuffers(3, 1, &volumeBuffer);
+	}
 
 	ID3D11RenderTargetView* r_target[2];
 	r_target[0] = rt_FinalLDR->GetRenderTargetView(0);

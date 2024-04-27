@@ -69,9 +69,9 @@ cbuffer lightCountBuffer : register(b9)
 	uint pointCount;
 	uint dirCount;
 	uint _padding;
-};
+}; 
 
-#define MAX_WAITING_CYCLES 20
+#define MAX_WAITING_CYCLES 32
 void InterlockedFloatAdd(uint3 coords, float value)
 {
 	uint comp;
@@ -129,7 +129,7 @@ void VoxelizationOpaquePS(PI_Mesh_Voxel input, bool front: SV_IsFrontFace, uint 
 	 
 	// rebouncing
 	const float3 diffuseBrdf = GetIndirectBrdfVoxel(albedo);
-	float4 indirectLight = GetIndirectVoxel(samplerBilinearVolumeClamp, lightVolume, volumePrevData, volumeTraceData, input.worldPosition, normal, diffuseBrdf);
+    float4 indirectLight = GetIndirectVoxel(samplerBilinearVolumeClamp, lightVolume, volumePrevData, volumeTraceData, input.worldPosition, normal, diffuseBrdf);
 	
 	// distant light
 	const float3 distLight = CalcutaleDistantProbVoxel(samplerBilinearWrap, envDistDiffuse, normal, diffuseBrdf);

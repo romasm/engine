@@ -32,33 +32,35 @@ Texture2D <float2> gb_Depth : register(t9);
 
 #include "../common/common_helpers.hlsl"
 
+  
 Texture2D <float> DynamicAO : register(t10); 
 Texture2D <float4> SSRTexture : register(t11); 
  
 Texture2D g_envbrdfLUT : register(t12);
 
-Texture2DArray <float> shadows: register(t13); 
+Texture3D<uint4> g_giChunks : register(t13);
+Texture3D<uint> g_giLookups : register(t14);
+Texture3D<float4> g_giBricks : register(t15);
 
-Texture3D <float4> volumeLight : register(t14); 
-Texture3D <float4> volumeEmittance : register(t15); 
+Texture2DArray <float> shadows: register(t16); 
 
-StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t16); 
-StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t17); 
+StructuredBuffer<SpotLightBuffer> g_spotLightBuffer : register(t17); 
+StructuredBuffer<SpotCasterBuffer> g_spotCasterBuffer : register(t18); 
 
-StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t18); 
-StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t19); 
+StructuredBuffer<PointLightBuffer> g_pointLightBuffer : register(t19); 
+StructuredBuffer<PointCasterBuffer> g_pointCasterBuffer : register(t20); 
 
-StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t20);     
+StructuredBuffer<DirLightBuffer> g_dirLightBuffer : register(t21);     
 
-StructuredBuffer<int> g_lightIDs : register(t21); 
+StructuredBuffer<int> g_lightIDs : register(t22); 
 
-TextureCubeArray <float4> g_hqEnvProbsArray: register(t22); 
-TextureCubeArray <float4> g_sqEnvProbsArray: register(t23); 
-TextureCubeArray <float4> g_lqEnvProbsArray: register(t24); 
+TextureCubeArray <float4> g_hqEnvProbsArray: register(t23); 
+TextureCubeArray <float4> g_sqEnvProbsArray: register(t24); 
+TextureCubeArray <float4> g_lqEnvProbsArray: register(t25); 
 
-StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t25); 
-StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t26); 
-StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t27); 
+StructuredBuffer <EnvProbRenderData> g_hqEnvProbsData: register(t26); 
+StructuredBuffer <EnvProbRenderData> g_sqEnvProbsData: register(t27); 
+StructuredBuffer <EnvProbRenderData> g_lqEnvProbsData: register(t28); 
 
 cbuffer configBuffer : register(b1)
 {
@@ -70,7 +72,15 @@ cbuffer lightsCount : register(b2)
 	LightsCount g_lightCount;
 };
 
-#include "../system/direct_brdf.hlsl"      
+#include "../system/direct_brdf.hlsl"   
+#include "../common/sg_helpers.hlsl"   
+ 
+cbuffer giData : register(b3)  
+{ 
+	GISampleData g_giSampleData;
+};   
+
+#include "../common/gi_helpers.hlsl"       
 #include "../common/ibl_helpers.hlsl"           
   
 // TEMP       
@@ -79,18 +89,6 @@ cbuffer lightsCount : register(b2)
 #include "../common/shadow_helpers.hlsl"
 #define FULL_LIGHT  
 #include "../common/light_helpers.hlsl"
-
-#include "../common/voxel_helpers.hlsl"
- 
-cbuffer volumeBuffer : register(b3)
-{ 
-	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
-}; 
- 
-cbuffer volumeTraceBuffer : register(b4)
-{ 
-	VolumeTraceData volumeTraceData; 
-};
  
 [numthreads( GROUP_THREAD_COUNT, GROUP_THREAD_COUNT, 1 )]
 void DefferedLighting(uint3 threadID : SV_DispatchThreadID) 
@@ -99,7 +97,7 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	[branch]
 	if(coords.x > 1.0f || coords.y > 1.0f)   
 		return;     
-	 
+	
 	GBufferData gbuffer = ReadGBuffer(samplerPointClamp, coords); 
 	const MaterialParams materialParams = ReadMaterialParams(threadID.xy);
 	       
@@ -133,33 +131,32 @@ void DefferedLighting(uint3 threadID : SV_DispatchThreadID)
 	float4 envProbDiffuse = 0;
 	EvaluateEnvProbSpecular(samplerTrilinearWrap, mData, ViewVector, gbuffer, SO, specularBrdf, diffuseBrdf, envProbSpecular, envProbDiffuse);
 	 
-	LightComponents indirectLight;
-	indirectLight.diffuse = envProbDiffuse.rgb;
-	indirectLight.specular = envProbSpecular.rgb;
-	indirectLight.scattering = 0;
-	 
-	// VCTGI                                
-	//LightComponentsWeight vctLight = GetIndirectLight(samplerBilinearVolumeClamp, volumeLight, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO); 
-    LightComponentsWeight vctLight = CalculateVCTLight(samplerBilinearVolumeClamp, volumeEmittance, volumeData, volumeTraceData, gbuffer, mData, specularBrdf, diffuseBrdf, SO);
-		
-    indirectLight.diffuse = lerp(indirectLight.diffuse, vctLight.diffuse, vctLight.diffuseW);
-    //vctLight.diffuseW * indirectLight.diffuse + vctLight.diffuse;
-	indirectLight.specular = lerp(indirectLight.specular, vctLight.specular, vctLight.specularW);
-	indirectLight.scattering = lerp(indirectLight.scattering, vctLight.scattering, vctLight.scatteringW);
+	// SG         
+	float3 sgDiffuse;
+	float3 sgSpecular;
+	float lerpEnvProbSG = ComputeSGIndirect(gbuffer, mData, ViewVector, diffuseBrdf, sgDiffuse, sgSpecular);
+
+	sgDiffuse = lerp(envProbDiffuse.rgb, sgDiffuse, lerpEnvProbSG); 
+	sgSpecular = lerp(envProbSpecular.rgb, sgSpecular, saturate((mData.avgR - 0.25) * 10.0));
+	sgSpecular = lerp(envProbSpecular.rgb, sgSpecular, lerpEnvProbSG);
+
+	sgSpecular *= SO;
 	
 	// SSR     
 	float4 specularSecond = float4( ( SSR.rgb * specularBrdf ) * SSR.a, 1 - SSR.a );
-	         
+	     
 	// OUTPUT    
 	// temp, move somewhere 
 	float scatteringBlendFactor = saturate(luminance(gbuffer.albedo) + float(materialParams.ior == 0.0));
 
-	indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
+	//indirectLight.diffuse = lerp(indirectLight.scattering, indirectLight.diffuse, scatteringBlendFactor);
 	directLight.diffuse = lerp(directLight.scattering, directLight.diffuse, scatteringBlendFactor);
 
-	float3 diffuse = indirectLight.diffuse * configs.indirDiff + directLight.diffuse * configs.dirDiff;
-	float3 specular = indirectLight.specular * configs.indirSpec + directLight.specular * configs.dirSpec;
-	
+	float3 diffuse = sgDiffuse * configs.indirDiff + directLight.diffuse * configs.dirDiff;
+	float3 specular = sgSpecular * configs.indirSpec + directLight.specular * configs.dirSpec;
+	   
+	//diffuse = lerp(diffuse, g_lightCount.envProbsCountHQ, 0.999);
+
 	diffuseOutput[threadID.xy] = float4( gbuffer.emissive + diffuse, specularSecond.r);
 	specularFirstOutput[threadID.xy] = float4( specular, specularSecond.g);
 	specularSecondOutput[threadID.xy] = specularSecond.ba;  

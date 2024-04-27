@@ -97,6 +97,9 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 		comp.view_proj = XMMatrixMultiply(comp.viewMatrix, comp.projMatrix); // remove
 
+		if (rndMgr->voxelRenderer) // todo
+			rndMgr->voxelRenderer->CalcVolumeBox(comp.camPos, comp.camLookDir);
+
 		comp.dirty = false;
 	}
 
@@ -104,6 +107,12 @@ void CameraSystem::regCamera(CameraComponent& comp)
 
 	auto f = frustum_mgr->AddFrustum(ent, &comp.worldFrustum, rndMgr, &comp.viewMatrix, &comp.projMatrix);
 	comp.frust_id = int32_t(f->get_frustum_id());
+
+	if (rndMgr->voxelRenderer)
+	{
+		auto v = frustum_mgr->AddFrustum(ent, &rndMgr->voxelRenderer->GetBigVolumeBox(), rndMgr, nullptr, nullptr, true, true);
+		comp.volume_id = int32_t(v->get_frustum_id());
+	}
 
 	rndMgr->UpdateCamera(&comp);
 }

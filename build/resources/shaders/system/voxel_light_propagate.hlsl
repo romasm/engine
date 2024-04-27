@@ -23,12 +23,12 @@ SamplerState samplerPointClamp : register(s0);
 Texture3D <float4> emittanceVolume : register(t0);
 Texture3D <float4> sourceLightVolume : register(t1);
 
-cbuffer volumeBuffer0 : register(b0)
+cbuffer volumeDataBuffer : register(b0)
 {
 	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
 };
 
-cbuffer volumeBuffer1 : register(b4)
+cbuffer volumeTraceDataBuffer : register(b1)
 { 
 	VolumeTraceData volumeTraceData;
 };

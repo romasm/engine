@@ -7,6 +7,7 @@
 #include "RenderState.h"
 #include "LightBuffers.h"
 #include "Compute.h"
+#include "VoxelRenderer.h"
 #include "ShadowsRenderer.h"
 #include "Entity.h"
 #include "MeshLoader.h"
@@ -177,7 +178,8 @@ namespace EngineCore
 		
 		inline PointCasterBuffer* GetPointCasterDataPtr(size_t* size) 
 		{*size = casterPoint_count; return casterPoint_array;}
-		
+
+		VoxelRenderer* voxelRenderer;
 		ShadowsRenderer* shadowsRenderer;
 		EnvProbMgr* envProbMgr;
 

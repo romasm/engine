@@ -110,6 +110,52 @@ namespace EngineCore
 		XMMATRIX matViewProj3;
 	};
 
+	// voxels
+	struct SpotVoxelBuffer
+	{
+		Vector4 PosRange;
+		Vector4 ColorConeX;
+		Vector4 DirConeY;
+		Vector4 Virtpos;
+		Vector4 ShadowmapAdress;
+		Vector4 ShadowmapHPixProjNearclip;
+		XMMATRIX matViewProj;
+	};
+
+	struct PointVoxelBuffer
+	{
+		Vector4 PosRange;
+		Vector4 ColorShadowmapProj;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		Vector4 ShadowmapAdress4;
+		Vector4 ShadowmapAdress5;
+		Vector4 ShadowmapHPix0;
+		Vector4 ShadowmapHPix1;
+		XMMATRIX matProj;
+		XMMATRIX matView;
+	};
+
+	struct DirVoxelBuffer
+	{
+		Vector4 Color;
+		Vector4 Dir;
+		Vector4 PosHPix0;
+		Vector4 PosHPix1;
+		Vector4 PosHPix2;
+		Vector4 PosHPix3;
+		Vector4 ShadowmapAdress0;
+		Vector4 ShadowmapAdress1;
+		Vector4 ShadowmapAdress2;
+		Vector4 ShadowmapAdress3;
+		XMMATRIX ViewProj0;
+		XMMATRIX ViewProj1;
+		XMMATRIX ViewProj2;
+		XMMATRIX ViewProj3;
+	};
+
 	// env probes
 	
 	enum EnvParallaxType

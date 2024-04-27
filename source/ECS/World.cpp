@@ -64,8 +64,13 @@ void BaseWorld::SetDirtyFromSceneGraph(Entity e)
 void BaseWorld::UpdateEnvProbRenderData(Entity e)
 {
 	auto comp = m_envProbSystem->GetComponent(e);
-	for(auto it: m_scenes)
-		it->render_mgr->envProbMgr->ForceUpdate(comp->probId);
+	for (auto it : m_scenes)
+	{
+		if (it && it->render_mgr && it->render_mgr->envProbMgr)
+		{
+			it->render_mgr->envProbMgr->ForceUpdate(comp->probId);
+		}
+	}
 }
 
 bool BaseWorld::Init(string filename)

@@ -8,6 +8,9 @@ TECHNIQUE_DEFAULT
 #include "../common/structs.hlsl"
 #include "../common/shared.hlsl"
 
+#include "../common/voxel_helpers.hlsl"
+#define VOXEL_ALPHA 1.0
+
 Texture2D opaqueTex : register(t0); 
 //Texture2D transparentTex : register(t1); 
 Texture2D hudTex : register(t1); 
@@ -24,6 +27,8 @@ Texture2D <float> dynamicAO : register(t10);
 Texture2D <float2> gb_depth : register(t11);
 // debug
 Texture2D <float4> ssrTex : register(t12);  
+Texture3D <float4> voxelLightTex : register(t13); 
+Texture3D <float4> voxelEmittanceTex : register(t14); 
 
 SamplerState samplerPointClamp : register(s0);
 SamplerState samplerBilinearClamp : register(s1);
@@ -50,6 +55,17 @@ cbuffer materialBuffer : register(b1)
 	float voxelCascade;
 	float _padding2;
 };  
+
+cbuffer volumeBuffer0 : register(b2)
+{
+	VolumeData volumeData[VCT_CLIPMAP_COUNT_MAX];
+};
+
+cbuffer volumeBuffer1 : register(b3)
+{ 
+	VolumeTraceData volumeTraceData;
+};   
+
 
 #include "tonemapping.hlsl"
 
@@ -95,6 +111,37 @@ float4 Combine(Texture2D opaque, Texture2D transperency, float2 coord)
 	color.a = saturate(color.a + trsp.a);
 	return color;
 }
+
+float2 GetVoxelOpacity(float2 uv, uint level)
+{
+	float3 collidePosWS = 0;  
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, level, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
+		return 0;
+	  
+	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
+	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
+
+	return float2(saturate(emittance.w), collidePosPS.z / collidePosPS.w);
+}
+     
+float4 GetVoxelEmittance(float2 uv, uint level)
+{ 
+	float3 collidePosWS = 0;
+	int4 sampleCoords = GetVoxelOnRay(g_CamPos, GetCameraVector(uv), volumeData, volumeTraceData, level, voxelEmittanceTex, collidePosWS);
+	if( sampleCoords.w < 0.0f )
+		return 0;
+	    
+	float4 emittance = voxelEmittanceTex.Load(sampleCoords);
+
+	[flatten]
+	if(emittance.w > 0)
+		emittance.rgb /= emittance.w;
+
+	float4 collidePosPS = mul(float4(collidePosWS, 1.0f), g_viewProj);
+	   
+	return float4(emittance.rgb, collidePosPS.z / collidePosPS.w);
+}       
 
 struct PO_LDR 
 {
@@ -182,6 +229,37 @@ PO_LDR HDRLDR(PI_PosTex input)
 		tonemapped = ssr.rgb * ssr.a;
 	}
 	
+	if(voxelVis > 0)       
+	{ 
+		float sceneDepth = gb_depth.SampleLevel(samplerPointClamp, UVforSamplePow2(input.tex), 0).r;
+		float viewLength = length(GetWPos(input.tex, sceneDepth) - g_CamPos);
+		
+		if(voxelVis == 1)               
+		{       
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
+				volumeTraceData, voxelCascade, voxelLightTex, 0.003);
+			tonemapped = lerp(0, light.rgb, light.a * VOXEL_ALPHA); 
+		}  
+		else if(voxelVis == 2)         
+		{  
+			float4 light = GetVoxelLightOnRay(g_CamPos, GetCameraVector(input.tex), viewLength, volumeData, 
+				volumeTraceData, voxelCascade, voxelLightTex, 0.003);
+			tonemapped = lerp(0, 1, light.a * VOXEL_ALPHA); 
+		}
+		else if(voxelVis == 3) 
+		{ 
+			float2 voxelOpacity = GetVoxelOpacity(input.tex, voxelCascade);      
+			if(sceneDepth >= voxelOpacity.g && voxelOpacity.g != 0) 
+				tonemapped = lerp(tonemapped, float3(voxelOpacity.r, 0, 1 - voxelOpacity.r), VOXEL_ALPHA);
+		}
+		else if(voxelVis == 4) 
+		{
+			float4 voxelEmittance = GetVoxelEmittance(input.tex, voxelCascade);
+			if(sceneDepth >= voxelEmittance.a && voxelEmittance.a != 0) 
+				tonemapped = lerp(tonemapped, voxelEmittance.rgb, VOXEL_ALPHA);
+		}  
+	}            
+
 	float4 hud = hudTex.Sample(samplerPointClamp, input.tex);
 	tonemapped = lerp(tonemapped, SRGBToLinear(hud.rgb), hud.a);
 	
@@ -193,6 +271,6 @@ PO_LDR HDRLDR(PI_PosTex input)
 	
 	res.lin.rgb = saturate(tonemapped);
 	res.lin.a = 1;
-	
+		
 	return res; 
 }

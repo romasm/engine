@@ -301,29 +301,73 @@ bool VoxelRenderer::initVoxelBuffers()
 	volumeLightInfo = Buffer::CreateConstantBuffer(DEVICE, sizeof(uint32_t) * 4, true);
 	volumeDownsampleBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeDownsample), true);
 
-	spotLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, SPOT_VOXEL_FRAME_MAX, sizeof(SpotVoxelBuffer), true);
-	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, POINT_VOXEL_FRAME_MAX, sizeof(PointVoxelBuffer), true);
+	spotLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, CASTER_SPOT_FRAME_MAX, sizeof(SpotVoxelBuffer), true);
+	pointLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, CASTER_POINT_FRAME_MAX, sizeof(PointVoxelBuffer), true);
 	dirLightInjectBuffer = Buffer::CreateStructedBuffer(DEVICE, LIGHT_DIR_FRAME_MAX, sizeof(DirVoxelBuffer), true);
-
-	voxelPropagateLight = new Compute( COMPUTE_VOXEL_PROPAGATE_LIGHT );
-
-	voxelDownsample[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1" );
-	voxelDownsampleMove[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1" );
-	voxelDownsample[1] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "2" );
-	voxelDownsampleMove[1] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "2" );
-	voxelDownsample[2] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "4" );
-	voxelDownsampleMove[2] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "4" );
-	voxelDownsample[3] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "8" );
-	voxelDownsampleMove[3] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "8" );
 
 	volumeTraceDataBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeTraceData), true);
 
 	VolumeTraceData volumeTraceData;
 	volumeTraceData.levelsCount = clipmapCount + mipmapCount;
-	volumeTraceData.xVolumeSizeRcp = 1.0f / ( (float)clipmapCount + 0.5f );
+	volumeTraceData.xVolumeSizeRcp = 1.0f / ((float)clipmapCount + 0.5f);
 	volumeTraceData.maxLevel = volumeTraceData.levelsCount - 1;
 	volumeTraceData.clipmapCount = clipmapCount;
 	Render::UpdateDynamicResource(volumeTraceDataBuffer, &volumeTraceData, sizeof(VolumeTraceData));
+
+	voxelPropagateLight = new Compute( COMPUTE_VOXEL_PROPAGATE_LIGHT );
+	voxelPropagateLight->AttachRWResource("targetLightVolume", voxelLight1UAV);
+	voxelPropagateLight->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelPropagateLight->AttachResource("sourceLightVolume", voxelLight0SRV);
+	voxelPropagateLight->AttachConstantBuffer("volumeDataBuffer", volumeDataBuffer);
+	voxelPropagateLight->AttachConstantBuffer("volumeTraceDataBuffer", volumeTraceDataBuffer);
+
+	voxelDownsample[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "1#" );
+	voxelDownsample[0]->AttachRWResource("downsampleVolumeRW", voxelDownsampleTempUAV);
+	voxelDownsample[0]->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelDownsample[0]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsample[0]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsampleMove[0] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "1#" );
+	voxelDownsampleMove[0]->AttachRWResource("emittanceVolumeRW", voxelEmittanceUAV);
+	voxelDownsampleMove[0]->AttachResource("downsampleVolume", voxelDownsampleTempSRV);
+	voxelDownsampleMove[0]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsampleMove[0]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsample[1] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "2#" );
+	voxelDownsample[1]->AttachRWResource("downsampleVolumeRW", voxelDownsampleTempUAV);
+	voxelDownsample[1]->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelDownsample[1]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsample[1]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsampleMove[1] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "2#" );
+	voxelDownsampleMove[1]->AttachRWResource("emittanceVolumeRW", voxelEmittanceUAV);
+	voxelDownsampleMove[1]->AttachResource("downsampleVolume", voxelDownsampleTempSRV);
+	voxelDownsampleMove[1]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsampleMove[1]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsample[2] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "4#" );
+	voxelDownsample[2]->AttachRWResource("downsampleVolumeRW", voxelDownsampleTempUAV);
+	voxelDownsample[2]->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelDownsample[2]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsample[2]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsampleMove[2] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "4#" );
+	voxelDownsampleMove[2]->AttachRWResource("emittanceVolumeRW", voxelEmittanceUAV);
+	voxelDownsampleMove[2]->AttachResource("downsampleVolume", voxelDownsampleTempSRV);
+	voxelDownsampleMove[2]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsampleMove[2]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsample[3] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE "8#" );
+	voxelDownsample[3]->AttachRWResource("downsampleVolumeRW", voxelDownsampleTempUAV);
+	voxelDownsample[3]->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelDownsample[3]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsample[3]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
+
+	voxelDownsampleMove[3] = new Compute( COMPUTE_VOXEL_DOWNSAMPLE_MOVE "8#" );
+	voxelDownsampleMove[3]->AttachRWResource("emittanceVolumeRW", voxelEmittanceUAV);
+	voxelDownsampleMove[3]->AttachResource("downsampleVolume", voxelDownsampleTempSRV);
+	voxelDownsampleMove[3]->AttachConstantBuffer("volumeBuffer", volumeDataBuffer);
+	voxelDownsampleMove[3]->AttachConstantBuffer("downsampleBuffer", volumeDownsampleBuffer);
 
 	// first update to prevent uninit data
 	updateBuffers();
@@ -337,7 +381,7 @@ void VoxelRenderer::updateBuffers()
 	swap(voxelLight0, voxelLight1);
 	swap(voxelLight0SRV, voxelLight1SRV);
 	swap(voxelLight0UAV, voxelLight1UAV);
-	swap(volumeDataPrevBuffer, volumeDataBuffer);
+	//swap(volumeDataPrevBuffer, volumeDataBuffer);
 	
 	Render::UpdateDynamicResource(spotLightInjectBuffer.buf, spotVoxel_array.data(), spotVoxel_array.size() * sizeof(SpotVoxelBuffer));
 	Render::UpdateDynamicResource(pointLightInjectBuffer.buf, pointVoxel_array.data(), pointVoxel_array.size() * sizeof(PointVoxelBuffer));
@@ -346,7 +390,7 @@ void VoxelRenderer::updateBuffers()
 	uint32_t lightCount[4] = {(uint32_t)spotVoxel_array.size(), (uint32_t)pointVoxel_array.size(), 
 		(uint32_t)dirVoxel_array.size(), 0};
 	Render::UpdateDynamicResource(volumeLightInfo, lightCount, sizeof(uint32_t) * 4);
-	
+
 	Render::UpdateDynamicResource(volumeDataBuffer, volumeData, sizeof(VolumeData) * (clipmapCount + mipmapCount));
 
 	Vector3 camDirs[3];
@@ -419,8 +463,8 @@ void VoxelRenderer::VoxelizeScene()
 	Render::PSSetShaderResources(9, 1, &shadowsBufferSRV);
 	Render::PSSetShaderResources(10, 1, &voxelLight0SRV);
 
-	auto diffCubeSRV = render_mgr->GetDistEnvProb().diffCube;
-	Render::PSSetShaderResources(11, 1, &diffCubeSRV);
+	//auto diffCubeSRV = render_mgr->GetDistEnvProb().diffCube;
+	//Render::PSSetShaderResources(11, 1, nullptr);
 
 	Render::PSSetShaderResources(12, 1, &spotLightInjectBuffer.srv);
 	Render::PSSetShaderResources(13, 1, &pointLightInjectBuffer.srv);
@@ -507,30 +551,24 @@ void VoxelRenderer::ProcessEmittance()
 	return; 
 #endif
 
+	/*
 	PERF_GPU_TIMESTAMP(_PROPAGATE);
 	
 	Render::ClearUnorderedAccessViewFloat(voxelLight1UAV, Vector4(0,0,0,0));
 
-	voxelPropagateLight->BindUAV(voxelLight1UAV);
-
-	Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
-	Render::CSSetShaderResources(1, 1, &voxelLight0SRV);
-	
-	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
+	voxelPropagateLight->AttachRWResource("targetLightVolume", voxelLight1UAV);
+	voxelPropagateLight->AttachResource("emittanceVolume", voxelEmittanceSRV);
+	voxelPropagateLight->AttachResource("sourceLightVolume", voxelLight0SRV);
 
 	voxelPropagateLight->Dispatch(injectGroupsCount[0], injectGroupsCount[1], injectGroupsCount[2]);
-	voxelPropagateLight->UnbindUAV();
-	
+	*/
+
 	PERF_GPU_TIMESTAMP(_VOXELDOWNSAMPLE);
 	
 	VolumeDownsample volumeDownsample;
 	ZeroMemory(&volumeDownsample, sizeof(VolumeDownsample));
 
 	uint32_t currentRes = volumeResolution / 2;
-	ID3D11ShaderResourceView* null_srv = nullptr;
-	
-	Render::CSSetConstantBuffers(0, 1, &volumeDataBuffer);
-	Render::CSSetConstantBuffers(1, 1, &volumeDownsampleBuffer);
 	
 	uint32_t threadCount[3];
 	threadCount[0] = currentRes / 8;
@@ -605,22 +643,10 @@ void VoxelRenderer::ProcessEmittance()
 		Render::UpdateDynamicResource(volumeDownsampleBuffer, &volumeDownsample, sizeof(VolumeDownsample));
 
 		// downsample
-		voxelDownsample[shaderId]->BindUAV(voxelDownsampleTempUAV);
-		Render::CSSetShaderResources(0, 1, &voxelEmittanceSRV);
-
 		voxelDownsample[shaderId]->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
 
-		voxelDownsample[shaderId]->UnbindUAV();
-		Render::CSSetShaderResources(0, 1, &null_srv);
-
 		// move data
-		voxelDownsampleMove[shaderId]->BindUAV(voxelEmittanceUAV);
-		Render::CSSetShaderResources(0, 1, &voxelDownsampleTempSRV);
-
 		voxelDownsampleMove[shaderId]->Dispatch(threadCount[0], threadCount[1], threadCount[2]);
-
-		voxelDownsampleMove[shaderId]->UnbindUAV();
-		Render::CSSetShaderResources(0, 1, &null_srv);
 
 		currentRes /= 2;
 	}

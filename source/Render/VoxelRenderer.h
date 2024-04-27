@@ -5,9 +5,9 @@
 #include "LightBuffers.h"
 #include "MeshLoader.h"
 
-#define COMPUTE_VOXEL_PROPAGATE_LIGHT PATH_SHADERS "system/voxel_light_propagate", "PropagateLight"
-#define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample", "DownsampleEmittance"
-#define COMPUTE_VOXEL_DOWNSAMPLE_MOVE PATH_SHADERS "system/voxel_downsample", "DownsampleMove"
+#define COMPUTE_VOXEL_PROPAGATE_LIGHT PATH_SHADERS "system/voxel_light_propagate#PropagateLight#"
+#define COMPUTE_VOXEL_DOWNSAMPLE_EMITTANCE PATH_SHADERS "system/voxel_downsample#DownsampleEmittance"
+#define COMPUTE_VOXEL_DOWNSAMPLE_MOVE PATH_SHADERS "system/voxel_downsample#DownsampleMove"
 
 #define VCT_VOLUME_RES 64
 #define VCT_CLIPMAP_COUNT 6
@@ -166,8 +166,8 @@ namespace EngineCore
 		RArray<SArray<StmMatrixBuffer, VCT_MESH_MAX_COUNT>> matrixPerMesh;
 		RArray<SArray<VCTInstanceGroup, VCT_MESH_MAX_COUNT>> meshInstanceGroups;
 
-		SArray<SpotVoxelBuffer, SPOT_VOXEL_FRAME_MAX> spotVoxel_array;
-		SArray<PointVoxelBuffer, POINT_VOXEL_FRAME_MAX> pointVoxel_array;
+		SArray<SpotVoxelBuffer, CASTER_SPOT_FRAME_MAX> spotVoxel_array;
+		SArray<PointVoxelBuffer, CASTER_POINT_FRAME_MAX> pointVoxel_array;
 		SArray<DirVoxelBuffer, LIGHT_DIR_FRAME_MAX> dirVoxel_array;
 
 		StructBuf spotLightInjectBuffer;
