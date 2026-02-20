@@ -15,6 +15,7 @@
 #include "VolumePainter.h"
 
 #include "Utils\Profiler.h"
+#include "System\DebugServer.h"
 
 class MainLoop
 {
@@ -102,6 +103,10 @@ public:
 		m_timer.Frame();
 		fpslock = 1000.0f / CONFIG(int, fpslock);
 		init = true;
+
+	#ifdef _DEV
+		debugServer = new DebugServer;
+	#endif
 	}
 
 	~MainLoop()
@@ -122,6 +127,7 @@ public:
 
 	#ifdef _DEV
 		_DELETE(profiler);
+		_DELETE(debugServer);
 	#endif
 	}
 
@@ -153,6 +159,10 @@ public:
 			// job update
 			jobSystem->Tick(m_timer.dt_ms);
 			m_resourceProc->Tick();
+
+		#ifdef _DEV
+			if (debugServer) debugServer->Tick();
+		#endif
 			
 			PERF_CPU_BEGIN(_LUA_TICK);
 			// Lua
@@ -247,5 +257,6 @@ private:
 
 #ifdef _DEV
 	Profiler* profiler;
+	DebugServer* debugServer;
 #endif
 };

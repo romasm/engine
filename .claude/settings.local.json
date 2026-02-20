@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" Engine.sln /p:Configuration=Development /p:Platform=x64 /m /v:minimal)",
+      "Bash(cmd //c:*)",
+      "Bash(cmd /c:*)",
+      "Bash(/tmp/build.bat:*)",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\roman\\\\Dropbox\\\\Engine\\\\build\\\\stats\\\\log_02_20_26_22_41_11.log''\")",
+      "Bash(powershell -Command:*)",
+      "Bash(curl:*)",
+      "Bash(python -c:*)",
+      "Bash(ping:*)",
+      "Bash(findstr:*)"
+    ]
+  }
+}

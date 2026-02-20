@@ -66,19 +66,21 @@ workspace "Engine"
 			defines { "_EDITOR", "WIN64", "_DEV", "_DEBUG;" }
 			flags{ "FatalWarnings" }
 			disablewarnings { "4099", "4244" }
+			buildoptions { "/FS" }
 			symbols "On"
 			optimize "Off"
-			targetname "core_d"		
-			libdirs {			
+			targetname "core_d"
+			libdirs {
 				"thirdparty/Lua/lib/debug" ,
 				"thirdparty/DirectXTK/lib/x64/Debug" ,
 				"thirdparty/DirectXTex/lib/x64/Debug" ,
 			}
-			
+
 		filter "configurations:Development"
 			defines { "_EDITOR", "WIN64", "_DEV", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
 			disablewarnings { "4099", "4244" }
+			buildoptions { "/FS" }
 			symbols "On"
 			optimize "Speed"
 			targetname "core_dev"	
@@ -92,6 +94,7 @@ workspace "Engine"
 			defines { "_EDITOR", "WIN64", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
 			disablewarnings { "4099", "4244" }
+			buildoptions { "/FS" }
 			optimize "Speed"
 			targetname "core"	
 			libdirs {			

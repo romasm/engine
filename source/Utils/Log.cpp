@@ -45,8 +45,9 @@ namespace EngineCore
 		GET_DATETIME
 
 		string filename = PATH_RUNTIME_STATS "log_" + datetime + ".log";
+		m_filePath = filename;
 
-		if( fopen_s(&m_file, filename.c_str(), "w") == 0 )
+		if( (m_file = _fsopen(filename.c_str(), "w", _SH_DENYWR)) != nullptr )
 		{
 			char timer[9];
 			_strtime_s(timer,9);

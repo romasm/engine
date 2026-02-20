@@ -57,6 +57,7 @@ namespace EngineCore
 		static int32_t GetBufferSize() {return (int32_t)instance->bufferLog.size();}
 		static std::string GetBufferText(int32_t i) {return instance->bufferLog[i].text;}
 		static std::string GetBufferPrefix(int32_t i) {return instance->bufferLog[i].prefix;}
+		static std::string GetFilePath() {return instance->m_filePath;}
 		static int32_t GetBufferUpdatesAndReset()
 		{
 			int32_t bu = instance->bufferUpdates;
@@ -71,7 +72,8 @@ namespace EngineCore
 
 		void m_print(const char *levtext, const char *text, bool infile = true);
 
-		FILE *m_file;	
+		FILE *m_file;
+		std::string m_filePath;
 		HANDLE consoleOutH;
 
 		struct ConsoleMsg

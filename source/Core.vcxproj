@@ -19,7 +19,7 @@
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Core</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.20348.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -96,6 +96,7 @@
       <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\debug;..\thirdparty\DirectXTK\lib\x64\Debug;..\thirdparty\DirectXTex\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -124,6 +125,7 @@
       <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,6 +152,7 @@
       <AdditionalDependencies>assimp-vc140-mt.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\thirdparty\Assimp\lib\Release;..\thirdparty\BulletPhysics\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 6.0.0\lib64;$(WindowsSdkDir_10)Lib\$(WindowsTargetPlatformVersion)\um\x64;..\thirdparty\Lua\lib\release;..\thirdparty\DirectXTK\lib\x64\Release;..\thirdparty\DirectXTex\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -230,6 +233,7 @@
     <ClInclude Include="System\FileIO.h" />
     <ClInclude Include="System\JobSystem.h" />
     <ClInclude Include="System\LocalTimer.h" />
+    <ClInclude Include="System\DebugServer.h" />
     <ClInclude Include="System\LuaVM.h" />
     <ClInclude Include="System\Timer.h" />
     <ClInclude Include="System\VirtualFileSystem.h" />
@@ -302,6 +306,7 @@
     <ClCompile Include="System\FileIO.cpp" />
     <ClCompile Include="System\JobSystem.cpp" />
     <ClCompile Include="System\LocalTimer.cpp" />
+    <ClCompile Include="System\DebugServer.cpp" />
     <ClCompile Include="System\LuaVM.cpp" />
     <ClCompile Include="System\Timer.cpp" />
     <ClCompile Include="System\VirtualFileSystem.cpp" />
