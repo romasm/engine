@@ -241,6 +241,9 @@
     <FxCompile Include="system\deffered_opaque_simple.hlsl">
       <Filter>system</Filter>
     </FxCompile>
+    <FxCompile Include="system\deffered_opaque_static_gi.hlsl">
+      <Filter>system</Filter>
+    </FxCompile>
     <FxCompile Include="system\depth_copy_hiz.hlsl">
       <Filter>system</Filter>
     </FxCompile>

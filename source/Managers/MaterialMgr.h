@@ -22,12 +22,12 @@ namespace EngineCore
 
 		inline static bool IsNull(Material* mat){return mat == instance->null_material;}
 
-		Material* GetMaterial(string& name);
-		void DeleteMaterial(string& name);
+		Material* GetMaterial(const string& name);
+		void DeleteMaterial(const string& name);
 
 	private:
-		Material* AddMaterialToList(string& name);
-		Material* FindMaterialInList(string& name);
+		Material* AddMaterialToList(const string& name);
+		Material* FindMaterialInList(const string& name);
 
 		struct MaterialHandle
 		{

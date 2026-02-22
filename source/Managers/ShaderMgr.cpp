@@ -10,7 +10,7 @@ ShaderMgr::ShaderMgr() : BaseMgr<BaseShader, SHADERS_MAX_COUNT>()
 	resExt = nullptr;
 }
 
-uint32_t ShaderMgr::AddResourceToList(string& name, bool simple, onLoadCallback callback, onLoadCallback callbackUpdate)
+uint32_t ShaderMgr::AddResourceToList(const string& name, bool simple, onLoadCallback callback, onLoadCallback callbackUpdate)
 {
 	if(free_ids.size() == 0)
 	{

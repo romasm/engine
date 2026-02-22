@@ -4,6 +4,7 @@
 #include "BaseMgr.h"
 #include "TexLoader.h"
 #include "Pathes.h"
+#include "DX11Types.h"
 
 #define TEXTURE(name) TexMgr::Get()->GetResource(name)
 #define RELOADABLE_TEXTURE(name, need_reload) TexMgr::Get()->GetResource(name, need_reload)
@@ -26,7 +27,7 @@ namespace EngineCore
 		DXGI_FORMAT format;
 		D3D11_SRV_DIMENSION type;
 
-		TextureMeta() : width(0), height(0), depth(0), mipsCount(0), arraySize(0), 
+		TextureMeta() : width(0), height(0), depth(0), mipsCount(0), arraySize(0),
 			format(DXGI_FORMAT_UNKNOWN), type(D3D_SRV_DIMENSION_UNKNOWN) {}
 
 		inline bool IsInvalid()
@@ -35,32 +36,33 @@ namespace EngineCore
 		}
 	};
 
-	class TexMgr : public BaseMgr<ID3D11ShaderResourceView>
+	class TexMgr : public BaseMgr<RHI::GfxSRV>
 	{
 	public:
-		TexMgr() : BaseMgr<ID3D11ShaderResourceView>()
+		TexMgr() : BaseMgr<RHI::GfxSRV>()
 		{
 			null_resource = TexLoader::LoadTexture(string(PATH_TEXTURE_NULL));
 			resType = ResourceType::TEXTURE;
 			resExt = EXT_TEXTURE;
 		}
-		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<ID3D11ShaderResourceView>::Get();}
+		inline static TexMgr* Get(){return (TexMgr*)BaseMgr<RHI::GfxSRV>::Get();}
 
-		virtual void ResourceDeallocate(ID3D11ShaderResourceView*& resource)
+		virtual void ResourceDeallocate(RHI::GfxSRV*& resource)
 		{
-			_RELEASE(resource);
+			_DELETE(resource);
 		};
 
 		static TextureMeta GetMeta(uint32_t id)
 		{
 			TextureMeta result;
 
-			auto srv = GetResourcePtr(id);			
+			auto gfxSrv = GetResourcePtr(id);
+			auto* dx11srv = RHI::DX11::Cast(gfxSrv)->view;
 			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-			srv->GetDesc(&desc);
-									
+			dx11srv->GetDesc(&desc);
+
 			ID3D11Resource* resource = nullptr;
-			srv->GetResource(&resource);
+			dx11srv->GetResource(&resource);
 			if(!resource)
 				return result;
 
@@ -91,7 +93,7 @@ namespace EngineCore
 					resource->QueryInterface<ID3D11Texture2D>(&tex);
 					if(!tex)
 						return result;
-					
+
 					D3D11_TEXTURE2D_DESC texDesc;
 					tex->GetDesc(&texDesc);
 
@@ -121,7 +123,7 @@ namespace EngineCore
 				WRN("Resource dimention is unsupported");
 				return result;
 			}
-						
+
 			result.format = desc.Format;
 			result.type = desc.ViewDimension;
 			return result;

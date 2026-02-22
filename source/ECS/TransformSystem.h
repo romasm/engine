@@ -109,34 +109,34 @@ namespace EngineCore
 		Entity GetChildNext(Entity child);
 
 		// TODO
-		bool SetPhysicsTransform(Entity e, XMMATRIX& transform);
+		bool SetPhysicsTransform(Entity e, const XMMATRIX& transform);
 
 		bool SetMobility(Entity e, uint32_t mbl);
 		uint32_t GetMobility(Entity e);
 
 		// Set Transform
 		bool SetPosition_L3F(Entity e, float x, float y, float z);
-		bool SetPosition_L(Entity e, Vector3& p);
+		bool SetPosition_L(Entity e, const Vector3& p);
 		bool SetRotationPYR_L3F(Entity e, float p, float y, float r);
-		bool SetRotationPYR_L(Entity e, Vector3& r);
-		bool SetRotation_L(Entity e, Quaternion& quat);
-		bool SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
+		bool SetRotationPYR_L(Entity e, const Vector3& r);
+		bool SetRotation_L(Entity e, const Quaternion& quat);
+		bool SetRotationAxis_L(Entity e, const Vector3& normalAxis, float angle);
 		bool SetScale_L3F(Entity e, float x, float y, float z);
-		bool SetScale_L(Entity e, Vector3& s);
-		
-		bool SetPosition_W3F(Entity e, float x, float y, float z);
-		bool SetPosition_W(Entity e, Vector3& p);
-		bool SetRotationPYR_W3F(Entity e, float p, float y, float r);
-		bool SetRotationPYR_W(Entity e, Vector3& r);
-		bool SetRotation_W(Entity e, Quaternion& quat);
-		bool SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
-		bool SetScale_W3F(Entity e, float x, float y, float z);
-		bool SetScale_W(Entity e, Vector3& s);
+		bool SetScale_L(Entity e, const Vector3& s);
 
-		bool SetTransform_LInternal(Entity e, XMMATRIX& mat);
-		inline bool SetTransform_L(Entity e, Matrix& mat) {return SetTransform_LInternal(e, XMMATRIX(mat));};
-		bool SetTransform_WInternal(Entity e, XMMATRIX& mat);
-		inline bool SetTransform_W(Entity e, Matrix& mat) {return SetTransform_WInternal(e, XMMATRIX(mat));};
+		bool SetPosition_W3F(Entity e, float x, float y, float z);
+		bool SetPosition_W(Entity e, const Vector3& p);
+		bool SetRotationPYR_W3F(Entity e, float p, float y, float r);
+		bool SetRotationPYR_W(Entity e, const Vector3& r);
+		bool SetRotation_W(Entity e, const Quaternion& quat);
+		bool SetRotationAxis_W(Entity e, const Vector3& normalAxis, float angle);
+		bool SetScale_W3F(Entity e, float x, float y, float z);
+		bool SetScale_W(Entity e, const Vector3& s);
+
+		bool SetTransform_LInternal(Entity e, const XMMATRIX& mat);
+		inline bool SetTransform_L(Entity e, const Matrix& mat) {return SetTransform_LInternal(e, XMMATRIX(mat));};
+		bool SetTransform_WInternal(Entity e, const XMMATRIX& mat);
+		inline bool SetTransform_W(Entity e, const Matrix& mat) {return SetTransform_WInternal(e, XMMATRIX(mat));};
 				
 		// Get Transform		
 		Vector3 GetPosition_L(Entity e);
@@ -162,22 +162,22 @@ namespace EngineCore
 
 		// Add Transform
 		bool AddPosition_L3F(Entity e, float x, float y, float z);
-		bool AddPosition_L(Entity e, Vector3& p);
-		bool AddRotationPYR_L(Entity e, Vector3& r);
+		bool AddPosition_L(Entity e, const Vector3& p);
+		bool AddRotationPYR_L(Entity e, const Vector3& r);
 		bool AddRotationPYR_L3F(Entity e, float p, float y, float r);
-		bool AddRotationAxis_L(Entity e, Vector3& normalAxis, float angle);
-		bool AddRotation_L(Entity e, Quaternion& quat);
+		bool AddRotationAxis_L(Entity e, const Vector3& normalAxis, float angle);
+		bool AddRotation_L(Entity e, const Quaternion& quat);
 		bool AddScale_L3F(Entity e, float x, float y, float z);
-		bool AddScale_L(Entity e, Vector3& s);
+		bool AddScale_L(Entity e, const Vector3& s);
 
 		bool AddPosition_W3F(Entity e, float x, float y, float z);
-		bool AddPosition_W(Entity e, Vector3& p);
-		bool AddRotationPYR_W(Entity e, Vector3& r);
+		bool AddPosition_W(Entity e, const Vector3& p);
+		bool AddRotationPYR_W(Entity e, const Vector3& r);
 		bool AddRotationPYR_W3F(Entity e, float p, float y, float r);
-		bool AddRotationAxis_W(Entity e, Vector3& normalAxis, float angle);
-		bool AddRotation_W(Entity e, Quaternion& quat);
+		bool AddRotationAxis_W(Entity e, const Vector3& normalAxis, float angle);
+		bool AddRotation_W(Entity e, const Quaternion& quat);
 		bool AddScale_W3F(Entity e, float x, float y, float z);
-		bool AddScale_W(Entity e, Vector3& s);
+		bool AddScale_W(Entity e, const Vector3& s);
 		
 		bool PostTransform_L(Entity e, Matrix& mat);
 		bool PostTransform_W(Entity e, Matrix& mat);

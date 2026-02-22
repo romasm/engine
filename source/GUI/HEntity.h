@@ -173,7 +173,7 @@ public:
 	bool GetFocusLock();
 
 	// rects
-	uint32_t AddRect(string& shadername)
+	uint32_t AddRect(const string& shadername)
 	{
 		Image2D& rect = rects->push_back();
 		rect.Init(shadername);
@@ -197,7 +197,7 @@ public:
 	}
 
 	// texts
-	uint32_t AddText(string& font, string& text, string& shadername, bool static_text, uint16_t length)
+	uint32_t AddText(const string& font, const string& text, const string& shadername, bool static_text, uint16_t length)
 	{
 		Text& t = texts->push_back();
 		t.Init(font, StringToWstring(text), shadername, static_text, length, true);
@@ -212,7 +212,7 @@ public:
 		(*texts)[i].SetPos(x, y);
 		return true;
 	}
-	bool SetText(uint32_t i, string& text)
+	bool SetText(uint32_t i, const string& text)
 	{
 		if(i >= texts->size())
 			return false;

@@ -55,7 +55,7 @@ void LineGeometrySystem::RegToDraw()
 
 			LineGeometryBuffer mb;
 			mb.world = XMMatrixTranspose(worldMatrix);
-			Render::UpdateDynamicResource(i.constantBuffer, (void*)&mb, sizeof(LineGeometryBuffer));			
+			GFX_CMD->UpdateBuffer(i.constantBuffer, (void*)&mb, sizeof(LineGeometryBuffer));			
 					
 			i.dirty = false;
 		}
@@ -158,19 +158,19 @@ void LineGeometrySystem::DestroyGeometry(LineGeometryComponent* comp, bool delet
 {
 	if(delete_all)
 	{
-		_RELEASE(comp->constantBuffer);
+		_DELETE(comp->constantBuffer);
 	}
 	MATERIAL_PTR_DROP(comp->material);
-	_RELEASE(comp->indexBuffer);
+	_DELETE(comp->indexBuffer);
 	comp->index_count = 0;
-	_RELEASE(comp->vertexBuffer);
+	_DELETE(comp->vertexBuffer);
 }
 
 #define INIT_BUFS \
-	comp.vertexBuffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(LineGeometryVertex) * vertex_count, false, &vertices);\
+	comp.vertexBuffer = Buffer::CreateVertexBuffer(sizeof(LineGeometryVertex) * vertex_count, false, &vertices);\
 	if(!comp.vertexBuffer)return false;\
 	comp.index_count = index_count;\
-	comp.indexBuffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(unsigned long) * index_count, false, &indices);\
+	comp.indexBuffer = Buffer::CreateIndexBuffer(sizeof(unsigned long) * index_count, false, &indices);\
 	if(!comp.indexBuffer)return false;\
 	return true;
 
@@ -185,7 +185,7 @@ bool LineGeometrySystem::SetLine(Entity e, Vector3 p1, Vector3 p2)
 
 	if(comp.type == LG_LINE && comp.vertexBuffer)
 	{
-		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		GFX_CMD->UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
 		return true;
 	}
 	else
@@ -230,7 +230,7 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingBox box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		GFX_CMD->UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
 		return true;
 	}
 	else
@@ -249,7 +249,7 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingOrientedBox box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		GFX_CMD->UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
 		return true;
 	}
 	else
@@ -268,7 +268,7 @@ bool LineGeometrySystem::SetBox(Entity e, BoundingFrustum box)
 
 	if(comp.type == LG_BOX && comp.vertexBuffer)
 	{
-		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		GFX_CMD->UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
 		return true;
 	}
 	else
@@ -295,7 +295,7 @@ bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, uint32_t size)
 	if(comp.type == LG_SPLINE && comp.vertexBuffer)
 	{
 		comp.index_count = index_count;
-		Render::UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
+		GFX_CMD->UpdateSubresource(comp.vertexBuffer, 0, nullptr, (void*)vertices, 0, 0); 
 		return true;
 	}
 	else
@@ -312,11 +312,11 @@ bool LineGeometrySystem::SetSpline(Entity e, Vector3* p, uint32_t size)
 			indices[i+1] = indices[i] + 1;
 		}
 
-		comp.vertexBuffer = Buffer::CreateVertexBuffer(Render::Device(), sizeof(LineGeometryVertex) * max_vertex_count, false, &vertices);
+		comp.vertexBuffer = Buffer::CreateVertexBuffer(sizeof(LineGeometryVertex) * max_vertex_count, false, &vertices);
 		if(!comp.vertexBuffer)
 			return false;
 	
-		comp.indexBuffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(unsigned long) * LG_SPLINE_MAX, false, &indices);
+		comp.indexBuffer = Buffer::CreateIndexBuffer(sizeof(unsigned long) * LG_SPLINE_MAX, false, &indices);
 		if(!comp.indexBuffer)
 			return false;
 

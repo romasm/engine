@@ -193,7 +193,7 @@ bool ControllerSystem::AttachLuaFuncs(Entity e, Controller& comp, ScriptComponen
 
 KeyMap* ControllerSystem::GetKeyMap(string& keyMapName)
 {
-	auto& it = keyMaps.find(keyMapName);
+	auto it = keyMaps.find(keyMapName);
 	if(it != keyMaps.end())
 	{
 		return it->second;

@@ -69,8 +69,8 @@ bool GaussianBlur::Init(int width, int height, DXGI_FORMAT format, eKernel kerne
 		break;
 	}
 
-	char* mat_h = nullptr;
-	char* mat_v = nullptr;
+	const char* mat_h = nullptr;
+	const char* mat_v = nullptr;
 
 	if(isDepthDependent)
 	{
@@ -153,7 +153,7 @@ bool GaussianBlur::Init(int width, int height, DXGI_FORMAT format, eKernel kerne
 	return true;
 }
 
-void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceView* depth)
+void GaussianBlur::blur(RenderTarget* inout, uint8_t id, RHI::GfxSRV* depth)
 {
 	if(!inout)return;
 
@@ -188,7 +188,7 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 
 	case GB_ALLMIPS:
 		{
-			ID3D11RenderTargetView* r_target;
+			RHI::GfxRTV* r_target;
 
 			float rcpW = 1.0f/float(inout->t_width);
 			float rcpH = 1.0f/float(inout->t_height);
@@ -207,20 +207,20 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 			sp_vert->SetFloat(rcpH, 1);
 			sp_vert->Draw();
 
-			float t_width = horzPass->m_viewport.Width;
-			float t_height = horzPass->m_viewport.Height;
+			float t_width = horzPass->m_viewport.width;
+			float t_height = horzPass->m_viewport.height;
 
 			for(int i=0; i<inout->mipRes[id].mipCount-1; i++)
 			{
 				float rcpMW = 1.0f/float(inout->mip_res[i].x);
 				float rcpMH = 1.0f/float(inout->mip_res[i].y);
 
-				horzPass->m_viewport.Width = float(horzPass->mip_res[i].x);
-				horzPass->m_viewport.Height = float(horzPass->mip_res[i].y);
-				m_render->m_pImmediateContext->RSSetViewports(1, &horzPass->m_viewport);
+				horzPass->m_viewport.width = float(horzPass->mip_res[i].x);
+				horzPass->m_viewport.height = float(horzPass->mip_res[i].y);
+				GFX_CMD->SetViewport(horzPass->m_viewport);
 
 				r_target = horzPass->mipRes[0].mip_RTV[i];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_horz->SetTexture(inout->mipRes[id].mip_SRV[i+1], 0);
 				sp_horz->SetFloat(rcpMW, 0);
@@ -228,7 +228,7 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 				sp_horz->Draw();
 
 				r_target = inout->mipRes[id].mip_RTV[i];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_vert->SetTexture(horzPass->mipRes[0].mip_SRV[i+1], 0);
 				sp_vert->SetFloat(rcpMW, 0);
@@ -236,14 +236,14 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 				sp_vert->Draw();
 			}
 
-			horzPass->m_viewport.Width = t_width;
-			horzPass->m_viewport.Height = t_height;
+			horzPass->m_viewport.width = t_width;
+			horzPass->m_viewport.height = t_height;
 		}
 		break;
 
 	case GB_ALLMIPSBUT0:
 		{
-			ID3D11RenderTargetView* r_target;
+			RHI::GfxRTV* r_target;
 
 			float rcpW = 2.0f/float(inout->t_width);
 			float rcpH = 2.0f/float(inout->t_height);
@@ -255,30 +255,30 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 			sp_horz->SetFloat(rcpH, 1);
 			sp_horz->Draw();
 
-			m_render->m_pImmediateContext->RSSetViewports(1, &horzPass->m_viewport);
+			GFX_CMD->SetViewport(horzPass->m_viewport);
 
 			r_target = inout->mipRes[id].mip_RTV[0];
-			m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+			GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 			
 			sp_vert->SetTexture(horzPass->GetShaderResourceView(0), 0);
 			sp_vert->SetFloat(rcpW, 0);
 			sp_vert->SetFloat(rcpH, 1);
 			sp_vert->Draw();
 
-			float t_width = horzPass->m_viewport.Width;
-			float t_height = horzPass->m_viewport.Height;
+			float t_width = horzPass->m_viewport.width;
+			float t_height = horzPass->m_viewport.height;
 
 			for(int i=1; i<inout->mipRes[id].mipCount-1; i++)
 			{
 				float rcpMW = 1.0f/float(inout->mip_res[i].x);
 				float rcpMH = 1.0f/float(inout->mip_res[i].y);
 
-				horzPass->m_viewport.Width = float(horzPass->mip_res[i-1].x);
-				horzPass->m_viewport.Height = float(horzPass->mip_res[i-1].y);
-				m_render->m_pImmediateContext->RSSetViewports(1, &horzPass->m_viewport);
+				horzPass->m_viewport.width = float(horzPass->mip_res[i-1].x);
+				horzPass->m_viewport.height = float(horzPass->mip_res[i-1].y);
+				GFX_CMD->SetViewport(horzPass->m_viewport);
 
 				r_target = horzPass->mipRes[0].mip_RTV[i-1];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_horz->SetTexture(inout->mipRes[id].mip_SRV[i+1], 0);
 				sp_horz->SetFloat(rcpMW, 0);
@@ -286,7 +286,7 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 				sp_horz->Draw();
 
 				r_target = inout->mipRes[id].mip_RTV[i];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_vert->SetTexture(horzPass->mipRes[0].mip_SRV[i], 0);
 				sp_vert->SetFloat(rcpMW, 0);
@@ -294,14 +294,14 @@ void GaussianBlur::blur(RenderTarget* inout, uint8_t id, ID3D11ShaderResourceVie
 				sp_vert->Draw();
 			}
 
-			horzPass->m_viewport.Width = t_width;
-			horzPass->m_viewport.Height = t_height;
+			horzPass->m_viewport.width = t_width;
+			horzPass->m_viewport.height = t_height;
 		}
 		break;
 	}
 }
 	
-void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_id, ID3D11ShaderResourceView* depth)
+void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_id, RHI::GfxSRV* depth)
 {
 	if(!in || !out)return;
 
@@ -338,10 +338,10 @@ void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_
 		{
 			if(in->mip_count != out->mip_count)
 			{
-				ERR("Количество мп-уровней не совпадает в in и out");
+				ERR("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ in пїЅ out");
 			}
 
-			ID3D11RenderTargetView* r_target;
+			RHI::GfxRTV* r_target;
 
 			float rcpW = 1.0f/float(in->t_width);
 			float rcpH = 1.0f/float(in->t_height);
@@ -360,20 +360,20 @@ void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_
 			sp_vert->SetFloat(rcpH, 1);
 			sp_vert->Draw();
 
-			float t_width = horzPass->m_viewport.Width;
-			float t_height = horzPass->m_viewport.Height;
+			float t_width = horzPass->m_viewport.width;
+			float t_height = horzPass->m_viewport.height;
 
 			for(int i=0; i<in->mipRes[in_id].mipCount-1; i++)
 			{
 				float rcpMW = 1.0f/float(in->mip_res[i].x);
 				float rcpMH = 1.0f/float(in->mip_res[i].y);
 
-				horzPass->m_viewport.Width = float(horzPass->mip_res[i].x);
-				horzPass->m_viewport.Height = float(horzPass->mip_res[i].y);
-				m_render->m_pImmediateContext->RSSetViewports(1, &horzPass->m_viewport);
+				horzPass->m_viewport.width = float(horzPass->mip_res[i].x);
+				horzPass->m_viewport.height = float(horzPass->mip_res[i].y);
+				GFX_CMD->SetViewport(horzPass->m_viewport);
 
 				r_target = horzPass->mipRes[0].mip_RTV[i];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_horz->SetTexture(in->mipRes[in_id].mip_SRV[i+1], 0);
 				sp_horz->SetFloat(rcpMW, 0);
@@ -381,7 +381,7 @@ void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_
 				sp_horz->Draw();
 
 				r_target = out->mipRes[out_id].mip_RTV[i];
-				m_render->m_pImmediateContext->OMSetRenderTargets(1, &r_target, nullptr);
+				GFX_CMD->SetRenderTargets(1, &r_target, nullptr);
 
 				sp_vert->SetTexture(horzPass->mipRes[0].mip_SRV[i+1], 0);
 				sp_vert->SetFloat(rcpMW, 0);
@@ -389,13 +389,13 @@ void GaussianBlur::blur(RenderTarget* in, RenderTarget* out, int in_id, int out_
 				sp_vert->Draw();
 			}
 
-			horzPass->m_viewport.Width = t_width;
-			horzPass->m_viewport.Height = t_height;
+			horzPass->m_viewport.width = t_width;
+			horzPass->m_viewport.height = t_height;
 		}
 		break;
 
 	case GB_ALLMIPSBUT0:
-		ERR("Режим GB_ALLMIPSBUT0 не поддерживаеться");
+		ERR("пїЅпїЅпїЅпїЅпїЅ GB_ALLMIPSBUT0 пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
 		break;
 	}
 }

@@ -153,6 +153,10 @@ public:
 			PERF_CPU_FRAME_BEGIN;
 			PERF_GPU_FRAME_BEGIN;
 
+			// DX12: begin a new GPU frame (wait for prior frame, open command list,
+			// set descriptor heaps). No-op on DX11.
+			Render::BeginFrameDX12();
+
 			rendertime = cur_time;
 			m_timer.Frame();
 

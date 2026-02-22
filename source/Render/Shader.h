@@ -2,6 +2,8 @@
 #include "ShaderCodeMgr.h"
 #include "RenderState.h"
 
+namespace EngineCore::RHI { struct GfxPipelineState; }
+
 #define SHADERCODE_STR_LEN 256
 
 #define TECHNIQUE_SIZE (sizeof(uint8_t) + SHADERCODE_STR_LEN * 5 + sizeof(uint8_t) + sizeof(D3D11_DEPTH_STENCIL_DESC) \
@@ -32,7 +34,7 @@ namespace EngineCore
 	class BaseShader
 	{
 	public:
-		BaseShader(string& name);
+		BaseShader(const string& name);
 		virtual ~BaseShader(){}
 		
 	#ifdef _DEV
@@ -57,7 +59,7 @@ namespace EngineCore
 	class Shader : protected BaseShader
 	{
 	public:
-		Shader(string& name);
+		Shader(const string& name);
 		virtual ~Shader();
 
 		void Set(TECHNIQUES tech = TECHNIQUE_DEFAULT);
@@ -118,11 +120,14 @@ namespace EngineCore
 			uint16_t blendState;
 			uint16_t rastState;
 
+			RHI::GfxPipelineState* pso;
+
 			technique_data()
 			{
 				depthState = STATE_NULL;
 				blendState = STATE_NULL;
 				rastState = STATE_NULL;
+				pso = nullptr;
 				for(int i=0; i<5; i++)
 					shadersID[i] = SHADER_NULL;
 				queue = RENDER_QUEUES::SC_OPAQUE;
@@ -135,7 +140,7 @@ namespace EngineCore
 	class SimpleShader : protected BaseShader
 	{
 	public:
-		SimpleShader(string& name);
+		SimpleShader(const string& name);
 		virtual ~SimpleShader();
 
 		void Set();
@@ -189,11 +194,14 @@ namespace EngineCore
 			uint16_t blendState;
 			uint16_t rastState;
 
+			RHI::GfxPipelineState* pso;
+
 			technique_data()
 			{
 				depthState = STATE_NULL;
 				blendState = STATE_NULL;
 				rastState = STATE_NULL;
+				pso = nullptr;
 				for(int i=0; i<2; i++)
 					shadersID[i] = SHADER_NULL;
 				queue = RENDER_QUEUES::SC_OPAQUE;

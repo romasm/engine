@@ -24,17 +24,17 @@ namespace EngineCore
 	public:
 		TypeMgr(BaseWorld* wld, uint32_t maxCount);
 
-		bool RegType(string& type, LuaRef* constructor = nullptr);
-		bool UnregType(string& type);
+		bool RegType(const string& type, LuaRef* constructor = nullptr);
+		bool UnregType(const string& type);
 
-		LuaRef LuaConstructor(string& type, Entity ent);
+		LuaRef LuaConstructor(const string& type, Entity ent);
 
-		bool SetType(Entity ent, string& type);
+		bool SetType(Entity ent, const string& type);
 		void ClearType(Entity ent);
 
 		inline string GetType(Entity ent) const {return typeOfEntity[ent.index()];}
-		inline bool IsThisType(Entity ent, string& type) const {return typeOfEntity[ent.index()] == type;}
-		Entity GetFirstByType(string& type);
+		inline bool IsThisType(Entity ent, const string& type) const {return typeOfEntity[ent.index()] == type;}
+		Entity GetFirstByType(const string& type);
 		Entity GetNextByType();
 
 	#ifdef _DEV

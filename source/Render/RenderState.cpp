@@ -22,10 +22,13 @@ uint16_t RenderStateMgr::GetDepthState(D3D11_DEPTH_STENCIL_DESC& desc)
 	}
 
 	ID3D11DepthStencilState* state = nullptr;
-	if( FAILED( DEVICE->CreateDepthStencilState(&desc, &state) ) )
+	if(!GFX_DEVICE->IsDX12())
 	{
-		ERR("Failed to create depth stencil state!");
-		return STATE_NULL;
+		if( FAILED( DEVICE->CreateDepthStencilState(&desc, &state) ) )
+		{
+			ERR("Failed to create depth stencil state!");
+			return STATE_NULL;
+		}
 	}
 
 	uint32_t idx = instance->depth_free.front();
@@ -51,10 +54,13 @@ uint16_t RenderStateMgr::GetBlendState(D3D11_BLEND_DESC& desc)
 	}
 
 	ID3D11BlendState* state = nullptr;
-	if( FAILED( DEVICE->CreateBlendState(&desc, &state) ) )
+	if(!GFX_DEVICE->IsDX12())
 	{
-		ERR("Failed to create blend state!");
-		return STATE_NULL;
+		if( FAILED( DEVICE->CreateBlendState(&desc, &state) ) )
+		{
+			ERR("Failed to create blend state!");
+			return STATE_NULL;
+		}
 	}
 
 	uint32_t idx = instance->blend_free.front();
@@ -84,10 +90,13 @@ uint16_t RenderStateMgr::GetRSState(D3D11_RASTERIZER_DESC& desc)
 	}
 
 	ID3D11RasterizerState* state = nullptr;
-	if( FAILED( DEVICE->CreateRasterizerState(&desc, &state) ) )
+	if(!GFX_DEVICE->IsDX12())
 	{
-		ERR("Failed to create rasterizer state!");
-		return STATE_NULL;
+		if( FAILED( DEVICE->CreateRasterizerState(&desc, &state) ) )
+		{
+			ERR("Failed to create rasterizer state!");
+			return STATE_NULL;
+		}
 	}
 
 	uint32_t idx = instance->rast_free.front();
@@ -153,7 +162,8 @@ bool RenderStateMgr::SetDefault()
 	uint16_t state = GetDepthState(depthStencilDesc);
 	if(state == STATE_NULL)
 		return false;
-	Render::OMSetDepthState(state);
+	if(!GFX_DEVICE->IsDX12())
+		CONTEXT->OMSetDepthStencilState(GetDepthStatePtr(state), 1);
 
 	D3D11_BLEND_DESC blendStateDesc;
 	ZeroMemory(&blendStateDesc, sizeof(D3D11_BLEND_DESC));
@@ -164,7 +174,8 @@ bool RenderStateMgr::SetDefault()
 	state = GetBlendState(blendStateDesc);
 	if(state == STATE_NULL)
 		return false;
-	Render::OMSetBlendState(state);
+	if(!GFX_DEVICE->IsDX12())
+		CONTEXT->OMSetBlendState(GetBlendStatePtr(state), NULL, 0xffffffff);
 
 	D3D11_RASTERIZER_DESC rastStatedDesc;
 	ZeroMemory(&rastStatedDesc, sizeof(D3D11_RASTERIZER_DESC));
@@ -180,9 +191,10 @@ bool RenderStateMgr::SetDefault()
 	state = GetRSState(rastStatedDesc);
 	if(state == STATE_NULL)
 		return false;
-	Render::RSSetState(state);
+	if(!GFX_DEVICE->IsDX12())
+		CONTEXT->RSSetState(GetRSStatePtr(state));
 
-	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
+	GFX_CMD->SetTopology(RHI::Topology::TriangleList);
 
 	return true;
 }
@@ -191,12 +203,12 @@ bool RenderStateMgr::SetDefault()
 
 SamplerStateMgr *SamplerStateMgr::instance = nullptr;
 
-ID3D11SamplerState* SamplerStateMgr::GetSampler(string name)
+RHI::GfxSampler* SamplerStateMgr::GetSampler(string name)
 {
 	auto it = instance->sampler_map.find(name);
 	if(it != instance->sampler_map.end())
 		return it->second;
-		
+
 	ERR("Sampler %s does not exist!", name.c_str());
 	return nullptr;
 }
@@ -215,7 +227,7 @@ SamplerStateMgr::SamplerStateMgr()
 SamplerStateMgr::~SamplerStateMgr()
 {
 	for(auto& it: sampler_map)
-		_RELEASE(it.second);
+		delete it.second;
 
 	instance = nullptr;
 }
@@ -261,12 +273,12 @@ bool SamplerStateMgr::LoadSamplers()
 		{
 			string samplerName((char*)t_data, 0, SAMPLER_STR_LEN);
 			t_data += SAMPLER_STR_LEN;
-			
+
 			D3D11_SAMPLER_DESC* desc = (D3D11_SAMPLER_DESC*)t_data;
 			t_data += sizeof(D3D11_SAMPLER_DESC);
 
-			ID3D11SamplerState* sampler = nullptr;
-			if( FAILED( DEVICE->CreateSamplerState(desc, &sampler) ) )
+			RHI::GfxSampler* sampler = GFX_DEVICE->CreateSampler({*desc});
+			if(!sampler)
 			{
 				ERR("Failed to create sampler %s!", samplerName.c_str());
 				continue;
@@ -286,6 +298,9 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 	auto root = techSource.Root();
 	if(!root)
 		return false;
+
+	// Keep descs for binary serialization (GfxSampler has no GetDesc())
+	std::vector<std::pair<string, D3D11_SAMPLER_DESC>> samplerDescs;
 
 	for(auto &it: *root)
 	{
@@ -313,7 +328,7 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 		desc.BorderColor[3] = borderColor.w;
 
 		desc.MipLODBias = techSource.ReadFloat("MipLODBias", it.second.node);
-		
+
 		if(it.second.node->find("MaxLOD") == it.second.node->end())
 			desc.MaxLOD = D3D11_FLOAT32_MAX;
 		else
@@ -322,17 +337,18 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 		desc.MinLOD = techSource.ReadFloat("MinLOD", it.second.node);
 		desc.MaxAnisotropy = uint32_t(techSource.ReadInt("MaxAnisotropy", it.second.node));
 
-		ID3D11SamplerState* sampler = nullptr;
-		if( FAILED( DEVICE->CreateSamplerState(&desc, &sampler) ) )
+		RHI::GfxSampler* sampler = GFX_DEVICE->CreateSampler({desc});
+		if(!sampler)
 		{
 			ERR("Failed to create sampler %s!", samplerName.c_str());
 			continue;
 		}
 
 		sampler_map.insert(make_pair(samplerName, sampler));
+		samplerDescs.push_back(make_pair(samplerName, desc));
 	}
-	
-	uint16_t samplersCount = (uint16_t)sampler_map.size();
+
+	uint16_t samplersCount = (uint16_t)samplerDescs.size();
 
 	if(samplersCount == 0)
 	{
@@ -348,15 +364,15 @@ bool SamplerStateMgr::CompileSamplers(uint32_t sourceDate)
 	*((uint16_t*)dataPtr) = samplersCount;
 	dataPtr += sizeof(uint16_t);
 
-	for(auto &it: sampler_map)
+	for(auto &entry: samplerDescs)
 	{
-		memcpy((char*)dataPtr, it.first.c_str(), SAMPLER_STR_LEN);
+		memcpy((char*)dataPtr, entry.first.c_str(), SAMPLER_STR_LEN);
 		dataPtr += SAMPLER_STR_LEN;
 
-		it.second->GetDesc((D3D11_SAMPLER_DESC*)dataPtr);
+		memcpy(dataPtr, &entry.second, sizeof(D3D11_SAMPLER_DESC));
 		dataPtr += sizeof(D3D11_SAMPLER_DESC);
 	}
-	
+
 	if(FileIO::WriteFileDataS(SAMPLERS_BIN, s_data, s_datasize, sourceDate))
 	{
 		_DELETE_ARRAY(s_data);

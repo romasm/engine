@@ -58,7 +58,7 @@ namespace EngineCore
 	class Material
 	{
 	public:
-		Material(string& name);
+		Material(const string& name);
 		~Material();
 
 		void Set(TECHNIQUES tech = TECHNIQUE_DEFAULT);
@@ -83,8 +83,8 @@ namespace EngineCore
 
 		void AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i);
 		
-		void SetTexture(ID3D11ShaderResourceView *texture, uint8_t id, uint8_t shaderType);
-		void SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot, uint8_t shaderType);
+		void SetTexture(RHI::GfxSRV *texture, uint8_t id, uint8_t shaderType);
+		void SetTextureWithSlotName(RHI::GfxSRV *texture, string& slot, uint8_t shaderType);
 
 		string GetTextureName(uint8_t id, uint8_t shader);
 		string GetTextureNameWithSlotName(string slot, uint8_t shaderType);
@@ -94,10 +94,10 @@ namespace EngineCore
 
 		void ClearTextures();
 
-		void SetVector(Vector4& vect, uint8_t id, uint8_t shaderType);
+		void SetVector(const Vector4& vect, uint8_t id, uint8_t shaderType);
 		void SetFloat(float f, uint8_t id, uint8_t shaderType);
-		void SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType);
-		void SetVector3WithSlotName(Vector3& vect, string slot, uint8_t shaderType)
+		void SetVectorWithSlotName(const Vector4& vect, string slot, uint8_t shaderType);
+		void SetVector3WithSlotName(const Vector3& vect, string slot, uint8_t shaderType)
 		{SetVectorWithSlotName(Vector4(vect.x, vect.y, vect.z, 0), slot, shaderType);}
 		void SetFloatWithSlotName(float f, string slot, uint8_t shaderType);
 
@@ -166,7 +166,7 @@ namespace EngineCore
 		bool createMat();
 
 	#ifdef _DEV
-		bool ñonvertMat(string& nameBin);
+		bool ConvertMat(const string& nameBin);
 	#endif
 
 		bool initBuffers();
@@ -183,8 +183,8 @@ namespace EngineCore
 
 		MaterialParamsStructBuffer* defferedParams;
 		
-		ID3D11Buffer* inputBuf[5];
-		ID3D11Buffer* idBuf;
+		RHI::GfxBuffer* inputBuf[5];
+		RHI::GfxBuffer* idBuf;
 
 		uint32_t scene_id;
 
@@ -201,17 +201,17 @@ namespace EngineCore
 	class SimpleShaderInst
 	{
 	public:
-		SimpleShaderInst(string& shaderName);
+		SimpleShaderInst(const string& shaderName);
 		~SimpleShaderInst();
 
 		void Set();
 
 		inline void ForceUpdate() {b_dirty = true;}
 
-		void SetMatrixBuffer(ID3D11Buffer* matrixBuf);
+		void SetMatrixBuffer(RHI::GfxBuffer* matrixBuf);
 
-		void SetTexture(ID3D11ShaderResourceView *texture, uint8_t id);
-		void SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot);
+		void SetTexture(RHI::GfxSRV *texture, uint8_t id);
+		void SetTextureWithSlotName(RHI::GfxSRV *texture, string& slot);
 		
 		string GetTextureName(uint8_t id);
 		string GetTextureNameWithSlotName(string slot);
@@ -220,9 +220,9 @@ namespace EngineCore
 		bool SetTextureByNameWithSlotName(string name, string slot);
 		void ClearTextures();
 
-		void SetVector(Vector4& vect, uint8_t id);
-		void SetVectorWithSlotName(Vector4& vect, string slot);
-		void SetVector3WithSlotName(Vector3& vect, string slot)
+		void SetVector(const Vector4& vect, uint8_t id);
+		void SetVectorWithSlotName(const Vector4& vect, string slot);
+		void SetVector3WithSlotName(const Vector3& vect, string slot)
 		{SetVectorWithSlotName(Vector4(vect.x, vect.y, vect.z, 0), slot);}
 		void SetFloat(float f, uint8_t id);
 		void SetFloatWithSlotName(float f, string slot);
@@ -259,7 +259,7 @@ namespace EngineCore
 		}
 
 	private:
-		bool initInst(string& shaderName);
+		bool initInst(const string& shaderName);
 		bool initBuffers();
 		void updateBuffers();
 
@@ -270,8 +270,8 @@ namespace EngineCore
 		RArray<Vector4> dataVector;
 		uint8_t offsetFloat;
 		
-		ID3D11Buffer* inputBuf;
-		
+		RHI::GfxBuffer* inputBuf;
+
 		uint8_t vectorsReg;
 		uint8_t texReg;
 		uint8_t matrixReg;

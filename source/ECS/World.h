@@ -166,12 +166,12 @@ namespace EngineCore
 		inline float GetDT() const { return m_dt; }
 
 		bool BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLightweight = false, uint32_t arrayCount = 1);
-		ID3D11ShaderResourceView* CaptureProb(Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID = 0);
+		RHI::GfxSRV* CaptureProb(const Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID = 0);
 		bool CaptureProbMipGen();
 		void CaptureProbClear();
 		void EndCaptureProb();
 
-		inline ID3D11ShaderResourceView* GetCaptureProbSRV()
+		inline RHI::GfxSRV* GetCaptureProbSRV()
 		{
 			return probTarget.GetShaderResourceView();
 		}

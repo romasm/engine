@@ -17,6 +17,8 @@
 
 namespace EngineCore
 {
+	namespace RHI { struct GfxTexture; struct GfxSRV; }
+
 	class SceneRenderMgr;
 
 	class EnvProbMgr
@@ -38,8 +40,8 @@ namespace EngineCore
 		bool InitBuffers();
 
 		template<size_t FRAME_COUNT>
-		void PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev, 
-			SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, ID3D11Texture2D* probArray, 
+		void PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev,
+			SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, RHI::GfxTexture* probArray,
 			SArray<EnvProbRenderData, FRAME_COUNT>& probsBuffer );
 		
 
@@ -47,14 +49,14 @@ namespace EngineCore
 		SArray<EnvProbData, ENVPROBS_FRAME_COUNT_SQ * 4> sqEnvProbs;
 		SArray<EnvProbData, ENVPROBS_FRAME_COUNT_LQ * 4> lqEnvProbs;
 		
-		ID3D11Texture2D* hqProbArray;
-		ID3D11ShaderResourceView* hqProbArraySRV;
+		RHI::GfxTexture* hqProbArray;
+		RHI::GfxSRV* hqProbArraySRV;
 
-		ID3D11Texture2D* sqProbArray;
-		ID3D11ShaderResourceView* sqProbArraySRV;
+		RHI::GfxTexture* sqProbArray;
+		RHI::GfxSRV* sqProbArraySRV;
 
-		ID3D11Texture2D* lqProbArray;
-		ID3D11ShaderResourceView* lqProbArraySRV;
+		RHI::GfxTexture* lqProbArray;
+		RHI::GfxSRV* lqProbArraySRV;
 
 		unordered_map<uint32_t, int32_t> hqRegedProbsPrev;
 		unordered_map<uint32_t, int32_t> sqRegedProbsPrev;

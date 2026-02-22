@@ -66,8 +66,8 @@ namespace EngineCore
 		void Close();
 		bool Init(int width, int height, DXGI_FORMAT format, eKernel kernel, eBlurWhat mipsBlur, bool depthDependent = false);
 
-		void blur(RenderTarget* inout, uint8_t id = 0, ID3D11ShaderResourceView* depth = nullptr);
-		void blur(RenderTarget* in, RenderTarget* out, int in_id = 0, int out_id = 0, ID3D11ShaderResourceView* depth = nullptr);
+		void blur(RenderTarget* inout, uint8_t id = 0, RHI::GfxSRV* depth = nullptr);
+		void blur(RenderTarget* in, RenderTarget* out, int in_id = 0, int out_id = 0, RHI::GfxSRV* depth = nullptr);
 
 	protected:
 		Render* m_render;

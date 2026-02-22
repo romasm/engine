@@ -6,6 +6,7 @@
 #include "Frustum.h"
 #include "World.h"
 #include "Utils\Profiler.h"
+#include "DX11Types.h"
 
 using namespace EngineCore;
 
@@ -75,17 +76,17 @@ GIMgr::~GIMgr()
 	TEXTURE_DROP(bricksLookupsResource);
 	TEXTURE_DROP(chunksResource);
 
-	_RELEASE(sampleDataGPU);
+	_DELETE(sampleDataGPU);
 
 	_DELETE(cubemapToSH);
-	_RELEASE(adressBuffer);
+	_DELETE(adressBuffer);
 	_DELETE(copyBricks);
 	_DELETE(interpolateProbes);
 }
 
 bool GIMgr::InitBuffers()
 {
-	sampleDataGPU = Buffer::CreateConstantBuffer(Render::Device(), sizeof(GISampleData), true);
+	sampleDataGPU = Buffer::CreateConstantBuffer(sizeof(GISampleData), true);
 
 	sampleData.minCorner = Vector3(0.0f);
 	sampleData.chunkSizeRcp = 0.0f;
@@ -97,11 +98,11 @@ bool GIMgr::InitBuffers()
 
 	GenerateSGBasis();
 
-	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+	GFX_CMD->UpdateBuffer(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 #ifdef _EDITOR
 
-	adressBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SGAdresses), true);
+	adressBuffer = Buffer::CreateConstantBuffer(sizeof(SGAdresses), true);
 
 	cubemapToSH = new Compute(SHADER_CUBEMAP_TO_SH);
 	cubemapToSH->AttachConstantBuffer((uint8_t)0, adressBuffer);
@@ -116,7 +117,7 @@ bool GIMgr::InitBuffers()
 	return true;
 }
 
-ID3D11ShaderResourceView* GIMgr::GetGIBricksSRV()
+RHI::GfxSRV* GIMgr::GetGIBricksSRV()
 {
 	if (!bricksAtlasSRV)
 		return TexMgr::GetResourcePtr(bricksAtlasResource);
@@ -124,7 +125,7 @@ ID3D11ShaderResourceView* GIMgr::GetGIBricksSRV()
 	return bricksAtlasSRV;
 }
 
-ID3D11ShaderResourceView* GIMgr::GetGIChunksSRV()
+RHI::GfxSRV* GIMgr::GetGIChunksSRV()
 {
 	if (!chunksLookupSRV)
 		return TexMgr::GetResourcePtr(chunksResource);
@@ -132,7 +133,7 @@ ID3D11ShaderResourceView* GIMgr::GetGIChunksSRV()
 	return chunksLookupSRV;
 }
 
-ID3D11ShaderResourceView* GIMgr::GetGILookupsSRV()
+RHI::GfxSRV* GIMgr::GetGILookupsSRV()
 {
 	if (!bricksLookupSRV)
 		return TexMgr::GetResourcePtr(bricksLookupsResource);
@@ -142,19 +143,19 @@ ID3D11ShaderResourceView* GIMgr::GetGILookupsSRV()
 
 void GIMgr::DeleteResources()
 {
-	_RELEASE(chunksLookupSRV);
-	_RELEASE(chunksLookup);
+	_DELETE(chunksLookupSRV);
+	_DELETE(chunksLookup);
 
-	_RELEASE(bricksLookupSRV);
-	_RELEASE(bricksLookup);
+	_DELETE(bricksLookupSRV);
+	_DELETE(bricksLookup);
 
-	_RELEASE(bricksAtlasUAV);
-	_RELEASE(bricksAtlasSRV);
-	_RELEASE(bricksAtlas);
+	_DELETE(bricksAtlasUAV);
+	_DELETE(bricksAtlasSRV);
+	_DELETE(bricksAtlas);
 
-	_RELEASE(bricksTempAtlasUAV);
-	_RELEASE(bricksTempAtlasSRV);
-	_RELEASE(bricksTempAtlas);
+	_DELETE(bricksTempAtlasUAV);
+	_DELETE(bricksTempAtlasSRV);
+	_DELETE(bricksTempAtlas);
 }
 
 bool GIMgr::CompareOctrees(Octree& first, Octree& second)
@@ -189,7 +190,7 @@ void GIMgr::LoadGIData(GISampleData& giData)
 
 	sampleData = giData;
 		
-	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+	GFX_CMD->UpdateBuffer(sampleDataGPU, &sampleData, sizeof(GISampleData));
 }
 
 GISampleData* GIMgr::SaveGIData()
@@ -201,7 +202,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage bricksAtlasVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), bricksAtlas, bricksAtlasVolume)))
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(bricksAtlas)->AsResource(), bricksAtlasVolume)))
 	{
 		ERR("Cant get GI bricks atlas");
 	}
@@ -214,7 +215,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage bricksLookupsVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), bricksLookup, bricksLookupsVolume)))
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(bricksLookup)->AsResource(), bricksLookupsVolume)))
 	{
 		ERR("Cant get GI bricks lookups");
 	}
@@ -227,7 +228,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage chunksVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), chunksLookup, chunksVolume)))
+	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(chunksLookup)->AsResource(), chunksVolume)))
 	{
 		ERR("Cant get GI chunks");
 	}
@@ -254,63 +255,59 @@ bool GIMgr::RecreateResources()
 	// bricks atlas temp
 	const DXGI_FORMAT formatBricksTemp = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 
-	D3D11_TEXTURE3D_DESC volumeDesc;
-	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = bricksTexX * BRICK_RESOLUTION;
-	volumeDesc.Height = bricksTexY * BRICK_RESOLUTION;
-	volumeDesc.Depth = BRICK_RESOLUTION * BRICK_COEF_COUNT;
-	volumeDesc.MipLevels = 1;
-	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
-	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	volumeDesc.CPUAccessFlags = 0;
-	volumeDesc.MiscFlags = 0;
-	volumeDesc.Format = formatBricksTemp;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksTempAtlas)))
+	uint32_t volumeWidth = bricksTexX * BRICK_RESOLUTION;
+	uint32_t volumeHeight = bricksTexY * BRICK_RESOLUTION;
+	uint32_t volumeDepth = BRICK_RESOLUTION * BRICK_COEF_COUNT;
+
+	RHI::TextureDesc texDesc = {};
+	texDesc.dimension = RHI::TextureDimension::Tex3D;
+	texDesc.width = volumeWidth;
+	texDesc.height = volumeHeight;
+	texDesc.depth = volumeDepth;
+	texDesc.mipLevels = 1;
+	texDesc.format = formatBricksTemp;
+	texDesc.allowSRV = true;
+	texDesc.allowUAV = true;
+	texDesc.msaaSamples = 1;
+	texDesc.msaaQuality = 0;
+	bricksTempAtlas = GFX_DEVICE->CreateTexture(texDesc);
+	if (!bricksTempAtlas)
 		return false;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
-	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Texture3D.MipLevels = -1;
-	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
-	volumeSRVDesc.Format = formatBricksTemp;
-	if (FAILED(Render::CreateShaderResourceView(bricksTempAtlas, &volumeSRVDesc, &bricksTempAtlasSRV)))
+	bricksTempAtlasSRV = GFX_DEVICE->CreateSRV(bricksTempAtlas, formatBricksTemp, 0, UINT32_MAX);
+	if (!bricksTempAtlasSRV)
 		return false;
 
-	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
-	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-	volumeUAVDesc.Texture3D.MipSlice = 0;
-	volumeUAVDesc.Texture3D.WSize = volumeDesc.Depth;
-	volumeUAVDesc.Format = formatBricksTemp;
-	if (FAILED(Render::CreateUnorderedAccessView(bricksTempAtlas, &volumeUAVDesc, &bricksTempAtlasUAV)))
+	bricksTempAtlasUAV = GFX_DEVICE->CreateUAV(bricksTempAtlas, formatBricksTemp, 0);
+	if (!bricksTempAtlasUAV)
 		return false;
-	 
-	Render::ClearUnorderedAccessViewFloat(bricksTempAtlasUAV, Vector4(0, 0, 0, 0));
-	 
+
+	GFX_CMD->ClearUAVFloat(bricksTempAtlasUAV, 0, 0, 0, 0);
+
 	sampleData.brickAtlasOffset = Vector3(1.0f / bricksTexX, 1.0f / bricksTexY, 1.0f / BRICK_COEF_COUNT);
-	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / volumeDesc.Width, 1.0f / volumeDesc.Height, 1.0f / volumeDesc.Depth);
+	sampleData.halfBrickVoxelSize = 0.5f * Vector3(1.0f / volumeWidth, 1.0f / volumeHeight, 1.0f / volumeDepth);
 	sampleData.brickSampleSize = sampleData.halfBrickVoxelSize * 4.0f;
 
 	// brick atlas final
 	// TODO: DXGI_FORMAT_R9G9B9E5_SHAREDEXP, DXGI_FORMAT_R11G11B10_FLOAT, DXGI_FORMAT_BC6H_UF16 ???
 	const DXGI_FORMAT formatBricks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
 
-	volumeDesc.Format = formatBricks;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &bricksAtlas)))
+	texDesc.format = formatBricks;
+	bricksAtlas = GFX_DEVICE->CreateTexture(texDesc);
+	if (!bricksAtlas)
 		return false;
 
-	volumeSRVDesc.Format = formatBricks;
-	if (FAILED(Render::CreateShaderResourceView(bricksAtlas, &volumeSRVDesc, &bricksAtlasSRV)))
+	bricksAtlasSRV = GFX_DEVICE->CreateSRV(bricksAtlas, formatBricks, 0, UINT32_MAX);
+	if (!bricksAtlasSRV)
 		return false;
 
-	volumeUAVDesc.Format = formatBricks;
-	if (FAILED(Render::CreateUnorderedAccessView(bricksAtlas, &volumeUAVDesc, &bricksAtlasUAV)))
+	bricksAtlasUAV = GFX_DEVICE->CreateUAV(bricksAtlas, formatBricks, 0);
+	if (!bricksAtlasUAV)
 		return false;
 
-	Render::ClearUnorderedAccessViewFloat(bricksAtlasUAV, Vector4(0, 0, 0, 0));
+	GFX_CMD->ClearUAVFloat(bricksAtlasUAV, 0, 0, 0, 0);
 
-	LOG_GOOD("Brick atlas size: %i mb", volumeDesc.Width * volumeDesc.Height * volumeDesc.Depth * sizeof(Vector4Uint16) / 1048576);
+	LOG_GOOD("Brick atlas size: %i mb", volumeWidth * volumeHeight * volumeDepth * sizeof(Vector4Uint16) / 1048576);
 	// ----------------------------------------------------------------------
 	
 	// chunks lookup
@@ -411,22 +408,35 @@ bool GIMgr::RecreateResources()
 	chunksData.SysMemPitch = chunksX * sizeof(Vector4Uint16);
 	chunksData.SysMemSlicePitch = zStride * sizeof(Vector4Uint16);
 
+	D3D11_TEXTURE3D_DESC volumeDesc;
+	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
 	volumeDesc.Width = chunksX;
 	volumeDesc.Height = chunksY;
 	volumeDesc.Depth = chunksZ;
+	volumeDesc.MipLevels = 1;
 	volumeDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	volumeDesc.CPUAccessFlags = 0;
+	volumeDesc.MiscFlags = 0;
 	volumeDesc.Format = formatChunks;
 
-	HRESULT hr = Render::CreateTexture3D(&volumeDesc, &chunksData, &chunksLookup);
+	ID3D11Texture3D* rawChunksTex = nullptr;
+	HRESULT hr = Render::Device()->CreateTexture3D(&volumeDesc, &chunksData, &rawChunksTex);
 	_DELETE_ARRAY(chunksArray);
 
 	if (FAILED(hr))
 		return false;
 
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Format = formatChunks;
-	if (FAILED(Render::CreateShaderResourceView(chunksLookup, &volumeSRVDesc, &chunksLookupSRV)))
+	auto* wrappedChunksTex = new RHI::DX11::DX11Texture();
+	wrappedChunksTex->texture3D = rawChunksTex;
+	wrappedChunksTex->width = volumeDesc.Width;
+	wrappedChunksTex->height = volumeDesc.Height;
+	wrappedChunksTex->depth = volumeDesc.Depth;
+	wrappedChunksTex->format = formatChunks;
+	chunksLookup = wrappedChunksTex;
+
+	chunksLookupSRV = GFX_DEVICE->CreateSRV(chunksLookup, formatChunks, 0, UINT32_MAX);
+	if (!chunksLookupSRV)
 		return false;
 	
 	sampleData.chunkSizeRcp = 1.0f / chunkSize;
@@ -471,20 +481,28 @@ bool GIMgr::RecreateResources()
 	volumeDesc.Depth = lookupMaxSize;
 	volumeDesc.Format = formatLookup;
 
-	hr = Render::CreateTexture3D(&volumeDesc, &lookupArrayData, &bricksLookup);
+	ID3D11Texture3D* rawLookupTex = nullptr;
+	hr = Render::Device()->CreateTexture3D(&volumeDesc, &lookupArrayData, &rawLookupTex);
 	_DELETE_ARRAY(lookupArray);
 
 	if (FAILED(hr))
 		return false;
 
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Format = formatLookup;
-	if (FAILED(Render::CreateShaderResourceView(bricksLookup, &volumeSRVDesc, &bricksLookupSRV)))
+	auto* wrappedLookupTex = new RHI::DX11::DX11Texture();
+	wrappedLookupTex->texture3D = rawLookupTex;
+	wrappedLookupTex->width = volumeDesc.Width;
+	wrappedLookupTex->height = volumeDesc.Height;
+	wrappedLookupTex->depth = volumeDesc.Depth;
+	wrappedLookupTex->format = formatLookup;
+	bricksLookup = wrappedLookupTex;
+
+	bricksLookupSRV = GFX_DEVICE->CreateSRV(bricksLookup, formatLookup, 0, UINT32_MAX);
+	if (!bricksLookupSRV)
 		return false;
 
 	LOG_GOOD("Brick lookup size: %i kb", lookupArrayX * lookupArrayY * lookupMaxSize * sizeof(uint32_t) / 1024);
 
-	Render::UpdateDynamicResource(sampleDataGPU, &sampleData, sizeof(GISampleData));
+	GFX_CMD->UpdateBuffer(sampleDataGPU, &sampleData, sizeof(GISampleData));
 
 	return true;
 }
@@ -791,7 +809,7 @@ bool GIMgr::BakeGI()
 			return false;
 		}
 
-		ID3D11ShaderResourceView* probSRV = world->GetCaptureProbSRV();
+		RHI::GfxSRV* probSRV = world->GetCaptureProbSRV();
 		if (!probSRV)
 			return false;
 
@@ -828,7 +846,7 @@ bool GIMgr::BakeGI()
 			}
 			adresses.adresses[0].w = (float)prob.adresses.size();
 
-			Render::UpdateDynamicResource(adressBuffer, &adresses, sizeof(SGAdresses));
+			GFX_CMD->UpdateBuffer(adressBuffer, &adresses, sizeof(SGAdresses));
 						
 #if PROB_CAPTURE_NO_AA == 0
 			if (b == PROB_CAPTURE_BOUNCES - 1)
@@ -879,9 +897,9 @@ bool GIMgr::BakeGI()
 	interpolateProbes->DetachRWResource();
 	interpolateProbes->DetachResource();
 
-	_RELEASE(bricksTempAtlasUAV);
-	_RELEASE(bricksTempAtlasSRV);
-	_RELEASE(bricksTempAtlas);
+	_DELETE(bricksTempAtlasUAV);
+	_DELETE(bricksTempAtlasSRV);
+	_DELETE(bricksTempAtlas);
 
 	interpolationArray.destroy();
 
@@ -1200,7 +1218,7 @@ void GIMgr::InterpolateProbes(RArray<ProbInterpolation>& interpolationArray)
 		if (interpolationDataGPU.empty())
 			continue;
 
-		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer(Render::Device(), (int32_t)interpolationDataGPU.size(), sizeof(ProbInterpolationGPU), false, interpolationDataGPU.data());
+		StructBuf interpolationBuffer = Buffer::CreateStructedBuffer((int32_t)interpolationDataGPU.size(), sizeof(ProbInterpolationGPU), false, interpolationDataGPU.data());
 
 		uint32_t groupsCountX = (uint32_t)ceilf(float(interpolationDataGPU.size()) / 128);
 		uint8_t interpolationBufferSlot = interpolateProbes->AttachResource("probes", interpolationBuffer.srv);

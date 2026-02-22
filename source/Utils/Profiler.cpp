@@ -81,16 +81,8 @@ Profiler::Profiler()
 	InitParams();
 
 	// GPU
-	disjoints.resize(2);
-	disjoints.assign(nullptr);
-
-	timestamps.create(PERF_GPU::PERF_GPU_COUNT + 1);
-	timestamps.resize(PERF_GPU::PERF_GPU_COUNT + 1);
-	for(uint32_t i = 0; i <= PERF_GPU::PERF_GPU_COUNT; i++)
-	{
-		timestamps[i].resize(2);
-		timestamps[i].assign(nullptr);
-	}
+	disjointHeap = nullptr;
+	timestampHeap = nullptr;
 
 	gpu_perf_data.create(PERF_GPU::PERF_GPU_COUNT);
 	gpu_perf_data.resize(PERF_GPU::PERF_GPU_COUNT);
@@ -120,30 +112,23 @@ Profiler::~Profiler()
 
 bool Profiler::InitQueries()
 {
-	D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_TIMESTAMP_DISJOINT, 0 };
+	disjointHeap = GFX_DEVICE->CreateQueryHeap(RHI::QueryType::TimestampDisjoint, 2);
+	timestampHeap = GFX_DEVICE->CreateQueryHeap(RHI::QueryType::Timestamp, (PERF_GPU::PERF_GPU_COUNT + 1) * 2);
 
-	for(uint32_t i = 0; i < 2; i++)
-		if ( FAILED( DEVICE->CreateQuery(&queryDesc, &disjoints[i]) ) )
-			return false;
+	if(!disjointHeap || !timestampHeap)
+	{
+		// Backend doesn't support query heaps (e.g. DX12 stub) — GPU profiling disabled
+		WRN("GPU profiler queries unavailable on this backend, GPU profiling disabled");
+		ReleaseQueries();
+	}
 
-	queryDesc.Query = D3D11_QUERY_TIMESTAMP;
-
-	for(uint32_t i = 0; i <= PERF_GPU::PERF_GPU_COUNT; i++)
-		for(uint32_t j = 0; j < 2; j++)
-			if ( FAILED( DEVICE->CreateQuery(&queryDesc, &timestamps[i][j]) ) )
-				return false;
-	
 	return true;
 }
 
 void Profiler::ReleaseQueries()
 {
-	for(uint32_t i = 0; i < 2; i++)
-		_RELEASE(disjoints[i]);
-
-	for(uint32_t i = 0; i <= PERF_GPU::PERF_GPU_COUNT; i++)
-		for(uint32_t j = 0; j < 2; j++)
-			_RELEASE(timestamps[i][j]);
+	if(disjointHeap) { GFX_DEVICE->DestroyQueryHeap(disjointHeap); disjointHeap = nullptr; }
+	if(timestampHeap) { GFX_DEVICE->DestroyQueryHeap(timestampHeap); timestampHeap = nullptr; }
 }
 
 void Profiler::CPU_BeginFrame()
@@ -181,20 +166,20 @@ void Profiler::CPU_EndFrame()
 
 void Profiler::GPU_BeginFrame()
 {
-	if(!started)
+	if(!started || !disjointHeap)
 		return;
 
-	CONTEXT->Begin(disjoints[querySwitch]);
-	CONTEXT->End(timestamps[PERF_GPU::PERF_GPU_FRAME][querySwitch]);
+	GFX_CMD->BeginQuery(disjointHeap, querySwitch);
+	GFX_CMD->EndQuery(timestampHeap, PERF_GPU::PERF_GPU_FRAME * 2 + querySwitch);
 }
-		
+
 void Profiler::GPU_EndFrame()
 {
-	if(!started)
+	if(!started || !disjointHeap)
 		return;
-	
-	CONTEXT->End(timestamps[PERF_GPU::PERF_GPU_COUNT][querySwitch]);
-	CONTEXT->End(disjoints[querySwitch]);
+
+	GFX_CMD->EndQuery(timestampHeap, PERF_GPU::PERF_GPU_COUNT * 2 + querySwitch);
+	GFX_CMD->EndQuery(disjointHeap, querySwitch);
 	++querySwitch &= 1;
 }
 
@@ -218,7 +203,7 @@ Vector2 Profiler::GetGpuCurrentTimeSlice(uint32_t id)
 
 void Profiler::GPU_GrabData()
 {
-	if(!started)
+	if(!started || !disjointHeap)
 		return;
 
 	if(collectSwitch < 0)
@@ -228,7 +213,7 @@ void Profiler::GPU_GrabData()
 	}
 
 	bool msg = false;
-	while( CONTEXT->GetData(disjoints[collectSwitch], NULL, 0, 0) == S_FALSE )
+	while( GFX_CMD->GetQueryData(disjointHeap, collectSwitch, NULL, 0, 0) == S_FALSE )
 	{
 		if(!msg)
 		{
@@ -242,7 +227,7 @@ void Profiler::GPU_GrabData()
 	++collectSwitch &= 1;
 
 	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT timestampDisjoint;
-	if( CONTEXT->GetData(disjoints[prevCollect], &timestampDisjoint, sizeof(timestampDisjoint), 0) != S_OK )
+	if( GFX_CMD->GetQueryData(disjointHeap, prevCollect, &timestampDisjoint, sizeof(timestampDisjoint), 0) != S_OK )
 	{
 		ERR("Cant get profiler GPU timestamp disjoint query data!");
 		return;
@@ -265,9 +250,8 @@ void Profiler::GPU_GrabData()
 	for (uint32_t i = 0; i <= PERF_GPU::PERF_GPU_COUNT; i++)
 	{
 		uint64_t time;
-		if( CONTEXT->GetData(timestamps[i][prevCollect], &time, sizeof(uint64_t), 0) != S_OK )
+		if( GFX_CMD->GetQueryData(timestampHeap, i * 2 + prevCollect, &time, sizeof(uint64_t), 0) != S_OK )
 		{
-			//ERR("Cant get profiler GPU timestamp query data for id: %u !", i);
 			if(i < PERF_GPU::PERF_GPU_COUNT)
 			{
 				gpu_perf_data[i][prevFrameID].begin = 0;
@@ -287,7 +271,7 @@ void Profiler::GPU_GrabData()
 		uint16_t depth = 0;
 		if(i < PERF_GPU::PERF_GPU_COUNT)
 			depth = gpu_ids_name[i].depth;
-		
+
 		maxDepth = max(maxDepth, depth);
 
 		int32_t prevID = gpu_prev_id[depth];
@@ -303,7 +287,7 @@ void Profiler::GPU_GrabData()
 				gpu_prev_id[j] = -1;
 			}
 		}
-		
+
 		gpu_prev_id[depth] = i;
 	}
 }

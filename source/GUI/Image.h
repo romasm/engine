@@ -10,9 +10,9 @@ namespace EngineCore
 	public:
 		Image2D();
 		
-		void Init(string& shadername);
+		void Init(const string& shadername);
 
-		void SetRect(MLRECT& rect) // todo
+		void SetRect(const MLRECT& rect) // todo
 		{
 			quad_rect = rect; 
 			dirty = true;
@@ -32,7 +32,7 @@ namespace EngineCore
 		bool updateVertices();
 
 		SimpleShaderInst* shaderInst;
-		ID3D11Buffer *vertexBuffer; 
+		RHI::GfxBuffer *vertexBuffer;
 
 		MLRECT quad_rect;
 

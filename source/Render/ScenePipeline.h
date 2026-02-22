@@ -273,7 +273,7 @@ namespace EngineCore
 		void HDRtoLDRStage();
 
 		void LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp);
-		ID3D11ShaderResourceView* GetLinearAndDepthSRV();
+		RHI::GfxSRV* GetLinearAndDepthSRV();
 
 		luaSRV GetSRV()
 		{
@@ -330,7 +330,7 @@ namespace EngineCore
 
 		bool Resize(int t_width, int t_height);
 
-		ID3D11ShaderResourceView* GetOpaqueSceneDepth() const 
+		RHI::GfxSRV* GetOpaqueSceneDepth() const
 		{return rt_OpaqueForward->GetShaderResourceView(4);}
 
 		inline CameraLink GetSceneCamera() const {return camera;}
@@ -423,10 +423,10 @@ namespace EngineCore
 
 		SceneRenderMgr* render_mgr;
 
-		ID3D11Buffer* m_AOBuffer;
+		RHI::GfxBuffer* m_AOBuffer;
 		//AOBuffer aoBuffer;
 
-		ID3D11Buffer* sharedBuffer;
+		RHI::GfxBuffer* sharedBuffer;
 		SharedBuffer sharedconst;
 
 		StructBuf lightSpotBuffer;
@@ -438,7 +438,7 @@ namespace EngineCore
 		StructBuf lightsPerTile;
 		LightsIDs lightsIDs;
 
-		ID3D11Buffer* lightsPerClusterCount;
+		RHI::GfxBuffer* lightsPerClusterCount;
 		LightsCount lightsCount;
 
 		StructBuf m_MaterialBuffer;
@@ -457,17 +457,17 @@ namespace EngineCore
 
 		uint32_t textureIBLLUT;
 
-		ID3D11Texture2D* sceneDepth;
-		ID3D11ShaderResourceView* sceneDepthSRV;
-		ID3D11DepthStencilView* sceneDepthDSV;
+		RHI::GfxTexture* sceneDepth;
+		RHI::GfxSRV* sceneDepthSRV;
+		RHI::GfxDSV* sceneDepthDSV;
 
-		ID3D11Texture2D* transparencyDepth;
-		ID3D11ShaderResourceView* transparencyDepthSRV;
-		ID3D11DepthStencilView* transparencyDepthDSV;
+		RHI::GfxTexture* transparencyDepth;
+		RHI::GfxSRV* transparencyDepthSRV;
+		RHI::GfxDSV* transparencyDepthDSV;
 		
 		Compute* defferedOpaqueCompute;
 		DefferedConfigData defferedConfigData;
-		ID3D11Buffer* defferedConfigBuffer;
+		RHI::GfxBuffer* defferedConfigBuffer;
 		
 		CameraLink camera;
 		CameraComponent* current_camera;

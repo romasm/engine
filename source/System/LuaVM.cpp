@@ -129,7 +129,7 @@ string LuaVM::FunctionSerialize(LuaRef func)
 	return (*LuaVM::Get()->functionSerialize)(func).cast<string>();
 }
 
-LuaRef LuaVM::FunctionDeserialize(string& func)
+LuaRef LuaVM::FunctionDeserialize(const string& func)
 {
 	if(!LuaVM::Get()->functionDeserialize)
 		return LuaRef(LuaVM::Get()->L);
@@ -181,7 +181,7 @@ void LuaVM::HandleError()
 	LUA_ERROR("%s", str.c_str());
 }
 
-bool LuaVM::LoadScript(string& filename)
+bool LuaVM::LoadScript(const string& filename)
 {  
 	string scriptFile = filename + EXT_SCRIPT_COMPILED;
 

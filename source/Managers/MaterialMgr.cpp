@@ -31,7 +31,7 @@ MaterialMgr::~MaterialMgr()
 	instance = nullptr;
 }
 
-Material* MaterialMgr::GetMaterial(string& name)
+Material* MaterialMgr::GetMaterial(const string& name)
 {
 	Material* res = nullptr;
 	if(name.length() == 0)
@@ -49,7 +49,7 @@ Material* MaterialMgr::GetMaterial(string& name)
 	return null_material;
 }
 
-Material* MaterialMgr::AddMaterialToList(string& name)
+Material* MaterialMgr::AddMaterialToList(const string& name)
 {
 	MaterialHandle handle;
 
@@ -68,7 +68,7 @@ Material* MaterialMgr::AddMaterialToList(string& name)
 	return handle.material;
 }
 
-Material* MaterialMgr::FindMaterialInList(string& name)
+Material* MaterialMgr::FindMaterialInList(const string& name)
 {
 	auto it = material_map.find(name);
 	if(it == material_map.end())
@@ -78,7 +78,7 @@ Material* MaterialMgr::FindMaterialInList(string& name)
 	return it->second.material;
 }
 
-void MaterialMgr::DeleteMaterial(string& name)
+void MaterialMgr::DeleteMaterial(const string& name)
 {
 	auto it = material_map.find(name);
 	if(it == material_map.end())

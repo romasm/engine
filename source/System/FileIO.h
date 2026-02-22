@@ -68,7 +68,7 @@ public:
 	typedef unordered_map<string, FileNode> file_map;
 
 public:
-	FileIO(string& filename, bool overwrite = false)
+	FileIO(const string& filename, bool overwrite = false)
 	{init(filename, overwrite);}
 	FileIO(char* filename, bool overwrite = false)
 	{init(string(filename), overwrite);}
@@ -78,7 +78,7 @@ public:
 	inline bool Empty() {return fileMap->empty();}
 
 	bool Save(){return SaveAs(fileName);}
-	bool SaveAs(string& file);
+	bool SaveAs(const string& file);
 	inline bool SaveAsS(char* file)
 	{return SaveAs(string(file));}
 	
@@ -175,7 +175,7 @@ public:
 		
 
 private:
-	void init(string& filename, bool overwrite);
+	void init(const string& filename, bool overwrite);
 
 	void buildMap(uint8_t* fileData, uint32_t fileSize);
 	void buildBlockMap(char* data, uint32_t dataSize, uint32_t& current, file_map* mmap);		
@@ -190,8 +190,8 @@ private:
 	string fileName;
 
 public:
-	static bool IsExist(string& path);
-	inline static bool IsExistS(char* path){return IsExist(string(path));}
+	static bool IsExist(const string& path);
+	inline static bool IsExistS(const char* path){return IsExist(string(path));}
 	inline static bool IsExist_lua(string path){return IsExist(path);}
 	static bool IsFile(string filename);
 
@@ -205,17 +205,17 @@ public:
 	static bool Delete(string path);
 
 	static uint32_t GetDateRawFromString(string& date);
-	static uint32_t GetDateModifRaw(string& filename);
-	inline static uint32_t GetDateModifRawS(char* filename){return GetDateModifRaw(string(filename));}
+	static uint32_t GetDateModifRaw(const string& filename);
+	inline static uint32_t GetDateModifRawS(const char* filename){return GetDateModifRaw(string(filename));}
 	inline static uint32_t GetDateModifRaw_lua(string filename){return GetDateModifRaw(filename);}
 	static string GetDateModif(string filename);
 	static string GetDateCreate(string path);
 	static uint32_t GetSize(string filename);
 
-	static uint8_t* ReadFileData(string& filename, uint32_t *ret_size, bool noWarning = false);
-	inline static uint8_t* ReadFileDataS(char* filename, uint32_t *ret_size){return ReadFileData(string(filename), ret_size);}
-	static bool WriteFileData(string& filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0);
-	inline static bool WriteFileDataS(char* filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0){return WriteFileData(string(filename), data, size, modif_date);}
+	static uint8_t* ReadFileData(const string& filename, uint32_t *ret_size, bool noWarning = false);
+	inline static uint8_t* ReadFileDataS(const char* filename, uint32_t *ret_size){return ReadFileData(string(filename), ret_size);}
+	static bool WriteFileData(const string& filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0);
+	inline static bool WriteFileDataS(const char* filename, uint8_t* data, uint32_t size, uint32_t modif_date = 0){return WriteFileData(string(filename), data, size, modif_date);}
 	
 	static void RegLuaFunctions()
 	{

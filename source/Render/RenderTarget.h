@@ -18,12 +18,12 @@ public:
 	RenderTarget();
 
 	bool Init(int width, int height, DXGI_FORMAT depthStencil = DXGI_FORMAT_UNKNOWN, int msaa_count = 1, int msaa_quality = 0);
-	bool Init(int width, int height, ID3D11DepthStencilView* depthStencilView, int msaa_count = 1, int msaa_quality = 0);
+	bool Init(int width, int height, RHI::GfxDSV* depthStencilView, int msaa_count = 1, int msaa_quality = 0);
 	bool Init(RenderTarget* importDepthStencil);
 
 	bool AddRT(DXGI_FORMAT RT_format, unsigned short mips = 1, bool UAV = false, bool forceMipRes = false);
 
-	bool AddBackBufferRT(ID3D11Texture2D* p_BB);
+	bool AddBackBufferRT(RHI::GfxTexture* p_BB);
 
 	void Close();
 
@@ -31,20 +31,20 @@ public:
 	void ClearRenderTargets(bool clearDS = true){ClearRenderTargets(0,0,0,0, clearDS);}
 	void ClearRenderTargets(float, float, float, float, bool clearDS = true);
 
-	// Получаем текстуру RT в виде shader resource view
-	ID3D11ShaderResourceView* GetShaderResourceView(int id);
-	ID3D11UnorderedAccessView* GetUnorderedAccessView(int id);
-	ID3D11RenderTargetView* GetRenderTargetView(int id);
-	ID3D11DepthStencilView* GetDepthStencilView();
-	ID3D11Texture2D* GetTexture(int id);
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RT пїЅ пїЅпїЅпїЅпїЅ shader resource view
+	RHI::GfxSRV* GetShaderResourceView(int id);
+	RHI::GfxUAV* GetUnorderedAccessView(int id);
+	RHI::GfxRTV* GetRenderTargetView(int id);
+	RHI::GfxDSV* GetDepthStencilView();
+	RHI::GfxTexture* GetTexture(int id);
 
 	// Call after Init, before AddRT!!!
-	void SetMipmappingMaterial(string& mat)
+	void SetMipmappingMaterial(const string& mat)
 	{
 		if(!mip_mat) mip_mat = new string;
 		*mip_mat = mat;
 	}
-	inline void SetMipmappingMaterial(char* mat){SetMipmappingMaterial(string(mat));}
+	inline void SetMipmappingMaterial(const char* mat){SetMipmappingMaterial(string(mat));}
 
 	void GenerateMipmaps(class ScenePipeline* scene = nullptr);
 	int GetMipsCountInFullChain(){return mip_count;}
@@ -53,8 +53,8 @@ public:
 
 	struct miplevel
 	{
-		ID3D11RenderTargetView** mip_RTV;
-		ID3D11ShaderResourceView** mip_SRV;		
+		RHI::GfxRTV** mip_RTV;
+		RHI::GfxSRV** mip_SRV;
 		unsigned short mipCount;
 
 		miplevel()
@@ -68,14 +68,14 @@ public:
 private:
 	void initVP();
 
-	D3D11_VIEWPORT m_viewport;
+	RHI::GfxViewport m_viewport;
 
-	ID3D11Texture2D* m_RTTexture[MAX_RENDERTARGETS];
-	ID3D11Texture2D* m_DSTexture;
-	ID3D11RenderTargetView* m_RTV[MAX_RENDERTARGETS];
-	ID3D11ShaderResourceView* m_SRV[MAX_RENDERTARGETS];
-	ID3D11UnorderedAccessView* m_UAV[MAX_RENDERTARGETS];
-	ID3D11DepthStencilView* m_DSV;
+	RHI::GfxTexture* m_RTTexture[MAX_RENDERTARGETS];
+	RHI::GfxTexture* m_DSTexture;
+	RHI::GfxRTV* m_RTV[MAX_RENDERTARGETS];
+	RHI::GfxSRV* m_SRV[MAX_RENDERTARGETS];
+	RHI::GfxUAV* m_UAV[MAX_RENDERTARGETS];
+	RHI::GfxDSV* m_DSV;
 
 	miplevel mipRes[MAX_RENDERTARGETS];
 

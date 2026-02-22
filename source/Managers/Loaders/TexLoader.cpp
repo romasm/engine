@@ -3,15 +3,39 @@
 #include "macros.h"
 #include "Log.h"
 #include "Render.h"
+#include "DX11Types.h"
 
 using namespace EngineCore;
 
-ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
+RHI::GfxSRV* TexLoader::LoadTexture(const string& resName)
 {
-	ID3D11ShaderResourceView* newTex = nullptr;
-
 	if( resName.find(".dds") == string::npos && resName.find(".DDS") == string::npos )
 		return nullptr;
+
+	// DX12 path: create DX12 texture + SRV via the RHI device
+	if(GFX_DEVICE && GFX_DEVICE->IsDX12())
+	{
+		uint32_t size = 0;
+		uint8_t* data = FileIO::ReadFileData(resName, &size);
+		if(!data)
+		{
+			ERR("Cant load DDS texture %s !", resName.c_str());
+			return nullptr;
+		}
+
+		auto* result = GFX_DEVICE->LoadDDSFromMemory(data, size);
+		_DELETE_ARRAY(data);
+
+		if(result)
+			LOG("Texture loaded %s", resName.c_str());
+		else
+			ERR("Cant load DDS texture %s !", resName.c_str());
+
+		return result;
+	}
+
+	// DX11 path (unchanged)
+	ID3D11ShaderResourceView* newTex = nullptr;
 
 	HRESULT hr = -1;
 	uint32_t size = 0;
@@ -21,14 +45,14 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 		hr = CreateDDSTextureFromMemoryEx( DEVICE, data, size, 0, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, false, nullptr, &newTex, nullptr);
 		_DELETE_ARRAY(data);
 	}
-	
+
 	if(FAILED(hr))
 	{
 		ERR("Cant load DDS texture %s !", resName.c_str());
 
 #ifdef _EDITOR
 #ifdef _DEV
-		
+
 		uint32_t date;
 		ImportInfo info;
 		ResourceProcessor::LoadImportInfo(resName, info, date);
@@ -56,7 +80,7 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 			info.resourceName = resourceName;
 			info.importBytes = IMP_BYTE_TEXTURE;
 			info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
-		}			
+		}
 
 		if( ResourceProcessor::ImportResource(info, true) )
 		{
@@ -68,7 +92,7 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 				_DELETE_ARRAY(data);
 			}
 		}
-		
+
 #endif
 #endif
 	}
@@ -77,10 +101,15 @@ ID3D11ShaderResourceView* TexLoader::LoadTexture(string& resName)
 		LOG("Texture loaded %s", resName.c_str());
 	}
 
-	return newTex;
+	if(!newTex)
+		return nullptr;
+
+	auto* result = new RHI::DX11::DX11SRV();
+	result->view = newTex;
+	return result;
 }
 
-bool TexLoader::ConvertTextureToEngineFormat(string& sourceFile, string& resFile, bool getMips, uint32_t genMipsFilter)
+bool TexLoader::ConvertTextureToEngineFormat(const string& sourceFile, const string& resFile, bool getMips, uint32_t genMipsFilter)
 {
 	bool status = false;
 
@@ -181,10 +210,11 @@ bool TexLoader::IsSupported(string filename)
 	return true;
 }
 
-bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
+bool TexLoader::SaveTexture(const string& filename, RHI::GfxSRV* srv)
 {
+	auto* dx11srv = RHI::DX11::Cast(srv)->view;
 	ID3D11Resource* resource = nullptr;
-	srv->GetResource(&resource);
+	dx11srv->GetResource(&resource);
 
 	ScratchImage texture;
 	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
@@ -215,14 +245,14 @@ bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 		if(codec == 0)
 		{
 			ERR("Unsupported texture format for %s !", filename.c_str());
-			return nullptr;
+			return false;
 		}
 
 		HRESULT hr = SaveToWICFile( *texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(codec), StringToWstring(filename).data() );
 		if(FAILED(hr))
 		{
 			ERR("Cant save WIC texture %s !", filename.c_str());
-			return nullptr;
+			return false;
 		}
 	}	
 
@@ -230,7 +260,7 @@ bool TexLoader::SaveTexture(string& filename, ID3D11ShaderResourceView* srv)
 	return true;
 }
 
-WICCodecs TexLoader::WICCodec(string& filename)
+WICCodecs TexLoader::WICCodec(const string& filename)
 {
 	WICCodecs codec = (WICCodecs)0;
 	if( filename.find(".bmp") != string::npos || filename.find(".BMP") != string::npos )

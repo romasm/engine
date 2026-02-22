@@ -20,7 +20,7 @@ TypeMgr::TypeMgr(BaseWorld* wld, uint32_t maxCount) :
 	search_type = "";
 }
 
-LuaRef TypeMgr::LuaConstructor(string& type, Entity ent)
+LuaRef TypeMgr::LuaConstructor(const string& type, Entity ent)
 {
 	LuaRef classTable(LSTATE);
 	auto it = reged_types.find(type);
@@ -38,7 +38,7 @@ LuaRef TypeMgr::LuaConstructor(string& type, Entity ent)
 	LUA_CALL(return luaConstuctor(world, ent, classTable), return classTable);
 }
 
-bool TypeMgr::RegType(string& type, LuaRef* constructor)
+bool TypeMgr::RegType(const string& type, LuaRef* constructor)
 {
 	if(reged_types.size() >= MAX_TYPES_COUNT)
 		return false;
@@ -67,7 +67,7 @@ bool TypeMgr::RegType(string& type, LuaRef* constructor)
 	return true;
 }
 
-bool TypeMgr::UnregType(string& type)
+bool TypeMgr::UnregType(const string& type)
 {
 	auto it = reged_types.find(type);
 	if(it == reged_types.end())
@@ -82,7 +82,7 @@ bool TypeMgr::UnregType(string& type)
 	return true;
 }
 
-bool TypeMgr::SetType(Entity ent, string& type)
+bool TypeMgr::SetType(Entity ent, const string& type)
 {
 	if(ent.isnull())
 		return false;
@@ -126,7 +126,7 @@ void TypeMgr::ClearType(Entity ent)
 	type = "";
 }
 
-Entity TypeMgr::GetFirstByType(string& type)
+Entity TypeMgr::GetFirstByType(const string& type)
 {
 	Entity ent;
 	ent.setnull();

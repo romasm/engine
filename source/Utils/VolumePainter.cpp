@@ -2,6 +2,7 @@
 
 #include "VolumePainter.h"
 #include "Render.h"
+#include "RHI\DX11\DX11Types.h"
 #include "TexMgr.h"
 
 using namespace EngineCore;
@@ -27,12 +28,12 @@ VolumePainter::VolumePainter()
 
 VolumePainter::~VolumePainter()
 {
-	_RELEASE(volumeTextureUAV);
-	_RELEASE(volumeTextureSRV);
-	_RELEASE(volumeTexture);
+	_DELETE(volumeTextureUAV);
+	_DELETE(volumeTextureSRV);
+	_DELETE(volumeTexture);
 
-	_RELEASE(volumeDifferenceUAV);
-	_RELEASE(volumeDifference);
+	_DELETE(volumeDifferenceUAV);
+	_DELETE(volumeDifference);
 
 	_DELETE(computeImportTexture);
 	_DELETE(computeDrawBrush);
@@ -47,66 +48,62 @@ bool VolumePainter::Init(uint32_t width, uint32_t height, uint32_t depth, uint32
 	volumeResolutionY = height;
 	volumeResolutionZ = depth;
 	
-	D3D11_TEXTURE3D_DESC volumeDesc;
-	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = volumeResolutionX;
-	volumeDesc.Height = volumeResolutionY;
-	volumeDesc.Depth = volumeResolutionZ;
-	volumeDesc.MipLevels = 1;
-	volumeDesc.Usage = D3D11_USAGE_DEFAULT;
-	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	volumeDesc.CPUAccessFlags = 0;
-	volumeDesc.MiscFlags = 0;
-	volumeDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	if (FAILED(Render::CreateTexture3D(&volumeDesc, NULL, &volumeTexture)))
+	RHI::TextureDesc volumeDesc = {};
+	volumeDesc.dimension = RHI::TextureDimension::Tex3D;
+	volumeDesc.width = volumeResolutionX;
+	volumeDesc.height = volumeResolutionY;
+	volumeDesc.depth = volumeResolutionZ;
+	volumeDesc.mipLevels = 1;
+	volumeDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	volumeDesc.allowSRV = true;
+	volumeDesc.allowUAV = true;
+	volumeDesc.allowRTV = false;
+	volumeDesc.allowDSV = false;
+	volumeDesc.generateMips = false;
+	volumeDesc.msaaSamples = 1;
+	volumeDesc.msaaQuality = 0;
+	volumeDesc.initialData = nullptr;
+
+	volumeTexture = GFX_DEVICE->CreateTexture(volumeDesc);
+	if (!volumeTexture)
 	{
-		ERR("VolumePainter -> volume texture CreateTexture3D failed");
+		ERR("VolumePainter -> volume texture CreateTexture failed");
 		return false;
 	}
 
-	volumeDesc.Format = DXGI_FORMAT_R16G16B16A16_SNORM;
-	volumeDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-	volumeDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-	if (FAILED(DEVICE3->CreateTexture3D(&volumeDesc, NULL, &volumeDifference)))
+	volumeDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
+	volumeDesc.allowSRV = false;
+	volumeDifference = GFX_DEVICE->CreateTexture(volumeDesc);
+	if (!volumeDifference)
 	{
-		ERR("VolumePainter -> volume difference CreateTexture3D failed");
+		ERR("VolumePainter -> volume difference CreateTexture failed");
 		return false;
 	}
 
-	D3D11_UNORDERED_ACCESS_VIEW_DESC volumeUAVDesc;
-	ZeroMemory(&volumeUAVDesc, sizeof(volumeUAVDesc));
-	volumeUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-	volumeUAVDesc.Texture3D.MipSlice = 0;
-	volumeUAVDesc.Texture3D.WSize = volumeResolutionZ;
-	volumeUAVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	if (FAILED(Render::CreateUnorderedAccessView(volumeTexture, &volumeUAVDesc, &volumeTextureUAV)))
+	volumeTextureUAV = GFX_DEVICE->CreateUAV(volumeTexture, DXGI_FORMAT_R8G8B8A8_UNORM);
+	if (!volumeTextureUAV)
 	{
-		ERR("VolumePainter -> volume texture CreateUnorderedAccessView failed");
+		ERR("VolumePainter -> volume texture CreateUAV failed");
 		return false;
 	}
 
-	volumeUAVDesc.Format = DXGI_FORMAT_R16G16B16A16_SNORM;
-	if (FAILED(Render::CreateUnorderedAccessView(volumeDifference, &volumeUAVDesc, &volumeDifferenceUAV)))
+	volumeDifferenceUAV = GFX_DEVICE->CreateUAV(volumeDifference, DXGI_FORMAT_R16G16B16A16_SNORM);
+	if (!volumeDifferenceUAV)
 	{
-		ERR("VolumePainter -> volume difference CreateUnorderedAccessView failed");
+		ERR("VolumePainter -> volume difference CreateUAV failed");
 		return false;
 	}
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC volumeSRVDesc;
-	ZeroMemory(&volumeSRVDesc, sizeof(volumeSRVDesc));
-	volumeSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	volumeSRVDesc.Texture3D.MipLevels = -1;
-	volumeSRVDesc.Texture3D.MostDetailedMip = 0;
-	volumeSRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	if (FAILED(Render::CreateShaderResourceView(volumeTexture, &volumeSRVDesc, &volumeTextureSRV)))
+	volumeTextureSRV = GFX_DEVICE->CreateSRV(volumeTexture, DXGI_FORMAT_R8G8B8A8_UNORM);
+	if (!volumeTextureSRV)
 	{
-		ERR("VolumePainter -> volume texture CreateShaderResourceView failed");
+		ERR("VolumePainter -> volume texture CreateSRV failed");
 		return false;
 	}
 
-	volumeInfoBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(VolumeInfo), true);
-	
-	brushInfoBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(BrushInfo), true);
+	volumeInfoBuffer = Buffer::CreateConstantBuffer(sizeof(VolumeInfo), true);
+
+	brushInfoBuffer = Buffer::CreateConstantBuffer(sizeof(BrushInfo), true);
 
 	computeImportTexture = new Compute(COMPUTE_IMPORT_TEXTURE);
 	computeImportTexture->AttachRWResource("volumeRW", volumeTextureUAV);
@@ -148,7 +145,7 @@ void VolumePainter::ImportTexture(string textureName)
 		VolumeInfo volumeInfo;
 		volumeInfo.minCorner = Vector3(0, 0, 0);
 		volumeInfo.sizeInv = Vector3(1.0f / volumeResolutionX, 1.0f / volumeResolutionY, 1.0f / volumeResolutionZ);
-		Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+		GFX_CMD->UpdateBuffer(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
 
 		computeImportTexture->AttachResource("volumeTexture", TexMgr::GetResourcePtr(id));
 
@@ -176,7 +173,7 @@ void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float ra
 	brushInfo.colorOpacity = colorOpacity;
 	brushInfo.hardness = min(hardness, 0.999f);
 	brushInfo.erase = erase ? 1.0f : 0.0f;
-	Render::UpdateDynamicResource(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
+	GFX_CMD->UpdateBuffer(brushInfoBuffer, &brushInfo, sizeof(BrushInfo));
 
 	Vector3 minCorner = Vector3::Min(position, prevPosition);
 	minCorner -= Vector3(radius);
@@ -206,7 +203,7 @@ void VolumePainter::DrawBrush(Vector3& prevPosition, Vector3& position, float ra
 	VolumeInfo volumeInfo;
 	volumeInfo.minCorner = minCorner;
 	volumeInfo.size = boxSize;
-	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+	GFX_CMD->UpdateBuffer(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
 
 	uint32_t groupCountX = (uint32_t)ceil(boxSize.x / COPMUTE_TREADS_X);
 	uint32_t groupCountY = (uint32_t)ceil(boxSize.y / COPMUTE_TREADS_Y);
@@ -259,16 +256,17 @@ void VolumePainter::PushDifference(Vector3& minCorner, Vector3& maxCorner)
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
 	
-	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_READ, 0, NULL)))
+	auto* rawDiffTex = RHI::DX11::Cast(volumeDifference)->texture3D;
+	if (FAILED(CONTEXT3->Map(rawDiffTex, 0, D3D11_MAP_READ, 0, NULL)))
 	{
 		ERR("Cant map volume difference to CPU");
 		return;
 	}
 
-	DEVICE3->ReadFromSubresource(volumeArea.data, rowPitch, depthPitch, volumeDifference, 0, &volumeBox);	
-	CONTEXT3->Unmap(volumeDifference, 0);
+	DEVICE3->ReadFromSubresource(volumeArea.data, rowPitch, depthPitch, rawDiffTex, 0, &volumeBox);
+	CONTEXT3->Unmap(rawDiffTex, 0);
 
-	Render::ClearUnorderedAccessViewFloat(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
+	GFX_CMD->ClearUAVFloat(volumeDifferenceUAV, 0, 0, 0, 0);
 
 	LOG("Difference pushed, history size = %i MB", int32_t(historySize / (1024 * 1024)));
 }
@@ -285,20 +283,21 @@ void VolumePainter::HistoryStepBack()
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
 
-	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
+	auto* rawDiffTexBack = RHI::DX11::Cast(volumeDifference)->texture3D;
+	if (FAILED(CONTEXT3->Map(rawDiffTexBack, 0, D3D11_MAP_WRITE, 0, NULL)))
 	{
 		ERR("Cant map volume difference to CPU");
 		return;
 	}
 
-	DEVICE3->WriteToSubresource(volumeDifference, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
-	CONTEXT3->Unmap(volumeDifference, 0);
+	DEVICE3->WriteToSubresource(rawDiffTexBack, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
+	CONTEXT3->Unmap(rawDiffTexBack, 0);
 
 	// execute compute to do step back
 	VolumeInfo volumeInfo;
 	volumeInfo.minCorner = Vector3((float)volumeArea.minX, (float)volumeArea.minY, (float)volumeArea.minZ);
 	volumeInfo.size = Vector3((float)volumeArea.resX, (float)volumeArea.resY, (float)volumeArea.resZ);
-	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+	GFX_CMD->UpdateBuffer(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
 
 	uint32_t groupCountX = (uint32_t)ceil(volumeInfo.size.x / COPMUTE_TREADS_X);
 	uint32_t groupCountY = (uint32_t)ceil(volumeInfo.size.y / COPMUTE_TREADS_Y);
@@ -306,7 +305,7 @@ void VolumePainter::HistoryStepBack()
 
 	computeHistoryStepBack->Dispatch(groupCountX, groupCountY, groupCountZ);
 
-	Render::ClearUnorderedAccessViewFloat(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
+	GFX_CMD->ClearUAVFloat(volumeDifferenceUAV, 0, 0, 0, 0);
 
 	historyMark--;
 
@@ -325,20 +324,21 @@ void VolumePainter::HistoryStepForward()
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
 	
-	if (FAILED(CONTEXT3->Map(volumeDifference, 0, D3D11_MAP_WRITE, 0, NULL)))
+	auto* rawDiffTexFwd = RHI::DX11::Cast(volumeDifference)->texture3D;
+	if (FAILED(CONTEXT3->Map(rawDiffTexFwd, 0, D3D11_MAP_WRITE, 0, NULL)))
 	{
 		ERR("Cant map volume difference to CPU");
 		return;
 	}
 
-	DEVICE3->WriteToSubresource(volumeDifference, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
-	CONTEXT3->Unmap(volumeDifference, 0);
+	DEVICE3->WriteToSubresource(rawDiffTexFwd, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
+	CONTEXT3->Unmap(rawDiffTexFwd, 0);
 
 	// execute compute to do step forward
 	VolumeInfo volumeInfo;
 	volumeInfo.minCorner = Vector3((float)volumeArea.minX, (float)volumeArea.minY, (float)volumeArea.minZ);
 	volumeInfo.size = Vector3((float)volumeArea.resX, (float)volumeArea.resY, (float)volumeArea.resZ);
-	Render::UpdateDynamicResource(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
+	GFX_CMD->UpdateBuffer(volumeInfoBuffer, &volumeInfo, sizeof(VolumeInfo));
 
 	uint32_t groupCountX = (uint32_t)ceil(volumeInfo.size.x / COPMUTE_TREADS_X);
 	uint32_t groupCountY = (uint32_t)ceil(volumeInfo.size.y / COPMUTE_TREADS_Y);
@@ -346,7 +346,7 @@ void VolumePainter::HistoryStepForward()
 
 	computeHistoryStepForward->Dispatch(groupCountX, groupCountY, groupCountZ);
 
-	Render::ClearUnorderedAccessViewFloat(volumeDifferenceUAV, Vector4(0, 0, 0, 0));
+	GFX_CMD->ClearUAVFloat(volumeDifferenceUAV, 0, 0, 0, 0);
 	
 	historyMark++;
 

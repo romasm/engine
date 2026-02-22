@@ -23,9 +23,9 @@ namespace EngineCore
 		}
 
 		// callbackUpdate - only for last resource request, overwrite previous
-		uint32_t GetResource(string& name, bool reload = false, onLoadCallback callback = nullptr, onLoadCallback callbackUpdate = nullptr);
+		uint32_t GetResource(const string& name, bool reload = false, onLoadCallback callback = nullptr, onLoadCallback callbackUpdate = nullptr);
 		void DeleteResource(uint32_t id);
-		void DeleteResourceByName(string& name);
+		void DeleteResourceByName(const string& name);
 		
 		inline static DataType* GetResourcePtr(uint32_t id)
 		{
@@ -50,15 +50,15 @@ namespace EngineCore
 			_DELETE(resource);
 		};
 
-		virtual uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate);
-		uint32_t FindResourceInList(string& name);
+		virtual uint32_t AddResourceToList(const string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate);
+		uint32_t FindResourceInList(const string& name);
 
 		static BaseMgr *instance;
 
 		DataType* null_resource;
 		string null_name;
 		ResourceType resType;
-		char* resExt;
+		const char* resExt;
 
 		struct ResourceHandle
 		{
@@ -154,7 +154,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	uint32_t BaseMgr<DataType, MaxCount>::GetResource(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
+	uint32_t BaseMgr<DataType, MaxCount>::GetResource(const string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 	{
 		uint32_t res = nullres;
 		if( name.length() == 0 )
@@ -200,7 +200,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	uint32_t BaseMgr<DataType, MaxCount>::AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
+	uint32_t BaseMgr<DataType, MaxCount>::AddResourceToList(const string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 	{
 		if(free_ids.size() == 0)
 		{
@@ -260,7 +260,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	uint32_t BaseMgr<DataType, MaxCount>::FindResourceInList(string& name)
+	uint32_t BaseMgr<DataType, MaxCount>::FindResourceInList(const string& name)
 	{
 		auto it = resource_map.find(name);
 		if(it == resource_map.end())
@@ -320,7 +320,7 @@ namespace EngineCore
 	}
 
 	template<typename DataType, uint32_t MaxCount>
-	void BaseMgr<DataType, MaxCount>::DeleteResourceByName(string& name)
+	void BaseMgr<DataType, MaxCount>::DeleteResourceByName(const string& name)
 	{
 		if(name.length() == 0)
 			return;

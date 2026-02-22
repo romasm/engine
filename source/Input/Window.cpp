@@ -7,6 +7,8 @@
 #include "RenderTarget.h"
 #include "MainLoop.h"
 #include "WorldMgr.h"
+#include "Render\RHI\DX11\DX11Types.h"
+#include "Render\RHI\DX12\DX12Device.h"
 
 #define wndClass L"MLE"
 
@@ -93,7 +95,7 @@ namespace EngineCore
 		HRESULT hr = S_OK;
 		hr = DwmExtendFrameIntoClientArea(m_hwnd, &borderless);
 		if( FAILED(hr) )
-			WRN("Не удалось вызвать DwmExtendFrameIntoClientArea");*/
+			WRN("пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ DwmExtendFrameIntoClientArea");*/
 
 		OleInitialize(nullptr);	
 		m_dropTarget = new DropTarget(this);
@@ -130,6 +132,20 @@ namespace EngineCore
 
 	bool Window::CreateSwapChain()
 	{
+		// DX12 path: the swap chain is owned by DX12FrameScheduler.
+		// GFX_DEVICE->InitSwapChain() creates it now that we have an HWND.
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		{
+			if(!Render::GetGfxDevice()->InitSwapChain(m_hwnd, m_desc.width, m_desc.height))
+			{
+				ERR("DX12 swap chain creation failed");
+				return false;
+			}
+			m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
+			return true;
+		}
+
+		// DX11 path (unchanged).
 		DXGI_SWAP_CHAIN_DESC1 schd;
 		ZeroMemory( &schd, sizeof( schd ) );
 		schd.BufferCount = 1;
@@ -141,7 +157,7 @@ namespace EngineCore
 		schd.SampleDesc.Quality = 0;
 		schd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		schd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-	
+
 		DXGI_SWAP_CHAIN_FULLSCREEN_DESC schdf;
 		ZeroMemory( &schdf, sizeof( schdf ) );
 		schdf.RefreshRate.Denominator = 1;
@@ -171,11 +187,20 @@ namespace EngineCore
 		hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 		if( FAILED(hr) )
 			return false;
-		if(!m_RTmain->AddBackBufferRT(pBackBuffer))
 		{
-			ERR("Не удалось создать основной RenderTarget");
-			return false;
-		}		
+			auto* backBufferWrapper = new RHI::DX11::DX11Texture();
+			backBufferWrapper->texture2D = pBackBuffer;
+			if(!m_RTmain->AddBackBufferRT(backBufferWrapper))
+			{
+				ERR("Cannot create main RenderTarget back buffer");
+				backBufferWrapper->texture2D = nullptr;
+				delete backBufferWrapper;
+				_RELEASE(pBackBuffer);
+				return false;
+			}
+			backBufferWrapper->texture2D = nullptr;
+			delete backBufferWrapper;
+		}
 		_RELEASE(pBackBuffer);
 
 		return true;
@@ -183,21 +208,92 @@ namespace EngineCore
 
 	void Window::SetRenderTarget()
 	{
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		{
+			// DX12: back buffer is already in RENDER_TARGET state (set by ClearRenderTarget).
+			// Just re-bind it and set the viewport.
+			uint32_t bbIndex = GFX_DEVICE->GetCurrentBackBufferIndex();
+			RHI::GfxRTV* rtv = GFX_DEVICE->GetBackBufferRTV(bbIndex);
+			GFX_CMD->SetRenderTargets(1, &rtv, nullptr);
+
+			RHI::GfxViewport viewport = {};
+			viewport.topLeftX = 0.0f;
+			viewport.topLeftY = 0.0f;
+			viewport.width    = static_cast<float>(m_desc.width);
+			viewport.height   = static_cast<float>(m_desc.height);
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+			GFX_CMD->SetViewport(viewport);
+
+			Render::Get()->CurrentHudWindow = this;
+			return;
+		}
+
+		if(!m_RTmain) return;
 		m_RTmain->SetRenderTarget();
 		Render::Get()->CurrentHudWindow = this;
 	}
 
 	void Window::ClearRenderTarget()
 	{
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		{
+			// DX12: transition back buffer from PRESENT to RENDER_TARGET, set it, clear it.
+			uint32_t bbIndex   = GFX_DEVICE->GetCurrentBackBufferIndex();
+			auto* backBuffer   = GFX_DEVICE->GetBackBuffer(bbIndex);
+			RHI::GfxRTV* rtv   = GFX_DEVICE->GetBackBufferRTV(bbIndex);
+
+			GFX_CMD->TransitionTexture(backBuffer,
+				RHI::ResourceState::Present, RHI::ResourceState::RenderTarget);
+			GFX_CMD->FlushBarriers();
+
+			GFX_CMD->SetRenderTargets(1, &rtv, nullptr);
+
+			RHI::GfxViewport viewport = {};
+			viewport.topLeftX = 0.0f;
+			viewport.topLeftY = 0.0f;
+			viewport.width    = static_cast<float>(m_desc.width);
+			viewport.height   = static_cast<float>(m_desc.height);
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+			GFX_CMD->SetViewport(viewport);
+
+			Vector4* bgColor = m_desc.bg_color;
+			GFX_CMD->ClearRenderTarget(rtv, bgColor->x, bgColor->y, bgColor->z, 1.0f);
+
+			Render::Get()->CurrentHudWindow = this;
+			return;
+		}
+
+		if(!m_RTmain) return;
 		m_RTmain->ClearRenderTargets();
 	}
 
 	void Window::Swap()
 	{
-		/*if(EngineSettings::EngSets.vsync && EngineSettings::EngSets.fullscreen)
-			m_pSwapChain->Present1(1, 0, &p); // todo: num of wait frames
-		else */
-			m_pSwapChain->Present1(0, 0, &presetParams);
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		{
+			// DX12: transition back buffer to PRESENT, close command list,
+			// execute, and present.
+			uint32_t bbIndex = GFX_DEVICE->GetCurrentBackBufferIndex();
+			auto* backBuffer = GFX_DEVICE->GetBackBuffer(bbIndex);
+
+			GFX_CMD->TransitionTexture(backBuffer,
+				RHI::ResourceState::RenderTarget, RHI::ResourceState::Present);
+			GFX_CMD->FlushBarriers();
+			GFX_CMD->Close();
+
+			auto* commandList = Render::GetCommandList();
+			GFX_FRAME->ExecuteCommandLists(1, &commandList);
+			GFX_FRAME->Present(0);
+		}
+		else
+		{
+			/*if(EngineSettings::EngSets.vsync && EngineSettings::EngSets.fullscreen)
+				m_pSwapChain->Present1(1, 0, &p); // todo: num of wait frames
+			else */
+				m_pSwapChain->Present1(0, 0, &presetParams);
+		}
 	}
 
 	void Window::AfterRunEvent()
@@ -632,6 +728,14 @@ namespace EngineCore
 
 	bool Window::resize()
 	{
+		// DX12: swap chain is managed by DX12FrameScheduler, not the Window.
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		{
+			m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
+			UpdateWindowState();
+			return true;
+		}
+
 		_CLOSE(m_RTmain);
 
 		HRESULT hr = m_pSwapChain->ResizeBuffers(0, m_desc.width, m_desc.height, DXGI_FORMAT_UNKNOWN, 0);
@@ -654,11 +758,20 @@ namespace EngineCore
 		hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 		if( FAILED(hr) )
 			return false;
-		if(!m_RTmain->AddBackBufferRT(pBackBuffer))
 		{
-			ERR("AddBackBufferRT failed");
-			return false;
-		}		
+			auto* backBufferWrapper = new RHI::DX11::DX11Texture();
+			backBufferWrapper->texture2D = pBackBuffer;
+			if(!m_RTmain->AddBackBufferRT(backBufferWrapper))
+			{
+				ERR("AddBackBufferRT failed");
+				backBufferWrapper->texture2D = nullptr;
+				delete backBufferWrapper;
+				_RELEASE(pBackBuffer);
+				return false;
+			}
+			backBufferWrapper->texture2D = nullptr;
+			delete backBufferWrapper;
+		}
 		_RELEASE(pBackBuffer);
 
 		UpdateWindowState();

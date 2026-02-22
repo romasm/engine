@@ -11,11 +11,15 @@ namespace EngineCore
 	class Compute
 	{
 	public:
-		Compute(string& shader) {	Init(shader); }
-		Compute(char* shader) { Init(string(shader)); }
+		Compute(const string& shader) {	Init(shader); }
+		Compute(const char* shader) { Init(string(shader)); }
 
 		~Compute()
 		{
+			if(computePSO)
+				GFX_DEVICE->DestroyPSO(computePSO);
+			computePSO = nullptr;
+
 			SHADERCODE_DROP(shaderID, SHADER_CS);
 			shaderID = SHADER_NULL;
 
@@ -26,31 +30,30 @@ namespace EngineCore
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)
 		{
-			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
-
-			if(!handle.input.samplers.empty())
-				Render::CSSetSamplers(0, (uint32_t)handle.input.samplers.size(), handle.input.samplers.data());
-
 			if(!resAttachments.empty())
-				Render::CSSetShaderResources(0, (uint32_t)resAttachments.size(), resAttachments.data());
+				GFX_CMD->SetCSResources(0, (uint32_t)resAttachments.size(), resAttachments.data());
 			if (!cbAttachments.empty())
-				Render::CSSetConstantBuffers(0, (uint32_t)cbAttachments.size(), cbAttachments.data());
+				GFX_CMD->SetCSConstantBuffers(0, (uint32_t)cbAttachments.size(), cbAttachments.data());
 			if (!rwAttachments.empty())
-				CONTEXT->CSSetUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), rwAttachments.data(), nullptr);
+				GFX_CMD->SetCSUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), rwAttachments.data());
 
-			Render::CSSetShader( (ID3D11ComputeShader*)handle.code, nullptr, 0 );
+			GFX_CMD->SetPipelineState(computePSO);
 
-			CONTEXT->Dispatch(x, y, z);
+			GFX_CMD->Dispatch(x, y, z);
 
-			Render::CSSetShader( nullptr, nullptr, 0 );
+			// Unbind compute shader
+			GFX_CMD->SetPipelineState(nullptr);
 
-			CONTEXT->CSSetUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), Buffer::nullRWs, nullptr);
-			Render::CSSetConstantBuffers(0, (uint32_t)cbAttachments.size(), Buffer::nullCBs);
-			Render::CSSetShaderResources(0, (uint32_t)resAttachments.size(), Buffer::nullRESs);
+			static RHI::GfxUAV* s_nullUAVs[8] = {};
+			static RHI::GfxSRV* s_nullSRVs[16] = {};
+			static RHI::GfxBuffer* s_nullCBs[16] = {};
+			GFX_CMD->SetCSUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), s_nullUAVs);
+			GFX_CMD->SetCSConstantBuffers(0, (uint32_t)cbAttachments.size(), s_nullCBs);
+			GFX_CMD->SetCSResources(0, (uint32_t)resAttachments.size(), s_nullSRVs);
 		}
 
 		// ----------------------------- rw buffers
-		uint8_t AttachRWResource(uint8_t slotId, ID3D11UnorderedAccessView* rw)
+		uint8_t AttachRWResource(uint8_t slotId, RHI::GfxUAV* rw)
 		{
 #ifdef _DEV
 			if ((size_t)slotId >= rwAttachments.size())
@@ -64,7 +67,7 @@ namespace EngineCore
 			return slotId;
 		}
 
-		uint8_t AttachRWResource(const string& slotName, ID3D11UnorderedAccessView* rw)
+		uint8_t AttachRWResource(const string& slotName, RHI::GfxUAV* rw)
 		{
 			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
 
@@ -78,7 +81,7 @@ namespace EngineCore
 			rwAttachments[it->second] = rw;
 			return it->second;
 		}
-		inline uint8_t AttachRWResource(char* slotName, ID3D11UnorderedAccessView* rw) { return AttachRWResource(string(slotName), rw); }
+		inline uint8_t AttachRWResource(char* slotName, RHI::GfxUAV* rw) { return AttachRWResource(string(slotName), rw); }
 
 		// if no slotId -> detach all resources
 		void DetachRWResource(uint8_t slotId = REGISTER_NULL)
@@ -109,7 +112,7 @@ namespace EngineCore
 		inline void DetachRWResource(char* slotName) { DetachRWResource(string(slotName)); }
 
 		// ----------------------------- constant buffers
-		uint8_t AttachConstantBuffer(uint8_t slotId, ID3D11Buffer* cb)
+		uint8_t AttachConstantBuffer(uint8_t slotId, RHI::GfxBuffer* cb)
 		{
 #ifdef _DEV
 			if ((size_t)slotId >= cbAttachments.size())
@@ -123,19 +126,8 @@ namespace EngineCore
 			return slotId;
 		}
 
-		uint8_t AttachConstantBuffer(const string& slotName, ID3D11Buffer* cb)
+		uint8_t AttachConstantBuffer(const string& slotName, RHI::GfxBuffer* cb)
 		{
-#ifdef _DEBUG
-			D3D11_BUFFER_DESC desc;
-			cb->GetDesc(&desc);
-
-			if (desc.BindFlags != D3D11_BIND_CONSTANT_BUFFER)
-			{
-				ERR("Wrong constant buffer attachment type");
-				return REGISTER_NULL;
-			}
-#endif
-
 			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
 
 			auto it = handle.input.constantBuffers.find(slotName);
@@ -148,7 +140,7 @@ namespace EngineCore
 			cbAttachments[it->second] = cb;
 			return it->second;
 		}
-		inline uint8_t AttachConstantBuffer(char* slotName, ID3D11Buffer* cb) { return AttachConstantBuffer(string(slotName), cb); }
+		inline uint8_t AttachConstantBuffer(char* slotName, RHI::GfxBuffer* cb) { return AttachConstantBuffer(string(slotName), cb); }
 
 		// if no slotId -> detach all resources
 		void DetachConstantBuffer(uint8_t slotId = REGISTER_NULL)
@@ -177,9 +169,9 @@ namespace EngineCore
 			cbAttachments[it->second] = nullptr;
 		}
 		inline void DetachConstantBuffer(char* slotName) { DetachConstantBuffer(string(slotName)); }
-		
+
 		// ----------------------------- shader resources
-		uint8_t AttachResource(uint8_t slotId, ID3D11ShaderResourceView* res)
+		uint8_t AttachResource(uint8_t slotId, RHI::GfxSRV* res)
 		{
 #ifdef _DEV
 			if ((size_t)slotId >= resAttachments.size())
@@ -193,7 +185,7 @@ namespace EngineCore
 			return slotId;
 		}
 
-		uint8_t AttachResource(const string& slotName, ID3D11ShaderResourceView* res)
+		uint8_t AttachResource(const string& slotName, RHI::GfxSRV* res)
 		{
 			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
 
@@ -207,7 +199,7 @@ namespace EngineCore
 			resAttachments[it->second] = res;
 			return it->second;
 		}
-		inline uint8_t AttachResource(char* slotName, ID3D11ShaderResourceView* res) { return AttachResource(string(slotName), res); }
+		inline uint8_t AttachResource(char* slotName, RHI::GfxSRV* res) { return AttachResource(string(slotName), res); }
 
 		// if no slotId -> detach all resources
 		void DetachResource(uint8_t slotId = REGISTER_NULL)
@@ -221,7 +213,7 @@ namespace EngineCore
 			if ((size_t)slotId < resAttachments.size())
 				resAttachments[slotId] = nullptr;
 		}
-		
+
 		void DetachResource(const string& slotName)
 		{
 			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
@@ -237,7 +229,7 @@ namespace EngineCore
 		}
 		inline void DetachResource(char* slotName) { DetachResource(string(slotName)); }
 
-		// -----------------------------		
+		// -----------------------------
 		static void Preload(string& shader)
 		{
 			auto res = ShaderCodeMgr::Get()->GetShaderCode(shader, SHADER_CS);
@@ -246,11 +238,16 @@ namespace EngineCore
 		}
 
 	private:
-		void Init(string& shader)
+		void Init(const string& shader)
 		{
 			shaderID = ShaderCodeMgr::Get()->GetShaderCode(shader, SHADER_CS);
 			if(shaderID == SHADER_NULL)
 				ERR("Cant init compute shader %s !", shader.c_str());
+
+			// Create compute PSO
+			RHI::ComputePSODesc psoDesc = {};
+			psoDesc.computeShaderID = shaderID;
+			computePSO = GFX_DEVICE->CreateComputePSO(psoDesc);
 
 			auto& handle = ShaderCodeMgr::Get()->GetShaderCodeRef(shaderID);
 
@@ -268,9 +265,10 @@ namespace EngineCore
 		}
 
 		uint16_t shaderID;
+		RHI::GfxPipelineState* computePSO = nullptr;
 
-		DArray<ID3D11Buffer*> cbAttachments;
-		DArray<ID3D11ShaderResourceView*> resAttachments;
-		DArray<ID3D11UnorderedAccessView*> rwAttachments;
+		DArray<RHI::GfxBuffer*> cbAttachments;
+		DArray<RHI::GfxSRV*> resAttachments;
+		DArray<RHI::GfxUAV*> rwAttachments;
 	};
 }

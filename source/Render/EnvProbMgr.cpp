@@ -5,6 +5,7 @@
 #include "Render.h"
 #include "Frustum.h"
 #include "Utils\Profiler.h"
+#include "DX11Types.h"
 
 using namespace EngineCore;
 
@@ -36,13 +37,13 @@ EnvProbMgr::~EnvProbMgr()
 	hqProbsBufferGPU.Release();
 	sqProbsBufferGPU.Release();
 	lqProbsBufferGPU.Release();
-	
-	_RELEASE(hqProbArraySRV);
-	_RELEASE(hqProbArray);
-	_RELEASE(sqProbArraySRV);
-	_RELEASE(sqProbArray);
-	_RELEASE(lqProbArraySRV);
-	_RELEASE(lqProbArray);
+
+	_DELETE(hqProbArraySRV);
+	_DELETE(hqProbArray);
+	_DELETE(sqProbArraySRV);
+	_DELETE(sqProbArray);
+	_DELETE(lqProbArraySRV);
+	_DELETE(lqProbArray);
 }
 
 bool EnvProbMgr::InitBuffers()
@@ -51,6 +52,8 @@ bool EnvProbMgr::InitBuffers()
 	int32_t resolution = EnvProbSystem::GetResolution(EnvProbQuality::EP_HIGH);
 	int32_t mipCount = EnvProbSystem::GetMipsCount(EnvProbQuality::EP_HIGH);
 
+	// Cube array textures use D3D11_RESOURCE_MISC_TEXTURECUBE with arraySize*6;
+	// raw DX11 creation is kept because RHI CreateTexture doesn't handle cube arrays.
 	D3D11_TEXTURE2D_DESC cubeArrayDesc;
 	ZeroMemory(&cubeArrayDesc, sizeof(cubeArrayDesc));
 	cubeArrayDesc.Width = resolution;
@@ -64,8 +67,19 @@ bool EnvProbMgr::InitBuffers()
 	cubeArrayDesc.CPUAccessFlags = 0;
 	cubeArrayDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 	cubeArrayDesc.Format = format;
-	if( FAILED(Render::CreateTexture2D(&cubeArrayDesc, NULL, &hqProbArray)) )
-		return false;
+	{
+		ID3D11Texture2D* rawTexture = nullptr;
+		if( FAILED(Render::Device()->CreateTexture2D(&cubeArrayDesc, NULL, &rawTexture)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11Texture();
+		wrapped->texture2D = rawTexture;
+		wrapped->width = resolution;
+		wrapped->height = resolution;
+		wrapped->depth = ENVPROBS_FRAME_COUNT_HQ * 6;
+		wrapped->mipLevels = mipCount;
+		wrapped->format = format;
+		hqProbArray = wrapped;
+	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC cubeArraySRVDesc;
 	ZeroMemory(&cubeArraySRVDesc, sizeof(cubeArraySRVDesc));
@@ -75,8 +89,14 @@ bool EnvProbMgr::InitBuffers()
 	cubeArraySRVDesc.TextureCubeArray.First2DArrayFace = 0;
 	cubeArraySRVDesc.TextureCubeArray.NumCubes = ENVPROBS_FRAME_COUNT_HQ;
 	cubeArraySRVDesc.Format = format;
-	if( FAILED(Render::CreateShaderResourceView(hqProbArray, &cubeArraySRVDesc, &hqProbArraySRV)) )
-		return false;
+	{
+		ID3D11ShaderResourceView* rawSRV = nullptr;
+		if( FAILED(Render::Device()->CreateShaderResourceView(RHI::DX11::Cast(hqProbArray)->texture2D, &cubeArraySRVDesc, &rawSRV)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11SRV();
+		wrapped->view = rawSRV;
+		hqProbArraySRV = wrapped;
+	}
 
 	format = EnvProbSystem::GetFormat(EnvProbQuality::EP_STANDART);
 	resolution = EnvProbSystem::GetResolution(EnvProbQuality::EP_STANDART);
@@ -87,14 +107,31 @@ bool EnvProbMgr::InitBuffers()
 	cubeArrayDesc.MipLevels = mipCount;
 	cubeArrayDesc.ArraySize = ENVPROBS_FRAME_COUNT_SQ * 6;
 	cubeArrayDesc.Format = format;
-	if( FAILED(Render::CreateTexture2D(&cubeArrayDesc, NULL, &sqProbArray)) )
-		return false;
+	{
+		ID3D11Texture2D* rawTexture = nullptr;
+		if( FAILED(Render::Device()->CreateTexture2D(&cubeArrayDesc, NULL, &rawTexture)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11Texture();
+		wrapped->texture2D = rawTexture;
+		wrapped->width = resolution;
+		wrapped->height = resolution;
+		wrapped->depth = ENVPROBS_FRAME_COUNT_SQ * 6;
+		wrapped->mipLevels = mipCount;
+		wrapped->format = format;
+		sqProbArray = wrapped;
+	}
 
 	cubeArraySRVDesc.TextureCubeArray.MipLevels = mipCount;
 	cubeArraySRVDesc.TextureCubeArray.NumCubes = ENVPROBS_FRAME_COUNT_SQ;
 	cubeArraySRVDesc.Format = format;
-	if( FAILED(Render::CreateShaderResourceView(sqProbArray, &cubeArraySRVDesc, &sqProbArraySRV)) )
-		return false;
+	{
+		ID3D11ShaderResourceView* rawSRV = nullptr;
+		if( FAILED(Render::Device()->CreateShaderResourceView(RHI::DX11::Cast(sqProbArray)->texture2D, &cubeArraySRVDesc, &rawSRV)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11SRV();
+		wrapped->view = rawSRV;
+		sqProbArraySRV = wrapped;
+	}
 
 	format = EnvProbSystem::GetFormat(EnvProbQuality::EP_LOW);
 	resolution = EnvProbSystem::GetResolution(EnvProbQuality::EP_LOW);
@@ -105,18 +142,35 @@ bool EnvProbMgr::InitBuffers()
 	cubeArrayDesc.MipLevels = mipCount;
 	cubeArrayDesc.ArraySize = ENVPROBS_FRAME_COUNT_LQ * 6;
 	cubeArrayDesc.Format = format;
-	if( FAILED(Render::CreateTexture2D(&cubeArrayDesc, NULL, &lqProbArray)) )
-		return false;
+	{
+		ID3D11Texture2D* rawTexture = nullptr;
+		if( FAILED(Render::Device()->CreateTexture2D(&cubeArrayDesc, NULL, &rawTexture)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11Texture();
+		wrapped->texture2D = rawTexture;
+		wrapped->width = resolution;
+		wrapped->height = resolution;
+		wrapped->depth = ENVPROBS_FRAME_COUNT_LQ * 6;
+		wrapped->mipLevels = mipCount;
+		wrapped->format = format;
+		lqProbArray = wrapped;
+	}
 
 	cubeArraySRVDesc.TextureCubeArray.MipLevels = mipCount;
 	cubeArraySRVDesc.TextureCubeArray.NumCubes = ENVPROBS_FRAME_COUNT_LQ;
 	cubeArraySRVDesc.Format = format;
-	if( FAILED(Render::CreateShaderResourceView(lqProbArray, &cubeArraySRVDesc, &lqProbArraySRV)) )
-		return false;
+	{
+		ID3D11ShaderResourceView* rawSRV = nullptr;
+		if( FAILED(Render::Device()->CreateShaderResourceView(RHI::DX11::Cast(lqProbArray)->texture2D, &cubeArraySRVDesc, &rawSRV)) )
+			return false;
+		auto* wrapped = new RHI::DX11::DX11SRV();
+		wrapped->view = rawSRV;
+		lqProbArraySRV = wrapped;
+	}
 
-	hqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_HQ, sizeof(EnvProbRenderData), true);
-	sqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_SQ, sizeof(EnvProbRenderData), true);
-	lqProbsBufferGPU = Buffer::CreateStructedBuffer(Render::Device(), ENVPROBS_FRAME_COUNT_LQ, sizeof(EnvProbRenderData), true);
+	hqProbsBufferGPU = Buffer::CreateStructedBuffer(ENVPROBS_FRAME_COUNT_HQ, sizeof(EnvProbRenderData), true);
+	sqProbsBufferGPU = Buffer::CreateStructedBuffer(ENVPROBS_FRAME_COUNT_SQ, sizeof(EnvProbRenderData), true);
+	lqProbsBufferGPU = Buffer::CreateStructedBuffer(ENVPROBS_FRAME_COUNT_LQ, sizeof(EnvProbRenderData), true);
 
 	return true;
 }
@@ -182,17 +236,17 @@ void EnvProbMgr::PrepareEnvProbs()
 	PrepareEnvProbsChannel<ENVPROBS_FRAME_COUNT_LQ>(lqRegedProbs, lqRegedProbsPrev, lqEnvProbs, lqFreeProbIndex, lqProbArray, lqProbsBuffer);
 
 	if(!hqProbsBuffer.empty())
-		Render::UpdateDynamicResource(hqProbsBufferGPU.buf, hqProbsBuffer.data(), sizeof(EnvProbRenderData) * hqProbsBuffer.size());
+		GFX_CMD->UpdateBuffer(hqProbsBufferGPU.buf, hqProbsBuffer.data(), sizeof(EnvProbRenderData) * hqProbsBuffer.size());
 	if(!sqProbsBuffer.empty())
-		Render::UpdateDynamicResource(sqProbsBufferGPU.buf, sqProbsBuffer.data(), sizeof(EnvProbRenderData) * sqProbsBuffer.size());
+		GFX_CMD->UpdateBuffer(sqProbsBufferGPU.buf, sqProbsBuffer.data(), sizeof(EnvProbRenderData) * sqProbsBuffer.size());
 	if(!lqProbsBuffer.empty())
-		Render::UpdateDynamicResource(lqProbsBufferGPU.buf, lqProbsBuffer.data(), sizeof(EnvProbRenderData) * lqProbsBuffer.size());
+		GFX_CMD->UpdateBuffer(lqProbsBufferGPU.buf, lqProbsBuffer.data(), sizeof(EnvProbRenderData) * lqProbsBuffer.size());
 }
 
 template<size_t FRAME_COUNT>
-void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev, 
-										SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex, 
-										ID3D11Texture2D* probArray, SArray<EnvProbRenderData, FRAME_COUNT>& probsBuffer )
+void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& regedProbs, unordered_map<uint32_t, int32_t>& regedProbsPrev,
+										SArray<EnvProbData, FRAME_COUNT * 4>& envProbs, SArray<int32_t, FRAME_COUNT>& freeProbIndex,
+										RHI::GfxTexture* probArray, SArray<EnvProbRenderData, FRAME_COUNT>& probsBuffer )
 {
 	sort(envProbs.begin(), envProbs.end(), CompareEnvProbs );
 
@@ -228,8 +282,10 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 			freeProbIndex.erase_and_pop_back(i);
 	}
 
+	// Extract raw DX11 texture for subresource copies
+	auto* dx11ProbArray = RHI::DX11::Cast(probArray);
 	D3D11_TEXTURE2D_DESC desc;
-	probArray->GetDesc(&desc);
+	dx11ProbArray->texture2D->GetDesc(&desc);
 
 	D3D11_BOX region;
 	region.front = 0;
@@ -249,8 +305,9 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 			freeProbIndex.erase_and_pop_back((size_t)0);
 			
 			auto textureCube = TEXTURE_GETPTR(prob.probId);
+			auto* dx11View = RHI::DX11::Cast(textureCube)->view;
 			ID3D11Resource* srcRes = nullptr;
-			textureCube->GetResource(&srcRes);
+			dx11View->GetResource(&srcRes);
 			
 			for(int32_t face = 0; face < 6; face++)
 			{
@@ -260,7 +317,7 @@ void EnvProbMgr::PrepareEnvProbsChannel( unordered_map<uint32_t, int32_t>& reged
 					region.right = currentRes;
 					region.bottom = region.right;
 
-					CONTEXT->CopySubresourceRegion(probArray, D3D11CalcSubresource(mipSlice, arrayId * 6 + face, desc.MipLevels), 0, 0, 0, 
+					CONTEXT->CopySubresourceRegion(dx11ProbArray->texture2D, D3D11CalcSubresource(mipSlice, arrayId * 6 + face, desc.MipLevels), 0, 0, 0,
 						srcRes, D3D11CalcSubresource(mipSlice, face, prob.mips), &region);
 
 					currentRes /= 2;

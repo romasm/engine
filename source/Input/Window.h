@@ -133,7 +133,7 @@ namespace EngineCore
 		inline int GetWidth() const {return m_desc.width;}
 		inline int GetHeight() const {return m_desc.height;}
 		
-		XMMATRIX* Window::GetOrtho() {return &m_ortho;}
+		XMMATRIX* GetOrtho() {return &m_ortho;}
 
 		string GetCaption() const {return m_desc.caption;}
 		void SetCaption(string str) 

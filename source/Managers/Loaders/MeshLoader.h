@@ -1,17 +1,49 @@
 #pragma once
 #include "stdafx.h"
 #include "Common.h"
+#include "Render\RHI\RHITypes.h"
 
 namespace EngineCore
 {
-#define MESH_FILE_VERSION 103
+#define MESH_FILE_VERSION 104
 #define SKELETON_FILE_VERSION 101
 #define ANIMATION_FILE_VERSION 103
 
 #define ANIMATION_BAKE_MAX_KPS 120 // keys per second
 #define ANIMATION_BAKE_MIN_KPS 10
 
-	enum MeshVertexFormat 
+	// Upper bounds matching D3D12 mesh shader hardware limits.
+	// Each meshlet fits in 64 unique vertices and 84 triangles (D3D12 max is 256/512).
+	static constexpr uint32_t MESHLET_MAX_VERTICES   = 64;
+	static constexpr uint32_t MESHLET_MAX_PRIMITIVES = 84;
+
+	// Per-meshlet metadata written into the .msh.imp file (version 104+).
+	struct Meshlet
+	{
+		uint32_t vertexOffset;    // first entry in uniqueVertexIndices for this meshlet
+		uint32_t vertexCount;     // number of unique vertices used by this meshlet
+		uint32_t primitiveOffset; // first entry in packedPrimitiveIndices for this meshlet
+		uint32_t primitiveCount;  // number of triangles in this meshlet
+	};
+
+	// Per-submesh meshlet data stored alongside vertex/index buffers.
+	struct MeshletSubset
+	{
+		DArray<Meshlet>  meshlets;
+		// remapped vertex indices into the submesh vertex buffer
+		DArray<uint32_t> uniqueVertexIndices;
+		// triangle list, packed as (v2<<20)|(v1<<10)|v0 with 10-bit local vertex indices
+		DArray<uint32_t> packedPrimitiveIndices;
+
+		void destroy()
+		{
+			meshlets.destroy();
+			uniqueVertexIndices.destroy();
+			packedPrimitiveIndices.destroy();
+		}
+	};
+
+	enum MeshVertexFormat
 	{
 		LIT_VERTEX = 0,
 		LIT_SKINNED_VERTEX,
@@ -21,7 +53,7 @@ namespace EngineCore
 	{
 		// It's count of elements, NOT byte size
 		uint32_t count;
-		ID3D11Buffer* buffer;
+		RHI::GfxBuffer* buffer;
 
 		GPUMeshBuffer() : count(0), buffer(nullptr) {}
 	};
@@ -37,6 +69,10 @@ namespace EngineCore
 		RArray<GPUMeshBuffer> vertexBuffers;
 		RArray<GPUMeshBuffer> indexBuffers;
 
+		// Per-submesh meshlet data for the mesh shader pipeline (version 104+).
+		// Populated when loading version-104 .msh.imp files and during conversion.
+		RArray<MeshletSubset> meshletSubsets;
+
 #ifdef _EDITOR
 		RArray<uint8_t*> vertices;
 		RArray<uint32_t*> indices;
@@ -51,9 +87,13 @@ namespace EngineCore
 		~MeshData()
 		{
 			for(uint32_t i = 0; i < (uint32_t)vertexBuffers.size(); i++)
-				_RELEASE(vertexBuffers[i].buffer);
+				_DELETE(vertexBuffers[i].buffer);
 			for(uint32_t i = 0; i < (uint32_t)indexBuffers.size(); i++)
-				_RELEASE(indexBuffers[i].buffer);
+				_DELETE(indexBuffers[i].buffer);
+
+			for(uint32_t i = 0; i < (uint32_t)meshletSubsets.size(); i++)
+				meshletSubsets[i].destroy();
+			meshletSubsets.destroy();
 
 #ifdef _EDITOR
 			for (uint32_t i = 0; i < (uint32_t)vertices.size(); i++)
@@ -64,7 +104,7 @@ namespace EngineCore
 
 			vertexBuffers.destroy();
 			indexBuffers.destroy();
-			
+
 			box.Center = Vector3::Zero;
 			box.Extents = Vector3::Zero;
 			vertexFormat = MeshVertexFormat::LIT_VERTEX;
@@ -154,19 +194,19 @@ namespace EngineCore
 		static Assimp::Importer meshImporter;
 		void Configurate();
 
-		MeshData* LoadMesh(string& resName);
-		MeshData* loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size);
+		MeshData* LoadMesh(const string& resName);
+		MeshData* loadEngineMeshFromMemory(const string& filename, uint8_t* data, uint32_t size);
 
 		// TODO: load only cashed bones(sokets) for game
-		SkeletonData* LoadSkeleton(string& resName);
-		SkeletonData* loadEngineSkeletonFromMemory(string& filename, uint8_t* data, uint32_t size);
+		SkeletonData* LoadSkeleton(const string& resName);
+		SkeletonData* loadEngineSkeletonFromMemory(const string& filename, uint8_t* data, uint32_t size);
 
-		AnimationData* LoadAnimation(string& resName);
-		AnimationData* loadEngineAnimationFromMemory(string& filename, uint8_t* data, uint32_t size);
+		AnimationData* LoadAnimation(const string& resName);
+		AnimationData* loadEngineAnimationFromMemory(const string& filename, uint8_t* data, uint32_t size);
 
-		bool ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile);
-		bool ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned);
-		bool ConverAnimationToEngineFormat(string& sourceFile, string& resFile);
+		bool ConvertSkeletonToEngineFormat(const string& sourceFile, const string& resFile);
+		bool ConvertMeshToEngineFormat(const string& sourceFile, const string& resFile, bool isSkinned);
+		bool ConverAnimationToEngineFormat(const string& sourceFile, const string& resFile);
 
 		bool IsNative(string filename);
 		bool IsSupported(string filename);
@@ -177,14 +217,19 @@ namespace EngineCore
 		bool IsNativeAnimation(string filename);
 		bool IsSupportedAnimation(string filename);
 
-		bool saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
-		bool saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
-		bool saveAnimation(string& filename, DArray<AnimationData>& animations);
+		bool saveMesh(const string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices);
+		bool saveSkeleton(const string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds);
+		bool saveAnimation(const string& filename, DArray<AnimationData>& animations);
 
-		bool convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format);
-		bool convertAnimationAIScene(string& filename, const aiScene* scene);
+		// Partition a triangle mesh into meshlets with at most MESHLET_MAX_VERTICES
+		// unique vertices and MESHLET_MAX_PRIMITIVES triangles each.
+		void GenerateMeshlets(const uint32_t* indices, uint32_t indexCount,
+		                      uint32_t vertexCount, MeshletSubset& outSubset);
 
-		bool loadMeshSkeleton(string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, 
+		bool convertAIScene(const string& filename, const aiScene* scene, MeshVertexFormat format);
+		bool convertAnimationAIScene(const string& filename, const aiScene* scene);
+
+		bool loadMeshSkeleton(const string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds,
 			DArray<BoneData>& boneData, DArray<int32_t>& boneInvRemap, bool boneInvWorldTransforms);
 
 		void loadVerticesLit(uint8_t* data, uint32_t count, uint32_t vertexSize, aiMesh* mesh, Vector3& posMin, Vector3& posMax);

@@ -14,6 +14,8 @@
 #define SAMPLER_STR_LEN 64
 #define SAMPLER_SIZE (SAMPLER_STR_LEN + sizeof(D3D11_SAMPLER_DESC))
 
+namespace EngineCore::RHI { struct GfxSampler; }
+
 namespace EngineCore
 {
 	class RenderStateMgr
@@ -61,7 +63,7 @@ namespace EngineCore
 
 		inline static SamplerStateMgr* Get(){return instance;}
 
-		static ID3D11SamplerState* GetSampler(string name);
+		static RHI::GfxSampler* GetSampler(string name);
 
 	private:
 
@@ -71,6 +73,6 @@ namespace EngineCore
 
 		static SamplerStateMgr *instance;
 
-		unordered_map<string, ID3D11SamplerState*> sampler_map;
+		unordered_map<string, RHI::GfxSampler*> sampler_map;
 	};
 }

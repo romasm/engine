@@ -14,12 +14,12 @@ namespace EngineCore
 
 		inline static FontMgr* Get(){return instance;}
 
-		Font* GetFont(string& name);
-		void DeleteFont(string& name);
+		Font* GetFont(const string& name);
+		void DeleteFont(const string& name);
 
 	private:
-		Font* AddFontToList(string& name);
-		Font* FindFontInList(string& name);
+		Font* AddFontToList(const string& name);
+		Font* FindFontInList(const string& name);
 
 		struct FontHandle
 		{

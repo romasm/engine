@@ -6,6 +6,8 @@
 #include "EarlyVisibilitySystem.h"
 
 #define LG_SPLINE_MAX 1024
+namespace EngineCore::RHI { struct GfxBuffer; }
+
 #define LG_SPHERE_SUBD 32
 #define LG_POINT_SIZE 0.1f
 
@@ -44,10 +46,10 @@ namespace EngineCore
 
 		LineGeometryTypes type;
 
-		ID3D11Buffer *vertexBuffer; 
-		ID3D11Buffer *indexBuffer;
+		RHI::GfxBuffer *vertexBuffer;
+		RHI::GfxBuffer *indexBuffer;
 		uint32_t index_count;
-		ID3D11Buffer *constantBuffer;
+		RHI::GfxBuffer *constantBuffer;
 		Material *material;
 	};
 
@@ -75,7 +77,7 @@ namespace EngineCore
 			res->parent = e;
 			res->material = nullptr;
 
-			res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LineGeometryBuffer), true);
+			res->constantBuffer = Buffer::CreateConstantBuffer(sizeof(LineGeometryBuffer), true);
 			return res;
 		}
 		void DeleteComponent(Entity e);

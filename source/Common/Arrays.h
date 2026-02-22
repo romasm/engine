@@ -2,6 +2,7 @@
 
 #include "macros.h"
 #include <stdint.h>
+#include <algorithm>
 
 namespace EngineCore
 {
@@ -17,7 +18,7 @@ namespace EngineCore
 		DArray(size_t inital_capasity = 0, size_t inital_size = 0)
 		{
 			m_capacity = inital_capasity;
-			m_size = min(inital_size, m_capacity);
+			m_size = std::min(inital_size, m_capacity);
 			if (m_capacity > 0) m_data = new T[m_capacity];
 			else m_data = nullptr;
 		}
@@ -179,7 +180,7 @@ namespace EngineCore
 			return res;
 		}
 
-		inline size_t calc_size( size_t N ) {return max<size_t>(N, m_size + m_size / 2 );}
+		inline size_t calc_size( size_t N ) {return std::max<size_t>(N, m_size + m_size / 2 );}
 		inline void	grow( size_t N ) {reserve( calc_size( N ) );}
 
 		inline void	deallocate() {_DELETE_ARRAY(m_data);}
@@ -205,14 +206,14 @@ namespace EngineCore
 		typedef T* iterator;
 		typedef const T* const_iterator;
 
-		SArray(size_t inital_size = 0) {m_size = min(inital_size, S);}
+		SArray(size_t inital_size = 0) {m_size = std::min(inital_size, S);}
 
 		inline T& operator[] (const size_t i ) {return m_data[i];}
 		inline const T& operator[] (const size_t i ) const {return m_data[i];}
 
 		inline size_t size() const {return m_size;}
 
-		inline void resize( size_t N ) {m_size = min(N, S);}
+		inline void resize( size_t N ) {m_size = std::min(N, S);}
 
 		inline bool empty() const {return m_size == 0 ? true : false;}
 		inline bool full() const {return m_size == S ? true : false;}
@@ -356,7 +357,7 @@ namespace EngineCore
 
 		inline size_t size() const {return m_size;}
 
-		inline void resize( size_t N ) {m_size = min(N, m_capacity);}
+		inline void resize( size_t N ) {m_size = std::min(N, m_capacity);}
 
 		inline bool empty() const {return m_size == 0 ? true : false;}
 		inline bool full() const {return m_size == m_capacity ? true : false;}
@@ -501,7 +502,7 @@ namespace EngineCore
 	public:
 		SDeque(size_t inital_size = 0)
 		{
-			m_size = min(inital_size, S);
+			m_size = std::min(inital_size, S);
 			m_begin = 0;
 		}
 
@@ -510,7 +511,7 @@ namespace EngineCore
 
 		inline size_t size() const {return m_size;}
 
-		inline void resize( size_t N ) {m_size = min(N, S);}
+		inline void resize( size_t N ) {m_size = std::min(N, S);}
 
 		inline bool empty() const {return m_size == 0 ? true : false;}
 		inline bool full() const {return m_size == S ? true : false;}
@@ -680,7 +681,7 @@ namespace EngineCore
 
 		inline size_t size() const {return m_size;}
 
-		inline void resize( size_t N ) {m_size = min(N, m_capacity);}
+		inline void resize( size_t N ) {m_size = std::min(N, m_capacity);}
 
 		inline bool empty() const {return m_size == 0 ? true : false;}
 		inline bool full() const {return m_size == m_capacity ? true : false;}
@@ -1065,7 +1066,7 @@ namespace EngineCore
 			m_lookup.assign(max_size);
 		}
 		
-		inline void reserve(size_t N) {m_data.reserve(min(m_lookup.capacity(), N));}
+		inline void reserve(size_t N) {m_data.reserve(std::min(m_lookup.capacity(), N));}
 
 		inline size_t getArrayIdx(const size_t i) {return m_lookup[i];}
 		inline T& getDataByArrayIdx(const size_t i) {return m_data[i];}

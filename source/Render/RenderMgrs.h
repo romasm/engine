@@ -21,8 +21,8 @@ namespace EngineCore
 		struct RenderMesh
 		{
 			uint32_t indexCount; 
-			ID3D11Buffer* vertexBuffer; 
-			ID3D11Buffer* indexBuffer; 
+			RHI::GfxBuffer* vertexBuffer; 
+			RHI::GfxBuffer* indexBuffer; 
 			void* gpuMatrixBuffer;
 			uint32_t isSkinned;
 			uint32_t vertexSize;
@@ -81,9 +81,9 @@ namespace EngineCore
 		~ShadowRenderMgr()
 		{ClearAll();}
 
-		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
-			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+		bool RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, const Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer, 
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
 		void UpdateCamera(Vector3& pos) {cameraPosition = pos;}
@@ -119,9 +119,9 @@ namespace EngineCore
 		SceneRenderMgr(bool lightweight);
 		~SceneRenderMgr();
 
-		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
-			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
-		bool RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+		bool RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer, 
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, const Vector3& center, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
+		bool RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer, 
 			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo = IA_TOPOLOGY::TRISLIST);
 		
 		bool RegSpotLight(uint8_t type, Vector4& color, float range, Vector3& area, Vector2& cone, Vector3& pos, Vector3& dir, 

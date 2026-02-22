@@ -25,6 +25,15 @@
     <Filter Include="Render">
       <UniqueIdentifier>{C5BB87CE-B15D-B2A4-9A18-C6F8865939F5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Render\RHI">
+      <UniqueIdentifier>{7742F5FF-63FA-364D-CC01-10A9B8D8D13D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\RHI\DX11">
+      <UniqueIdentifier>{24AB9D4E-9036-0B13-9947-8E0705526713}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\RHI\DX12">
+      <UniqueIdentifier>{25AB9D4E-9136-0B13-9A47-8E0706526713}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Render\Support">
       <UniqueIdentifier>{7114235E-5DE2-1664-4676-878A32E3F2C8}</UniqueIdentifier>
     </Filter>
@@ -217,6 +226,48 @@
     <ClInclude Include="Render\Material.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="Render\RHI\DX11\DX11CommandList.h">
+      <Filter>Render\RHI\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX11\DX11Device.h">
+      <Filter>Render\RHI\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX11\DX11Types.h">
+      <Filter>Render\RHI\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12CommandList.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12CommandQueue.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12Device.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12Fence.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12SwapChain.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\DX12\DX12Types.h">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\GfxCommandList.h">
+      <Filter>Render\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\GfxDescriptors.h">
+      <Filter>Render\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\GfxDevice.h">
+      <Filter>Render\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\GfxSync.h">
+      <Filter>Render\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RHI\RHITypes.h">
+      <Filter>Render\RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Render\Render.h">
       <Filter>Render</Filter>
     </ClInclude>
@@ -252,6 +303,12 @@
     </ClInclude>
     <ClInclude Include="Render\Support\ScreenPlane.h">
       <Filter>Render\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\VoxelRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="System\DebugServer.h">
+      <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="System\FileIO.h">
       <Filter>System</Filter>
@@ -299,9 +356,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Render\VoxelRenderer.h">
-      <Filter>Render</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Config\GlobalColor.cpp">
@@ -430,6 +484,15 @@
     <ClCompile Include="Render\Material.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\RHI\DX11\DX11CommandList.cpp">
+      <Filter>Render\RHI\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\RHI\DX12\DX12CommandList.cpp">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\RHI\DX12\DX12Device.cpp">
+      <Filter>Render\RHI\DX12</Filter>
+    </ClCompile>
     <ClCompile Include="Render\Render.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -463,6 +526,12 @@
     <ClCompile Include="Render\Support\ScreenPlane.cpp">
       <Filter>Render\Support</Filter>
     </ClCompile>
+    <ClCompile Include="Render\VoxelRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="System\DebugServer.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
     <ClCompile Include="System\FileIO.cpp">
       <Filter>System</Filter>
     </ClCompile>
@@ -492,8 +561,5 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="Render\VoxelRenderer.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

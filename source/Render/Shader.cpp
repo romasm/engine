@@ -4,10 +4,11 @@
 #include "Material.h"
 #include "ScenePipeline.h"
 #include "StringToData.h"
+#include "Render.h"
 
 using namespace EngineCore;
 
-BaseShader::BaseShader(string& name)
+BaseShader::BaseShader(const string& name)
 {
 	shaderName = name;
 	filedate = 0;
@@ -251,7 +252,7 @@ bool BaseShader::CompileTechniques(string& file, string& binFile, DArray<tech_de
 
 ///////////////////////////////////
 
-Shader::Shader(string& name) : BaseShader(name)
+Shader::Shader(const string& name) : BaseShader(name)
 {
 	techs_array.resize(TECHNIQUES_COUNT);
 	if(!initShader())
@@ -262,9 +263,11 @@ Shader::~Shader()
 {
 	for(uint8_t i = 0; i < TECHNIQUES_COUNT; i++)
 	{
+		if(techs_array[i].pso)
+			GFX_DEVICE->DestroyPSO(techs_array[i].pso);
 		for(uint8_t j = 0; j < 5; j++)
 			ShaderCodeMgr::Get()->DeleteShaderCode(techs_array[i].shadersID[j], j);
-	}	
+	}
 	shaderName.clear();
 }
 
@@ -423,6 +426,21 @@ bool Shader::initShader()
 		}
 		else
 			tech.shadersID[SHADER_GS] = SHADER_NULL;
+
+		RHI::GraphicsPSODesc psoDesc = {};
+		psoDesc.vertexShaderID   = tech.shadersID[SHADER_VS];
+		psoDesc.pixelShaderID    = tech.shadersID[SHADER_PS];
+		psoDesc.hullShaderID     = tech.shadersID[SHADER_HS];
+		psoDesc.domainShaderID   = tech.shadersID[SHADER_DS];
+		psoDesc.geometryShaderID = tech.shadersID[SHADER_GS];
+		psoDesc.depthStateID     = tech.depthState;
+		psoDesc.blendStateID     = tech.blendState;
+		psoDesc.rastStateID      = tech.rastState;
+		psoDesc.depthStencilDesc = techsDesc[i].depthStencilDesc;
+		psoDesc.blendDesc        = techsDesc[i].blendDesc;
+		psoDesc.rasterizerDesc   = techsDesc[i].rastDesc;
+		psoDesc.inputLayout      = nullptr;
+		tech.pso = GFX_DEVICE->CreateGraphicsPSO(psoDesc);
 	}
 	return true;
 }
@@ -430,43 +448,15 @@ bool Shader::initShader()
 void Shader::Set(TECHNIQUES tech)
 {
 	auto& tq = techs_array[tech];
-	if( tq.shadersID[SHADER_VS] == SHADER_NULL )
+	if(!tq.pso)
 		return;
 
-	Render::OMSetDepthState(tq.depthState);
-	Render::OMSetBlendState(tq.blendState);
-	Render::RSSetState(tq.rastState);
-	
-	auto& shaderVS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_VS]);
-	Render::VSSetShader((ID3D11VertexShader*)shaderVS.code, nullptr, 0);
-	Render::IASetInputLayout(shaderVS.input.layout);
-	if(!shaderVS.input.samplers.empty())
-		Render::VSSetSamplers(0, (uint32_t)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
-	
-	auto& shaderPS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_PS]);
-	Render::PSSetShader((ID3D11PixelShader*)shaderPS.code, nullptr, 0);
-	if(!shaderPS.input.samplers.empty())
-		Render::PSSetSamplers(0, (uint32_t)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
-	
-	auto& shaderHS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_HS]);
-	Render::HSSetShader((ID3D11HullShader*)shaderHS.code, nullptr, 0);
-	if(!shaderHS.input.samplers.empty())
-		Render::HSSetSamplers(0, (uint32_t)shaderHS.input.samplers.size(), shaderHS.input.samplers.data());
-
-	auto& shaderDS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_DS]);
-	Render::DSSetShader((ID3D11DomainShader*)shaderDS.code, nullptr, 0);
-	if(!shaderDS.input.samplers.empty())
-		Render::DSSetSamplers(0, (uint32_t)shaderDS.input.samplers.size(), shaderDS.input.samplers.data());
-
-	auto& shaderGS = ShaderCodeMgr::GetShaderCodeRef(tq.shadersID[SHADER_GS]);
-	Render::GSSetShader((ID3D11GeometryShader*)shaderGS.code, nullptr, 0);
-	if(!shaderGS.input.samplers.empty())
-		Render::GSSetSamplers(0, (uint32_t)shaderGS.input.samplers.size(), shaderGS.input.samplers.data());
+	GFX_CMD->SetPipelineState(tq.pso);
 }
 
 //////////////////////////////////////////////
 
-SimpleShader::SimpleShader(string& name) : BaseShader(name)
+SimpleShader::SimpleShader(const string& name) : BaseShader(name)
 {
 	if(!initShader())
 		shaderName = "";
@@ -477,8 +467,10 @@ SimpleShader::SimpleShader(string& name) : BaseShader(name)
 
 SimpleShader::~SimpleShader()
 {
+	if(data.pso)
+		GFX_DEVICE->DestroyPSO(data.pso);
 	for(uint8_t j = 0; j < 2; j++)
-		ShaderCodeMgr::Get()->DeleteShaderCode(data.shadersID[j], j);	
+		ShaderCodeMgr::Get()->DeleteShaderCode(data.shadersID[j], j);
 	shaderName.clear();
 }
 
@@ -596,30 +588,29 @@ bool SimpleShader::initShader()
 	}
 	else
 		data.shadersID[SHADER_PS] = SHADER_NULL;
+
+	RHI::GraphicsPSODesc psoDesc = {};
+	psoDesc.vertexShaderID   = data.shadersID[SHADER_VS];
+	psoDesc.pixelShaderID    = data.shadersID[SHADER_PS];
+	psoDesc.hullShaderID     = SHADER_NULL;
+	psoDesc.domainShaderID   = SHADER_NULL;
+	psoDesc.geometryShaderID = SHADER_NULL;
+	psoDesc.depthStateID     = data.depthState;
+	psoDesc.blendStateID     = data.blendState;
+	psoDesc.rastStateID      = data.rastState;
+	psoDesc.depthStencilDesc = tqDesc.depthStencilDesc;
+	psoDesc.blendDesc        = tqDesc.blendDesc;
+	psoDesc.rasterizerDesc   = tqDesc.rastDesc;
+	psoDesc.inputLayout      = nullptr;
+	data.pso = GFX_DEVICE->CreateGraphicsPSO(psoDesc);
+
 	return true;
 }
 
 void SimpleShader::Set()
 {
-	if( data.shadersID[SHADER_VS] == SHADER_NULL )
+	if(!data.pso)
 		return;
 
-	Render::OMSetDepthState(data.depthState);
-	Render::OMSetBlendState(data.blendState);
-	Render::RSSetState(data.rastState);
-	
-	auto& shaderVS = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_VS]);
-	Render::VSSetShader((ID3D11VertexShader*)shaderVS.code, nullptr, 0);
-	Render::IASetInputLayout(shaderVS.input.layout);
-	if(!shaderVS.input.samplers.empty())
-		Render::VSSetSamplers(0, (uint32_t)shaderVS.input.samplers.size(), shaderVS.input.samplers.data());
-	
-	auto& shaderPS = ShaderCodeMgr::GetShaderCodeRef(data.shadersID[SHADER_PS]);
-	Render::PSSetShader((ID3D11PixelShader*)shaderPS.code, nullptr, 0);
-	if(!shaderPS.input.samplers.empty())
-		Render::PSSetSamplers(0, (uint32_t)shaderPS.input.samplers.size(), shaderPS.input.samplers.data());
-	
-	Render::HSSetShader(nullptr, nullptr, 0);
-	Render::DSSetShader(nullptr, nullptr, 0);
-	Render::GSSetShader(nullptr, nullptr, 0);
+	GFX_CMD->SetPipelineState(data.pso);
 }

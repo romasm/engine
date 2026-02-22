@@ -3,6 +3,7 @@
 #include "ShadowsRenderer.h"
 #include "RenderMgrs.h"
 #include "Render.h"
+#include "RHI\DX11\DX11Types.h"
 #include "Utils\Profiler.h"
 
 using namespace EngineCore;
@@ -42,10 +43,10 @@ ShadowsRenderer::~ShadowsRenderer()
 {
 	render_mgr = nullptr;
 
-	_RELEASE(shadowsBufferSRV);
+	_DELETE(shadowsBufferSRV);
 	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
-		_RELEASE(shadowsBufferDSV[i]);
-	_RELEASE(shadowsBuffer);
+		_DELETE(shadowsBufferDSV[i]);
+	_DELETE(shadowsBuffer);
 }
 
 void ShadowsRenderer::ClearPerFrame()
@@ -57,32 +58,48 @@ void ShadowsRenderer::ClearPerFrame()
 
 bool ShadowsRenderer::initShadowBuffer()
 {
+	// Create shadow buffer texture via raw DX11 (texture array with depth/SRV bindings)
 	D3D11_TEXTURE2D_DESC shadowBufferDesc;
 	ZeroMemory(&shadowBufferDesc, sizeof(shadowBufferDesc));
 	shadowBufferDesc.Width = SHADOWS_BUF_RES;
 	shadowBufferDesc.Height = SHADOWS_BUF_RES;
 	shadowBufferDesc.MipLevels = 1;
 	shadowBufferDesc.ArraySize = SHADOWS_BUF_SIZE;
-	shadowBufferDesc.Format = DXGI_FORMAT_R32_TYPELESS; //DXGI_FORMAT_D32_FLOAT
+	shadowBufferDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	shadowBufferDesc.SampleDesc.Count = 1;
 	shadowBufferDesc.SampleDesc.Quality = 0;
 	shadowBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	shadowBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	shadowBufferDesc.CPUAccessFlags = 0;
 	shadowBufferDesc.MiscFlags = 0;
-	if( FAILED(Render::CreateTexture2D(&shadowBufferDesc, NULL, &shadowsBuffer)) )
+	ID3D11Texture2D* rawTexture = nullptr;
+	if( FAILED(Render::Device()->CreateTexture2D(&shadowBufferDesc, NULL, &rawTexture)) )
 		return false;
-	
+	auto* wrappedTexture = new RHI::DX11::DX11Texture();
+	wrappedTexture->texture2D = rawTexture;
+	wrappedTexture->width = SHADOWS_BUF_RES;
+	wrappedTexture->height = SHADOWS_BUF_RES;
+	wrappedTexture->depth = SHADOWS_BUF_SIZE;
+	wrappedTexture->mipLevels = 1;
+	wrappedTexture->format = DXGI_FORMAT_R32_TYPELESS;
+	shadowsBuffer = wrappedTexture;
+
+	// SRV: Texture2DArray view with R32_FLOAT format (raw DX11 creation, cube arrays not auto-detected)
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 	shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-	shaderResourceViewDesc.Texture2DArray.MipLevels = -1;	
-	shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;	
-	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;	
-	if( FAILED(Render::CreateShaderResourceView(shadowsBuffer, &shaderResourceViewDesc, &shadowsBufferSRV)) )
+	shaderResourceViewDesc.Texture2DArray.MipLevels = -1;
+	shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+	shaderResourceViewDesc.Texture2DArray.ArraySize = SHADOWS_BUF_SIZE;
+	ID3D11ShaderResourceView* rawSRV = nullptr;
+	if( FAILED(Render::Device()->CreateShaderResourceView(rawTexture, &shaderResourceViewDesc, &rawSRV)) )
 		return false;
-	
+	auto* wrappedSRV = new RHI::DX11::DX11SRV();
+	wrappedSRV->view = rawSRV;
+	shadowsBufferSRV = wrappedSRV;
+
+	// DSVs: per-slice Texture2DArray views (raw DX11 creation + wrap in DX11DSV)
 	for(uint8_t i = 0; i < SHADOWS_BUF_SIZE; i++)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -92,8 +109,12 @@ bool ShadowsRenderer::initShadowBuffer()
 		depthStencilViewDesc.Texture2DArray.MipSlice = 0;
 		depthStencilViewDesc.Texture2DArray.ArraySize = 1;
 		depthStencilViewDesc.Texture2DArray.FirstArraySlice = i;
-		if( FAILED(Render::CreateDepthStencilView(shadowsBuffer, &depthStencilViewDesc, &shadowsBufferDSV[i])) )
+		ID3D11DepthStencilView* rawDSV = nullptr;
+		if( FAILED(Render::Device()->CreateDepthStencilView(rawTexture, &depthStencilViewDesc, &rawDSV)) )
 			return false;
+		auto* wrappedDSV = new RHI::DX11::DX11DSV();
+		wrappedDSV->view = rawDSV;
+		shadowsBufferDSV[i] = wrappedDSV;
 	}
 
 	return true;
@@ -239,7 +260,7 @@ void ShadowsRenderer::ResolveShadowMaps()
 			castersIdx[shadowmap_array[i].id] = i;
 
 	for(int i=0; i<SHADOWS_BUF_SIZE; i++)
-		Render::ClearDepthStencilView(shadowsBufferDSV[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
+		GFX_CMD->ClearDepthStencil(shadowsBufferDSV[i], 1.0f, 0);
 
 	PlaceShadowMaps();
 }
@@ -277,7 +298,7 @@ bool ShadowsRenderer::RegShadowMap(uint32_t id,  float size)
 	return true;
 }
 
-void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp)
+void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, RHI::GfxBuffer* vp)
 {
 	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
 
@@ -285,17 +306,17 @@ void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* sh
 	for(uint32_t i=0; i<num; i++)
 		shm = shadowmap_array[shm.next];
 
-	Render::OMSetRenderTargets(0, nullptr, shadowsBufferDSV[std::min<uint8_t>(shm.dsv, SHADOWS_BUF_SIZE-1)]);
-	D3D11_VIEWPORT viewport;
-	viewport.TopLeftX = shm.x;
-	viewport.TopLeftY = shm.y;
-	viewport.Height = viewport.Width = shm.res;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
+	GFX_CMD->SetRenderTargets(0, nullptr, shadowsBufferDSV[std::min<uint8_t>(shm.dsv, SHADOWS_BUF_SIZE-1)]);
+	RHI::GfxViewport viewport;
+	viewport.topLeftX = shm.x;
+	viewport.topLeftY = shm.y;
+	viewport.height = viewport.width = shm.res;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
 
-	Render::RSSetViewports(1, &viewport);
+	GFX_CMD->SetViewport(viewport);
 
-	Render::VSSetConstantBuffers(0, 1, &vp);
+	GFX_CMD->SetVSConstantBuffers(0, 1, &vp);
 
 	shadow_mgr->DrawOpaque();
 
@@ -305,5 +326,5 @@ void ShadowsRenderer::RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* sh
 		shadow_mgr->DrawTransparent();
 	}
 
-	Render::OMSetRenderTargets(0, nullptr, nullptr);
+	GFX_CMD->SetRenderTargets(0, nullptr, nullptr);
 }

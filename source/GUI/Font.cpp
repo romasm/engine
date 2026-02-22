@@ -7,7 +7,7 @@
 
 using namespace EngineCore;
 
-Font::Font(string& name)
+Font::Font(const string& name)
 {
 	fontName = name;
 	texture = 0;
@@ -120,7 +120,7 @@ bool Font::parse(string& filename)
 	return true;
 }
 
-void Font::BuildVertexArray(UnlitVertex *vertex, uint16_t numvert, wstring& sentence, int16_t* symbols_pos, uint16_t* letter_count)
+void Font::BuildVertexArray(UnlitVertex *vertex, uint16_t numvert, const wstring& sentence, int16_t* symbols_pos, uint16_t* letter_count)
 {
 	uint16_t numLetters = (uint16_t)sentence.size();
 	

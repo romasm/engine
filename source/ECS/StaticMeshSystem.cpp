@@ -110,7 +110,7 @@ void StaticMeshSystem::RegToDraw()
 
 				i.matrixBuffer.world = XMMatrixTranspose(worldMatrix);
 				i.matrixBuffer.norm = XMMatrixTranspose(normalMatrix);
-				Render::UpdateDynamicResource(i.constantBuffer, (void*)&i.matrixBuffer, sizeof(StmMatrixBuffer));
+				GFX_CMD->UpdateBuffer(i.constantBuffer, (void*)&i.matrixBuffer, sizeof(StmMatrixBuffer));
 
 				i.dirty = false;
 			}	
@@ -180,7 +180,7 @@ StaticMeshComponent* StaticMeshSystem::AddComponent(Entity e)
 	auto skeleton = skeletonSystem->GetComponent(e);
 	if(!skeleton)
 	{
-		res->constantBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(StmMatrixBuffer), true);
+		res->constantBuffer = Buffer::CreateConstantBuffer(sizeof(StmMatrixBuffer), true);
 	}
 	else
 	{
@@ -374,7 +374,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		auto meshPtr = MeshMgr::GetResourcePtr(id);
 		if(!meshPtr)
 		{
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -382,7 +382,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
 		{
 			MeshMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -390,7 +390,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if(!comp)
 		{
 			MeshMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 		
@@ -446,7 +446,7 @@ bool StaticMeshSystem::setMesh(StaticMeshComponent* comp, string& mesh, LuaRef f
 		if(luaRef->isFunction())
 			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
 
-		_DELETE((LuaRef*)luaRef);
+		delete luaRef;
 	});
 
 	MeshMgr::Get()->DeleteResource(oldMesh);
@@ -511,5 +511,5 @@ void StaticMeshSystem::destroyMeshData(StaticMeshComponent& comp)
 	MeshMgr::Get()->DeleteResource(comp.stmesh);
 	comp.stmesh = MeshMgr::nullres;
 
-	_RELEASE(comp.constantBuffer);
+	_DELETE(comp.constantBuffer);
 }

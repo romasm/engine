@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ScenePipeline.h"
 #include "Render.h"
+#include "RHI\DX11\DX11Types.h"
 #include "World.h"
 #include "Utils\Profiler.h"
 #include "EnvProbMgr.h"
@@ -111,7 +112,7 @@ void ScenePipeline::Close()
 	
 	TEXTURE_DROP(textureIBLLUT);
 
-	_RELEASE(defferedConfigBuffer);
+	_DELETE(defferedConfigBuffer);
 
 	lightSpotBuffer.Release();
 	lightPointBuffer.Release();
@@ -122,12 +123,12 @@ void ScenePipeline::Close()
 
 	lightsPerTile.Release();
 
-	_RELEASE(lightsPerClusterCount);
+	_DELETE(lightsPerClusterCount);
 
 	m_MaterialBuffer.Release();
 
-	_RELEASE(sharedBuffer);
-	_RELEASE(m_AOBuffer);
+	_DELETE(sharedBuffer);
+	_DELETE(m_AOBuffer);
 
 	giMgr = nullptr;
 	_DELETE(render_mgr);
@@ -142,13 +143,13 @@ void ScenePipeline::CloseAvgRt()
 
 void ScenePipeline::CloseRts()
 {
-	_RELEASE(sceneDepth);
-	_RELEASE(sceneDepthDSV);
-	_RELEASE(sceneDepthSRV);
+	if(sceneDepthDSV) { GFX_DEVICE->DestroyDSV(sceneDepthDSV); sceneDepthDSV = nullptr; }
+	if(sceneDepthSRV) { GFX_DEVICE->DestroyView(sceneDepthSRV); sceneDepthSRV = nullptr; }
+	if(sceneDepth) { GFX_DEVICE->DestroyTexture(sceneDepth); sceneDepth = nullptr; }
 
-	_RELEASE(transparencyDepth);
-	_RELEASE(transparencyDepthDSV);
-	_RELEASE(transparencyDepthSRV);
+	if(transparencyDepthDSV) { GFX_DEVICE->DestroyDSV(transparencyDepthDSV); transparencyDepthDSV = nullptr; }
+	if(transparencyDepthSRV) { GFX_DEVICE->DestroyView(transparencyDepthSRV); transparencyDepthSRV = nullptr; }
+	if(transparencyDepth) { GFX_DEVICE->DestroyTexture(transparencyDepth); transparencyDepth = nullptr; }
 	
 	_CLOSE(rt_OpaqueForward);
 	_CLOSE(rt_TransparentForward);
@@ -198,23 +199,23 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitCo
 	
 	render_mgr = new SceneRenderMgr(initConfig.lightweight);
 	
-	sharedBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(SharedBuffer), true);
+	sharedBuffer = Buffer::CreateConstantBuffer(sizeof(SharedBuffer), true);
 			
 	if(!initConfig.lightweight)
 	{
-		lightSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_SPOT_FRAME_MAX, sizeof(SpotLightBuffer), true);
-		lightPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_POINT_FRAME_MAX, sizeof(PointLightBuffer), true);
-		lightDirBuffer = Buffer::CreateStructedBuffer(Render::Device(), LIGHT_DIR_FRAME_MAX, sizeof(DirLightBuffer), true);
+		lightSpotBuffer = Buffer::CreateStructedBuffer(LIGHT_SPOT_FRAME_MAX, sizeof(SpotLightBuffer), true);
+		lightPointBuffer = Buffer::CreateStructedBuffer(LIGHT_POINT_FRAME_MAX, sizeof(PointLightBuffer), true);
+		lightDirBuffer = Buffer::CreateStructedBuffer(LIGHT_DIR_FRAME_MAX, sizeof(DirLightBuffer), true);
 
-		casterSpotBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_SPOT_FRAME_MAX, sizeof(SpotCasterBuffer), true);
-		casterPointBuffer = Buffer::CreateStructedBuffer(Render::Device(), CASTER_POINT_FRAME_MAX, sizeof(PointCasterBuffer), true);
-		
-		lightsPerTile = Buffer::CreateStructedBuffer(Render::Device(), TOTAL_LIGHT_COUNT, sizeof(int32_t), true);
+		casterSpotBuffer = Buffer::CreateStructedBuffer(CASTER_SPOT_FRAME_MAX, sizeof(SpotCasterBuffer), true);
+		casterPointBuffer = Buffer::CreateStructedBuffer(CASTER_POINT_FRAME_MAX, sizeof(PointCasterBuffer), true);
+
+		lightsPerTile = Buffer::CreateStructedBuffer(TOTAL_LIGHT_COUNT, sizeof(int32_t), true);
 	}
 
-	lightsPerClusterCount = Buffer::CreateConstantBuffer(Render::Device(), sizeof(LightsCount), true);
+	lightsPerClusterCount = Buffer::CreateConstantBuffer(sizeof(LightsCount), true);
 
-	m_MaterialBuffer = Buffer::CreateStructedBuffer(Render::Device(), MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
+	m_MaterialBuffer = Buffer::CreateStructedBuffer(MATERIALS_COUNT, sizeof(MaterialParamsStructBuffer), true);
 	Materials[0].unlit = 0;
 	Materials[0].ior = 0.0f;
 	Materials[0].asymmetry = 0.0f;
@@ -230,7 +231,7 @@ bool ScenePipeline::Init(BaseWorld* wrd, int t_width, int t_height, RenderInitCo
 	else
 		defferedOpaqueCompute = new Compute( SHADER_DEFFERED_OPAQUE_IBL );
 
-	defferedConfigBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(DefferedConfigData), true);
+	defferedConfigBuffer = Buffer::CreateConstantBuffer(sizeof(DefferedConfigData), true);
 	ZeroMemory(&defferedConfigData, sizeof(DefferedConfigData));
 
 	combineSceneCompute = new Compute(SHADER_COMBINE);
@@ -388,43 +389,44 @@ bool ScenePipeline::Resize(int t_width, int t_height)
 
 bool ScenePipeline::InitDepth()
 {
-	D3D11_TEXTURE2D_DESC bufferDesc;
-	ZeroMemory(&bufferDesc, sizeof(bufferDesc));
-	bufferDesc.Width = width;
-	bufferDesc.Height = height;
-	bufferDesc.MipLevels = 1;
-	bufferDesc.ArraySize = 1;
-	bufferDesc.Format = DXGI_FORMAT_R32_TYPELESS; //DXGI_FORMAT_D32_FLOAT
-	bufferDesc.SampleDesc.Count = 1;
-	bufferDesc.SampleDesc.Quality = 0;
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	bufferDesc.CPUAccessFlags = 0;
-	bufferDesc.MiscFlags = 0;
-	if( FAILED(Render::CreateTexture2D(&bufferDesc, NULL, &sceneDepth)) )
+	RHI::TextureDesc depthTexDesc = {};
+	depthTexDesc.dimension = RHI::TextureDimension::Tex2D;
+	depthTexDesc.width = width;
+	depthTexDesc.height = height;
+	depthTexDesc.depth = 1;
+	depthTexDesc.mipLevels = 1;
+	depthTexDesc.format = DXGI_FORMAT_R32_TYPELESS;
+	depthTexDesc.allowDSV = true;
+	depthTexDesc.allowSRV = true;
+	depthTexDesc.allowRTV = false;
+	depthTexDesc.allowUAV = false;
+	depthTexDesc.generateMips = false;
+	depthTexDesc.msaaSamples = 1;
+	depthTexDesc.msaaQuality = 0;
+	depthTexDesc.initialData = nullptr;
+
+	sceneDepth = GFX_DEVICE->CreateTexture(depthTexDesc);
+	if(!sceneDepth)
 		return false;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	shaderResourceViewDesc.Texture2D.MipLevels = -1;
-	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;	
-	if( FAILED(Render::CreateShaderResourceView(sceneDepth, &shaderResourceViewDesc, &sceneDepthSRV)) )
+	sceneDepthSRV = GFX_DEVICE->CreateSRV(sceneDepth, DXGI_FORMAT_R32_FLOAT, 0, UINT32_MAX);
+	if(!sceneDepthSRV)
 		return false;
 
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
-	depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	depthStencilViewDesc.Texture2D.MipSlice = 0;
-	if( FAILED(Render::CreateDepthStencilView(sceneDepth, &depthStencilViewDesc, &sceneDepthDSV)) )
+	sceneDepthDSV = GFX_DEVICE->CreateDSV(sceneDepth, DXGI_FORMAT_D32_FLOAT);
+	if(!sceneDepthDSV)
 		return false;
 
-	if( FAILED(Render::CreateTexture2D(&bufferDesc, NULL, &transparencyDepth)) )
+	transparencyDepth = GFX_DEVICE->CreateTexture(depthTexDesc);
+	if(!transparencyDepth)
 		return false;
-	if( FAILED(Render::CreateShaderResourceView(transparencyDepth, &shaderResourceViewDesc, &transparencyDepthSRV)) )
+
+	transparencyDepthSRV = GFX_DEVICE->CreateSRV(transparencyDepth, DXGI_FORMAT_R32_FLOAT, 0, UINT32_MAX);
+	if(!transparencyDepthSRV)
 		return false;
-	if( FAILED(Render::CreateDepthStencilView(transparencyDepth, &depthStencilViewDesc, &transparencyDepthDSV)) )
+
+	transparencyDepthDSV = GFX_DEVICE->CreateDSV(transparencyDepth, DXGI_FORMAT_D32_FLOAT);
+	if(!transparencyDepthDSV)
 		return false;
 
 	return true;
@@ -721,12 +723,12 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 
 	sharedconst.viewProjInv_ViewProjPrev = XMMatrixTranspose(current_camera->prevViewProj) * sharedconst.invViewProjection;
 
-	Render::UpdateDynamicResource(sharedBuffer, (void*)&sharedconst, sizeof(sharedconst));
-	Render::PSSetConstantBuffers(0, 1, &sharedBuffer); 
-	Render::VSSetConstantBuffers(0, 1, &sharedBuffer); 
-	Render::HSSetConstantBuffers(0, 1, &sharedBuffer); 
-	Render::DSSetConstantBuffers(0, 1, &sharedBuffer); 
-	Render::GSSetConstantBuffers(0, 1, &sharedBuffer); 
+	GFX_CMD->UpdateBuffer(sharedBuffer, (void*)&sharedconst, sizeof(sharedconst));
+	GFX_CMD->SetPSConstantBuffer(0, sharedBuffer);
+	GFX_CMD->SetVSConstantBuffer(0, sharedBuffer);
+	GFX_CMD->SetHSConstantBuffer(0, sharedBuffer);
+	GFX_CMD->SetDSConstantBuffer(0, sharedBuffer);
+	GFX_CMD->SetGSConstantBuffer(0, sharedBuffer);
 	
 	// remove
 	float projParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
@@ -744,7 +746,7 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	defferedConfigData.indirSpec = renderConfig.ambientLightSpecular;
 	defferedConfigData.albedoWhite = renderConfig.albedoWhite;
 
-	Render::UpdateDynamicResource(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
+	GFX_CMD->UpdateBuffer(defferedConfigBuffer, &defferedConfigData, sizeof(DefferedConfigData));
 
 	render_mgr->envProbMgr->PrepareEnvProbs();
 
@@ -774,7 +776,7 @@ void ScenePipeline::UIOverlayStage()
 	if(!renderConfig.editorGuiEnable) return;
 	
 	rt_3DHud->SetRenderTarget();
-	Render::ClearDepthStencilView(rt_3DHud->m_DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	GFX_CMD->ClearDepthStencil(rt_3DHud->m_DSV, 1.0f, 0);
 
 	render_mgr->DrawOvHud();
 }
@@ -825,7 +827,7 @@ void ScenePipeline::TransparentForwardStage()
 	render_mgr->DrawForward();
 
 	// DEPTH COPY
-	CONTEXT->CopyResource(transparencyDepth, sceneDepth);
+	GFX_CMD->CopyResource(transparencyDepth, sceneDepth);
 
 	// PREPASS
 	/*rt_TransparentPrepass->ClearRenderTargets(true);
@@ -839,7 +841,7 @@ void ScenePipeline::TransparentForwardStage()
 	// RENDER 
 	rt_TransparentForward->SetRenderTarget();
 
-	Render::PSSetShaderResources(0, 1, &transparencyDepthSRV);
+	GFX_CMD->SetPSResource(0, transparencyDepthSRV);
 	
 	//Render::PSSetConstantBuffers(3, 1, &defferedConfigBuffer); 
 	
@@ -858,15 +860,15 @@ void ScenePipeline::LoadLights()
 	void* caster_point_data = (void*)render_mgr->GetPointCasterDataPtr(&caster_point_size);
 	
 	if(spot_size > 0)
-		Render::UpdateDynamicResource(lightSpotBuffer.buf, spot_data, sizeof(SpotLightBuffer) * spot_size);
+		GFX_CMD->UpdateBuffer(lightSpotBuffer.buf, spot_data, sizeof(SpotLightBuffer) * spot_size);
 	if(caster_spot_size > 0)
-		Render::UpdateDynamicResource(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);	
+		GFX_CMD->UpdateBuffer(casterSpotBuffer.buf, caster_spot_data, sizeof(SpotCasterBuffer) * caster_spot_size);
 	if(point_size > 0)
-		Render::UpdateDynamicResource(lightPointBuffer.buf, point_data, sizeof(PointLightBuffer) * point_size);
+		GFX_CMD->UpdateBuffer(lightPointBuffer.buf, point_data, sizeof(PointLightBuffer) * point_size);
 	if(caster_point_size > 0)
-		Render::UpdateDynamicResource(casterPointBuffer.buf, caster_point_data, sizeof(PointCasterBuffer) * caster_point_size);
+		GFX_CMD->UpdateBuffer(casterPointBuffer.buf, caster_point_data, sizeof(PointCasterBuffer) * caster_point_size);
 	if(dir_size > 0)
-		Render::UpdateDynamicResource(lightDirBuffer.buf, dir_data, sizeof(DirLightBuffer) * dir_size);
+		GFX_CMD->UpdateBuffer(lightDirBuffer.buf, dir_data, sizeof(DirLightBuffer) * dir_size);
 
 		// TEMP
 		for(uint16_t i = 0; i < LIGHT_SPOT_FRAME_MAX; i++)
@@ -880,7 +882,7 @@ void ScenePipeline::LoadLights()
 		for(uint16_t i = 0; i < LIGHT_DIR_FRAME_MAX; i++)
 			lightsIDs[DIR_ID(i)] = i;
 
-	Render::UpdateDynamicResource(lightsPerTile.buf, &lightsIDs, sizeof(LightsIDs));
+	GFX_CMD->UpdateBuffer(lightsPerTile.buf, &lightsIDs, sizeof(LightsIDs));
 	
 	lightsCount.spot_count = (int32_t)spot_size;
 	lightsCount.caster_spot_count = (int32_t)caster_spot_size;
@@ -895,17 +897,17 @@ void ScenePipeline::HiZMips()
 
 	for(int j=0; j<miplvl.mipCount-1; j++)
 	{
-		rt_HiZDepth->m_viewport.Width = float(rt_HiZDepth->mip_res[j].x);
-		rt_HiZDepth->m_viewport.Height = float(rt_HiZDepth->mip_res[j].y);
-		Render::RSSetViewports(1, &rt_HiZDepth->m_viewport);
+		rt_HiZDepth->m_viewport.width = float(rt_HiZDepth->mip_res[j].x);
+		rt_HiZDepth->m_viewport.height = float(rt_HiZDepth->mip_res[j].y);
+		GFX_CMD->SetViewport(rt_HiZDepth->m_viewport);
 
-		Render::OMSetRenderTargets(1, &miplvl.mip_RTV[j], nullptr);
-		
+		GFX_CMD->SetRenderTargets(1, &miplvl.mip_RTV[j], nullptr);
+
 		sp_HiZ->SetTexture(miplvl.mip_SRV[j], 0);
 		sp_HiZ->Draw();
 	}
-	rt_HiZDepth->m_viewport.Width = float(rt_HiZDepth->t_width);
-	rt_HiZDepth->m_viewport.Height = float(rt_HiZDepth->t_height);
+	rt_HiZDepth->m_viewport.width = float(rt_HiZDepth->t_width);
+	rt_HiZDepth->m_viewport.height = float(rt_HiZDepth->t_height);
 }
 
 void ScenePipeline::OpaqueDefferedStage()
@@ -918,13 +920,9 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	PERF_GPU_TIMESTAMP(_SSR);
 	// mat params
-	D3D11_MAPPED_SUBRESOURCE mappedResourceM;
-	if(FAILED(Render::Map(m_MaterialBuffer.buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceM)))
-		return;
-	memcpy(mappedResourceM.pData, (void*)Materials, Materials_Count * sizeof(MaterialParamsStructBuffer));
-	Render::Unmap(m_MaterialBuffer.buf, 0);
+	GFX_CMD->UpdateBuffer(m_MaterialBuffer.buf, (void*)Materials, Materials_Count * sizeof(MaterialParamsStructBuffer));
 
-	Render::PSSetShaderResources(0, 1, &m_MaterialBuffer.srv);
+	GFX_CMD->SetPSResource(0, m_MaterialBuffer.srv);
 	
 	//sp_SSR->Draw();
 	
@@ -936,7 +934,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	rt_AO->ClearRenderTargets(1.0f,1.0f,1.0f,1.0f);
 	rt_AO->SetRenderTarget();
 
-	Render::PSSetConstantBuffers(1, 1, &m_AOBuffer); 
+	GFX_CMD->SetPSConstantBuffer(1, m_AOBuffer);
 
 	sp_AO->Draw();
 	
@@ -946,7 +944,7 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
 	
-	Render::OMUnsetRenderTargets();
+	GFX_CMD->SetRenderTargets(0, nullptr, nullptr);
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
 
@@ -968,7 +966,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	lightsCount.envProbsCountSQ = (int32_t)render_mgr->envProbMgr->sqProbsBuffer.size();
 	lightsCount.envProbsCountLQ = (int32_t)render_mgr->envProbMgr->lqProbsBuffer.size();
 
-	Render::UpdateDynamicResource(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
+	GFX_CMD->UpdateBuffer(lightsPerClusterCount, &lightsCount, sizeof(LightsCount));
 
 	//temp
 	uint16_t group_count_x = (uint16_t)ceil(float(width) / 8);
@@ -991,17 +989,19 @@ void ScenePipeline::OpaqueDefferedStage()
 		// avglum
 		rt_AvgLum->ClearRenderTargets();
 
-		ID3D11UnorderedAccessView* UAV = rt_AvgLumCurrent->GetUnorderedAccessView(0);
-		ID3D11RenderTargetView* r_target = rt_AvgLum->GetRenderTargetView(0);
-		if(!UAV)
+		RHI::GfxUAV* avgUAV = rt_AvgLumCurrent->GetUnorderedAccessView(0);
+		RHI::GfxRTV* avgRTV = rt_AvgLum->GetRenderTargetView(0);
+		if(!avgUAV)
 			return;
 
-		Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
-		Render::RSSetViewports(1, &rt_AvgLum->m_viewport);
+		GFX_CMD->SetRenderTargets(1, &avgRTV, nullptr);
+		GFX_CMD->SetOMUnorderedAccessViews(1, 1, &avgUAV, nullptr);
+		GFX_CMD->SetViewport(rt_AvgLum->m_viewport);
 		sp_AvgLum->Draw();
-		r_target = nullptr;
-		UAV = nullptr;
-		Render::OMSetRenderTargetsAndUnorderedAccessViews(1, &r_target, nullptr, 1, 1, &UAV, nullptr);
+		avgRTV = nullptr;
+		avgUAV = nullptr;
+		GFX_CMD->SetRenderTargets(1, &avgRTV, nullptr);
+		GFX_CMD->SetOMUnorderedAccessViews(1, 1, &avgUAV, nullptr);
 	}
 
 	if(renderConfig.bloomEnable)
@@ -1029,16 +1029,16 @@ void ScenePipeline::HDRtoLDRStage()
 	if (!initConfig.lightweight)
 	{
 		auto volumeBuffer = render_mgr->voxelRenderer->GetVolumeBuffer();
-		Render::PSSetConstantBuffers(2, 1, &volumeBuffer);
+		GFX_CMD->SetPSConstantBuffer(2, volumeBuffer);
 
 		volumeBuffer = render_mgr->voxelRenderer->GetVolumeTraceBuffer();
-		Render::PSSetConstantBuffers(3, 1, &volumeBuffer);
+		GFX_CMD->SetPSConstantBuffer(3, volumeBuffer);
 	}
 
-	ID3D11RenderTargetView* r_target[2];
+	RHI::GfxRTV* r_target[2];
 	r_target[0] = rt_FinalLDR->GetRenderTargetView(0);
 	r_target[1] = rt_Antialiased->GetRenderTargetView(0);
-	Render::OMSetRenderTargets(2, r_target, nullptr);
+	GFX_CMD->SetRenderTargets(2, r_target, nullptr);
 	
 	sp_HDRtoLDR->Draw();
 
@@ -1050,7 +1050,7 @@ void ScenePipeline::HDRtoLDRStage()
 	rt_Antialiased->SetRenderTarget(0, 1);
 	sp_Antialiased[1]->Draw();
 
-	Render::ClearRenderTargetView(rt_Antialiased->m_RTV[1], Vector4(0,0,0,0));
+	GFX_CMD->ClearRenderTarget(rt_Antialiased->m_RTV[1], 0, 0, 0, 0);
 
 	rt_Antialiased->SetRenderTarget(1, 2);
 	sp_Antialiased[2]->Draw();
@@ -1070,7 +1070,7 @@ void ScenePipeline::LinearAndDepthToRT(RenderTarget* rt, ScreenPlane* sp)
 	sp->ClearTex();
 }
 
-ID3D11ShaderResourceView* ScenePipeline::GetLinearAndDepthSRV()
+RHI::GfxSRV* ScenePipeline::GetLinearAndDepthSRV()
 {
 	return rt_OpaqueFinal->GetShaderResourceView(0);
 }
@@ -1091,7 +1091,7 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targe
 		Vector4 pixelSize;
 	} params;
 
-	auto paramsBuffer = Buffer::CreateConstantBuffer(Render::Device(), sizeof(ParamsBuffer), true);
+	auto paramsBuffer = Buffer::CreateConstantBuffer(sizeof(ParamsBuffer), true);
 	
 	params.samplesPerPixel.x = (float)(width / targetX);
 	params.samplesPerPixel.y = (float)(height / targetY);
@@ -1102,8 +1102,8 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targe
 	params.pixelSize.z = 0;
 	params.pixelSize.w = 0;
 
-	Render::UpdateDynamicResource(paramsBuffer, &params, sizeof(ParamsBuffer));
-	Render::PSSetConstantBuffers(0, 1, &paramsBuffer); 
+	GFX_CMD->UpdateBuffer(paramsBuffer, &params, sizeof(ParamsBuffer));
+	GFX_CMD->SetPSConstantBuffer(0, paramsBuffer);
 
 	sp->SetTexture(rt_Antialiased->GetShaderResourceView(1), 0);
 
@@ -1113,7 +1113,7 @@ bool ScenePipeline::SaveScreenshot(string path, uint32_t targetX, uint32_t targe
 	sp->Draw();
 	sp->ClearTex();
 		
-	_RELEASE(paramsBuffer);
+	_DELETE(paramsBuffer);
 
 	return TexLoader::SaveTexture(path, rt->GetShaderResourceView(0));
 }

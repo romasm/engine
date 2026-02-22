@@ -8,7 +8,7 @@
 
 using namespace EngineCore;
 
-Material::Material(string& name)
+Material::Material(const string& name)
 {
 	materialName = name;
 	defferedParams = nullptr;
@@ -74,7 +74,7 @@ bool Material::loadMat()
 {	
 #ifdef _DEV
 	if(!FileIO::IsExist(materialName))
-		return ñonvertMat(materialName);
+		return ConvertMat(materialName);
 #endif
 	
 	uint32_t data_size = 0;
@@ -119,7 +119,7 @@ bool Material::loadMat()
 			continue;
 
 		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
-		if(!Hcode.code)
+		if(!Hcode.IsValid())
 			return false;
 
 		// TODO: unique regs per tech
@@ -130,7 +130,7 @@ bool Material::loadMat()
 		if(codeSkinIds)
 		{
 			auto& HScode = ShaderCodeMgr::GetShaderCodeRef(codeSkinIds[i]);
-			if(!HScode.code)
+			if(!HScode.IsValid())
 				return false;
 
 			matrixBoneReg[i] = HScode.input.matrixBoneBuf_Register;
@@ -191,7 +191,7 @@ bool Material::createMat()
 			continue;
 
 		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
-		if(!Hcode.code)
+		if(!Hcode.IsValid())
 			return false;
 
 		vectorsReg[i] = Hcode.input.matInfo_Register;
@@ -283,7 +283,7 @@ bool Material::Save()
 }
 
 #ifdef _DEV
-bool Material::ñonvertMat(string& nameBin)
+bool Material::ConvertMat(const string& nameBin)
 {
 	string nameText = nameBin;
 	nameText[nameText.size() - 1] = 'a';
@@ -323,7 +323,7 @@ bool Material::ñonvertMat(string& nameBin)
 		}
 
 		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
-		if(!Hcode.code)
+		if(!Hcode.IsValid())
 			return false;
 
 		vectorsReg[i] = Hcode.input.matInfo_Register;
@@ -426,7 +426,7 @@ bool Material::initBuffers()
 		if(dataVector[i].size() == 0)
 			continue;
 
-		inputBuf[i] = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector[i].size() * sizeof(Vector4), true);
+		inputBuf[i] = Buffer::CreateConstantBuffer((int)dataVector[i].size() * sizeof(Vector4), true);
 		if (!inputBuf[i])
 			return false;
 	}
@@ -434,7 +434,7 @@ bool Material::initBuffers()
 	if(!defferedParams || sceneReg == REGISTER_NULL)
 		return true;
 
-	idBuf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(uint32_t) * 4, true);
+	idBuf = Buffer::CreateConstantBuffer(sizeof(uint32_t) * 4, true);
 	if (!idBuf)
 		return false;
 
@@ -444,8 +444,8 @@ bool Material::initBuffers()
 void Material::closeBuffers()
 {
 	for(uint8_t i = 0; i < 5; i++)
-		_RELEASE(inputBuf[i]);
-	_RELEASE(idBuf);
+		_DELETE(inputBuf[i]);
+	_DELETE(idBuf);
 }
 
 bool Material::SetShader(string shaderName)
@@ -482,7 +482,7 @@ bool Material::SetShader(string shaderName)
 			continue;
 
 		auto& Hcode = ShaderCodeMgr::GetShaderCodeRef(codeIds[i]);
-		if(!Hcode.code)
+		if(!Hcode.IsValid())
 			return false;
 
 		vectorsReg[i] = Hcode.input.matInfo_Register;
@@ -568,7 +568,7 @@ bool Material::SetTextureByName(string name, uint8_t id, uint8_t shader)
 	return true;
 }
 
-void Material::SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot, uint8_t shaderType)
+void Material::SetTextureWithSlotName(RHI::GfxSRV *texture, string& slot, uint8_t shaderType)
 {
 	int16_t id = ((Shader*)(ShaderMgr::GetResourcePtr(shaderID)))->GetTextureIdBySlot(slot, shaderType);
 	if(id < 0)
@@ -577,7 +577,7 @@ void Material::SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string&
 		SetTexture(texture, (uint8_t)id, shaderType);
 }
 
-void Material::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id, uint8_t shader)
+void Material::SetTexture(RHI::GfxSRV *texture, uint8_t id, uint8_t shader)
 {
 	if(id >= textures[shader].size())
 		return;
@@ -630,7 +630,7 @@ void Material::updateBuffers()
 	b_dirty = false;
 	for(uint32_t i=0; i<5; i++)
 		if(inputBuf[i] != nullptr)
-			Render::UpdateDynamicResource(inputBuf[i], (void*)dataVector[i].data(), sizeof(Vector4) * dataVector[i].size());
+			GFX_CMD->UpdateBuffer(inputBuf[i], (void*)dataVector[i].data(), sizeof(Vector4) * dataVector[i].size());
 }
 
 void Material::AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i)
@@ -645,10 +645,10 @@ void Material::AddToFrameBuffer(MaterialParamsStructBuffer* buf, uint32_t* i)
 		for(uint8_t i = 0; i < textures[SHADER_##stage].size(); i++){	\
 			auto& tex = textures[SHADER_##stage][i];						\
 			if(tex.is_ptr){											\
-				auto ptr = reinterpret_cast<ID3D11ShaderResourceView*>(tex.texture); \
-				Render::##stage##SetShaderResources(currentReg, 1, &ptr);}	\
+				auto ptr = reinterpret_cast<RHI::GfxSRV*>(tex.texture); \
+				GFX_CMD->Set##stage##Resource(currentReg, ptr);}	\
 			else													\
-				Render::##stage##SetShaderTexture(currentReg, (uint32_t)tex.texture); \
+				GFX_CMD->Set##stage##Resource(currentReg, TexMgr::GetResourcePtr((uint32_t)tex.texture)); \
 			currentReg++;}}
 
 void Material::Set(TECHNIQUES tech)
@@ -671,24 +671,24 @@ void Material::Set(TECHNIQUES tech)
 		uint32_t id[4];
 		id[0] = scene_id;
 
-		Render::UpdateDynamicResource(idBuf, (void*)id, sizeof(uint32_t) * 4);
-		Render::PSSetConstantBuffers(sceneReg, 1, &idBuf);
+		GFX_CMD->UpdateBuffer(idBuf, (void*)id, sizeof(uint32_t) * 4);
+		GFX_CMD->SetPSConstantBuffers(sceneReg, 1, &idBuf);
 	}
 
 	if(inputBuf[SHADER_PS] != nullptr)
-		Render::PSSetConstantBuffers(vectorsReg[SHADER_PS], 1, &inputBuf[SHADER_PS]);
+		GFX_CMD->SetPSConstantBuffers(vectorsReg[SHADER_PS], 1, &inputBuf[SHADER_PS]);
 
 	if(inputBuf[SHADER_VS] != nullptr)
-		Render::VSSetConstantBuffers(vectorsReg[SHADER_VS], 1, &inputBuf[SHADER_VS]);
+		GFX_CMD->SetVSConstantBuffers(vectorsReg[SHADER_VS], 1, &inputBuf[SHADER_VS]);
 
 	if(inputBuf[SHADER_DS] != nullptr)
-		Render::DSSetConstantBuffers(vectorsReg[SHADER_DS], 1, &inputBuf[SHADER_DS]);
+		GFX_CMD->SetDSConstantBuffers(vectorsReg[SHADER_DS], 1, &inputBuf[SHADER_DS]);
 
 	if(inputBuf[SHADER_HS] != nullptr)
-		Render::HSSetConstantBuffers(vectorsReg[SHADER_HS], 1, &inputBuf[SHADER_HS]);
-	
+		GFX_CMD->SetHSConstantBuffers(vectorsReg[SHADER_HS], 1, &inputBuf[SHADER_HS]);
+
 	if(inputBuf[SHADER_GS] != nullptr)
-		Render::GSSetConstantBuffers(vectorsReg[SHADER_GS], 1, &inputBuf[SHADER_GS]);
+		GFX_CMD->SetGSConstantBuffers(vectorsReg[SHADER_GS], 1, &inputBuf[SHADER_GS]);
 
 	shaderPtr->Set(tech);
 }
@@ -697,35 +697,35 @@ void Material::SetMatrixBuffer(void* matrixBuf, bool isSkinned)
 {
 	if(isSkinned)
 	{
-		ID3D11ShaderResourceView* srv = (ID3D11ShaderResourceView*)matrixBuf;
+		RHI::GfxSRV* srv = (RHI::GfxSRV*)matrixBuf;
 		if(matrixBoneReg[SHADER_VS] != REGISTER_NULL)
-			Render::Context()->VSSetShaderResources(matrixBoneReg[SHADER_VS], 1, &srv);
+			GFX_CMD->SetVSResource(matrixBoneReg[SHADER_VS], srv);
 		if(matrixBoneReg[SHADER_PS] != REGISTER_NULL)
-			Render::Context()->PSSetShaderResources(matrixBoneReg[SHADER_PS], 1, &srv);
+			GFX_CMD->SetPSResource(matrixBoneReg[SHADER_PS], srv);
 		if(matrixBoneReg[SHADER_HS] != REGISTER_NULL)
-			Render::Context()->HSSetShaderResources(matrixBoneReg[SHADER_HS], 1, &srv);
+			GFX_CMD->SetHSResource(matrixBoneReg[SHADER_HS], srv);
 		if(matrixBoneReg[SHADER_DS] != REGISTER_NULL)
-			Render::Context()->DSSetShaderResources(matrixBoneReg[SHADER_DS], 1, &srv);
+			GFX_CMD->SetDSResource(matrixBoneReg[SHADER_DS], srv);
 		if(matrixBoneReg[SHADER_GS] != REGISTER_NULL)
-			Render::Context()->GSSetShaderResources(matrixBoneReg[SHADER_GS], 1, &srv);	
+			GFX_CMD->SetGSResource(matrixBoneReg[SHADER_GS], srv);
 	}
 	else
 	{
-		ID3D11Buffer* buf = (ID3D11Buffer*)matrixBuf;
+		RHI::GfxBuffer* buf = (RHI::GfxBuffer*)matrixBuf;
 		if(matrixReg[SHADER_VS] != REGISTER_NULL)
-			Render::Context()->VSSetConstantBuffers(matrixReg[SHADER_VS], 1, &buf);
+			GFX_CMD->SetVSConstantBuffers(matrixReg[SHADER_VS], 1, &buf);
 		if(matrixReg[SHADER_PS] != REGISTER_NULL)
-			Render::Context()->PSSetConstantBuffers(matrixReg[SHADER_PS], 1, &buf);
+			GFX_CMD->SetPSConstantBuffers(matrixReg[SHADER_PS], 1, &buf);
 		if(matrixReg[SHADER_HS] != REGISTER_NULL)
-			Render::Context()->HSSetConstantBuffers(matrixReg[SHADER_HS], 1, &buf);
+			GFX_CMD->SetHSConstantBuffers(matrixReg[SHADER_HS], 1, &buf);
 		if(matrixReg[SHADER_DS] != REGISTER_NULL)
-			Render::Context()->DSSetConstantBuffers(matrixReg[SHADER_DS], 1, &buf);
+			GFX_CMD->SetDSConstantBuffers(matrixReg[SHADER_DS], 1, &buf);
 		if(matrixReg[SHADER_GS] != REGISTER_NULL)
-			Render::Context()->GSSetConstantBuffers(matrixReg[SHADER_GS], 1, &buf);	
+			GFX_CMD->SetGSConstantBuffers(matrixReg[SHADER_GS], 1, &buf);
 	}
 }
 
-void Material::SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderType)
+void Material::SetVectorWithSlotName(const Vector4& vect, string slot, uint8_t shaderType)
 {
 	int16_t id = ((Shader*)(ShaderMgr::GetResourcePtr(shaderID)))->GetVectorIdBySlot(slot, shaderType);
 	if(id < 0)
@@ -734,7 +734,7 @@ void Material::SetVectorWithSlotName(Vector4& vect, string slot, uint8_t shaderT
 		SetVector(vect, (uint8_t)id, shaderType);
 }
 
-void Material::SetVector(Vector4& vect, uint8_t id, uint8_t shader)
+void Material::SetVector(const Vector4& vect, uint8_t id, uint8_t shader)
 {
 	if(id >= offsetFloat[shader])
 		return;
@@ -906,7 +906,7 @@ float Material::GetDefferedParamWithSlotName(string slot)
 
 /////////////////////////////////////////////
 
-SimpleShaderInst::SimpleShaderInst(string& shaderName)
+SimpleShaderInst::SimpleShaderInst(const string& shaderName)
 {
 	inputBuf = nullptr;
 	offsetFloat = 0;
@@ -937,12 +937,12 @@ SimpleShaderInst::~SimpleShaderInst()
 	textures.destroy();
 	dataVector.destroy();
 
-	_RELEASE(inputBuf);
+	_DELETE(inputBuf);
 
 	ShaderMgr::Get()->DeleteResource(shaderID);
 }
 
-bool SimpleShaderInst::initInst(string& shaderName)
+bool SimpleShaderInst::initInst(const string& shaderName)
 {
 	shaderID = ShaderMgr::Get()->GetResource(shaderName, true);
 	if(shaderID == SHADER_NULL)
@@ -953,11 +953,11 @@ bool SimpleShaderInst::initInst(string& shaderName)
 	uint16_t* codeIds = shaderPtr->GetCode();
 	
 	auto& PScode = ShaderCodeMgr::GetShaderCodeRef(codeIds[SHADER_PS]);
-	if(!PScode.code)
+	if(!PScode.IsValid())
 		return false;
 
 	auto& VScode = ShaderCodeMgr::GetShaderCodeRef(codeIds[SHADER_VS]);
-	if(!VScode.code)
+	if(!VScode.IsValid())
 		return false;
 
 	vectorsReg = PScode.input.matInfo_Register;
@@ -988,7 +988,7 @@ bool SimpleShaderInst::initBuffers()
 	if(dataVector.size() == 0)
 		return true;
 
-	inputBuf = Buffer::CreateConstantBuffer(DEVICE, (int)dataVector.size() * sizeof(Vector4), true);
+	inputBuf = Buffer::CreateConstantBuffer((int)dataVector.size() * sizeof(Vector4), true);
 	if (!inputBuf)
 		return false;
 
@@ -1002,7 +1002,7 @@ void SimpleShaderInst::updateBuffers()
 	if(inputBuf == nullptr)
 		return;
 	
-	Render::UpdateDynamicResource(inputBuf, (void*)dataVector.data(), sizeof(Vector4) * dataVector.size());
+	GFX_CMD->UpdateBuffer(inputBuf, (void*)dataVector.data(), sizeof(Vector4) * dataVector.size());
 }
 
 void SimpleShaderInst::Set()
@@ -1018,8 +1018,8 @@ void SimpleShaderInst::Set()
 			auto& tex = textures[i];						
 			if(tex.is_ptr)
 			{											
-				auto ptr = reinterpret_cast<ID3D11ShaderResourceView*>(tex.texture); 
-				Render::PSSetShaderResources(currentReg, 1, &ptr);
+				auto ptr = reinterpret_cast<RHI::GfxSRV*>(tex.texture);
+				GFX_CMD->SetPSResource(currentReg, ptr);
 			}	
 			else													
 				Render::PSSetShaderTexture(currentReg, (uint32_t)tex.texture); 
@@ -1028,18 +1028,18 @@ void SimpleShaderInst::Set()
 	}
 	
 	if(inputBuf != nullptr)
-		Render::PSSetConstantBuffers(vectorsReg, 1, &inputBuf);
+		GFX_CMD->SetPSConstantBuffers(vectorsReg, 1, &inputBuf);
 
 	((SimpleShader*)ShaderMgr::GetResourcePtr(shaderID))->Set();
 }
 
-void SimpleShaderInst::SetMatrixBuffer(ID3D11Buffer* matrixBuf)
+void SimpleShaderInst::SetMatrixBuffer(RHI::GfxBuffer* matrixBuf)
 {
 	if(matrixReg != REGISTER_NULL)
-		Render::Context()->VSSetConstantBuffers(matrixReg, 1, &matrixBuf);
+		GFX_CMD->SetVSConstantBuffers(matrixReg, 1, &matrixBuf);
 }
 
-void SimpleShaderInst::SetVectorWithSlotName(Vector4& vect, string slot)
+void SimpleShaderInst::SetVectorWithSlotName(const Vector4& vect, string slot)
 {
 	int16_t id = ((SimpleShader*)(ShaderMgr::GetResourcePtr(shaderID)))->GetVectorIdBySlot(slot);
 	if(id < 0)
@@ -1048,7 +1048,7 @@ void SimpleShaderInst::SetVectorWithSlotName(Vector4& vect, string slot)
 		SetVector(vect, (uint8_t)id);
 }
 
-void SimpleShaderInst::SetVector(Vector4& vect, uint8_t id)
+void SimpleShaderInst::SetVector(const Vector4& vect, uint8_t id)
 {
 	if(id >= offsetFloat)
 		return;
@@ -1178,7 +1178,7 @@ bool SimpleShaderInst::SetTextureByName(string name, uint8_t id)
 	return true;
 }
 
-void SimpleShaderInst::SetTextureWithSlotName(ID3D11ShaderResourceView *texture, string& slot)
+void SimpleShaderInst::SetTextureWithSlotName(RHI::GfxSRV *texture, string& slot)
 {
 	int16_t id = ((SimpleShader*)(ShaderMgr::GetResourcePtr(shaderID)))->GetTextureIdBySlot(slot);
 	if(id < 0)
@@ -1187,7 +1187,7 @@ void SimpleShaderInst::SetTextureWithSlotName(ID3D11ShaderResourceView *texture,
 		SetTexture(texture, (uint8_t)id);
 }
 
-void SimpleShaderInst::SetTexture(ID3D11ShaderResourceView *texture, uint8_t id)
+void SimpleShaderInst::SetTexture(RHI::GfxSRV *texture, uint8_t id)
 {
 	if(id >= textures.size())
 		return;

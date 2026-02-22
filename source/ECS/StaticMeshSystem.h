@@ -24,7 +24,7 @@ namespace EngineCore
 
 		// update on transform
 		Vector3 center;
-		ID3D11Buffer* constantBuffer;
+		RHI::GfxBuffer* constantBuffer;
 		StmMatrixBuffer matrixBuffer;
 
 		StaticMeshComponent()

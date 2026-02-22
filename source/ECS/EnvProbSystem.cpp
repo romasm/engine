@@ -2,6 +2,7 @@
 #include "EnvProbSystem.h"
 #include "World.h"
 #include "TexMgr.h"
+#include "RHI\DX11\DX11Types.h"
 
 using namespace EngineCore;
 
@@ -433,7 +434,7 @@ bool EnvProbSystem::Bake(Entity e)
 	Matrix worldTransform = transformSys->GetTransform_W(comp.get_entity());
 	worldTransform = localOffset * worldTransform;
 
-	ID3D11ShaderResourceView* cubemapSRV = world->CaptureProb(worldTransform, comp.nearClip, comp.farClip);
+	RHI::GfxSRV* cubemapSRV = world->CaptureProb(worldTransform, comp.nearClip, comp.farClip);
 	world->CaptureProbMipGen();
 
 	const uint32_t facesCount = 6 * mipNum;
@@ -491,7 +492,7 @@ bool EnvProbSystem::Bake(Entity e)
 		for (int j = 0; j < 6; j++)
 		{
 			ID3D11Resource* resource = nullptr;
-			mip_rt->GetShaderResourceView(j)->GetResource(&resource);
+			RHI::DX11::Cast(mip_rt->GetShaderResourceView(j))->view->GetResource(&resource);
 
 			if (FAILED(CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i])))
 			{

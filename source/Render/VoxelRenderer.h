@@ -81,8 +81,8 @@ namespace EngineCore
 		struct VCTRenderMesh
 		{
 			uint32_t index_count; 
-			ID3D11Buffer* vertex_buffer; 
-			ID3D11Buffer* index_buffer; 
+			RHI::GfxBuffer* vertex_buffer;
+			RHI::GfxBuffer* index_buffer;
 			uint32_t vertex_size;
 			Material* material;
 
@@ -132,11 +132,11 @@ namespace EngineCore
 		inline void RegisterDirCaster(DirVoxelBuffer& data)
 		{dirVoxel_array.push_back(data);}
 		
-		inline ID3D11ShaderResourceView* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
-		inline ID3D11ShaderResourceView* GetVoxelLightSRV() const {return voxelLight1SRV;}
+		inline RHI::GfxSRV* GetVoxelEmittanceSRV() const {return voxelEmittanceSRV;}
+		inline RHI::GfxSRV* GetVoxelLightSRV() const {return voxelLight1SRV;}
 
-		inline ID3D11Buffer* GetVolumeBuffer() const {return volumeDataBuffer;}
-		inline ID3D11Buffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
+		inline RHI::GfxBuffer* GetVolumeBuffer() const {return volumeDataBuffer;}
+		inline RHI::GfxBuffer* GetVolumeTraceBuffer() const {return volumeTraceDataBuffer;}
 
 		void RegMeshForVCT(GPUMeshBuffer& index, GPUMeshBuffer& vertex, MeshVertexFormat& format, Material* material, StmMatrixBuffer& matrixData, BoundingOrientedBox& bbox);
 
@@ -178,39 +178,39 @@ namespace EngineCore
 		Compute* voxelDownsample[4];
 		Compute* voxelDownsampleMove[4];
 
-		ID3D11Texture2D* voxelizationDumb;
-		ID3D11RenderTargetView* voxelizationDumbRTV;
-				
-		ID3D11Texture3D* voxelEmittance;
-		ID3D11UnorderedAccessView* voxelEmittanceUAV;
-		ID3D11ShaderResourceView* voxelEmittanceSRV;
+		RHI::GfxTexture* voxelizationDumb;
+		RHI::GfxRTV* voxelizationDumbRTV;
 
-		ID3D11Texture3D* voxelLight0;
-		ID3D11UnorderedAccessView* voxelLight0UAV;
-		ID3D11ShaderResourceView* voxelLight0SRV;
+		RHI::GfxTexture* voxelEmittance;
+		RHI::GfxUAV* voxelEmittanceUAV;
+		RHI::GfxSRV* voxelEmittanceSRV;
 
-		ID3D11Texture3D* voxelLight1;
-		ID3D11UnorderedAccessView* voxelLight1UAV;
-		ID3D11ShaderResourceView* voxelLight1SRV;
+		RHI::GfxTexture* voxelLight0;
+		RHI::GfxUAV* voxelLight0UAV;
+		RHI::GfxSRV* voxelLight0SRV;
 
-		ID3D11Texture3D* voxelDownsampleTemp;
-		ID3D11UnorderedAccessView* voxelDownsampleTempUAV;
-		ID3D11ShaderResourceView* voxelDownsampleTempSRV;
+		RHI::GfxTexture* voxelLight1;
+		RHI::GfxUAV* voxelLight1UAV;
+		RHI::GfxSRV* voxelLight1SRV;
+
+		RHI::GfxTexture* voxelDownsampleTemp;
+		RHI::GfxUAV* voxelDownsampleTempUAV;
+		RHI::GfxSRV* voxelDownsampleTempSRV;
 		
-		ID3D11Buffer* volumeMatBuffer;
-		ID3D11Buffer* volumeDataBuffer;
-		ID3D11Buffer* volumeDataPrevBuffer;
-		ID3D11Buffer* volumeTraceDataBuffer;
-		ID3D11Buffer* levelBuffer;
+		RHI::GfxBuffer* volumeMatBuffer;
+		RHI::GfxBuffer* volumeDataBuffer;
+		RHI::GfxBuffer* volumeDataPrevBuffer;
+		RHI::GfxBuffer* volumeTraceDataBuffer;
+		RHI::GfxBuffer* levelBuffer;
 
-		ID3D11Buffer* volumeLightInfo;
-		ID3D11Buffer* volumeDownsampleBuffer;
+		RHI::GfxBuffer* volumeLightInfo;
+		RHI::GfxBuffer* volumeDownsampleBuffer;
 
-		D3D11_VIEWPORT viewport;
+		RHI::GfxViewport viewport;
 
 		VolumeData volumeData[VCT_MAX_COUNT];
 
-		ID3D11Buffer* instanceMatrixBuffer;
+		RHI::GfxBuffer* instanceMatrixBuffer;
 		
 		struct VolumeConfig
 		{

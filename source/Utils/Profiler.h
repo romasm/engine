@@ -80,10 +80,10 @@ namespace EngineCore
 		void GPU_EndFrame();
 		inline static void GPU_Timestamp( uint32_t id )
 		{
-			if(!instance || !instance->started)
+			if(!instance || !instance->started || !instance->timestampHeap)
 				return;
 
-			CONTEXT->End(instance->timestamps[id][instance->querySwitch]);
+			GFX_CMD->EndQuery(instance->timestampHeap, id * 2 + instance->querySwitch);
 		}
 
 		void GPU_GrabData();
@@ -158,8 +158,8 @@ namespace EngineCore
 			/*threads*/>
 		/*params*/ perf_data; // 8 bytes * threads(9) per frame(3600) per param
 
-		SArray<ID3D11Query*, 2> disjoints;
-		RArray<SArray<ID3D11Query*, 2>/*params*/> timestamps;
+		RHI::GfxQueryHeap* disjointHeap;
+		RHI::GfxQueryHeap* timestampHeap;
 
 		RArray<
 			SArray<frame_perf, PERF_FRAMES_DUMP>

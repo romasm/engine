@@ -158,12 +158,12 @@ namespace EngineCore
 		uint32_t volumeResolutionY;
 		uint32_t volumeResolutionZ;
 
-		ID3D11Texture3D* volumeTexture;
-		ID3D11UnorderedAccessView* volumeTextureUAV;
-		ID3D11ShaderResourceView* volumeTextureSRV;
+		RHI::GfxTexture* volumeTexture;
+		RHI::GfxUAV* volumeTextureUAV;
+		RHI::GfxSRV* volumeTextureSRV;
 
-		ID3D11Texture3D* volumeDifference;
-		ID3D11UnorderedAccessView* volumeDifferenceUAV;
+		RHI::GfxTexture* volumeDifference;
+		RHI::GfxUAV* volumeDifferenceUAV;
 
 		Compute* computeImportTexture;
 		Compute* computeDrawBrush;
@@ -171,8 +171,8 @@ namespace EngineCore
 		Compute* computeHistoryStepBack;
 		Compute* computeHistoryStepForward;
 
-		ID3D11Buffer* brushInfoBuffer;
-		ID3D11Buffer* volumeInfoBuffer;
+		RHI::GfxBuffer* brushInfoBuffer;
+		RHI::GfxBuffer* volumeInfoBuffer;
 		
 		RDeque<VolumeDiff> history;
 		int64_t historySize;

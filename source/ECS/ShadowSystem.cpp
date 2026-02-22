@@ -26,7 +26,7 @@ void ShadowSystem::initShadowmap(ShadowComponent* comp)
 {
 	comp->dirty = true;
 	comp->render_mgr = new ShadowRenderMgr();
-	comp->vp_buf = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
+	comp->vp_buf = Buffer::CreateConstantBuffer(sizeof(XMMATRIX), true);
 }
 
 void ShadowSystem::Update()
@@ -45,7 +45,7 @@ void ShadowSystem::Update()
 		i.view = XMMatrixTranspose(view);
 		i.view_proj = i.proj * i.view;
 
-		Render::UpdateDynamicResource(i.vp_buf, (void*)&i.view_proj, sizeof(XMMATRIX));
+		GFX_CMD->UpdateBuffer(i.vp_buf, (void*)&i.view_proj, sizeof(XMMATRIX));
 
 		i.localFrustum.Transform(i.worldFrustum, TransformationFromViewPos(view, pos));
 

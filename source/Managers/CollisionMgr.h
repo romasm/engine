@@ -51,7 +51,7 @@ namespace EngineCore
 			instance->CallCallback(newgId, callback, status);
 		}
 		
-		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
+		uint32_t AddResourceToList(const string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate)
 		{
 			if(free_ids.size() == 0)
 			{
@@ -139,7 +139,7 @@ namespace EngineCore
 			BaseMgr<btCollisionShape, RESOURCE_MAX_COUNT>::DeleteResource(id);
 		}
 
-		inline static string SetScaleToResourceId(string& name, Vector3& scale)
+		inline static string SetScaleToResourceId(const string& name, const Vector3& scale)
 		{
 			auto scaleStrN = name.rfind('?');
 			if( scaleStrN == string::npos )

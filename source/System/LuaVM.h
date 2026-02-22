@@ -2,6 +2,8 @@
 #include "Log.h"
 #include "macros.h"
 
+namespace EngineCore::RHI { struct GfxSRV; }
+
 namespace EngineCore
 {
 #define LUA_SCRIPT_CLASS PATH_SCRIPTS "class"
@@ -16,11 +18,11 @@ namespace EngineCore
 		LuaVM();
 		~LuaVM();
 
-		bool LoadScript(string& filename);
+		bool LoadScript(const string& filename);
 		void InitFunctions();
 
 		static string FunctionSerialize(LuaRef func);
-		static LuaRef FunctionDeserialize(string& func);
+		static LuaRef FunctionDeserialize(const string& func);
 
 		lua_State* GetState(){return L;}
 
@@ -66,9 +68,9 @@ namespace EngineCore
 
 	struct luaSRV
 	{
-		ID3D11ShaderResourceView* srv;
+		RHI::GfxSRV* srv;
 		luaSRV(){srv = nullptr;}
-		luaSRV(ID3D11ShaderResourceView* view){srv = view;}
+		luaSRV(RHI::GfxSRV* view){srv = view;}
 		bool is_null(){return srv == nullptr;}
 	};
 }

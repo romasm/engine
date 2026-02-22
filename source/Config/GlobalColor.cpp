@@ -56,7 +56,7 @@ namespace EngineCore
 		return true;
 	}
 
-	void GlobalColor::AddColor(string& id, Vector4 l_color)
+	void GlobalColor::AddColor(const string& id, Vector4 l_color)
 	{
 		if(init)
 		{

@@ -21,7 +21,7 @@ static Vector4 white_color = Vector4(1,1,1,1);
 
 		inline static GlobalColor* Get(){return instance;}
 
-		void AddColor(string& id, Vector4 color);
+		void AddColor(const string& id, Vector4 color);
 		Vector4* GetColorPtr(string& id);
 		
 		static Vector4 GetColor(string id) {return *(instance->GetColorPtr(id));}

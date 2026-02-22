@@ -24,7 +24,7 @@ Text::Text()
 	dirty = true;
 }
 
-bool Text::Init(string &font, wstring &text, string& shaderName, bool statictext, uint16_t length, bool needSymPos)
+bool Text::Init(const string &font, const wstring &text, const string& shaderName, bool statictext, uint16_t length, bool needSymPos)
 {
 	if(shaderName.size() > 0)
 		shaderInst = new SimpleShaderInst(shaderName);
@@ -62,7 +62,7 @@ bool Text::Init(string &font, wstring &text, string& shaderName, bool statictext
 	return true;
 }
 
-bool Text::initBuffers(wstring &text)
+bool Text::initBuffers(const wstring &text)
 {
 	numVertex = maxLength * 4;
 	numIndex = maxLength * 6;
@@ -93,7 +93,7 @@ bool Text::initBuffers(wstring &text)
 		indices[i*6+5] = i*4+1;
 	}
 
-	vertexBuffer = Buffer::CreateVertexBuffer(DEVICE, sizeof(UnlitVertex) * numVertex, !is_static, vertex);
+	vertexBuffer = Buffer::CreateVertexBuffer(sizeof(UnlitVertex) * numVertex, !is_static, vertex);
 	if (!vertexBuffer)
 	{
 		_DELETE_ARRAY(vertex);
@@ -101,7 +101,7 @@ bool Text::initBuffers(wstring &text)
 		return false;
 	}
 
-	indexBuffer = Buffer::CreateIndexBuffer(DEVICE, sizeof(unsigned long) * numIndex, false, indices);
+	indexBuffer = Buffer::CreateIndexBuffer(sizeof(unsigned long) * numIndex, false, indices);
 	if (!indexBuffer)
 	{
 		_DELETE_ARRAY(vertex);
@@ -109,7 +109,7 @@ bool Text::initBuffers(wstring &text)
 		return false;
 	}
 
-	constantBuffer = Buffer::CreateConstantBuffer(DEVICE, sizeof(SimpleMatrixBuffer), true);
+	constantBuffer = Buffer::CreateConstantBuffer(sizeof(SimpleMatrixBuffer), true);
 	if (!constantBuffer)
 	{
 		_DELETE_ARRAY(vertex);
@@ -123,18 +123,17 @@ bool Text::initBuffers(wstring &text)
 	return true;
 }
 
-bool Text::updateBuffer(wstring &text)
+bool Text::updateBuffer(const wstring &text)
 {
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	HRESULT result = CONTEXT->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if(FAILED(result))
+	UnlitVertex *vertices = new UnlitVertex[numVertex];
+	if(!vertices)
 		return false;
 
-	UnlitVertex *verticesPtr = (UnlitVertex*)mappedResource.pData;
+	textFont->BuildVertexArray(vertices, numVertex, text, symbolsPos, &symbolsCount);
 
-	textFont->BuildVertexArray(verticesPtr, numVertex, text, symbolsPos, &symbolsCount);
+	GFX_CMD->UpdateBuffer(vertexBuffer, (void*)vertices, sizeof(UnlitVertex) * numVertex);
 
-	CONTEXT->Unmap(vertexBuffer, 0);
+	_DELETE_ARRAY(vertices);
 	return true;
 }
 
@@ -147,19 +146,17 @@ void Text::Draw()
 		dirty = false;
 	}
 
-	const unsigned int stride = sizeof(UnlitVertex); 
-	const unsigned int offset = 0;
-	CONTEXT->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	CONTEXT->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	
-	Render::SetTopology(IA_TOPOLOGY::TRISLIST);
+	GFX_CMD->SetVertexBuffer(0, vertexBuffer, sizeof(UnlitVertex));
+	GFX_CMD->SetIndexBuffer(indexBuffer, true);
+
+	GFX_CMD->SetTopology(RHI::Topology::TriangleList);
 
 	textFont->SetTexture();
 
 	shaderInst->SetMatrixBuffer(constantBuffer);
 	shaderInst->Set();
 
-	CONTEXT->DrawIndexed(numDrawIndex, 0, 0);
+	GFX_CMD->DrawIndexed(numDrawIndex);
 }
 
 bool Text::updateMatrix()
@@ -176,7 +173,7 @@ bool Text::updateMatrix()
 	SimpleMatrixBuffer cb;
 	cb.WVP = XMMatrixTranspose(objmatrix);
 
-	Render::UpdateDynamicResource(constantBuffer, (void*)&cb, sizeof(SimpleMatrixBuffer));
+	GFX_CMD->UpdateBuffer(constantBuffer, (void*)&cb, sizeof(SimpleMatrixBuffer));
 
 	return true;
 }
@@ -202,14 +199,14 @@ uint16_t Text::GetClosestSym(uint16_t x)
 void Text::Close()
 {
 	FontMgr::Get()->DeleteFont(textFont->GetName());
-	_RELEASE(vertexBuffer);
-	_RELEASE(indexBuffer);
-	_RELEASE(constantBuffer);
+	_DELETE(vertexBuffer);
+	_DELETE(indexBuffer);
+	_DELETE(constantBuffer);
 	_DELETE_ARRAY(symbolsPos);
 	_DELETE(shaderInst);
 }
 
-bool Text::SetText(wstring &text)
+bool Text::SetText(const wstring &text)
 {
 	if (is_static)
 		return false;

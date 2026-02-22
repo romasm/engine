@@ -7,12 +7,12 @@ using namespace EngineCore;
 DebugDrawer::DebugDrawer()
 {
 	dbgLines.create(DEBUG_ARRAY_SIZE);
-	lineBuffer = Buffer::CreateVertexBuffer(DEVICE, DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
+	lineBuffer = Buffer::CreateVertexBuffer(DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
 	lineMat = MaterialMgr::Get()->GetMaterial(string(DEBUG_MATERIAL));
 	lineCount = 0;
 
 	dbgLinesDepthCull.create(DEBUG_ARRAY_SIZE);
-	lineBufferDepthCull = Buffer::CreateVertexBuffer(DEVICE, DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
+	lineBufferDepthCull = Buffer::CreateVertexBuffer(DEBUG_ARRAY_SIZE * sizeof(DBGLine), true, nullptr);
 	lineMatDepthCull = MaterialMgr::Get()->GetMaterial(string(DEBUG_MATERIAL_DEPTHCULL));
 	lineCountDepthCull = 0;
 
@@ -30,14 +30,14 @@ DebugDrawer::DebugDrawer()
 
 DebugDrawer::~DebugDrawer()
 {
-	_RELEASE(lineBuffer);
+	_DELETE(lineBuffer);
 	if (lineMat)
 	{
 		MaterialMgr::Get()->DeleteMaterial(lineMat->GetName());
 		lineMat = nullptr;
 	}
 
-	_RELEASE(lineBufferDepthCull);
+	_DELETE(lineBufferDepthCull);
 	if (lineMatDepthCull)
 	{
 		MaterialMgr::Get()->DeleteMaterial(lineMatDepthCull->GetName());
@@ -46,7 +46,7 @@ DebugDrawer::~DebugDrawer()
 
 	for (auto& i : vertexGeometry)
 	{
-		_RELEASE(i.verts);
+		_DELETE(i.verts);
 		if (i.mat)
 		{
 			MaterialMgr::Get()->DeleteMaterial(i.mat->GetName());
@@ -90,7 +90,7 @@ void DebugDrawer::PushBoundingBox(BoundingBox& box, Vector3& color, bool depthCu
 	PushLine(bboxCorners[6], bboxCorners[7], color, depthCull);
 }
 
-int32_t DebugDrawer::CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque)
+int32_t DebugDrawer::CreateGeometryHandle(const string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque)
 {
 	if (vertexGeometryFreeId.empty())
 		return -1;
@@ -105,7 +105,7 @@ int32_t DebugDrawer::CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uin
 	handle->topo = topo;
 	handle->vertCount = 0;
 	handle->vertSize = vertSize;
-	handle->verts = Buffer::CreateVertexBuffer(DEVICE, maxPrimCount * vertSize, true, nullptr);
+	handle->verts = Buffer::CreateVertexBuffer(maxPrimCount * vertSize, true, nullptr);
 	handle->lookup = handleId;
 	handle->opaque = isOpaque;
 
@@ -121,7 +121,7 @@ void DebugDrawer::UpdateGeometry(int32_t handleId, void* verts, uint32_t count)
 	DebugGeomHandle& handle = vertexGeometry[lookupId];
 	handle.vertCount = count;
 
-	Render::UpdateDynamicResource(handle.verts, verts, count * handle.vertSize);
+	GFX_CMD->UpdateBuffer(handle.verts, verts, count * handle.vertSize);
 }
 
 void DebugDrawer::DeleteGeometryHandle(int32_t handleId)
@@ -135,7 +135,7 @@ void DebugDrawer::DeleteGeometryHandle(int32_t handleId)
 
 	DebugGeomHandle& handle = vertexGeometry[lookupId];
 
-	_RELEASE(handle.verts);
+	_DELETE(handle.verts);
 	if (handle.mat)
 	{
 		MaterialMgr::Get()->DeleteMaterial(handle.mat->GetName());
@@ -156,14 +156,14 @@ void DebugDrawer::Prepare()
 {
 	if (!dbgLines.empty())
 	{
-		Render::UpdateDynamicResource(lineBuffer, dbgLines.data(), dbgLines.size() * sizeof(DBGLine));
+		GFX_CMD->UpdateBuffer(lineBuffer, dbgLines.data(), dbgLines.size() * sizeof(DBGLine));
 		lineCount = (uint32_t)dbgLines.size();
 		dbgLines.resize(0);
 	}
 
 	if (!dbgLinesDepthCull.empty())
 	{
-		Render::UpdateDynamicResource(lineBufferDepthCull, dbgLinesDepthCull.data(), dbgLinesDepthCull.size() * sizeof(DBGLine));
+		GFX_CMD->UpdateBuffer(lineBufferDepthCull, dbgLinesDepthCull.data(), dbgLinesDepthCull.size() * sizeof(DBGLine));
 		lineCountDepthCull = (uint32_t)dbgLinesDepthCull.size();
 		dbgLinesDepthCull.resize(0);
 	}
@@ -181,24 +181,23 @@ void DebugDrawer::Drop()
 void DebugDrawer::Render()
 {
 	const uint32_t stride = sizeof(DBGLine) / 2;
-	const uint32_t offset = 0;
 
 	if (lineCount > 0)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &lineBuffer, &stride, &offset);
+		GFX_CMD->SetVertexBuffer(0, lineBuffer, stride);
 
 		lineMat->Set();
 		Render::SetTopology(IA_TOPOLOGY::LINELIST);
-		Render::Context()->Draw(lineCount * 2, 0);
+		GFX_CMD->Draw(lineCount * 2, 0);
 	}
 
 	if (lineCountDepthCull > 0)
 	{
-		Render::Context()->IASetVertexBuffers(0, 1, &lineBufferDepthCull, &stride, &offset);
+		GFX_CMD->SetVertexBuffer(0, lineBufferDepthCull, stride);
 
 		lineMatDepthCull->Set();
 		Render::SetTopology(IA_TOPOLOGY::LINELIST);
-		Render::Context()->Draw(lineCountDepthCull * 2, 0);
+		GFX_CMD->Draw(lineCountDepthCull * 2, 0);
 	}
 	
 	for (auto& i : vertexGeometry)
@@ -206,25 +205,23 @@ void DebugDrawer::Render()
 		if (i.opaque)
 			continue;
 
-		Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
+		GFX_CMD->SetVertexBuffer(0, i.verts, i.vertSize);
 		i.mat->Set();
 		Render::SetTopology(i.topo);
-		Render::Context()->Draw(i.vertCount, 0);
+		GFX_CMD->Draw(i.vertCount, 0);
 	}
 }
 
 void DebugDrawer::RenderOpaque()
 {
-	const uint32_t offset = 0;
-
 	for (auto& i : vertexGeometry)
 	{
 		if (!i.opaque)
 			continue;
 
-		Render::Context()->IASetVertexBuffers(0, 1, &i.verts, &i.vertSize, &offset);
+		GFX_CMD->SetVertexBuffer(0, i.verts, i.vertSize);
 		i.mat->Set();
 		Render::SetTopology(i.topo);
-		Render::Context()->Draw(i.vertCount, 0);
+		GFX_CMD->Draw(i.vertCount, 0);
 	}
 }

@@ -111,7 +111,8 @@ namespace EngineCore
 		template<class BoundingShape>
 		static float CalcScreenSize(const BoundingFrustumEx& screen, const BoundingShape& shape)
 		{
-			if(shape.Contains(XMLoadFloat3(&screen.GetViewPoint())))
+			XMFLOAT3 viewPoint = screen.GetViewPoint();
+			if(shape.Contains(XMLoadFloat3(&viewPoint)))
 				return 1.0f;
 			
 			Vector3 corners[8];
@@ -120,7 +121,7 @@ namespace EngineCore
 			Vector3 corners_vs[8];
 			XMVector3TransformCoordStream(corners_vs, sizeof(Vector3), corners, sizeof(Vector3), 8, screen.GetWV());
 			
-			// TODO: некоректное проецирование точек за камерой
+			// TODO: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			for(uint8_t i = 0; i < 8; i++)
 			{
 				auto& p1 = corners_vs[i];

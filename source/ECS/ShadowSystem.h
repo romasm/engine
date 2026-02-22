@@ -6,6 +6,8 @@
 #include "RenderMgrs.h"
 #include "EarlyVisibilitySystem.h"
 
+namespace EngineCore::RHI { struct GfxBuffer; }
+
 namespace EngineCore
 {
 
@@ -32,7 +34,7 @@ namespace EngineCore
 		XMMATRIX proj;
 		XMMATRIX view;
 
-		ID3D11Buffer* vp_buf;
+		RHI::GfxBuffer* vp_buf;
 
 		ALIGNED_ALLOCATION
 	};
@@ -49,7 +51,7 @@ namespace EngineCore
 			for(auto& it: *components.data())
 			{
 				_DELETE(it.render_mgr);
-				_RELEASE(it.vp_buf);
+				_DELETE(it.vp_buf);
 			}
 		}
 
@@ -74,7 +76,7 @@ namespace EngineCore
 			if(!comp) return;
 			do
 			{
-				_RELEASE(comp->vp_buf);
+				_DELETE(comp->vp_buf);
 				_DELETE(comp->render_mgr);
 			}
 			while(comp = GetNextComponent(comp));
@@ -85,9 +87,9 @@ namespace EngineCore
 		bool HasComponent(Entity e) const {return components.has(e.index());}
 		size_t ComponentsCount() {return components.dataSize();}
 
-		ShadowComponent* ShadowSystem::GetComponent(Entity e, uint32_t num = 0)
+		ShadowComponent* GetComponent(Entity e, uint32_t num = 0)
 		{return components.getDataById(e.index(), num);}
-		ShadowComponent* ShadowSystem::GetNextComponent(ShadowComponent* comp)
+		ShadowComponent* GetNextComponent(ShadowComponent* comp)
 		{
 			if(comp->next == components.capacity()) return nullptr;
 			return &components.getDataByArrayIdx(comp->next);

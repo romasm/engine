@@ -11,20 +11,20 @@ namespace EngineCore
 	public:
 		Text();
 
-		bool Init(string &font, wstring &text, string& shaderName, bool statictext = true, uint16_t length = 0, bool needSymPos = false);
+		bool Init(const string &font, const wstring &text, const string& shaderName, bool statictext = true, uint16_t length = 0, bool needSymPos = false);
 		void Draw();
 		void Close();
 
 		inline void ForceUpdate() {shaderInst->ForceUpdate();}
 
-		bool SetText(wstring &text);
+		bool SetText(const wstring &text);
 
-		inline void SetColor(Vector4& color)
+		inline void SetColor(const Vector4& color)
 		{shaderInst->SetVector(color, 0);}
 		inline void SetPos(int16_t x, int16_t y)
 		{textPos = Vector2(float(x),float(y)); dirty = true;}
-		
-		inline void SetClip(RECT& r)
+
+		inline void SetClip(const RECT& r)
 		{shaderInst->SetVector(Vector4( float(r.left), float(r.top), float(r.right), float(r.bottom) ), 1);}
 
 		inline uint16_t GetSymbolsCount() const 
@@ -46,9 +46,9 @@ namespace EngineCore
 		inline void SetFloat(float f, uint8_t i){shaderInst->SetFloat(f, i);}
 		inline void SetVector(Vector4 v, uint8_t i){shaderInst->SetVector(v, i);}
 
-		inline void SetTexture(ID3D11ShaderResourceView *tex, uint8_t id){shaderInst->SetTexture(tex, id);}
-		inline void SetTextureByName(string& name, uint8_t id){shaderInst->SetTextureByName(name, id);}
-		inline void SetTextureByNameS(char* name, uint8_t id){shaderInst->SetTextureByName(string(name), id);}
+		inline void SetTexture(RHI::GfxSRV *tex, uint8_t id){shaderInst->SetTexture(tex, id);}
+		inline void SetTextureByName(const string& name, uint8_t id){shaderInst->SetTextureByName(name, id);}
+		inline void SetTextureByNameS(const char* name, uint8_t id){shaderInst->SetTextureByName(string(name), id);}
 		inline void ClearTex(){shaderInst->ClearTextures();}
 
 		static void RegLuaClass()
@@ -64,16 +64,16 @@ namespace EngineCore
 		}
 
 	private:
-		bool initBuffers(wstring &text);
-		bool updateBuffer(wstring &text);
+		bool initBuffers(const wstring &text);
+		bool updateBuffer(const wstring &text);
 		bool updateMatrix();
 
 		SimpleShaderInst* shaderInst;
 
 		Font *textFont;
-		ID3D11Buffer *vertexBuffer; 
-		ID3D11Buffer *indexBuffer;	
-		ID3D11Buffer *constantBuffer;
+		RHI::GfxBuffer *vertexBuffer; 
+		RHI::GfxBuffer *indexBuffer;	
+		RHI::GfxBuffer *constantBuffer;
 		uint16_t numIndex;
 		uint16_t numDrawIndex;
 		uint16_t numVertex;

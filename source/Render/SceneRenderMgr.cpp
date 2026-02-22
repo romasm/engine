@@ -79,12 +79,12 @@ void SceneRenderMgr::cleanRenderArrayLights()
 		voxelRenderer->ClearPerFrame();
 }
 
-bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
+bool SceneRenderMgr::RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer,
 							  uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, IA_TOPOLOGY topo)
 {return RegMesh(indexCount, indexBuffer, vertexBuffer, vertexSize, isSkinned, gpuMatrixBuffer, material, Vector3(currentCamera->far_clip,0,0), topo);}
 
-bool SceneRenderMgr::RegMesh(uint32_t indexCount, ID3D11Buffer* indexBuffer, ID3D11Buffer* vertexBuffer, 
-			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, Vector3& center, IA_TOPOLOGY topo)
+bool SceneRenderMgr::RegMesh(uint32_t indexCount, RHI::GfxBuffer* indexBuffer, RHI::GfxBuffer* vertexBuffer,
+			uint32_t vertexSize, bool isSkinned, void* gpuMatrixBuffer, Material* material, const Vector3& center, IA_TOPOLOGY topo)
 {
 	if( !material || gpuMatrixBuffer == nullptr || indexCount == 0 )
 		return false;
@@ -345,20 +345,18 @@ void SceneRenderMgr::DrawHud()
 {
 	//sort(hud_array.begin(), hud_array.end(), BaseRenderMgr::InvCompareMeshes );
 
-	const unsigned int offset = 0;
-	
 	for(auto cur: hud_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
-		
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
@@ -366,80 +364,74 @@ void SceneRenderMgr::DrawOvHud()
 {
 	sort(ovhud_array.begin(), ovhud_array.end(), BaseRenderMgr::InvCompareMeshes );
 
-	const unsigned int offset = 0;
-	
 	for(auto cur: ovhud_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
 void SceneRenderMgr::PrepassOpaque()
 {
-	const unsigned int offset = 0;
-
 	sort(opaque_array.begin(), opaque_array.end(), BaseRenderMgr::CompareMeshes);
-	
+
 	for (auto cur : opaque_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_PREPASS + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 
 	// alphatest
 	sort(alphatest_array.begin(), alphatest_array.end(), BaseRenderMgr::CompareMeshes);
-	
+
 	for (auto cur : alphatest_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_PREPASS + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
 void SceneRenderMgr::DrawOpaque()
 {
-	const unsigned int offset = 0;
-	
 	for(auto cur: opaque_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
-		
+
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 
 	// alphatest
@@ -447,15 +439,15 @@ void SceneRenderMgr::DrawOpaque()
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
-		
+
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
@@ -463,29 +455,25 @@ void SceneRenderMgr::DrawForward()
 {
 	sort(forward_array.begin(), forward_array.end(), BaseRenderMgr::CompareMeshes);
 
-	const unsigned int offset = 0;
-
 	for (auto cur : forward_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
 void SceneRenderMgr::PrepassTransparent()
 {
 	sort(transparent_array.begin(), transparent_array.end(), BaseRenderMgr::InvCompareMeshes );
-
-	const unsigned int offset = 0;
 
 	for(auto cur: transparent_array)
 	{
@@ -494,34 +482,32 @@ void SceneRenderMgr::PrepassTransparent()
 		if(!cur.material->HasTechnique(tech))
 			continue;
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }
 
 void SceneRenderMgr::DrawTransparent()
 {
-	const unsigned int offset = 0;
-
 	for(auto cur: transparent_array)
 	{
 		const TECHNIQUES tech = TECHNIQUES(TECHNIQUES::TECHNIQUE_DEFAULT + cur.isSkinned);
 
-		Render::Context()->IASetVertexBuffers(0, 1, &(cur.vertexBuffer), &(cur.vertexSize), &offset);
-		Render::Context()->IASetIndexBuffer(cur.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		GFX_CMD->SetVertexBuffer(0, cur.vertexBuffer, cur.vertexSize);
+		GFX_CMD->SetIndexBuffer(cur.indexBuffer, true);
 
 		cur.material->SetMatrixBuffer(cur.gpuMatrixBuffer, cur.isSkinned > 0);
 
 		cur.material->Set(tech);
 		Render::SetTopology(cur.topo);
 
-		Render::Context()->DrawIndexed(cur.indexCount, 0, 0);
+		GFX_CMD->DrawIndexed(cur.indexCount);
 	}
 }

@@ -141,7 +141,7 @@ void GlobalLightSystem::buildCascades(GlobalLightComponent& comp, uint16_t camId
 		if(!shadowCascade.render_mgr[i])
 			shadowCascade.render_mgr[i] = new ShadowRenderMgr();
 		if(!shadowCascade.vp_buf[i])
-			shadowCascade.vp_buf[i] = Buffer::CreateConstantBuffer(Render::Device(), sizeof(XMMATRIX), true);
+			shadowCascade.vp_buf[i] = Buffer::CreateConstantBuffer(sizeof(XMMATRIX), true);
 	}
 }
 
@@ -178,7 +178,7 @@ void GlobalLightSystem::destroyCascades(CascadeShadow& cascade)
 	for(uint8_t i=0; i<LIGHT_DIR_NUM_CASCADES; i++)
 	{
 		_DELETE(cascade.render_mgr[i]);
-		_RELEASE(cascade.vp_buf[i]);
+		_DELETE(cascade.vp_buf[i]);
 	}
 }
 
@@ -211,7 +211,7 @@ void GlobalLightSystem::matrixGenerate(GlobalLightComponent& comp, CascadeShadow
 		cascade.view_proj[i] = XMMatrixTranspose(cascade.view[i] * projCascade.proj[i]);
 		cascade.pos[i] = lightPos;
 		
-		Render::UpdateDynamicResource(cascade.vp_buf[i], (void*)&cascade.view_proj[i], sizeof(XMMATRIX));
+		GFX_CMD->UpdateBuffer(cascade.vp_buf[i], (void*)&cascade.view_proj[i], sizeof(XMMATRIX));
 
 		// Frustum
 		BoundingOrientedBox& viewbox = cascade.worldFrustum[i];

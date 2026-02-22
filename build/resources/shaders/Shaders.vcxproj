@@ -284,6 +284,9 @@
     <FxCompile Include="system\deffered_opaque_simple.hlsl">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="system\deffered_opaque_static_gi.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="system\depth_copy_hiz.hlsl">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>

@@ -24,10 +24,10 @@ namespace EngineCore
 		};	
 
 	public:
-		Font(string& filename);
+		Font(const string& filename);
 		~Font()	{TEXTURE_DROP(texture);}
 
-		void BuildVertexArray(UnlitVertex *vert, uint16_t numvert, wstring& sentence, int16_t* symbols_pos = nullptr, uint16_t* letter_count = nullptr);
+		void BuildVertexArray(UnlitVertex *vert, uint16_t numvert, const wstring& sentence, int16_t* symbols_pos = nullptr, uint16_t* letter_count = nullptr);
 		
 		inline void SetTexture(uint16_t i = 0){Render::PSSetShaderTexture(i, texture);}
 		inline uint16_t GetLineH() const {return lineH;}

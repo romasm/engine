@@ -375,7 +375,7 @@ bool ResourceProcessor::loadResource(const ResourceSlot& loadingSlot)
 }
 
 // TODO: different res pathes
-bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
+bool ResourceProcessor::SaveImportInfo(const string& resFile, ImportInfo& info)
 {
 	bool status = false;
 #ifdef _EDITOR
@@ -429,7 +429,7 @@ bool ResourceProcessor::SaveImportInfo(string& resFile, ImportInfo& info)
 }
 
 // TODO: different res pathes
-void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date)
+void ResourceProcessor::LoadImportInfo(const string& resName, ImportInfo& info, uint32_t& date)
 {
 #ifdef _EDITOR
 	string impFileName = resName + EXT_IMPORT;
@@ -489,7 +489,7 @@ void ResourceProcessor::LoadImportInfo(string& resName, ImportInfo& info, uint32
 #endif
 }
 
-bool ResourceProcessor::CheckImportNeeded(ImportInfo& info, uint32_t date, string& resFile)
+bool ResourceProcessor::CheckImportNeeded(ImportInfo& info, uint32_t date, const string& resFile)
 {
 #ifdef _EDITOR
 	if(!FileIO::IsExist(resFile))
@@ -731,8 +731,8 @@ bool ImportResourceCallbackLua(LuaRef params, LuaRef func, LuaRef data)
 	{
 		if(luaRef->isFunction())
 			LUA_CALL((*luaRef)(info.resourceName, status, (*luaRefData)),);
-		_DELETE((LuaRef*)luaRef);
-		_DELETE((LuaRef*)luaRefData);
+		delete luaRef;
+		delete luaRefData;
 	}, false);
 }
 

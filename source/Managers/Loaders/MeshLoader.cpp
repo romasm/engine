@@ -12,7 +12,7 @@ void MeshLoader::Configurate()
 	meshImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
 };
 
-MeshData* MeshLoader::LoadMesh(string& resName)
+MeshData* MeshLoader::LoadMesh(const string& resName)
 {
 	MeshData* newMesh = nullptr;
 	if(resName.find(EXT_MESH) == string::npos)
@@ -72,7 +72,7 @@ MeshData* MeshLoader::LoadMesh(string& resName)
 	return newMesh;
 }
 
-SkeletonData* MeshLoader::LoadSkeleton(string& resName)
+SkeletonData* MeshLoader::LoadSkeleton(const string& resName)
 {
 	SkeletonData* newSkeleton = nullptr;
 	if(resName.find(EXT_SKELETON) == string::npos)
@@ -131,7 +131,7 @@ SkeletonData* MeshLoader::LoadSkeleton(string& resName)
 	return newSkeleton;
 }
 
-AnimationData* MeshLoader::LoadAnimation(string& resName)
+AnimationData* MeshLoader::LoadAnimation(const string& resName)
 {
 	AnimationData* newAnimation = nullptr;
 	if(resName.find(EXT_ANIMATION) == string::npos)
@@ -190,7 +190,7 @@ AnimationData* MeshLoader::LoadAnimation(string& resName)
 	return newAnimation;
 }
 
-MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, uint32_t size)
+MeshData* MeshLoader::loadEngineMeshFromMemory(const string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t* t_data = data;
 
@@ -255,8 +255,8 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
-		mesh->vertexBuffers[i].buffer = Buffer::CreateVertexBuffer(Render::Device(), vetrexSize * mesh->vertexBuffers[i].count, false, vertices[i]);
-		mesh->indexBuffers[i].buffer = Buffer::CreateIndexBuffer(Render::Device(), sizeof(uint32_t) * mesh->indexBuffers[i].count, false, indices[i]);
+		mesh->vertexBuffers[i].buffer = Buffer::CreateVertexBuffer(vetrexSize * mesh->vertexBuffers[i].count, false, vertices[i]);
+		mesh->indexBuffers[i].buffer = Buffer::CreateIndexBuffer(sizeof(uint32_t) * mesh->indexBuffers[i].count, false, indices[i]);
 
 		if (!mesh->vertexBuffers[i].buffer || !mesh->indexBuffers[i].buffer)
 		{
@@ -281,11 +281,127 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(string& filename, uint8_t* data, 
 	}
 #endif
 
+	// Version 104: read per-submesh meshlet data that follows all vertex/index blocks.
+	mesh->meshletSubsets.create(header.materialCount);
+	mesh->meshletSubsets.resize(header.materialCount);
+	for(uint32_t i = 0; i < header.materialCount; i++)
+	{
+		MeshletSubset& subset = mesh->meshletSubsets[i];
+
+		uint32_t meshletCount = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		subset.meshlets.resize(meshletCount);
+		if(meshletCount)
+		{
+			memcpy(subset.meshlets.data(), t_data, meshletCount * sizeof(Meshlet));
+			t_data += meshletCount * sizeof(Meshlet);
+		}
+
+		uint32_t uniqueCount = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		subset.uniqueVertexIndices.resize(uniqueCount);
+		if(uniqueCount)
+		{
+			memcpy(subset.uniqueVertexIndices.data(), t_data, uniqueCount * sizeof(uint32_t));
+			t_data += uniqueCount * sizeof(uint32_t);
+		}
+
+		uint32_t packedCount = *(uint32_t*)t_data;
+		t_data += sizeof(uint32_t);
+		subset.packedPrimitiveIndices.resize(packedCount);
+		if(packedCount)
+		{
+			memcpy(subset.packedPrimitiveIndices.data(), t_data, packedCount * sizeof(uint32_t));
+			t_data += packedCount * sizeof(uint32_t);
+		}
+	}
+
 	LOG("Mesh loaded %s", filename.c_str());
 	return mesh;
 }
 
-bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
+// Simple greedy meshlet partitioner.
+// Processes triangles in order and packs them into meshlets bounded by
+// MESHLET_MAX_VERTICES unique vertices and MESHLET_MAX_PRIMITIVES triangles.
+void MeshLoader::GenerateMeshlets(const uint32_t* indices, uint32_t indexCount,
+                                  uint32_t vertexCount, MeshletSubset& outSubset)
+{
+	const uint32_t triangleCount = indexCount / 3;
+
+	// Map from global vertex index → local index within the current meshlet.
+	// Sized by vertexCount; value UINT32_MAX = not in current meshlet.
+	std::vector<uint32_t> localIndexMap(vertexCount, UINT32_MAX);
+
+	uint32_t localVertexCount = 0;
+	uint32_t localPrimCount   = 0;
+	uint32_t meshletVertexStart = 0; // offset into uniqueVertexIndices at meshlet start
+	uint32_t meshletPrimStart   = 0; // offset into packedPrimitiveIndices at meshlet start
+
+	auto flushMeshlet = [&]()
+	{
+		if(localPrimCount == 0) return;
+		Meshlet m;
+		m.vertexOffset    = meshletVertexStart;
+		m.vertexCount     = localVertexCount;
+		m.primitiveOffset = meshletPrimStart;
+		m.primitiveCount  = localPrimCount;
+		outSubset.meshlets.push_back(m);
+
+		// Advance offsets for next meshlet.
+		meshletVertexStart += localVertexCount;
+		meshletPrimStart   += localPrimCount;
+
+		// Reset local map entries we used (avoid clearing the full vector).
+		for(uint32_t k = meshletVertexStart - localVertexCount;
+		    k < static_cast<uint32_t>(outSubset.uniqueVertexIndices.size()); ++k)
+		{
+			localIndexMap[outSubset.uniqueVertexIndices[k]] = UINT32_MAX;
+		}
+
+		localVertexCount = 0;
+		localPrimCount   = 0;
+	};
+
+	for(uint32_t tri = 0; tri < triangleCount; ++tri)
+	{
+		const uint32_t i0 = indices[tri * 3 + 0];
+		const uint32_t i1 = indices[tri * 3 + 1];
+		const uint32_t i2 = indices[tri * 3 + 2];
+
+		// Count how many new vertices this triangle would add.
+		uint32_t needed = (localIndexMap[i0] == UINT32_MAX ? 1u : 0u)
+		                + (localIndexMap[i1] == UINT32_MAX ? 1u : 0u)
+		                + (localIndexMap[i2] == UINT32_MAX ? 1u : 0u);
+
+		if(localVertexCount + needed > MESHLET_MAX_VERTICES ||
+		   localPrimCount >= MESHLET_MAX_PRIMITIVES)
+		{
+			flushMeshlet();
+		}
+
+		// Add any new vertices to the meshlet.
+		auto addVertex = [&](uint32_t globalIndex) -> uint32_t
+		{
+			if(localIndexMap[globalIndex] == UINT32_MAX)
+			{
+				localIndexMap[globalIndex] = localVertexCount++;
+				outSubset.uniqueVertexIndices.push_back(globalIndex);
+			}
+			return localIndexMap[globalIndex];
+		};
+
+		const uint32_t l0 = addVertex(i0);
+		const uint32_t l1 = addVertex(i1);
+		const uint32_t l2 = addVertex(i2);
+
+		outSubset.packedPrimitiveIndices.push_back((l2 << 20) | (l1 << 10) | l0);
+		++localPrimCount;
+	}
+
+	flushMeshlet();
+}
+
+bool MeshLoader::saveMesh(const string& filename, MeshData* mesh, uint32_t** indices, uint8_t** vertices)
 {
 	MeshFileHeader header;
 	header.version = MESH_FILE_VERSION;
@@ -297,13 +413,32 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 
 	const uint32_t vetrexSize = GetVertexSize(header.vertexFormat);
 
-	// calc file size
+	// Generate meshlets for every submesh now, so size calculation is accurate.
+	DArray<MeshletSubset> meshletSubsets;
+	meshletSubsets.resize(header.materialCount);
+	for(uint32_t i = 0; i < header.materialCount; i++)
+	{
+		if(indices[i])
+		{
+			GenerateMeshlets(indices[i], mesh->indexBuffers[i].count,
+			                 mesh->vertexBuffers[i].count, meshletSubsets[i]);
+		}
+	}
+
+	// Calculate file size: header + per-submesh vertex/index + per-submesh meshlet data.
 	uint32_t file_size = sizeof(MeshFileHeader);
 	for(uint16_t i = 0; i < header.materialCount; i++)
 	{
 		file_size += sizeof(uint32_t) + sizeof(uint32_t);
 		file_size += mesh->vertexBuffers[i].count * vetrexSize;
 		file_size += mesh->indexBuffers[i].count * sizeof(uint32_t);
+	}
+	for(uint16_t i = 0; i < header.materialCount; i++)
+	{
+		const MeshletSubset& subset = meshletSubsets[i];
+		file_size += sizeof(uint32_t) + (uint32_t)subset.meshlets.size() * sizeof(Meshlet);
+		file_size += sizeof(uint32_t) + (uint32_t)subset.uniqueVertexIndices.size() * sizeof(uint32_t);
+		file_size += sizeof(uint32_t) + (uint32_t)subset.packedPrimitiveIndices.size() * sizeof(uint32_t);
 	}
 
 	unique_ptr<uint8_t> data(new uint8_t[file_size]);
@@ -312,6 +447,7 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 	*(MeshFileHeader*)t_data = header;
 	t_data += sizeof(MeshFileHeader);
 
+	// Write vertex and index data.
 	for(uint32_t i = 0; i < header.materialCount; i++)
 	{
 		*(uint32_t*)t_data = mesh->vertexBuffers[i].count;
@@ -319,9 +455,9 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 
 		if(vertices[i])
 		{
-			uint32_t size = mesh->vertexBuffers[i].count * vetrexSize;
-			memcpy(t_data, vertices[i], size);
-			t_data += size;
+			uint32_t byteSize = mesh->vertexBuffers[i].count * vetrexSize;
+			memcpy(t_data, vertices[i], byteSize);
+			t_data += byteSize;
 		}
 
 		*(uint32_t*)t_data = mesh->indexBuffers[i].count;
@@ -329,11 +465,48 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 
 		if(indices[i])
 		{
-			uint32_t size = mesh->indexBuffers[i].count * sizeof(uint32_t);
-			memcpy(t_data, indices[i], size);
-			t_data += size;
+			uint32_t byteSize = mesh->indexBuffers[i].count * sizeof(uint32_t);
+			memcpy(t_data, indices[i], byteSize);
+			t_data += byteSize;
 		}
 	}
+
+	// Write meshlet data (version 104 extension, one block per submesh).
+	for(uint32_t i = 0; i < header.materialCount; i++)
+	{
+		MeshletSubset& subset = meshletSubsets[i];
+
+		uint32_t meshletCount = (uint32_t)subset.meshlets.size();
+		*(uint32_t*)t_data = meshletCount;
+		t_data += sizeof(uint32_t);
+		if(meshletCount)
+		{
+			memcpy(t_data, subset.meshlets.data(), meshletCount * sizeof(Meshlet));
+			t_data += meshletCount * sizeof(Meshlet);
+		}
+
+		uint32_t uniqueCount = (uint32_t)subset.uniqueVertexIndices.size();
+		*(uint32_t*)t_data = uniqueCount;
+		t_data += sizeof(uint32_t);
+		if(uniqueCount)
+		{
+			memcpy(t_data, subset.uniqueVertexIndices.data(), uniqueCount * sizeof(uint32_t));
+			t_data += uniqueCount * sizeof(uint32_t);
+		}
+
+		uint32_t packedCount = (uint32_t)subset.packedPrimitiveIndices.size();
+		*(uint32_t*)t_data = packedCount;
+		t_data += sizeof(uint32_t);
+		if(packedCount)
+		{
+			memcpy(t_data, subset.packedPrimitiveIndices.data(), packedCount * sizeof(uint32_t));
+			t_data += packedCount * sizeof(uint32_t);
+		}
+	}
+
+	for(uint32_t i = 0; i < header.materialCount; i++)
+		meshletSubsets[i].destroy();
+	meshletSubsets.destroy();
 
 	if(!FileIO::WriteFileData( filename, data.get(), file_size ))
 	{
@@ -343,7 +516,7 @@ bool MeshLoader::saveMesh(string& filename, MeshData* mesh, uint32_t** indices, 
 	return true;
 }
 
-SkeletonData* MeshLoader::loadEngineSkeletonFromMemory(string& filename, uint8_t* data, uint32_t size)
+SkeletonData* MeshLoader::loadEngineSkeletonFromMemory(const string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t* t_data = data;
 
@@ -389,7 +562,7 @@ SkeletonData* MeshLoader::loadEngineSkeletonFromMemory(string& filename, uint8_t
 	return skeleton;
 }
 
-bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds)
+bool MeshLoader::saveSkeleton(const string& filename, DArray<BoneData>& boneData, unordered_map<string, int32_t>& boneIds)
 {
 	SkeletonFileHeader header;
 	header.version = SKELETON_FILE_VERSION;
@@ -436,7 +609,7 @@ bool MeshLoader::saveSkeleton(string& filename, DArray<BoneData>& boneData, unor
 	return true;
 }
 
-AnimationData* MeshLoader::loadEngineAnimationFromMemory(string& filename, uint8_t* data, uint32_t size)
+AnimationData* MeshLoader::loadEngineAnimationFromMemory(const string& filename, uint8_t* data, uint32_t size)
 {
 	uint8_t* t_data = data;
 
@@ -489,7 +662,7 @@ AnimationData* MeshLoader::loadEngineAnimationFromMemory(string& filename, uint8
 	return animation;
 }
 
-bool MeshLoader::saveAnimation(string& filename, DArray<AnimationData>& animations)
+bool MeshLoader::saveAnimation(const string& filename, DArray<AnimationData>& animations)
 {
 	WRN("TODO: Only 0-id animation is imported for now");
 	AnimationData& anim = animations[0];
@@ -593,7 +766,7 @@ bool MeshLoader::IsSupportedAnimation(string filename)
 	return meshImporter.IsExtensionSupported(GetExtension(filename));
 }
 
-bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, bool isSkinned)
+bool MeshLoader::ConvertMeshToEngineFormat(const string& sourceFile, const string& resFile, bool isSkinned)
 {
 	string ext = GetExtension(sourceFile);
 
@@ -640,7 +813,7 @@ bool MeshLoader::ConvertMeshToEngineFormat(string& sourceFile, string& resFile, 
 	return status;
 }
 
-bool MeshLoader::ConvertSkeletonToEngineFormat(string& sourceFile, string& resFile)
+bool MeshLoader::ConvertSkeletonToEngineFormat(const string& sourceFile, const string& resFile)
 {
 	string ext = GetExtension(sourceFile);
 
@@ -686,7 +859,7 @@ bool MeshLoader::ConvertSkeletonToEngineFormat(string& sourceFile, string& resFi
 	return status;
 }
 
-bool MeshLoader::ConverAnimationToEngineFormat(string& sourceFile, string& resFile)
+bool MeshLoader::ConverAnimationToEngineFormat(const string& sourceFile, const string& resFile)
 {
 	string ext = GetExtension(sourceFile);
 
@@ -723,7 +896,7 @@ bool MeshLoader::ConverAnimationToEngineFormat(string& sourceFile, string& resFi
 	return status;
 }
 
-bool MeshLoader::convertAIScene(string& filename, const aiScene* scene, MeshVertexFormat format)
+bool MeshLoader::convertAIScene(const string& filename, const aiScene* scene, MeshVertexFormat format)
 {
 	unordered_map<string, int32_t> boneIds;
 	DArray<BoneData> boneData;
@@ -994,7 +1167,7 @@ BoneTransformation getBoneTransformationForTime(aiNodeAnim* boneAnim, float time
 
 #define FBX_BROKEN_BONE_SUFIX "_$AssimpFbx$_"
 
-bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
+bool MeshLoader::convertAnimationAIScene(const string& filename, const aiScene* scene)
 {
 	if(!scene->HasAnimations())
 	{
@@ -1182,7 +1355,7 @@ bool MeshLoader::convertAnimationAIScene(string& filename, const aiScene* scene)
 	return saveAnimation(filename, animationsArray);
 }
 
-bool MeshLoader::loadMeshSkeleton(string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData, 
+bool MeshLoader::loadMeshSkeleton(const string& filename, const aiScene* scene, unordered_map<string, int32_t>& boneIds, DArray<BoneData>& boneData,
 							  DArray<int32_t>& boneInvRemap, bool boneInvWorldTransforms)
 {
 	aiMesh** mesh = scene->mMeshes;

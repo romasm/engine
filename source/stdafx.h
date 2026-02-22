@@ -1,6 +1,8 @@
 #pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 
 #include <clocale>
 #include <ctime>
@@ -31,7 +33,6 @@
 
 #include <memory>
 
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 //#include <windowsx.h>
 #include <wrl/client.h>
@@ -44,14 +45,12 @@
 #include <Dwmapi.h>
 #pragma comment(lib, "Dwmapi.lib")
 
-/*#include <d3d12.h>
+#include <d3d12.h>
 #include <dxgi1_6.h>
-
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
 #include <d3dx12.h>
-*/
 
 #include <d3d11_3.h>
 #pragma comment(lib, "d3d11.lib")
@@ -84,9 +83,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#undef max
-#undef min
 
 #include <btBulletDynamicsCommon.h>
 

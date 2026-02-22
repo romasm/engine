@@ -18,6 +18,8 @@
 #define SHADER_DEFINE_BEG '['
 #define SHADER_DEFINE_END ']'
 
+namespace EngineCore::RHI { struct GfxSampler; struct GfxInputLayout; }
+
 namespace EngineCore
 {
 #define REGISTER_NULL 255
@@ -28,7 +30,7 @@ namespace EngineCore
 		unordered_map<string, uint8_t> resourceBuffers;
 		unordered_map<string, uint8_t> rwBuffers;
 
-		DArray<ID3D11SamplerState*> samplers;
+		DArray<RHI::GfxSampler*> samplers;
 
 		// material data
 		uint8_t matInfo_Register;
@@ -48,7 +50,7 @@ namespace EngineCore
 		uint8_t matrixBuf_Register;
 		uint8_t matrixBoneBuf_Register;
 
-		ID3D11InputLayout* layout;
+		RHI::GfxInputLayout* layout;
 		
 		void Reset()
 		{
@@ -85,6 +87,14 @@ namespace EngineCore
 
 		ShaderInput input;
 
+		// Raw DXBC/DXIL bytecode kept alive for DX12 PSO creation.
+		// Populated by AddShaderToList / CheckForReload alongside the DX11
+		// shader object stored in `code`.
+		std::vector<uint8_t> bytecode;
+
+		// Returns true if the shader was loaded (DX11: code ptr; DX12: bytecode)
+		bool IsValid() const { return code != nullptr || !bytecode.empty(); }
+
 		CodeHandle()
 		{
 			code = nullptr;
@@ -101,13 +111,22 @@ namespace EngineCore
 	
 		inline static ShaderCodeMgr* Get(){return instance;}
 
-		uint16_t GetShaderCode(string& name, uint8_t type);
+		uint16_t GetShaderCode(const string& name, uint8_t type);
 		void DeleteShaderCode(uint16_t id, uint8_t type);
 
-		inline static CodeHandle& GetShaderCodeRef(uint16_t id) 
+		inline static CodeHandle& GetShaderCodeRef(uint16_t id)
 		{
 			if(id == SHADER_NULL) return instance->null_shader;
 			return instance->shader_array[id];
+		}
+
+		// Returns the raw shader bytecode (DXBC or DXIL) for DX12 PSO creation.
+		// Returns an empty vector for the null shader or an unloaded slot.
+		inline static const std::vector<uint8_t>& GetShaderBytecode(uint16_t id)
+		{
+			static const std::vector<uint8_t> empty;
+			if(id == SHADER_NULL || !instance) return empty;
+			return instance->shader_array[id].bytecode;
 		}
 
 	#ifdef _DEV
@@ -124,18 +143,18 @@ namespace EngineCore
 		D3D_SHADER_MACRO* ConstructDefinesArray(const string& defines, uint32_t& outCount);
 		void DeleteDefinesArray(D3D_SHADER_MACRO* definesArray, uint32_t count);
 
-		uint16_t AddShaderToList(string& name, uint8_t type);
-		uint16_t FindShaderInList(string& name, uint8_t type);
+		uint16_t AddShaderToList(const string& name, uint8_t type);
+		uint16_t FindShaderInList(const string& name, uint8_t type);
 
 		inline DXGI_FORMAT GetInputFormat(D3D_REGISTER_COMPONENT_TYPE component, BYTE mask);
 		
 		bool GetInputData(ShaderInput& HInput, uint8_t* data, uint32_t size, uint8_t type);
-		ID3D11InputLayout* GetVertexLayout(uint8_t* data, uint32_t size);
+		RHI::GfxInputLayout* GetVertexLayout(uint8_t* data, uint32_t size);
 
 		static ShaderCodeMgr *instance;
 
 		unordered_map<string, uint16_t> shader_map[6];
-		unordered_map<string, ID3D11InputLayout*> layout_map;
+		unordered_map<string, RHI::GfxInputLayout*> layout_map;
 
 		SArray<CodeHandle, SHADER_MAX_COUNT> shader_array;
 		SDeque<uint16_t, SHADER_MAX_COUNT> shader_free;

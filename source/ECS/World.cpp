@@ -605,7 +605,7 @@ bool BaseWorld::BeginCaptureProb(int32_t resolution, DXGI_FORMAT fmt, bool isLig
 	return true;
 }
 
-ID3D11ShaderResourceView* BaseWorld::CaptureProb(Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID)
+RHI::GfxSRV* BaseWorld::CaptureProb(const Matrix& probTransform, float nearClip, float farClip, uint32_t arrayID)
 {
 	if( !probScene || probCamera.isnull() || !probCaptureShader || probTarget.GetMipsCount() == 0 )
 		return nullptr;

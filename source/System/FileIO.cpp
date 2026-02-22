@@ -4,7 +4,7 @@
 
 using namespace EngineCore;
 
-void FileIO::init(string& file, bool overwrite)
+void FileIO::init(const string& file, bool overwrite)
 {
 	fileMap = nullptr;
 	fileName = file;
@@ -187,7 +187,7 @@ void FileIO::buildBlockMap(char* data, uint32_t dataSize, uint32_t& current, fil
 			prev_node = nullptr;
 
 			string attr(data+start, current-start);
-			auto& nodeEmpty = FileNode();
+			auto nodeEmpty = FileNode();
 			mmap->insert(make_pair(attr, nodeEmpty));
 			node = &mmap->at(attr);
 			continue;
@@ -235,7 +235,7 @@ void FileIO::readValue(char* data, uint32_t dataSize, uint32_t& current, FileNod
 		current++;
 }
 
-bool FileIO::SaveAs(string& file)
+bool FileIO::SaveAs(const string& file)
 {
 	fileName = file;
 
@@ -298,7 +298,7 @@ void FileIO::writeMap(ofstream* file, file_map* node, uint16_t depth)
 
 // static
 
-bool FileIO::IsExist(string& path)
+bool FileIO::IsExist(const string& path)
 {
 	struct _stat32 buffer;   
 	return (_stat32(path.data(), &buffer) == 0);  
@@ -319,7 +319,7 @@ uint32_t FileIO::GetDateRawFromString(string& date)
 	return 0;
 }
 
-uint32_t FileIO::GetDateModifRaw(string& filename)
+uint32_t FileIO::GetDateModifRaw(const string& filename)
 {
 	struct _stat32 buffer;
 	if(_stat32(filename.data(), &buffer) != 0)
@@ -355,7 +355,7 @@ uint32_t FileIO::GetSize(string filename)
 	return buffer.st_size;
 }
 
-uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size, bool noWarning)
+uint8_t* FileIO::ReadFileData(const string& filename, uint32_t *ret_size, bool noWarning)
 {
 	ifstream stream;
 	uint32_t size;
@@ -380,7 +380,7 @@ uint8_t* FileIO::ReadFileData(string& filename, uint32_t *ret_size, bool noWarni
 	return data;
 }
 
-bool FileIO::WriteFileData(string& filename, uint8_t* data, uint32_t size, uint32_t modif_date)
+bool FileIO::WriteFileData(const string& filename, uint8_t* data, uint32_t size, uint32_t modif_date)
 {
 	ofstream stream;
 

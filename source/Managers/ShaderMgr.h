@@ -12,7 +12,7 @@ namespace EngineCore
 	{
 	public:
 		ShaderMgr();
-		uint32_t GetResource(string& name, bool simple = false, onLoadCallback callback = nullptr, onLoadCallback callbackUpdate = nullptr)
+		uint32_t GetResource(const string& name, bool simple = false, onLoadCallback callback = nullptr, onLoadCallback callbackUpdate = nullptr)
 		{
 			return BaseMgr<BaseShader, SHADERS_MAX_COUNT>::GetResource(name, simple, callback, callbackUpdate);
 		}
@@ -21,6 +21,6 @@ namespace EngineCore
 		inline static ShaderMgr* Get(){return (ShaderMgr*)BaseMgr<BaseShader, SHADERS_MAX_COUNT>::Get();}
 
 	protected:
-		uint32_t AddResourceToList(string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate);
+		uint32_t AddResourceToList(const string& name, bool reload, onLoadCallback callback, onLoadCallback callbackUpdate);
 	};
 }

@@ -28,6 +28,8 @@
 
 namespace EngineCore
 {
+	namespace RHI { struct GfxBuffer; struct GfxTexture; struct GfxDSV; }
+
 	struct ShadowMap
 	{
 		float x;
@@ -67,14 +69,14 @@ namespace EngineCore
 		void ClearPerFrame();
 		
 		void ResolveShadowMaps();
-		inline ID3D11ShaderResourceView* GetShadowBuffer() const {return shadowsBufferSRV;}
+		inline RHI::GfxSRV* GetShadowBuffer() const {return shadowsBufferSRV;}
 
 		static bool CompareShadows(ShadowMap& first, ShadowMap& second);
 		static void SwapShadows(ShadowMap* first, ShadowMap* second, SArray<ShadowMap, SHADOWMAPS_COUNT>* arr);
 
 		bool RegShadowMap(uint32_t id,  float size);
 
-		void RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, ID3D11Buffer* vp);
+		void RenderShadow(uint32_t id, uint8_t num, ShadowRenderMgr* shadow_mgr, RHI::GfxBuffer* vp);
 		
 		inline ShadowMap& GetShadowAdress(uint64_t id) {return shadowmap_array[castersIdx[id]];}
 		inline ShadowMap& GetShadowAdressNext(ShadowMap& prev) {return shadowmap_array[prev.next];}
@@ -92,9 +94,9 @@ namespace EngineCore
 
 		uint16_t cascadeShadowRes;
 
-		ID3D11Texture2D* shadowsBuffer;
-		ID3D11ShaderResourceView* shadowsBufferSRV;
-		ID3D11DepthStencilView* shadowsBufferDSV[SHADOWS_BUF_SIZE];
+		RHI::GfxTexture* shadowsBuffer;
+		RHI::GfxSRV* shadowsBufferSRV;
+		RHI::GfxDSV* shadowsBufferDSV[SHADOWS_BUF_SIZE];
 
 		struct{
 			float size;

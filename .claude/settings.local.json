@@ -10,7 +10,23 @@
       "Bash(curl:*)",
       "Bash(python -c:*)",
       "Bash(ping:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(wc:*)",
+      "Bash(where:*)",
+      "Bash(./create_project.bat)",
+      "Bash(START core_dev.exe -c)",
+      "Bash(echo:*)",
+      "Bash(bash \"/c/Users/roman/Dropbox/Engine/tests/run_tests.sh\")",
+      "Bash(start:*)",
+      "Bash(Start-Process -FilePath \"c:\\\\Users\\\\roman\\\\Dropbox\\\\Engine\\\\build\\\\launch_dev.bat\" -WindowStyle Normal)",
+      "Bash(Start-Sleep -Seconds 4)",
+      "Bash(bash tests/run_tests.sh:*)",
+      "Bash(ls:*)",
+      "Bash(xxd:*)",
+      "Bash(grep:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(taskkill:*)",
+      "Bash(python3:*)"
     ]
   }
 }

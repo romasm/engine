@@ -23,6 +23,8 @@
 #define DEPTH_CASCADE_2_HALF DEPTH_CASCADE_2 * 0.5f
 #define DEPTH_CASCADE_3_HALF DEPTH_CASCADE_3 * 0.5f
 
+namespace EngineCore::RHI { struct GfxBuffer; }
+
 namespace EngineCore
 {
 	struct CascadeShadow
@@ -35,7 +37,7 @@ namespace EngineCore
 		XMMATRIX view[LIGHT_DIR_NUM_CASCADES];
 		Vector3 pos[LIGHT_DIR_NUM_CASCADES];
 		
-		ID3D11Buffer* vp_buf[LIGHT_DIR_NUM_CASCADES];
+		RHI::GfxBuffer* vp_buf[LIGHT_DIR_NUM_CASCADES];
 
 		Entity camera;
 

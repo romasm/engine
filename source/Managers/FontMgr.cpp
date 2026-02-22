@@ -28,7 +28,7 @@ FontMgr::~FontMgr()
 	instance = nullptr;
 }
 
-Font* FontMgr::GetFont(string& name)
+Font* FontMgr::GetFont(const string& name)
 {
 	if(name.size() == 0)
 		return nullptr;
@@ -45,7 +45,7 @@ Font* FontMgr::GetFont(string& name)
 	return nullptr;
 }
 
-Font* FontMgr::AddFontToList(string& name)
+Font* FontMgr::AddFontToList(const string& name)
 {
 	FontHandle handle;
 	handle.name = name;
@@ -58,7 +58,7 @@ Font* FontMgr::AddFontToList(string& name)
 	return handle.font;
 }
 
-Font* FontMgr::FindFontInList(string& name)
+Font* FontMgr::FindFontInList(const string& name)
 {
 	auto it = font_map.find(name);
 	if(it == font_map.end())
@@ -68,7 +68,7 @@ Font* FontMgr::FindFontInList(string& name)
 	return it->second.font;
 }
 
-void FontMgr::DeleteFont(string& name)
+void FontMgr::DeleteFont(const string& name)
 {
 	auto it = font_map.find(name);
 	if(it == font_map.end())

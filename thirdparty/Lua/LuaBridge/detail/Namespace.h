@@ -805,7 +805,7 @@ private:
 	Class <T>& addOperatorGlobal (char const* name, MemFn mf)
 	{
 		new (lua_newuserdata (L, sizeof (MemFn))) MemFn (mf);
-		lua_pushcclosure (L, &CFunc::Call <MemFn, FuncTraits <MemFn>::ReturnType>::f, 1);
+		lua_pushcclosure (L, &CFunc::Call <MemFn, typename FuncTraits <MemFn>::ReturnType>::f, 1);
 		rawsetfield (L, -3, name); // class table
 
 		return *this;

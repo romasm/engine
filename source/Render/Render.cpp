@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "Render.h"
+#include "DX11Device.h"
+#include "DX12Device.h"
 #include "macros.h"
 #include "Image.h"
 #include "Font.h"
@@ -33,7 +35,6 @@ namespace EngineCore
 	}
 	
 	Render* Render::m_instance = nullptr;
-	ID3D11RenderTargetView** Render::rts_null = nullptr;
 
 	Render::Render()
 	{
@@ -50,26 +51,24 @@ namespace EngineCore
 			renderStateMgr = nullptr;
 			samplerStateMgr = nullptr;
 			bufferMgr = nullptr;
+			gfxDevice = nullptr;
+			gfxCommandList = nullptr;
+			gfxFrameScheduler = nullptr;
 
 			// remove
 			CurrentHudWindow = nullptr;
-
-			rts_null = new ID3D11RenderTargetView*[8];
-			for(uint8_t i = 0; i < 8; i++)
-				rts_null[i] = nullptr;
 
 			RegLuaClass();
 		}
 		else
 		{
-			ERR("Повтороное создание Render");
+			ERR("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Render");
 		}
 	}
 
 	Render::~Render()
 	{
 		m_instance = nullptr;
-		_DELETE(rts_null);
 	}
 	
 	bool Render::Init()
@@ -79,6 +78,54 @@ namespace EngineCore
 		{
 			ERR("Cant create DirectX Device!");
 			return false;
+		}
+
+		// RHI backend вЂ” must be created before state managers so GFX_DEVICE/GFX_CMD are available.
+		// DX12 if the config requests it, otherwise DX11.
+		// The DX12 device is created without a swap chain here; Window::CreateSwapChain()
+		// calls GFX_DEVICE->InitSwapChain() once the HWND is available.
+		if(CONFIG(bool, dx12_backend))
+		{
+			auto* dx12Device = new RHI::DX12::DX12Device();
+			if(!dx12Device->Init(nullptr))
+			{
+				ERR("Failed to initialise DX12 device!");
+				delete dx12Device;
+				return false;
+			}
+			gfxDevice         = dx12Device;
+			gfxFrameScheduler = dx12Device->GetFrameScheduler();
+			gfxCommandList    = gfxFrameScheduler->AllocateCommandList();
+		}
+		else
+		{
+			auto* dx11Device = new RHI::DX11::DX11Device(
+				m_pd3dDevice, m_pd3dDevice3,
+				m_pImmediateContext, m_pImmediateContext3);
+			gfxDevice = dx11Device;
+
+			auto* scheduler = new RHI::DX11::DX11FrameScheduler(
+				m_pImmediateContext, m_pImmediateContext3, nullptr);
+			gfxFrameScheduler = scheduler;
+			gfxCommandList    = scheduler->AllocateCommandList();
+
+			// Log DX11 device info
+			DXGI_ADAPTER_DESC1 adapterDesc = {};
+			if(m_pDxgiAdapter && SUCCEEDED(m_pDxgiAdapter->GetDesc1(&adapterDesc)))
+			{
+				char gpuName[128] = {};
+				WideCharToMultiByte(CP_ACP, 0, adapterDesc.Description, -1,
+					gpuName, sizeof(gpuName), nullptr, nullptr);
+				size_t vramMB = adapterDesc.DedicatedVideoMemory / (1024 * 1024);
+
+				LOG("------ GPU Device Info ------");
+				LOG("  API:             DirectX 11.3");
+				LOG("  GPU:             %s", gpuName);
+				LOG("  VRAM:            %zu MB", vramMB);
+				LOG("  Raytracing:      not supported (DX11)");
+				LOG("  Mesh shaders:    not supported (DX11)");
+				LOG("-----------------------------");
+			}
 		}
 
 		// RENDER STATE
@@ -96,15 +143,15 @@ namespace EngineCore
 			ERR("Cant load predefined sampler states!");
 			return false;
 		}
-		
+
 	#ifdef _DEV
 		if( !Profiler::Get()->InitQueries() )
 		{
 			ERR("Cant init profiler queries!");
 			return false;
 		}
-	#endif 
-		
+	#endif
+
 		bufferMgr = new Buffer;
 
 		return true;
@@ -151,19 +198,56 @@ namespace EngineCore
 		return true;
 	}
 
+	void Render::BeginFrameDX12()
+	{
+		if(!m_instance || !m_instance->gfxDevice || !m_instance->gfxDevice->IsDX12())
+			return;
+
+		// Begin new frame: wait for prior GPU work, reset allocators
+		m_instance->gfxFrameScheduler->BeginFrame();
+
+		// Open the command list for recording
+		m_instance->gfxCommandList->Open();
+
+		// Set the shader-visible descriptor heaps (required before any binding)
+		auto* dx12Device  = static_cast<RHI::DX12::DX12Device*>(m_instance->gfxDevice);
+		auto* dx12CmdList = static_cast<RHI::DX12::DX12CommandList*>(m_instance->gfxCommandList);
+		ID3D12DescriptorHeap* heaps[] = {
+			dx12Device->GetCbvSrvUavHeap(),
+			dx12Device->GetSamplerHeap()
+		};
+		dx12CmdList->GetCommandList()->SetDescriptorHeaps(2, heaps);
+	}
+
 	void Render::Close()
 	{
 	#ifdef _DEV
 		Profiler::Get()->ReleaseQueries();
 	#endif
 
-		if( m_pImmediateContext ) 
+		if( m_pImmediateContext )
 			m_pImmediateContext->ClearState();
-	
+
+		// Destroy state managers and buffers before RHI backend
+		// (their destructors may route through GFX_DEVICE)
+		_DELETE(bufferMgr);
 		_DELETE(renderStateMgr);
 		_DELETE(samplerStateMgr);
 
-		_DELETE(bufferMgr);
+		if(gfxDevice && gfxDevice->IsDX12())
+		{
+			// For DX12: the frame scheduler is owned by DX12Device; deleting the
+			// device shuts everything down (swap chain, queues, heaps).
+			gfxCommandList    = nullptr; // owned by pool inside frame scheduler
+			gfxFrameScheduler = nullptr; // owned by DX12Device
+			_DELETE(gfxDevice);
+		}
+		else
+		{
+			_DELETE(gfxFrameScheduler); // owns the DX11CommandList
+			_DELETE(gfxDevice);
+			gfxCommandList = nullptr;
+		}
 
 		_RELEASE(m_pImmediateContext);
 		_RELEASE(m_pImmediateContext3);

@@ -10,6 +10,8 @@
 
 #define DEBUG_GEOM_MAXCOUNT 128
 
+namespace EngineCore::RHI { struct GfxBuffer; }
+
 namespace EngineCore
 {
 	struct DBGLine
@@ -27,7 +29,7 @@ namespace EngineCore
 	{
 		struct DebugGeomHandle
 		{
-			ID3D11Buffer* verts;
+			RHI::GfxBuffer* verts;
 			Material* mat;
 			IA_TOPOLOGY topo;
 			uint32_t vertCount;
@@ -48,7 +50,7 @@ namespace EngineCore
 
 		void PushBoundingBox(BoundingBox& box, Vector3& color, bool depthCull = false);
 
-		int32_t CreateGeometryHandle(string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque = false);
+		int32_t CreateGeometryHandle(const string& matName, IA_TOPOLOGY topo, uint32_t maxPrimCount, uint32_t vertSize, bool isOpaque = false);
 		void UpdateGeometry(int32_t handleId, void* verts, uint32_t count);
 		void DeleteGeometryHandle(int32_t handleId);
 
@@ -64,10 +66,10 @@ namespace EngineCore
 		RArray<DBGLine> dbgLinesDepthCull;
 		uint32_t lineCountDepthCull;
 
-		ID3D11Buffer* lineBuffer;
+		RHI::GfxBuffer* lineBuffer;
 		Material* lineMat;
 
-		ID3D11Buffer* lineBufferDepthCull;
+		RHI::GfxBuffer* lineBufferDepthCull;
 		Material* lineMatDepthCull;
 
 		Vector3 bboxCorners[8];

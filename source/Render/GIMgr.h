@@ -175,11 +175,11 @@ namespace EngineCore
 		void LoadGIData(GISampleData& giData);
 		GISampleData* SaveGIData();
 
-		ID3D11ShaderResourceView* GetGIBricksSRV();
-		ID3D11ShaderResourceView* GetGIChunksSRV();
-		ID3D11ShaderResourceView* GetGILookupsSRV();
+		RHI::GfxSRV* GetGIBricksSRV();
+		RHI::GfxSRV* GetGIChunksSRV();
+		RHI::GfxSRV* GetGILookupsSRV();
 
-		ID3D11Buffer* GetGISampleData() { return sampleDataGPU; }
+		RHI::GfxBuffer* GetGISampleData() { return sampleDataGPU; }
 
 		bool BakeGI();
 		
@@ -203,23 +203,23 @@ namespace EngineCore
 		uint32_t chunksResource;
 
 		GISampleData sampleData;
-		ID3D11Buffer* sampleDataGPU;
+		RHI::GfxBuffer* sampleDataGPU;
 		
 		// editor gi resources
 
-		ID3D11Texture3D* bricksAtlas;
-		ID3D11ShaderResourceView* bricksAtlasSRV;
-		ID3D11UnorderedAccessView* bricksAtlasUAV;
+		RHI::GfxTexture* bricksAtlas;
+		RHI::GfxSRV* bricksAtlasSRV;
+		RHI::GfxUAV* bricksAtlasUAV;
 
-		ID3D11Texture3D* bricksTempAtlas;
-		ID3D11ShaderResourceView* bricksTempAtlasSRV;
-		ID3D11UnorderedAccessView* bricksTempAtlasUAV;
+		RHI::GfxTexture* bricksTempAtlas;
+		RHI::GfxSRV* bricksTempAtlasSRV;
+		RHI::GfxUAV* bricksTempAtlasUAV;
 
-		ID3D11Texture3D* chunksLookup;
-		ID3D11ShaderResourceView* chunksLookupSRV;
+		RHI::GfxTexture* chunksLookup;
+		RHI::GfxSRV* chunksLookupSRV;
 
-		ID3D11Texture3D* bricksLookup;
-		ID3D11ShaderResourceView* bricksLookupSRV;
+		RHI::GfxTexture* bricksLookup;
+		RHI::GfxSRV* bricksLookupSRV;
 
 		uint32_t bricksTexX;
 		uint32_t bricksTexY;
@@ -241,7 +241,7 @@ namespace EngineCore
 		void GenerateProbOffsetVectors();
 		
 		Compute* cubemapToSH;
-		ID3D11Buffer* adressBuffer;
+		RHI::GfxBuffer* adressBuffer;
 
 		Compute* copyBricks;
 		Compute* interpolateProbes;

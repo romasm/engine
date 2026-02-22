@@ -5,11 +5,12 @@ workspace "Engine"
 	platforms {"x64"}
 	        	
 	project "Core"
-		kind "WindowedApp"
+		kind "ConsoleApp"
 		location "source"
 		language "C++"
+		cppdialect "C++20"
 				
-		includedirs { 
+		includedirs {
 			"source/Common/" ,
 			"source/Config/" ,
 			"source/ECS/" ,
@@ -19,6 +20,10 @@ workspace "Engine"
 			"source/Managers/Loaders/" ,
 			"source/Render/" ,
 			"source/Render/Support/" ,
+			"source/Render/RHI/" ,
+			"source/Render/RHI/DX11/" ,
+			"source/Render/RHI/DX12/" ,
+			"source/Render/RayTracing/" ,
 			"source/System/" ,
 			"source/Utils/" ,
 			"source/" ,
@@ -55,7 +60,7 @@ workspace "Engine"
 			"$(WindowsSdkDir_10)Lib/$(WindowsTargetPlatformVersion)/um/x64",
 		}
 		
-		systemversion "10.0.20348.0"
+		systemversion "10.0.26100.0"
 			
 		filter "platforms:x64"
 			targetdir "build/bin"
@@ -65,7 +70,7 @@ workspace "Engine"
 		filter "configurations:Debug"
 			defines { "_EDITOR", "WIN64", "_DEV", "_DEBUG;" }
 			flags{ "FatalWarnings" }
-			disablewarnings { "4099", "4244" }
+			disablewarnings { "4099", "4244", "5033" }
 			buildoptions { "/FS" }
 			symbols "On"
 			optimize "Off"
@@ -79,7 +84,7 @@ workspace "Engine"
 		filter "configurations:Development"
 			defines { "_EDITOR", "WIN64", "_DEV", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
-			disablewarnings { "4099", "4244" }
+			disablewarnings { "4099", "4244", "5033" }
 			buildoptions { "/FS" }
 			symbols "On"
 			optimize "Speed"
@@ -93,7 +98,7 @@ workspace "Engine"
 		filter "configurations:Release"
 			defines { "_EDITOR", "WIN64", "NDEBUG;" }
 			flags{ "LinkTimeOptimization", "FatalWarnings" }
-			disablewarnings { "4099", "4244" }
+			disablewarnings { "4099", "4244", "5033" }
 			buildoptions { "/FS" }
 			optimize "Speed"
 			targetname "core"	
@@ -104,7 +109,10 @@ workspace "Engine"
 			}
 		
 		filter {}
-		
+
+		-- suppress linker warning for missing PDBs from third-party libs (Bullet, etc.)
+		linkoptions { "/IGNORE:4099" }
+
 		links { 
 			"assimp-vc140-mt", 
 			"lua51", 
@@ -115,32 +123,48 @@ workspace "Engine"
 		}
 		
 		files {
-			"source/Common/*.h", 
+			"source/Common/*.h",
 			"source/Common/*.cpp",
-			"source/Config/*.h", 
+			"source/Config/*.h",
 			"source/Config/*.cpp",
-			"source/ECS/*.h", 
+			"source/ECS/*.h",
 			"source/ECS/*.cpp",
-			"source/GUI/*.h", 
+			"source/GUI/*.h",
 			"source/GUI/*.cpp",
-			"source/Input/*.h", 
+			"source/Input/*.h",
 			"source/Input/*.cpp",
-			"source/Managers/*.h", 
+			"source/Managers/*.h",
 			"source/Managers/*.cpp",
-			"source/Managers/Loaders/*.h" ,
-			"source/Managers/Loaders/*.cpp" ,
-			"source/Render/*.h", 
+			"source/Managers/Loaders/*.h",
+			"source/Managers/Loaders/*.cpp",
+			"source/Render/*.h",
 			"source/Render/*.cpp",
-			"source/Render/Support/*.h" ,
-			"source/Render/Support/*.cpp" ,
-			"source/System/*.h", 
+			"source/Render/Support/*.h",
+			"source/Render/Support/*.cpp",
+			"source/Render/RHI/*.h",
+			"source/Render/RHI/*.cpp",
+			"source/Render/RHI/DX11/*.h",
+			"source/Render/RHI/DX11/*.cpp",
+			"source/Render/RHI/DX12/*.h",
+			"source/Render/RHI/DX12/*.cpp",
+			"source/Render/RayTracing/*.h",
+			"source/Render/RayTracing/*.cpp",
+			"source/System/*.h",
 			"source/System/*.cpp",
-			"source/Utils/*.h", 
+			"source/Utils/*.h",
 			"source/Utils/*.cpp",
 			"source/*.h",
 			"source/*.cpp"
 		}
 		
+		-- exclude unfinished files that don't compile yet
+		removefiles {
+			"source/GUI/HVisuals.h",
+			"source/GUI/HVisuals.cpp",
+			"source/Render/VoxelRender.h",
+			"source/Render/VoxelRender.cpp",
+		}
+
 		pchheader "stdafx.h"
 		pchsource "source/stdafx.cpp"
 		

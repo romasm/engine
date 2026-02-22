@@ -5,7 +5,7 @@ mesh
 }
 import
 {
-	fileDate = '1523711406'
+	fileDate = '1771622735'
 	version = '101'
 	filePath = '../resources/meshes/null_mesh.fbx'
 }

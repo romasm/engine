@@ -296,7 +296,7 @@ void SkeletonSystem::UpdateBuffers()
 			i.matrixBuffer[matrixID + 1] = XMMatrixTranspose(normalMatrix);
 		}
 
-		Render::UpdateDynamicResource(i.gpuMatrixBuffer.buf, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
+		GFX_CMD->UpdateBuffer(i.gpuMatrixBuffer.buf, (void*)i.matrixBuffer.data(), sizeof(XMMATRIX) * i.matrixBuffer.size());
 	}
 }
 
@@ -357,7 +357,7 @@ bool SkeletonSystem::updateSkeleton(SkeletonComponent& comp)
 
 	comp.matrixBuffer.reserve(matrixCount);
 	comp.matrixBuffer.resize(matrixCount);
-	comp.gpuMatrixBuffer = Buffer::CreateStructedBuffer(Render::Device(), matrixCount, sizeof(XMMATRIX), true);
+	comp.gpuMatrixBuffer = Buffer::CreateStructedBuffer(matrixCount, sizeof(XMMATRIX), true);
 
 	comp.dirty = true;
 	_setIdle(comp);
@@ -555,7 +555,7 @@ bool SkeletonSystem::_setSkeleton(SkeletonComponent* comp, string& skeleton, Lua
 		auto skeletonPtr = SkeletonMgr::GetResourcePtr(id);
 		if( !skeletonPtr )
 		{
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -563,7 +563,7 @@ bool SkeletonSystem::_setSkeleton(SkeletonComponent* comp, string& skeleton, Lua
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
 		{
 			SkeletonMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -572,7 +572,7 @@ bool SkeletonSystem::_setSkeleton(SkeletonComponent* comp, string& skeleton, Lua
 		if(!comp)
 		{
 			SkeletonMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -584,7 +584,7 @@ bool SkeletonSystem::_setSkeleton(SkeletonComponent* comp, string& skeleton, Lua
 		if(luaRef->isFunction())
 			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
 
-		_DELETE((LuaRef*)luaRef);
+		delete luaRef;
 	});
 
 	MeshMgr::Get()->DeleteResource(oldSkeleton);
@@ -611,7 +611,7 @@ int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, Lua
 		auto animPtr = AnimationMgr::GetResourcePtr(id);
 		if(!animPtr)
 		{
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -619,7 +619,7 @@ int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, Lua
 		if(!worldPtr || !worldPtr->IsEntityAlive(ent))
 		{
 			AnimationMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -628,7 +628,7 @@ int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, Lua
 		if(!comp)
 		{
 			AnimationMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -636,7 +636,7 @@ int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, Lua
 		{
 			WRN("Cant set single animation %s because animations of component were modified");
 			AnimationMgr::Get()->DeleteResource(id);
-			_DELETE((LuaRef*)luaRef);
+			delete luaRef;
 			return;
 		}
 
@@ -646,7 +646,7 @@ int32_t SkeletonSystem::_addAnimation(SkeletonComponent* comp, string& anim, Lua
 		if(luaRef->isFunction())
 			LUA_CALL((*luaRef)(worldPtr, comp->get_entity(), id, status),);
 
-		_DELETE((LuaRef*)luaRef);
+		delete luaRef;
 	});
 
 	return animID;

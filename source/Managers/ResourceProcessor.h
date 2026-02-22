@@ -129,10 +129,10 @@ namespace EngineCore
 		static void RegLuaFunctions();
 
 		static bool ImportResource(ImportInfo& info, bool force = false);
-		static bool SaveImportInfo(string& resFile, ImportInfo& info);
-		static void LoadImportInfo(string& resName, ImportInfo& info, uint32_t& date);
+		static bool SaveImportInfo(const string& resFile, ImportInfo& info);
+		static void LoadImportInfo(const string& resName, ImportInfo& info, uint32_t& date);
 
-		static bool CheckImportNeeded(ImportInfo& info, uint32_t date, string& resFile);
+		static bool CheckImportNeeded(ImportInfo& info, uint32_t date, const string& resFile);
 
 	private:
 		bool loadResource(const ResourceSlot& loadingSlot);

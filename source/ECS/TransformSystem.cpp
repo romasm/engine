@@ -219,7 +219,7 @@ bool TransformSystem::PostLoadParentsResolve()
 	return true;
 }
 
-bool TransformSystem::SetPhysicsTransform(Entity e, XMMATRIX& transform)
+bool TransformSystem::SetPhysicsTransform(Entity e, const XMMATRIX& transform)
 {
 	GET_COMPONENT(false)
 	XMVECTOR pos, rot, scale;
@@ -261,7 +261,7 @@ bool TransformSystem::SetPosition_L3F(Entity e, float x, float y, float z)
 	return SetPosition_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::SetPosition_L(Entity e, Vector3& p)
+bool TransformSystem::SetPosition_L(Entity e, const Vector3& p)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p));
 }
@@ -271,17 +271,17 @@ bool TransformSystem::SetRotationPYR_L3F(Entity e, float p, float y, float r)
 	return SetRotationPYR_L(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::SetRotationPYR_L(Entity e, Vector3& r)
+bool TransformSystem::SetRotationPYR_L(Entity e, const Vector3& r)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotation_L(Entity e, Quaternion& quat)
+bool TransformSystem::SetRotation_L(Entity e, const Quaternion& quat)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotationAxis_L(Entity e, Vector3& normalAxis, float angle)
+bool TransformSystem::SetRotationAxis_L(Entity e, const Vector3& normalAxis, float angle)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
@@ -291,7 +291,7 @@ bool TransformSystem::SetScale_L3F(Entity e, float x, float y, float z)
 	return SetScale_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::SetScale_L(Entity e, Vector3& s)
+bool TransformSystem::SetScale_L(Entity e, const Vector3& s)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
@@ -316,7 +316,7 @@ bool TransformSystem::SetPosition_W3F(Entity e, float x, float y, float z)
 	world->SetDirty(e);\
 	return true;
 
-bool TransformSystem::SetPosition_W(Entity e, Vector3& p)
+bool TransformSystem::SetPosition_W(Entity e, const Vector3& p)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(p));
 }
@@ -326,17 +326,17 @@ bool TransformSystem::SetRotationPYR_W3F(Entity e, float p, float y, float r)
 	return SetRotationPYR_W(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::SetRotationPYR_W(Entity e, Vector3& r)
+bool TransformSystem::SetRotationPYR_W(Entity e, const Vector3& r)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotation_W(Entity e, Quaternion& quat)
+bool TransformSystem::SetRotation_W(Entity e, const Quaternion& quat)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetRotationAxis_W(Entity e, Vector3& normalAxis, float angle)
+bool TransformSystem::SetRotationAxis_W(Entity e, const Vector3& normalAxis, float angle)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
@@ -346,12 +346,12 @@ bool TransformSystem::SetScale_W3F(Entity e, float x, float y, float z)
 	return SetScale_W(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::SetScale_W(Entity e, Vector3& s)
+bool TransformSystem::SetScale_W(Entity e, const Vector3& s)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::SetTransform_LInternal(Entity e, XMMATRIX& mat)
+bool TransformSystem::SetTransform_LInternal(Entity e, const XMMATRIX& mat)
 {
 	GET_COMPONENT(false)
 	sceneGraph->SetTransformation(comp.nodeID, mat);
@@ -359,7 +359,7 @@ bool TransformSystem::SetTransform_LInternal(Entity e, XMMATRIX& mat)
 	return true;
 }
 
-bool TransformSystem::SetTransform_WInternal(Entity e, XMMATRIX& mat)
+bool TransformSystem::SetTransform_WInternal(Entity e, const XMMATRIX& mat)
 {
 	GET_COMPONENT(false)
 	auto parent = sceneGraph->GetParent(comp.nodeID);
@@ -498,7 +498,7 @@ bool TransformSystem::AddPosition_L3F(Entity e, float x, float y, float z)
 	return AddPosition_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddPosition_L(Entity e, Vector3& p)
+bool TransformSystem::AddPosition_L(Entity e, const Vector3& p)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p));
 }
@@ -508,17 +508,17 @@ bool TransformSystem::AddRotationPYR_L3F(Entity e, float p, float y, float r)
 	return AddRotationPYR_L(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::AddRotationPYR_L(Entity e, Vector3& r)
+bool TransformSystem::AddRotationPYR_L(Entity e, const Vector3& r)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotationAxis_L(Entity e, Vector3& normalAxis, float angle)
+bool TransformSystem::AddRotationAxis_L(Entity e, const Vector3& normalAxis, float angle)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotation_L(Entity e, Quaternion& quat)
+bool TransformSystem::AddRotation_L(Entity e, const Quaternion& quat)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
@@ -528,7 +528,7 @@ bool TransformSystem::AddScale_L3F(Entity e, float x, float y, float z)
 	return AddScale_L(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddScale_L(Entity e, Vector3& s)
+bool TransformSystem::AddScale_L(Entity e, const Vector3& s)
 {
 	SET_TRANSFORM_L(XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
@@ -538,7 +538,7 @@ bool TransformSystem::AddPosition_W3F(Entity e, float x, float y, float z)
 	return AddPosition_W(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddPosition_W(Entity e, Vector3& p)
+bool TransformSystem::AddPosition_W(Entity e, const Vector3& p)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos) * XMMatrixTranslationFromVector(p));
 }
@@ -548,17 +548,17 @@ bool TransformSystem::AddRotationPYR_W3F(Entity e, float p, float y, float r)
 	return AddRotationPYR_W(e, Vector3(p, y, r));
 }
 
-bool TransformSystem::AddRotationPYR_W(Entity e, Vector3& r)
+bool TransformSystem::AddRotationPYR_W(Entity e, const Vector3& r)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationRollPitchYawFromVector(r) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotationAxis_W(Entity e, Vector3& normalAxis, float angle)
+bool TransformSystem::AddRotationAxis_W(Entity e, const Vector3& normalAxis, float angle)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationNormal(normalAxis, angle) * XMMatrixTranslationFromVector(pos));
 }
 
-bool TransformSystem::AddRotation_W(Entity e, Quaternion& quat)
+bool TransformSystem::AddRotation_W(Entity e, const Quaternion& quat)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixRotationQuaternion(rot) * XMMatrixRotationQuaternion(quat) * XMMatrixTranslationFromVector(pos));
 }
@@ -568,7 +568,7 @@ bool TransformSystem::AddScale_W3F(Entity e, float x, float y, float z)
 	return AddScale_W(e, Vector3(x, y, z));
 }
 
-bool TransformSystem::AddScale_W(Entity e, Vector3& s)
+bool TransformSystem::AddScale_W(Entity e, const Vector3& s)
 {
 	SET_TRANSFORM_W(XMMatrixScalingFromVector(scale) * XMMatrixScalingFromVector(s) * XMMatrixRotationQuaternion(rot) * XMMatrixTranslationFromVector(pos));
 }
