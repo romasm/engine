@@ -107,6 +107,31 @@ bool DX12Device::InitSwapChain(HWND hwnd, uint32_t width, uint32_t height)
 }
 
 // -----------------------------------------------------------------------
+// DX12Device::ResizeSwapChain
+
+bool DX12Device::ResizeSwapChain(uint32_t width, uint32_t height)
+{
+	if(!m_frameScheduler) return false;
+
+	// Flush all GPU work so back buffer references are safe to release.
+	m_frameScheduler->FlushGPU();
+
+	// Release our AddRef'd back-buffer texture wrappers.
+	for(auto& texture : m_backBufferTextures)
+	{
+		if(texture.resource) { texture.resource->Release(); texture.resource = nullptr; }
+	}
+
+	bool result = m_frameScheduler->GetSwapChain().Resize(
+		width, height, m_device, m_rtvHeap);
+
+	if(result)
+		InitBackBufferTextures();
+
+	return result;
+}
+
+// -----------------------------------------------------------------------
 // DX12Device::Shutdown
 
 void DX12Device::Shutdown()

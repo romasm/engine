@@ -223,6 +223,7 @@ public:
 	// DX12 backend: creates IDXGISwapChain4 inside DX12FrameScheduler.
 
 	virtual bool InitSwapChain(HWND /*hwnd*/, uint32_t /*width*/, uint32_t /*height*/) { return true; }
+	virtual bool ResizeSwapChain(uint32_t /*width*/, uint32_t /*height*/) { return true; }
 
 	// -----------------------------------------------------------------------
 	// Backend identification

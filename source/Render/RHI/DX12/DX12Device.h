@@ -215,6 +215,7 @@ public:
 
 	// Create the swap chain after the fact (deferred window creation).
 	bool InitSwapChain(HWND hwnd, uint32_t width, uint32_t height) override;
+	bool ResizeSwapChain(uint32_t width, uint32_t height) override;
 
 	// -----------------------------------------------------------------------
 	// Buffer creation / destruction

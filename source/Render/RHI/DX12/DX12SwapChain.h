@@ -82,6 +82,22 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferRTV()   const { return m_rtvHandles[m_currentBackBufferIndex]; }
 	IDXGISwapChain4*            GetSwapChain()              const { return m_swapChain; }
 
+	// Resize the swap chain back buffers (call after GPU flush).
+	bool Resize(uint32_t width, uint32_t height,
+	            ID3D12Device* device, ID3D12DescriptorHeap* rtvHeap)
+	{
+		if(!m_swapChain) return false;
+
+		ReleaseBackBuffers();
+
+		HRESULT hr = m_swapChain->ResizeBuffers(
+			BackBufferCount, max(1u, width), max(1u, height),
+			BackBufferFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+		if(FAILED(hr)) return false;
+
+		return AcquireBackBuffers(device, rtvHeap);
+	}
+
 	// Per-frame back buffer access (used by DX12Device::GetBackBuffer)
 	ID3D12Resource*             GetBackBuffer(uint32_t index) const
 	{ return (index < BackBufferCount) ? m_backBuffers[index] : nullptr; }

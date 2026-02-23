@@ -728,9 +728,14 @@ namespace EngineCore
 
 	bool Window::resize()
 	{
-		// DX12: swap chain is managed by DX12FrameScheduler, not the Window.
+		// DX12: resize the swap chain back buffers to match the new window size.
 		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
 		{
+			if(!Render::GetGfxDevice()->ResizeSwapChain(m_desc.width, m_desc.height))
+			{
+				ERR("DX12 swap chain resize failed");
+				return false;
+			}
 			m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
 			UpdateWindowState();
 			return true;
