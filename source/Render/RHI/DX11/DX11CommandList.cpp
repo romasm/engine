@@ -37,9 +37,9 @@ void DX11CommandList::SetPipelineState(GfxPipelineState* pso)
 	}
 
 	// Graphics pipeline — render states + all shader stages
-	m_context->OMSetDepthStencilState(RenderStateMgr::GetDepthStatePtr(dx11pso->depthState), 1);
-	m_context->OMSetBlendState(RenderStateMgr::GetBlendStatePtr(dx11pso->blendState), nullptr, 0xffffffff);
-	m_context->RSSetState(RenderStateMgr::GetRSStatePtr(dx11pso->rastState));
+	m_context->OMSetDepthStencilState(static_cast<ID3D11DepthStencilState*>(RenderStateMgr::GetDepthStatePtr(dx11pso->depthState)), 1);
+	m_context->OMSetBlendState(static_cast<ID3D11BlendState*>(RenderStateMgr::GetBlendStatePtr(dx11pso->blendState)), nullptr, 0xffffffff);
+	m_context->RSSetState(static_cast<ID3D11RasterizerState*>(RenderStateMgr::GetRSStatePtr(dx11pso->rastState)));
 
 	// Vertex shader (always required)
 	auto& shaderVS = ShaderCodeMgr::GetShaderCodeRef(dx11pso->shadersID[SHADER_VS]);

@@ -26,7 +26,16 @@
       "Bash(grep:*)",
       "Bash(powershell -ExecutionPolicy Bypass -File:*)",
       "Bash(taskkill:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(python \"c:/Users/roman/Dropbox/Engine/.claude/scripts/debug_bridge.py\" launch --exe \"c:/Users/roman/Dropbox/Engine/build/bin/core_dev.exe\" --attach)",
+      "Bash(python \"c:/Users/roman/Dropbox/Engine/.claude/scripts/debug_bridge.py\" --name core_dev)",
+      "Bash(python \"c:/Users/roman/Dropbox/Engine/.claude/scripts/debug_bridge.py\" --cmd \"sxe av; sxe gp; g\")",
+      "Bash(powershell -File:*)",
+      "Bash(python \"c:/Users/roman/Dropbox/Engine/.claude/scripts/debug_bridge.py\" --pid 39612)",
+      "Bash(./compile.bat)",
+      "Bash(sleep 4:*)",
+      "Bash(sleep 2:*)"
     ]
-  }
+  },
+  "outputStyle": "Explanatory"
 }

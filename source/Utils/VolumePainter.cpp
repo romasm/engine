@@ -2,7 +2,6 @@
 
 #include "VolumePainter.h"
 #include "Render.h"
-#include "RHI\DX11\DX11Types.h"
 #include "TexMgr.h"
 
 using namespace EngineCore;
@@ -252,19 +251,15 @@ void VolumePainter::PushDifference(Vector3& minCorner, Vector3& maxCorner)
 		history.pop_front();
 	}
 
-	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
+	RHI::GfxBox volumeBox = volumeArea.GetBox();
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
-	
-	auto* rawDiffTex = RHI::DX11::Cast(volumeDifference)->texture3D;
-	if (FAILED(CONTEXT3->Map(rawDiffTex, 0, D3D11_MAP_READ, 0, NULL)))
+
+	if (FAILED(GFX_DEVICE->ReadTextureRegion(volumeDifference, 0, volumeBox, volumeArea.data, rowPitch, depthPitch)))
 	{
-		ERR("Cant map volume difference to CPU");
+		ERR("Cant read volume difference to CPU");
 		return;
 	}
-
-	DEVICE3->ReadFromSubresource(volumeArea.data, rowPitch, depthPitch, rawDiffTex, 0, &volumeBox);
-	CONTEXT3->Unmap(rawDiffTex, 0);
 
 	GFX_CMD->ClearUAVFloat(volumeDifferenceUAV, 0, 0, 0, 0);
 
@@ -279,19 +274,15 @@ void VolumePainter::HistoryStepBack()
 	// send diff to gpu
 	VolumeDiff& volumeArea = history[historyMark - 1];
 
-	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
+	RHI::GfxBox volumeBox = volumeArea.GetBox();
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
 
-	auto* rawDiffTexBack = RHI::DX11::Cast(volumeDifference)->texture3D;
-	if (FAILED(CONTEXT3->Map(rawDiffTexBack, 0, D3D11_MAP_WRITE, 0, NULL)))
+	if (FAILED(GFX_DEVICE->WriteTextureRegion(volumeDifference, 0, volumeBox, volumeArea.data, rowPitch, depthPitch)))
 	{
-		ERR("Cant map volume difference to CPU");
+		ERR("Cant write volume difference to GPU");
 		return;
 	}
-
-	DEVICE3->WriteToSubresource(rawDiffTexBack, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
-	CONTEXT3->Unmap(rawDiffTexBack, 0);
 
 	// execute compute to do step back
 	VolumeInfo volumeInfo;
@@ -320,19 +311,15 @@ void VolumePainter::HistoryStepForward()
 	// send diff to gpu
 	VolumeDiff& volumeArea = history[historyMark];
 
-	D3D11_BOX volumeBox = volumeArea.GetD3DBox();
+	RHI::GfxBox volumeBox = volumeArea.GetBox();
 	uint32_t rowPitch = volumeArea.resX * VOXEL_DIFF_SIZE;
 	uint32_t depthPitch = rowPitch * volumeArea.resY;
-	
-	auto* rawDiffTexFwd = RHI::DX11::Cast(volumeDifference)->texture3D;
-	if (FAILED(CONTEXT3->Map(rawDiffTexFwd, 0, D3D11_MAP_WRITE, 0, NULL)))
+
+	if (FAILED(GFX_DEVICE->WriteTextureRegion(volumeDifference, 0, volumeBox, volumeArea.data, rowPitch, depthPitch)))
 	{
-		ERR("Cant map volume difference to CPU");
+		ERR("Cant write volume difference to GPU");
 		return;
 	}
-
-	DEVICE3->WriteToSubresource(rawDiffTexFwd, 0, &volumeBox, volumeArea.data, rowPitch, depthPitch);
-	CONTEXT3->Unmap(rawDiffTexFwd, 0);
 
 	// execute compute to do step forward
 	VolumeInfo volumeInfo;

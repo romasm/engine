@@ -4,7 +4,6 @@
 #include "BaseMgr.h"
 #include "TexLoader.h"
 #include "Pathes.h"
-#include "DX11Types.h"
 
 #define TEXTURE(name) TexMgr::Get()->GetResource(name)
 #define RELOADABLE_TEXTURE(name, need_reload) TexMgr::Get()->GetResource(name, need_reload)
@@ -25,14 +24,14 @@ namespace EngineCore
 		uint32_t arraySize;
 
 		DXGI_FORMAT format;
-		D3D11_SRV_DIMENSION type;
+		RHI::TextureDimension dimension;
 
 		TextureMeta() : width(0), height(0), depth(0), mipsCount(0), arraySize(0),
-			format(DXGI_FORMAT_UNKNOWN), type(D3D_SRV_DIMENSION_UNKNOWN) {}
+			format(DXGI_FORMAT_UNKNOWN), dimension(RHI::TextureDimension::Tex2D) {}
 
 		inline bool IsInvalid()
 		{
-			return (type == D3D_SRV_DIMENSION_UNKNOWN);
+			return (width == 0 && height == 0);
 		}
 	};
 
@@ -56,76 +55,27 @@ namespace EngineCore
 		{
 			TextureMeta result;
 
-			auto gfxSrv = GetResourcePtr(id);
-			auto* dx11srv = RHI::DX11::Cast(gfxSrv)->view;
-			D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-			dx11srv->GetDesc(&desc);
-
-			ID3D11Resource* resource = nullptr;
-			dx11srv->GetResource(&resource);
-			if(!resource)
+			auto* gfxSrv = GetResourcePtr(id);
+			if(!gfxSrv || !gfxSrv->sourceTexture)
 				return result;
 
-			switch (desc.ViewDimension)
+			auto* tex = gfxSrv->sourceTexture;
+			result.width     = tex->width;
+			result.height    = tex->height;
+			result.depth     = tex->depth;
+			result.mipsCount = tex->mipLevels;
+			result.format    = tex->format;
+			result.dimension = tex->dimension;
+
+			// arraySize: for cube maps depth stores faces/cubes, for arrays it's the slice count
+			switch(tex->dimension)
 			{
-			case D3D11_SRV_DIMENSION_TEXTURE1D:
-			case D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
-				{
-					ID3D11Texture1D* tex = nullptr;
-					resource->QueryInterface<ID3D11Texture1D>(&tex);
-					if(!tex)
-						return result;
-
-					D3D11_TEXTURE1D_DESC texDesc;
-					tex->GetDesc(&texDesc);
-
-					result.width = texDesc.Width;
-					result.arraySize = texDesc.ArraySize;
-					result.mipsCount = texDesc.MipLevels;
-				}
-				break;
-			case D3D11_SRV_DIMENSION_TEXTURE2D:
-			case D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
-			case D3D11_SRV_DIMENSION_TEXTURECUBE:
-			case D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
-				{
-					ID3D11Texture2D* tex = nullptr;
-					resource->QueryInterface<ID3D11Texture2D>(&tex);
-					if(!tex)
-						return result;
-
-					D3D11_TEXTURE2D_DESC texDesc;
-					tex->GetDesc(&texDesc);
-
-					result.width = texDesc.Width;
-					result.height = texDesc.Height;
-					result.arraySize = texDesc.ArraySize;
-					result.mipsCount = texDesc.MipLevels;
-				}
-				break;
-			case D3D11_SRV_DIMENSION_TEXTURE3D:
-				{
-					ID3D11Texture3D* tex = nullptr;
-					resource->QueryInterface<ID3D11Texture3D>(&tex);
-					if(!tex)
-						return result;
-
-					D3D11_TEXTURE3D_DESC texDesc;
-					tex->GetDesc(&texDesc);
-
-					result.width = texDesc.Width;
-					result.height = texDesc.Height;
-					result.depth = texDesc.Depth;
-					result.mipsCount = texDesc.MipLevels;
-				}
-				break;
-			default:
-				WRN("Resource dimention is unsupported");
-				return result;
+			case RHI::TextureDimension::CubeMap:      result.arraySize = 6; break;
+			case RHI::TextureDimension::CubeMapArray:  result.arraySize = tex->depth * 6; break;
+			case RHI::TextureDimension::Tex2DArray:    result.arraySize = tex->depth; break;
+			default:                                   result.arraySize = 1; break;
 			}
 
-			result.format = desc.Format;
-			result.type = desc.ViewDimension;
 			return result;
 		}
 	};

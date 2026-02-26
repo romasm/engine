@@ -2,7 +2,6 @@
 #include "EnvProbSystem.h"
 #include "World.h"
 #include "TexMgr.h"
-#include "RHI\DX11\DX11Types.h"
 
 using namespace EngineCore;
 
@@ -491,10 +490,7 @@ bool EnvProbSystem::Bake(Entity e)
 
 		for (int j = 0; j < 6; j++)
 		{
-			ID3D11Resource* resource = nullptr;
-			RHI::DX11::Cast(mip_rt->GetShaderResourceView(j))->view->GetResource(&resource);
-
-			if (FAILED(CaptureTexture(Render::Device(), Render::Context(), resource, i_faces[j * mipNum + i])))
+			if (FAILED(GFX_DEVICE->CaptureTexture(mip_rt->GetShaderResourceView(j), i_faces[j * mipNum + i])))
 			{
 				_CLOSE(mip_rt);
 				return false;

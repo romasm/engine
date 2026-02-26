@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "CubeRenderTarget.h"
-#include "RHI\DX11\DX11Types.h"
+#include "Render.h"
 
 using namespace EngineCore;
 
@@ -20,83 +20,37 @@ bool CubeRenderTarget::Init(int32_t res, DXGI_FORMAT fmt, bool hasMipChain, uint
 		Close();
 
 	arraySize = max((uint32_t)1, arrayCount);
-
 	resolution = res;
+	mipsCount = hasMipChain ? GetLog2(resolution) : 1;
 
-	if(hasMipChain)
-		mipsCount = GetLog2(resolution);
-	else
-		mipsCount = 1;
+	const auto dimension = (arraySize > 1)
+		? RHI::TextureDimension::CubeMapArray
+		: RHI::TextureDimension::CubeMap;
 
-	// Create cubemap texture via raw DX11 (cubemap misc flag not handled by RHI CreateTexture)
-	D3D11_TEXTURE2D_DESC textureDesc;
-	ZeroMemory(&textureDesc, sizeof(textureDesc));
-	textureDesc.Width = resolution;
-	textureDesc.Height = resolution;
-	textureDesc.MipLevels = mipsCount;
-	textureDesc.ArraySize = 6 * arraySize;
-	textureDesc.Format = fmt;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.SampleDesc.Quality = 0;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = (hasMipChain ? D3D11_BIND_RENDER_TARGET : 0) | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = (hasMipChain ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0) | D3D11_RESOURCE_MISC_TEXTURECUBE;
-	ID3D11Texture2D* rawTexture = nullptr;
-	if( FAILED(Render::Device()->CreateTexture2D(&textureDesc, NULL, &rawTexture)) )
-		return false;
-	auto* wrappedTexture = new RHI::DX11::DX11Texture();
-	wrappedTexture->texture2D = rawTexture;
-	wrappedTexture->width = resolution;
-	wrappedTexture->height = resolution;
-	wrappedTexture->depth = 6 * arraySize;
-	wrappedTexture->mipLevels = mipsCount;
-	wrappedTexture->format = fmt;
-	faces = wrappedTexture;
+	RHI::TextureDesc texDesc = {};
+	texDesc.dimension    = dimension;
+	texDesc.width        = resolution;
+	texDesc.height       = resolution;
+	texDesc.depth        = arraySize; // number of cubes
+	texDesc.mipLevels    = mipsCount;
+	texDesc.format       = fmt;
+	texDesc.allowSRV     = true;
+	texDesc.allowUAV     = true;
+	texDesc.allowRTV     = hasMipChain;
+	texDesc.generateMips = hasMipChain;
+	faces = GFX_DEVICE->CreateTexture(texDesc);
+	if(!faces) return false;
 
-	// SRV: cubemap or cubemap array (raw DX11 creation + wrap)
-	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	shaderResourceViewDesc.Format = fmt;
-	shaderResourceViewDesc.ViewDimension = arraySize > 1 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE;
-	shaderResourceViewDesc.TextureCube.MipLevels = mipsCount;
-	shaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+	SRV = GFX_DEVICE->CreateSRV(faces, fmt, 0, mipsCount);
+	if(!SRV) return false;
 
-	shaderResourceViewDesc.TextureCubeArray.MipLevels = mipsCount;
-	shaderResourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
-	shaderResourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
-	shaderResourceViewDesc.TextureCubeArray.NumCubes = arraySize;
-
+	// Per-face UAVs (one per cube face per array element)
+	const uint32_t totalFaces = 6 * arraySize;
+	UAV = new RHI::GfxUAV*[totalFaces];
+	for(uint32_t faceIndex = 0; faceIndex < totalFaces; faceIndex++)
 	{
-		ID3D11ShaderResourceView* rawSRV = nullptr;
-		if( FAILED(Render::Device()->CreateShaderResourceView(rawTexture, &shaderResourceViewDesc, &rawSRV)) )
-			return false;
-		auto* wrapped = new RHI::DX11::DX11SRV();
-		wrapped->view = rawSRV;
-		SRV = wrapped;
-	}
-
-	// Per-face UAVs: Texture2DArray per-slice (raw DX11 creation + wrap in DX11UAV)
-	UAV = new RHI::GfxUAV*[6 * arraySize];
-
-	D3D11_UNORDERED_ACCESS_VIEW_DESC UAVdesc;
-	ZeroMemory(&UAVdesc, sizeof(UAVdesc));
-	UAVdesc.Format = fmt;
-	UAVdesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-	UAVdesc.Texture2DArray.MipSlice = 0;
-	UAVdesc.Texture2DArray.ArraySize = 1;
-
-	for (uint32_t k = 0; k < arraySize; k++)
-	{
-		for (int32_t i = 0; i < 6; i++)
-		{
-			UAVdesc.Texture2DArray.FirstArraySlice = k * 6 + i;
-			ID3D11UnorderedAccessView* rawUAV = nullptr;
-			if (FAILED(Render::Device()->CreateUnorderedAccessView(rawTexture, &UAVdesc, &rawUAV)))
-				return false;
-			auto* wrappedUAV = new RHI::DX11::DX11UAV();
-			wrappedUAV->view = rawUAV;
-			UAV[UAVdesc.Texture2DArray.FirstArraySlice] = wrappedUAV;
-		}
+		UAV[faceIndex] = GFX_DEVICE->CreateUAV(faces, fmt, 0, faceIndex);
+		if(!UAV[faceIndex]) return false;
 	}
 
 	return true;

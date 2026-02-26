@@ -13,9 +13,11 @@ RenderTarget::RenderTarget()
 		m_SRV[i] = nullptr;
 		m_UAV[i] = nullptr;
 		b_mips[i] = false;
+		m_currentRTState[i] = RHI::ResourceState::RenderTarget;
 	}
 	m_DSTexture = nullptr;
 	m_DSV = nullptr;
+	m_currentDSState = RHI::ResourceState::DepthWrite;
 	t_width = 0;
 	t_height = 0;
 	RT_count = 0;
@@ -318,13 +320,32 @@ void RenderTarget::GenerateMipmaps(ScenePipeline* scene)
 
 void RenderTarget::SetRenderTarget(uint32_t rt_start, uint32_t rt_end)
 {
-	uint32_t count = (rt_end == 0 ? RT_count : rt_end) - rt_start;
+	uint32_t end = (rt_end == 0 ? RT_count : rt_end);
+
+	for(uint32_t i = rt_start; i < end; i++)
+	{
+		if(m_RTTexture[i] && m_currentRTState[i] != RHI::ResourceState::RenderTarget)
+		{
+			GFX_CMD->TransitionTexture(m_RTTexture[i], m_currentRTState[i], RHI::ResourceState::RenderTarget);
+			m_currentRTState[i] = RHI::ResourceState::RenderTarget;
+		}
+	}
+	if(m_DSTexture && !b_importedDS && m_currentDSState != RHI::ResourceState::DepthWrite)
+	{
+		GFX_CMD->TransitionTexture(m_DSTexture, m_currentDSState, RHI::ResourceState::DepthWrite);
+		m_currentDSState = RHI::ResourceState::DepthWrite;
+	}
+	GFX_CMD->FlushBarriers();
+
+	uint32_t count = end - rt_start;
 	GFX_CMD->SetRenderTargets(count, &m_RTV[rt_start], m_DSV);
 	GFX_CMD->SetViewport(m_viewport);
 }
 
 void RenderTarget::ClearRenderTargets(float red, float green, float blue, float alpha, bool clearDS)
 {
+	TransitionToRenderTarget();
+
 	for(int i=0; i<(int)RT_count; i++)
 		GFX_CMD->ClearRenderTarget(m_RTV[i], red, green, blue, alpha);
 
@@ -362,4 +383,58 @@ RHI::GfxTexture* RenderTarget::GetTexture(int id)
 	if(id>=int(RT_count) || id<0)
 		return nullptr;
 	return m_RTTexture[id];
+}
+
+void RenderTarget::TransitionToRenderTarget()
+{
+	for(uint32_t i = 0; i < RT_count; i++)
+	{
+		if(m_RTTexture[i] && m_currentRTState[i] != RHI::ResourceState::RenderTarget)
+		{
+			GFX_CMD->TransitionTexture(m_RTTexture[i], m_currentRTState[i], RHI::ResourceState::RenderTarget);
+			m_currentRTState[i] = RHI::ResourceState::RenderTarget;
+		}
+	}
+	if(m_DSTexture && !b_importedDS && m_currentDSState != RHI::ResourceState::DepthWrite)
+	{
+		GFX_CMD->TransitionTexture(m_DSTexture, m_currentDSState, RHI::ResourceState::DepthWrite);
+		m_currentDSState = RHI::ResourceState::DepthWrite;
+	}
+	GFX_CMD->FlushBarriers();
+}
+
+void RenderTarget::TransitionToShaderResource()
+{
+	for(uint32_t i = 0; i < RT_count; i++)
+	{
+		if(m_RTTexture[i] && m_currentRTState[i] != RHI::ResourceState::ShaderResource)
+		{
+			GFX_CMD->TransitionTexture(m_RTTexture[i], m_currentRTState[i], RHI::ResourceState::ShaderResource);
+			m_currentRTState[i] = RHI::ResourceState::ShaderResource;
+		}
+	}
+	GFX_CMD->FlushBarriers();
+}
+
+void RenderTarget::TransitionToUnorderedAccess()
+{
+	for(uint32_t i = 0; i < RT_count; i++)
+	{
+		if(m_UAV[i] && m_RTTexture[i] && m_currentRTState[i] != RHI::ResourceState::UnorderedAccess)
+		{
+			GFX_CMD->TransitionTexture(m_RTTexture[i], m_currentRTState[i], RHI::ResourceState::UnorderedAccess);
+			m_currentRTState[i] = RHI::ResourceState::UnorderedAccess;
+		}
+	}
+	GFX_CMD->FlushBarriers();
+}
+
+void RenderTarget::TransitionDepthToRead()
+{
+	if(m_DSTexture && !b_importedDS && m_currentDSState != RHI::ResourceState::ShaderResource)
+	{
+		GFX_CMD->TransitionTexture(m_DSTexture, m_currentDSState, RHI::ResourceState::ShaderResource);
+		m_currentDSState = RHI::ResourceState::ShaderResource;
+	}
+	GFX_CMD->FlushBarriers();
 }

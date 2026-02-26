@@ -17,19 +17,63 @@ RHI::GfxSRV* TexLoader::LoadTexture(const string& resName)
 	{
 		uint32_t size = 0;
 		uint8_t* data = FileIO::ReadFileData(resName, &size);
-		if(!data)
+
+		RHI::GfxSRV* result = nullptr;
+		if(data)
 		{
-			ERR("Cant load DDS texture %s !", resName.c_str());
-			return nullptr;
+			result = GFX_DEVICE->LoadDDSFromMemory(data, size);
+			_DELETE_ARRAY(data);
 		}
 
-		auto* result = GFX_DEVICE->LoadDDSFromMemory(data, size);
-		_DELETE_ARRAY(data);
-
-		if(result)
-			LOG("Texture loaded %s", resName.c_str());
-		else
+		if(!result)
+		{
 			ERR("Cant load DDS texture %s !", resName.c_str());
+
+#ifdef _EDITOR
+#ifdef _DEV
+			uint32_t date;
+			ImportInfo info;
+			ResourceProcessor::LoadImportInfo(resName, info, date);
+
+			if( info.importBytes == 0 )
+			{
+				auto ext = resName.find(".dds");
+				if( ext == string::npos )
+					ext = resName.find(".DDS");
+
+				string resourceName = resName.substr(0, ext);
+				string tgaTexture = resourceName + ".tga";
+				if( !FileIO::IsExist(tgaTexture) )
+				{
+					tgaTexture = resourceName + ".TGA";
+					if( !FileIO::IsExist(tgaTexture) )
+						return nullptr;
+				}
+
+				info.filePath = tgaTexture;
+				info.resourceName = resourceName;
+				info.importBytes = IMP_BYTE_TEXTURE;
+				info.textureFormat = DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+			}
+
+			if( ResourceProcessor::ImportResource(info, true) )
+			{
+				data = FileIO::ReadFileData(resName, &size);
+				if(data)
+				{
+					result = GFX_DEVICE->LoadDDSFromMemory(data, size);
+					if(result)
+						LOG("Texture loaded %s", resName.c_str());
+					_DELETE_ARRAY(data);
+				}
+			}
+#endif
+#endif
+		}
+		else
+		{
+			LOG("Texture loaded %s", resName.c_str());
+		}
 
 		return result;
 	}
@@ -37,7 +81,7 @@ RHI::GfxSRV* TexLoader::LoadTexture(const string& resName)
 	// DX11 path (unchanged)
 	ID3D11ShaderResourceView* newTex = nullptr;
 
-	HRESULT hr = -1;
+	HRESULT hr = E_FAIL;
 	uint32_t size = 0;
 	uint8_t* data = FileIO::ReadFileData(resName, &size);
 	if(data)
@@ -106,6 +150,57 @@ RHI::GfxSRV* TexLoader::LoadTexture(const string& resName)
 
 	auto* result = new RHI::DX11::DX11SRV();
 	result->view = newTex;
+
+	// Extract the underlying texture resource and wrap it so that
+	// RHI code can access the backing GfxTexture via sourceTexture.
+	ID3D11Resource* rawResource = nullptr;
+	newTex->GetResource(&rawResource);
+	if(rawResource)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		newTex->GetDesc(&srvDesc);
+
+		auto* texWrapper = new RHI::DX11::DX11Texture();
+		// Determine dimension from SRV view type
+		ID3D11Texture2D* tex2D = nullptr;
+		ID3D11Texture3D* tex3D = nullptr;
+		if(SUCCEEDED(rawResource->QueryInterface(&tex2D)) && tex2D)
+		{
+			texWrapper->texture2D = tex2D; // AddRef'd by QueryInterface
+			D3D11_TEXTURE2D_DESC texDesc;
+			tex2D->GetDesc(&texDesc);
+			texWrapper->width     = texDesc.Width;
+			texWrapper->height    = texDesc.Height;
+			texWrapper->depth     = texDesc.ArraySize;
+			texWrapper->mipLevels = texDesc.MipLevels;
+			texWrapper->format    = texDesc.Format;
+			if(texDesc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE)
+				texWrapper->dimension = (texDesc.ArraySize > 6)
+					? RHI::TextureDimension::CubeMapArray
+					: RHI::TextureDimension::CubeMap;
+			else if(texDesc.ArraySize > 1)
+				texWrapper->dimension = RHI::TextureDimension::Tex2DArray;
+			else
+				texWrapper->dimension = RHI::TextureDimension::Tex2D;
+		}
+		else if(SUCCEEDED(rawResource->QueryInterface(&tex3D)) && tex3D)
+		{
+			texWrapper->texture3D = tex3D; // AddRef'd by QueryInterface
+			D3D11_TEXTURE3D_DESC texDesc;
+			tex3D->GetDesc(&texDesc);
+			texWrapper->width     = texDesc.Width;
+			texWrapper->height    = texDesc.Height;
+			texWrapper->depth     = texDesc.Depth;
+			texWrapper->mipLevels = texDesc.MipLevels;
+			texWrapper->format    = texDesc.Format;
+			texWrapper->dimension = RHI::TextureDimension::Tex3D;
+		}
+		rawResource->Release(); // GetResource AddRef'd it
+
+		result->sourceTexture     = texWrapper;
+		result->ownsSourceTexture = true;
+	}
+
 	return result;
 }
 
@@ -212,12 +307,8 @@ bool TexLoader::IsSupported(string filename)
 
 bool TexLoader::SaveTexture(const string& filename, RHI::GfxSRV* srv)
 {
-	auto* dx11srv = RHI::DX11::Cast(srv)->view;
-	ID3D11Resource* resource = nullptr;
-	dx11srv->GetResource(&resource);
-
 	ScratchImage texture;
-	auto hr = CaptureTexture(Render::Device(), Render::Context(), resource, texture);
+	auto hr = GFX_DEVICE->CaptureTexture(srv, texture);
 	if ( FAILED(hr) )
 		return false;
 	

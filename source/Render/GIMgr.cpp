@@ -6,7 +6,6 @@
 #include "Frustum.h"
 #include "World.h"
 #include "Utils\Profiler.h"
-#include "DX11Types.h"
 
 using namespace EngineCore;
 
@@ -87,6 +86,11 @@ GIMgr::~GIMgr()
 bool GIMgr::InitBuffers()
 {
 	sampleDataGPU = Buffer::CreateConstantBuffer(sizeof(GISampleData), true);
+	if(!sampleDataGPU)
+	{
+		ERR("GIMgr: Failed to create sampleDataGPU constant buffer");
+		return false;
+	}
 
 	sampleData.minCorner = Vector3(0.0f);
 	sampleData.chunkSizeRcp = 0.0f;
@@ -202,7 +206,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage bricksAtlasVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(bricksAtlas)->AsResource(), bricksAtlasVolume)))
+	if (FAILED(GFX_DEVICE->CaptureTexture(bricksAtlas, bricksAtlasVolume)))
 	{
 		ERR("Cant get GI bricks atlas");
 	}
@@ -215,7 +219,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage bricksLookupsVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(bricksLookup)->AsResource(), bricksLookupsVolume)))
+	if (FAILED(GFX_DEVICE->CaptureTexture(bricksLookup, bricksLookupsVolume)))
 	{
 		ERR("Cant get GI bricks lookups");
 	}
@@ -228,7 +232,7 @@ GISampleData* GIMgr::SaveGIData()
 	}
 
 	ScratchImage chunksVolume;
-	if (FAILED(CaptureTexture(Render::Device(), Render::Context(), RHI::DX11::Cast(chunksLookup)->AsResource(), chunksVolume)))
+	if (FAILED(GFX_DEVICE->CaptureTexture(chunksLookup, chunksVolume)))
 	{
 		ERR("Cant get GI chunks");
 	}
@@ -402,38 +406,24 @@ bool GIMgr::RecreateResources()
 	
 	// chunks to GPU
 	const DXGI_FORMAT formatChunks = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
-
-	D3D11_SUBRESOURCE_DATA chunksData;
-	chunksData.pSysMem = chunksArray;
-	chunksData.SysMemPitch = chunksX * sizeof(Vector4Uint16);
-	chunksData.SysMemSlicePitch = zStride * sizeof(Vector4Uint16);
-
-	D3D11_TEXTURE3D_DESC volumeDesc;
-	ZeroMemory(&volumeDesc, sizeof(volumeDesc));
-	volumeDesc.Width = chunksX;
-	volumeDesc.Height = chunksY;
-	volumeDesc.Depth = chunksZ;
-	volumeDesc.MipLevels = 1;
-	volumeDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	volumeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	volumeDesc.CPUAccessFlags = 0;
-	volumeDesc.MiscFlags = 0;
-	volumeDesc.Format = formatChunks;
-
-	ID3D11Texture3D* rawChunksTex = nullptr;
-	HRESULT hr = Render::Device()->CreateTexture3D(&volumeDesc, &chunksData, &rawChunksTex);
+	{
+		RHI::TextureDesc texDesc = {};
+		texDesc.dimension             = RHI::TextureDimension::Tex3D;
+		texDesc.width                 = chunksX;
+		texDesc.height                = chunksY;
+		texDesc.depth                 = chunksZ;
+		texDesc.mipLevels             = 1;
+		texDesc.format                = formatChunks;
+		texDesc.allowSRV              = true;
+		texDesc.initialData           = chunksArray;
+		texDesc.initialDataRowPitch   = chunksX * sizeof(Vector4Uint16);
+		texDesc.initialDataSlicePitch = zStride * sizeof(Vector4Uint16);
+		chunksLookup = GFX_DEVICE->CreateTexture(texDesc);
+	}
 	_DELETE_ARRAY(chunksArray);
 
-	if (FAILED(hr))
+	if (!chunksLookup)
 		return false;
-
-	auto* wrappedChunksTex = new RHI::DX11::DX11Texture();
-	wrappedChunksTex->texture3D = rawChunksTex;
-	wrappedChunksTex->width = volumeDesc.Width;
-	wrappedChunksTex->height = volumeDesc.Height;
-	wrappedChunksTex->depth = volumeDesc.Depth;
-	wrappedChunksTex->format = formatChunks;
-	chunksLookup = wrappedChunksTex;
 
 	chunksLookupSRV = GFX_DEVICE->CreateSRV(chunksLookup, formatChunks, 0, UINT32_MAX);
 	if (!chunksLookupSRV)
@@ -470,31 +460,24 @@ bool GIMgr::RecreateResources()
 
 	// lookups to GPU
 	const DXGI_FORMAT formatLookup = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-
-	D3D11_SUBRESOURCE_DATA lookupArrayData;
-	lookupArrayData.pSysMem = lookupArray;
-	lookupArrayData.SysMemPitch = lookupArrayX * sizeof(uint32_t);
-	lookupArrayData.SysMemSlicePitch = zStride * sizeof(uint32_t);
-
-	volumeDesc.Width = lookupArrayX;
-	volumeDesc.Height = lookupArrayY;
-	volumeDesc.Depth = lookupMaxSize;
-	volumeDesc.Format = formatLookup;
-
-	ID3D11Texture3D* rawLookupTex = nullptr;
-	hr = Render::Device()->CreateTexture3D(&volumeDesc, &lookupArrayData, &rawLookupTex);
+	{
+		RHI::TextureDesc texDesc = {};
+		texDesc.dimension             = RHI::TextureDimension::Tex3D;
+		texDesc.width                 = lookupArrayX;
+		texDesc.height                = lookupArrayY;
+		texDesc.depth                 = lookupMaxSize;
+		texDesc.mipLevels             = 1;
+		texDesc.format                = formatLookup;
+		texDesc.allowSRV              = true;
+		texDesc.initialData           = lookupArray;
+		texDesc.initialDataRowPitch   = lookupArrayX * sizeof(uint32_t);
+		texDesc.initialDataSlicePitch = zStride * sizeof(uint32_t);
+		bricksLookup = GFX_DEVICE->CreateTexture(texDesc);
+	}
 	_DELETE_ARRAY(lookupArray);
 
-	if (FAILED(hr))
+	if (!bricksLookup)
 		return false;
-
-	auto* wrappedLookupTex = new RHI::DX11::DX11Texture();
-	wrappedLookupTex->texture3D = rawLookupTex;
-	wrappedLookupTex->width = volumeDesc.Width;
-	wrappedLookupTex->height = volumeDesc.Height;
-	wrappedLookupTex->depth = volumeDesc.Depth;
-	wrappedLookupTex->format = formatLookup;
-	bricksLookup = wrappedLookupTex;
 
 	bricksLookupSRV = GFX_DEVICE->CreateSRV(bricksLookup, formatLookup, 0, UINT32_MAX);
 	if (!bricksLookupSRV)

@@ -66,7 +66,8 @@ public:
 	                      D3D12_CPU_DESCRIPTOR_HANDLE nullSrvCpu,
 	                      D3D12_CPU_DESCRIPTOR_HANDLE nullUavCpu,
 	                      ID3D12RootSignature* graphicsRootSig,
-	                      ID3D12RootSignature* computeRootSig)
+	                      ID3D12RootSignature* computeRootSig,
+	                      D3D12_GPU_VIRTUAL_ADDRESS zeroCbvAddress)
 	{
 		m_cbvSrvUavHeap     = cbvSrvUavHeap;
 		m_cbvSrvUavDescSize = descSize;
@@ -76,6 +77,7 @@ public:
 		m_nullUavCpu        = nullUavCpu;
 		m_graphicsRootSig   = graphicsRootSig;
 		m_computeRootSig    = computeRootSig;
+		m_zeroCbvAddress    = zeroCbvAddress;
 	}
 
 	// -----------------------------------------------------------------------
@@ -96,9 +98,34 @@ public:
 		memset(m_boundSRVs, 0, sizeof(m_boundSRVs));
 		memset(m_boundUAVs, 0, sizeof(m_boundUAVs));
 
-		// Set default root signature so CBV/SRV/UAV binding is always valid.
+		// Set default root signatures so CBV/SRV/UAV binding is always valid.
 		if(m_graphicsRootSig)
+		{
 			m_commandList->SetGraphicsRootSignature(m_graphicsRootSig);
+
+			// Initialize all root CBV params to the zero buffer so shaders
+			// never read from GPU address 0 (which causes a page fault).
+			if(m_zeroCbvAddress)
+			{
+				for(uint32_t i = 0; i < 4; ++i)
+					m_commandList->SetGraphicsRootConstantBufferView(RP_VS_CBV + i, m_zeroCbvAddress);
+				for(uint32_t i = 0; i < 10; ++i)
+					m_commandList->SetGraphicsRootConstantBufferView(RP_PS_CBV + i, m_zeroCbvAddress);
+				m_commandList->SetGraphicsRootConstantBufferView(RP_GS_CBV, m_zeroCbvAddress);
+				m_commandList->SetGraphicsRootConstantBufferView(RP_HS_CBV, m_zeroCbvAddress);
+				m_commandList->SetGraphicsRootConstantBufferView(RP_DS_CBV, m_zeroCbvAddress);
+			}
+		}
+		if(m_computeRootSig)
+		{
+			m_commandList->SetComputeRootSignature(m_computeRootSig);
+
+			if(m_zeroCbvAddress)
+			{
+				for(uint32_t i = 0; i < 4; ++i)
+					m_commandList->SetComputeRootConstantBufferView(RP_CS_CBV + i, m_zeroCbvAddress);
+			}
+		}
 	}
 
 	void Close() override
@@ -112,24 +139,40 @@ public:
 
 	void SetRenderTargets(uint32_t count, GfxRTV* const* rtvs, GfxDSV* dsv) override
 	{
+		// DX12 requires valid descriptor handles for all count entries.
+		// DX11 allows NULL to unbind. Detect all-null RTVs and set count=0.
 		D3D12_CPU_DESCRIPTOR_HANDLE d3dRTVs[8] = {};
+		bool anyValid = false;
 		for(uint32_t i = 0; i < count && i < 8; ++i)
-			d3dRTVs[i] = rtvs[i] ? Cast(rtvs[i])->handle : D3D12_CPU_DESCRIPTOR_HANDLE{};
+		{
+			if(rtvs[i])
+			{
+				d3dRTVs[i] = Cast(rtvs[i])->handle;
+				anyValid = true;
+			}
+		}
+
+		if(!anyValid)
+			count = 0;
 
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
 			dsv ? Cast(dsv)->handle : D3D12_CPU_DESCRIPTOR_HANDLE{};
 
-		m_commandList->OMSetRenderTargets(count, d3dRTVs, FALSE, dsv ? &dsvHandle : nullptr);
+		m_commandList->OMSetRenderTargets(count,
+			count > 0 ? d3dRTVs : nullptr,
+			FALSE, dsv ? &dsvHandle : nullptr);
 	}
 
 	void ClearRenderTarget(GfxRTV* rtv, float r, float g, float b, float a) override
 	{
+		if(!rtv) return;
 		const float color[4] = { r, g, b, a };
 		m_commandList->ClearRenderTargetView(Cast(rtv)->handle, color, 0, nullptr);
 	}
 
 	void ClearDepthStencil(GfxDSV* dsv, float depth, uint8_t stencil) override
 	{
+		if(!dsv) return;
 		m_commandList->ClearDepthStencilView(Cast(dsv)->handle,
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
 			depth, stencil, 0, nullptr);
@@ -185,6 +228,7 @@ public:
 	void SetVertexBuffer(uint32_t slot, GfxBuffer* buffer, uint32_t stride,
 	                     uint32_t offset = 0) override
 	{
+		if(!buffer) return;
 		auto* dx12Buffer = Cast(buffer);
 		D3D12_VERTEX_BUFFER_VIEW view;
 		view.BufferLocation = dx12Buffer->resource->GetGPUVirtualAddress() + offset;
@@ -197,6 +241,7 @@ public:
 	void SetIndexBuffer(GfxBuffer* buffer, bool index32bit,
 	                    uint32_t offset = 0) override
 	{
+		if(!buffer) return;
 		auto* dx12Buffer = Cast(buffer);
 		D3D12_INDEX_BUFFER_VIEW view;
 		view.BufferLocation = dx12Buffer->resource->GetGPUVirtualAddress() + offset;
@@ -349,6 +394,7 @@ public:
 
 	void UpdateBuffer(GfxBuffer* buffer, const void* data, size_t sizeBytes) override
 	{
+		if(!buffer) return;
 		auto* dx12Buffer = Cast(buffer);
 		void* mapped = nullptr;
 		D3D12_RANGE readRange = { 0, 0 }; // CPU is not reading back
@@ -379,6 +425,7 @@ public:
 	void TransitionBuffer(GfxBuffer* buffer,
 	                      ResourceState before, ResourceState after) override
 	{
+		if(!buffer) return;
 		auto* dx12Buffer = Cast(buffer);
 		m_pendingBarriers.push_back(
 			CD3DX12_RESOURCE_BARRIER::Transition(
@@ -390,6 +437,7 @@ public:
 	void TransitionTexture(GfxTexture* texture,
 	                       ResourceState before, ResourceState after) override
 	{
+		if(!texture) return;
 		auto* dx12Tex = Cast(texture);
 		m_pendingBarriers.push_back(
 			CD3DX12_RESOURCE_BARRIER::Transition(
@@ -413,8 +461,42 @@ public:
 
 	void CopyResource(GfxTexture* dest, GfxTexture* source) override
 	{
+		if(!dest || !source) return;
 		m_commandList->CopyResource(
 			Cast(dest)->resource, Cast(source)->resource);
+	}
+
+	void CopyTextureRegion(GfxTexture* dest, uint32_t destSubresource,
+		uint32_t destX, uint32_t destY, uint32_t destZ,
+		GfxTexture* source, uint32_t sourceSubresource,
+		const GfxBox* sourceBox) override
+	{
+		if(!dest || !source) return;
+
+		D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+		dstLoc.pResource        = Cast(dest)->resource;
+		dstLoc.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		dstLoc.SubresourceIndex = destSubresource;
+
+		D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+		srcLoc.pResource        = Cast(source)->resource;
+		srcLoc.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		srcLoc.SubresourceIndex = sourceSubresource;
+
+		const D3D12_BOX* pBox = nullptr;
+		D3D12_BOX d3dBox;
+		if(sourceBox)
+		{
+			d3dBox.left   = sourceBox->left;
+			d3dBox.top    = sourceBox->top;
+			d3dBox.front  = sourceBox->front;
+			d3dBox.right  = sourceBox->right;
+			d3dBox.bottom = sourceBox->bottom;
+			d3dBox.back   = sourceBox->back;
+			pBox = &d3dBox;
+		}
+
+		m_commandList->CopyTextureRegion(&dstLoc, destX, destY, destZ, &srcLoc, pBox);
 	}
 
 	void GenerateMips(GfxSRV* /*srv*/) override
@@ -426,6 +508,7 @@ public:
 	void ResolveSubresource(GfxTexture* dest, uint32_t destSubresource,
 		GfxTexture* source, uint32_t sourceSubresource, DXGI_FORMAT format) override
 	{
+		if(!dest || !source) return;
 		m_commandList->ResolveSubresource(
 			Cast(dest)->resource, destSubresource,
 			Cast(source)->resource, sourceSubresource, format);
@@ -616,6 +699,7 @@ private:
 	ID3D12DescriptorHeap* m_cbvSrvUavHeap     = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_nullSrvCpu  = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_nullUavCpu  = {};
+	D3D12_GPU_VIRTUAL_ADDRESS   m_zeroCbvAddress = 0;
 
 	void BindSRV(uint32_t slot, GfxSRV* srv)
 	{

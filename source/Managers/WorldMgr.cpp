@@ -61,7 +61,7 @@ WorldMgr::WorldMgr()
 	}
 	else
 	{
-		ERR("Повтороное создание WorldMgr");
+		ERR("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ WorldMgr");
 	}
 }
 
@@ -138,6 +138,13 @@ void WorldMgr::CloseWorldByID(uint32_t id)
 		ERR("World with id %u doesn\'t exist!", id);
 		return;
 	}
+
+	// Flush all in-flight GPU work before destroying the world's DX12 resources.
+	// In DX12, resources cannot be freed while the GPU is still referencing them.
+	auto* frameScheduler = Render::GetFrameScheduler();
+	if(frameScheduler)
+		frameScheduler->FlushGPU();
+
 	_CLOSE(i->second);
 	m_worldsMap.erase(i);
 }

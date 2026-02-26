@@ -6,8 +6,8 @@ namespace EngineCore::RHI { struct GfxPipelineState; }
 
 #define SHADERCODE_STR_LEN 256
 
-#define TECHNIQUE_SIZE (sizeof(uint8_t) + SHADERCODE_STR_LEN * 5 + sizeof(uint8_t) + sizeof(D3D11_DEPTH_STENCIL_DESC) \
-	+ sizeof(D3D11_BLEND_DESC) + sizeof(D3D11_RASTERIZER_DESC))
+#define TECHNIQUE_SIZE (sizeof(uint8_t) + SHADERCODE_STR_LEN * 5 + sizeof(uint8_t) + sizeof(RHI::DepthStencilDesc) \
+	+ sizeof(RHI::BlendDesc) + sizeof(RHI::RasterizerDesc))
 
 #define TECHIQUE_STR_L L"TECHNIQUE_"
 #define TECHIQUE_STR "TECHNIQUE_"
@@ -26,9 +26,9 @@ namespace EngineCore
 		string domainShader;
 		string geometryShader;
 
-		D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-		D3D11_BLEND_DESC blendDesc;
-		D3D11_RASTERIZER_DESC rastDesc;
+		RHI::DepthStencilDesc depthStencilDesc;
+		RHI::BlendDesc blendDesc;
+		RHI::RasterizerDesc rastDesc;
 	};
 
 	class BaseShader

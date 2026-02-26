@@ -55,12 +55,10 @@ namespace EngineCore
 		rt.SetRenderTarget();
 		plane.Draw();
 
-		ID3D11Resource* resource = nullptr;
-		rt.GetShaderResourceView(0)->GetResource(&resource);
 		ScratchImage texture;
-	
+
 		bool result = true;
-		HRESULT hr = CaptureTexture(DEVICE, CONTEXT, resource, texture);
+		HRESULT hr = GFX_DEVICE->CaptureTexture(rt.GetShaderResourceView(0), texture);
 		if ( SUCCEEDED(hr) )
 		{
 			hr = SaveToDDSFile( texture.GetImages(), texture.GetImageCount(), texture.GetMetadata(), 

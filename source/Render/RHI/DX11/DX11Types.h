@@ -29,12 +29,7 @@ struct DX11Texture : GfxTexture
 {
 	ID3D11Texture2D* texture2D = nullptr;
 	ID3D11Texture3D* texture3D = nullptr;
-	uint32_t         width     = 0;
-	uint32_t         height    = 0;
-	uint32_t         depth     = 1;
-	uint32_t         mipLevels = 1;
 	uint32_t         msaaSamples = 1;
-	DXGI_FORMAT      format    = DXGI_FORMAT_UNKNOWN;
 
 	~DX11Texture() override
 	{
@@ -139,5 +134,24 @@ inline DX11Sampler*      Cast(GfxSampler*      p) { return static_cast<DX11Sampl
 inline DX11InputLayout*  Cast(GfxInputLayout*  p) { return static_cast<DX11InputLayout*>(p); }
 inline DX11PipelineState* Cast(GfxPipelineState* p) { return static_cast<DX11PipelineState*>(p); }
 inline DX11QueryHeap*    Cast(GfxQueryHeap*    p) { return static_cast<DX11QueryHeap*>(p); }
+
+// -----------------------------------------------------------------------
+// Binary-compatible casts from RHI descriptor structs to D3D11 equivalents.
+// Guaranteed safe by static_assert in RHITypes.h.
+
+inline const D3D11_DEPTH_STENCIL_DESC& ToD3D11(const DepthStencilDesc& d)
+{ return reinterpret_cast<const D3D11_DEPTH_STENCIL_DESC&>(d); }
+
+inline const D3D11_BLEND_DESC& ToD3D11(const BlendDesc& d)
+{ return reinterpret_cast<const D3D11_BLEND_DESC&>(d); }
+
+inline const D3D11_RASTERIZER_DESC& ToD3D11(const RasterizerDesc& d)
+{ return reinterpret_cast<const D3D11_RASTERIZER_DESC&>(d); }
+
+inline const D3D11_SAMPLER_DESC& ToD3D11(const SamplerDesc& d)
+{ return reinterpret_cast<const D3D11_SAMPLER_DESC&>(d); }
+
+inline const D3D11_INPUT_ELEMENT_DESC* ToD3D11(const InputElementDesc* d)
+{ return reinterpret_cast<const D3D11_INPUT_ELEMENT_DESC*>(d); }
 
 } // namespace EngineCore::RHI::DX11

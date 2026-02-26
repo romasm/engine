@@ -8,163 +8,168 @@
 
 namespace StringToData
 {
-	inline UINT8 GetRTWriteMask( const string& str )
+	inline uint8_t GetRTWriteMask( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_COLOR_WRITE_ENABLE_ALL;
+			return ColorWriteAll;
 
-		PROC_STRING(D3D11_COLOR_WRITE_ENABLE_, ALL)
-		PROC_STRING(D3D11_COLOR_WRITE_ENABLE_, RED)
-		PROC_STRING(D3D11_COLOR_WRITE_ENABLE_, GREEN)
-		PROC_STRING(D3D11_COLOR_WRITE_ENABLE_, BLUE)
-		PROC_STRING(D3D11_COLOR_WRITE_ENABLE_, ALPHA)
+		if(str == "ALL")   return ColorWriteAll;
+		if(str == "RED")   return ColorWriteRed;
+		if(str == "GREEN") return ColorWriteGreen;
+		if(str == "BLUE")  return ColorWriteBlue;
+		if(str == "ALPHA") return ColorWriteAlpha;
 
-		return D3D11_COLOR_WRITE_ENABLE_ALL;
+		return ColorWriteAll;
 	};
 
-	inline D3D11_TEXTURE_ADDRESS_MODE GetAddressType( const string& str )
+	inline EngineCore::RHI::TextureAddressMode GetAddressType( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_TEXTURE_ADDRESS_WRAP;
+			return AddressWrap;
 
-		PROC_STRING(D3D11_TEXTURE_ADDRESS_, CLAMP)
-		PROC_STRING(D3D11_TEXTURE_ADDRESS_, WRAP)
-		PROC_STRING(D3D11_TEXTURE_ADDRESS_, BORDER)
-		PROC_STRING(D3D11_TEXTURE_ADDRESS_, MIRROR)
-		PROC_STRING(D3D11_TEXTURE_ADDRESS_, MIRROR_ONCE)
+		if(str == "CLAMP")       return AddressClamp;
+		if(str == "WRAP")        return AddressWrap;
+		if(str == "BORDER")      return AddressBorder;
+		if(str == "MIRROR")      return AddressMirror;
+		if(str == "MIRROR_ONCE") return AddressClamp; // no MIRROR_ONCE in RHI, fallback
 
-		return D3D11_TEXTURE_ADDRESS_WRAP;
+		return AddressWrap;
 	};
 
-	inline D3D11_COMPARISON_FUNC GetCompareFunc( const string& str )
+	inline EngineCore::RHI::ComparisonFunc GetCompareFunc( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_COMPARISON_ALWAYS;
-		
-		PROC_STRING(D3D11_COMPARISON_, ALWAYS)
-		PROC_STRING(D3D11_COMPARISON_, NEVER)
-		PROC_STRING(D3D11_COMPARISON_, LESS)
-		PROC_STRING(D3D11_COMPARISON_, EQUAL)
-		PROC_STRING(D3D11_COMPARISON_, LESS_EQUAL)
-		PROC_STRING(D3D11_COMPARISON_, GREATER)
-		PROC_STRING(D3D11_COMPARISON_, NOT_EQUAL)
-		PROC_STRING(D3D11_COMPARISON_, GREATER_EQUAL)
+			return ComparisonAlways;
 
-		return D3D11_COMPARISON_ALWAYS;
+		if(str == "ALWAYS")        return ComparisonAlways;
+		if(str == "NEVER")         return ComparisonNever;
+		if(str == "LESS")          return ComparisonLess;
+		if(str == "EQUAL")         return ComparisonEqual;
+		if(str == "LESS_EQUAL")    return ComparisonLessEqual;
+		if(str == "GREATER")       return ComparisonGreater;
+		if(str == "NOT_EQUAL")     return ComparisonNotEqual;
+		if(str == "GREATER_EQUAL") return ComparisonGreaterEqual;
+
+		return ComparisonAlways;
 	};
 
-	inline D3D11_FILTER GetFilter( const string& str )
+	inline EngineCore::RHI::Filter GetFilter( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		
-		PROC_STRING(D3D11_FILTER_, MIN_MAG_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, MIN_MAG_POINT_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, MIN_POINT_MAG_LINEAR_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, MIN_POINT_MAG_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, MIN_LINEAR_MAG_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, MIN_LINEAR_MAG_POINT_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, MIN_MAG_LINEAR_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, MIN_MAG_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, ANISOTROPIC)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_MAG_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_MAG_POINT_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_POINT_MAG_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_LINEAR_MAG_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_MAG_LINEAR_MIP_POINT)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_MIN_MAG_MIP_LINEAR)
-		PROC_STRING(D3D11_FILTER_, COMPARISON_ANISOTROPIC)
+			return FilterMinMagMipPoint;
 
-		return D3D11_FILTER_MIN_MAG_MIP_POINT;
+		if(str == "MIN_MAG_MIP_POINT")                      return FilterMinMagMipPoint;
+		if(str == "MIN_MAG_POINT_MIP_LINEAR")               return FilterMinMagPointMipLinear;
+		if(str == "MIN_POINT_MAG_LINEAR_MIP_POINT")         return FilterMinPointMagLinearMipPoint;
+		if(str == "MIN_POINT_MAG_MIP_LINEAR")               return FilterMinPointMagMipLinear;
+		if(str == "MIN_LINEAR_MAG_MIP_POINT")               return FilterMinLinearMagMipPoint;
+		if(str == "MIN_LINEAR_MAG_POINT_MIP_LINEAR")        return FilterMinLinearMagPointMipLinear;
+		if(str == "MIN_MAG_LINEAR_MIP_POINT")               return FilterMinMagLinearMipPoint;
+		if(str == "MIN_MAG_MIP_LINEAR")                     return FilterMinMagMipLinear;
+		if(str == "ANISOTROPIC")                             return FilterAnisotropic;
+		if(str == "COMPARISON_MIN_MAG_MIP_POINT")           return FilterMinMagMipPoint;
+		if(str == "COMPARISON_MIN_MAG_POINT_MIP_LINEAR")    return FilterMinMagPointMipLinear;
+		if(str == "COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT") return FilterMinPointMagLinearMipPoint;
+		if(str == "COMPARISON_MIN_POINT_MAG_MIP_LINEAR")    return FilterMinPointMagMipLinear;
+		if(str == "COMPARISON_MIN_LINEAR_MAG_MIP_POINT")    return FilterMinLinearMagMipPoint;
+		if(str == "COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR") return FilterMinLinearMagPointMipLinear;
+		if(str == "COMPARISON_MIN_MAG_LINEAR_MIP_POINT")    return FilterMinMagLinearMipPoint;
+		if(str == "COMPARISON_MIN_MAG_MIP_LINEAR")          return FilterComparisonMinMagMipLinear;
+		if(str == "COMPARISON_ANISOTROPIC")                  return FilterComparisonAnisotropic;
+
+		return FilterMinMagMipPoint;
 	};
 
-	inline D3D11_STENCIL_OP GetStencilOp( const string& str )
+	inline EngineCore::RHI::StencilOp GetStencilOp( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_STENCIL_OP_KEEP;
-		
-		PROC_STRING(D3D11_STENCIL_OP_, KEEP)
-		PROC_STRING(D3D11_STENCIL_OP_, ZERO)
-		PROC_STRING(D3D11_STENCIL_OP_, REPLACE)
-		PROC_STRING(D3D11_STENCIL_OP_, INCR_SAT)
-		PROC_STRING(D3D11_STENCIL_OP_, DECR_SAT)
-		PROC_STRING(D3D11_STENCIL_OP_, INVERT)
-		PROC_STRING(D3D11_STENCIL_OP_, INCR)
-		PROC_STRING(D3D11_STENCIL_OP_, DECR)
+			return StencilKeep;
 
-		return D3D11_STENCIL_OP_KEEP;
+		if(str == "KEEP")     return StencilKeep;
+		if(str == "ZERO")     return StencilZero;
+		if(str == "REPLACE")  return StencilReplace;
+		if(str == "INCR_SAT") return StencilIncrSat;
+		if(str == "DECR_SAT") return StencilDecrSat;
+		if(str == "INVERT")   return StencilInvert;
+		if(str == "INCR")     return StencilIncr;
+		if(str == "DECR")     return StencilDecr;
+
+		return StencilKeep;
 	};
 
-	inline D3D11_BLEND_OP GetBlendOp( const string& str )
+	inline EngineCore::RHI::BlendOp GetBlendOp( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_BLEND_OP_ADD;
-		
-		PROC_STRING(D3D11_BLEND_OP_, ADD)
-		PROC_STRING(D3D11_BLEND_OP_, SUBTRACT)
-		PROC_STRING(D3D11_BLEND_OP_, REV_SUBTRACT)
-		PROC_STRING(D3D11_BLEND_OP_, MIN)
-		PROC_STRING(D3D11_BLEND_OP_, MAX)
+			return BlendOpAdd;
 
-		return D3D11_BLEND_OP_ADD;
+		if(str == "ADD")          return BlendOpAdd;
+		if(str == "SUBTRACT")     return BlendOpSubtract;
+		if(str == "REV_SUBTRACT") return BlendOpRevSubtract;
+		if(str == "MIN")          return BlendOpMin;
+		if(str == "MAX")          return BlendOpMax;
+
+		return BlendOpAdd;
 	};
 
-	inline D3D11_BLEND GetBlend( const string& str )
+	inline EngineCore::RHI::Blend GetBlend( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_BLEND_ZERO;
-		
-		PROC_STRING(D3D11_BLEND_, ZERO)
-		PROC_STRING(D3D11_BLEND_, ONE)
-		PROC_STRING(D3D11_BLEND_, SRC_COLOR)
-		PROC_STRING(D3D11_BLEND_, INV_SRC_COLOR)
-		PROC_STRING(D3D11_BLEND_, SRC_ALPHA)
-		PROC_STRING(D3D11_BLEND_, INV_SRC_ALPHA)
-		PROC_STRING(D3D11_BLEND_, DEST_ALPHA)
-		PROC_STRING(D3D11_BLEND_, INV_DEST_ALPHA)
-		PROC_STRING(D3D11_BLEND_, DEST_COLOR)
-		PROC_STRING(D3D11_BLEND_, INV_DEST_COLOR)
-		PROC_STRING(D3D11_BLEND_, SRC_ALPHA_SAT)
-		PROC_STRING(D3D11_BLEND_, BLEND_FACTOR)
-		PROC_STRING(D3D11_BLEND_, INV_BLEND_FACTOR)
-		PROC_STRING(D3D11_BLEND_, SRC1_COLOR)
-		PROC_STRING(D3D11_BLEND_, INV_SRC1_COLOR)
-		PROC_STRING(D3D11_BLEND_, SRC1_ALPHA)
-		PROC_STRING(D3D11_BLEND_, INV_SRC1_ALPHA)
+			return BlendZero;
 
-		return D3D11_BLEND_ZERO;
+		if(str == "ZERO")             return BlendZero;
+		if(str == "ONE")              return BlendOne;
+		if(str == "SRC_COLOR")        return BlendSrcColor;
+		if(str == "INV_SRC_COLOR")    return BlendInvSrcColor;
+		if(str == "SRC_ALPHA")        return BlendSrcAlpha;
+		if(str == "INV_SRC_ALPHA")    return BlendInvSrcAlpha;
+		if(str == "DEST_ALPHA")       return BlendDestAlpha;
+		if(str == "INV_DEST_ALPHA")   return BlendInvDestAlpha;
+		if(str == "DEST_COLOR")       return BlendDestColor;
+		if(str == "INV_DEST_COLOR")   return BlendInvDestColor;
+		if(str == "SRC_ALPHA_SAT")    return BlendSrcAlphaSat;
+		if(str == "BLEND_FACTOR")     return BlendBlendFactor;
+		if(str == "INV_BLEND_FACTOR") return BlendInvBlendFactor;
+
+		return BlendZero;
 	};
 
-	inline D3D11_FILL_MODE GetFill( const string& str )
+	inline EngineCore::RHI::FillMode GetFill( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_FILL_SOLID;
-		
-		PROC_STRING(D3D11_FILL_, SOLID)
-		PROC_STRING(D3D11_FILL_, WIREFRAME)
+			return FillSolid;
 
-		return D3D11_FILL_SOLID;
+		if(str == "SOLID")     return FillSolid;
+		if(str == "WIREFRAME") return FillWireframe;
+
+		return FillSolid;
 	};
 
-	inline D3D11_CULL_MODE GetCull( const string& str )
+	inline EngineCore::RHI::CullMode GetCull( const string& str )
 	{
+		using namespace EngineCore::RHI;
 		if(str.empty())
-			return D3D11_CULL_BACK;
-		
-		PROC_STRING(D3D11_CULL_, NONE)
-		PROC_STRING(D3D11_CULL_, FRONT)
-		PROC_STRING(D3D11_CULL_, BACK)
+			return CullBack;
 
-		return D3D11_CULL_BACK;
+		if(str == "NONE")  return CullNone;
+		if(str == "FRONT") return CullFront;
+		if(str == "BACK")  return CullBack;
+
+		return CullBack;
 	};
 
 	inline EngineCore::RENDER_QUEUES GetQueueID( const string& str )
 	{
 		if(str.empty())
 			return EngineCore::RENDER_QUEUES::SC_OPAQUE;
-		
+
 		PROC_STRING(EngineCore::RENDER_QUEUES::, SC_OPAQUE)
 		PROC_STRING(EngineCore::RENDER_QUEUES::, GUI_2D)
 		PROC_STRING(EngineCore::RENDER_QUEUES::, GUI_2D_FONT)
@@ -181,7 +186,7 @@ namespace StringToData
 	{
 		if(str.empty())
 			return EngineCore::TECHNIQUES::TECHNIQUE_DEFAULT;
-		
+
 		PROC_STRING(EngineCore::TECHNIQUES::, TECHNIQUE_DEFAULT)
 		PROC_STRING(EngineCore::TECHNIQUES::, TECHNIQUE_SKIN_DEFAULT)
 		PROC_STRING(EngineCore::TECHNIQUES::, TECHNIQUE_SHADOW)

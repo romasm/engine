@@ -184,10 +184,12 @@ struct ShadowMatrixBuffer
 
 //#define MATNUM 50
 
+namespace EngineCore::RHI { struct GfxBuffer; }
+
 struct StMeshInfo
 {
-	ID3D11Buffer **m_vertexBuffer;
-	ID3D11Buffer **m_indexBuffer;
+	EngineCore::RHI::GfxBuffer **m_vertexBuffer;
+	EngineCore::RHI::GfxBuffer **m_indexBuffer;
 	
 	uint16_t mat_num;
 	uint32_t* m_indexCount;

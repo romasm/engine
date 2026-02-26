@@ -282,6 +282,7 @@ MeshData* MeshLoader::loadEngineMeshFromMemory(const string& filename, uint8_t* 
 #endif
 
 	// Version 104: read per-submesh meshlet data that follows all vertex/index blocks.
+	if(!mesh) return nullptr;
 	mesh->meshletSubsets.create(header.materialCount);
 	mesh->meshletSubsets.resize(header.materialCount);
 	for(uint32_t i = 0; i < header.materialCount; i++)

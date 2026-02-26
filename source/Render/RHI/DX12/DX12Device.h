@@ -174,13 +174,15 @@ public:
 	                          D3D12_CPU_DESCRIPTOR_HANDLE nullSrvCpu,
 	                          D3D12_CPU_DESCRIPTOR_HANDLE nullUavCpu,
 	                          ID3D12RootSignature* graphicsRootSig,
-	                          ID3D12RootSignature* computeRootSig)
+	                          ID3D12RootSignature* computeRootSig,
+	                          D3D12_GPU_VIRTUAL_ADDRESS zeroCbvAddress)
 	{
 		for(auto& entry : m_pool)
 			entry.commandList.InitBindingState(
 				cbvSrvUavHeap, descSize, ringStart, ringSize,
 				nullSrvCpu, nullUavCpu,
-				graphicsRootSig, computeRootSig);
+				graphicsRootSig, computeRootSig,
+				zeroCbvAddress);
 	}
 
 	// Accessors used by DX12Device for back-buffer RTV setup.
@@ -239,7 +241,8 @@ public:
 	                  uint32_t mipSlice = 0, uint32_t arraySlice = 0) override;
 
 	GfxDSV* CreateDSV(GfxTexture* texture, DXGI_FORMAT format,
-	                  uint32_t mipSlice = 0) override;
+	                  uint32_t mipSlice = 0,
+	                  uint32_t arraySlice = UINT32_MAX) override;
 
 	GfxSRV* CreateSRV(GfxTexture* texture, DXGI_FORMAT format,
 	                  uint32_t mostDetailedMip = 0,
@@ -249,7 +252,7 @@ public:
 	                  uint32_t numElements) override;
 
 	GfxUAV* CreateUAV(GfxTexture* texture, DXGI_FORMAT format,
-	                  uint32_t mipSlice = 0) override;
+	                  uint32_t mipSlice = 0, uint32_t arraySlice = UINT32_MAX) override;
 
 	GfxUAV* CreateUAV(GfxBuffer* buffer, uint32_t firstElement,
 	                  uint32_t numElements) override;
@@ -274,7 +277,7 @@ public:
 	void DestroyPSO(GfxPipelineState* pso) override { delete Cast(pso); }
 
 	GfxInputLayout* CreateInputLayout(const void* /*bytecode*/, size_t /*size*/,
-	    const D3D11_INPUT_ELEMENT_DESC* /*elements*/, uint32_t /*count*/) override
+	    const InputElementDesc* /*elements*/, uint32_t /*count*/) override
 	{ return nullptr; /* Phase 4: DX12 embeds layout in PSO */ }
 	void DestroyInputLayout(GfxInputLayout* layout) override { delete Cast(layout); }
 
@@ -292,6 +295,12 @@ public:
 	{ delete Cast(pipeline); }
 
 	// -----------------------------------------------------------------------
+	// Texture readback (GPU → CPU)
+
+	HRESULT CaptureTexture(GfxTexture* texture, DirectX::ScratchImage& result) override;
+	HRESULT CaptureTexture(GfxSRV* srv, DirectX::ScratchImage& result) override;
+
+	// -----------------------------------------------------------------------
 	// Back buffer access
 
 	GfxTexture* GetBackBuffer(uint32_t frameIndex) override;
@@ -307,6 +316,79 @@ public:
 	const char* GetAdapterName()   override { return m_adapterName; }
 	bool        SupportsRaytracing()  override { return m_supportsRaytracing; }
 	bool        SupportsMeshShaders() override { return m_supportsMeshShaders; }
+
+	// Check if the DX12 device is still alive. Returns true if healthy.
+	// On device removal, logs the reason and DRED breadcrumbs.
+	bool CheckDeviceHealth()
+	{
+		if(!m_device || m_deviceRemoved) return false;
+
+		HRESULT reason = m_device->GetDeviceRemovedReason();
+		if(reason == S_OK) return true;
+
+		m_deviceRemoved = true;
+		ERR("DX12 DEVICE REMOVED! Reason: 0x%08X", static_cast<unsigned>(reason));
+
+		// Try to get DRED auto-breadcrumbs
+		ID3D12DeviceRemovedExtendedData* dred = nullptr;
+		if(SUCCEEDED(m_device->QueryInterface(IID_PPV_ARGS(&dred))))
+		{
+			D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT breadcrumbs = {};
+			if(SUCCEEDED(dred->GetAutoBreadcrumbsOutput(&breadcrumbs)))
+			{
+				const D3D12_AUTO_BREADCRUMB_NODE* node = breadcrumbs.pHeadAutoBreadcrumbNode;
+				while(node)
+				{
+					if(node->pCommandListDebugNameW)
+						ERR("  DRED CmdList: %ls", node->pCommandListDebugNameW);
+					if(node->pCommandQueueDebugNameW)
+						ERR("  DRED Queue: %ls", node->pCommandQueueDebugNameW);
+
+					ERR("  DRED Breadcrumbs: %u completed of %u total",
+						node->pLastBreadcrumbValue ? *node->pLastBreadcrumbValue : 0,
+						node->BreadcrumbCount);
+
+					for(uint32_t i = 0; i < node->BreadcrumbCount; ++i)
+					{
+						const char* opName = "Unknown";
+						switch(node->pCommandHistory[i])
+						{
+						case D3D12_AUTO_BREADCRUMB_OP_SETMARKER:        opName = "SetMarker"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT:       opName = "BeginEvent"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_ENDEVENT:         opName = "EndEvent"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_DRAWINSTANCED:    opName = "DrawInstanced"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_DRAWINDEXEDINSTANCED: opName = "DrawIndexedInstanced"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_EXECUTEINDIRECT:  opName = "ExecuteIndirect"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_DISPATCH:         opName = "Dispatch"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_COPYBUFFERREGION: opName = "CopyBufferRegion"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_COPYTEXTUREREGION: opName = "CopyTextureRegion"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_COPYRESOURCE:     opName = "CopyResource"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_RESOURCEBARRIER:  opName = "ResourceBarrier"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_CLEARRENDERTARGETVIEW: opName = "ClearRTV"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_CLEARDEPTHSTENCILVIEW: opName = "ClearDSV"; break;
+						case D3D12_AUTO_BREADCRUMB_OP_PRESENT:          opName = "Present"; break;
+						default: break;
+						}
+						uint32_t lastCompleted = node->pLastBreadcrumbValue ? *node->pLastBreadcrumbValue : 0;
+						const char* marker = (i < lastCompleted) ? "DONE" : ((i == lastCompleted) ? ">>LAST<<" : "pending");
+						ERR("  DRED [%u] %s (%s)", i, opName, marker);
+					}
+
+					node = node->pNext;
+				}
+			}
+
+			D3D12_DRED_PAGE_FAULT_OUTPUT pageFault = {};
+			if(SUCCEEDED(dred->GetPageFaultAllocationOutput(&pageFault)))
+			{
+				ERR("  DRED Page fault VA: 0x%llX", pageFault.PageFaultVA);
+			}
+
+			dred->Release();
+		}
+
+		return false;
+	}
 
 	// -----------------------------------------------------------------------
 	// Internal accessors
@@ -351,6 +433,10 @@ public:
 	const DX12SRV* GetNullSRV() const { return &m_nullSRV; }
 	const DX12UAV* GetNullUAV() const { return &m_nullUAV; }
 
+	// Zero-filled CBV address for initializing unbound root CBV slots
+	D3D12_GPU_VIRTUAL_ADDRESS GetZeroCbvAddress() const
+	{ return m_zeroCbvBuffer ? m_zeroCbvBuffer->GetGPUVirtualAddress() : 0; }
+
 	ID3D12DescriptorHeap* GetRtvHeap()       const { return m_rtvHeap; }
 	ID3D12DescriptorHeap* GetDsvHeap()       const { return m_dsvHeap; }
 	ID3D12DescriptorHeap* GetCbvSrvUavHeap() const { return m_cbvSrvUavHeap; }
@@ -382,7 +468,12 @@ private:
 	void UploadBufferSync(ID3D12Resource* dest, const void* data,
 	                      uint64_t sizeBytes, D3D12_RESOURCE_STATES finalState);
 	void UploadTextureSync(ID3D12Resource* dest,
-	                       const D3D12_RESOURCE_DESC& destDesc, const void* data);
+	                       const D3D12_RESOURCE_DESC& destDesc, const void* data,
+	                       uint32_t srcRowPitch = 0, uint32_t srcSlicePitch = 0);
+
+	// Synchronous GPU readback (blocks until GPU completes the copy)
+	HRESULT ReadbackTexture(ID3D12Resource* resource, D3D12_RESOURCE_STATES currentState,
+	                        DirectX::ScratchImage& result);
 
 	// Wrap swapchain back buffers in DX12Texture for IGfxDevice::GetBackBuffer
 	void InitBackBufferTextures();
@@ -440,9 +531,13 @@ private:
 	DX12SRV m_nullSRV;
 	DX12UAV m_nullUAV;
 
+	// Zero-filled constant buffer for initializing unbound root CBV slots
+	ID3D12Resource* m_zeroCbvBuffer = nullptr;
+
 	// Capability cache
 	bool m_supportsRaytracing  = false;
 	bool m_supportsMeshShaders = false;
+	bool m_deviceRemoved       = false;
 	char m_adapterName[128]    = "DirectX 12";
 	size_t m_dedicatedVideoMemoryMB = 0;
 };

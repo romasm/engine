@@ -16,7 +16,23 @@ bool DX12Device::Init(HWND hwnd)
 	// for all subsequent API calls. Must happen before D3D12CreateDevice.
 	ComPtr<ID3D12Debug> debugController;
 	if(SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	{
 		debugController->EnableDebugLayer();
+		LOG("DX12: Debug layer enabled");
+	}
+#endif
+
+#ifdef _DEV
+	// Enable DRED (Device Removed Extended Data) for GPU breadcrumbs
+	// when device removal occurs. This tells us which GPU command caused it.
+	// DRED is lightweight and doesn't require the full debug layer.
+	ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dredSettings;
+	if(SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dredSettings))))
+	{
+		dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		LOG("DX12: DRED enabled (auto-breadcrumbs + page fault)");
+	}
 #endif
 
 	if(!CreateDevice())                  return false;
@@ -52,6 +68,32 @@ bool DX12Device::Init(HWND hwnd)
 		m_nullUAV.gpuHandle = gpuHandle;
 	}
 
+	// Create a small zero-filled constant buffer for initializing unbound root CBV slots.
+	// Without this, shaders reading from unbound CBV root params would access GPU address 0
+	// and trigger a device-removed page fault.
+	{
+		const uint32_t zeroCbvSize = 256; // minimum CB alignment
+		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto resDesc   = CD3DX12_RESOURCE_DESC::Buffer(zeroCbvSize);
+		HRESULT hr = m_device->CreateCommittedResource(
+			&heapProps, D3D12_HEAP_FLAG_NONE,
+			&resDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr, IID_PPV_ARGS(&m_zeroCbvBuffer));
+		if(FAILED(hr))
+		{
+			ERR("DX12: Failed to create zero CBV buffer: 0x%08X", (unsigned)hr);
+			return false;
+		}
+		// Zero-fill the buffer
+		void* mapped = nullptr;
+		D3D12_RANGE readRange = { 0, 0 };
+		if(SUCCEEDED(m_zeroCbvBuffer->Map(0, &readRange, &mapped)))
+		{
+			memset(mapped, 0, zeroCbvSize);
+			m_zeroCbvBuffer->Unmap(0, nullptr);
+		}
+	}
+
 	m_frameScheduler = new DX12FrameScheduler();
 
 	// The swapchain needs a window; if none is provided we create everything
@@ -84,7 +126,8 @@ bool DX12Device::Init(HWND hwnd)
 		m_cbvSrvUavHeap, m_cbvSrvUavDescriptorSize,
 		DynamicDescriptorStart, ringSize,
 		m_nullSRV.cpuHandle, m_nullUAV.cpuHandle,
-		m_graphicsRootSignature, m_computeRootSignature);
+		m_graphicsRootSignature, m_computeRootSignature,
+		GetZeroCbvAddress());
 
 	return true;
 }
@@ -95,6 +138,13 @@ bool DX12Device::Init(HWND hwnd)
 bool DX12Device::InitSwapChain(HWND hwnd, uint32_t width, uint32_t height)
 {
 	if(!m_frameScheduler || !hwnd) return false;
+
+	// DX12 currently supports a single swap chain (the main window).
+	// Secondary windows (profiler, etc.) share the main rendering context.
+	// Creating a second swap chain would overwrite back buffer RTVs and
+	// corrupt the frame scheduler state.
+	if(m_frameScheduler->GetSwapChain().IsInitialized())
+		return true;
 
 	bool result = m_frameScheduler->InitSwapChain(
 		m_factory, hwnd, width, height,
@@ -150,6 +200,7 @@ void DX12Device::Shutdown()
 		if(texture.resource) { texture.resource->Release(); texture.resource = nullptr; }
 	}
 
+	if(m_zeroCbvBuffer)     { m_zeroCbvBuffer->Release();     m_zeroCbvBuffer     = nullptr; }
 	if(m_uploadCommandList) { m_uploadCommandList->Release(); m_uploadCommandList = nullptr; }
 	if(m_uploadAllocator)   { m_uploadAllocator->Release();   m_uploadAllocator   = nullptr; }
 
@@ -550,7 +601,8 @@ void DX12Device::UploadBufferSync(ID3D12Resource* dest, const void* data,
 // Handles DX12's required row-pitch alignment in the upload buffer.
 
 void DX12Device::UploadTextureSync(ID3D12Resource* dest,
-                                    const D3D12_RESOURCE_DESC& destDesc, const void* data)
+                                    const D3D12_RESOURCE_DESC& destDesc, const void* data,
+                                    uint32_t srcRowPitch, uint32_t srcSlicePitch)
 {
 	// Query DX12-aligned layout for subresource 0.
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
@@ -571,18 +623,30 @@ void DX12Device::UploadTextureSync(ID3D12Resource* dest,
 		nullptr, IID_PPV_ARGS(&uploadBuffer));
 	if(FAILED(hr)) return;
 
-	// Copy row by row, inserting the padding required by DX12's row-pitch alignment.
+	// Source row pitch defaults to tight packing.
+	const UINT64 effectiveSrcRowPitch   = srcRowPitch   ? srcRowPitch   : rowSizeBytes;
+	const UINT64 effectiveSrcSlicePitch = srcSlicePitch  ? srcSlicePitch
+		: (effectiveSrcRowPitch * numRows);
+
+	// Copy row by row, slice by slice (handles DX12 row-pitch alignment and 3D depth).
 	BYTE* mapped = nullptr;
 	D3D12_RANGE readRange = { 0, 0 };
 	uploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mapped));
 
-	const BYTE* src = static_cast<const BYTE*>(data);
-	BYTE*       dst = mapped + footprint.Offset;
-	for(UINT row = 0; row < numRows; ++row)
+	const BYTE* srcBase = static_cast<const BYTE*>(data);
+	const UINT  depth   = max(1u, static_cast<UINT>(footprint.Footprint.Depth));
+	const UINT  dstSlicePitch = footprint.Footprint.RowPitch * numRows;
+
+	for(UINT slice = 0; slice < depth; ++slice)
 	{
-		memcpy(dst, src, static_cast<size_t>(rowSizeBytes));
-		src += rowSizeBytes;
-		dst += footprint.Footprint.RowPitch;
+		const BYTE* sliceSrc = srcBase + slice * effectiveSrcSlicePitch;
+		BYTE*       sliceDst = mapped + footprint.Offset + slice * dstSlicePitch;
+		for(UINT row = 0; row < numRows; ++row)
+		{
+			memcpy(sliceDst, sliceSrc, static_cast<size_t>(rowSizeBytes));
+			sliceSrc += effectiveSrcRowPitch;
+			sliceDst += footprint.Footprint.RowPitch;
+		}
 	}
 
 	uploadBuffer->Unmap(0, nullptr);
@@ -612,6 +676,177 @@ void DX12Device::UploadTextureSync(ID3D12Resource* dest,
 	ID3D12CommandList* lists[] = { m_uploadCommandList };
 	m_directQueue->ExecuteAndSignal(1, lists);
 	m_directQueue->Flush();
+}
+
+// -----------------------------------------------------------------------
+// CaptureTexture — GPU → CPU readback (synchronous, blocks until complete)
+
+HRESULT DX12Device::CaptureTexture(GfxTexture* texture, DirectX::ScratchImage& result)
+{
+	auto* dx12tex = Cast(texture);
+	if(!dx12tex || !dx12tex->resource) return E_FAIL;
+	return ReadbackTexture(dx12tex->resource, dx12tex->currentState, result);
+}
+
+HRESULT DX12Device::CaptureTexture(GfxSRV* srv, DirectX::ScratchImage& result)
+{
+	if(!srv || !srv->sourceTexture) return E_FAIL;
+	auto* dx12tex = Cast(srv->sourceTexture);
+	if(!dx12tex || !dx12tex->resource) return E_FAIL;
+	return ReadbackTexture(dx12tex->resource, dx12tex->currentState, result);
+}
+
+// -----------------------------------------------------------------------
+// Private: ReadbackTexture
+// Copies all subresources of a GPU texture into a DirectXTex ScratchImage.
+// Uses the upload command list + direct queue for a synchronous GPU readback.
+
+HRESULT DX12Device::ReadbackTexture(ID3D12Resource* resource,
+                                     D3D12_RESOURCE_STATES currentState,
+                                     DirectX::ScratchImage& result)
+{
+	D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
+
+	bool is3D = (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D);
+	uint32_t arraySize = static_cast<uint32_t>(resourceDesc.DepthOrArraySize);
+	uint32_t mipLevels = resourceDesc.MipLevels;
+
+	// For 3D textures each mip is one subresource (depth slices are inside).
+	// For 2D/Cube textures each (mip, arraySlice) pair is one subresource.
+	uint32_t subresourceCount = is3D ? mipLevels : (mipLevels * arraySize);
+
+	// Query DX12-aligned layout for all subresources.
+	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(subresourceCount);
+	std::vector<UINT>   numRowsPerSubresource(subresourceCount);
+	std::vector<UINT64> rowSizeBytesPerSubresource(subresourceCount);
+	UINT64 totalBytes = 0;
+	m_device->GetCopyableFootprints(&resourceDesc, 0, subresourceCount, 0,
+		footprints.data(), numRowsPerSubresource.data(),
+		rowSizeBytesPerSubresource.data(), &totalBytes);
+
+	// Create readback buffer.
+	ComPtr<ID3D12Resource> readbackBuffer;
+	CD3DX12_HEAP_PROPERTIES readbackProps(D3D12_HEAP_TYPE_READBACK);
+	auto readbackDesc = CD3DX12_RESOURCE_DESC::Buffer(totalBytes);
+
+	HRESULT hr = m_device->CreateCommittedResource(
+		&readbackProps, D3D12_HEAP_FLAG_NONE,
+		&readbackDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr, IID_PPV_ARGS(&readbackBuffer));
+	if(FAILED(hr)) return hr;
+
+	// Record copy commands using the upload command list.
+	m_uploadAllocator->Reset();
+	m_uploadCommandList->Reset(m_uploadAllocator, nullptr);
+
+	if(currentState != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	{
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			resource, currentState, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		m_uploadCommandList->ResourceBarrier(1, &barrier);
+	}
+
+	for(uint32_t i = 0; i < subresourceCount; ++i)
+	{
+		D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+		srcLoc.pResource        = resource;
+		srcLoc.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		srcLoc.SubresourceIndex = i;
+
+		D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+		dstLoc.pResource       = readbackBuffer.Get();
+		dstLoc.Type            = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		dstLoc.PlacedFootprint = footprints[i];
+
+		m_uploadCommandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+	}
+
+	if(currentState != D3D12_RESOURCE_STATE_COPY_SOURCE)
+	{
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			resource, D3D12_RESOURCE_STATE_COPY_SOURCE, currentState);
+		m_uploadCommandList->ResourceBarrier(1, &barrier);
+	}
+
+	m_uploadCommandList->Close();
+
+	ID3D12CommandList* lists[] = { m_uploadCommandList };
+	m_directQueue->ExecuteAndSignal(1, lists);
+	m_directQueue->Flush();
+
+	// Map readback buffer to CPU.
+	BYTE* mapped = nullptr;
+	D3D12_RANGE readRange = { 0, static_cast<size_t>(totalBytes) };
+	hr = readbackBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mapped));
+	if(FAILED(hr)) return hr;
+
+	// Initialize ScratchImage with matching dimensions.
+	if(is3D)
+		hr = result.Initialize3D(resourceDesc.Format,
+			static_cast<size_t>(resourceDesc.Width),
+			resourceDesc.Height, arraySize, mipLevels);
+	else
+		hr = result.Initialize2D(resourceDesc.Format,
+			static_cast<size_t>(resourceDesc.Width),
+			resourceDesc.Height, arraySize, mipLevels);
+
+	if(FAILED(hr))
+	{
+		D3D12_RANGE writtenRange = { 0, 0 };
+		readbackBuffer->Unmap(0, &writtenRange);
+		return hr;
+	}
+
+	// Copy from readback buffer (DX12-aligned rows) into ScratchImage (tight rows).
+	for(uint32_t i = 0; i < subresourceCount; ++i)
+	{
+		const auto& footprint = footprints[i];
+		const BYTE* subresourceBase = mapped + footprint.Offset;
+		uint32_t numRows   = numRowsPerSubresource[i];
+		uint32_t rowBytes  = static_cast<uint32_t>(rowSizeBytesPerSubresource[i]);
+		uint32_t srcRowPitch = footprint.Footprint.RowPitch;
+
+		if(is3D)
+		{
+			uint32_t mip = i;
+			uint32_t depthAtMip = footprint.Footprint.Depth;
+			uint32_t slicePitch = srcRowPitch * numRows;
+
+			for(uint32_t slice = 0; slice < depthAtMip; ++slice)
+			{
+				const DirectX::Image* image = result.GetImage(mip, 0, slice);
+				if(!image) continue;
+
+				const BYTE* sliceSource = subresourceBase + slice * slicePitch;
+				for(uint32_t row = 0; row < numRows; ++row)
+				{
+					memcpy(image->pixels + row * image->rowPitch,
+					       sliceSource + row * srcRowPitch,
+					       rowBytes);
+				}
+			}
+		}
+		else
+		{
+			uint32_t mip        = i % mipLevels;
+			uint32_t arraySlice = i / mipLevels;
+
+			const DirectX::Image* image = result.GetImage(mip, arraySlice, 0);
+			if(!image) continue;
+
+			for(uint32_t row = 0; row < numRows; ++row)
+			{
+				memcpy(image->pixels + row * image->rowPitch,
+				       subresourceBase + row * srcRowPitch,
+				       rowBytes);
+			}
+		}
+	}
+
+	D3D12_RANGE writtenRange = { 0, 0 };
+	readbackBuffer->Unmap(0, &writtenRange);
+
+	return S_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -645,7 +880,13 @@ GfxBuffer* DX12Device::CreateBuffer(const BufferDesc& desc)
 		&heapProps, D3D12_HEAP_FLAG_NONE,
 		&resourceDesc, initialState,
 		nullptr, IID_PPV_ARGS(&resource));
-	if(FAILED(hr)) return nullptr;
+	if(FAILED(hr))
+	{
+		ERR("DX12 CreateBuffer failed: HRESULT=0x%08X size=%u dynamic=%d const=%d removed=0x%08X",
+			(unsigned)hr, alignedSize, isDynamic, desc.isConstant,
+			(unsigned)m_device->GetDeviceRemovedReason());
+		return nullptr;
+	}
 
 	// Upload initial data into static buffers; leave in COMMON afterward so
 	// the DX12 runtime can promote to VB/IB/SRV state on first GPU access.
@@ -694,8 +935,10 @@ GfxTexture* DX12Device::CreateTexture(const TextureDesc& desc)
 	resourceDesc.Alignment        = 0;
 	resourceDesc.Width            = desc.width;
 	resourceDesc.Height           = desc.height;
-	resourceDesc.DepthOrArraySize = static_cast<UINT16>(
-		desc.dimension == TextureDimension::CubeMap ? 6u : max(1u, desc.depth));
+	uint32_t depthOrArray = max(1u, desc.depth);
+	if(desc.dimension == TextureDimension::CubeMap) depthOrArray = 6u;
+	else if(desc.dimension == TextureDimension::CubeMapArray) depthOrArray = max(1u, desc.depth) * 6u;
+	resourceDesc.DepthOrArraySize = static_cast<UINT16>(depthOrArray);
 	resourceDesc.MipLevels        = static_cast<UINT16>(mipLevels);
 	resourceDesc.Format           = desc.format;
 	resourceDesc.SampleDesc.Count   = max(1u, desc.msaaSamples);
@@ -753,7 +996,8 @@ GfxTexture* DX12Device::CreateTexture(const TextureDesc& desc)
 	// Upload mip 0 subresource data for plain shader-read textures.
 	if(desc.initialData && !desc.allowDSV && !desc.allowRTV)
 	{
-		UploadTextureSync(resource, resourceDesc, desc.initialData);
+		UploadTextureSync(resource, resourceDesc, desc.initialData,
+			desc.initialDataRowPitch, desc.initialDataSlicePitch);
 		initialState = D3D12_RESOURCE_STATE_COMMON;
 	}
 
@@ -942,7 +1186,8 @@ GfxSRV* DX12Device::LoadDDSFromMemory(const uint8_t* data, uint32_t dataSize)
 
 	DX12SRV* srv = new DX12SRV();
 	srv->heapIndex     = AllocateCbvSrvUavSlot(srv->cpuHandle, srv->gpuHandle);
-	srv->ownedTexture  = texture;
+	srv->sourceTexture     = texture;
+	srv->ownsSourceTexture = true;
 	m_device->CreateShaderResourceView(resource, &srvDesc, srv->cpuHandle);
 	return srv;
 }
@@ -997,7 +1242,8 @@ GfxRTV* DX12Device::CreateRTV(GfxTexture* texture, DXGI_FORMAT format,
 // -----------------------------------------------------------------------
 // CreateDSV
 
-GfxDSV* DX12Device::CreateDSV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice)
+GfxDSV* DX12Device::CreateDSV(GfxTexture* texture, DXGI_FORMAT format,
+                               uint32_t mipSlice, uint32_t arraySlice)
 {
 	auto* tex = Cast(texture);
 	const uint32_t sampleCount = tex->resource->GetDesc().SampleDesc.Count;
@@ -1006,7 +1252,14 @@ GfxDSV* DX12Device::CreateDSV(GfxTexture* texture, DXGI_FORMAT format, uint32_t 
 	dsvDesc.Format = format;
 	dsvDesc.Flags  = D3D12_DSV_FLAG_NONE;
 
-	if(sampleCount > 1)
+	if(arraySlice != UINT32_MAX)
+	{
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+		dsvDesc.Texture2DArray.MipSlice        = mipSlice;
+		dsvDesc.Texture2DArray.FirstArraySlice = arraySlice;
+		dsvDesc.Texture2DArray.ArraySize       = 1;
+	}
+	else if(sampleCount > 1)
 	{
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
 	}
@@ -1056,6 +1309,15 @@ GfxSRV* DX12Device::CreateSRV(GfxTexture* texture, DXGI_FORMAT format,
 			srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 		}
 		break;
+	case TextureDimension::Tex2DArray:
+		srvDesc.ViewDimension                        = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		srvDesc.Texture2DArray.MostDetailedMip       = mostDetailedMip;
+		srvDesc.Texture2DArray.MipLevels             = effectiveMips;
+		srvDesc.Texture2DArray.FirstArraySlice       = 0;
+		srvDesc.Texture2DArray.ArraySize             = tex->depth;
+		srvDesc.Texture2DArray.PlaneSlice            = 0;
+		srvDesc.Texture2DArray.ResourceMinLODClamp   = 0.0f;
+		break;
 	case TextureDimension::Tex3D:
 		srvDesc.ViewDimension                 = D3D12_SRV_DIMENSION_TEXTURE3D;
 		srvDesc.Texture3D.MostDetailedMip     = mostDetailedMip;
@@ -1068,10 +1330,19 @@ GfxSRV* DX12Device::CreateSRV(GfxTexture* texture, DXGI_FORMAT format,
 		srvDesc.TextureCube.MipLevels           = effectiveMips;
 		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 		break;
+	case TextureDimension::CubeMapArray:
+		srvDesc.ViewDimension                            = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+		srvDesc.TextureCubeArray.MostDetailedMip         = mostDetailedMip;
+		srvDesc.TextureCubeArray.MipLevels               = effectiveMips;
+		srvDesc.TextureCubeArray.First2DArrayFace        = 0;
+		srvDesc.TextureCubeArray.NumCubes                = tex->depth;
+		srvDesc.TextureCubeArray.ResourceMinLODClamp     = 0.0f;
+		break;
 	}
 
 	DX12SRV* srv = new DX12SRV();
-	srv->heapIndex = AllocateCbvSrvUavSlot(srv->cpuHandle, srv->gpuHandle);
+	srv->heapIndex      = AllocateCbvSrvUavSlot(srv->cpuHandle, srv->gpuHandle);
+	srv->sourceTexture  = texture; // non-owning back-pointer
 	m_device->CreateShaderResourceView(tex->resource, &srvDesc, srv->cpuHandle);
 	return srv;
 }
@@ -1102,14 +1373,24 @@ GfxSRV* DX12Device::CreateSRV(GfxBuffer* buffer, uint32_t firstElement,
 // -----------------------------------------------------------------------
 // CreateUAV (texture)
 
-GfxUAV* DX12Device::CreateUAV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice)
+GfxUAV* DX12Device::CreateUAV(GfxTexture* texture, DXGI_FORMAT format,
+                                uint32_t mipSlice, uint32_t arraySlice)
 {
 	auto* tex = Cast(texture);
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = format;
 
-	switch(tex->dimension)
+	if(arraySlice != UINT32_MAX)
+	{
+		// Per-slice UAV (e.g. individual cube face)
+		uavDesc.ViewDimension                    = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+		uavDesc.Texture2DArray.MipSlice          = mipSlice;
+		uavDesc.Texture2DArray.FirstArraySlice   = arraySlice;
+		uavDesc.Texture2DArray.ArraySize         = 1;
+		uavDesc.Texture2DArray.PlaneSlice        = 0;
+	}
+	else switch(tex->dimension)
 	{
 	case TextureDimension::Tex2D:
 		uavDesc.ViewDimension            = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -1123,10 +1404,11 @@ GfxUAV* DX12Device::CreateUAV(GfxTexture* texture, DXGI_FORMAT format, uint32_t 
 		uavDesc.Texture3D.WSize           = tex->depth;
 		break;
 	case TextureDimension::CubeMap:
+	case TextureDimension::CubeMapArray:
 		uavDesc.ViewDimension                    = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		uavDesc.Texture2DArray.MipSlice          = mipSlice;
 		uavDesc.Texture2DArray.FirstArraySlice   = 0;
-		uavDesc.Texture2DArray.ArraySize         = 6;
+		uavDesc.Texture2DArray.ArraySize         = tex->depth * 6;
 		uavDesc.Texture2DArray.PlaneSlice        = 0;
 		break;
 	}
@@ -1169,16 +1451,16 @@ GfxUAV* DX12Device::CreateUAV(GfxBuffer* buffer, uint32_t firstElement,
 GfxSampler* DX12Device::CreateSampler(const SamplerDesc& desc)
 {
 	D3D12_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter         = static_cast<D3D12_FILTER>(desc.d3d11Desc.Filter);
-	samplerDesc.AddressU       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.d3d11Desc.AddressU);
-	samplerDesc.AddressV       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.d3d11Desc.AddressV);
-	samplerDesc.AddressW       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.d3d11Desc.AddressW);
-	samplerDesc.MipLODBias     = desc.d3d11Desc.MipLODBias;
-	samplerDesc.MaxAnisotropy  = desc.d3d11Desc.MaxAnisotropy;
-	samplerDesc.ComparisonFunc = static_cast<D3D12_COMPARISON_FUNC>(desc.d3d11Desc.ComparisonFunc);
-	memcpy(samplerDesc.BorderColor, desc.d3d11Desc.BorderColor, sizeof(samplerDesc.BorderColor));
-	samplerDesc.MinLOD = desc.d3d11Desc.MinLOD;
-	samplerDesc.MaxLOD = desc.d3d11Desc.MaxLOD;
+	samplerDesc.Filter         = static_cast<D3D12_FILTER>(desc.filter);
+	samplerDesc.AddressU       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.addressU);
+	samplerDesc.AddressV       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.addressV);
+	samplerDesc.AddressW       = static_cast<D3D12_TEXTURE_ADDRESS_MODE>(desc.addressW);
+	samplerDesc.MipLODBias     = desc.mipLODBias;
+	samplerDesc.MaxAnisotropy  = desc.maxAnisotropy;
+	samplerDesc.ComparisonFunc = static_cast<D3D12_COMPARISON_FUNC>(desc.comparisonFunc);
+	memcpy(samplerDesc.BorderColor, desc.borderColor, sizeof(samplerDesc.BorderColor));
+	samplerDesc.MinLOD = desc.minLOD;
+	samplerDesc.MaxLOD = desc.maxLOD;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
@@ -1206,64 +1488,63 @@ GfxTexture* DX12Device::GetBackBuffer(uint32_t frameIndex)
 // The two APIs share the same enum values for Fill/Cull/Blend/Comparison so
 // direct static_cast is safe throughout.
 
-static void ConvertBlendDesc(const D3D11_BLEND_DESC& src, D3D12_BLEND_DESC& dst)
+static void ConvertBlendDesc(const BlendDesc& src, D3D12_BLEND_DESC& dst)
 {
-	dst.AlphaToCoverageEnable  = src.AlphaToCoverageEnable;
-	dst.IndependentBlendEnable = src.IndependentBlendEnable;
+	dst.AlphaToCoverageEnable  = src.alphaToCoverageEnable;
+	dst.IndependentBlendEnable = src.independentBlendEnable;
 	for(uint32_t i = 0; i < 8; ++i)
 	{
-		const auto& s = src.RenderTarget[i];
+		const auto& s = src.renderTarget[i];
 		auto&       d = dst.RenderTarget[i];
-		d.BlendEnable           = s.BlendEnable;
+		d.BlendEnable           = s.blendEnable;
 		d.LogicOpEnable         = FALSE;
 		// DX12 validates blend enum values even when BlendEnable=FALSE.
-		// DX11 allows 0 (uninitialized) when blend is disabled; DX12 does not.
-		d.SrcBlend              = s.SrcBlend      ? static_cast<D3D12_BLEND>(s.SrcBlend)      : D3D12_BLEND_ONE;
-		d.DestBlend             = s.DestBlend     ? static_cast<D3D12_BLEND>(s.DestBlend)     : D3D12_BLEND_ZERO;
-		d.BlendOp               = s.BlendOp       ? static_cast<D3D12_BLEND_OP>(s.BlendOp)    : D3D12_BLEND_OP_ADD;
-		d.SrcBlendAlpha         = s.SrcBlendAlpha ? static_cast<D3D12_BLEND>(s.SrcBlendAlpha) : D3D12_BLEND_ONE;
-		d.DestBlendAlpha        = s.DestBlendAlpha? static_cast<D3D12_BLEND>(s.DestBlendAlpha): D3D12_BLEND_ZERO;
-		d.BlendOpAlpha          = s.BlendOpAlpha  ? static_cast<D3D12_BLEND_OP>(s.BlendOpAlpha): D3D12_BLEND_OP_ADD;
+		d.SrcBlend              = s.srcBlend      ? static_cast<D3D12_BLEND>(s.srcBlend)      : D3D12_BLEND_ONE;
+		d.DestBlend             = s.destBlend     ? static_cast<D3D12_BLEND>(s.destBlend)     : D3D12_BLEND_ZERO;
+		d.BlendOp               = s.blendOp       ? static_cast<D3D12_BLEND_OP>(s.blendOp)    : D3D12_BLEND_OP_ADD;
+		d.SrcBlendAlpha         = s.srcBlendAlpha ? static_cast<D3D12_BLEND>(s.srcBlendAlpha) : D3D12_BLEND_ONE;
+		d.DestBlendAlpha        = s.destBlendAlpha? static_cast<D3D12_BLEND>(s.destBlendAlpha): D3D12_BLEND_ZERO;
+		d.BlendOpAlpha          = s.blendOpAlpha  ? static_cast<D3D12_BLEND_OP>(s.blendOpAlpha): D3D12_BLEND_OP_ADD;
 		d.LogicOp               = D3D12_LOGIC_OP_NOOP;
-		d.RenderTargetWriteMask = s.RenderTargetWriteMask;
+		d.RenderTargetWriteMask = s.renderTargetWriteMask;
 	}
 }
 
-static void ConvertDepthStencilDesc(const D3D11_DEPTH_STENCIL_DESC& src,
+static void ConvertDepthStencilDesc(const DepthStencilDesc& src,
                                     D3D12_DEPTH_STENCIL_DESC& dst)
 {
-	dst.DepthEnable    = src.DepthEnable;
-	dst.DepthWriteMask = static_cast<D3D12_DEPTH_WRITE_MASK>(src.DepthWriteMask);
+	dst.DepthEnable    = src.depthEnable;
+	dst.DepthWriteMask = static_cast<D3D12_DEPTH_WRITE_MASK>(src.depthWriteMask);
 	// DX12 requires valid comparison func even when DepthEnable=FALSE.
-	dst.DepthFunc      = src.DepthFunc ? static_cast<D3D12_COMPARISON_FUNC>(src.DepthFunc) : D3D12_COMPARISON_FUNC_LESS;
-	dst.StencilEnable  = src.StencilEnable;
-	dst.StencilReadMask  = src.StencilReadMask;
-	dst.StencilWriteMask = src.StencilWriteMask;
+	dst.DepthFunc      = src.depthFunc ? static_cast<D3D12_COMPARISON_FUNC>(src.depthFunc) : D3D12_COMPARISON_FUNC_LESS;
+	dst.StencilEnable  = src.stencilEnable;
+	dst.StencilReadMask  = src.stencilReadMask;
+	dst.StencilWriteMask = src.stencilWriteMask;
 
-	auto convertOp = [](const D3D11_DEPTH_STENCILOP_DESC& s,
+	auto convertOp = [](const StencilOpDesc& s,
 	                    D3D12_DEPTH_STENCILOP_DESC& d)
 	{
-		d.StencilFailOp      = s.StencilFailOp      ? static_cast<D3D12_STENCIL_OP>(s.StencilFailOp)      : D3D12_STENCIL_OP_KEEP;
-		d.StencilDepthFailOp = s.StencilDepthFailOp ? static_cast<D3D12_STENCIL_OP>(s.StencilDepthFailOp) : D3D12_STENCIL_OP_KEEP;
-		d.StencilPassOp      = s.StencilPassOp      ? static_cast<D3D12_STENCIL_OP>(s.StencilPassOp)      : D3D12_STENCIL_OP_KEEP;
-		d.StencilFunc        = s.StencilFunc         ? static_cast<D3D12_COMPARISON_FUNC>(s.StencilFunc)   : D3D12_COMPARISON_FUNC_ALWAYS;
+		d.StencilFailOp      = s.stencilFailOp      ? static_cast<D3D12_STENCIL_OP>(s.stencilFailOp)      : D3D12_STENCIL_OP_KEEP;
+		d.StencilDepthFailOp = s.stencilDepthFailOp ? static_cast<D3D12_STENCIL_OP>(s.stencilDepthFailOp) : D3D12_STENCIL_OP_KEEP;
+		d.StencilPassOp      = s.stencilPassOp      ? static_cast<D3D12_STENCIL_OP>(s.stencilPassOp)      : D3D12_STENCIL_OP_KEEP;
+		d.StencilFunc        = s.stencilFunc         ? static_cast<D3D12_COMPARISON_FUNC>(s.stencilFunc)   : D3D12_COMPARISON_FUNC_ALWAYS;
 	};
-	convertOp(src.FrontFace, dst.FrontFace);
-	convertOp(src.BackFace,  dst.BackFace);
+	convertOp(src.frontFace, dst.FrontFace);
+	convertOp(src.backFace,  dst.BackFace);
 }
 
-static void ConvertRasterizerDesc(const D3D11_RASTERIZER_DESC& src,
+static void ConvertRasterizerDesc(const RasterizerDesc& src,
                                   D3D12_RASTERIZER_DESC& dst)
 {
-	dst.FillMode              = static_cast<D3D12_FILL_MODE>(src.FillMode);
-	dst.CullMode              = static_cast<D3D12_CULL_MODE>(src.CullMode);
-	dst.FrontCounterClockwise = src.FrontCounterClockwise;
-	dst.DepthBias             = src.DepthBias;
-	dst.DepthBiasClamp        = src.DepthBiasClamp;
-	dst.SlopeScaledDepthBias  = src.SlopeScaledDepthBias;
-	dst.DepthClipEnable       = src.DepthClipEnable;
-	dst.MultisampleEnable     = src.MultisampleEnable;
-	dst.AntialiasedLineEnable = src.AntialiasedLineEnable;
+	dst.FillMode              = static_cast<D3D12_FILL_MODE>(src.fillMode);
+	dst.CullMode              = static_cast<D3D12_CULL_MODE>(src.cullMode);
+	dst.FrontCounterClockwise = src.frontCounterClockwise;
+	dst.DepthBias             = src.depthBias;
+	dst.DepthBiasClamp        = src.depthBiasClamp;
+	dst.SlopeScaledDepthBias  = src.slopeScaledDepthBias;
+	dst.DepthClipEnable       = src.depthClipEnable;
+	dst.MultisampleEnable     = src.multisampleEnable;
+	dst.AntialiasedLineEnable = src.antialiasedLineEnable;
 	dst.ForcedSampleCount     = 0;
 	dst.ConservativeRaster    = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 }

@@ -16,13 +16,11 @@ void DX12CommandList::SetPipelineState(GfxPipelineState* pso)
 	auto* dx12pso = Cast(pso);
 	m_isCompute = dx12pso->isCompute;
 
-	if(dx12pso->rootSignature)
-	{
-		if(dx12pso->isCompute)
-			m_commandList->SetComputeRootSignature(dx12pso->rootSignature);
-		else
-			m_commandList->SetGraphicsRootSignature(dx12pso->rootSignature);
-	}
+	// Root signatures are set once in Open() and shared by all PSOs of the
+	// same type (graphics or compute).  Re-setting them here would invalidate
+	// all root parameter bindings (CBVs, descriptor tables), causing shaders
+	// to read from undefined GPU addresses and crash.
+	// Only the PSO itself needs to be swapped per draw/dispatch.
 
 	if(dx12pso->pso)
 		m_commandList->SetPipelineState(dx12pso->pso);

@@ -32,12 +32,6 @@ struct DX12Texture : GfxTexture
 {
 	ID3D12Resource*       resource     = nullptr;
 	D3D12_RESOURCE_STATES currentState = D3D12_RESOURCE_STATE_COMMON;
-	uint32_t              width        = 0;
-	uint32_t              height       = 0;
-	uint32_t              depth        = 1;
-	uint32_t              mipLevels    = 1;
-	DXGI_FORMAT           format       = DXGI_FORMAT_UNKNOWN;
-	TextureDimension      dimension    = TextureDimension::Tex2D;
 
 	~DX12Texture() override
 	{
@@ -67,12 +61,9 @@ struct DX12SRV : GfxSRV
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle  = {};
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle  = {};
 	uint32_t                    heapIndex  = UINT32_MAX; // index in the bindless heap
-	DX12Texture*                ownedTexture = nullptr;  // non-null when SRV owns the texture (DDS load)
 
-	~DX12SRV() override
-	{
-		if(ownedTexture) { delete ownedTexture; ownedTexture = nullptr; }
-	}
+	// Texture ownership is handled by base GfxSRV::sourceTexture + ownsSourceTexture.
+	~DX12SRV() override {}
 };
 
 struct DX12UAV : GfxUAV

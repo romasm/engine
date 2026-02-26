@@ -39,6 +39,11 @@ public:
 
 	virtual void SetPipelineState(GfxPipelineState* pso) = 0;
 
+	// Render state binding (DX11: dynamic state objects; DX12: baked into PSO — no-op)
+	virtual void SetDepthStencilState(void* /*state*/, uint32_t /*stencilRef*/) {}
+	virtual void SetBlendState(void* /*state*/, const float* /*blendFactor*/, uint32_t /*sampleMask*/) {}
+	virtual void SetRasterizerState(void* /*state*/) {}
+
 	// -----------------------------------------------------------------------
 	// Input assembly
 
@@ -146,6 +151,13 @@ public:
 	// Copy / resolve
 
 	virtual void CopyResource(GfxTexture* dest, GfxTexture* source) = 0;
+
+	// Copy a subresource region between textures (per-mip, per-array-slice)
+	virtual void CopyTextureRegion(GfxTexture* dest, uint32_t destSubresource,
+		uint32_t destX, uint32_t destY, uint32_t destZ,
+		GfxTexture* source, uint32_t sourceSubresource,
+		const GfxBox* sourceBox) = 0;
+
 	virtual void GenerateMips(GfxSRV* srv) = 0;
 
 	// Resolve MSAA texture to a non-MSAA destination

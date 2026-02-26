@@ -7,13 +7,79 @@
 #include "RenderTarget.h"
 #include "MainLoop.h"
 #include "WorldMgr.h"
-#include "Render\RHI\DX11\DX11Types.h"
+#include "Render\RHI\DX11\DX11Device.h"
 #include "Render\RHI\DX12\DX12Device.h"
 
 #define wndClass L"MLE"
 
 namespace EngineCore
 {
+//------------------------------------------------------------------
+
+	static constexpr uint32_t SecondaryBackBufferCount = 3;
+
+	struct DX12SecondarySwapChain
+	{
+		IDXGISwapChain4*            swapChain = nullptr;
+		ID3D12DescriptorHeap*       rtvHeap = nullptr;
+		ID3D12Resource*             backBuffers[SecondaryBackBufferCount] = {};
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[SecondaryBackBufferCount] = {};
+		uint32_t                    currentIndex = 0;
+		bool                        needsPresent = false;
+		bool                        pendingResize = false;
+		uint32_t                    pendingWidth = 0;
+		uint32_t                    pendingHeight = 0;
+
+		~DX12SecondarySwapChain() { Destroy(); }
+
+		void Destroy()
+		{
+			for(uint32_t i = 0; i < SecondaryBackBufferCount; ++i)
+			{
+				if(backBuffers[i]) { backBuffers[i]->Release(); backBuffers[i] = nullptr; }
+			}
+			if(rtvHeap) { rtvHeap->Release(); rtvHeap = nullptr; }
+			if(swapChain) { swapChain->Release(); swapChain = nullptr; }
+			needsPresent = false;
+			pendingResize = false;
+		}
+
+		// Resize back buffers. Must be called when no GPU work references them.
+		bool Resize(uint32_t width, uint32_t height, ID3D12Device* device)
+		{
+			if(!swapChain || !rtvHeap) return false;
+
+			// Release old back buffers
+			for(uint32_t i = 0; i < SecondaryBackBufferCount; ++i)
+			{
+				if(backBuffers[i]) { backBuffers[i]->Release(); backBuffers[i] = nullptr; }
+			}
+
+			HRESULT hr = swapChain->ResizeBuffers(
+				SecondaryBackBufferCount,
+				max(1u, width), max(1u, height),
+				DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+			if(FAILED(hr)) return false;
+
+			// Re-acquire back buffers and recreate RTVs
+			uint32_t rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+			for(uint32_t i = 0; i < SecondaryBackBufferCount; ++i)
+			{
+				hr = swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffers[i]));
+				if(FAILED(hr)) return false;
+
+				device->CreateRenderTargetView(backBuffers[i], nullptr, rtvHandle);
+				rtvHandles[i] = rtvHandle;
+				rtvHandle.ptr += rtvDescSize;
+			}
+
+			currentIndex = swapChain->GetCurrentBackBufferIndex();
+			pendingResize = false;
+			return true;
+		}
+	};
+
 //------------------------------------------------------------------
 	Window::Window(void) :
 		m_hwnd(0),
@@ -24,6 +90,7 @@ namespace EngineCore
 		m_isresize(false),
 		m_RTmain(nullptr),
 		m_pSwapChain(nullptr),
+		m_dx12Secondary(nullptr),
 		b_main(false)
 	{
 		systemId = -1;
@@ -132,47 +199,115 @@ namespace EngineCore
 
 	bool Window::CreateSwapChain()
 	{
-		// DX12 path: the swap chain is owned by DX12FrameScheduler.
-		// GFX_DEVICE->InitSwapChain() creates it now that we have an HWND.
-		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+		// Swap chain creation is now handled by the RHI backend (both DX11 and DX12).
+		if(!Render::GetGfxDevice()->InitSwapChain(m_hwnd, m_desc.width, m_desc.height))
 		{
-			if(!Render::GetGfxDevice()->InitSwapChain(m_hwnd, m_desc.width, m_desc.height))
-			{
-				ERR("DX12 swap chain creation failed");
-				return false;
-			}
+			ERR("Swap chain creation failed");
+			return false;
+		}
+
+		if(Render::GetGfxDevice()->IsDX12())
+		{
 			m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
+
+			// Main window: swap chain is owned by DX12FrameScheduler, nothing more to do.
+			// Secondary windows: InitSwapChain() returned true (guard) but created nothing.
+			// Create a per-window swap chain so this window has its own rendering surface.
+			if(!b_main)
+			{
+				auto* dx12Device = static_cast<RHI::DX12::DX12Device*>(Render::GetGfxDevice());
+				ID3D12Device8*    device      = dx12Device->GetDevice();
+				IDXGIFactory6*    factory     = dx12Device->GetFactory();
+				ID3D12CommandQueue* directQueue = dx12Device->GetDirectQueue()->GetQueue();
+
+				m_dx12Secondary = new DX12SecondarySwapChain();
+
+				// Create swap chain for this HWND using actual client area dimensions
+				RECT clientRect = {};
+				GetClientRect(m_hwnd, &clientRect);
+				uint32_t clientWidth  = static_cast<uint32_t>(max(1L, clientRect.right - clientRect.left));
+				uint32_t clientHeight = static_cast<uint32_t>(max(1L, clientRect.bottom - clientRect.top));
+
+				DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
+				swapDesc.Width              = clientWidth;
+				swapDesc.Height             = clientHeight;
+				swapDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
+				swapDesc.Stereo             = FALSE;
+				swapDesc.SampleDesc.Count   = 1;
+				swapDesc.SampleDesc.Quality = 0;
+				swapDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+				swapDesc.BufferCount        = SecondaryBackBufferCount;
+				swapDesc.Scaling            = DXGI_SCALING_STRETCH;
+				swapDesc.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+				swapDesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
+				swapDesc.Flags              = 0;
+
+				IDXGISwapChain1* swapChain1 = nullptr;
+				HRESULT hr = factory->CreateSwapChainForHwnd(
+					directQueue, m_hwnd, &swapDesc, nullptr, nullptr, &swapChain1);
+				if(FAILED(hr))
+				{
+					ERR("DX12 secondary swap chain creation failed: 0x%08X", static_cast<unsigned>(hr));
+					delete m_dx12Secondary;
+					m_dx12Secondary = nullptr;
+					return false;
+				}
+
+				factory->MakeWindowAssociation(m_hwnd, DXGI_MWA_NO_ALT_ENTER);
+
+				hr = swapChain1->QueryInterface(IID_PPV_ARGS(&m_dx12Secondary->swapChain));
+				swapChain1->Release();
+				if(FAILED(hr))
+				{
+					ERR("DX12 secondary swap chain QueryInterface failed");
+					delete m_dx12Secondary;
+					m_dx12Secondary = nullptr;
+					return false;
+				}
+
+				// Create a small RTV descriptor heap for this window's back buffers
+				D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+				rtvHeapDesc.NumDescriptors = SecondaryBackBufferCount;
+				rtvHeapDesc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+				rtvHeapDesc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				hr = device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_dx12Secondary->rtvHeap));
+				if(FAILED(hr))
+				{
+					ERR("DX12 secondary RTV heap creation failed");
+					delete m_dx12Secondary;
+					m_dx12Secondary = nullptr;
+					return false;
+				}
+
+				// Get back buffers and create RTVs
+				uint32_t rtvDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+				D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_dx12Secondary->rtvHeap->GetCPUDescriptorHandleForHeapStart();
+
+				for(uint32_t i = 0; i < SecondaryBackBufferCount; ++i)
+				{
+					hr = m_dx12Secondary->swapChain->GetBuffer(i, IID_PPV_ARGS(&m_dx12Secondary->backBuffers[i]));
+					if(FAILED(hr))
+					{
+						ERR("DX12 secondary GetBuffer(%u) failed", i);
+						delete m_dx12Secondary;
+						m_dx12Secondary = nullptr;
+						return false;
+					}
+					device->CreateRenderTargetView(m_dx12Secondary->backBuffers[i], nullptr, rtvHandle);
+					m_dx12Secondary->rtvHandles[i] = rtvHandle;
+					rtvHandle.ptr += rtvDescSize;
+				}
+
+				m_dx12Secondary->currentIndex = m_dx12Secondary->swapChain->GetCurrentBackBufferIndex();
+				LOG("DX12 secondary swap chain created for window %d (%ux%u)", systemId, clientWidth, clientHeight);
+			}
+
 			return true;
 		}
 
-		// DX11 path (unchanged).
-		DXGI_SWAP_CHAIN_DESC1 schd;
-		ZeroMemory( &schd, sizeof( schd ) );
-		schd.BufferCount = 1;
-		schd.Width = m_desc.width;
-		schd.Height = m_desc.height;
-		schd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		schd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		schd.SampleDesc.Count = 1;
-		schd.SampleDesc.Quality = 0;
-		schd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		schd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-		DXGI_SWAP_CHAIN_FULLSCREEN_DESC schdf;
-		ZeroMemory( &schdf, sizeof( schdf ) );
-		schdf.RefreshRate.Denominator = 1;
-		schdf.RefreshRate.Numerator = 60;
-		schdf.Scaling = DXGI_MODE_SCALING_CENTERED;
-		schdf.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
-		schdf.Windowed = !CONFIG(bool, fullscreen);
-
-		HRESULT hr = Render::Get()->m_pDxgiFactory->CreateSwapChainForHwnd( Render::Get()->m_pd3dDevice, m_hwnd, &schd, &schdf, nullptr, &m_pSwapChain );
-		if( FAILED(hr) )
-		{
-			ERR("CreateSwapChainForHwnd failed");
-			return false;
-		}
-		Render::Get()->m_pDxgiFactory->MakeWindowAssociation(m_hwnd, DXGI_MWA_NO_ALT_ENTER);
+		// DX11: get the swap chain from the DX11Device for back buffer setup
+		auto* dx11Device = static_cast<RHI::DX11::DX11Device*>(Render::GetGfxDevice());
+		m_pSwapChain = dx11Device->GetSwapChain();
 
 		// RENDER TARGET
 		m_RTmain = new RenderTarget();
@@ -184,7 +319,7 @@ namespace EngineCore
 		m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
 
 		ID3D11Texture2D* pBackBuffer = nullptr;
-		hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
+		HRESULT hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 		if( FAILED(hr) )
 			return false;
 		{
@@ -210,8 +345,29 @@ namespace EngineCore
 	{
 		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
 		{
-			// DX12: back buffer is already in RENDER_TARGET state (set by ClearRenderTarget).
-			// Just re-bind it and set the viewport.
+			Render::Get()->CurrentHudWindow = this;
+
+			if(!b_main && m_dx12Secondary)
+			{
+				// Secondary DX12 window: bind its own back buffer.
+				auto* nativeList = static_cast<RHI::DX12::DX12CommandList*>(Render::GetCommandList())->GetCommandList();
+				nativeList->OMSetRenderTargets(1, &m_dx12Secondary->rtvHandles[m_dx12Secondary->currentIndex], FALSE, nullptr);
+
+				RHI::GfxViewport viewport = {};
+				viewport.topLeftX = 0.0f;
+				viewport.topLeftY = 0.0f;
+				viewport.width    = static_cast<float>(m_desc.width);
+				viewport.height   = static_cast<float>(m_desc.height);
+				viewport.minDepth = 0.0f;
+				viewport.maxDepth = 1.0f;
+				GFX_CMD->SetViewport(viewport);
+				return;
+			}
+
+			if(!b_main)
+				return;
+
+			// Main window: back buffer is already in RENDER_TARGET state.
 			uint32_t bbIndex = GFX_DEVICE->GetCurrentBackBufferIndex();
 			RHI::GfxRTV* rtv = GFX_DEVICE->GetBackBufferRTV(bbIndex);
 			GFX_CMD->SetRenderTargets(1, &rtv, nullptr);
@@ -224,8 +380,6 @@ namespace EngineCore
 			viewport.minDepth = 0.0f;
 			viewport.maxDepth = 1.0f;
 			GFX_CMD->SetViewport(viewport);
-
-			Render::Get()->CurrentHudWindow = this;
 			return;
 		}
 
@@ -238,7 +392,57 @@ namespace EngineCore
 	{
 		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
 		{
-			// DX12: transition back buffer from PRESENT to RENDER_TARGET, set it, clear it.
+			Render::Get()->CurrentHudWindow = this;
+
+			if(!b_main && m_dx12Secondary)
+			{
+				// If a resize is pending, skip rendering this frame. The resize
+				// will be performed in the main window's Swap() after the command
+				// list is executed and the GPU is flushed. ResizeBuffers cannot
+				// be called while a command list is open on the same queue.
+				if(m_dx12Secondary->pendingResize)
+					return;
+
+				// Secondary DX12 window: render to its own swap chain back buffer.
+				auto* nativeList = static_cast<RHI::DX12::DX12CommandList*>(Render::GetCommandList())->GetCommandList();
+				m_dx12Secondary->currentIndex = m_dx12Secondary->swapChain->GetCurrentBackBufferIndex();
+				ID3D12Resource* backBuffer = m_dx12Secondary->backBuffers[m_dx12Secondary->currentIndex];
+
+				// Transition PRESENT → RENDER_TARGET
+				D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+					backBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				nativeList->ResourceBarrier(1, &barrier);
+
+				// Clear
+				Vector4* bgColor = m_desc.bg_color;
+				const float clearColor[4] = { bgColor->x, bgColor->y, bgColor->z, 1.0f };
+				nativeList->ClearRenderTargetView(m_dx12Secondary->rtvHandles[m_dx12Secondary->currentIndex], clearColor, 0, nullptr);
+
+				// Bind as render target
+				nativeList->OMSetRenderTargets(1, &m_dx12Secondary->rtvHandles[m_dx12Secondary->currentIndex], FALSE, nullptr);
+
+				// Set viewport and scissor for this window's dimensions
+				RHI::GfxViewport viewport = {};
+				viewport.topLeftX = 0.0f;
+				viewport.topLeftY = 0.0f;
+				viewport.width    = static_cast<float>(m_desc.width);
+				viewport.height   = static_cast<float>(m_desc.height);
+				viewport.minDepth = 0.0f;
+				viewport.maxDepth = 1.0f;
+				GFX_CMD->SetViewport(viewport);
+
+				// Mark for present — the main window's Swap() will record the
+				// RT→PRESENT barrier and call Present() after executing the
+				// command list. This avoids iteration-order issues with
+				// unordered_map (main Swap might run before secondary Swap).
+				m_dx12Secondary->needsPresent = true;
+				return;
+			}
+
+			if(!b_main)
+				return;
+
+			// Main window: transition and clear the main swap chain back buffer.
 			uint32_t bbIndex   = GFX_DEVICE->GetCurrentBackBufferIndex();
 			auto* backBuffer   = GFX_DEVICE->GetBackBuffer(bbIndex);
 			RHI::GfxRTV* rtv   = GFX_DEVICE->GetBackBufferRTV(bbIndex);
@@ -260,8 +464,6 @@ namespace EngineCore
 
 			Vector4* bgColor = m_desc.bg_color;
 			GFX_CMD->ClearRenderTarget(rtv, bgColor->x, bgColor->y, bgColor->z, 1.0f);
-
-			Render::Get()->CurrentHudWindow = this;
 			return;
 		}
 
@@ -273,8 +475,32 @@ namespace EngineCore
 	{
 		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
 		{
-			// DX12: transition back buffer to PRESENT, close command list,
-			// execute, and present.
+			// Secondary DX12 windows: nothing to do here.
+			// ClearRenderTarget already set needsPresent, and the main window's
+			// Swap handles all RT→PRESENT barriers + Present calls.
+			// This avoids iteration-order issues with unordered_map — if main's
+			// Swap ran first, recording barriers on a closed command list would
+			// cause undefined behavior and GPU stalls.
+			if(!b_main)
+				return;
+
+			// Transition all secondary back buffers RT→PRESENT before closing
+			// the command list. ClearRenderTarget (which always runs for all
+			// windows before any Swap) set needsPresent on each rendered secondary.
+			auto* nativeList = static_cast<RHI::DX12::DX12CommandList*>(Render::GetCommandList())->GetCommandList();
+			for(auto& winId : *WindowsMgr::Get()->GetMap())
+			{
+				Window* window = WindowsMgr::Get()->GetWindowByID(winId.second);
+				if(window && window->m_dx12Secondary && window->m_dx12Secondary->needsPresent)
+				{
+					ID3D12Resource* secondaryBackBuffer = window->m_dx12Secondary->backBuffers[window->m_dx12Secondary->currentIndex];
+					D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+						secondaryBackBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+					nativeList->ResourceBarrier(1, &barrier);
+				}
+			}
+
+			// Transition main back buffer RT→PRESENT
 			uint32_t bbIndex = GFX_DEVICE->GetCurrentBackBufferIndex();
 			auto* backBuffer = GFX_DEVICE->GetBackBuffer(bbIndex);
 
@@ -283,9 +509,56 @@ namespace EngineCore
 			GFX_CMD->FlushBarriers();
 			GFX_CMD->Close();
 
+			// Execute and present
 			auto* commandList = Render::GetCommandList();
 			GFX_FRAME->ExecuteCommandLists(1, &commandList);
 			GFX_FRAME->Present(0);
+
+			// Present all secondary DX12 swap chains
+			for(auto& winId : *WindowsMgr::Get()->GetMap())
+			{
+				Window* window = WindowsMgr::Get()->GetWindowByID(winId.second);
+				if(window && window->m_dx12Secondary && window->m_dx12Secondary->needsPresent)
+				{
+					window->m_dx12Secondary->swapChain->Present(0, 0);
+					window->m_dx12Secondary->currentIndex = window->m_dx12Secondary->swapChain->GetCurrentBackBufferIndex();
+					window->m_dx12Secondary->needsPresent = false;
+				}
+			}
+
+			// Check device health after every present to catch GPU faults early
+			auto* dx12Dev = static_cast<RHI::DX12::DX12Device*>(Render::GetGfxDevice());
+			dx12Dev->CheckDeviceHealth();
+
+			// Handle deferred secondary swap chain resizes. This must happen
+			// AFTER the command list is executed and presented, because
+			// ResizeBuffers cannot be called while a command list is open on
+			// the same queue. Flush the GPU to ensure all references are released.
+			bool anyResizePending = false;
+			for(auto& winId : *WindowsMgr::Get()->GetMap())
+			{
+				Window* window = WindowsMgr::Get()->GetWindowByID(winId.second);
+				if(window && window->m_dx12Secondary && window->m_dx12Secondary->pendingResize)
+				{
+					anyResizePending = true;
+					break;
+				}
+			}
+			if(anyResizePending)
+			{
+				GFX_FRAME->FlushGPU();
+				for(auto& winId : *WindowsMgr::Get()->GetMap())
+				{
+					Window* window = WindowsMgr::Get()->GetWindowByID(winId.second);
+					if(window && window->m_dx12Secondary && window->m_dx12Secondary->pendingResize)
+					{
+						window->m_dx12Secondary->Resize(
+							window->m_dx12Secondary->pendingWidth,
+							window->m_dx12Secondary->pendingHeight,
+							dx12Dev->GetDevice());
+					}
+				}
+			}
 		}
 		else
 		{
@@ -312,6 +585,9 @@ namespace EngineCore
 	{
 		if( IsNull() )
 			return;
+
+		delete m_dx12Secondary;
+		m_dx12Secondary = nullptr;
 
 		Hud::Get()->DestroyRoot(this);
 
@@ -722,20 +998,37 @@ namespace EngineCore
 
 	void Window::ForceRedraw()
 	{
+		// DX12: skip forced redraws (WM_MOVE/WM_SIZE mid-frame).
+		// A nested Frame() call would double-open the command list and corrupt
+		// allocator state.  The normal frame loop will pick up the changes.
+		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
+			return;
+
 		if(MainLoop::Get()->Succeeded())
 			MainLoop::Get()->Frame(rendertime, true, true);
 	}
 
 	bool Window::resize()
 	{
-		// DX12: resize the swap chain back buffers to match the new window size.
+		// DX12: defer swap chain resize to the next frame start.
+		// WM_SIZE fires mid-frame while the command list is open; resizing
+		// inline would corrupt allocator/fence state. Instead just update
+		// the ortho matrix and flag the pending resize for BeginFrameDX12.
 		if(Render::GetGfxDevice() && Render::GetGfxDevice()->IsDX12())
 		{
-			if(!Render::GetGfxDevice()->ResizeSwapChain(m_desc.width, m_desc.height))
+			if(!b_main && m_dx12Secondary)
 			{
-				ERR("DX12 swap chain resize failed");
-				return false;
+				// Secondary DX12 window: update ortho and flag deferred back buffer resize.
+				// Can't resize inline because WM_SIZE fires mid-frame.
+				m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
+				m_dx12Secondary->pendingResize = true;
+				m_dx12Secondary->pendingWidth = m_desc.width;
+				m_dx12Secondary->pendingHeight = m_desc.height;
+				UpdateWindowState();
+				return true;
 			}
+
+			Render::SetPendingResize(m_desc.width, m_desc.height);
 			m_ortho = XMMatrixOrthographicLH(float(m_desc.width), float(m_desc.height), 0.0f, 1.0f);
 			UpdateWindowState();
 			return true;

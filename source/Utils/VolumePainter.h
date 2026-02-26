@@ -61,16 +61,16 @@ namespace EngineCore
 				return resX * resY * resZ * VOXEL_DIFF_SIZE;
 			}
 
-			inline D3D11_BOX GetD3DBox()
+			inline RHI::GfxBox GetBox()
 			{
-				D3D11_BOX volumeBox;
-				volumeBox.left = minX;
-				volumeBox.top = minY;
-				volumeBox.front = minZ;
-				volumeBox.right = maxX;
-				volumeBox.bottom = maxY;
-				volumeBox.back = maxZ;
-				return volumeBox;
+				RHI::GfxBox box;
+				box.left = minX;
+				box.top = minY;
+				box.front = minZ;
+				box.right = maxX;
+				box.bottom = maxY;
+				box.back = maxZ;
+				return box;
 			}
 
 			VolumeDiff()

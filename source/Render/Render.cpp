@@ -41,28 +41,19 @@ namespace EngineCore
 		if(!m_instance)
 		{
 			m_instance = this;
-			m_pd3dDevice = nullptr;
-			m_pd3dDevice3 = nullptr;
-			m_pDXGIDevice = nullptr;
-			m_pDxgiAdapter = nullptr;
-			m_pDxgiFactory = nullptr;
-			m_pImmediateContext = nullptr;
-			m_pImmediateContext3 = nullptr;
 			renderStateMgr = nullptr;
 			samplerStateMgr = nullptr;
 			bufferMgr = nullptr;
 			gfxDevice = nullptr;
 			gfxCommandList = nullptr;
 			gfxFrameScheduler = nullptr;
-
-			// remove
 			CurrentHudWindow = nullptr;
 
 			RegLuaClass();
 		}
 		else
 		{
-			ERR("���������� �������� Render");
+			ERR("Can't init Render");
 		}
 	}
 
@@ -73,15 +64,7 @@ namespace EngineCore
 	
 	bool Render::Init()
 	{
-		// DEVICE
-		if ( !m_createdevice() )
-		{
-			ERR("Cant create DirectX Device!");
-			return false;
-		}
-
-		// RHI backend — must be created before state managers so GFX_DEVICE/GFX_CMD are available.
-		// DX12 if the config requests it, otherwise DX11.
+		// RHI backend — DX12 if config requests it, otherwise DX11.
 		// The DX12 device is created without a swap chain here; Window::CreateSwapChain()
 		// calls GFX_DEVICE->InitSwapChain() once the HWND is available.
 		if(CONFIG(bool, dx12_backend))
@@ -99,33 +82,25 @@ namespace EngineCore
 		}
 		else
 		{
-			auto* dx11Device = new RHI::DX11::DX11Device(
-				m_pd3dDevice, m_pd3dDevice3,
-				m_pImmediateContext, m_pImmediateContext3);
+			auto* dx11Device = new RHI::DX11::DX11Device();
+			if(!dx11Device->Init(nullptr))
+			{
+				ERR("Cant create DirectX Device!");
+				delete dx11Device;
+				return false;
+			}
 			gfxDevice = dx11Device;
 
-			auto* scheduler = new RHI::DX11::DX11FrameScheduler(
-				m_pImmediateContext, m_pImmediateContext3, nullptr);
-			gfxFrameScheduler = scheduler;
-			gfxCommandList    = scheduler->AllocateCommandList();
+			gfxFrameScheduler = dx11Device->CreateFrameScheduler();
+			gfxCommandList    = gfxFrameScheduler->AllocateCommandList();
 
 			// Log DX11 device info
-			DXGI_ADAPTER_DESC1 adapterDesc = {};
-			if(m_pDxgiAdapter && SUCCEEDED(m_pDxgiAdapter->GetDesc1(&adapterDesc)))
-			{
-				char gpuName[128] = {};
-				WideCharToMultiByte(CP_ACP, 0, adapterDesc.Description, -1,
-					gpuName, sizeof(gpuName), nullptr, nullptr);
-				size_t vramMB = adapterDesc.DedicatedVideoMemory / (1024 * 1024);
-
-				LOG("------ GPU Device Info ------");
-				LOG("  API:             DirectX 11.3");
-				LOG("  GPU:             %s", gpuName);
-				LOG("  VRAM:            %zu MB", vramMB);
-				LOG("  Raytracing:      not supported (DX11)");
-				LOG("  Mesh shaders:    not supported (DX11)");
-				LOG("-----------------------------");
-			}
+			LOG("------ GPU Device Info ------");
+			LOG("  API:             DirectX 11.3");
+			LOG("  GPU:             %s", gfxDevice->GetAdapterName());
+			LOG("  Raytracing:      not supported (DX11)");
+			LOG("  Mesh shaders:    not supported (DX11)");
+			LOG("-----------------------------");
 		}
 
 		// RENDER STATE
@@ -157,51 +132,41 @@ namespace EngineCore
 		return true;
 	}
 
-	bool Render::m_createdevice()
-	{
-		uint32_t createDeviceFlags = 0;
-	#ifdef _DEBUG
-		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-	#endif
-	
-		D3D_FEATURE_LEVEL featureLevels[] =
-		{
-			D3D_FEATURE_LEVEL_11_1,
-			D3D_FEATURE_LEVEL_11_0,
-			D3D_FEATURE_LEVEL_10_1,
-			D3D_FEATURE_LEVEL_10_0,
-		};
-		uint32_t numFeatureLevels = ARRAYSIZE( featureLevels );
-	
-		HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, 0, createDeviceFlags, 
-			featureLevels, numFeatureLevels, D3D11_SDK_VERSION, &m_pd3dDevice, nullptr, &m_pImmediateContext );
-		if( FAILED(hr) )
-			return false;	
-
-		hr = m_pd3dDevice->QueryInterface(__uuidof(ID3D11Device3), reinterpret_cast<void**>(&m_pd3dDevice3));
-		if (FAILED(hr))
-			return false;
-		hr = m_pImmediateContext->QueryInterface(__uuidof(ID3D11DeviceContext3), reinterpret_cast<void**>(&m_pImmediateContext3));
-		if (FAILED(hr))
-			return false;
-
-		hr = m_pd3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&m_pDXGIDevice));
-		if( FAILED(hr) )
-			return false;	
-		hr = m_pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(&m_pDxgiAdapter));
-		if( FAILED(hr) )
-			return false;
-		hr = m_pDxgiAdapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&m_pDxgiFactory));
-		if( FAILED(hr) )
-			return false;	
-
-		return true;
-	}
+	// m_createdevice() removed — device creation moved into DX11Device::Init() and DX12Device::Init()
 
 	void Render::BeginFrameDX12()
 	{
 		if(!m_instance || !m_instance->gfxDevice || !m_instance->gfxDevice->IsDX12())
 			return;
+
+		static uint32_t s_frameCounter = 0;
+		++s_frameCounter;
+
+		auto* dx12Device = static_cast<RHI::DX12::DX12Device*>(m_instance->gfxDevice);
+
+		// Check device health BEFORE waiting for the GPU fence.
+		// This catches device removal from the PREVIOUS frame's GPU work.
+		if(!dx12Device->CheckDeviceHealth())
+		{
+			static bool s_reported = false;
+			if(!s_reported)
+			{
+				ERR("DX12: Device removed at start of frame %u!", s_frameCounter);
+				s_reported = true;
+			}
+			return;  // Don't try to continue with a dead device
+		}
+
+		// Apply deferred swap chain resize before starting the new frame.
+		// This is safe here because the previous frame's GPU work has been
+		// presented and no command list is open yet.
+		if(m_instance->m_pendingResize)
+		{
+			m_instance->m_pendingResize = false;
+			dx12Device->ResizeSwapChain(
+				m_instance->m_pendingResizeW,
+				m_instance->m_pendingResizeH);
+		}
 
 		// Begin new frame: wait for prior GPU work, reset allocators
 		m_instance->gfxFrameScheduler->BeginFrame();
@@ -210,7 +175,6 @@ namespace EngineCore
 		m_instance->gfxCommandList->Open();
 
 		// Set the shader-visible descriptor heaps (required before any binding)
-		auto* dx12Device  = static_cast<RHI::DX12::DX12Device*>(m_instance->gfxDevice);
 		auto* dx12CmdList = static_cast<RHI::DX12::DX12CommandList*>(m_instance->gfxCommandList);
 		ID3D12DescriptorHeap* heaps[] = {
 			dx12Device->GetCbvSrvUavHeap(),
@@ -225,9 +189,6 @@ namespace EngineCore
 		Profiler::Get()->ReleaseQueries();
 	#endif
 
-		if( m_pImmediateContext )
-			m_pImmediateContext->ClearState();
-
 		// Destroy state managers and buffers before RHI backend
 		// (their destructors may route through GFX_DEVICE)
 		_DELETE(bufferMgr);
@@ -238,24 +199,16 @@ namespace EngineCore
 		{
 			// For DX12: the frame scheduler is owned by DX12Device; deleting the
 			// device shuts everything down (swap chain, queues, heaps).
-			gfxCommandList    = nullptr; // owned by pool inside frame scheduler
-			gfxFrameScheduler = nullptr; // owned by DX12Device
+			gfxCommandList    = nullptr;
+			gfxFrameScheduler = nullptr;
 			_DELETE(gfxDevice);
 		}
 		else
 		{
-			_DELETE(gfxFrameScheduler); // owns the DX11CommandList
-			_DELETE(gfxDevice);
+			_DELETE(gfxFrameScheduler);
+			_DELETE(gfxDevice);	// DX11Device destructor releases DX11 device/context/DXGI
 			gfxCommandList = nullptr;
 		}
-
-		_RELEASE(m_pImmediateContext);
-		_RELEASE(m_pImmediateContext3);
-		_RELEASE(m_pd3dDevice);
-		_RELEASE(m_pd3dDevice3);
-		_RELEASE(m_pDXGIDevice);
-		_RELEASE(m_pDxgiAdapter);
-		_RELEASE(m_pDxgiFactory);
 	}
 //------------------------------------------------------------------
 }

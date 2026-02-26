@@ -191,29 +191,29 @@ public:
 			
 			PERF_CPU_BEGIN(_GUI_UPDATE);
 			m_hud->Update(force_update_gui, no_gui_gc);
-			PERF_CPU_END(_GUI_UPDATE);	
+			PERF_CPU_END(_GUI_UPDATE);
 
-			// Render
-			PERF_CPU_BEGIN(_SCENE);	
-			PERF_GPU_TIMESTAMP(_SCENE);	
-
-			WorldMgr::Get()->UpdateWorlds();
-
-			PERF_CPU_END(_SCENE);
-
-			PERF_CPU_BEGIN(_GUI_DRAW);
-			PERF_GPU_TIMESTAMP(_GUI);		
-			for(auto& winId : *m_wins->GetMap())
 			{
-				auto window = m_wins->GetWindowByID(winId.second);
-				window->ClearRenderTarget();
+				PERF_CPU_BEGIN(_SCENE);
+				PERF_GPU_TIMESTAMP(_SCENE);
 
-				m_hud->Draw(winId.first);
+				WorldMgr::Get()->UpdateWorlds();
+
+				PERF_CPU_END(_SCENE);
+
+				PERF_CPU_BEGIN(_GUI_DRAW);
+				PERF_GPU_TIMESTAMP(_GUI);
+				for(auto& winId : *m_wins->GetMap())
+				{
+					auto window = m_wins->GetWindowByID(winId.second);
+					window->ClearRenderTarget();
+
+					m_hud->Draw(winId.first);
+				}
+				PERF_CPU_END(_GUI_DRAW);
 			}
-			PERF_CPU_END(_GUI_DRAW);	
-			
 			PERF_CPU_BEGIN(_PRESENT);
-			//PERF_GPU_TIMESTAMP(_PRESENT);	
+			//PERF_GPU_TIMESTAMP(_PRESENT);
 			PERF_GPU_FRAME_END;
 
 			for(auto& winId : *WindowsMgr::Get()->GetMap())

@@ -835,7 +835,7 @@ void World::Frame()
 		return;
 	}
 
-	m_collisionSystem->DebugDraw();	
+	m_collisionSystem->DebugDraw();
 
 	m_lightSystem->Update();
 	m_shadowSystem->Update();
@@ -844,7 +844,7 @@ void World::Frame()
 	m_cameraSystem->RegToDraw();
 
 	m_globalLightSystem->Update();
-	
+
 	dbgDrawer.Prepare();
 
 	m_earlyVisibilitySystem->CheckEarlyVisibility();
@@ -893,13 +893,13 @@ void World::Frame()
 
 			PERF_GPU_TIMESTAMP(_SCENE_DEFFERED);
 			it->OpaqueDefferedStage();
-			
+
 			PERF_GPU_TIMESTAMP(_SCENE_UI);
 			if( it->UIStage() )
 				dbgDrawer.Render();
 
 			it->UIOverlayStage();
-			
+
 			PERF_GPU_TIMESTAMP(_SCENE_LDR);
 			it->HDRtoLDRStage();
 		}

@@ -75,7 +75,7 @@ void ShaderCodeMgr::DeleteShaderCode(uint16_t id, uint8_t type)
 	{
 		if(handle.code)
 		{
-			((ID3D11DeviceChild*)handle.code)->Release();
+			GFX_DEVICE->DestroyShaderObject(handle.code);
 			handle.code = nullptr;
 		}
 		handle.bytecode.clear();
@@ -171,17 +171,8 @@ uint16_t ShaderCodeMgr::AddShaderToList(const string& name, uint8_t type)
 	// DX11 shader objects — only needed on DX11 backend (DX12 uses bytecode in PSOs)
 	if(!GFX_DEVICE->IsDX12())
 	{
-		HRESULT hr = S_OK;
-		switch (type)
-		{
-		case SHADER_PS:hr = DEVICE->CreatePixelShader(data_code, data_size, NULL, (ID3D11PixelShader**)(&HCode.code));break;
-		case SHADER_VS:hr = DEVICE->CreateVertexShader(data_code, data_size, NULL, (ID3D11VertexShader**)(&HCode.code));break;
-		case SHADER_HS:hr = DEVICE->CreateHullShader(data_code, data_size, NULL, (ID3D11HullShader**)(&HCode.code));break;
-		case SHADER_DS:hr = DEVICE->CreateDomainShader(data_code, data_size, NULL, (ID3D11DomainShader**)(&HCode.code));break;
-		case SHADER_GS:hr = DEVICE->CreateGeometryShader(data_code, data_size, NULL, (ID3D11GeometryShader**)(&HCode.code));break;
-		case SHADER_CS:hr = DEVICE->CreateComputeShader(data_code, data_size, NULL, (ID3D11ComputeShader**)(&HCode.code));break;
-		}
-		if( FAILED(hr) )
+		HCode.code = GFX_DEVICE->CreateShaderObject(type, data_code, data_size);
+		if(!HCode.code)
 		{
 			ERR("Cant create shader %s", name.c_str());
 			_DELETE_ARRAY(s_data);
@@ -194,7 +185,7 @@ uint16_t ShaderCodeMgr::AddShaderToList(const string& name, uint8_t type)
 	{
 		ERR("Wrong shader input data in %s !", name.c_str());
 		if(HCode.code)
-			((ID3D11DeviceChild*)HCode.code)->Release();
+			GFX_DEVICE->DestroyShaderObject(HCode.code);
 		HCode.code = nullptr;
 		_DELETE_ARRAY(s_data);
 		_RELEASE(s_blob);
@@ -257,21 +248,12 @@ void ShaderCodeMgr::CheckForReload()
 			// Update raw bytecode cache (used by DX12 PSOs and DX11 shader re-creation)
 			handle.bytecode.assign(blobPtr, blobPtr + blobSize);
 
+			_RELEASE(blob);
+
 			if(!GFX_DEVICE->IsDX12())
 			{
-				void* code_ptr = nullptr;
-				HRESULT hr;
-				switch (type)
-				{
-				case SHADER_PS:hr = DEVICE->CreatePixelShader(blobPtr, blobSize, NULL, (ID3D11PixelShader**)(&code_ptr));break;
-				case SHADER_VS:hr = DEVICE->CreateVertexShader(blobPtr, blobSize, NULL, (ID3D11VertexShader**)(&code_ptr));break;
-				case SHADER_HS:hr = DEVICE->CreateHullShader(blobPtr, blobSize, NULL, (ID3D11HullShader**)(&code_ptr));break;
-				case SHADER_DS:hr = DEVICE->CreateDomainShader(blobPtr, blobSize, NULL, (ID3D11DomainShader**)(&code_ptr));break;
-				case SHADER_GS:hr = DEVICE->CreateGeometryShader(blobPtr, blobSize, NULL, (ID3D11GeometryShader**)(&code_ptr));break;
-				case SHADER_CS:hr = DEVICE->CreateComputeShader(blobPtr, blobSize, NULL, (ID3D11ComputeShader**)(&code_ptr));break;
-				}
-				_RELEASE(blob);
-				if( FAILED(hr) )
+				void* code_ptr = GFX_DEVICE->CreateShaderObject(type, handle.bytecode.data(), handle.bytecode.size());
+				if(!code_ptr)
 				{
 					ERR("Cant create shader %s", it->first.c_str());
 					it++;
@@ -279,10 +261,6 @@ void ShaderCodeMgr::CheckForReload()
 				}
 
 				handle.code = code_ptr;
-			}
-			else
-			{
-				_RELEASE(blob);
 			}
 			it++;
 		}
@@ -769,7 +747,8 @@ RHI::GfxInputLayout* ShaderCodeMgr::GetVertexLayout(uint8_t* data, uint32_t size
 		return it->second;
 	}
 
-	RHI::GfxInputLayout* layout = GFX_DEVICE->CreateInputLayout(data, size, layoutformat, shader_desc.InputParameters);
+	RHI::GfxInputLayout* layout = GFX_DEVICE->CreateInputLayout(data, size,
+		reinterpret_cast<RHI::InputElementDesc*>(layoutformat), shader_desc.InputParameters);
 	_DELETE_ARRAY(layoutformat);
 	_DELETE_ARRAY(input_desc);
 	if(!layout)

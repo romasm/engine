@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "ScenePipeline.h"
 #include "Render.h"
-#include "RHI\DX11\DX11Types.h"
 #include "World.h"
 #include "Utils\Profiler.h"
 #include "EnvProbMgr.h"
@@ -729,7 +728,6 @@ bool ScenePipeline::StartFrame(LocalTimer* timer)
 	GFX_CMD->SetHSConstantBuffer(0, sharedBuffer);
 	GFX_CMD->SetDSConstantBuffer(0, sharedBuffer);
 	GFX_CMD->SetGSConstantBuffer(0, sharedBuffer);
-	
 	// remove
 	float projParam = 0.5f * (sharedconst.projection.r[1].m128_f32[1] + sharedconst.projection.r[2].m128_f32[2]);
 	sp_AO->SetFloat(projParam, 5);
@@ -805,15 +803,12 @@ void ScenePipeline::OpaqueForwardStage(DebugDrawer* dbgDrawer)
 	Materials_Count = 1;
 
 	render_mgr->DrawOpaque();
-	
+
 	if(dbgDrawer)
 		dbgDrawer->RenderOpaque();
 
 	PERF_GPU_TIMESTAMP(_DEPTH_COPY);
 
-	//ID3D11Resource* hiz_topmip = nullptr;
-	//rt_HiZDepth->GetRenderTargetView(0)->GetResource(&hiz_topmip);
-	//CONTEXT->CopyResource(hiz_topmip, sceneDepth);
 	rt_HiZDepth->SetRenderTarget();
 	sp_OpaqueDepthCopy->Draw();
 }
@@ -911,9 +906,13 @@ void ScenePipeline::HiZMips()
 }
 
 void ScenePipeline::OpaqueDefferedStage()
-{	
+{
 	PERF_GPU_TIMESTAMP(_HIZ_GEN);
 	HiZMips();
+
+	// GBuffer and depth textures need SRV state for SSR, AO, and compute reads
+	rt_OpaqueForward->TransitionToShaderResource();
+	rt_HiZDepth->TransitionToShaderResource();
 
 	rt_SSR->ClearRenderTargets();
 	rt_SSR->SetRenderTarget();
@@ -927,7 +926,7 @@ void ScenePipeline::OpaqueDefferedStage()
 	//sp_SSR->Draw();
 	
 	g_SSR->blur(rt_SSR, 0, rt_HiZDepth->GetShaderResourceView(0));
-	
+
 	// ao
 	PERF_GPU_TIMESTAMP(_AO);
 
@@ -937,13 +936,13 @@ void ScenePipeline::OpaqueDefferedStage()
 	GFX_CMD->SetPSConstantBuffer(1, m_AOBuffer);
 
 	sp_AO->Draw();
-	
+
 #ifdef AO_FILTER
 	g_AO->blur(rt_AO, 0, rt_HiZDepth->GetShaderResourceView(0));
 #endif
 
 	PERF_GPU_TIMESTAMP(_OPAQUE_MAIN);
-	
+
 	GFX_CMD->SetRenderTargets(0, nullptr, nullptr);
 
 	rt_OpaqueDefferedDirect->ClearRenderTargets();
@@ -972,22 +971,38 @@ void ScenePipeline::OpaqueDefferedStage()
 	uint16_t group_count_x = (uint16_t)ceil(float(width) / 8);
 	uint16_t group_count_y = (uint16_t)ceil(float(height) / 8);
 
+	// Transition for defferedOpaqueCompute: reads SRVs, writes UAVs
+	rt_AO->TransitionToShaderResource();
+	rt_SSR->TransitionToShaderResource();
+	rt_OpaqueDefferedDirect->TransitionToUnorderedAccess();
+
 	defferedOpaqueCompute->Dispatch(group_count_x, group_count_y, 1);
-	
+
 	PERF_GPU_TIMESTAMP(_OPAQUE_FINAL);
-	// final 
+
+	// Transition for combineSceneCompute: reads from OpaqueDefferedDirect + TransparentForward, writes to OpaqueFinal
+	rt_OpaqueDefferedDirect->TransitionToShaderResource();
+	rt_TransparentForward->TransitionToShaderResource();
+
+	// final
 	rt_OpaqueFinal->ClearRenderTargets();
+	rt_OpaqueFinal->TransitionToUnorderedAccess();
 	combineSceneCompute->Dispatch(group_count_x, group_count_y, 1);
 
 	// blur
+	rt_OpaqueFinal->TransitionToRenderTarget();
 	rt_OpaqueFinal->GenerateMipmaps(this); // !!!!!!!!!!!!!! TODO: separete blur
-	
+
+	// AvgLum and Bloom read rt_OpaqueFinal as SRV
+	rt_OpaqueFinal->TransitionToShaderResource();
+
 	PERF_GPU_TIMESTAMP(_HDR_BLOOM);
 
 	if(renderConfig.cameraAdoptEnable)
 	{
 		// avglum
 		rt_AvgLum->ClearRenderTargets();
+		rt_AvgLumCurrent->TransitionToUnorderedAccess();
 
 		RHI::GfxUAV* avgUAV = rt_AvgLumCurrent->GetUnorderedAccessView(0);
 		RHI::GfxRTV* avgRTV = rt_AvgLum->GetRenderTargetView(0);
@@ -1006,6 +1021,9 @@ void ScenePipeline::OpaqueDefferedStage()
 
 	if(renderConfig.bloomEnable)
 	{
+		// Bloom reads rt_OpaqueFinal (already SRV) and rt_AvgLum SRV
+		rt_AvgLum->TransitionToShaderResource();
+
 		// bloom prepare
 		rt_Bloom->ClearRenderTargets(); // !!!!!!!!!!!! TODO: only opaque now!
 		rt_Bloom->SetRenderTarget();
@@ -1020,6 +1038,13 @@ void ScenePipeline::OpaqueDefferedStage()
 void ScenePipeline::HDRtoLDRStage()
 {
 	PERF_GPU_TIMESTAMP(_COMBINE);
+
+	// Transition sources that HDRtoLDR shader reads
+	rt_3DHud->TransitionToShaderResource();
+	rt_Bloom->TransitionToShaderResource();
+	rt_AvgLum->TransitionToShaderResource();
+	// rt_OpaqueFinal, rt_OpaqueForward, rt_AO, rt_HiZDepth already SRV from OpaqueDefferedStage
+
 	rt_Antialiased->ClearRenderTargets();
 
 	// combine opaque and transparent, hdr, tonemap
@@ -1039,20 +1064,25 @@ void ScenePipeline::HDRtoLDRStage()
 	r_target[0] = rt_FinalLDR->GetRenderTargetView(0);
 	r_target[1] = rt_Antialiased->GetRenderTargetView(0);
 	GFX_CMD->SetRenderTargets(2, r_target, nullptr);
-	
+
 	sp_HDRtoLDR->Draw();
 
 	PERF_GPU_TIMESTAMP(_AA);
-	// smaa
+	// smaa pass 1: writes slot 1, reads slot 0
+	rt_Antialiased->TransitionToShaderResource();
 	rt_Antialiased->SetRenderTarget(1, 2);
 	sp_Antialiased[0]->Draw();
 
+	// smaa pass 2: writes slot 0, reads slot 1
+	rt_Antialiased->TransitionToShaderResource();
 	rt_Antialiased->SetRenderTarget(0, 1);
 	sp_Antialiased[1]->Draw();
 
-	GFX_CMD->ClearRenderTarget(rt_Antialiased->m_RTV[1], 0, 0, 0, 0);
-
+	// smaa pass 3: writes slot 1, reads slot 0 + rt_FinalLDR
+	rt_Antialiased->TransitionToShaderResource();
+	rt_FinalLDR->TransitionToShaderResource();
 	rt_Antialiased->SetRenderTarget(1, 2);
+	GFX_CMD->ClearRenderTarget(rt_Antialiased->m_RTV[1], 0, 0, 0, 0);
 	sp_Antialiased[2]->Draw();
 }
 

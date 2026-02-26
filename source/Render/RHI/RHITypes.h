@@ -18,8 +18,10 @@ namespace EngineCore::RHI
 	enum class TextureDimension : uint8_t
 	{
 		Tex2D,
+		Tex2DArray,
 		Tex3D,
 		CubeMap,
+		CubeMapArray,
 	};
 
 	// -----------------------------------------------------------------------
@@ -98,6 +100,163 @@ namespace EngineCore::RHI
 	};
 
 	// -----------------------------------------------------------------------
+	// Render state enums (values match D3D11/D3D12 — binary-compatible)
+
+	enum ComparisonFunc : int32_t
+	{
+		ComparisonNever = 1, ComparisonLess, ComparisonEqual, ComparisonLessEqual,
+		ComparisonGreater, ComparisonNotEqual, ComparisonGreaterEqual, ComparisonAlways
+	};
+
+	enum StencilOp : int32_t
+	{
+		StencilKeep = 1, StencilZero, StencilReplace, StencilIncrSat,
+		StencilDecrSat, StencilInvert, StencilIncr, StencilDecr
+	};
+
+	enum DepthWriteMask : int32_t
+	{
+		DepthWriteZero = 0, DepthWriteAll = 1
+	};
+
+	enum Blend : int32_t
+	{
+		BlendZero = 1, BlendOne, BlendSrcColor, BlendInvSrcColor,
+		BlendSrcAlpha, BlendInvSrcAlpha, BlendDestAlpha, BlendInvDestAlpha,
+		BlendDestColor, BlendInvDestColor, BlendSrcAlphaSat, // 11
+		BlendBlendFactor = 14, BlendInvBlendFactor
+	};
+
+	enum BlendOp : int32_t
+	{
+		BlendOpAdd = 1, BlendOpSubtract, BlendOpRevSubtract, BlendOpMin, BlendOpMax
+	};
+
+	enum FillMode : int32_t
+	{
+		FillWireframe = 2, FillSolid = 3
+	};
+
+	enum CullMode : int32_t
+	{
+		CullNone = 1, CullFront, CullBack
+	};
+
+	enum Filter : int32_t
+	{
+		FilterMinMagMipPoint             = 0x00,
+		FilterMinMagPointMipLinear       = 0x01,
+		FilterMinPointMagLinearMipPoint  = 0x04,
+		FilterMinPointMagMipLinear       = 0x05,
+		FilterMinLinearMagMipPoint       = 0x10,
+		FilterMinLinearMagPointMipLinear = 0x11,
+		FilterMinMagLinearMipPoint       = 0x14,
+		FilterMinMagMipLinear            = 0x15,
+		FilterAnisotropic                = 0x55,
+		FilterComparisonMinMagMipLinear  = 0x95,
+		FilterComparisonAnisotropic      = 0xD5
+	};
+
+	enum TextureAddressMode : int32_t
+	{
+		AddressWrap = 1, AddressMirror, AddressClamp, AddressBorder
+	};
+
+	enum ColorWriteEnable : uint8_t
+	{
+		ColorWriteRed = 1, ColorWriteGreen = 2, ColorWriteBlue = 4, ColorWriteAlpha = 8,
+		ColorWriteAll = 0x0F
+	};
+
+	enum InputClassification : int32_t
+	{
+		InputPerVertex = 0, InputPerInstance = 1
+	};
+
+	constexpr uint32_t AppendAligned = 0xFFFFFFFF;
+
+	// -----------------------------------------------------------------------
+	// Render state descriptor structs (binary-compatible with D3D11 equivalents)
+
+	struct StencilOpDesc
+	{
+		StencilOp      stencilFailOp;
+		StencilOp      stencilDepthFailOp;
+		StencilOp      stencilPassOp;
+		ComparisonFunc stencilFunc;
+	};
+
+	struct DepthStencilDesc
+	{
+		BOOL           depthEnable;
+		DepthWriteMask depthWriteMask;
+		ComparisonFunc depthFunc;
+		BOOL           stencilEnable;
+		uint8_t        stencilReadMask;
+		uint8_t        stencilWriteMask;
+		StencilOpDesc  frontFace;
+		StencilOpDesc  backFace;
+	};
+
+	struct RenderTargetBlendDesc
+	{
+		BOOL    blendEnable;
+		Blend   srcBlend;
+		Blend   destBlend;
+		BlendOp blendOp;
+		Blend   srcBlendAlpha;
+		Blend   destBlendAlpha;
+		BlendOp blendOpAlpha;
+		uint8_t renderTargetWriteMask;
+	};
+
+	struct BlendDesc
+	{
+		BOOL                  alphaToCoverageEnable;
+		BOOL                  independentBlendEnable;
+		RenderTargetBlendDesc renderTarget[8];
+	};
+
+	struct RasterizerDesc
+	{
+		FillMode fillMode;
+		CullMode cullMode;
+		BOOL     frontCounterClockwise;
+		int32_t  depthBias;
+		float    depthBiasClamp;
+		float    slopeScaledDepthBias;
+		BOOL     depthClipEnable;
+		BOOL     scissorEnable;
+		BOOL     multisampleEnable;
+		BOOL     antialiasedLineEnable;
+	};
+
+	struct SamplerDesc
+	{
+		Filter             filter;
+		TextureAddressMode addressU;
+		TextureAddressMode addressV;
+		TextureAddressMode addressW;
+		float              mipLODBias;
+		uint32_t           maxAnisotropy;
+		ComparisonFunc     comparisonFunc;
+		float              borderColor[4];
+		float              minLOD;
+		float              maxLOD;
+	};
+
+	struct InputElementDesc
+	{
+		const char*         semanticName;
+		uint32_t            semanticIndex;
+		DXGI_FORMAT         format;
+		uint32_t            inputSlot;
+		uint32_t            alignedByteOffset;
+		InputClassification inputSlotClass;
+		uint32_t            instanceDataStepRate;
+	};
+
+	// -----------------------------------------------------------------------
 	// Opaque GPU resource base types
 	// Concrete implementations live in DX11/ and DX12/ subdirectories.
 
@@ -108,13 +267,37 @@ namespace EngineCore::RHI
 
 	struct GfxTexture
 	{
+		uint32_t         width     = 0;
+		uint32_t         height    = 0;
+		uint32_t         depth     = 1;      // array slices or 3D depth
+		uint32_t         mipLevels = 1;
+		DXGI_FORMAT      format    = DXGI_FORMAT_UNKNOWN;
+		TextureDimension dimension = TextureDimension::Tex2D;
+
 		virtual ~GfxTexture() {}
 	};
+
+	// Compute subresource index from mip + array slice (matches D3D11CalcSubresource / D3D12CalcSubresource)
+	inline uint32_t CalcSubresource(uint32_t mipSlice, uint32_t arraySlice, uint32_t mipLevels)
+	{
+		return mipSlice + arraySlice * mipLevels;
+	}
 
 	// Views
 	struct GfxRTV { virtual ~GfxRTV() {} };  // render target view
 	struct GfxDSV { virtual ~GfxDSV() {} };  // depth stencil view
-	struct GfxSRV { virtual ~GfxSRV() {} };  // shader resource view
+
+	struct GfxSRV
+	{
+		GfxTexture* sourceTexture     = nullptr; // backing texture (set by CreateSRV / LoadDDS)
+		bool        ownsSourceTexture = false;    // if true, destructor deletes sourceTexture
+
+		virtual ~GfxSRV()
+		{
+			if(ownsSourceTexture && sourceTexture) { delete sourceTexture; sourceTexture = nullptr; }
+		}
+	};
+
 	struct GfxUAV { virtual ~GfxUAV() {} };  // unordered access view
 	struct GfxSampler { virtual ~GfxSampler() {} };
 
@@ -188,6 +371,13 @@ namespace EngineCore::RHI
 
 	struct GfxQueryHeap { virtual ~GfxQueryHeap() {} };
 
+	// Result data from a TimestampDisjoint query (binary-compatible with D3D11_QUERY_DATA_TIMESTAMP_DISJOINT)
+	struct TimestampDisjointData
+	{
+		uint64_t frequency;
+		BOOL     disjoint;
+	};
+
 	// -----------------------------------------------------------------------
 	// Box region (used by UpdateSubresource)
 
@@ -198,3 +388,11 @@ namespace EngineCore::RHI
 	};
 
 } // namespace EngineCore::RHI
+
+// Binary compatibility with D3D11 structs (serialized material files depend on exact layout)
+static_assert(sizeof(EngineCore::RHI::DepthStencilDesc) == sizeof(D3D11_DEPTH_STENCIL_DESC), "DepthStencilDesc layout mismatch");
+static_assert(sizeof(EngineCore::RHI::BlendDesc) == sizeof(D3D11_BLEND_DESC), "BlendDesc layout mismatch");
+static_assert(sizeof(EngineCore::RHI::RasterizerDesc) == sizeof(D3D11_RASTERIZER_DESC), "RasterizerDesc layout mismatch");
+static_assert(sizeof(EngineCore::RHI::SamplerDesc) == sizeof(D3D11_SAMPLER_DESC), "SamplerDesc layout mismatch");
+static_assert(sizeof(EngineCore::RHI::InputElementDesc) == sizeof(D3D11_INPUT_ELEMENT_DESC), "InputElementDesc layout mismatch");
+static_assert(sizeof(EngineCore::RHI::TimestampDisjointData) == sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT), "TimestampDisjointData layout mismatch");

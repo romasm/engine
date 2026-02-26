@@ -13,10 +13,10 @@
 #include "GfxSync.h"
 
 #define RENDER Render::Get()
-#define DEVICE RENDER->m_pd3dDevice
-#define DEVICE3 RENDER->m_pd3dDevice3
-#define CONTEXT RENDER->m_pImmediateContext
-#define CONTEXT3 RENDER->m_pImmediateContext3
+#define DEVICE  Render::Device()
+#define DEVICE3 Render::Device3()
+#define CONTEXT  Render::Context()
+#define CONTEXT3 Render::Context3()
 
 // RHI backend accessors (use these for new rendering code)
 #define GFX_DEVICE   Render::GetGfxDevice()
@@ -31,10 +31,10 @@ namespace EngineCore
 
 	enum IA_TOPOLOGY
 	{
-		POINTLIST = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
-		LINELIST = D3D11_PRIMITIVE_TOPOLOGY_LINELIST,
-		TRISLIST = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		PATCH3LIST = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
+		POINTLIST  = (int)RHI::Topology::PointList,
+		LINELIST   = (int)RHI::Topology::LineList,
+		TRISLIST   = (int)RHI::Topology::TriangleList,
+		PATCH3LIST = (int)RHI::Topology::Patch3,
 	};
 
 	class Render
@@ -73,17 +73,8 @@ namespace EngineCore
 		SamplerStateMgr* samplerStateMgr;
 
 		ResourceProcessor* resourceProc;
-		
-		GlobalColor gl_color;
 
-		ID3D11Device *m_pd3dDevice;
-		ID3D11Device3 *m_pd3dDevice3;
-		ID3D11DeviceContext *m_pImmediateContext;
-		ID3D11DeviceContext3 *m_pImmediateContext3;
-		
-		IDXGIDevice* m_pDXGIDevice;
-		IDXGIAdapter1* m_pDxgiAdapter;
-		IDXGIFactory2* m_pDxgiFactory;
+		GlobalColor gl_color;
 
 		Window* CurrentHudWindow;
 
@@ -103,18 +94,31 @@ namespace EngineCore
 	protected:
 		static Render *m_instance;
 
-		bool m_createdevice();
-
 		void m_resize();
-		
+
+		// Deferred resize state (DX12 only)
+		bool     m_pendingResize  = false;
+		uint32_t m_pendingResizeW = 0;
+		uint32_t m_pendingResizeH = 0;
+
 	public:
-		// Raw DX11 device/context accessors (used by DX11-only systems: ShaderCodeMgr, RenderState, Profiler)
-		inline static ID3D11Device* Device() {return m_instance->m_pd3dDevice;}
-		inline static ID3D11DeviceContext* Context() {return m_instance->m_pImmediateContext;}
+		// Raw DX11 device/context accessors (route through RHI backend; nullptr when DX12)
+		inline static ID3D11Device*         Device()   { return m_instance->gfxDevice->GetDX11Device(); }
+		inline static ID3D11Device3*        Device3()  { return m_instance->gfxDevice->GetDX11Device3(); }
+		inline static ID3D11DeviceContext*  Context()  { return m_instance->gfxDevice->GetDX11Context(); }
+		inline static ID3D11DeviceContext3* Context3() { return m_instance->gfxDevice->GetDX11Context3(); }
 
 		// DX12 frame lifecycle: call at frame start (after PERF_GPU_FRAME_BEGIN).
 		// On DX11 this is a no-op.
 		static void BeginFrameDX12();
+
+		// Deferred DX12 swap chain resize (set from WM_SIZE, applied next frame).
+		static void SetPendingResize(uint32_t width, uint32_t height)
+		{
+			m_instance->m_pendingResizeW = width;
+			m_instance->m_pendingResizeH = height;
+			m_instance->m_pendingResize  = true;
+		}
 
 		// Topology (routes through RHI; IA_TOPOLOGY values match RHI::Topology)
 		inline static void SetTopology(IA_TOPOLOGY topo)

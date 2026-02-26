@@ -16,7 +16,8 @@ namespace EngineCore
 #define SYSTEM_BORDER_SIZE 7
 
 	class RenderTarget;
-	
+	struct DX12SecondarySwapChain;
+
 	struct luaHWND
 	{
 		luaHWND(HWND h){hwnd = h;}
@@ -401,6 +402,7 @@ namespace EngineCore
 		XMMATRIX m_ortho;
 
 		IDXGISwapChain1 *m_pSwapChain;
+		DX12SecondarySwapChain* m_dx12Secondary;
 		RenderTarget* m_RTmain;
 		
 		DXGI_PRESENT_PARAMETERS presetParams;

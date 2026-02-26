@@ -60,6 +60,8 @@ namespace EngineCore
 	
 		static void RegLuaClass();
 
+		bool HasWorlds() const { return !m_worldsMap.empty(); }
+
 	private:
 		void regWorld(BaseWorld* world);
 

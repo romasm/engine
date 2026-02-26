@@ -84,6 +84,21 @@ public:
 
 	void SetPipelineState(GfxPipelineState* pso) override;  // implemented in .cpp
 
+	void SetDepthStencilState(void* state, uint32_t stencilRef) override
+	{
+		m_context->OMSetDepthStencilState(static_cast<ID3D11DepthStencilState*>(state), stencilRef);
+	}
+
+	void SetBlendState(void* state, const float* blendFactor, uint32_t sampleMask) override
+	{
+		m_context->OMSetBlendState(static_cast<ID3D11BlendState*>(state), blendFactor, sampleMask);
+	}
+
+	void SetRasterizerState(void* state) override
+	{
+		m_context->RSSetState(static_cast<ID3D11RasterizerState*>(state));
+	}
+
 	// -----------------------------------------------------------------------
 	// Input assembly
 
@@ -298,6 +313,28 @@ public:
 	void CopyResource(GfxTexture* dest, GfxTexture* source) override
 	{
 		m_context->CopyResource(Cast(dest)->AsResource(), Cast(source)->AsResource());
+	}
+
+	void CopyTextureRegion(GfxTexture* dest, uint32_t destSubresource,
+		uint32_t destX, uint32_t destY, uint32_t destZ,
+		GfxTexture* source, uint32_t sourceSubresource,
+		const GfxBox* sourceBox) override
+	{
+		const D3D11_BOX* pBox = nullptr;
+		D3D11_BOX d3dBox;
+		if(sourceBox)
+		{
+			d3dBox.left   = sourceBox->left;
+			d3dBox.top    = sourceBox->top;
+			d3dBox.front  = sourceBox->front;
+			d3dBox.right  = sourceBox->right;
+			d3dBox.bottom = sourceBox->bottom;
+			d3dBox.back   = sourceBox->back;
+			pBox = &d3dBox;
+		}
+		m_context->CopySubresourceRegion(
+			Cast(dest)->AsResource(), destSubresource, destX, destY, destZ,
+			Cast(source)->AsResource(), sourceSubresource, pBox);
 	}
 
 	void GenerateMips(GfxSRV* srv) override

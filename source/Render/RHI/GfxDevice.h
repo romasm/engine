@@ -1,6 +1,8 @@
 #pragma once
 #include "RHITypes.h"
 
+namespace DirectX { class ScratchImage; }
+
 // IGfxDevice — creates and destroys GPU resources.
 // One instance exists for the lifetime of the application.
 // Call-sites use this to allocate buffers/textures/PSOs etc.
@@ -29,7 +31,7 @@ struct TextureDesc
 	TextureDimension dimension;
 	uint32_t    width;
 	uint32_t    height;
-	uint32_t    depth;      // slices for Tex2DArray / depth for Tex3D
+	uint32_t    depth;      // slices for Tex2DArray / cubes for CubeMapArray / depth for Tex3D
 	uint32_t    mipLevels;  // 0 = full chain
 	DXGI_FORMAT format;
 	bool        allowRTV;
@@ -40,13 +42,8 @@ struct TextureDesc
 	uint32_t    msaaSamples;  // 1 = no MSAA
 	uint32_t    msaaQuality;
 	const void* initialData;
-};
-
-struct SamplerDesc
-{
-	// Thin wrapper over D3D11_SAMPLER_DESC / D3D12_STATIC_SAMPLER_DESC
-	// (raw DX descriptor stored to keep migration incremental)
-	D3D11_SAMPLER_DESC d3d11Desc; // shared layout with DX12 static sampler subset
+	uint32_t    initialDataRowPitch;   // bytes per row (for 2D/3D + initialData)
+	uint32_t    initialDataSlicePitch; // bytes per 2D slice (for 3D + initialData)
 };
 
 // PSO descriptor: wraps existing D3D11 state descs + shader IDs.
@@ -63,10 +60,10 @@ struct GraphicsPSODesc
 	// For DX12: input layout is derived from vertex shader reflection
 	GfxInputLayout* inputLayout;
 
-	// Render state (stored as DX11 descs; DX12 backend converts)
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	D3D11_BLEND_DESC         blendDesc;
-	D3D11_RASTERIZER_DESC    rasterizerDesc;
+	// Render state (RHI descriptors; DX12 backend converts field-by-field)
+	DepthStencilDesc depthStencilDesc;
+	BlendDesc        blendDesc;
+	RasterizerDesc   rasterizerDesc;
 
 	// Cached render state IDs (RenderStateMgr pool indices, used by DX11 backend)
 	uint16_t depthStateID = 0;
@@ -100,10 +97,10 @@ struct MeshShaderPSODesc
 	uint16_t meshShaderID;
 	uint16_t pixelShaderID;
 
-	// Render state (stored as DX11 descs; DX12 backend converts)
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	D3D11_BLEND_DESC         blendDesc;
-	D3D11_RASTERIZER_DESC    rasterizerDesc;
+	// Render state (RHI descriptors; DX12 backend converts field-by-field)
+	DepthStencilDesc depthStencilDesc;
+	BlendDesc        blendDesc;
+	RasterizerDesc   rasterizerDesc;
 
 	static constexpr uint32_t MaxRenderTargets = 8;
 	DXGI_FORMAT renderTargetFormats[MaxRenderTargets];
@@ -144,11 +141,13 @@ public:
 
 	virtual GfxRTV* CreateRTV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice = 0,
 		uint32_t arraySlice = 0) = 0;
-	virtual GfxDSV* CreateDSV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice = 0) = 0;
+	virtual GfxDSV* CreateDSV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice = 0,
+		uint32_t arraySlice = UINT32_MAX) = 0;
 	virtual GfxSRV* CreateSRV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mostDetailedMip = 0,
 		uint32_t mipLevels = UINT32_MAX) = 0;
 	virtual GfxSRV* CreateSRV(GfxBuffer* buffer, uint32_t firstElement, uint32_t numElements) = 0;
-	virtual GfxUAV* CreateUAV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice = 0) = 0;
+	virtual GfxUAV* CreateUAV(GfxTexture* texture, DXGI_FORMAT format, uint32_t mipSlice = 0,
+		uint32_t arraySlice = UINT32_MAX) = 0;
 	virtual GfxUAV* CreateUAV(GfxBuffer* buffer, uint32_t firstElement, uint32_t numElements) = 0;
 
 	virtual void DestroyRTV(GfxRTV* rtv) = 0;
@@ -176,7 +175,7 @@ public:
 	// Input layout
 
 	virtual GfxInputLayout* CreateInputLayout(const void* shaderBytecode, size_t bytecodeSize,
-		const D3D11_INPUT_ELEMENT_DESC* elements, uint32_t elementCount) = 0;
+		const InputElementDesc* elements, uint32_t elementCount) = 0;
 	virtual void            DestroyInputLayout(GfxInputLayout* layout) = 0;
 
 	// -----------------------------------------------------------------------
@@ -211,11 +210,49 @@ public:
 	virtual void DestroyQueryHeap(GfxQueryHeap* heap) { delete heap; }
 
 	// -----------------------------------------------------------------------
+	// Render state object creation (DX11 creates COM objects, DX12 returns nullptr — bakes into PSO)
+
+	virtual void* CreateDepthStencilStateObject(const DepthStencilDesc& desc) { (void)desc; return nullptr; }
+	virtual void* CreateBlendStateObject(const BlendDesc& desc) { (void)desc; return nullptr; }
+	virtual void* CreateRasterizerStateObject(const RasterizerDesc& desc) { (void)desc; return nullptr; }
+
+	// -----------------------------------------------------------------------
+	// Shader object creation (DX11 creates ID3D11*Shader objects, DX12 keeps bytecode only)
+	// type: 0=PS, 1=VS, 2=DS, 3=HS, 4=GS, 5=CS
+
+	virtual void* CreateShaderObject(uint8_t type, const void* bytecode, size_t size)
+	{ (void)type; (void)bytecode; (void)size; return nullptr; }
+	virtual void  DestroyShaderObject(void* shaderObject) { (void)shaderObject; }
+
+	// -----------------------------------------------------------------------
 	// DDS texture loading (creates texture + SRV from raw DDS bytes)
 	// DX11: returns nullptr (uses DDSTextureLoader directly)
 	// DX12: parses DDS, creates committed resource, uploads all subresources, creates SRV
 
 	virtual GfxSRV* LoadDDSFromMemory(const uint8_t* /*data*/, uint32_t /*dataSize*/) { return nullptr; }
+
+	// -----------------------------------------------------------------------
+	// CPU ↔ GPU texture data transfer (box-region granularity).
+	// Used by VolumePainter undo/redo to read/write 3D texture regions.
+	// DX11: Map + ReadFromSubresource / WriteToSubresource + Unmap
+	// DX12: readback/upload heap staging (TODO).
+
+	virtual HRESULT ReadTextureRegion(GfxTexture* /*texture*/, uint32_t /*subresource*/,
+		const GfxBox& /*sourceBox*/, void* /*destData*/, uint32_t /*destRowPitch*/, uint32_t /*destDepthPitch*/)
+	{ return E_NOTIMPL; }
+
+	virtual HRESULT WriteTextureRegion(GfxTexture* /*texture*/, uint32_t /*subresource*/,
+		const GfxBox& /*destBox*/, const void* /*sourceData*/, uint32_t /*sourceRowPitch*/, uint32_t /*sourceDepthPitch*/)
+	{ return E_NOTIMPL; }
+
+	// -----------------------------------------------------------------------
+	// Texture readback (GPU → CPU). Used by editor tools to save textures to disk.
+	// DX11: delegates to DirectXTex CaptureTexture. DX12: readback heap + copy.
+
+	virtual HRESULT CaptureTexture(GfxTexture* /*texture*/, DirectX::ScratchImage& /*result*/)
+	{ return E_NOTIMPL; }
+	virtual HRESULT CaptureTexture(GfxSRV* /*srv*/, DirectX::ScratchImage& /*result*/)
+	{ return E_NOTIMPL; }
 
 	// -----------------------------------------------------------------------
 	// Swap chain (deferred — HWND is not always available at device creation time)
@@ -236,6 +273,15 @@ public:
 	virtual const char* GetAdapterName() = 0;
 	virtual bool        SupportsRaytracing() = 0;
 	virtual bool        SupportsMeshShaders() = 0;
+
+	// -----------------------------------------------------------------------
+	// Raw DX11 accessors (for legacy systems not yet migrated to RHI)
+	// Returns nullptr when the backend is DX12.
+
+	virtual ID3D11Device*         GetDX11Device()   { return nullptr; }
+	virtual ID3D11Device3*        GetDX11Device3()  { return nullptr; }
+	virtual ID3D11DeviceContext*  GetDX11Context()  { return nullptr; }
+	virtual ID3D11DeviceContext3* GetDX11Context3() { return nullptr; }
 };
 
 } // namespace EngineCore::RHI

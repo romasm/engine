@@ -31,6 +31,12 @@ public:
 	void ClearRenderTargets(bool clearDS = true){ClearRenderTargets(0,0,0,0, clearDS);}
 	void ClearRenderTargets(float, float, float, float, bool clearDS = true);
 
+	// DX12 resource state transitions (no-ops on DX11)
+	void TransitionToRenderTarget();
+	void TransitionToShaderResource();
+	void TransitionToUnorderedAccess();
+	void TransitionDepthToRead();
+
 	// �������� �������� RT � ���� shader resource view
 	RHI::GfxSRV* GetShaderResourceView(int id);
 	RHI::GfxUAV* GetUnorderedAccessView(int id);
@@ -87,6 +93,9 @@ private:
 	int t_width;
 
 	bool b_importedDS;
+
+	RHI::ResourceState m_currentRTState[MAX_RENDERTARGETS];
+	RHI::ResourceState m_currentDSState;
 
 	bool msaa;
 	uint32_t m_msaa_count;

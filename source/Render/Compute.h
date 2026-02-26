@@ -30,6 +30,10 @@ namespace EngineCore
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z)
 		{
+			// SetPipelineState must come first: on DX12 it sets the root signature,
+			// which invalidates all prior root parameter bindings (CBVs especially).
+			GFX_CMD->SetPipelineState(computePSO);
+
 			if(!resAttachments.empty())
 				GFX_CMD->SetCSResources(0, (uint32_t)resAttachments.size(), resAttachments.data());
 			if (!cbAttachments.empty())
@@ -37,15 +41,13 @@ namespace EngineCore
 			if (!rwAttachments.empty())
 				GFX_CMD->SetCSUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), rwAttachments.data());
 
-			GFX_CMD->SetPipelineState(computePSO);
-
 			GFX_CMD->Dispatch(x, y, z);
 
 			// Unbind compute shader
 			GFX_CMD->SetPipelineState(nullptr);
 
-			static RHI::GfxUAV* s_nullUAVs[8] = {};
-			static RHI::GfxSRV* s_nullSRVs[16] = {};
+			static RHI::GfxUAV* s_nullUAVs[32] = {};
+			static RHI::GfxSRV* s_nullSRVs[128] = {};
 			static RHI::GfxBuffer* s_nullCBs[16] = {};
 			GFX_CMD->SetCSUnorderedAccessViews(0, (uint32_t)rwAttachments.size(), s_nullUAVs);
 			GFX_CMD->SetCSConstantBuffers(0, (uint32_t)cbAttachments.size(), s_nullCBs);

@@ -226,14 +226,14 @@ void Profiler::GPU_GrabData()
 	int8_t prevCollect = collectSwitch;
 	++collectSwitch &= 1;
 
-	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT timestampDisjoint;
+	RHI::TimestampDisjointData timestampDisjoint;
 	if( GFX_CMD->GetQueryData(disjointHeap, prevCollect, &timestampDisjoint, sizeof(timestampDisjoint), 0) != S_OK )
 	{
 		ERR("Cant get profiler GPU timestamp disjoint query data!");
 		return;
 	}
 
-	if (timestampDisjoint.Disjoint)
+	if (timestampDisjoint.disjoint)
 	{
 		WRN("Profiler GPU timestamps disjoint!");
 		return;
@@ -263,7 +263,7 @@ void Profiler::GPU_GrabData()
 		if(i == 0)
 			timeBegin = time;
 
-		float timeslice = 1000.0f * float(time - timeBegin) / timestampDisjoint.Frequency;
+		float timeslice = 1000.0f * float(time - timeBegin) / timestampDisjoint.frequency;
 
 		if(i < PERF_GPU::PERF_GPU_COUNT)
 			gpu_perf_data[i][prevFrameID].begin = timeslice;
